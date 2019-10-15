@@ -18,14 +18,16 @@ Author(s):
 
 #include "precomp.h"
 #include "..\types\UiaTextRangeBase.hpp"
+#include <wrl.h>
 
 namespace Microsoft::Console::Interactivity::Win32
 {
     class UiaTextRange final : public Microsoft::Console::Types::UiaTextRangeBase
     {
     public:
-        static std::deque<UiaTextRange*> GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                                            _In_ IRawElementProviderSimple* pProvider);
+        static HRESULT GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                          _In_ IRawElementProviderSimple* pProvider,
+                                          _Outptr_ std::deque<WRL::ComPtr<UiaTextRange>> ranges);
 
         UiaTextRange() = default;
 

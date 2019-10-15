@@ -7,6 +7,7 @@
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::WRL;
 
 HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* termControl,
                                                        _In_ std::function<RECT(void)> GetBoundingRect)
@@ -94,69 +95,76 @@ const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() c
     return _termControl->GetPadding();
 }
 
-std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* const pProvider)
+HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Outptr_ std::deque<ComPtr<UiaTextRangeBase>> result)
 {
-    std::deque<UiaTextRangeBase*> result;
+    result = {};
 
-    auto ranges = UiaTextRange::GetSelectionRanges(_pData, pProvider);
-    while (!ranges.empty())
+    std::deque<ComPtr<UiaTextRange>> ranges;
+    auto hr = UiaTextRange::GetSelectionRanges(_pData, pProvider, ranges);
+
+    if (SUCCEEDED(hr))
     {
-        result.emplace_back(ranges.back());
-        ranges.pop_back();
+        while (!ranges.empty())
+        {
+            result.emplace_back(ranges.back());
+            ranges.pop_back();
+        }
+    }
+    else
+    {
+        while (!result.empty())
+        {
+            result.pop_back();
+        }
     }
 
-    return result;
+    return hr;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                          const Cursor& cursor)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                               const Cursor& cursor,
+                                               _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, cursor);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider, cursor);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                          const Endpoint start,
-                                                          const Endpoint end,
-                                                          const bool degenerate)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                               const Endpoint start,
+                                               const Endpoint end,
+                                               const bool degenerate,
+                                               _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, start, end, degenerate);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider, start, end, degenerate);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                          const UiaPoint point)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                               const UiaPoint point,
+                                               _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, point);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider, point);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }

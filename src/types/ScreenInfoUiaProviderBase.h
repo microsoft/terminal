@@ -76,24 +76,27 @@ namespace Microsoft::Console::Types
     protected:
         ScreenInfoUiaProviderBase() = default;
 
-        virtual std::deque<UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) = 0;
+        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Outptr_result_maybenull_ std::deque<WRL::ComPtr<UiaTextRangeBase>> selectionRanges) = 0;
 
         // degenerate range
-        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider) = 0;
+        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
 
         // degenerate range at cursor position
-        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                  const Cursor& cursor) = 0;
+        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                        const Cursor& cursor,
+                                        _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
 
         // specific endpoint range
-        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                  const Endpoint start,
-                                                  const Endpoint end,
-                                                  const bool degenerate) = 0;
+        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                        const Endpoint start,
+                                        const Endpoint end,
+                                        const bool degenerate,
+                                        _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
 
         // range from a UiaPoint
-        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                  const UiaPoint point) = 0;
+        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                        const UiaPoint point,
+                                        _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
 
         // weak reference to IUiaData
         IUiaData* _pData;

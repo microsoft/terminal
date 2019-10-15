@@ -10,12 +10,14 @@
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::WRL;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
-                                                           _In_ IRawElementProviderSimple* pProvider)
+HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
+                                         _In_ IRawElementProviderSimple* pProvider,
+                                         _Outptr_ std::deque<ComPtr<UiaTextRange>> ranges)
 {
-    std::deque<UiaTextRange*> ranges;
+    ranges = {};
 
     // get the selection rects
     const auto rectangles = pData->GetSelectionRects();
@@ -26,23 +28,24 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         ScreenInfoRow currentRow = rect.Top();
         Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
         Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
-        UiaTextRange* range;
-        LOG_IF_FAILED(WRL::MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
-        if (range == nullptr)
+
+        ComPtr<UiaTextRange> range;
+        auto hr = MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false);
+        if (FAILED(hr))
         {
             // something when wrong, clean up and throw
             while (!ranges.empty())
             {
                 ranges.pop_front();
             }
-            THROW_HR(E_INVALIDARG);
+            return hr;
         }
         else
         {
             ranges.push_back(range);
         }
     }
-    return ranges;
+    return S_OK;
 }
 
 // degenerate range constructor.
@@ -88,7 +91,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
-    RETURN_IF_FAILED(WRL::MakeAndInitialize<UiaTextRange>(ppRetVal, *this));
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(ppRetVal, *this));
 
 #if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
     OutputDebugString(L"Clone\n");

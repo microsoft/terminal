@@ -4,14 +4,17 @@
 #include "pch.h"
 #include "UiaTextRange.hpp"
 #include "TermControlUiaProvider.hpp"
+#include <wrl.h>
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::WRL;
 
-std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
-                                                           _In_ IRawElementProviderSimple* pProvider)
+HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
+                                         _In_ IRawElementProviderSimple* pProvider,
+                                         _Outptr_ std::deque<ComPtr<UiaTextRange>> ranges)
 {
-    std::deque<UiaTextRange*> ranges;
+    ranges = {};
 
     // get the selection rects
     const auto rectangles = pData->GetSelectionRects();
@@ -23,23 +26,23 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
         Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
 
-        UiaTextRange* range;
-        LOG_IF_FAILED(WRL::MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
-        if (range == nullptr)
+        ComPtr<UiaTextRange> range;
+        auto hr = MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false);
+        if (FAILED(hr))
         {
-            // something went wrong, clean up and throw
+            // something when wrong, clean up and throw
             while (!ranges.empty())
             {
                 ranges.pop_front();
             }
-            THROW_HR(E_INVALIDARG);
+            return hr;
         }
         else
         {
             ranges.push_back(range);
         }
     }
-    return ranges;
+    return S_OK;
 }
 
 // degenerate range constructor.
@@ -83,11 +86,11 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(ppRetVal, *this);
+    auto hr = MakeAndInitialize<UiaTextRange>(ppRetVal, *this);
 
     if (hr != S_OK)
     {
-        ppRetVal = nullptr;
+        *ppRetVal = nullptr;
         return hr;
     }
 

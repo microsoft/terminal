@@ -23,6 +23,7 @@ Author(s):
 #include "..\types\ScreenInfoUiaProviderBase.h"
 #include "..\types\UiaTextRangeBase.hpp"
 #include "uiaTextRange.hpp"
+#include <wrl.h>
 
 namespace Microsoft::Console::Interactivity::Win32
 {
@@ -43,24 +44,27 @@ namespace Microsoft::Console::Interactivity::Win32
         void ChangeViewport(const SMALL_RECT NewWindow);
 
     protected:
-        std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) override;
+        HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Outptr_result_maybenull_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>> selectionRanges) override;
 
         // degenerate range
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
 
         // degenerate range at cursor position
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const Cursor& cursor) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const Cursor& cursor,
+                                _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
 
         // specific endpoint range
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const Endpoint start,
-                                                                     const Endpoint end,
-                                                                     const bool degenerate) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const Endpoint start,
+                                const Endpoint end,
+                                const bool degenerate,
+                                _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
 
         // range from a UiaPoint
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const UiaPoint point) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const UiaPoint point,
+                                _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
 
     private:
         // weak reference to uia parent

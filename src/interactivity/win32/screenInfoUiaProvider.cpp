@@ -10,6 +10,7 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::WRL;
 
 HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                                       _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent)
@@ -96,69 +97,76 @@ void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
     _pUiaParent->ChangeViewport(NewWindow);
 }
 
-std::deque<UiaTextRangeBase*> ScreenInfoUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider)
+HRESULT ScreenInfoUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Outptr_ std::deque<ComPtr<UiaTextRangeBase>> result)
 {
-    std::deque<UiaTextRangeBase*> result;
+    result = {};
 
-    auto ranges = UiaTextRange::GetSelectionRanges(_pData, pProvider);
-    while (!ranges.empty())
+    std::deque<ComPtr<UiaTextRange>> ranges;
+    auto hr = UiaTextRange::GetSelectionRanges(_pData, pProvider, ranges);
+
+    if (SUCCEEDED(hr))
     {
-        result.emplace_back(ranges.back());
-        ranges.pop_back();
+        while (!ranges.empty())
+        {
+            result.emplace_back(ranges.back());
+            ranges.pop_back();
+        }
+    }
+    else
+    {
+        while (!result.empty())
+        {
+            result.pop_back();
+        }
     }
 
-    return result;
+    return hr;
 }
 
-UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
+HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
 
-UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                         const Cursor& cursor)
+HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                               const Cursor& cursor,
+                                               _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, cursor);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider, cursor);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
 
-UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                         const Endpoint start,
-                                                         const Endpoint end,
-                                                         const bool degenerate)
+HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                               const Endpoint start,
+                                               const Endpoint end,
+                                               const bool degenerate,
+                                               _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, start, end, degenerate);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider, start, end, degenerate);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
 
-UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                         const UiaPoint point)
+HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                               const UiaPoint point,
+                                               _Outptr_result_maybenull_ ComPtr<UiaTextRangeBase> utr)
 {
-    UiaTextRange* retVal;
-    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, point);
+    auto hr = MakeAndInitialize<UiaTextRange>(&utr, _pData, pProvider, point);
     if (FAILED(hr))
     {
-        LOG_HR(hr);
-        return nullptr;
+        utr = nullptr;
     }
-    return retVal;
+    return hr;
 }
