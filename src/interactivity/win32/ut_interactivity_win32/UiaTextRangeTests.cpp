@@ -104,12 +104,12 @@ class UiaTextRangeTests
 
         // set up default range
         _range = Microsoft::WRL::Make<UiaTextRange>(
-            _pUiaData,
-            &_dummyProvider,
-            0,
-            0,
-            false
-        ).Detach();
+                     _pUiaData,
+                     &_dummyProvider,
+                     0,
+                     0,
+                     false)
+                     .Detach();
 
         return true;
     }
