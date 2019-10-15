@@ -52,6 +52,9 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestLayerGlobalsOnRoot);
 
+        TEST_METHOD(TestProfileIconWithEnvVar);
+        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1366,4 +1369,37 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(guid3, settings._globals._defaultProfile);
         }
     }
+    void SettingsTests::TestProfileIconWithEnvVar()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "icon": "%WINDIR%\\System32\\x_80.png"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings;
+        settings._ParseJsonString(settingsJson, false);
+    }
+    void SettingsTests::TestProfileBackgroundImageWithEnvVar()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings;
+        settings._ParseJsonString(settingsJson, false);
+    }
+
 }
