@@ -72,7 +72,7 @@ void NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
-    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+    _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -110,14 +110,6 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _titlebar.Content(content);
-
-    // When the size of the titlebar content changes, we want to make sure to
-    // update the size of the drag region as well.
-    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
-    if (fwe)
-    {
-        fwe.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
-    }
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept

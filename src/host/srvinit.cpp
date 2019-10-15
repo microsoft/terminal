@@ -46,7 +46,7 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
         Globals.pFontDefaultList = new RenderFontDefaults();
 
-        FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
+        FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
     }
     CATCH_RETURN();
 
@@ -187,7 +187,7 @@ static bool s_IsOnDesktop()
     //Save initial font name for comparison on exit. We want telemetry when the font has changed
     if (settings.IsFaceNameSet())
     {
-        settings.SetLaunchFaceName(settings.GetFaceName(), LF_FACESIZE);
+        settings.SetLaunchFaceName(settings.GetFaceName());
     }
 
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation

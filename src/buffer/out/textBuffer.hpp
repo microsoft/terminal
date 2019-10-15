@@ -69,8 +69,6 @@ public:
                Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
-    ~TextBuffer() = default;
-
     // Used for duplicating properties to another text buffer
     void CopyProperties(const TextBuffer& OtherBuffer) noexcept;
 
@@ -148,7 +146,7 @@ public:
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
-                               const PCWCHAR fontFaceName,
+                               const std::wstring_view fontFaceName,
                                const COLORREF backgroundColor,
                                const std::string& htmlTitle);
 

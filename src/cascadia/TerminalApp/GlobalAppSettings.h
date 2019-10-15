@@ -21,6 +21,7 @@ Author(s):
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
+    class ColorSchemeTests;
 };
 
 namespace TerminalApp
@@ -34,8 +35,10 @@ public:
     GlobalAppSettings();
     ~GlobalAppSettings();
 
-    const std::vector<ColorScheme>& GetColorSchemes() const noexcept;
-    std::vector<ColorScheme>& GetColorSchemes() noexcept;
+    std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() noexcept;
+    const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
+    void AddColorScheme(ColorScheme scheme);
+
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;
 
@@ -70,7 +73,7 @@ private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
 
-    std::vector<ColorScheme> _colorSchemes;
+    std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
 
     int32_t _initialRows;
     int32_t _initialCols;
@@ -88,4 +91,5 @@ private:
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
     friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ColorSchemeTests;
 };

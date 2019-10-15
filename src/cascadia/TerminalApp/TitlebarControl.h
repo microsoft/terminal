@@ -17,8 +17,8 @@ namespace winrt::TerminalApp::implementation
     {
         TitlebarControl(uint64_t handle);
 
-        Windows::UI::Xaml::UIElement Content();
-        void Content(Windows::UI::Xaml::UIElement content);
+        IInspectable Content();
+        void Content(IInspectable content);
 
         void SetWindowVisualState(WindowVisualState visualState);
 
