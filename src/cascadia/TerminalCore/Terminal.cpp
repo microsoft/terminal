@@ -368,6 +368,10 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     auto& cursor = _buffer->GetCursor();
     const Viewport bufferSize = _buffer->GetSize();
 
+    // Defer the cursor drawing while we are iterating the string, for a better performance.
+    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
+    cursor.StartDeferDrawing();
+
     for (size_t i = 0; i < stringView.size(); i++)
     {
         wchar_t wch = stringView[i];
@@ -468,6 +472,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             _NotifyScrollEvent();
         }
     }
+
+    cursor.EndDeferDrawing();
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
