@@ -45,6 +45,7 @@ public:
 
     WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow);
     ~WindowUiaProvider();
+
 protected:
     const OLECHAR* AutomationIdPropertyName = L"Terminal Window";
     const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Windows Terminal Window";

@@ -32,7 +32,7 @@ namespace Microsoft::Console::Types
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, IRawElementProviderFragmentRoot>
     {
     public:
-        virtual ~WindowUiaProviderBase() = default;
+        ~WindowUiaProviderBase() = default;
 
     protected:
         WindowUiaProviderBase() = default;
