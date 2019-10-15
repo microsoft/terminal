@@ -241,26 +241,6 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
 }
 
 // Method Description:
-// - Serialize this settings structure, and save it to a file. The location of
-//      the file changes depending whether we're running as a packaged
-//      application or not.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::SaveAll() const
-{
-    const auto json = ToJson();
-    Json::StreamWriterBuilder wbuilder;
-    // Use 4 spaces to indent instead of \t
-    wbuilder.settings_["indentation"] = "    ";
-    wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
-    const auto serializedString = Json::writeString(wbuilder, json);
-
-    _WriteSettings(serializedString);
-}
-
-// Method Description:
 // - Determines whether the user's settings file is missing a schema directive
 //   and, if so, inserts one.
 // - Assumes that the body of the root object is at an indentation of 4 spaces, and
@@ -403,36 +383,6 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 }
 
 // Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value CascadiaSettings::ToJson() const
-{
-    Json::Value root;
-
-    Json::Value profilesArray;
-    for (const auto& profile : _profiles)
-    {
-        profilesArray.append(profile.ToJson());
-    }
-
-    Json::Value schemesArray;
-    const auto& colorSchemes = _globals.GetColorSchemes();
-    for (auto& scheme : colorSchemes)
-    {
-        schemesArray.append(scheme.ToJson());
-    }
-
-    root[GlobalsKey.data()] = _globals.ToJson();
-    root[ProfilesKey.data()] = profilesArray;
-    root[SchemesKey.data()] = schemesArray;
-
-    return root;
-}
-
-// Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a CascadiaSettings object.
@@ -568,8 +518,7 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
     else
     {
-        auto scheme = ColorScheme::FromJson(schemeJson);
-        _globals.GetColorSchemes().emplace_back(scheme);
+        _globals.AddColorScheme(ColorScheme::FromJson(schemeJson));
     }
 }
 
@@ -588,13 +537,13 @@ ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schem
 {
     for (auto& scheme : _globals.GetColorSchemes())
     {
-        if (scheme.ShouldBeLayered(schemeJson))
+        if (scheme.second.ShouldBeLayered(schemeJson))
         {
             // HERE BE DRAGONS: Returning a pointer to a type in the vector is
             // maybe not the _safest_ thing, but we have a mind to make Profile
             // and ColorScheme winrt types in the future, so this will be safer
             // then.
-            return &scheme;
+            return &scheme.second;
         }
     }
     return nullptr;

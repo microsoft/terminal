@@ -48,6 +48,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestLayeringNameOnlyProfiles);
         TEST_METHOD(TestExplodingNameOnlyProfiles);
         TEST_METHOD(TestHideAllProfiles);
+        TEST_METHOD(TestInvalidColorSchemeName);
 
         TEST_METHOD(TestLayerGlobalsOnRoot);
 
@@ -395,9 +396,10 @@ namespace TerminalAppLocalTests
 
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings->_warnings.size());
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme, settings->_warnings.at(2));
 
         VERIFY_ARE_EQUAL(3u, settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
@@ -795,6 +797,9 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile1"
                 }
+            ],
+            "schemes": [
+                { "name": "Campbell" }
             ]
         })" };
 
@@ -1194,6 +1199,65 @@ namespace TerminalAppLocalTests
         }
     }
 
+    void SettingsTests::TestInvalidColorSchemeName()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Ensure that setting a profile's scheme to a non-existent scheme causes a warning."));
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                },
+                {
+                    "name" : "profile1",
+                    "colorScheme": "InvalidSchemeName"
+                },
+                {
+                    "name" : "profile2"
+                    // Will use the Profile default value, "Campbell"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                },
+                {
+                    "name": "schemeTwo",
+                    "foreground": "#222222"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings;
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+
+        VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings._profiles.at(1)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(2)._schemeName.value());
+
+        settings._ValidateAllSchemesExist();
+
+        VERIFY_ARE_EQUAL(1u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme, settings._warnings.at(0));
+
+        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+
+        VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(1)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(2)._schemeName.value());
+    }
+
     void SettingsTests::TestLayerGlobalsOnRoot()
     {
         // Test for microsoft/terminal#2906. We added the ability for the root
@@ -1302,5 +1366,4 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(guid3, settings._globals._defaultProfile);
         }
     }
-
 }

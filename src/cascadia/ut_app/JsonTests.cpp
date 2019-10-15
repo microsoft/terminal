@@ -98,6 +98,7 @@ namespace TerminalAppUnitTests
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
         Utils::InitializeCampbellColorTable(campbellSpan);
+        Utils::SetColorTableAlpha(campbellSpan, 0);
 
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {
