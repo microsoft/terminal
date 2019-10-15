@@ -11,6 +11,19 @@ Author(s):
 - Mike Griese (migrie) 12-Jun-2018
 --*/
 
+// Inspired from RETURN_IF_WIN32_BOOL_FALSE
+// WIL doesn't include a RETURN_BOOL_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
+//  will actually return the value of GLE.
+#define RETURN_BOOL_IF_FALSE(b)               \
+    do                                        \
+    {                                         \
+        BOOL __boolRet = wil::verify_bool(b); \
+        if (!__boolRet)                       \
+        {                                     \
+            return __boolRet;                 \
+        }                                     \
+    } while (0, 0)
+
 namespace Microsoft::Console::Utils
 {
     bool IsValidHandle(const HANDLE handle) noexcept;

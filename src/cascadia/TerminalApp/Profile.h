@@ -45,7 +45,7 @@ public:
 
     ~Profile();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const;
 
     Json::Value ToJson() const;
     Json::Value DiffToJson(const Profile& other) const;
@@ -66,6 +66,7 @@ public:
 
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
+    std::optional<std::wstring>& GetSchemeName() noexcept;
     void SetTabTitle(std::wstring tabTitle) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;

@@ -390,25 +390,41 @@ void VtRendererTest::Xterm256TestColors()
         L"These values were picked for ease of formatting raw COLORREF values."));
     qExpectedInput.push_back("\x1b[38;2;1;2;3m");
     qExpectedInput.push_back("\x1b[48;2;5;6;7m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201, 0x00070605, 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201,
+                                                  0x00070605,
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[48;2;7;8;9m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201, 0x00090807, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201,
+                                                      0x00090807,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[38;2;10;11;12m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a, 0x00090807, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a,
+                                                      0x00090807,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a, 0x00090807, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a,
+                                                      0x00090807,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 
@@ -420,41 +436,69 @@ void VtRendererTest::Xterm256TestColors()
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                  g_ColorTable[0],
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
         qExpectedInput.push_back("\x1b[48;2;1;1;1m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      0x010101,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
         qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
 
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 }
@@ -725,41 +769,65 @@ void VtRendererTest::XtermTestColors()
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                  g_ColorTable[0],
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, ExtendedAttributes::Normal, false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
 
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 }
@@ -961,40 +1029,64 @@ void VtRendererTest::WinTelnetTestColors()
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                  g_ColorTable[0],
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, ExtendedAttributes::Normal, false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 }

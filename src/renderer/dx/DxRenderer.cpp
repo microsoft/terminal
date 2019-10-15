@@ -925,16 +925,21 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 {
-    /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
-                                                  (float)_invalidRect.top,
-                                                  (float)_invalidRect.right,
-                                                  (float)_invalidRect.bottom),
-                                                   _d2dBrushBackground.Get());
-*/
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
+        _d2dRenderTarget->FillRectangle(D2D1::RectF(static_cast<float>(_invalidRect.left),
+                                                    static_cast<float>(_invalidRect.top),
+                                                    static_cast<float>(_invalidRect.right),
+                                                    static_cast<float>(_invalidRect.bottom)),
+                                        _d2dBrushBackground.Get());
+        break;
+    case SwapChainMode::ForComposition:
+        D2D1_COLOR_F nothing = { 0 };
 
-    D2D1_COLOR_F nothing = { 0 };
-
-    _d2dRenderTarget->Clear(nothing);
+        _d2dRenderTarget->Clear(nothing);
+        break;
+    }
 
     return S_OK;
 }
@@ -1218,14 +1223,14 @@ enum class CursorPaintType
 // - colorForeground - Foreground brush color
 // - colorBackground - Background brush color
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                                      COLORREF const colorBackground,
                                                      const WORD /*legacyColorAttribute*/,
-                                                     const bool /*isBold*/,
+                                                     const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
     _foregroundColor = _ColorFFromColorRef(colorForeground);
@@ -1760,8 +1765,6 @@ float DxEngine::GetScaling() const noexcept
         coordSize.X = gsl::narrow<SHORT>(widthExact);
         coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
 
-        const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
-
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding
         // or rounding or scaling manipulation.
@@ -1769,9 +1772,9 @@ float DxEngine::GetScaling() const noexcept
 
         const COORD scaled = coordSize;
 
-        actual.SetFromEngine(fontName.data(),
+        actual.SetFromEngine(fontName,
                              desired.GetFamily(),
-                             weightDword,
+                             textFormat->GetFontWeight(),
                              false,
                              scaled,
                              unscaled);

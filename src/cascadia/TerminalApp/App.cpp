@@ -26,9 +26,10 @@ namespace winrt
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, 3> settingsLoadWarningsLabels {
    L"MissingDefaultProfileText",
-   L"DuplicateProfileText"
+   L"DuplicateProfileText",
+   L"UnknownColorSchemeText"
 };
 static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
     L"NoProfilesText",
@@ -579,6 +580,22 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->TitlebarClicked();
+        }
+    }
+
+    // Method Description:
+    // - Used to tell the app that the 'X' button has been clicked and
+    //   the user wants to close the app. We kick off the close warning
+    //   experience.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void App::WindowCloseButtonClicked()
+    {
+        if (_root)
+        {
+            _root->CloseWindow();
         }
     }
 

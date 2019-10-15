@@ -22,7 +22,8 @@ namespace TerminalApp
     enum class SettingsLoadWarnings : uint32_t
     {
         MissingDefaultProfile = 0,
-        DuplicateProfile = 1
+        DuplicateProfile = 1,
+        UnknownColorScheme = 2
     };
 
     // SettingsLoadWarnings are scenarios where the settings had invalid state

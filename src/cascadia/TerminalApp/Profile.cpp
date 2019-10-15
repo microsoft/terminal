@@ -143,27 +143,6 @@ void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
     _source = sourceNamespace;
 }
 
-// Function Description:
-// - Searches a list of color schemes to find one matching the given name. Will
-//return the first match in the list, if the list has multiple schemes with the same name.
-// Arguments:
-// - schemes: a list of schemes to search
-// - schemeName: the name of the sceme to look for
-// Return Value:
-// - a non-ownership pointer to the matching scheme if we found one, else nullptr
-const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
-                               const std::wstring& schemeName)
-{
-    for (auto& scheme : schemes)
-    {
-        if (scheme.GetName() == schemeName)
-        {
-            return &scheme;
-        }
-    }
-    return nullptr;
-}
-
 // Method Description:
 // - Create a TerminalSettings from this object. Apply our settings, as well as
 //      any colors from our color scheme, if we have one.
@@ -171,7 +150,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>& schemes) const
+TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
 {
     TerminalSettings terminalSettings{};
 
@@ -210,10 +189,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     if (_schemeName)
     {
-        const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
-        if (matchingScheme)
+        const auto found = schemes.find(_schemeName.value());
+        if (found != schemes.end())
         {
-            matchingScheme->ApplyScheme(terminalSettings);
+            found->second.ApplyScheme(terminalSettings);
         }
     }
     if (_defaultForeground)
@@ -719,6 +698,11 @@ void Profile::SetFontFace(std::wstring fontFace) noexcept
 void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
 {
     _schemeName = std::move(schemeName);
+}
+
+std::optional<std::wstring>& Profile::GetSchemeName() noexcept
+{
+    return _schemeName;
 }
 
 void Profile::SetAcrylicOpacity(double opacity) noexcept

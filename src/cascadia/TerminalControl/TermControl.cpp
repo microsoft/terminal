@@ -42,7 +42,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
-        _leadingSurrogate{},
         _cursorTimer{},
         _lastMouseClick{},
         _lastMouseClickPos{}
@@ -85,8 +84,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        _loadedRevoker = swapChainPanel.Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            _InitializeTerminal();
+        _layoutUpdatedRevoker = swapChainPanel.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // This event fires every time the layout changes, but it is always the last one to fire
+            // in any layout change chain. That gives us great flexibility in finding the right point
+            // at which to initialize our renderer (and our terminal).
+            // Any earlier than the last layout update and we may not know the terminal's starting size.
+            if (_InitializeTerminal())
+            {
+                // Only let this succeed once.
+                this->_layoutUpdatedRevoker.revoke();
+            }
         });
 
         container.Children().Append(swapChainPanel);
@@ -383,15 +390,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
     }
 
-    void TermControl::_InitializeTerminal()
+    bool TermControl::_InitializeTerminal()
     {
         if (_initializedTerminal)
         {
-            return;
+            return false;
         }
 
         const auto windowWidth = _swapChainPanel.ActualWidth(); // Width() and Height() are NaN?
         const auto windowHeight = _swapChainPanel.ActualHeight();
+
+        if (windowWidth == 0 || windowHeight == 0)
+        {
+            return false;
+        }
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
@@ -566,6 +578,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _connection.Start();
         _initializedTerminal = true;
+        return true;
     }
 
     void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
@@ -578,44 +591,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ch = e.Character();
 
-        // We want Backspace to be handled by _KeyDownHandler, so the
-        // terminalInput can translate it into a \x7f. So, do nothing here, so
-        // we don't end up sending both a BS and a DEL to the terminal.
-        // Also skip processing DEL here, which will hit here when Ctrl+Bkspc is
-        // pressed, but after it's handled by the _KeyDownHandler below.
-        if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
-        {
-            return;
-        }
-        else if (Utf16Parser::IsLeadingSurrogate(ch))
-        {
-            if (_leadingSurrogate.has_value())
-            {
-                // we already were storing a leading surrogate but we got another one. Go ahead and send the
-                // saved surrogate piece and save the new one
-                auto hstr = to_hstring(_leadingSurrogate.value());
-                _connection.WriteInput(hstr);
-            }
-            // save the leading portion of a surrogate pair so that they can be sent at the same time
-            _leadingSurrogate.emplace(ch);
-        }
-        else if (_leadingSurrogate.has_value())
-        {
-            std::wstring wstr;
-            wstr.reserve(2);
-            wstr.push_back(_leadingSurrogate.value());
-            wstr.push_back(ch);
-            _leadingSurrogate.reset();
-
-            auto hstr = to_hstring(wstr.c_str());
-            _connection.WriteInput(hstr);
-        }
-        else
-        {
-            auto hstr = to_hstring(ch);
-            _connection.WriteInput(hstr);
-        }
-        e.Handled(true);
+        const bool handled = _terminal->SendCharEvent(ch);
+        e.Handled(handled);
     }
 
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
