@@ -227,7 +227,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
             // coincides with the screen
             const auto pCWindow = static_cast<IslandWindow*>(_window.get());
             const RECT frame = pCWindow->GetFrameBorderMargins(dpix);
-            proposedRect.left -= (frame.left * -1);
+            proposedRect.left += frame.left;
         }
 
         adjustedHeight = nonClient.bottom - nonClient.top;

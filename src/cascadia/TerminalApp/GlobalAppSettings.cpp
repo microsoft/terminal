@@ -340,10 +340,9 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
                                               std::optional<int32_t>& initialY) noexcept
 {
     const wchar_t singleCharDelim = L',';
-    std::wstringstream tokenStream(initialPosition.c_str());
+    std::wstringstream tokenStream(initialPosition);
     std::wstring token;
     uint8_t initialPosIndex = 0;
-    size_t* idx = nullptr;
 
     // Get initial position values till we run out of delimiter separated values in the stream
     // or we hit max number of allowable values (= 2)
@@ -352,7 +351,7 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
     {
         try
         {
-            int32_t position = std::stoi(token, idx);
+            int32_t position = std::stoi(token);
             if (initialPosIndex == 0)
             {
                 initialX.emplace(position);
@@ -381,7 +380,7 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
 std::string GlobalAppSettings::_SerializeInitialPosition(const std::optional<int32_t>& initialX,
                                                          const std::optional<int32_t>& initialY) noexcept
 {
-    std::string serializedInitialPos = "(";
+    std::string serializedInitialPos = "";
     if (initialX.has_value())
     {
         serializedInitialPos += initialX.value();
