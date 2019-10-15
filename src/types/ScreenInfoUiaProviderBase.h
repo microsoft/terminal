@@ -33,10 +33,11 @@ namespace Microsoft::Console::Types
     class Viewport;
 
     class ScreenInfoUiaProviderBase :
-        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
-        ScreenInfoUiaProviderBase(_In_ IUiaData* pData);
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData);
+
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
         ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = default;
@@ -73,6 +74,8 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal) noexcept override;
 
     protected:
+        ScreenInfoUiaProviderBase() = default;
+
         virtual std::deque<UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) = 0;
 
         // degenerate range
@@ -92,7 +95,7 @@ namespace Microsoft::Console::Types
         virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                   const UiaPoint point) = 0;
 
-        // weak reference to IRenderData
+        // weak reference to IUiaData
         IUiaData* _pData;
 
     private:

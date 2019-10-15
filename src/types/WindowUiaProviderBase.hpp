@@ -21,21 +21,22 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
+#include <wrl.h>
 
 namespace Microsoft::Console::Types
 {
     class IUiaWindow;
 
     class WindowUiaProviderBase :
-        public IRawElementProviderSimple,
-        public IRawElementProviderFragment,
-        public IRawElementProviderFragmentRoot
+        public WRL::RuntimeClass<WRL ::RuntimeClassFlags<WRL ::ClassicCom | WRL ::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, IRawElementProviderFragmentRoot>
     {
     public:
         virtual ~WindowUiaProviderBase() = default;
 
     protected:
         WindowUiaProviderBase() = default;
+        HRESULT RuntimeClassInitialize(IUiaWindow* baseWindow);
+
         WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
         WindowUiaProviderBase(WindowUiaProviderBase&&) = default;
         WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = default;
@@ -44,14 +45,6 @@ namespace Microsoft::Console::Types
     public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;
-
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef() override;
-        IFACEMETHODIMP_(ULONG)
-        Release() override;
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;
@@ -75,8 +68,6 @@ namespace Microsoft::Console::Types
                                                         _In_ double y,
                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
-
-        WindowUiaProviderBase(IUiaWindow* baseWindow);
 
         RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
@@ -102,9 +93,6 @@ namespace Microsoft::Console::Types
         const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Console Host Window";
 
     private:
-        // Ref counter for COM object
-        ULONG _cRefs;
-
         IUiaWindow* _baseWindow;
     };
 

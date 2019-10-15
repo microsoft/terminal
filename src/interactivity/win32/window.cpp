@@ -52,7 +52,8 @@ Window* Window::s_Instance = nullptr;
 Window::Window() :
     _fIsInFullscreen(false),
     _pSettings(nullptr),
-    _hWnd(0)
+    _hWnd(0),
+    _pUiaProvider(nullptr)
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcNonFullscreenWindowSize, sizeof(_rcNonFullscreenWindowSize));
@@ -61,12 +62,6 @@ Window::Window() :
 
 Window::~Window()
 {
-    if (nullptr != _pUiaProvider)
-    {
-        // This is a COM object, so call Release. It will clean up itself when the last ref is released.
-        _pUiaProvider->Release();
-    }
-
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         delete ServiceLocator::LocateGlobals().pRender;
@@ -1285,18 +1280,15 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
 {
     if (nullptr == _pUiaProvider)
     {
-        try
+        auto hr = WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this);
+        if (FAILED(hr))
         {
-            _pUiaProvider = WindowUiaProvider::Create(this);
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
+            LOG_HR(hr);
             _pUiaProvider = nullptr;
         }
     }
 
-    return _pUiaProvider;
+    return _pUiaProvider.Get();
 }
 
 [[nodiscard]] HRESULT Window::SignalUia(_In_ EVENTID id)

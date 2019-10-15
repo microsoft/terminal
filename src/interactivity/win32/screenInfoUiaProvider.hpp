@@ -29,8 +29,9 @@ namespace Microsoft::Console::Interactivity::Win32
     class ScreenInfoUiaProvider final : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        ScreenInfoUiaProvider(_In_ Microsoft::Console::Types::IUiaData* pData,
-                              _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent);
+        ScreenInfoUiaProvider() = default;
+        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                       _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent);
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
@@ -63,6 +64,6 @@ namespace Microsoft::Console::Interactivity::Win32
 
     private:
         // weak reference to uia parent
-        Microsoft::Console::Types::WindowUiaProviderBase* const _pUiaParent;
+        Microsoft::Console::Types::WindowUiaProviderBase* _pUiaParent;
     };
 }

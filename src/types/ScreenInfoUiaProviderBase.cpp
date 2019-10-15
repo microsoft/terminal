@@ -31,12 +31,11 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
     return psa;
 }
 
-ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
-    _signalFiringMapping{},
-    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
+HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pData);
+    _pData = pData;
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID id)

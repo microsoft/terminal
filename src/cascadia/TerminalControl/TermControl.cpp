@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            autoPeer = winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
+            autoPeer = winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
         }
         CATCH_LOG();
         return autoPeer;

@@ -74,7 +74,7 @@ constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Types
 {
-    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom>, ITextRangeProvider>
+    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
     {
     private:
         static IdType id;
@@ -138,6 +138,24 @@ namespace Microsoft::Console::Types
         };
 
     public:
+        // degenerate range
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider);
+
+        // degenerate range at cursor position
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Cursor& cursor);
+
+        // specific endpoint range
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Endpoint start,
+                                       const Endpoint end,
+                                       const bool degenerate);
+
+        HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a);
+
         UiaTextRangeBase(UiaTextRangeBase&&) = default;
         UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
@@ -191,37 +209,20 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
 
     protected:
+        UiaTextRangeBase() = default;
 #if _DEBUG
         void _outputRowConversions(IUiaData* pData);
         void _outputObjectState();
 #endif
-        IUiaData* const _pData;
+        IUiaData* _pData;
 
-        wil::com_ptr<IRawElementProviderSimple> const _pProvider;
+        IRawElementProviderSimple* _pProvider;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
-        // degenerate range
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider);
-
-        // degenerate range at cursor position
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider,
-                         const Cursor& cursor);
-
-        // specific endpoint range
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider,
-                         const Endpoint start,
-                         const Endpoint end,
-                         const bool degenerate);
-
         void Initialize(_In_ const UiaPoint point);
-
-        UiaTextRangeBase(const UiaTextRangeBase& a) noexcept;
 
         // used to debug objects passed back and forth
         // between the provider and the client

@@ -8,14 +8,18 @@
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
 
-TermControlUiaProvider::TermControlUiaProvider(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& termControl,
-                                               _In_ std::function<RECT(void)> GetBoundingRect) :
-    _getBoundingRect(GetBoundingRect),
-    _termControl(termControl),
-    ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, termControl.GetUiaData()))
+HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* termControl,
+                                                       _In_ std::function<RECT(void)> GetBoundingRect)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, termControl);
+    RETURN_IF_FAILED(__super::RuntimeClassInitialize(termControl->GetUiaData()));
+
+    _getBoundingRect = GetBoundingRect;
+    _termControl = termControl;
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+    return S_OK;
 }
 
 IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction,
@@ -82,12 +86,12 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
 
 const COORD TermControlUiaProvider::GetFontSize() const
 {
-    return _termControl.GetActualFont().GetSize();
+    return _termControl->GetActualFont().GetSize();
 }
 
 const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() const
 {
-    return _termControl.GetPadding();
+    return _termControl->GetPadding();
 }
 
 std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* const pProvider)
@@ -106,13 +110,27 @@ std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IR
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
 {
-    return WRL::Make<UiaTextRange>(_pData, pProvider).Detach();
+    UiaTextRange* retVal;
+    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider);
+    if (FAILED(hr))
+    {
+        LOG_HR(hr);
+        return nullptr;
+    }
+    return retVal;
 }
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                           const Cursor& cursor)
 {
-    return WRL::Make<UiaTextRange>(_pData, pProvider, cursor).Detach();
+    UiaTextRange* retVal;
+    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, cursor);
+    if (FAILED(hr))
+    {
+        LOG_HR(hr);
+        return nullptr;
+    }
+    return retVal;
 }
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -120,11 +138,25 @@ UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProvid
                                                           const Endpoint end,
                                                           const bool degenerate)
 {
-    return WRL::Make<UiaTextRange>(_pData, pProvider, start, end, degenerate).Detach();
+    UiaTextRange* retVal;
+    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, start, end, degenerate);
+    if (FAILED(hr))
+    {
+        LOG_HR(hr);
+        return nullptr;
+    }
+    return retVal;
 }
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                           const UiaPoint point)
 {
-    return WRL::Make<UiaTextRange>(_pData, pProvider, point).Detach();
+    UiaTextRange* retVal;
+    auto hr = WRL::MakeAndInitialize<UiaTextRange>(&retVal, _pData, pProvider, point);
+    if (FAILED(hr))
+    {
+        LOG_HR(hr);
+        return nullptr;
+    }
+    return retVal;
 }

@@ -26,12 +26,8 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         ScreenInfoRow currentRow = rect.Top();
         Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
         Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
-        auto range = WRL::Make<UiaTextRange>(pData,
-                                             pProvider,
-                                             start,
-                                             end,
-                                             false)
-                         .Detach();
+        UiaTextRange* range;
+        LOG_IF_FAILED(WRL::MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
         if (range == nullptr)
         {
             // something when wrong, clean up and throw
@@ -50,53 +46,49 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
 }
 
 // degenerate range constructor.
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
-    UiaTextRangeBase(pData, pProvider)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider)
 {
+    return __super::RuntimeClassInitialize(pData, pProvider);
 }
 
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const Cursor& cursor) :
-    UiaTextRangeBase(pData, pProvider, cursor)
+// degenerate range at cursor position
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const Cursor& cursor)
 {
+    return __super::RuntimeClassInitialize(pData, pProvider, cursor);
 }
 
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const Endpoint start,
-                           const Endpoint end,
-                           const bool degenerate) :
-    UiaTextRangeBase(pData, pProvider, start, end, degenerate)
+// specific endpoint range
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const Endpoint start,
+                                             const Endpoint end,
+                                             const bool degenerate)
 {
+    return __super::RuntimeClassInitialize(pData, pProvider, start, end, degenerate);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const UiaPoint point) :
-    UiaTextRangeBase(pData, pProvider)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const UiaPoint point)
 {
+    RETURN_IF_FAILED(__super::RuntimeClassInitialize(pData, pProvider));
     Initialize(point);
+    return S_OK;
+}
+
+HRESULT UiaTextRange::RuntimeClassInitialize(const UiaTextRange& a)
+{
+    return __super::RuntimeClassInitialize(a);
 }
 
 IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
-    try
-    {
-        *ppRetVal = WRL::Make<UiaTextRange>(*this).Get();
-    }
-    catch (...)
-    {
-        *ppRetVal = nullptr;
-        return wil::ResultFromCaughtException();
-    }
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    RETURN_IF_FAILED(WRL::MakeAndInitialize<UiaTextRange>(ppRetVal, *this));
 
 #if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
     OutputDebugString(L"Clone\n");
@@ -169,7 +161,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
 
 void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
 {
-    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider.get());
+    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
     provider->ChangeViewport(NewWindow);
 }
 
@@ -185,6 +177,6 @@ void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
 
 HWND UiaTextRange::_getWindowHandle() const
 {
-    const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider.get());
+    const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
     return provider->GetWindowHandle();
 }

@@ -5,6 +5,7 @@
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
+#include <wrl.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -216,7 +217,8 @@ IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
     {
         try
         {
-            _pUiaProvider = WindowUiaProvider::Create(this);
+            // TODO GitHub #3195: Remove WindowUiaProvider in WindowsTerminal
+            //Microsoft::WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this);
         }
         catch (...)
         {

@@ -102,13 +102,17 @@ void UiaTextRangeBase::_outputObjectState()
 #endif // _DEBUG
 
 // degenerate range constructor.
-UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
-    _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
-    _start{ 0 },
-    _end{ 0 },
-    _degenerate{ true },
-    _pData{ THROW_HR_IF_NULL(E_INVALIDARG, pData) }
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pData);
+
+    _pProvider = pProvider;
+    _start = 0;
+    _end = 0;
+    _degenerate = true;
+    _pData = pData;
+
     _id = id;
     ++id;
 
@@ -117,31 +121,42 @@ UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData, _In_ IRawElementProvide
     /*ApiMsgConstructor apiMsg;
     apiMsg.Id = _id;
     Tracing::s_TraceUia(nullptr, ApiCall::Constructor, &apiMsg);*/
+
+    return S_OK;
 }
 
-UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor& cursor) :
-    UiaTextRangeBase(pData, pProvider)
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                                 _In_ IRawElementProviderSimple* const pProvider,
+                                                 const Cursor& cursor)
 {
-    _degenerate = true;
-    _start = _screenInfoRowToEndpoint(_pData, cursor.GetPosition().Y) + cursor.GetPosition().X;
-    _end = _start;
+    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
+
+    try
+    {
+        _degenerate = true;
+        _start = _screenInfoRowToEndpoint(_pData, cursor.GetPosition().Y) + cursor.GetPosition().X;
+        _end = _start;
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Constructor\n");
-    _outputObjectState();
+        OutputDebugString(L"Constructor\n");
+        _outputObjectState();
 #endif
+    }
+    catch (...)
+    {
+        return E_INVALIDARG;
+    }
+    return S_OK;
 }
 
-UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Endpoint start,
-                                   const Endpoint end,
-                                   const bool degenerate) :
-    UiaTextRangeBase(pData, pProvider)
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                                 _In_ IRawElementProviderSimple* const pProvider,
+                                                 const Endpoint start,
+                                                 const Endpoint end,
+                                                 const bool degenerate)
 {
-    THROW_HR_IF(E_INVALIDARG, !degenerate && start > end);
+    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
+    RETURN_HR_IF(E_INVALIDARG, !degenerate && start > end);
 
     _degenerate = degenerate;
     _start = start;
@@ -151,6 +166,8 @@ UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData,
     OutputDebugString(L"Constructor\n");
     _outputObjectState();
 #endif
+
+    return S_OK;
 }
 
 void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
@@ -183,13 +200,14 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     _degenerate = true;
 }
 
-UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) noexcept :
-    _pProvider{ a._pProvider },
-    _start{ a._start },
-    _end{ a._end },
-    _degenerate{ a._degenerate },
-    _pData{ a._pData }
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a)
 {
+    _pProvider = a._pProvider;
+    _start = a._start;
+    _end = a._end;
+    _degenerate = a._degenerate;
+    _pData = a._pData;
+
     _id = id;
     ++id;
 
@@ -197,6 +215,8 @@ UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) noexcept :
     OutputDebugString(L"Copy Constructor\n");
     _outputObjectState();
 #endif
+
+    return S_OK;
 }
 
 const IdType UiaTextRangeBase::GetId() const noexcept

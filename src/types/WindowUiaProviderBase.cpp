@@ -8,54 +8,12 @@
 
 using namespace Microsoft::Console::Types;
 
-WindowUiaProviderBase::WindowUiaProviderBase(IUiaWindow* baseWindow) :
-    _signalEventFiring{},
-    _baseWindow{ baseWindow },
-    _cRefs(1)
+HRESULT WindowUiaProviderBase::RuntimeClassInitialize(IUiaWindow* baseWindow)
 {
-}
-
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-WindowUiaProviderBase::AddRef()
-{
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-WindowUiaProviderBase::Release()
-{
-    const long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
-    if (riid == __uuidof(IUnknown) ||
-        riid == __uuidof(IRawElementProviderSimple) ||
-        riid == __uuidof(IRawElementProviderFragment) ||
-        riid == __uuidof(IRawElementProviderFragmentRoot))
-    {
-        *ppInterface = this;
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-
+    _signalEventFiring = {};
+    _baseWindow = baseWindow;
     return S_OK;
 }
-
-#pragma endregion
 
 #pragma region IRawElementProviderSimple
 
@@ -205,8 +163,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_mayben
     RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = this;
-    AddRef();
+    RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(ppProvider)));
     return S_OK;
 }
 

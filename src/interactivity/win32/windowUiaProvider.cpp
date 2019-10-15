@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 #include "precomp.h"
 
-#include "windowUiaProvider.hpp"
 #include "screenInfoUiaProvider.hpp"
+#include "windowUiaProvider.hpp"
 
 #include "../types/IUiaData.h"
 #include "../host/renderData.hpp"
@@ -12,38 +12,20 @@
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-WindowUiaProvider::WindowUiaProvider(IConsoleWindow* baseWindow) :
-    _pScreenInfoProvider{ nullptr },
-    WindowUiaProviderBase(baseWindow)
+HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ IConsoleWindow* baseWindow)
 {
-}
+    RETURN_IF_FAILED(__super::RuntimeClassInitialize(baseWindow));
 
-WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
-{
-    WindowUiaProvider* pWindowProvider = nullptr;
-    WRL::ComPtr<ScreenInfoUiaProvider> pScreenInfoProvider;
-    try
-    {
-        pWindowProvider = new WindowUiaProvider(baseWindow);
+    Globals& g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    IUiaData* uiaData = &gci.renderData;
 
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-        IUiaData* uiaData = &gci.renderData;
+    RETURN_IF_FAILED(WRL::MakeAndInitialize<ScreenInfoUiaProvider>(&_pScreenInfoProvider, uiaData, this));
 
-        pScreenInfoProvider = WRL::Make<ScreenInfoUiaProvider>(uiaData, pWindowProvider);
-        pWindowProvider->_pScreenInfoProvider.Attach(pScreenInfoProvider.Detach());
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
 
-        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-        //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
-
-        return pWindowProvider;
-    }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-
-        return nullptr;
-    }
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()

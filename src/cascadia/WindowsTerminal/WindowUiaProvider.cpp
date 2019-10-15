@@ -6,22 +6,18 @@
 
 #include "../host/renderData.hpp"
 
-WindowUiaProvider::WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow) :
-    WindowUiaProviderBase(baseWindow)
+HRESULT WindowUiaProvider::RuntimeClassInitialize(Microsoft::Console::Types::IUiaWindow* baseWindow)
 {
+    return __super::RuntimeClassInitialize(baseWindow);
 }
 
-WindowUiaProvider::~WindowUiaProvider()
-{
-}
-
-WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* baseWindow)
+WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* /*baseWindow*/)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
     //Microsoft::Terminal::TermControlUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
-        pWindowProvider = new WindowUiaProvider(baseWindow);
+        //pWindowProvider = new WindowUiaProvider(baseWindow);
 
         // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
         // This may be needed for the signaling model

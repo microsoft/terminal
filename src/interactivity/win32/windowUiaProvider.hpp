@@ -20,6 +20,7 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
+#include "screenInfoUiaProvider.hpp"
 #include "../types/WindowUiaProviderBase.hpp"
 #include <wrl.h>
 
@@ -34,7 +35,8 @@ namespace Microsoft::Console::Interactivity::Win32
         public Microsoft::Console::Types::WindowUiaProviderBase
     {
     public:
-        static WindowUiaProvider* Create(Microsoft::Console::Types::IConsoleWindow* baseWindow);
+        WindowUiaProvider() = default;
+        HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ Microsoft::Console::Types::IConsoleWindow* baseWindow);
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id) override;
         [[nodiscard]] HRESULT SetTextAreaFocus() override;
@@ -55,8 +57,6 @@ namespace Microsoft::Console::Interactivity::Win32
         const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Console Host Window";
 
     private:
-        WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow);
-
         WRL::ComPtr<ScreenInfoUiaProvider> _pScreenInfoProvider;
     };
 }

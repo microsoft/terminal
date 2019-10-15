@@ -33,8 +33,9 @@ namespace Microsoft::Terminal
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        TermControlUiaProvider(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& termControl,
-                               _In_ std::function<RECT()> GetBoundingRect);
+        TermControlUiaProvider() = default;
+        HRESULT RuntimeClassInitialize(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* termControl,
+                                       _In_ std::function<RECT()> GetBoundingRect);
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
@@ -67,6 +68,6 @@ namespace Microsoft::Terminal
 
     private:
         std::function<RECT(void)> _getBoundingRect;
-        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& _termControl;
+        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* _termControl;
     };
 }
