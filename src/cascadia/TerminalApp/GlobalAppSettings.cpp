@@ -287,7 +287,7 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
 // - scheme: the color scheme to add
 // Return Value:
 // - <none>
-void GlobalAppSettings::AddScheme(ColorScheme scheme)
+void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
     _colorSchemes[name] = std::move(scheme);

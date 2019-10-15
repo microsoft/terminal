@@ -520,7 +520,7 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
     else
     {
-        _globals.AddScheme(ColorScheme::FromJson(schemeJson));
+        _globals.AddColorScheme(ColorScheme::FromJson(schemeJson));
     }
 }
 

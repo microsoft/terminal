@@ -37,7 +37,7 @@ public:
 
     std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() noexcept;
     const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
-    void AddScheme(ColorScheme scheme);
+    void AddColorScheme(ColorScheme scheme);
 
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;
