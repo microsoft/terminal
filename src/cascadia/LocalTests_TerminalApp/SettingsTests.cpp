@@ -48,6 +48,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestLayeringNameOnlyProfiles);
         TEST_METHOD(TestExplodingNameOnlyProfiles);
         TEST_METHOD(TestHideAllProfiles);
+        TEST_METHOD(TestProfileIconWithEnvVar);
+        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1190,5 +1192,37 @@ namespace TerminalAppLocalTests
             }
             VERIFY_IS_TRUE(caughtExpectedException);
         }
+    }
+    void SettingsTests::TestProfileIconWithEnvVar()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "icon": "%WINDIR%\\System32\\x_80.png"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings;
+        settings._ParseJsonString(settingsJson, false);
+    }
+    void SettingsTests::TestProfileBackgroundImageWithEnvVar()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings;
+        settings._ParseJsonString(settingsJson, false);
     }
 }
