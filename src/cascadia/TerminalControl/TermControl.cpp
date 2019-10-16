@@ -208,9 +208,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         uint32_t bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
-        // Apply padding as swapChainPanel's margin
+        const auto existingPadding = _padding;
         _padding = _ParseThicknessFromPadding(_settings.Padding());
-        auto existingPadding = _padding;
+        // Apply padding as swapChainPanel's margin
         _swapChainPanel.Margin(_padding);
 
         if (_padding != existingPadding && _padding != Thickness{ 0 })

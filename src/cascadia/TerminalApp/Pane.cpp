@@ -23,7 +23,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, Pane* const rootPane
 
     _root.Children().Append(_control);
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
-    _fonstSizeChangedToken = _control.FontSizeChanged({ this, &Pane::_FontSizeChangedHandler });
+    _fontSizeChangedToken = _control.FontSizeChanged({ this, &Pane::_FontSizeChangedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
     // background. This way, we'll match the small underline under the tabs, and
@@ -294,7 +294,19 @@ void Pane::_ControlClosedHandler()
     }
 }
 
-void Pane::_FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange)
+// Method Description:
+// - Called when our terminal changes its font size or sets it for the first time
+//   (because when we just create terminal via its ctor it has invalid font size).
+//   On the latter event, we tell the root pane to resize itself so that its
+//   descendants (including ourself) can properly snap to character grids. In future,
+//   we may also want to do that on regular font changes.
+// Arguments:
+// - fontWidth - new font width in pixels
+// - fontHeight - new font height in pixels
+// - isInitialChange - whether terminal just got its proper font size.
+// Return Value:
+// - <none>
+void Pane::_FontSizeChangedHandler(const int /* fontWidth */, const int /* fontHeight */, const bool isInitialChange)
 {
     if (isInitialChange)
     {
@@ -310,8 +322,8 @@ void Pane::_FontSizeChangedHandler(const int fontWidth, const int fontHeight, co
 // - <none>
 void Pane::Close()
 {
-    _control.FontSizeChanged(_fonstSizeChangedToken);
-    _fonstSizeChangedToken.value = 0;
+    _control.FontSizeChanged(_fontSizeChangedToken);
+    _fontSizeChangedToken.value = 0;
 
     // Fire our Closed event to tell our parent that we should be removed.
     _closedHandlers();
@@ -878,8 +890,8 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     _control.ConnectionClosed(_connectionClosedToken);
     _connectionClosedToken.value = 0;
 
-    _control.FontSizeChanged(_fonstSizeChangedToken);
-    _fonstSizeChangedToken.value = 0;
+    _control.FontSizeChanged(_fontSizeChangedToken);
+    _fontSizeChangedToken.value = 0;
 
     _splitState = splitType;
     _desiredSplitPosition = Half;

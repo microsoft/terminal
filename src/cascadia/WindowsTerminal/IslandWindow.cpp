@@ -93,6 +93,21 @@ void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, 
     _pfnCreateCallback = pfn;
 }
 
+// Method Description:
+// - Set a callback to be called when the window is being resized by user. For given
+//   requested window dimension (width or height, whichever border is dragged) it should
+//   return a resulting window dimension that is actually set. It is used to make the
+//   window 'snap' to the underling terminal's character grid.
+// Arguments:
+// - pfn: a function that transforms requested to actual window dimension.
+//   pfn's parameters:
+//      * widthOrHeight: whether the dimension is width (true) or height (false)
+//      * dimension: The requested dimension that comes from user dragging a border
+//        of the window. It is in pixels and represents only the client area.
+//   pfn's return value:
+//      * A dimension of client area that the window should resize to.
+// Return Value:
+// - <none>
 void IslandWindow::SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept
 {
     _pfnSnapDimensionCallback = pfn;

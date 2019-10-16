@@ -75,7 +75,7 @@ private:
     winrt::event_token _connectionClosedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-    winrt::event_token _fonstSizeChangedToken{ 0 };
+    winrt::event_token _fontSizeChangedToken{ 0 };
 
     std::shared_mutex _createCloseLock{};
 
