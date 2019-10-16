@@ -100,6 +100,13 @@ namespace Microsoft.Terminal.Wpf
         internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
         {
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+
+            NativeMethods.TerminalTriggerResize(this.terminal, this.ActualWidth, this.ActualHeight, out var dimensions);
+
+            this.Rows = dimensions.Y;
+            this.Columns = dimensions.X;
+
+            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
         }
 
         /// <summary>
@@ -115,6 +122,7 @@ namespace Microsoft.Terminal.Wpf
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
 
+            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
             return (dimensions.Y, dimensions.X);
         }
 
@@ -132,6 +140,11 @@ namespace Microsoft.Terminal.Wpf
             };
 
             NativeMethods.TerminalResize(this.terminal, dimensions);
+
+            this.Rows = dimensions.Y;
+            this.Columns = dimensions.X;
+
+            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
         }
 
         /// <inheritdoc/>
