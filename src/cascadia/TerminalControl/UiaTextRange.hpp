@@ -25,7 +25,7 @@ namespace Microsoft::Terminal
     public:
         static HRESULT GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
                                           _In_ IRawElementProviderSimple* pProvider,
-                                          _Outptr_ std::deque<WRL::ComPtr<UiaTextRange>> ranges);
+                                          _Out_ std::deque<WRL::ComPtr<UiaTextRange>>& ranges);
 
         UiaTextRange() = default;
 

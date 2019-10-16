@@ -76,27 +76,27 @@ namespace Microsoft::Console::Types
     protected:
         ScreenInfoUiaProviderBase() = default;
 
-        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Outptr_result_maybenull_ std::deque<WRL::ComPtr<UiaTextRangeBase>> selectionRanges) = 0;
+        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Out_ std::deque<WRL::ComPtr<UiaTextRangeBase>>& selectionRanges) = 0;
 
         // degenerate range
-        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
+        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // degenerate range at cursor position
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                         const Cursor& cursor,
-                                        _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
+                                        _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // specific endpoint range
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                         const Endpoint start,
                                         const Endpoint end,
                                         const bool degenerate,
-                                        _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
+                                        _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // range from a UiaPoint
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                         const UiaPoint point,
-                                        _Outptr_result_maybenull_ WRL::ComPtr<UiaTextRangeBase> utr) = 0;
+                                        _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // weak reference to IUiaData
         IUiaData* _pData;

@@ -271,7 +271,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         }
 
         WRL::ComPtr<UiaTextRangeBase> range;
-        hr = CreateTextRange(this, cursor, range);
+        hr = CreateTextRange(this, cursor, &range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -366,7 +366,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
                              start,
                              end,
                              false,
-                             range);
+                             &range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -396,13 +396,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    HRESULT hr = CreateTextRange(this, utr);
-    if (FAILED(hr))
-    {
-        *ppRetVal = nullptr;
-    }
+    RETURN_IF_FAILED(CreateTextRange(this, &utr));
     RETURN_IF_FAILED(utr->QueryInterface(IID_PPV_ARGS(ppRetVal)));
-    return hr;
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
@@ -415,15 +411,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    HRESULT hr = CreateTextRange(this,
-                                 point,
-                                 utr);
-    if (FAILED(hr))
-    {
-        *ppRetVal = nullptr;
-    }
+    RETURN_IF_FAILED(CreateTextRange(this,
+                                     point,
+                                     &utr));
     RETURN_IF_FAILED(utr->QueryInterface(IID_PPV_ARGS(ppRetVal)));
-    return hr;
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
@@ -435,17 +427,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    HRESULT hr = CreateTextRange(this, utr);
-    if (SUCCEEDED(hr))
-    {
-        hr = utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document);
-    }
-    else
-    {
-        *ppRetVal = nullptr;
-    }
+    RETURN_IF_FAILED(CreateTextRange(this, &utr));
+    RETURN_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document));
     RETURN_IF_FAILED(utr->QueryInterface(IID_PPV_ARGS(ppRetVal)));
-    return hr;
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal) noexcept

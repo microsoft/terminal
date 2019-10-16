@@ -47,27 +47,27 @@ namespace Microsoft::Terminal
         const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:
-        HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Outptr_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>> selectionRanges) override;
+        HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Out_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>>& selectionRanges) override;
 
         // degenerate range
-        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // degenerate range at cursor position
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                 const Cursor& cursor,
-                                _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // specific endpoint range
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                 const Endpoint start,
                                 const Endpoint end,
                                 const bool degenerate,
-                                _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // range from a UiaPoint
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                 const UiaPoint point,
-                                _Outptr_result_maybenull_ WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase> utr) override;
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
     private:
         std::function<RECT(void)> _getBoundingRect;

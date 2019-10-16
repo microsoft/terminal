@@ -15,9 +15,10 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                                          _In_ IRawElementProviderSimple* pProvider,
-                                         _Outptr_ std::deque<ComPtr<UiaTextRange>> ranges)
+                                         _Out_ std::deque<ComPtr<UiaTextRange>>& ranges)
+try
 {
-    ranges = {};
+    typename std::remove_reference<decltype(ranges)>::type temporaryResult;
 
     // get the selection rects
     const auto rectangles = pData->GetSelectionRects();
@@ -30,23 +31,13 @@ HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
 
         ComPtr<UiaTextRange> range;
-        auto hr = MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false);
-        if (FAILED(hr))
-        {
-            // something when wrong, clean up and throw
-            while (!ranges.empty())
-            {
-                ranges.pop_front();
-            }
-            return hr;
-        }
-        else
-        {
-            ranges.push_back(range);
-        }
+        RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
+        temporaryResult.emplace_back(std::move(range));
     }
+    std::swap(temporaryResult, ranges);
     return S_OK;
 }
+CATCH_RETURN();
 
 // degenerate range constructor.
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider)
