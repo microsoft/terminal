@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         UIA::ITextRangeProvider* returnVal;
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
         THROW_IF_FAILED(_uiaProvider->RangeFromChild(/* IRawElementProviderSimple */ nullptr,
-                                                    &returnVal));
+                                                     &returnVal));
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);

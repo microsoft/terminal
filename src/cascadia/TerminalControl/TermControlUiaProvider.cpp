@@ -124,8 +124,8 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const Cursor& cursor,
-                                               _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
+                                                const Cursor& cursor,
+                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     UiaTextRange* temp = nullptr;
@@ -135,10 +135,10 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const Endpoint start,
-                                               const Endpoint end,
-                                               const bool degenerate,
-                                               _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
+                                                const Endpoint start,
+                                                const Endpoint end,
+                                                const bool degenerate,
+                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     UiaTextRange* temp = nullptr;
@@ -148,8 +148,8 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const UiaPoint point,
-                                               _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
+                                                const UiaPoint point,
+                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     UiaTextRange* temp = nullptr;
