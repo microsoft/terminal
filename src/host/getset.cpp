@@ -2259,6 +2259,11 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 {
     try
     {
+        if (fillLength == 0)
+        {
+            return S_OK;
+        }
+
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
@@ -2275,6 +2280,12 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 
         const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
         screenInfo.Write(fillData, startPosition, false);
+
+        // Notify accessibility
+        auto endPosition = startPosition;
+        const auto bufferSize = screenInfo.GetBufferSize();
+        bufferSize.MoveInBounds(fillLength - 1, endPosition);
+        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
         return S_OK;
     }
     CATCH_RETURN();
