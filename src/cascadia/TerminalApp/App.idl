@@ -34,6 +34,7 @@ namespace TerminalApp
         LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();
+        void WindowCloseButtonClicked();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;

@@ -56,12 +56,12 @@ GlobalAppSettings::~GlobalAppSettings()
 {
 }
 
-const std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
+std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
 {
     return _colorSchemes;
 }
 
-std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
+const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
 {
     return _colorSchemes;
 }
@@ -429,4 +429,16 @@ std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launc
     default:
         return DefaultLaunchModeValue;
     }
+}
+
+// Method Description:
+// - Adds the given colorscheme to our map of schemes, using its name as the key.
+// Arguments:
+// - scheme: the color scheme to add
+// Return Value:
+// - <none>
+void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
+{
+    std::wstring name{ scheme.GetName() };
+    _colorSchemes[name] = std::move(scheme);
 }

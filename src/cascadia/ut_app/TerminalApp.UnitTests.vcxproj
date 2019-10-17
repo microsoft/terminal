@@ -82,7 +82,7 @@
     <!-- From Microsoft.UI.Xaml.targets -->
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.2.190917002\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -110,13 +110,6 @@
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
-
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalConnection\TerminalConnection.dll &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalSettings\TerminalSettings.dll &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalControl\TerminalControl.dll &quot;$(OutDir)\TerminalControl.dll*&quot; )
-
-        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.dll &quot;$(OutDir)\Microsoft.UI.Xaml.dll*&quot; )
-        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.pri &quot;$(OutDir)\Microsoft.UI.Xaml.pri*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

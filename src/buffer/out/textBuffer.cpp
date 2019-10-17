@@ -318,10 +318,12 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
 // Arguments:
 // - givenIt - Iterator representing output cell data to write
 // - target - the row/column to start writing the text to
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
 // Return Value:
 // - The final position of the iterator
 OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
-                                     const COORD target)
+                                     const COORD target,
+                                     const std::optional<bool> wrap)
 {
     // Make mutable copy so we can walk.
     auto it = givenIt;
@@ -336,7 +338,8 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
     while (it && size.IsInBounds(lineTarget))
     {
         // Attempt to write as much data as possible onto this line.
-        it = WriteLine(it, lineTarget, true);
+        // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
+        it = WriteLine(it, lineTarget, wrap);
 
         // Move to the next line down.
         lineTarget.X = 0;
@@ -351,13 +354,13 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
 // Arguments:
 // - givenIt - The iterator that will dereference into cell data to insert
 // - target - Coordinate targeted within output buffer
-// - setWrap - Whether we should try to set the wrap flag if we write up to the end of the line and have more data
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data in the iterator.
 // - limitRight - Optionally restrict the right boundary for writing (e.g. stop writing earlier than the end of line)
 // Return Value:
 // - The iterator, but advanced to where we stopped writing. Use to find input consumed length or cells written length.
 OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
                                          const COORD target,
-                                         const bool setWrap,
+                                         const std::optional<bool> wrap,
                                          std::optional<size_t> limitRight)
 {
     // If we're not in bounds, exit early.
@@ -368,7 +371,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 
     //  Get the row and write the cells
     ROW& row = GetRowByOffset(target.Y);
-    const auto newIt = row.WriteCells(givenIt, target.X, setWrap, limitRight);
+    const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight);
 
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
@@ -1062,14 +1065,10 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
 {
     try
     {
-        // TODO: GH 602 the font name needs to be passed and stored around as an actual bounded type, not an implicit bounds on LF_FACESIZE
-        const auto faceLength = wcsnlen_s(fontFaceName, LF_FACESIZE);
-        const std::wstring_view faceNameView{ fontFaceName, faceLength };
-
         std::ostringstream htmlBuilder;
 
         // First we have to add some standard
@@ -1093,7 +1092,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
             htmlBuilder << "font-family:";
             htmlBuilder << "'";
-            htmlBuilder << ConvertToA(CP_UTF8, faceNameView);
+            htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
             htmlBuilder << "',";
             // even with different font, add monospace as fallback
             htmlBuilder << "monospace;";

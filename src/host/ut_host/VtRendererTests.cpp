@@ -121,12 +121,13 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_METHOD(TestResize);
 
+    TEST_METHOD(TestCursorVisibility);
+
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
     bool WriteCallback(const char* const pch, size_t const cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
-    void TestPaintXterm(XtermEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
 };
 
@@ -171,38 +172,6 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
     VERIFY_SUCCEEDED(engine.StartPaint());
     pfn();
     VERIFY_SUCCEEDED(engine.EndPaint());
-}
-
-// Function Description:
-// - Small helper to do a series of testing wrapped by StartPaint/EndPaint calls
-//  Also expects \x1b[?25l and \x1b[?25h on start/stop, for cursor visibility
-// Arguments:
-// - engine: the engine to operate on
-// - pfn: A function pointer to some test code to run.
-// Return Value:
-// - <none>
-void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> pfn)
-{
-    HRESULT hr = engine.StartPaint();
-    pfn();
-    // If we didn't have anything to do on this frame, still execute our
-    //      callback, but don't check for the following ?25h
-    if (hr != S_FALSE)
-    {
-        // If the engine has decided that it needs to disble the cursor, it'll
-        //      insert ?25l to the front of the buffer (which won't hit this
-        //      callback) and write ?25h to the end of the frame
-        if (engine._needToDisableCursor)
-        {
-            qExpectedInput.push_back("\x1b[?25h");
-        }
-    }
-
-    VERIFY_SUCCEEDED(engine.EndPaint());
-
-    VERIFY_ARE_EQUAL(qExpectedInput.size(),
-                     static_cast<size_t>(0),
-                     L"Done painting, there shouldn't be any output we're still expecting");
 }
 
 void VtRendererTest::VtSequenceHelperTests()
@@ -298,7 +267,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
     COORD scrollDelta = { 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -314,7 +283,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     scrollDelta = { 0, 3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -328,7 +297,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     scrollDelta = { 0, -1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -343,7 +312,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     scrollDelta = { 0, -3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -363,7 +332,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     scrollDelta = { 0, 2 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -421,25 +390,41 @@ void VtRendererTest::Xterm256TestColors()
         L"These values were picked for ease of formatting raw COLORREF values."));
     qExpectedInput.push_back("\x1b[38;2;1;2;3m");
     qExpectedInput.push_back("\x1b[48;2;5;6;7m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201, 0x00070605, 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201,
+                                                  0x00070605,
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[48;2;7;8;9m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201, 0x00090807, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x00030201,
+                                                      0x00090807,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[38;2;10;11;12m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a, 0x00090807, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a,
+                                                      0x00090807,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a, 0x00090807, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(0x000c0b0a,
+                                                      0x00090807,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 
@@ -451,41 +436,69 @@ void VtRendererTest::Xterm256TestColors()
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                  g_ColorTable[0],
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
         qExpectedInput.push_back("\x1b[48;2;1;1;1m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      0x010101,
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
         qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
 
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 }
@@ -557,8 +570,6 @@ void VtRendererTest::Xterm256TestCursor()
             L"----move to the start of this line (y stays the same)----"));
         qExpectedInput.push_back("\r");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 1 }));
-
-        qExpectedInput.push_back("\x1b[?25h");
     });
 
     TestPaint(*engine, [&]() {
@@ -629,7 +640,7 @@ void VtRendererTest::XtermTestInvalidate()
         L"Make sure that invalidating anything only invalidates that portion"));
     SMALL_RECT invalid = { 1, 1, 1, 1 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
     });
 
@@ -637,7 +648,7 @@ void VtRendererTest::XtermTestInvalidate()
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
     COORD scrollDelta = { 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -652,7 +663,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     scrollDelta = { 0, 3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -666,7 +677,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     scrollDelta = { 0, -1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -681,7 +692,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     scrollDelta = { 0, -3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -701,7 +712,7 @@ void VtRendererTest::XtermTestInvalidate()
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     scrollDelta = { 0, 2 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -758,41 +769,65 @@ void VtRendererTest::XtermTestColors()
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                  g_ColorTable[0],
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, ExtendedAttributes::Normal, false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
 
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 }
@@ -864,8 +899,6 @@ void VtRendererTest::XtermTestCursor()
             L"----move to the start of this line (y stays the same)----"));
         qExpectedInput.push_back("\r");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 1 }));
-
-        qExpectedInput.push_back("\x1b[?25h");
     });
 
     TestPaint(*engine, [&]() {
@@ -996,40 +1029,64 @@ void VtRendererTest::WinTelnetTestColors()
         L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"));
 
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                  g_ColorTable[0],
+                                                  0,
+                                                  ExtendedAttributes::Normal,
+                                                  false));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[4],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, ExtendedAttributes::Normal, false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to the 'Default' background----"));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[7],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
 
         Log::Comment(NoThrowString().Format(
             L"----Back to defaults----"));
         qExpectedInput.push_back("\x1b[m");
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
     });
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
-        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false, false));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(g_ColorTable[15],
+                                                      g_ColorTable[0],
+                                                      0,
+                                                      ExtendedAttributes::Normal,
+                                                      false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
 }
@@ -1130,14 +1187,14 @@ void VtRendererTest::TestWrapping()
 
     Viewport view = SetUpViewport();
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure the cursor is at 0,0"));
         qExpectedInput.push_back("\x1b[H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 0 }));
     });
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Painting a line that wrapped, then painting another line, and "
             L"making sure we don't manually move the cursor between those paints."));
@@ -1196,9 +1253,125 @@ void VtRendererTest::TestResize()
 
     VERIFY_SUCCEEDED(engine->UpdateViewport(newView.ToInclusive()));
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(newView, engine->_invalidRect);
         VERIFY_IS_FALSE(engine->_firstPaint);
         VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
     });
+}
+
+void VtRendererTest::TestCursorVisibility()
+{
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), _shutdownEvent, p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    // Verify the first paint emits a clear
+    qExpectedInput.push_back("\x1b[2J");
+    VERIFY_IS_TRUE(engine->_firstPaint);
+    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    TestPaint(*engine, [&]() {
+        // During StartPaint, we'll mark the cursor as off. make sure that happens.
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_firstPaint);
+    });
+
+    // The cursor wasn't painted in the last frame.
+    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+
+    COORD origin{ 0, 0 };
+
+    VERIFY_ARE_NOT_EQUAL(origin, engine->_lastText);
+
+    IRenderEngine::CursorOptions options{};
+    options.coordCursor = origin;
+
+    // Frame 1: Paint the cursor at the home position. At the end of the frame,
+    // the cursor should be on. Because we're moving the cursor with CUP, we
+    // need to disable the cursor during this frame.
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        Log::Comment(NoThrowString().Format(L"Make sure the cursor is at 0,0"));
+        qExpectedInput.push_back("\x1b[H");
+        VERIFY_SUCCEEDED(engine->PaintCursor(options));
+
+        VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+        VERIFY_IS_TRUE(engine->_needToDisableCursor);
+
+        qExpectedInput.push_back("\x1b[?25h");
+    });
+
+    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+    // Frame 2: Paint the cursor again at the home position. At the end of the
+    // frame, the cursor should be on, the same as before. We aren't moving the
+    // cursor during this frame, so _needToDisableCursor will stay false.
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        Log::Comment(NoThrowString().Format(L"If we just paint the cursor again at the same position, the cursor should not need to be disabled"));
+        VERIFY_SUCCEEDED(engine->PaintCursor(options));
+
+        VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+    });
+
+    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+    // Frame 3: Paint the cursor at 2,2. At the end of the frame, the cursor
+    // should be on, the same as before. Because we're moving the cursor with
+    // CUP, we need to disable the cursor during this frame.
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        Log::Comment(NoThrowString().Format(L"Move the cursor to 2,2"));
+        qExpectedInput.push_back("\x1b[3;3H");
+
+        options.coordCursor = { 2, 2 };
+
+        VERIFY_SUCCEEDED(engine->PaintCursor(options));
+
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+        VERIFY_IS_TRUE(engine->_needToDisableCursor);
+
+        // Because _needToDisableCursor is true, we'll insert a ?25l at the
+        // start of the frame. Unfortunately, we can't test to make sure that
+        // it's there, but we can ensure that the matching ?25h is printed:
+        qExpectedInput.push_back("\x1b[?25h");
+    });
+
+    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+    // Frame 4: Don't paint the cursor. At the end of the frame, the cursor
+    // should be off.
+    Log::Comment(NoThrowString().Format(L"Painting without calling PaintCursor will hide the cursor"));
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        qExpectedInput.push_back("\x1b[?25l");
+    });
+
+    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
 }

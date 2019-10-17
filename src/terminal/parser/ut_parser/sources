@@ -23,6 +23,7 @@ SOURCES = \
     $(SOURCES) \
     OutputEngineTest.cpp \
     InputEngineTest.cpp \
+    StateMachineTest.cpp \
 
 # The InputEngineTest requires VTRedirMapVirtualKeyW, which means we need the
 # ServiceLocator, which means we need the entire host and all it's dependencies,

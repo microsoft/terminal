@@ -10,7 +10,10 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-static const int TabViewFontSize = 12;
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
 
 Tab::Tab(const GUID& profile, const TermControl& control)
 {
@@ -25,8 +28,7 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 
 void Tab::_MakeTabViewItem()
 {
-    _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
-    _tabViewItem.FontSize(TabViewFontSize);
+    _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
 }
 
 UIElement Tab::GetRootElement()
@@ -50,7 +52,7 @@ TermControl Tab::GetFocusedTerminalControl()
     return _rootPane->GetFocusedTerminalControl();
 }
 
-winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
+winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
 {
     return _tabViewItem;
 }
@@ -154,7 +156,7 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
     _lastIconPath = iconPath;
 
     _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-        _tabViewItem.Icon(GetColoredIcon(_lastIconPath));
+        _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
     });
 }
 

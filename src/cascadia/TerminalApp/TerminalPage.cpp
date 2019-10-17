@@ -9,6 +9,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
+#include "TabRowControl.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -25,6 +26,7 @@ using namespace ::TerminalApp;
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
@@ -57,7 +59,9 @@ namespace winrt::TerminalApp::implementation
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
-        _newTabButton = _tabRow.NewTabButton();
+
+        auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
+        _newTabButton = tabRowImpl->NewTabButton();
 
         if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
@@ -78,8 +82,8 @@ namespace winrt::TerminalApp::implementation
             this->_OpenNewTab(std::nullopt);
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
-        _tabView.Items().VectorChanged({ this, &TerminalPage::_OnTabItemsChanged });
-        _tabView.TabClosing({ this, &TerminalPage::_OnTabClosing });
+        _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
+        _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
         _OpenNewTab(std::nullopt);
@@ -102,7 +106,7 @@ namespace winrt::TerminalApp::implementation
         auto message = _resourceLoader->GetLocalizedString(contentKey);
         auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
 
-        Controls::ContentDialog dialog;
+        WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(message));
         dialog.CloseButtonText(buttonText);
@@ -169,14 +173,14 @@ namespace winrt::TerminalApp::implementation
 
         const auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
 
-        Controls::TextBlock aboutTextBlock;
+        WUX::Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
         aboutTextBlock.Inlines().Append(gettingStartedLink);
         aboutTextBlock.Inlines().Append(documentationLink);
         aboutTextBlock.Inlines().Append(releaseNotesLink);
         aboutTextBlock.IsTextSelectionEnabled(true);
 
-        Controls::ContentDialog dialog;
+        WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
         dialog.Content(aboutTextBlock);
         dialog.CloseButtonText(buttonText);
@@ -197,7 +201,7 @@ namespace winrt::TerminalApp::implementation
         auto primaryButtonText = _resourceLoader->GetLocalizedString(L"CloseAll");
         auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
 
-        Controls::ContentDialog dialog;
+        WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
 
         dialog.PrimaryButtonText(primaryButtonText);
@@ -215,7 +219,7 @@ namespace winrt::TerminalApp::implementation
     //   Below the profiles are the static menu items: settings, feedback
     void TerminalPage::_CreateNewTabFlyout()
     {
-        auto newTabFlyout = Controls::MenuFlyout{};
+        auto newTabFlyout = WUX::Controls::MenuFlyout{};
         auto keyBindings = _settings->GetKeybindings();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
@@ -224,7 +228,7 @@ namespace winrt::TerminalApp::implementation
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
-            auto profileMenuItem = Controls::MenuFlyoutItem{};
+            auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
             // add the keyboard shortcuts for the first 9 profiles
             if (profileIndex < 9)
@@ -248,7 +252,11 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (profile.HasIcon())
             {
-                profileMenuItem.Icon(_GetIconFromProfile(profile));
+                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.GetExpandedIconPath());
+
+                WUX::Controls::IconSourceElement iconElement;
+                iconElement.IconSource(iconSource);
+                profileMenuItem.Icon(iconElement);
             }
 
             if (profile.GetGuid() == defaultProfileGuid)
@@ -264,17 +272,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         // add menu separator
-        auto separatorItem = Controls::MenuFlyoutSeparator{};
+        auto separatorItem = WUX::Controls::MenuFlyoutSeparator{};
         newTabFlyout.Items().Append(separatorItem);
 
         // add static items
         {
             // Create the settings button.
-            auto settingsItem = Controls::MenuFlyoutItem{};
+            auto settingsItem = WUX::Controls::MenuFlyoutItem{};
             settingsItem.Text(_resourceLoader->GetLocalizedString(L"SettingsMenuItem"));
 
-            Controls::SymbolIcon ico{};
-            ico.Symbol(Controls::Symbol::Setting);
+            WUX::Controls::SymbolIcon ico{};
+            ico.Symbol(WUX::Controls::Symbol::Setting);
             settingsItem.Icon(ico);
 
             settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
@@ -287,24 +295,24 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Create the feedback button.
-            auto feedbackFlyout = Controls::MenuFlyoutItem{};
+            auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
             feedbackFlyout.Text(_resourceLoader->GetLocalizedString(L"FeedbackMenuItem"));
 
-            Controls::FontIcon feedbackIco{};
-            feedbackIco.Glyph(L"\xE939");
-            feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            feedbackFlyout.Icon(feedbackIco);
+            WUX::Controls::FontIcon feedbackIcon{};
+            feedbackIcon.Glyph(L"\xE939");
+            feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            feedbackFlyout.Icon(feedbackIcon);
 
             feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
             newTabFlyout.Items().Append(feedbackFlyout);
 
             // Create the about button.
-            auto aboutFlyout = Controls::MenuFlyoutItem{};
+            auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(_resourceLoader->GetLocalizedString(L"AboutMenuItem"));
 
-            Controls::SymbolIcon aboutIco{};
-            aboutIco.Symbol(Controls::Symbol::Help);
-            aboutFlyout.Icon(aboutIco);
+            WUX::Controls::SymbolIcon aboutIcon{};
+            aboutIcon.Symbol(WUX::Controls::Symbol::Help);
+            aboutFlyout.Icon(aboutIcon);
 
             aboutFlyout.Click({ this, &TerminalPage::_AboutButtonOnClick });
             newTabFlyout.Items().Append(aboutFlyout);
@@ -319,8 +327,8 @@ namespace winrt::TerminalApp::implementation
     // Shows the dropdown flyout.
     void TerminalPage::_OpenNewTabDropdown()
     {
-        Controls::Primitives::FlyoutShowOptions options{};
-        options.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        WUX::Controls::Primitives::FlyoutShowOptions options{};
+        options.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
         _newTabButton.Flyout().ShowAt(_newTabButton, options);
     }
 
@@ -396,7 +404,7 @@ namespace winrt::TerminalApp::implementation
         _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
-        _tabView.Items().Append(tabViewItem);
+        _tabView.TabItems().Append(tabViewItem);
 
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
@@ -632,10 +640,10 @@ namespace winrt::TerminalApp::implementation
     //   and call _RemoveTabViewItemByIndex
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
-    void TerminalPage::_RemoveTabViewItem(const IInspectable& tabViewItem)
+    void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
     {
         uint32_t tabIndexFromControl = 0;
-        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+        _tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl);
 
         _RemoveTabViewItemByIndex(tabIndexFromControl);
     }
@@ -654,7 +662,7 @@ namespace winrt::TerminalApp::implementation
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndex);
-        _tabView.Items().RemoveAt(tabIndex);
+        _tabView.TabItems().RemoveAt(tabIndex);
 
         auto focusedTabIndex = _GetFocusedTabIndex();
         if (tabIndex == focusedTabIndex)
@@ -785,7 +793,7 @@ namespace winrt::TerminalApp::implementation
         // GH#1117: This is a workaround because _tabView.SelectedIndex()
         //          sometimes return incorrect result after removing some tabs
         uint32_t focusedIndex;
-        if (_tabView.Items().IndexOf(_tabView.SelectedItem(), focusedIndex))
+        if (_tabView.TabItems().IndexOf(_tabView.SelectedItem(), focusedIndex))
         {
             return focusedIndex;
         }
@@ -823,9 +831,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the terminal app with keys. If there is more
+    // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    void TerminalPage::_CloseWindow()
+    void TerminalPage::CloseWindow()
     {
         if (_tabs.size() > 1)
         {
@@ -955,20 +963,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets a colored IconElement for the profile in question. If the profile
-    //   has an `icon` set in the settings, this will return an icon with that
-    //   image in it. Otherwise it will return a nullptr-initialized
-    //   IconElement.
-    // Arguments:
-    // - profile: the profile to get the icon from
-    // Return Value:
-    // - an IconElement for the profile's icon, if it has one.
-    Controls::IconElement TerminalPage::_GetIconFromProfile(const Profile& profile)
-    {
-        return profile.HasIcon() ? GetColoredIcon(profile.GetExpandedIconPath()) : Controls::IconElement{ nullptr };
-    }
-
-    // Method Description:
     // - Gets the title of the currently focused terminal control. If there
     //   isn't a control selected for any reason, returns "Windows Terminal"
     // Arguments:
@@ -1029,7 +1023,7 @@ namespace winrt::TerminalApp::implementation
     //   Takes into account a special case for an error condition for a comma
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
-    void TerminalPage::_SetAcceleratorForMenuItem(Controls::MenuFlyoutItem& menuItem,
+    void TerminalPage::_SetAcceleratorForMenuItem(WUX::Controls::MenuFlyoutItem& menuItem,
                                                   const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
 #ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
@@ -1194,7 +1188,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
         {
-            _RemoveTabViewItem(sender);
+            _RemoveTabViewItem(sender.as<MUX::Controls::TabViewItem>());
             eventArgs.Handled(true);
         }
     }
@@ -1205,7 +1199,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const Controls::SelectionChangedEventArgs& eventArgs)
+    void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& eventArgs)
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
@@ -1257,13 +1251,10 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
+    void TerminalPage::_OnTabCloseRequested(const IInspectable& sender, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
     {
-        const auto tabViewItem = eventArgs.Item();
+        const auto tabViewItem = eventArgs.Tab();
         _RemoveTabViewItem(tabViewItem);
-
-        // If we don't cancel the event, the TabView will remove the item itself.
-        eventArgs.Cancel(true);
     }
 
     // Method Description:
@@ -1274,8 +1265,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: unused
     // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog /* sender */,
-                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
+    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
+                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
         _CloseAllTabs();
     }
@@ -1340,5 +1331,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
 }
