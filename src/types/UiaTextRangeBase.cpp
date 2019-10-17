@@ -234,55 +234,6 @@ void UiaTextRangeBase::SetRangeValues(const Endpoint start, const Endpoint end, 
     _degenerate = isDegenerate;
 }
 
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-UiaTextRangeBase::AddRef()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-UiaTextRangeBase::Release()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
-
-    const long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP UiaTextRangeBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    RETURN_HR_IF(E_INVALIDARG, ppInterface == nullptr);
-    *ppInterface = nullptr;
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
-
-    if (riid == __uuidof(IUnknown) ||
-        riid == __uuidof(ITextRangeProvider))
-    {
-        *ppInterface = this;
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-    return S_OK;
-}
-
-#pragma endregion
-
 #pragma region ITextRangeProvider
 
 IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept

@@ -53,13 +53,6 @@ namespace Microsoft::Terminal
                                 _In_ BOOL ignoreCase,
                                 _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
-    protected:
-        void _ChangeViewport(const SMALL_RECT NewWindow) override;
-        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
-        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
-        const COORD _getScreenFontSize() const override;
-
-    private:
         // degenerate range
         UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider);
@@ -80,5 +73,11 @@ namespace Microsoft::Terminal
         UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider,
                      const UiaPoint point);
+
+    protected:
+        void _ChangeViewport(const SMALL_RECT NewWindow) override;
+        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
+        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
+        const COORD _getScreenFontSize() const override;
     };
 }
