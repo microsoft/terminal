@@ -39,15 +39,24 @@ ITermDispatch& OutputStateMachineEngine::Dispatch() noexcept
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
-    // microsoft/terminal#1825 - VT applications expect to be able to write NUL
-    // and have _nothing_ happen. Filter the NULs here, so they don't fill the
-    // buffer with empty spaces.
-    if (wch == AsciiChars::NUL)
+    switch (wch)
     {
-        return true;
+    case AsciiChars::NUL:
+        // microsoft/terminal#1825 - VT applications expect to be able to write NUL
+        // and have _nothing_ happen. Filter the NULs here, so they don't fill the
+        // buffer with empty spaces.
+        break;
+    case AsciiChars::LF:
+    case AsciiChars::FF:
+    case AsciiChars::VT:
+        // LF, FF, and VT are identical in function.
+        _dispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode);
+        break;
+    default:
+        _dispatch->Execute(wch);
+        break;
     }
 
-    _dispatch->Execute(wch);
     _ClearLastChar();
 
     if (wch == AsciiChars::BEL)
