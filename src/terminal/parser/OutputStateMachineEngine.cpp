@@ -171,22 +171,6 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
     {
         switch (wch)
         {
-        case VTActionCodes::CUU_CursorUp:
-            success = _dispatch->CursorUp(1);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
-            break;
-        case VTActionCodes::CUD_CursorDown:
-            success = _dispatch->CursorDown(1);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
-            break;
-        case VTActionCodes::CUF_CursorForward:
-            success = _dispatch->CursorForward(1);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
-            break;
-        case VTActionCodes::CUB_CursorBackward:
-            success = _dispatch->CursorBackward(1);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
-            break;
         case VTActionCodes::DECSC_CursorSave:
             success = _dispatch->CursorSaveState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
