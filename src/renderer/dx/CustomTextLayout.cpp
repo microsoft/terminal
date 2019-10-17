@@ -129,13 +129,20 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        // Call each of the analyzers in sequence, recording their results.
-        RETURN_IF_FAILED(_analyzer->AnalyzeLineBreakpoints(this, 0, textLength, this));
-        RETURN_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
-        RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
-        RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
-        // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
-        RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+        BOOL isTextSimple = FALSE;
+        UINT32 uiLengthRead = 0;
+        RETURN_IF_FAILED(_analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiLengthRead, NULL));
+
+        if (!(isTextSimple && uiLengthRead == _text.size()))
+        {
+            // Call each of the analyzers in sequence, recording their results.
+            RETURN_IF_FAILED(_analyzer->AnalyzeLineBreakpoints(this, 0, textLength, this));
+            RETURN_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
+            RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
+            RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
+            // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
+            RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+        }
 
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
