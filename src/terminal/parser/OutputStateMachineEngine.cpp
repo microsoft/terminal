@@ -197,6 +197,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::NEL);
             break;
+        case VTActionCodes::IND_Index:
+            success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::IND);
+            break;
         case VTActionCodes::RI_ReverseLineFeed:
             success = _dispatch->ReverseLineFeed();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);
