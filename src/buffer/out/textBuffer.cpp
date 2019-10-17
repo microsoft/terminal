@@ -346,6 +346,11 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
         ++lineTarget.Y;
     }
 
+    // Take the cell distance written and notify that it needs to be repainted.
+    const auto written = it.GetCellDistance(givenIt);
+    const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
+    _NotifyPaint(paint);
+
     return it;
 }
 
@@ -372,11 +377,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     //  Get the row and write the cells
     ROW& row = GetRowByOffset(target.Y);
     const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight);
-
-    // Take the cell distance written and notify that it needs to be repainted.
-    const auto written = newIt.GetCellDistance(givenIt);
-    const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
-    _NotifyPaint(paint);
 
     return newIt;
 }
