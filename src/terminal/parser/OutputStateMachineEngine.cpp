@@ -184,6 +184,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->SetKeypadMode(false);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPNM);
             break;
+        case VTActionCodes::NEL_NextLine:
+            success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::NEL);
+            break;
         case VTActionCodes::RI_ReverseLineFeed:
             success = _dispatch->ReverseLineFeed();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);

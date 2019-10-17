@@ -235,6 +235,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[ANSISYSSC], "ANSISYSSC"),
                                       TraceLoggingUInt32(_uiTimesUsed[ANSISYSRC], "ANSISYSRC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSTBM], "DECSTBM"),
+                                      TraceLoggingUInt32(_uiTimesUsed[NEL], "NEL"),
                                       TraceLoggingUInt32(_uiTimesUsed[RI], "RI"),
                                       TraceLoggingUInt32(_uiTimesUsed[OSCWT], "OscWindowTitle"),
                                       TraceLoggingUInt32(_uiTimesUsed[HTS], "HTS"),
