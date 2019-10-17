@@ -88,7 +88,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -110,12 +110,19 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
+    winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window.get(), rc);
+        _pfnCreateCallback(_window.get(), rc, launchMode);
     }
 
-    ShowWindow(_window.get(), SW_SHOW);
+    int nCmdShow = SW_SHOW;
+    if (launchMode == winrt::TerminalApp::LaunchMode::MaximizedMode)
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+
+    ShowWindow(_window.get(), nCmdShow);
     UpdateWindow(_window.get());
 }
 
@@ -234,6 +241,15 @@ IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
     }
 
     return _pUiaProvider;
+}
+
+RECT IslandWindow::GetFrameBorderMargins(unsigned int currentDpi)
+{
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto targetStyle = windowStyle & ~WS_DLGFRAME;
+    RECT frame{};
+    AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), currentDpi);
+    return frame;
 }
 
 // Method Description:
