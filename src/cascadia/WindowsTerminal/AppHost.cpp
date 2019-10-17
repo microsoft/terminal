@@ -33,7 +33,8 @@ AppHost::AppHost() noexcept :
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2);
+                         std::placeholders::_2,
+                         std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
     _window->MakeWindow();
@@ -129,63 +130,113 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - proposedRect: The location and size of the window that we're about to
 //   create. We'll use this rect to determine which monitor the window is about
 //   to appear on.
+// - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
-// - <none>
-void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
+// - None
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
 {
-    // Find nearest montitor.
-    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    launchMode = _app.GetLaunchMode();
 
-    // This API guarantees that dpix and dpiy will be equal, but neither is an
-    // optional parameter so give two UINTs.
-    UINT dpix = USER_DEFAULT_SCREEN_DPI;
-    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // Acquire the actual intial position
+    winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
+    proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
+    proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
 
-    auto initialSize = _app.GetLaunchDimensions(dpix);
-
-    const short _currentWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
-    const short _currentHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
-
-    // Create a RECT from our requested client size
-    auto nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                _currentHeight })
-                         .ToRect();
-
-    // Get the size of a window we'd need to host that client rect. This will
-    // add the titlebar space.
-    if (_useNonClientArea)
+    long adjustedHeight = 0;
+    long adjustedWidth = 0;
+    if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
     {
-        // If we're in NC tabs mode, do the math ourselves. Get the margins
-        // we're using for the window - this will include the size of the
-        // titlebar content.
-        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-        const MARGINS margins = pNcWindow->GetFrameMargins();
-        nonClient.left = 0;
-        nonClient.top = 0;
-        nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
-        nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
-    }
-    else
-    {
-        bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-        if (!succeeded)
+        // Find nearest montitor.
+        HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+
+        // Get nearest monitor information
+        MONITORINFO monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hmon, &monitorInfo);
+
+        // This API guarantees that dpix and dpiy will be equal, but neither is an
+        // optional parameter so give two UINTs.
+        UINT dpix = USER_DEFAULT_SCREEN_DPI;
+        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+        // If this fails, we'll use the default of 96.
+        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+        // We need to check if the top left point of the titlebar of the window is within any screen
+        RECT offScreenTestRect;
+        offScreenTestRect.left = proposedRect.left;
+        offScreenTestRect.top = proposedRect.top;
+        offScreenTestRect.right = offScreenTestRect.left + 1;
+        offScreenTestRect.bottom = offScreenTestRect.top + 1;
+
+        bool isTitlebarIntersectWithMonitors = false;
+        EnumDisplayMonitors(
+            nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
+                auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+                *intersectWithMonitor = true;
+                // Continue the enumeration
+                return FALSE;
+            },
+            reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
+
+        if (!isTitlebarIntersectWithMonitors)
         {
-            // If we failed to get the correct window size for whatever reason, log
-            // the error and go on. We'll use whatever the control proposed as the
-            // size of our window, which will be at least close.
-            LOG_LAST_ERROR();
-            nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                   _currentHeight })
-                            .ToRect();
+            // If the title bar is out-of-screen, we set the initial position to
+            // the top left corner of the nearest monitor
+            proposedRect.left = monitorInfo.rcWork.left;
+            proposedRect.top = monitorInfo.rcWork.top;
         }
-    }
 
-    const auto adjustedHeight = nonClient.bottom - nonClient.top;
-    const auto adjustedWidth = nonClient.right - nonClient.left;
+        auto initialSize = _app.GetLaunchDimensions(dpix);
+
+        const short _currentWidth = Utils::ClampToShortMax(
+            static_cast<long>(ceil(initialSize.X)), 1);
+        const short _currentHeight = Utils::ClampToShortMax(
+            static_cast<long>(ceil(initialSize.Y)), 1);
+
+        // Create a RECT from our requested client size
+        auto nonClient = Viewport::FromDimensions({ _currentWidth,
+                                                    _currentHeight })
+                             .ToRect();
+
+        // Get the size of a window we'd need to host that client rect. This will
+        // add the titlebar space.
+        if (_useNonClientArea)
+        {
+            // If we're in NC tabs mode, do the math ourselves. Get the margins
+            // we're using for the window - this will include the size of the
+            // titlebar content.
+            const auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
+            const MARGINS margins = pNcWindow->GetFrameMargins();
+            nonClient.left = 0;
+            nonClient.top = 0;
+            nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
+            nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
+        }
+        else
+        {
+            bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+            if (!succeeded)
+            {
+                // If we failed to get the correct window size for whatever reason, log
+                // the error and go on. We'll use whatever the control proposed as the
+                // size of our window, which will be at least close.
+                LOG_LAST_ERROR();
+                nonClient = Viewport::FromDimensions({ _currentWidth,
+                                                       _currentHeight })
+                                .ToRect();
+            }
+
+            // For client island scenario, there is an invisible border of 8 pixels.
+            // We need to remove this border to guarantee the left edge of the window
+            // coincides with the screen
+            const auto pCWindow = static_cast<IslandWindow*>(_window.get());
+            const RECT frame = pCWindow->GetFrameBorderMargins(dpix);
+            proposedRect.left += frame.left;
+        }
+
+        adjustedHeight = nonClient.bottom - nonClient.top;
+        adjustedWidth = nonClient.right - nonClient.left;
+    }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };
@@ -193,7 +244,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
                             Utils::ClampToShortMax(adjustedHeight, 1) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
-
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
                                   newPos.Left(),
@@ -201,6 +251,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
                                   newPos.Width(),
                                   newPos.Height(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
+
+    // Refresh the dpi of HWND becuase the dpi where the window will launch may be different
+    // at this time
+    _window->RefreshCurrentDPI();
 
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
