@@ -10,6 +10,11 @@ namespace Microsoft::Terminal::Core
     {
     public:
         virtual ~ITerminalApi() {}
+        ITerminalApi(const ITerminalApi&) = default;
+        ITerminalApi(ITerminalApi&&) = default;
+        ITerminalApi& operator=(const ITerminalApi&) = default;
+        ITerminalApi& operator=(ITerminalApi&&) = default;
+
         virtual bool PrintString(std::wstring_view stringView) = 0;
         virtual bool ExecuteChar(wchar_t wch) = 0;
 
@@ -38,5 +43,8 @@ namespace Microsoft::Terminal::Core
 
         virtual bool SetDefaultForeground(const DWORD dwColor) = 0;
         virtual bool SetDefaultBackground(const DWORD dwColor) = 0;
+
+    protected:
+        ITerminalApi() = default;
     };
 }

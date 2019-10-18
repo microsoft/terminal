@@ -21,17 +21,18 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
-#include <wrl.h>
+
+#include <wrl/implements.h>
 
 namespace Microsoft::Console::Types
 {
     class IUiaWindow;
 
     class WindowUiaProviderBase :
-        public WRL::RuntimeClass<WRL ::RuntimeClassFlags<WRL ::ClassicCom | WRL ::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, IRawElementProviderFragmentRoot>
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, IRawElementProviderFragmentRoot>
     {
     public:
-        virtual ~WindowUiaProviderBase() = default;
+        ~WindowUiaProviderBase() = default;
 
     protected:
         WindowUiaProviderBase() = default;

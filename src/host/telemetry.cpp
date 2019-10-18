@@ -439,7 +439,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingBool(gci.GetEnableColorSelection(), "EnabledColorSelection"),
                                     TraceLoggingBool(gci.GetFilterOnPaste(), "FilterOnPaste"),
                                     TraceLoggingBool(gci.GetTrimLeadingZeros(), "TrimLeadingZeros"),
-                                    TraceLoggingValue(gci.GetLaunchFaceName(), "LaunchFontName"),
+                                    TraceLoggingValue(gci.GetLaunchFaceName().data(), "LaunchFontName"),
                                     TraceLoggingValue(CommandHistory::s_CountOfHistories(), "CommandHistoriesNumber"),
                                     TraceLoggingValue(gci.GetCodePage(), "CodePage"),
                                     TraceLoggingValue(gci.GetCursorSize(), "CursorSize"),

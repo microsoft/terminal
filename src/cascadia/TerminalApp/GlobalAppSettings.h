@@ -21,6 +21,7 @@ Author(s):
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
+    class ColorSchemeTests;
 };
 
 namespace TerminalApp
@@ -34,8 +35,10 @@ public:
     GlobalAppSettings();
     ~GlobalAppSettings();
 
-    const std::vector<ColorScheme>& GetColorSchemes() const noexcept;
-    std::vector<ColorScheme>& GetColorSchemes() noexcept;
+    std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() noexcept;
+    const std::unordered_map<std::wstring, ColorScheme>& GetColorSchemes() const noexcept;
+    void AddColorScheme(ColorScheme scheme);
+
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;
 
@@ -58,6 +61,13 @@ public:
     bool GetCopyOnSelect() const noexcept;
     void SetCopyOnSelect(const bool copyOnSelect) noexcept;
 
+    std::optional<int32_t> GetInitialX() const noexcept;
+
+    std::optional<int32_t> GetInitialY() const noexcept;
+
+    winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
+    void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
+
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
     Json::Value ToJson() const;
@@ -70,10 +80,13 @@ private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
 
-    std::vector<ColorScheme> _colorSchemes;
+    std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
 
     int32_t _initialRows;
     int32_t _initialCols;
+
+    std::optional<int32_t> _initialX;
+    std::optional<int32_t> _initialY;
 
     bool _showStatusline;
     bool _alwaysShowTabs;
@@ -84,8 +97,21 @@ private:
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
+    winrt::TerminalApp::LaunchMode _launchMode;
+
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
+    static void _ParseInitialPosition(const std::wstring& initialPosition,
+                                      std::optional<int32_t>& initialX,
+                                      std::optional<int32_t>& initialY) noexcept;
+
+    static std::string _SerializeInitialPosition(const std::optional<int32_t>& initialX,
+                                                 const std::optional<int32_t>& initialY) noexcept;
+
+    static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
+    static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
+
     friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ColorSchemeTests;
 };

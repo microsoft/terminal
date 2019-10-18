@@ -26,9 +26,10 @@ namespace winrt
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, 3> settingsLoadWarningsLabels {
    L"MissingDefaultProfileText",
-   L"DuplicateProfileText"
+   L"DuplicateProfileText",
+   L"UnknownColorSchemeText"
 };
 static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
     L"NoProfilesText",
@@ -342,6 +343,60 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
+    // Method Description:
+    // - Get the launch mode in json settings file. Now there
+    //   two launch mode: default, maximized. Default means the window
+    //   will launch according to the launch dimensions provided. Maximized
+    //   means the window will launch as a maximized window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - LaunchMode enum that indicates the launch mode
+    LaunchMode App::GetLaunchMode()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings->GlobalSettings().GetLaunchMode();
+    }
+
+    // Method Description:
+    // - Get the user defined initial position from Json settings file.
+    //   This position represents the top left corner of the Terminal window.
+    //   This setting is optional, if not provided, we will use the system
+    //   default size, which is provided in IslandWindow::MakeWindow.
+    // Arguments:
+    // - defaultInitialX: the system default x coordinate value
+    // - defaultInitialY: the system defualt y coordinate value
+    // Return Value:
+    // - a point containing the requested initial position in pixels.
+    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY)
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
+
+        auto initialX = _settings->GlobalSettings().GetInitialX();
+        auto initialY = _settings->GlobalSettings().GetInitialY();
+        if (initialX.has_value())
+        {
+            point.X = gsl::narrow_cast<float>(initialX.value());
+        }
+        if (initialY.has_value())
+        {
+            point.Y = gsl::narrow_cast<float>(initialY.value());
+        }
+
+        return point;
+    }
+
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
@@ -579,6 +634,22 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->TitlebarClicked();
+        }
+    }
+
+    // Method Description:
+    // - Used to tell the app that the 'X' button has been clicked and
+    //   the user wants to close the app. We kick off the close warning
+    //   experience.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void App::WindowCloseButtonClicked()
+    {
+        if (_root)
+        {
+            _root->CloseWindow();
         }
     }
 

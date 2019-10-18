@@ -26,7 +26,7 @@ Author(s):
 
 #include <deque>
 #include <tuple>
-#include <wrl.h>
+#include <wrl/implements.h>
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -159,7 +159,7 @@ namespace Microsoft::Console::Types
         UiaTextRangeBase(UiaTextRangeBase&&) = default;
         UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
-        virtual ~UiaTextRangeBase() = default;
+        ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
         const Endpoint GetStart() const noexcept;

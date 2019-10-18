@@ -69,8 +69,6 @@ public:
                Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
-    ~TextBuffer() = default;
-
     // Used for duplicating properties to another text buffer
     void CopyProperties(const TextBuffer& OtherBuffer) noexcept;
 
@@ -89,11 +87,12 @@ public:
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
-                             const COORD target);
+                             const COORD target,
+                             const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteLine(const OutputCellIterator givenIt,
                                  const COORD target,
-                                 const bool setWrap = false,
+                                 const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<size_t> limitRight = std::nullopt);
 
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
@@ -147,7 +146,7 @@ public:
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
-                               const PCWCHAR fontFaceName,
+                               const std::wstring_view fontFaceName,
                                const COLORREF backgroundColor,
                                const std::string& htmlTitle);
 

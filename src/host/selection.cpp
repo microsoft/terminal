@@ -12,8 +12,6 @@
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 
-std::unique_ptr<Selection> Selection::_instance;
-
 Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
@@ -32,10 +30,7 @@ Selection::Selection() :
 
 Selection& Selection::Instance()
 {
-    if (!_instance)
-    {
-        _instance.reset(new Selection());
-    }
+    static std::unique_ptr<Selection> _instance{ new Selection() };
     return *_instance;
 }
 

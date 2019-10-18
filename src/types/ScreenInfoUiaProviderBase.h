@@ -27,6 +27,8 @@ Author(s):
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
 
+#include <wrl/implements.h>
+
 namespace Microsoft::Console::Types
 {
     class WindowUiaProviderBase;
@@ -42,7 +44,7 @@ namespace Microsoft::Console::Types
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
         ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = default;
         ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = default;
-        virtual ~ScreenInfoUiaProviderBase() = default;
+        ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
 

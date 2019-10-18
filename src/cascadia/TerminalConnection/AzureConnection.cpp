@@ -435,7 +435,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 continue;
             }
 
-            _outputHandlers(_StrFormatHelper(ithTenant, _maxStored, nameJson.at(L"displayName").as_string().c_str(), nameJson.at(L"tenantID").as_string().c_str()));
+            auto tenantLine{ wil::str_printf<std::wstring>(ithTenant, _maxStored, nameJson.at(L"displayName").as_string().c_str(), nameJson.at(L"tenantID").as_string().c_str()) };
+            _outputHandlers(tenantLine);
             _maxStored++;
         }
 
@@ -582,7 +583,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 const auto& tenant = tenantListAsArray.at(i);
                 const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
-                _outputHandlers(_StrFormatHelper(ithTenant, i, tenantDisplayName.c_str(), tenantId.c_str()));
+                auto tenantLine{ wil::str_printf<std::wstring>(ithTenant, i, tenantDisplayName.c_str(), tenantId.c_str()) };
+                _outputHandlers(tenantLine);
             }
             _outputHandlers(winrt::to_hstring(enterTenant));
             // Use a lock to wait for the user to input a valid number
@@ -934,14 +936,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 return;
             }
         }
-    }
-
-    std::wstring AzureConnection::_StrFormatHelper(const wchar_t* const format, int i, const wchar_t* name, const wchar_t* ID)
-    {
-        const auto lengthRequired = _scwprintf(ithTenant, i, name, ID);
-        std::wstring buffer;
-        buffer.resize(lengthRequired + 1);
-        swprintf_s(buffer.data(), buffer.size(), ithTenant, i, name, ID);
-        return buffer;
     }
 }

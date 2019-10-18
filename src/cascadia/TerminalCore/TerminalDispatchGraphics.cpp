@@ -103,7 +103,7 @@ bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTy
             isForeground = false;
         }
 
-        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColor && cOptions >= 5)
+        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint && cOptions >= 5)
         {
             *pcOptionsConsumed = 5;
             // ensure that each value fits in a byte
@@ -115,7 +115,7 @@ bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTy
 
             fSuccess = _terminalApi.SetTextRgbColor(color, isForeground);
         }
-        else if (typeOpt == DispatchTypes::GraphicsOptions::Xterm256Index && cOptions >= 3)
+        else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && cOptions >= 3)
         {
             *pcOptionsConsumed = 3;
             if (rgOptions[2] <= 255) // ensure that the provided index is on the table
