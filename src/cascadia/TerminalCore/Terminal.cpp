@@ -180,14 +180,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     Cursor& cursor = _buffer->GetCursor();
     auto cursorPosition = cursor.GetPosition();
-    if (cursorPosition.X > viewportSize.X)
-    {
-        cursorPosition.X = viewportSize.X - 1;
-    }
-    if (cursorPosition.Y > viewportSize.Y)
-    {
-        cursorPosition.Y = viewportSize.Y;
-    }
+
+    // If the cursor is positioned beyond the range of the viewport, then
+    // set the cursor position to a legal value.
+    cursorPosition.X = std::min(cursorPosition.X, static_cast<SHORT>(viewportSize.X - 1));
+    cursorPosition.Y = std::min(cursorPosition.Y, static_cast<SHORT>(viewportSize.Y - 1));
 
     cursor.StartDeferDrawing();
     cursor.SetPosition(cursorPosition);
@@ -553,7 +550,7 @@ void Terminal::_InitializeColorTable()
 // - isVisible: whether the cursor should be visible
 void Terminal::SetCursorVisible(const bool isVisible) noexcept
 {
-    auto lock = LockForReading();
+    auto lock = LockForWriting();
 
     auto& cursor = _buffer->GetCursor();
     cursor.SetIsVisible(isVisible);
