@@ -297,8 +297,8 @@ UiaEngine::UiaEngine() noexcept :
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
-[[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
-                                                      COLORREF const /*colorBackground*/,
+[[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const COLORREF /*colorForeground*/,
+                                                      const COLORREF /*colorBackground*/,
                                                       const WORD /*legacyColorAttribute*/,
                                                       const bool /*isBold*/,
                                                       bool const /*isSettingDefaultBrushes*/) noexcept
