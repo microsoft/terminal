@@ -58,11 +58,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
-                                                   COLORREF const colorBackground,
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                   const COLORREF colorBackground,
                                                    const WORD legacyColorAttribute,
                                                    const bool isBold,
-                                                   bool const isSettingDefaultBrushes) noexcept override;
+                                                   const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
