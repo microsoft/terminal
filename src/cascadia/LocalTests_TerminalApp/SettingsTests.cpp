@@ -1386,9 +1386,7 @@ namespace TerminalAppLocalTests
         VerifyParseSucceeded(settingsJson);
         CascadiaSettings settings;
         settings._ParseJsonString(settingsJson, false);
-        GlobalAppSettings globalSettings{};
-        auto terminalSettings = settings._profiles.at(0).CreateTerminalSettings(globalSettings.GetColorSchemes());
-        VERIFY_ARE_EQUAL(expectedPath, terminalSettings.BackgroundImage());
+        VERIFY_ARE_EQUAL(expectedPath, settings._profiles.at(0).GetExpandedIconPath());
     }
     void SettingsTests::TestProfileBackgroundImageWithEnvVar()
     {
