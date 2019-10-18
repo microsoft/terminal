@@ -33,7 +33,7 @@ public:
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
+    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
