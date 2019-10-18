@@ -22,6 +22,25 @@ using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
+    // See microsoft/terminal#2066 for more info.
+    static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
+    {
+        return false; // glyph is not wide.
+    }
+
+    static bool _EnsureStaticInitialization()
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        static bool initialized = []() {
+            // *** THIS IS A SINGLETON ***
+            SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
+
+            return true;
+        }();
+        return initialized;
+    }
+
     TermControl::TermControl() :
         TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
     {
@@ -46,6 +65,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClick{},
         _lastMouseClickPos{}
     {
+        _EnsureStaticInitialization();
         _Create();
     }
 
@@ -424,11 +444,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Set up the DX Engine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
-
-        // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out its width another way.
-        auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
-        SetGlyphWidthFallback(pfn);
 
         // Initialize our font with the renderer
         // We don't have to care about DPI. We'll get a change message immediately if it's not 96

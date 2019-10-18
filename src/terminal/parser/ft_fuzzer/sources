@@ -44,7 +44,6 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 # -------------------------------------
 
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Build System Settings

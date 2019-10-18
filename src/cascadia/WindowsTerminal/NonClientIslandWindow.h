@@ -21,7 +21,6 @@ Author(s):
 #include "IslandWindow.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
-#include <windowsx.h>
 #include <wil\resource.h>
 
 class NonClientIslandWindow : public IslandWindow

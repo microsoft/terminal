@@ -12,7 +12,6 @@ USE_UNICRT=1
 
 C_DEFINES=-DUNICODE
 
-USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
 
 TARGETLIBS=\
         $(MINCORE_SDK_LIB_PATH)\mincore.lib \

@@ -276,7 +276,9 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
     }
 
     auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), nlength);
-    _buffer->Write(eraseIter, startPos);
+
+    // Explicitly turn off end-of-line wrap-flag-setting when erasing cells.
+    _buffer->Write(eraseIter, startPos, false);
     return true;
 }
 

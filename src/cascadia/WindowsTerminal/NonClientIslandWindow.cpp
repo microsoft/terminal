@@ -73,6 +73,7 @@ void NonClientIslandWindow::Initialize()
     _dragBar = _titlebar.DragBar();
 
     _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 

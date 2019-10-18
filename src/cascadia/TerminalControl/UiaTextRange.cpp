@@ -50,7 +50,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData, pProvider);
+        return WRL::Make<UiaTextRange>(pData, pProvider).Detach();
     }
     catch (...)
     {
@@ -64,7 +64,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData, pProvider, cursor);
+        return WRL::Make<UiaTextRange>(pData, pProvider, cursor).Detach();
     }
     catch (...)
     {
@@ -80,11 +80,12 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData,
-                                pProvider,
-                                start,
-                                end,
-                                degenerate);
+        return WRL::Make<UiaTextRange>(pData,
+                                       pProvider,
+                                       start,
+                                       end,
+                                       degenerate)
+            .Detach();
     }
     catch (...)
     {
@@ -98,7 +99,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData, pProvider, point);
+        return WRL::Make<UiaTextRange>(pData, pProvider, point).Detach();
     }
     catch (...)
     {
@@ -143,7 +144,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     try
     {
-        *ppRetVal = new UiaTextRange(*this);
+        *ppRetVal = WRL::Make<UiaTextRange>(*this).Detach();
     }
     catch (...)
     {
