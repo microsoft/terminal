@@ -1375,8 +1375,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        // Since this callback fires from non-UI thread, we might be already
+        // closed/closing.
+        if (_closing.load())
+        {
+            return;
+        }
+
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            // Even if we weren't closed/closing few lines above, we might be
+            // while waiting for this block of code to be dispatched.
+            if (_closing.load())
+            {
+                return;
+            }
+
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
