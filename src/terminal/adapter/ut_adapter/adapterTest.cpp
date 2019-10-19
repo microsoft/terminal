@@ -369,6 +369,13 @@ public:
         return _privateSetScrollingRegionResult;
     }
 
+    bool PrivateLineFeed(const bool /*withReturn*/) override
+    {
+        Log::Comment(L"PrivateLineFeed MOCK called...");
+        // We made it through the adapter, woo! Return true.
+        return true;
+    }
+
     bool PrivateReverseLineFeed() override
     {
         Log::Comment(L"PrivateReverseLineFeed MOCK called...");

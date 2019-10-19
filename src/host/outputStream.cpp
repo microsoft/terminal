@@ -387,6 +387,19 @@ bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMa
 }
 
 // Routine Description:
+// - Connects the PrivateLineFeed call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateLineFeed is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// - withReturn - Set to true if a carriage return should be performed as well.
+// Return Value:
+// - true if successful (see DoSrvPrivateLineFeed). false otherwise.
+bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
+{
+    return NT_SUCCESS(DoSrvPrivateLineFeed(_io.GetActiveOutputBuffer(), withReturn));
+}
+
+// Routine Description:
 // - Connects the PrivateReverseLineFeed call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateReverseLineFeed is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.

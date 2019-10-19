@@ -1329,14 +1329,12 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     case DispatchTypes::LineFeedType::DependsOnMode:
         // Until we support the LNM mode, default to no carriage return.
     case DispatchTypes::LineFeedType::WithoutReturn:
-        Execute(L'\n');
-        break;
+        return _pConApi->PrivateLineFeed(false);
     case DispatchTypes::LineFeedType::WithReturn:
-        Execute(L'\r');
-        Execute(L'\n');
-        break;
+        return _pConApi->PrivateLineFeed(true);
+    default:
+        return false;
     }
-    return true;
 }
 
 // Routine Description:
