@@ -178,6 +178,18 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         proposedTop -= (proposedBottom - bufferSize.Y);
     }
 
+    Cursor& cursor = _buffer->GetCursor();
+    auto cursorPosition = cursor.GetPosition();
+
+    // If the cursor is positioned beyond the range of the viewport, then
+    // set the cursor position to a legal value.
+    cursorPosition.X = std::min(cursorPosition.X, static_cast<SHORT>(viewportSize.X - 1));
+    cursorPosition.Y = std::min(cursorPosition.Y, static_cast<SHORT>(viewportSize.Y - 1));
+
+    cursor.StartDeferDrawing();
+    cursor.SetPosition(cursorPosition);
+    cursor.EndDeferDrawing();
+
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     _scrollOffset = 0;
     _NotifyScrollEvent();
@@ -425,6 +437,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
         }
 
+        if (proposedCursorPosition.X > bufferSize.RightInclusive())
+        {
+            proposedCursorPosition.X = 0;
+        }
+
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
         const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         if (newRows > 0)
@@ -533,6 +550,8 @@ void Terminal::_InitializeColorTable()
 // - isVisible: whether the cursor should be visible
 void Terminal::SetCursorVisible(const bool isVisible) noexcept
 {
+    auto lock = LockForWriting();
+
     auto& cursor = _buffer->GetCursor();
     cursor.SetIsVisible(isVisible);
 }

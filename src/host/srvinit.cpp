@@ -502,6 +502,18 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p)
+{
+    Globals& g = ServiceLocator::LocateGlobals();
+    // processes that are created ...
+    //  ... with CREATE_NO_WINDOW never get a window.
+    //  ... on Desktop, with a visible window always get one (even a fake one)
+    //  ... not on Desktop, with a visible window only get one if we are headful (not ConPTY).
+    //  This prevents pseudoconsole-hosted applications from taking over the screen,
+    //  even if they really beg us for a window.
+    return p->WindowVisible && (s_IsOnDesktop() || !g.IsHeadless());
+}
+
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
@@ -546,7 +558,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    if (NT_SUCCESS(Status) && p->WindowVisible)
+    if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {
         HANDLE Thread = nullptr;
 
@@ -575,9 +587,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             // Cleanup the handles and events we used to maintain our virtual lock passing dance.
 
             CloseHandle(Thread); // This doesn't stop the thread from running.
-
-            g.consoleInputInitializedEvent.release();
-            g.consoleInputSetupEvent.release();
 
             if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
             {
