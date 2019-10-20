@@ -22,6 +22,8 @@ public:
     bool CursorBackward(const size_t distance) noexcept override;
     bool CursorUp(const size_t distance) noexcept override;
 
+    bool LineFeed(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::LineFeedType lineFeedType) override;
+
     bool EraseCharacters(const size_t numChars) noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
 
