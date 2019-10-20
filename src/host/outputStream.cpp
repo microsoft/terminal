@@ -386,6 +386,18 @@ bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMa
     return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_io.GetActiveOutputBuffer(), scrollMargins));
 }
 
+// Method Description:
+// - Retrieves the current Line Feed/New Line (LNM) mode.
+// Arguments:
+// - None
+// Return Value:
+// - true if a line feed also produces a carriage return. false otherwise.
+bool ConhostInternalGetSet::PrivateGetLineFeedMode() const
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsReturnOnNewlineAutomatic();
+}
+
 // Routine Description:
 // - Connects the PrivateLineFeed call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateLineFeed is an internal-only "API" call that the vt commands can execute,

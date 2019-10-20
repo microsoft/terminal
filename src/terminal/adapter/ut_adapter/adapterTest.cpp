@@ -369,6 +369,13 @@ public:
         return _privateSetScrollingRegionResult;
     }
 
+    bool PrivateGetLineFeedMode() const override
+    {
+        Log::Comment(L"PrivateGetLineFeedMode MOCK called...");
+        // Not currently used. Return true for now.
+        return true;
+    }
+
     bool PrivateLineFeed(const bool /*withReturn*/) override
     {
         Log::Comment(L"PrivateLineFeed MOCK called...");
