@@ -59,5 +59,7 @@ public:
     const bool IsSelectionActive() const override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+    COORD GetSelectionAnchor();
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
 #pragma endregion
 };

@@ -1,21 +1,16 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
+/*
 Module Name:
 - search.h
 
 Abstract:
 - This module is used for searching through the screen for a substring
-
-Author(s):
-- Michael Niksa (MiNiksa) 20-Apr-2018
-
-Revision History:
-- From components of find.c by Jerry Shea (jerrysh) 1-May-1997
---*/
-
+*/
 #pragma once
+
+#include <WinConTypes.h>
+#include "TextAttribute.hpp"
+#include "textBuffer.hpp"
+#include "../types/IUiaData.h"
 
 // This used to be in find.h.
 #define SEARCH_STRING_LENGTH (80)
@@ -35,12 +30,14 @@ public:
         CaseSensitive
     };
 
-    Search(const SCREEN_INFORMATION& ScreenInfo,
+    Search(const TextBuffer& textBuffer,
+           Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity);
 
-    Search(const SCREEN_INFORMATION& ScreenInfo,
+    Search(const TextBuffer& textBuffer,
+           Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity,
@@ -61,19 +58,21 @@ private:
     void _IncrementCoord(COORD& coord) const;
     void _DecrementCoord(COORD& coord) const;
 
-    static COORD s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Direction dir);
+    COORD s_GetInitialAnchor(const TextBuffer& textBuffer, const Direction dir);
+
     static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
 
     bool _reachedEnd = false;
     COORD _coordNext = { 0 };
     COORD _coordSelStart = { 0 };
     COORD _coordSelEnd = { 0 };
+    COORD _coordAnchor = { 0 };
 
-    const COORD _coordAnchor;
     const std::vector<std::vector<wchar_t>> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
-    const SCREEN_INFORMATION& _screenInfo;
+    const TextBuffer& _textBuffer;
+    Microsoft::Console::Types::IUiaData& _uiaData;
 
 #ifdef UNIT_TESTING
     friend class SearchTests;

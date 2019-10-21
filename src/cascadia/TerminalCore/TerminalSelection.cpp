@@ -107,6 +107,11 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
     return selectionRow;
 }
 
+COORD Terminal::GetSelectionAnchor()
+{
+    return _buffer->GetCursor().GetPosition();
+}
+
 // Method Description:
 // - Expand the selection row according to selection mode and wide glyphs
 // - this is particularly useful for box selections (ALT + selection)
@@ -454,4 +459,58 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
     THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;
+}
+
+// Method Description:
+// - Given two points in the buffer space, color the selection between the two with the given attribute.
+// - This will create an internal selection rectangle covering the two points, assume a line selection,
+//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
+// Arguments:
+// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
+// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
+// - attr - Color to apply to region.
+void Terminal::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
+{
+    // Make a rectangle for the region as if it were selected by a mouse.
+    // We will use the first one as the "anchor" to represent where the mouse went down.
+    SetSelectionAnchor(coordSelectionStart);
+    SetEndSelectionPosition(coordSelectionEnd);
+
+    try
+    {
+        const auto rectangles = _GetSelectionRects();
+        for (const auto& rect : rectangles)
+        {
+            ColorText(rect, attr);
+        }
+    }
+    CATCH_LOG();
+}
+
+// Method Description :
+// - Given a small rect representing the selected area in the text buffer, color it
+//   with the color in the attribute. This will create an internal selection rectangle.
+// Arguments:
+// - srRect - the small rect to be colored
+// - attr - Color to apply to region.
+    void Terminal::ColorText(const SMALL_RECT& srRect, const TextAttribute attr)
+{
+    COORD coordTargetSize;
+    coordTargetSize.X = srRect.Right - srRect.Left + 1;
+    coordTargetSize.Y = srRect.Bottom - srRect.Top + 1;
+
+    COORD coordTarget;
+    coordTarget.X = srRect.Left;
+    coordTarget.Y = srRect.Top;
+
+    for (; coordTarget.Y < (srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
+    {
+        const size_t cchWrite = gsl::narrow<size_t>(coordTargetSize.X);
+
+        try
+        {
+            _buffer->Write(OutputCellIterator(attr, cchWrite), coordTarget);
+        }
+        CATCH_LOG();
+    }
 }

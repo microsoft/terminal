@@ -6,6 +6,7 @@
 #include <conattrs.hpp>
 
 #include "../../buffer/out/textBuffer.hpp"
+#include "../../buffer/out/ISelection.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
@@ -126,7 +127,9 @@ public:
     const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+    COORD GetSelectionAnchor() override;
     const std::wstring GetConsoleTitle() const noexcept override;
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr) override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
@@ -242,5 +245,6 @@ private:
     std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
     SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
     void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
+    void ColorText(const SMALL_RECT& srRect, const TextAttribute attr);
 #pragma endregion
 };

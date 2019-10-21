@@ -5,7 +5,7 @@
 
 #include "uiaTextRange.hpp"
 #include "screenInfoUiaProvider.hpp"
-#include "..\host\search.h"
+#include "..\buffer\out\search.h"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -231,7 +231,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
         const auto& screenInfo = gci.GetActiveOutputBuffer().GetActiveBuffer();
-        Search searcher{ screenInfo, wstr, searchDirection, sensitivity, _endpointToCoord(_pData, searchAnchor) };
+        Search searcher{ screenInfo.GetTextBuffer(), gci.renderData, wstr, searchDirection, sensitivity, _endpointToCoord(_pData, searchAnchor) };
 
         HRESULT hr = S_OK;
         if (searcher.FindNext())

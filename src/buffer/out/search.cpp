@@ -1,34 +1,36 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
 #include "precomp.h"
 
 #include "search.h"
 
-#include "dbcs.h"
-#include "../buffer/out/CharRow.hpp"
+#include "CharRow.hpp"
+#include "textBuffer.hpp"
 #include "../types/inc/Utf16Parser.hpp"
 #include "../types/inc/GlyphWidth.hpp"
+
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Constructs a Search object.
 // - Make a Search object then call .FindNext() to locate items.
 // - Once you've found something, you can perfom actions like .Select() or .Color()
 // Arguments:
-// - screenInfo - The screen buffer to search through (the "haystack")
+// - textBuffer - The screen text buffer to search through (the "haystack")
+// - uiaData - The IUiaData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
-Search::Search(const SCREEN_INFORMATION& screenInfo,
+Search::Search(const TextBuffer& textBuffer,
+               IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
     _sensitivity(sensitivity),
-    _screenInfo(screenInfo),
+    _textBuffer(textBuffer),
     _needle(s_CreateNeedleFromString(str)),
-    _coordAnchor(s_GetInitialAnchor(screenInfo, direction))
+    _uiaData(uiaData)
 {
+    _coordAnchor = s_GetInitialAnchor(textBuffer, direction);
     _coordNext = _coordAnchor;
 }
 
@@ -37,21 +39,24 @@ Search::Search(const SCREEN_INFORMATION& screenInfo,
 // - Make a Search object then call .FindNext() to locate items.
 // - Once you've found something, you can perfom actions like .Select() or .Color()
 // Arguments:
-// - screenInfo - The screen buffer to search through (the "haystack")
+// - textBuffer - The screen text buffer to search through (the "haystack")
+// - uiaData - The IUiaData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
-Search::Search(const SCREEN_INFORMATION& screenInfo,
+Search::Search(const TextBuffer& textBuffer,
+               IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity,
                const COORD anchor) :
     _direction(direction),
     _sensitivity(sensitivity),
-    _screenInfo(screenInfo),
+    _textBuffer(textBuffer),
     _needle(s_CreateNeedleFromString(str)),
-    _coordAnchor(anchor)
+    _coordAnchor(anchor),
+    _uiaData(uiaData)
 {
     _coordNext = _coordAnchor;
 }
@@ -96,7 +101,7 @@ void Search::Select() const
     // Only select if we've found something.
     if (_coordSelStart != _coordSelEnd)
     {
-        Selection::Instance().SelectNewRegion(_coordSelStart, _coordSelEnd);
+        _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
     }
 }
 
@@ -109,7 +114,7 @@ void Search::Color(const TextAttribute attr) const
     // Only select if we've found something.
     if (_coordSelStart != _coordSelEnd)
     {
-        Selection::Instance().ColorSelection(_coordSelStart, _coordSelEnd, attr);
+        _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
 }
 
@@ -130,22 +135,22 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - If the screen buffer given already has a selection in it, it will be used to determine the anchor.
 // - Otherwise, we will choose one of the ends of the screen buffer depending on direction.
 // Arguments:
-// - screenInfo - The screen buffer for determining the anchor
+// - textBuffer - The screen text buffer for determining the anchor
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Direction direction)
+COORD Search::s_GetInitialAnchor(const TextBuffer& textBuffer, const Direction direction)
 {
-    if (Selection::Instance().IsInSelectingState())
+    if (_uiaData.IsSelectionActive())
     {
-        auto anchor = Selection::Instance().GetSelectionAnchor();
+        auto anchor = _uiaData.GetSelectionAnchor();
         if (direction == Direction::Forward)
         {
-            screenInfo.GetBufferSize().IncrementInBoundsCircular(anchor);
+            textBuffer.GetSize().IncrementInBoundsCircular(anchor);
         }
         else
         {
-            screenInfo.GetBufferSize().DecrementInBoundsCircular(anchor);
+            textBuffer.GetSize().DecrementInBoundsCircular(anchor);
         }
         return anchor;
     }
@@ -157,7 +162,7 @@ COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Dir
         }
         else
         {
-            const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
+            const auto bufferSize = textBuffer.GetSize().Dimensions();
             return { bufferSize.X - 1, bufferSize.Y - 1 };
         }
     }
@@ -183,7 +188,7 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
     for (const auto& needleCell : _needle)
     {
         // Haystack is the buffer. Needle is the string we were given.
-        const auto hayIter = _screenInfo.GetTextDataAt(bufferPos);
+        const auto hayIter = _textBuffer.GetTextDataAt(bufferPos);
         const auto hayChars = *hayIter;
         const auto needleChars = std::wstring_view(needleCell.data(), needleCell.size());
 
@@ -257,7 +262,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
 void Search::_IncrementCoord(COORD& coord) const
 {
-    _screenInfo.GetBufferSize().IncrementInBoundsCircular(coord);
+    _textBuffer.GetSize().IncrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -266,7 +271,7 @@ void Search::_IncrementCoord(COORD& coord) const
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
 void Search::_DecrementCoord(COORD& coord) const
 {
-    _screenInfo.GetBufferSize().DecrementInBoundsCircular(coord);
+    _textBuffer.GetSize().DecrementInBoundsCircular(coord);
 }
 
 // Routine Description:

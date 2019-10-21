@@ -9,7 +9,7 @@
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\handle.h"
-#include "..\..\host\search.h"
+#include "..\buffer\out\search.h"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -56,7 +56,8 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            Search search(ScreenInfo,
+            Search search(ScreenInfo.GetTextBuffer(),
+                          gci.renderData,
                           wstr,
                           Reverse ? Search::Direction::Backward : Search::Direction::Forward,
                           IgnoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive);
