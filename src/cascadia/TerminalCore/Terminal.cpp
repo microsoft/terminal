@@ -437,11 +437,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
         }
 
-        if (proposedCursorPosition.X > bufferSize.RightInclusive())
-        {
-            proposedCursorPosition.X = 0;
-        }
-
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
         const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         if (newRows > 0)
