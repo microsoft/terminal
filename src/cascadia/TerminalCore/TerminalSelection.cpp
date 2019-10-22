@@ -493,7 +493,7 @@ void Terminal::ColorSelection(const COORD coordSelectionStart, const COORD coord
 // Arguments:
 // - srRect - the small rect to be colored
 // - attr - Color to apply to region.
-    void Terminal::ColorText(const SMALL_RECT& srRect, const TextAttribute attr)
+void Terminal::ColorText(const SMALL_RECT& srRect, const TextAttribute attr)
 {
     COORD coordTargetSize;
     coordTargetSize.X = srRect.Right - srRect.Left + 1;

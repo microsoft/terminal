@@ -6,7 +6,6 @@
 #include <conattrs.hpp>
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/ISelection.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
