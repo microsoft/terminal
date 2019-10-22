@@ -56,8 +56,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            Search search(ScreenInfo.GetTextBuffer(),
-                          gci.renderData,
+            Search search(gci.renderData,
                           wstr,
                           Reverse ? Search::Direction::Backward : Search::Direction::Forward,
                           IgnoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive);

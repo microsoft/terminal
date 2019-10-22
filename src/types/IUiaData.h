@@ -36,7 +36,7 @@ namespace Microsoft::Console::Types
         virtual const bool IsSelectionActive() const = 0;
         virtual void ClearSelection() = 0;
         virtual void SelectNewRegion(const COORD coordStart, const COORD coordEnd) = 0;
-        virtual COORD GetSelectionAnchor() = 0;
+        virtual const COORD GetSelectionAnchor() const = 0;
         virtual void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr) = 0;
     };
 

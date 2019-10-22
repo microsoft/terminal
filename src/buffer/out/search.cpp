@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "precomp.h"
 
 #include "search.h"
@@ -19,18 +22,16 @@ using namespace Microsoft::Console::Types;
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
-Search::Search(const TextBuffer& textBuffer,
-               IUiaData& uiaData,
+Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
     _sensitivity(sensitivity),
-    _textBuffer(textBuffer),
     _needle(s_CreateNeedleFromString(str)),
-    _uiaData(uiaData)
+    _uiaData(uiaData),
+    _coordAnchor(s_GetInitialAnchor(uiaData.GetTextBuffer(), direction))
 {
-    _coordAnchor = s_GetInitialAnchor(textBuffer, direction);
     _coordNext = _coordAnchor;
 }
 
@@ -45,15 +46,13 @@ Search::Search(const TextBuffer& textBuffer,
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
-Search::Search(const TextBuffer& textBuffer,
-               IUiaData& uiaData,
+Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity,
                const COORD anchor) :
     _direction(direction),
     _sensitivity(sensitivity),
-    _textBuffer(textBuffer),
     _needle(s_CreateNeedleFromString(str)),
     _coordAnchor(anchor),
     _uiaData(uiaData)
@@ -106,7 +105,8 @@ void Search::Select() const
 }
 
 // Routine Description:
-// - Takes the found word and applies the given color to it in the screen buffer
+// - In console host, we takes the found word and applies the given color to it in the screen buffer
+// - Interminal, we just select the found word, but we do not ,modify the buffer
 // Arguments:
 // - ulAttr - The legacy color attribute to apply to the word
 void Search::Color(const TextAttribute attr) const
@@ -188,7 +188,7 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
     for (const auto& needleCell : _needle)
     {
         // Haystack is the buffer. Needle is the string we were given.
-        const auto hayIter = _textBuffer.GetTextDataAt(bufferPos);
+        const auto hayIter = _uiaData.GetTextBuffer().GetTextDataAt(bufferPos);
         const auto hayChars = *hayIter;
         const auto needleChars = std::wstring_view(needleCell.data(), needleCell.size());
 
@@ -244,7 +244,7 @@ bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view 
 // - wch - Character to adjust if necessary
 // Return Value:
 // - Adjusted value (or not).
-wchar_t Search::_ApplySensitivity(const wchar_t wch) const
+wchar_t Search::_ApplySensitivity(const wchar_t wch) const noexcept
 {
     if (_sensitivity == Sensitivity::CaseInsensitive)
     {
@@ -262,7 +262,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
 void Search::_IncrementCoord(COORD& coord) const
 {
-    _textBuffer.GetSize().IncrementInBoundsCircular(coord);
+    _uiaData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -271,7 +271,7 @@ void Search::_IncrementCoord(COORD& coord) const
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
 void Search::_DecrementCoord(COORD& coord) const
 {
-    _textBuffer.GetSize().DecrementInBoundsCircular(coord);
+    _uiaData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
 }
 
 // Routine Description:

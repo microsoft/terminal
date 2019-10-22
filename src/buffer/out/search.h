@@ -1,10 +1,20 @@
-/*
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
 Module Name:
 - search.h
 
 Abstract:
 - This module is used for searching through the screen for a substring
-*/
+
+Author(s):
+- Michael Niksa (MiNiksa) 20-Apr-2018
+
+Revision History:
+- From components of find.c by Jerry Shea (jerrysh) 1-May-1997
+--*/
+
 #pragma once
 
 #include <WinConTypes.h>
@@ -30,14 +40,12 @@ public:
         CaseSensitive
     };
 
-    Search(const TextBuffer& textBuffer,
-           Microsoft::Console::Types::IUiaData& uiaData,
+    Search(Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity);
 
-    Search(const TextBuffer& textBuffer,
-           Microsoft::Console::Types::IUiaData& uiaData,
+    Search(Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity,
@@ -50,7 +58,7 @@ public:
     std::pair<COORD, COORD> GetFoundLocation() const noexcept;
 
 private:
-    wchar_t _ApplySensitivity(const wchar_t wch) const;
+    wchar_t _ApplySensitivity(const wchar_t wch) const noexcept;
     bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
     bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const;
     void _UpdateNextPosition();
@@ -66,12 +74,11 @@ private:
     COORD _coordNext = { 0 };
     COORD _coordSelStart = { 0 };
     COORD _coordSelEnd = { 0 };
-    COORD _coordAnchor = { 0 };
 
+    const COORD _coordAnchor = { 0 };
     const std::vector<std::vector<wchar_t>> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
-    const TextBuffer& _textBuffer;
     Microsoft::Console::Types::IUiaData& _uiaData;
 
 #ifdef UNIT_TESTING

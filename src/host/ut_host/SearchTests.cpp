@@ -91,7 +91,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 0 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"AB", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
+        Search s(gci.renderData, L"AB", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
 
@@ -101,7 +101,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 2, 0 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
+        Search s(gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
 
@@ -111,7 +111,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 0 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"ab", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
+        Search s(gci.renderData, L"ab", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
 
@@ -121,7 +121,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 2, 0 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
+        Search s(gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
 
@@ -131,7 +131,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 0, 3 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"AB", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
+        Search s(gci.renderData, L"AB", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
 
@@ -141,7 +141,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 2, 3 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
+        Search s(gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
 
@@ -151,7 +151,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 0, 3 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"ab", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
+        Search s(gci.renderData, L"ab", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
 
@@ -161,7 +161,7 @@ class SearchTests
         const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
         COORD coordStartExpected = { 2, 3 };
-        Search s(outputBuffer.GetTextBuffer(), gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
+        Search s(gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
 };
