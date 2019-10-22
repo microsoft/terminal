@@ -219,7 +219,7 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
 // - two - String view representing the second string of text
 // Return Value:
 // - True if they are the same. False otherwise.
-bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view two) const
+bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept
 {
     if (one.size() != two.size())
     {
