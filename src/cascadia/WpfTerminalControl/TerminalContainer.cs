@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.Wpf
     using System.Runtime.InteropServices;
     using System.Windows;
     using System.Windows.Interop;
+    using System.Windows.Media;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
@@ -24,9 +25,6 @@ namespace Microsoft.Terminal.Wpf
 
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
-
-        // We keep track of the DPI scale since we could get a DPI changed event before we are able to initialize the terminal.
-        private DpiScale dpiScale = new DpiScale(NativeMethods.USER_DEFAULT_SCREEN_DPI, NativeMethods.USER_DEFAULT_SCREEN_DPI);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
@@ -96,12 +94,13 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="theme">The color theme for the terminal to use.</param>
         /// <param name="fontFamily">The font family to use in the terminal.</param>
         /// <param name="fontSize">The font size to use in the terminal.</param>
-        /// <param name="newDpi">The dpi that the terminal should be rendered at.</param>
-        internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
+        internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize)
         {
-            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+            var dpiScale = VisualTreeHelper.GetDpi(this);
 
-            NativeMethods.TerminalTriggerResize(this.terminal, this.ActualWidth, this.ActualHeight, out var dimensions);
+            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
+
+            NativeMethods.TerminalTriggerResize(this.terminal, this.ActualWidth * dpiScale.DpiScaleX, this.ActualHeight * dpiScale.DpiScaleY, out var dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
@@ -116,8 +115,10 @@ namespace Microsoft.Terminal.Wpf
         /// <returns>Tuple with rows and columns.</returns>
         internal (int rows, int columns) TriggerResize(Size renderSize)
         {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
             NativeMethods.COORD dimensions;
-            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width, renderSize.Height, out dimensions);
+            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width * dpiScale.DpiScaleX, renderSize.Height * dpiScale.DpiScaleY, out dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
@@ -150,12 +151,7 @@ namespace Microsoft.Terminal.Wpf
         /// <inheritdoc/>
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
-            // Save the DPI if the terminal hasn't been initialized.
-            if (this.terminal == IntPtr.Zero)
-            {
-                this.dpiScale = newDpi;
-            }
-            else
+            if (this.terminal != IntPtr.Zero)
             {
                 NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
             }
@@ -164,6 +160,8 @@ namespace Microsoft.Terminal.Wpf
         /// <inheritdoc/>
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
@@ -173,9 +171,9 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.TerminalRegisterWriteCallback(this.terminal, this.writeCallback);
 
             // If the saved DPI scale isn't the default scale, we push it to the terminal.
-            if (this.dpiScale.DpiScaleX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
+            if (dpiScale.PixelsPerInchX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
             {
-                NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * this.dpiScale.DpiScaleX));
+                NativeMethods.TerminalDpiChanged(this.terminal, (int)dpiScale.PixelsPerInchX);
             }
 
             return new HandleRef(this, this.hwnd);
