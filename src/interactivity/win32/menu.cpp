@@ -313,7 +313,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     pStateInfo->FontFamily = currentFont.GetFamily();
     pStateInfo->FontSize = currentFont.GetUnscaledSize();
     pStateInfo->FontWeight = currentFont.GetWeight();
-    StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName());
+    LOG_IF_FAILED(StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName().data()));
 
     const Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
     pStateInfo->CursorSize = cursor.GetSize();
@@ -447,7 +447,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // end V2 console properties
 
     // Apply font information (must come before all character calculations for window/buffer size).
-    FontInfo fiNewFont(pStateInfo->FaceName, static_cast<BYTE>(pStateInfo->FontFamily), pStateInfo->FontWeight, pStateInfo->FontSize, pStateInfo->CodePage);
+    FontInfo fiNewFont(pStateInfo->FaceName, gsl::narrow_cast<unsigned char>(pStateInfo->FontFamily), pStateInfo->FontWeight, pStateInfo->FontSize, pStateInfo->CodePage);
 
     ScreenInfo.UpdateFont(&fiNewFont);
 
@@ -457,7 +457,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFontFamily(fontApplied.GetFamily());
     gci.SetFontSize(fontApplied.GetUnscaledSize());
     gci.SetFontWeight(fontApplied.GetWeight());
-    gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
+    gci.SetFaceName(fontApplied.GetFaceName());
 
     // Set the cursor properties in the Settings
     const auto cursorType = static_cast<CursorType>(pStateInfo->CursorType);

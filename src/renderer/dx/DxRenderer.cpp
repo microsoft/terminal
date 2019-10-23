@@ -925,16 +925,21 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 {
-    /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
-                                                  (float)_invalidRect.top,
-                                                  (float)_invalidRect.right,
-                                                  (float)_invalidRect.bottom),
-                                                   _d2dBrushBackground.Get());
-*/
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
+        _d2dRenderTarget->FillRectangle(D2D1::RectF(static_cast<float>(_invalidRect.left),
+                                                    static_cast<float>(_invalidRect.top),
+                                                    static_cast<float>(_invalidRect.right),
+                                                    static_cast<float>(_invalidRect.bottom)),
+                                        _d2dBrushBackground.Get());
+        break;
+    case SwapChainMode::ForComposition:
+        D2D1_COLOR_F nothing = { 0 };
 
-    D2D1_COLOR_F nothing = { 0 };
-
-    _d2dRenderTarget->Clear(nothing);
+        _d2dRenderTarget->Clear(nothing);
+        break;
+    }
 
     return S_OK;
 }
@@ -1218,14 +1223,14 @@ enum class CursorPaintType
 // - colorForeground - Foreground brush color
 // - colorBackground - Background brush color
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                                      COLORREF const colorBackground,
                                                      const WORD /*legacyColorAttribute*/,
-                                                     const bool /*isBold*/,
+                                                     const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
     _foregroundColor = _ColorFFromColorRef(colorForeground);
@@ -1360,7 +1365,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars()
+[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 {
     SMALL_RECT r;
     r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
@@ -1594,32 +1599,27 @@ float DxEngine::GetScaling() const noexcept
         // Get the locale name out so at least the caller knows what locale this name goes with.
         UINT32 length = 0;
         THROW_IF_FAILED(familyNames->GetLocaleNameLength(index, &length));
+        localeName.resize(length);
 
         // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalenamelength
         // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalename
         // GetLocaleNameLength does not include space for null terminator, but GetLocaleName needs it so add one.
-        length++;
-
-        localeName.resize(length);
-
-        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length));
+        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length + 1));
     }
 
     // OK, now that we've decided which family name and the locale that it's in... let's go get it.
     UINT32 length = 0;
     THROW_IF_FAILED(familyNames->GetStringLength(index, &length));
 
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
-    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
-    length++;
-
     // Make our output buffer and resize it so it is allocated.
     std::wstring retVal;
     retVal.resize(length);
 
     // FINALLY, go fetch the string name.
-    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length));
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
+    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
+    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length + 1));
 
     // and return it.
     return retVal;
@@ -1760,8 +1760,6 @@ float DxEngine::GetScaling() const noexcept
         coordSize.X = gsl::narrow<SHORT>(widthExact);
         coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
 
-        const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
-
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding
         // or rounding or scaling manipulation.
@@ -1769,9 +1767,9 @@ float DxEngine::GetScaling() const noexcept
 
         const COORD scaled = coordSize;
 
-        actual.SetFromEngine(fontName.data(),
+        actual.SetFromEngine(fontName,
                              desired.GetFamily(),
-                             weightDword,
+                             textFormat->GetFontWeight(),
                              false,
                              scaled,
                              unscaled);

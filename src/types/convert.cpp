@@ -206,7 +206,8 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
                                                        SHIFT_PRESSED));
     }
 
-    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+    const auto vk = LOBYTE(keyState);
+    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary

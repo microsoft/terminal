@@ -34,16 +34,21 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent) const;
+        bool HandleChar(const wchar_t ch);
         void ChangeKeypadMode(const bool fApplicationMode);
         void ChangeCursorKeysMode(const bool fApplicationMode);
 
     private:
         std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
+
+        // storage location for the leading surrogate of a utf-16 surrogate pair
+        std::optional<wchar_t> _leadingSurrogate;
+
         bool _fKeypadApplicationMode = false;
         bool _fCursorApplicationMode = false;
 
         void _SendNullInputSequence(const DWORD dwControlKeyState) const;
-        void _SendInputSequence(_In_ PCWSTR const pwszSequence) const;
+        void _SendInputSequence(_In_ const std::wstring_view sequence) const;
         void _SendEscapedInputSequence(const wchar_t wch) const;
 
         struct _TermKeyMap
@@ -54,12 +59,12 @@ namespace Microsoft::Console::VirtualTerminal
 
             static const size_t s_cchMaxSequenceLength;
 
-            _TermKeyMap(const WORD wVirtualKey, _In_ PCWSTR const pwszSequence) :
+            _TermKeyMap(const WORD wVirtualKey, _In_ PCWSTR const pwszSequence) noexcept :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
                 dwModifiers(0){};
 
-            _TermKeyMap(const WORD wVirtualKey, const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) :
+            _TermKeyMap(const WORD wVirtualKey, const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) noexcept :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
                 dwModifiers(dwModifiers){};

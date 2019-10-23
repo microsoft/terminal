@@ -22,6 +22,25 @@ using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
+    // See microsoft/terminal#2066 for more info.
+    static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
+    {
+        return false; // glyph is not wide.
+    }
+
+    static bool _EnsureStaticInitialization()
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        static bool initialized = []() {
+            // *** THIS IS A SINGLETON ***
+            SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
+
+            return true;
+        }();
+        return initialized;
+    }
+
     TermControl::TermControl() :
         TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
     {
@@ -42,11 +61,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
-        _leadingSurrogate{},
         _cursorTimer{},
         _lastMouseClick{},
         _lastMouseClickPos{}
     {
+        _EnsureStaticInitialization();
         _Create();
     }
 
@@ -85,8 +104,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        _loadedRevoker = swapChainPanel.Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            _InitializeTerminal();
+        _layoutUpdatedRevoker = swapChainPanel.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // This event fires every time the layout changes, but it is always the last one to fire
+            // in any layout change chain. That gives us great flexibility in finding the right point
+            // at which to initialize our renderer (and our terminal).
+            // Any earlier than the last layout update and we may not know the terminal's starting size.
+            if (_InitializeTerminal())
+            {
+                // Only let this succeed once.
+                this->_layoutUpdatedRevoker.revoke();
+            }
         });
 
         container.Children().Append(swapChainPanel);
@@ -383,15 +410,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
     }
 
-    void TermControl::_InitializeTerminal()
+    bool TermControl::_InitializeTerminal()
     {
         if (_initializedTerminal)
         {
-            return;
+            return false;
         }
 
         const auto windowWidth = _swapChainPanel.ActualWidth(); // Width() and Height() are NaN?
         const auto windowHeight = _swapChainPanel.ActualHeight();
+
+        if (windowWidth == 0 || windowHeight == 0)
+        {
+            return false;
+        }
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
@@ -412,11 +444,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Set up the DX Engine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
-
-        // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out its width another way.
-        auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
-        SetGlyphWidthFallback(pfn);
 
         // Initialize our font with the renderer
         // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -566,6 +593,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _connection.Start();
         _initializedTerminal = true;
+        return true;
     }
 
     void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
@@ -578,44 +606,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ch = e.Character();
 
-        // We want Backspace to be handled by _KeyDownHandler, so the
-        // terminalInput can translate it into a \x7f. So, do nothing here, so
-        // we don't end up sending both a BS and a DEL to the terminal.
-        // Also skip processing DEL here, which will hit here when Ctrl+Bkspc is
-        // pressed, but after it's handled by the _KeyDownHandler below.
-        if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
-        {
-            return;
-        }
-        else if (Utf16Parser::IsLeadingSurrogate(ch))
-        {
-            if (_leadingSurrogate.has_value())
-            {
-                // we already were storing a leading surrogate but we got another one. Go ahead and send the
-                // saved surrogate piece and save the new one
-                auto hstr = to_hstring(_leadingSurrogate.value());
-                _connection.WriteInput(hstr);
-            }
-            // save the leading portion of a surrogate pair so that they can be sent at the same time
-            _leadingSurrogate.emplace(ch);
-        }
-        else if (_leadingSurrogate.has_value())
-        {
-            std::wstring wstr;
-            wstr.reserve(2);
-            wstr.push_back(_leadingSurrogate.value());
-            wstr.push_back(ch);
-            _leadingSurrogate.reset();
-
-            auto hstr = to_hstring(wstr.c_str());
-            _connection.WriteInput(hstr);
-        }
-        else
-        {
-            auto hstr = to_hstring(ch);
-            _connection.WriteInput(hstr);
-        }
-        e.Handled(true);
+        const bool handled = _terminal->SendCharEvent(ch);
+        e.Handled(handled);
     }
 
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
@@ -638,41 +630,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-
-        // AltGr key combinations don't always contain any meaningful,
-        // pretranslated unicode character during WM_KEYDOWN.
-        // E.g. on a German keyboard AltGr+Q should result in a "@" character,
-        // but actually results in "Q" with Alt and Ctrl modifier states.
-        // By returning false though, we can abort handling this WM_KEYDOWN
-        // event and let the WM_CHAR handler kick in, which will be
-        // provided with an appropriate unicode character.
-        //
-        // GH#2235: Make sure to handle AltGr before trying keybindings,
-        // so Ctrl+Alt keybindings won't eat an AltGr keypress.
-        if (modifiers.IsAltGrPressed())
-        {
-            _HandleVoidKeyEvent();
-            e.Handled(false);
-            return;
-        }
-
         const auto vkey = static_cast<WORD>(e.OriginalKey());
+        const auto scanCode = e.KeyStatus().ScanCode;
         bool handled = false;
 
-        auto bindings = _settings.KeyBindings();
-        if (bindings)
+        // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
+        // -> Don't check for key bindings if this is an AltGr key combination.
+        if (!modifiers.IsAltGrPressed())
         {
-            handled = bindings.TryKeyChord({
-                modifiers.IsCtrlPressed(),
-                modifiers.IsAltPressed(),
-                modifiers.IsShiftPressed(),
-                vkey,
-            });
+            auto bindings = _settings.KeyBindings();
+            if (bindings)
+            {
+                handled = bindings.TryKeyChord({
+                    modifiers.IsCtrlPressed(),
+                    modifiers.IsAltPressed(),
+                    modifiers.IsShiftPressed(),
+                    vkey,
+                });
+            }
         }
 
         if (!handled)
         {
-            handled = _TrySendKeyEvent(vkey, modifiers);
+            handled = _TrySendKeyEvent(vkey, scanCode, modifiers);
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
@@ -687,17 +667,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Some key events cannot be handled (e.g. AltGr combinations) and are
-    //   delegated to the character handler. Just like with _TrySendKeyEvent(),
-    //   the character handler counts on us though to:
-    // - Clears the current selection.
-    // - Makes the cursor briefly visible during typing.
-    void TermControl::_HandleVoidKeyEvent()
-    {
-        _TrySendKeyEvent(0, {});
-    }
-
-    // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
     // - Clears the current selection.
@@ -705,14 +674,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    bool TermControl::_TrySendKeyEvent(WORD vkey, const ControlKeyStates modifiers)
+    bool TermControl::_TrySendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates modifiers)
     {
         _terminal->ClearSelection();
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterRecieved event.
-        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, modifiers) : true;
+        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers) : true;
 
         if (_cursorTimer.has_value())
         {
@@ -987,10 +956,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_MouseZoomHandler(const double mouseDelta)
     {
         const auto fontDelta = mouseDelta < 0 ? -1 : 1;
+        AdjustFontSize(fontDelta);
+    }
+
+    // Method Description:
+    // - Adjust the font size of the terminal control.
+    // Arguments:
+    // - fontSizeDelta: The amount to increase or decrease the font size by.
+    void TermControl::AdjustFontSize(int fontSizeDelta)
+    {
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontDelta), static_cast<short>(1));
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontSizeDelta), static_cast<short>(1));
             const auto* fontFace = _settings.FontFace().c_str();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };

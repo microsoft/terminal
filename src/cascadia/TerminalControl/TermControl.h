@@ -68,6 +68,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         int GetScrollOffset();
         int GetViewHeight() const;
 
+        void AdjustFontSize(int fontSizeDelta);
+
         void SwapChainChanged();
         ~TermControl();
 
@@ -140,7 +142,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // lest we get callbacks afterwards.
         winrt::Windows::UI::Xaml::Controls::Control::SizeChanged_revoker _sizeChangedRevoker;
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::CompositionScaleChanged_revoker _compositionScaleChangedRevoker;
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::Loaded_revoker _loadedRevoker;
+        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
         winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
@@ -148,7 +150,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
-        void _InitializeTerminal();
+        bool _InitializeTerminal();
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
@@ -184,8 +186,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
-        void _HandleVoidKeyEvent();
-        bool _TrySendKeyEvent(WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

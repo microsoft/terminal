@@ -21,7 +21,6 @@ Author(s):
 #include "IslandWindow.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
-#include <windowsx.h>
 #include <wil\resource.h>
 
 class NonClientIslandWindow : public IslandWindow
@@ -55,7 +54,7 @@ private:
 
     RECT GetDragAreaRect() const noexcept;
 
-    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse, const bool titlebarIsCaption) const noexcept;
+    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
 
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 

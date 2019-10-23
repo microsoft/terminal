@@ -93,7 +93,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _HeaderHelper(web::http::http_request theRequest);
         void _StoreCredential();
         void _RemoveCredentials();
-        std::wstring _StrFormatHelper(const wchar_t* const format, int i, const wchar_t* name, const wchar_t* ID);
 
         web::websockets::client::websocket_client _cloudShellSocket;
     };

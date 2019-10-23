@@ -43,11 +43,10 @@ public:
                                             _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
     IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
 
+    WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow);
+    ~WindowUiaProvider();
+
 protected:
     const OLECHAR* AutomationIdPropertyName = L"Terminal Window";
     const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Windows Terminal Window";
-
-private:
-    WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow);
-    ~WindowUiaProvider();
 };

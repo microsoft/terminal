@@ -6,10 +6,10 @@
 #include "resource.h"
 
 using namespace winrt;
-using namespace Windows::UI;
-using namespace Windows::UI::Composition;
-using namespace Windows::UI::Xaml::Hosting;
-using namespace Windows::Foundation::Numerics;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Composition;
+using namespace winrt::Windows::UI::Xaml::Hosting;
+using namespace winrt::Windows::Foundation::Numerics;
 
 // Note: Generate GUID using TlgGuid.exe tool - seriously, it won't work if you
 // just generate an arbitrary GUID
@@ -85,18 +85,13 @@ static void EnsureNativeArchitecture()
         const auto nativeArchitecture = ImageArchitectureToString(nativeMachine);
         const auto processArchitecture = ImageArchitectureToString(processMachine);
 
-        const auto lengthRequired = _scwprintf(formatPattern.data(), nativeArchitecture.data(), processArchitecture.data());
-        const auto bufferSize = lengthRequired + 1;
-
-        std::wstring buffer;
-        buffer.resize(bufferSize);
-
-        swprintf_s(buffer.data(), buffer.size(), formatPattern.data(), nativeArchitecture.data(), processArchitecture.data());
+        auto buffer{ wil::str_printf<std::wstring>(formatPattern.data(), nativeArchitecture.data(), processArchitecture.data()) };
 
         MessageBoxW(nullptr,
                     buffer.data(),
                     GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
                     MB_OK | MB_ICONERROR);
+
         ExitProcess(0);
     }
 }
