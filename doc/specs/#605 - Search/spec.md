@@ -28,7 +28,6 @@ Our ultimate goal is to provide both search within one tab and search from all t
 Conhost already has a module for search. It realizes case sensitive or insensitive exact text match search, and it provides methods to select the found word. However, we want to make search as a shared component between Terminal and Console host. Now search module is part of Conhost, and its dependencies include BufferOut and some other types in ConHost such as SCREEN_INFORMATION. In order to make Search a shared component, we need to remove its dependency on ConHost types. BufferOut is already a shared component, but we need to make sure there is no other Conhost dependency.
 
 Search process:
-
 Search is performed on a XAML AutoSuggestBox. Once the user click the "Find" icon, we start from the cursor (or the current selection), and try to find the exact text in the text buffer. The nearest searched one will be selected. And we set the search start point to the selected text. The next time "Find" button is clicked, the search will start before or after the previous searched text.
 The user can choose to search up or down by choosing up arrow or down arrow buttons.
 The user can choose to do case sensitive or insensitive match by clicking a button.
@@ -36,7 +35,11 @@ If the user click the "X" button, the search stopped and the search box disappea
 
 ## UI/UX Design
 
+![Sol Design](images/AutoSuggestBox.png)
 
+Above is the XAML AutoSuggestBox. We also need to add at least two more buttons, one for case sensitive/insensitive switch, and one for search direction switch. We can consider adding the buttons on the right side of the AutoSuggestBox.
+
+The search box should be on the top right corner of the Terminal window. We need to avoid it blocking too much screen contents. 
 
 ## Capabilities
 
@@ -53,7 +56,7 @@ This feature could help multitaksing terminal users.
 
 ### Security
 
-This should not introduce any new security issues.
+This feature should not introduce any new security issues.
 
 ### Reliability
 
@@ -65,7 +68,7 @@ This feature won't break existing features of Terminal.
 
 ### Performance, Power, and Efficiency
 
-This feature only launch in need. It does not impact the performance of Terminal. 
+This feature only launches in need. It does not impact the performance of Terminal. 
 
 ## Potential Issues
 
