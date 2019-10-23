@@ -47,13 +47,13 @@ public:
     using key_type = typename COORD;
     using mapped_type = typename std::vector<wchar_t>;
 
-    UnicodeStorage();
+    UnicodeStorage() noexcept;
 
     const mapped_type& GetText(const key_type key) const;
 
     void StoreGlyph(const key_type key, const mapped_type& glyph);
 
-    void Erase(const key_type key) noexcept;
+    void Erase(const key_type key);
 
     void Remap(const std::map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width);
 

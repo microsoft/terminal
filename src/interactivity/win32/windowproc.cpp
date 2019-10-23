@@ -25,9 +25,10 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
-#include "../interactivity/win32/windowtheme.hpp"
-#include "../interactivity/win32/windowUiaProvider.hpp"
-#include "../interactivity/win32/CustomWindowMessages.h"
+#include "..\interactivity\win32\windowtheme.hpp"
+#include "..\interactivity\win32\CustomWindowMessages.h"
+
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 #include <iomanip>
 #include <sstream>
@@ -67,7 +68,32 @@ using namespace Microsoft::Console::Types;
     LRESULT Status = 0;
     BOOL Unlock = TRUE;
 
-    LockConsole();
+    // If we're during the initial allocation of the console, then the I/O thread is servicing a
+    // Console Connection Request under lock as the input thread is created on the first connection to a client.
+    // Normally we'd take the lock here at the top of the window proc to ensure consistency while servicing messages,
+    // but because the I/O thread needs to hold the lock for the duration of
+    // servicing the connection request, we have a wink-nudge agreement here with the I/O thread about the lock.
+    // As long as the input setup event exists and is signaled, we've been told that the I/O thread has the lock
+    // and is waiting for us to respond.
+    // As long as the input initialized event exists and is unsignaled, we haven't told the I/O thread that we're done
+    // yet and it can resume use of the lock.
+    // So under these conditions where we are assured the I/O thread is holding the lock on our behalf and waiting for us...
+    // skip the lock/unlock behavior down this entire procedure and perform the messages needed to get things set up
+    // knowing we have exclusive reign over the console variables.
+    if (g.consoleInputSetupEvent && g.consoleInputSetupEvent.is_signaled() &&
+        g.consoleInputInitializedEvent && !g.consoleInputInitializedEvent.is_signaled())
+    {
+        Unlock = FALSE;
+    }
+
+    // Under normal conditions, Unlock is TRUE at the top and we will need to take the lock
+    // to process messages.
+    // Under special init conditions, someone else holds the lock for us and we can skip all lock/unlock behavior
+    // by checking the Unlock variable.
+    if (Unlock)
+    {
+        LockConsole();
+    }
 
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
     if (hWnd == nullptr) // TODO: this might not be possible anymore
@@ -82,7 +108,10 @@ using namespace Microsoft::Console::Types;
             Status = DefWindowProcW(hWnd, Message, wParam, lParam);
         }
 
-        UnlockConsole();
+        if (Unlock)
+        {
+            UnlockConsole();
+        }
         return Status;
     }
 
@@ -213,7 +242,10 @@ using namespace Microsoft::Console::Types;
         pSuggestionSize->cy = RECT_HEIGHT(&rectProposed);
 
         // Format our final suggestion for consumption.
-        UnlockConsole();
+        if (Unlock)
+        {
+            UnlockConsole();
+        }
         return TRUE;
     }
 
@@ -484,8 +516,11 @@ using namespace Microsoft::Console::Types;
         {
             HMENU hHeirMenu = Menu::s_GetHeirMenuHandle();
 
-            Unlock = FALSE;
-            UnlockConsole();
+            if (Unlock)
+            {
+                Unlock = FALSE;
+                UnlockConsole();
+            }
 
             TrackPopupMenuEx(hHeirMenu,
                              TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
@@ -507,8 +542,11 @@ using namespace Microsoft::Console::Types;
         switch (wParam & 0x00FF)
         {
         case HTCAPTION:
-            UnlockConsole();
-            Unlock = FALSE;
+            if (Unlock)
+            {
+                UnlockConsole();
+                Unlock = FALSE;
+            }
             SetActiveWindow(hWnd);
             SendMessageTimeoutW(hWnd, WM_SYSCOMMAND, SC_MOVE | wParam, lParam, SMTO_NORMAL, INFINITE, nullptr);
             break;
@@ -674,8 +712,11 @@ using namespace Microsoft::Console::Types;
 
     case CM_BEEP:
     {
-        UnlockConsole();
-        Unlock = FALSE;
+        if (Unlock)
+        {
+            UnlockConsole();
+            Unlock = FALSE;
+        }
 
         // Don't fall back to Beep() on win32 systems -- if the user configures their system for no sound, we should
         // respect that.

@@ -1,0 +1,21 @@
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    enum WindowVisualState
+    {
+        WindowVisualStateNormal = 0,
+        WindowVisualStateMaximized,
+        WindowVisualStateIconified
+    };
+
+    [default_interface] runtimeclass TitlebarControl : Windows.UI.Xaml.Controls.Grid
+    {
+        TitlebarControl(UInt64 parentWindowHandle);
+        void SetWindowVisualState(WindowVisualState visualState);
+
+        IInspectable Content;
+        Windows.UI.Xaml.Controls.Border DragBar { get; };
+    }
+}

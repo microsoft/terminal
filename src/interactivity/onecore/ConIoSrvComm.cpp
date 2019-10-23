@@ -454,7 +454,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
         ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = status;
 
         // Signal that input is ready to go.
-        ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
+        ServiceLocator::LocateGlobals().consoleInputInitializedEvent.SetEvent();
 
         _fIsInputInitialized = true;
     }

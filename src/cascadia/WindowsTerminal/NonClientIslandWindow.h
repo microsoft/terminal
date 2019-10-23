@@ -21,7 +21,6 @@ Author(s):
 #include "IslandWindow.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
-#include <windowsx.h>
 #include <wil\resource.h>
 
 class NonClientIslandWindow : public IslandWindow
@@ -36,9 +35,16 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
-    void OnAppInitialized(winrt::TerminalApp::App app) override;
+    void Initialize() override;
+
+    void OnAppInitialized() override;
+    void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
+    void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
 
 private:
+    winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
+    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
+
     wil::unique_hbrush _backgroundBrush;
     wil::unique_hrgn _dragBarRegion;
 
@@ -54,6 +60,7 @@ private:
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
+    void _UpdateDragRegion();
 
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 

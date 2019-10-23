@@ -10,11 +10,12 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
+                                 wil::shared_event shutdownEvent,
                                  const IDefaultColorProvider& colorProvider,
                                  const Viewport initialViewport,
                                  _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                  const WORD cColorTable) :
-    VtEngine(std::move(hPipe), colorProvider, initialViewport),
+    VtEngine(std::move(hPipe), shutdownEvent, colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
 {
@@ -28,6 +29,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
+// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
@@ -35,10 +37,14 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                             const COLORREF colorBackground,
                                                             const WORD /*legacyColorAttribute*/,
-                                                            const bool isBold,
+                                                            const ExtendedAttributes extendedAttrs,
                                                             const bool /*isSettingDefaultBrushes*/) noexcept
 {
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
+                                                  colorBackground,
+                                                  WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
+                                                  _ColorTable,
+                                                  _cColorTable);
 }
 
 // Routine Description:

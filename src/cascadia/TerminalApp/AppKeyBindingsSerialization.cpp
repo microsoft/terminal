@@ -1,10 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+// - A couple helper functions for serializing/deserializing an AppKeyBindings
+//   to/from json.
+//
+// Author(s):
+// - Mike Griese - May 2019
 
 #include "pch.h"
-#include "AppKeyBindingsSerialization.h"
+#include "AppKeyBindings.h"
 #include "KeyChordSerialization.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include <winrt/Microsoft.Terminal.Settings.h>
 
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -13,10 +19,14 @@ using namespace winrt::TerminalApp;
 static constexpr std::string_view KeysKey{ "keys" };
 static constexpr std::string_view CommandKey{ "command" };
 
+// This key is reserved to remove a keybinding, instead of mapping it to an action.
+static constexpr std::string_view UnboundKey{ "unbound" };
+
 static constexpr std::string_view CopyTextKey{ "copy" };
 static constexpr std::string_view CopyTextWithoutNewlinesKey{ "copyTextWithoutNewlines" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view NewTabKey{ "newTab" };
+static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
 static constexpr std::string_view NewTabWithProfile0Key{ "newTabProfile0" };
 static constexpr std::string_view NewTabWithProfile1Key{ "newTabProfile1" };
@@ -30,6 +40,7 @@ static constexpr std::string_view NewTabWithProfile8Key{ "newTabProfile8" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view CloseWindowKey{ "closeWindow" };
 static constexpr std::string_view CloseTabKey{ "closeTab" };
+static constexpr std::string_view ClosePaneKey{ "closePane" };
 static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
@@ -55,6 +66,10 @@ static constexpr std::string_view ResizePaneLeftKey{ "resizePaneLeft" };
 static constexpr std::string_view ResizePaneRightKey{ "resizePaneRight" };
 static constexpr std::string_view ResizePaneUpKey{ "resizePaneUp" };
 static constexpr std::string_view ResizePaneDownKey{ "resizePaneDown" };
+static constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" };
+static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" };
+static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" };
+static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
@@ -69,6 +84,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { CopyTextWithoutNewlinesKey, ShortcutAction::CopyTextWithoutNewlines },
     { PasteTextKey, ShortcutAction::PasteText },
     { NewTabKey, ShortcutAction::NewTab },
+    { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
     { DuplicateTabKey, ShortcutAction::DuplicateTab },
     { NewTabWithProfile0Key, ShortcutAction::NewTabProfile0 },
     { NewTabWithProfile1Key, ShortcutAction::NewTabProfile1 },
@@ -82,6 +98,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { NewWindowKey, ShortcutAction::NewWindow },
     { CloseWindowKey, ShortcutAction::CloseWindow },
     { CloseTabKey, ShortcutAction::CloseTab },
+    { ClosePaneKey, ShortcutAction::ClosePane },
     { NextTabKey, ShortcutAction::NextTab },
     { PrevTabKey, ShortcutAction::PrevTab },
     { IncreaseFontSizeKey, ShortcutAction::IncreaseFontSize },
@@ -105,7 +122,12 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { ResizePaneRightKey, ShortcutAction::ResizePaneRight },
     { ResizePaneUpKey, ShortcutAction::ResizePaneUp },
     { ResizePaneDownKey, ShortcutAction::ResizePaneDown },
+    { MoveFocusLeftKey, ShortcutAction::MoveFocusLeft },
+    { MoveFocusRightKey, ShortcutAction::MoveFocusRight },
+    { MoveFocusUpKey, ShortcutAction::MoveFocusUp },
+    { MoveFocusDownKey, ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
+    { UnboundKey, ShortcutAction::Invalid },
 };
 
 // Function Description:
@@ -145,7 +167,7 @@ static Json::Value _ShortcutAsJsonObject(const KeyChord& chord,
 //   ShortcutAction.
 // Return Value:
 // - a Json::Value which is an equivalent serialization of this object.
-Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKeyBindings& bindings)
+Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 {
     Json::Value bindingsArray;
 
@@ -156,7 +178,7 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
 
-        if (const auto chord{ bindings.GetKeyBinding(searchedForAction) })
+        if (const auto chord{ GetKeyBinding(searchedForAction) })
         {
             if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
             {
@@ -175,53 +197,71 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
 //   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
 //   the array should contain a single string, which can be deserialized into a
 //   KeyChord.
+// - Applies the deserialized keybindings to the provided `bindings` object. If
+//   a key chord in `json` is already bound to an action, that chord will be
+//   overwritten with the new action. If a chord is bound to `null` or
+//   `"unbound"`, then we'll clear the keybinding from the existing keybindings.
 // Arguments:
 // - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
-// Return Value:
-// - the newly constructed AppKeyBindings object.
-winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const Json::Value& json)
+void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
 {
-    winrt::TerminalApp::AppKeyBindings newBindings{};
-
     for (const auto& value : json)
     {
-        if (value.isObject())
+        if (!value.isObject())
         {
-            const auto commandString = value[JsonKey(CommandKey)];
-            const auto keys = value[JsonKey(KeysKey)];
+            continue;
+        }
 
-            if (commandString && keys)
+        const auto commandVal = value[JsonKey(CommandKey)];
+        const auto keys = value[JsonKey(KeysKey)];
+
+        if (keys)
+        {
+            if (!keys.isArray() || keys.size() != 1)
             {
-                if (!keys.isArray() || keys.size() != 1)
-                {
-                    continue;
-                }
-                const auto keyChordString = winrt::to_hstring(keys[0].asString());
-                ShortcutAction action;
+                continue;
+            }
+            const auto keyChordString = winrt::to_hstring(keys[0].asString());
+            // Invalid is our placeholder that the action was not parsed.
+            ShortcutAction action = ShortcutAction::Invalid;
 
-                // Try matching the command to one we have
-                const auto found = commandNames.find(commandString.asString());
+            // Only try to parse the action if it's actually a string value.
+            // `null` will not pass this check.
+            if (commandVal.isString())
+            {
+                auto commandString = commandVal.asString();
+
+                // Try matching the command to one we have. If we can't find the
+                // action name in our list of names, let's just unbind that key.
+                const auto found = commandNames.find(commandString);
                 if (found != commandNames.end())
                 {
                     action = found->second;
                 }
+            }
+
+            // Try parsing the chord
+            try
+            {
+                const auto chord = KeyChordSerialization::FromString(keyChordString);
+
+                // If we couldn't find the action they want to set the chord to,
+                // or the action was `null` or `"unbound"`, just clear out the
+                // keybinding. Otherwise, set the keybinding to the action we
+                // found.
+                if (action != ShortcutAction::Invalid)
+                {
+                    SetKeyBinding(action, chord);
+                }
                 else
                 {
-                    continue;
+                    ClearKeyBinding(chord);
                 }
-
-                // Try parsing the chord
-                try
-                {
-                    const auto chord = KeyChordSerialization::FromString(keyChordString);
-                    newBindings.SetKeyBinding(action, chord);
-                }
-                catch (...)
-                {
-                    continue;
-                }
+            }
+            catch (...)
+            {
+                continue;
             }
         }
     }
-    return newBindings;
 }

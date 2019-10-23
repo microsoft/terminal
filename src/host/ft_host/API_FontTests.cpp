@@ -14,12 +14,6 @@ static const PCWSTR pwszLongFontPath = L"%WINDIR%\\Fonts\\ltype.ttf";
 class FontTests
 {
     BEGIN_TEST_CLASS(FontTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl3.h")
     END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
@@ -212,9 +206,9 @@ void FontTests::TestFontScenario()
 
 void FontTests::TestLongFontNameScenario()
 {
-    wistd::unique_ptr<wchar_t[]> expandedLongFontPath;
-    VERIFY_SUCCEEDED(ExpandPathToMutable(pwszLongFontPath, expandedLongFontPath));
-    if (!CheckIfFileExists(expandedLongFontPath.get()))
+    std::wstring expandedLongFontPath = wil::ExpandEnvironmentStringsW<std::wstring>(pwszLongFontPath);
+
+    if (!CheckIfFileExists(expandedLongFontPath.c_str()))
     {
         Log::Comment(L"Lucida Sans Typewriter doesn't exist; skipping long font test.");
         Log::Result(WEX::Logging::TestResults::Result::Skipped);

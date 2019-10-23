@@ -88,7 +88,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -110,12 +110,19 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
+    winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window.get(), rc);
+        _pfnCreateCallback(_window.get(), rc, launchMode);
     }
 
-    ShowWindow(_window.get(), SW_SHOW);
+    int nCmdShow = SW_SHOW;
+    if (launchMode == winrt::TerminalApp::LaunchMode::MaximizedMode)
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+
+    ShowWindow(_window.get(), nCmdShow);
     UpdateWindow(_window.get());
 }
 
@@ -161,10 +168,35 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     {
         if (_interopWindowHandle != nullptr)
         {
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+                // set the text area to have focus for accessibility consumers
+                if (_pUiaProvider)
+                {
+                    LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
+                }
+                break;
+            */
+
             // send focus to the child window
             SetFocus(_interopWindowHandle);
             return 0; // eat the message
         }
+    }
+
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCXBUTTONDOWN:
+    case WM_NCXBUTTONUP:
+    {
+        // If we clicked in the titlebar, raise an event so the app host can
+        // dispatch an appropriate event.
+        _DragRegionClickedHandlers();
+        break;
     }
     case WM_MENUCHAR:
     {
@@ -173,10 +205,51 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         // key that does not correspond to any mnemonic or accelerator key,
         return MAKELRESULT(0, MNC_CLOSE);
     }
+    case WM_CLOSE:
+    {
+        // If the user wants to close the app by clicking 'X' button,
+        // we hand off the close experience to the app layer. If all the tabs
+        // are closed, the window will be closed as well.
+        _windowCloseButtonClickedHandler();
+        return 0;
+    }
     }
 
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);
+}
+
+// Routine Description:
+// - Creates/retrieves a handle to the UI Automation provider COM interfaces
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to UI Automation provider class/interfaces.
+IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
+{
+    if (nullptr == _pUiaProvider)
+    {
+        try
+        {
+            _pUiaProvider = WindowUiaProvider::Create(this);
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            _pUiaProvider = nullptr;
+        }
+    }
+
+    return _pUiaProvider;
+}
+
+RECT IslandWindow::GetFrameBorderMargins(unsigned int currentDpi)
+{
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto targetStyle = windowStyle & ~WS_DLGFRAME;
+    RECT frame{};
+    AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), currentDpi);
+    return frame;
 }
 
 // Method Description:
@@ -196,22 +269,44 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 // - Called when the window is minimized to the taskbar.
 void IslandWindow::OnMinimize()
 {
-    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+    // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
 // Method Description:
 // - Called when the window is restored from having been minimized.
 void IslandWindow::OnRestore()
 {
-    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+    // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
-void IslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
+void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _rootGrid.Children().Clear();
-    _rootGrid.Children().Append(app.GetRoot());
+    _rootGrid.Children().Append(content);
+}
 
+void IslandWindow::OnAppInitialized()
+{
     // Do a quick resize to force the island to paint
     const auto size = GetPhysicalSize();
     OnSize(size.cx, size.cy);
 }
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll update the root UI
+//   element of the entire XAML tree, so that all UI elements get the theme
+//   applied.
+// Arguments:
+// - arg: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+{
+    _rootGrid.RequestedTheme(requestedTheme);
+    // Invalidate the window rect, so that we'll repaint any elements we're
+    // drawing ourselves to match the new theme
+    ::InvalidateRect(_window.get(), nullptr, false);
+}
+
+DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
+DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

@@ -7,20 +7,6 @@
 using namespace Microsoft::Console;
 
 // Function Description:
-// - Clamps a long in between `min` and `SHRT_MAX`
-// Arguments:
-// - value: the value to clamp
-// - min: the minimum value to clamp to
-// Return Value:
-// - The clamped value as a short.
-short Utils::ClampToShortMax(const long value, const short min)
-{
-    return static_cast<short>(std::clamp(value,
-                                         static_cast<long>(min),
-                                         static_cast<long>(SHRT_MAX)));
-}
-
-// Function Description:
 // - Creates a String representation of a guid, in the format
 //      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
 // Arguments:
@@ -29,12 +15,7 @@ short Utils::ClampToShortMax(const long value, const short min)
 // - a string representation of the GUID. On failure, throws E_INVALIDARG.
 std::wstring Utils::GuidToString(const GUID guid)
 {
-    wchar_t guid_cstr[39];
-    const int written = swprintf(guid_cstr, sizeof(guid_cstr), L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-
-    THROW_HR_IF(E_INVALIDARG, written == -1);
-
-    return std::wstring(guid_cstr);
+    return wil::str_printf<std::wstring>(L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 }
 
 // Method Description:
@@ -83,7 +64,7 @@ std::string Utils::ColorToHexString(const COLORREF color)
 }
 
 // Function Description:
-// - Parses a color from a string. The string should be in the format "#RRGGBB"
+// - Parses a color from a string. The string should be in the format "#RRGGBB" or "#RGB"
 // Arguments:
 // - str: a string representation of the COLORREF to parse
 // Return Value:
@@ -91,16 +72,29 @@ std::string Utils::ColorToHexString(const COLORREF color)
 //      the correct format, throws E_INVALIDARG
 COLORREF Utils::ColorFromHexString(const std::string str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() < 7 || str.size() >= 8);
-    THROW_HR_IF(E_INVALIDARG, str[0] != '#');
+    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
-    std::string rStr{ &str[1], 2 };
-    std::string gStr{ &str[3], 2 };
-    std::string bStr{ &str[5], 2 };
+    std::string rStr;
+    std::string gStr;
+    std::string bStr;
 
-    BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    BYTE b = static_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    if (str.size() == 4)
+    {
+        rStr = std::string(2, str.at(1));
+        gStr = std::string(2, str.at(2));
+        bStr = std::string(2, str.at(3));
+    }
+    else
+    {
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+    }
+
+    const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
 
     return RGB(r, g, b);
 }
@@ -113,16 +107,17 @@ COLORREF Utils::ColorFromHexString(const std::string str)
 // - True if non zero and not set to invalid magic value. False otherwise.
 bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
-    return handle != 0 && handle != INVALID_HANDLE_VALUE;
+    return handle != nullptr && handle != INVALID_HANDLE_VALUE;
 }
 
 // Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color scheme
+// - Fill the first 16 entries of a given color table with the Campbell color
+//   scheme, in the ANSI/VT RGB order.
 // Arguments:
 // - table: a color table with at least 16 entries
 // Return Value:
 // - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
+void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
 
@@ -147,13 +142,42 @@ void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
 }
 
 // Function Description:
+// - Fill the first 16 entries of a given color table with the Campbell color
+//   scheme, in the Windows BGR order.
+// Arguments:
+// - table: a color table with at least 16 entries
+// Return Value:
+// - <none>, throws if the table has less that 16 entries
+void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
+{
+    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
+    InitializeCampbellColorTable(table);
+    SwapANSIColorOrderForConhost(table);
+}
+
+// Function Description:
+// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
+// Arguments:
+// - table: a color table with at least 16 entries
+// Return Value:
+// - <none>, throws if the table has less that 16 entries
+void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
+{
+    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
+    std::swap(table[1], table[4]);
+    std::swap(table[3], table[6]);
+    std::swap(table[9], table[12]);
+    std::swap(table[11], table[14]);
+}
+
+// Function Description:
 // - Fill the first 255 entries of a given color table with the default values
 //      of a full 256-color table
 // Arguments:
 // - table: a color table with at least 256 entries
 // Return Value:
 // - <none>, throws if the table has less that 256 entries
-void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
+void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 256);
 
@@ -418,22 +442,6 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
 }
 
 // Function Description:
-// - Fill the alpha byte of the colors in a given color table with the given value.
-// Arguments:
-// - table: a color table
-// - newAlpha: the new value to use as the alpha for all the entries in that table.
-// Return Value:
-// - <none>
-void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
-{
-    const auto shiftedAlpha = newAlpha << 24;
-    for (auto& color : table)
-    {
-        WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
-    }
-}
-
-// Function Description:
 // - Generate a Version 5 UUID (specified in RFC4122 4.3)
 //   v5 UUIDs are stable given the same namespace and "name".
 // Arguments:
@@ -443,7 +451,7 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
 // - name: Bytes comprising the name (in a namespace-specific format)
 // Return Value:
 // - a new stable v5 UUID
-GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte>& name)
+GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name)
 {
     // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
@@ -460,8 +468,8 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
 
-    buffer[6] = (buffer[6] & 0x0F) | 0x50; // set the uuid version to 5
-    buffer[8] = (buffer[8] & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
+    buffer.at(6) = (buffer.at(6) & 0x0F) | 0x50; // set the uuid version to 5
+    buffer.at(8) = (buffer.at(8) & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
 
     // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
     // "...the underlying bytes making up the object can be copied into an array

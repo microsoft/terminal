@@ -17,8 +17,14 @@ Author(s):
 #pragma once
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/TerminalApp.h>
 #include "../../inc/conattrs.hpp"
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class ColorSchemeTests;
+};
 
 namespace TerminalApp
 {
@@ -36,6 +42,8 @@ public:
 
     Json::Value ToJson() const;
     static ColorScheme FromJson(const Json::Value& json);
+    bool ShouldBeLayered(const Json::Value& json) const;
+    void LayerJson(const Json::Value& json);
 
     std::wstring_view GetName() const noexcept;
     std::array<COLORREF, COLOR_TABLE_SIZE>& GetTable() noexcept;
@@ -47,4 +55,7 @@ private:
     std::array<COLORREF, COLOR_TABLE_SIZE> _table;
     COLORREF _defaultForeground;
     COLORREF _defaultBackground;
+
+    friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ColorSchemeTests;
 };

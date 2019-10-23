@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <atomic>
 #include <deque>
+#include <future>
 #include <list>
 #include <memory>
 #include <map>
@@ -43,12 +44,15 @@
 #include <iomanip>
 #include <filesystem>
 #include <functional>
+#include <set>
+#include <unordered_set>
 
 // WIL
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
+#include <wil/stl.h>
 #include <wil/com.h>
 #include <wil/filesystem.h>
 

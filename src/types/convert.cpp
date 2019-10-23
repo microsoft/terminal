@@ -44,15 +44,15 @@ static const WORD leftShiftScanCode = 0x2A;
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
-    // Allocate ourselves space in a smart pointer.
-    std::unique_ptr<wchar_t[]> pwsOut = std::make_unique<wchar_t[]>(cchNeeded);
-    THROW_IF_NULL_ALLOC(pwsOut);
+    // Allocate ourselves some space
+    std::wstring out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
-    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, pwsOut.get(), iTarget));
+    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
 
     // Return as a string
-    return std::wstring(pwsOut.get(), cchNeeded);
+    return out;
 }
 
 // Routine Description:
@@ -85,18 +85,18 @@ static const WORD leftShiftScanCode = 0x2A;
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
-    // Allocate ourselves space in a smart pointer
-    std::unique_ptr<char[]> psOut = std::make_unique<char[]>(cchNeeded);
-    THROW_IF_NULL_ALLOC(psOut.get());
+    // Allocate ourselves some space
+    std::string out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
     // clang-format off
 #pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     // clang-format on
-    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, psOut.get(), iTarget, nullptr, nullptr));
+    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, out.data(), iTarget, nullptr, nullptr));
 
     // Return as a string
-    return std::string(psOut.get(), cchNeeded);
+    return out;
 }
 
 // Routine Description:
@@ -206,7 +206,8 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
                                                        SHIFT_PRESSED));
     }
 
-    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+    const auto vk = LOBYTE(keyState);
+    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -284,7 +285,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
         // But it is absolutely valid as 0xFF or 255 unsigned as the correct CP437 character.
         // We need to treat it as unsigned because we're going to pretend it was a keypad entry
         // and you don't enter negative numbers on the keypad.
-        unsigned char const uch = static_cast<unsigned char>(convertedChars[0]);
+        unsigned char const uch = static_cast<unsigned char>(convertedChars.at(0));
 
         // unsigned char values are in the range [0, 255] so we need to be
         // able to store up to 4 chars from the conversion (including the end of string char)

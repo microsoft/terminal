@@ -3,10 +3,16 @@
 
 namespace TerminalApp
 {
-    delegate void LastTabClosedEventArgs();
-    [default_interface]
-    runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
+    enum LaunchMode
     {
+        DefaultMode,
+        MaximizedMode,
+    };
+
+    delegate void LastTabClosedEventArgs();
+    [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
+    {
+
         App();
 
         void Initialize();
@@ -16,19 +22,23 @@ namespace TerminalApp
         // then it might look like TermApp just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is TermApp not
         // registered?" when it definitely is.
-        void Create(UInt64 hParentWnd);
+        void Create();
 
         void LoadSettings();
-
         Windows.UI.Xaml.UIElement GetRoot();
-        Windows.UI.Xaml.Controls.Border GetDragBar{ get; };
+
+        String Title { get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
+        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        void TitlebarClicked();
+        void WindowCloseButtonClicked();
 
-        event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
-        event LastTabClosedEventArgs LastTabClosed;
-
-        String GetTitle();
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
+        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
     }
 }

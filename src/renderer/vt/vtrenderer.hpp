@@ -18,7 +18,6 @@ Author(s):
 #include "../inc/RenderEngineBase.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
-#include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
 #include <string>
@@ -33,11 +32,12 @@ namespace Microsoft::Console::Render
         static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
         static const COORD INVALID_COORDS;
 
-        VtEngine(_In_ wil::unique_hfile hPipe,
+        VtEngine(wil::unique_hfile hPipe,
+                 wil::shared_event shutdownEvent,
                  const Microsoft::Console::IDefaultColorProvider& colorProvider,
                  const Microsoft::Console::Types::Viewport initialViewport);
 
-        virtual ~VtEngine() override = default;
+        ~VtEngine() override;
 
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
@@ -64,12 +64,12 @@ namespace Microsoft::Console::Render
                                                    const COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
-        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+        [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,
-                                                           const bool isBold,
+                                                           const ExtendedAttributes extendedAttrs,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                                          _Out_ FontInfo& pfiFontInfo) noexcept override;
@@ -93,9 +93,14 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
 
-        void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
+        void BeginResizeRequest();
+        void EndResizeRequest();
 
     protected:
+        wil::shared_event _shutdownEvent;
+        std::future<void> _shutdownWatchdog;
+        std::atomic<DWORD> _blockedThreadId;
+
         wil::unique_hfile _hFile;
         std::string _buffer;
 
@@ -127,11 +132,8 @@ namespace Microsoft::Console::Render
         bool _newBottomLine;
         COORD _deferredCursorPos;
 
-        bool _pipeBroken;
-        HRESULT _exitResult;
-        Microsoft::Console::ITerminalOwner* _terminalOwner;
-
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
+        bool _inResizeRequest{ false };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
@@ -170,8 +172,19 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
         [[nodiscard]] HRESULT _BeginUnderline() noexcept;
-
         [[nodiscard]] HRESULT _EndUnderline() noexcept;
+
+        [[nodiscard]] HRESULT _BeginItalics() noexcept;
+        [[nodiscard]] HRESULT _EndItalics() noexcept;
+
+        [[nodiscard]] HRESULT _BeginBlink() noexcept;
+        [[nodiscard]] HRESULT _EndBlink() noexcept;
+
+        [[nodiscard]] HRESULT _BeginInvisible() noexcept;
+        [[nodiscard]] HRESULT _EndInvisible() noexcept;
+
+        [[nodiscard]] HRESULT _BeginCrossedOut() noexcept;
+        [[nodiscard]] HRESULT _EndCrossedOut() noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 

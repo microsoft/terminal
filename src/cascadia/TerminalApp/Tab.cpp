@@ -3,13 +3,17 @@
 
 #include "pch.h"
 #include "Tab.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-static const int TabViewFontSize = 12;
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
 
 Tab::Tab(const GUID& profile, const TermControl& control)
 {
@@ -24,8 +28,7 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 
 void Tab::_MakeTabViewItem()
 {
-    _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
-    _tabViewItem.FontSize(TabViewFontSize);
+    _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
 }
 
 UIElement Tab::GetRootElement()
@@ -49,7 +52,7 @@ TermControl Tab::GetFocusedTerminalControl()
     return _rootPane->GetFocusedTerminalControl();
 }
 
-winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
+winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
 {
     return _tabViewItem;
 }
@@ -124,7 +127,7 @@ void Tab::_Focus()
     auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     if (lastFocusedControl)
     {
-        lastFocusedControl.GetControl().Focus(FocusState::Programmatic);
+        lastFocusedControl.Focus(FocusState::Programmatic);
     }
 }
 
@@ -140,6 +143,21 @@ void Tab::_Focus()
 void Tab::UpdateFocus()
 {
     _rootPane->UpdateFocus();
+}
+
+void Tab::UpdateIcon(const winrt::hstring iconPath)
+{
+    // Don't reload our icon if it hasn't changed.
+    if (iconPath == _lastIconPath)
+    {
+        return;
+    }
+
+    _lastIconPath = iconPath;
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+    });
 }
 
 // Method Description:
@@ -181,36 +199,35 @@ void Tab::SetTabText(const winrt::hstring& text)
 void Tab::Scroll(const int delta)
 {
     auto control = GetFocusedTerminalControl();
-    control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
+    control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
         const auto currentOffset = control.GetScrollOffset();
         control.KeyboardScrollViewport(currentOffset + delta);
     });
 }
 
 // Method Description:
-// - Vertically split the focused pane in our tree of panes, and place the
-//   given TermControl into the newly created pane.
+// - Determines whether the focused pane has sufficient space to be split.
 // Arguments:
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - splitType: The type of split we want to create.
 // Return Value:
-// - <none>
-void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
+// - True if the focused pane can be split. False otherwise.
+bool Tab::CanSplitPane(Pane::SplitState splitType)
 {
-    _rootPane->SplitVertical(profile, control);
+    return _rootPane->CanSplit(splitType);
 }
 
 // Method Description:
-// - Horizontally split the focused pane in our tree of panes, and place the
+// - Split the focused pane in our tree of panes, and place the
 //   given TermControl into the newly created pane.
 // Arguments:
+// - splitType: The type of split we want to create.
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
+void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    _rootPane->SplitHorizontal(profile, control);
+    _rootPane->Split(splitType, profile, control);
 }
 
 // Method Description:
@@ -235,6 +252,32 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 {
     _rootPane->ResizePane(direction);
+}
+
+// Method Description:
+// - Attempt to move focus between panes, as to focus the child on
+//   the other side of the separator. See Pane::NavigateFocus for details.
+// Arguments:
+// - direction: The direction to move the focus in.
+// Return Value:
+// - <none>
+void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+{
+    _rootPane->NavigateFocus(direction);
+}
+
+// Method Description:
+// - Closes the currently focused pane in this tab. If it's the last pane in
+//   this tab, our Closed event will be fired (at a later time) for anyone
+//   registered as a handler of our close event.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Tab::ClosePane()
+{
+    auto focused = _rootPane->GetFocusedPane();
+    focused->Close();
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

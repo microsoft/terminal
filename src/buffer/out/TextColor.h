@@ -91,13 +91,13 @@ public:
         return _meta == ColorType::IsRgb;
     }
 
-    void SetColor(const COLORREF rgbColor);
-    void SetIndex(const BYTE index);
-    void SetDefault();
+    void SetColor(const COLORREF rgbColor) noexcept;
+    void SetIndex(const BYTE index) noexcept;
+    void SetDefault() noexcept;
 
     COLORREF GetColor(std::basic_string_view<COLORREF> colorTable,
                       const COLORREF defaultColor,
-                      const bool brighten) const;
+                      const bool brighten) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept
     {
@@ -113,7 +113,7 @@ private:
     BYTE _green;
     BYTE _blue;
 
-    COLORREF _GetRGB() const;
+    COLORREF _GetRGB() const noexcept;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
