@@ -66,7 +66,7 @@ private:
     void _IncrementCoord(COORD& coord) const;
     void _DecrementCoord(COORD& coord) const;
 
-    COORD s_GetInitialAnchor(const TextBuffer& textBuffer, const Direction dir);
+    COORD _GetInitialAnchor(Microsoft::Console::Types::IUiaData& uiaData, const Direction dir);
 
     static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
 

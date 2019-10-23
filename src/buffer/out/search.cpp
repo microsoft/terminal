@@ -30,7 +30,7 @@ Search::Search(IUiaData& uiaData,
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
     _uiaData(uiaData),
-    _coordAnchor(s_GetInitialAnchor(uiaData.GetTextBuffer(), direction))
+    _coordAnchor(_GetInitialAnchor(uiaData, direction))
 {
     _coordNext = _coordAnchor;
 }
@@ -135,15 +135,16 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - If the screen buffer given already has a selection in it, it will be used to determine the anchor.
 // - Otherwise, we will choose one of the ends of the screen buffer depending on direction.
 // Arguments:
-// - textBuffer - The screen text buffer for determining the anchor
+// - uiaData - The reference to the IUiaData interface type object
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::s_GetInitialAnchor(const TextBuffer& textBuffer, const Direction direction)
+COORD Search::_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
-    if (_uiaData.IsSelectionActive())
+    const auto& textBuffer = uiaData.GetTextBuffer();
+    if (uiaData.IsSelectionActive())
     {
-        auto anchor = _uiaData.GetSelectionAnchor();
+        auto anchor = uiaData.GetSelectionAnchor();
         if (direction == Direction::Forward)
         {
             textBuffer.GetSize().IncrementInBoundsCircular(anchor);
