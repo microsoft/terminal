@@ -2230,7 +2230,8 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexce
         {
             if (*it > cCurrCursorPos.X)
             {
-                cNewCursorPos.X = *it;
+                // make sure we don't exceed the width of the buffer
+                cNewCursorPos.X = std::min(*it, sWidth);
                 break;
             }
         }
