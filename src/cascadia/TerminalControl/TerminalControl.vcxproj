@@ -51,6 +51,8 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
+    <Midl Include="TermControlAutomationPeer.idl" />
+    <Midl Include="TSFInputControl.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
