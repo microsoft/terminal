@@ -230,7 +230,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
-        Search searcher{gci.renderData, wstr, searchDirection, sensitivity, _endpointToCoord(_pData, searchAnchor) };
+        Search searcher{ gci.renderData, wstr, searchDirection, sensitivity, _endpointToCoord(_pData, searchAnchor) };
 
         HRESULT hr = S_OK;
         if (searcher.FindNext())

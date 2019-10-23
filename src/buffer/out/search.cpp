@@ -105,8 +105,8 @@ void Search::Select() const
 }
 
 // Routine Description:
-// - In console host, we takes the found word and applies the given color to it in the screen buffer
-// - Interminal, we just select the found word, but we do not ,modify the buffer
+// - In console host, we take the found word and apply the given color to it in the screen buffer
+// - In Windows Terminal, we just select the found word, but we do not ,modify the buffer
 // Arguments:
 // - ulAttr - The legacy color attribute to apply to the word
 void Search::Color(const TextAttribute attr) const
@@ -229,7 +229,7 @@ bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view 
 
     for (size_t i = 0; i < one.size(); i++)
     {
-        if (_ApplySensitivity(one[i]) != _ApplySensitivity(two[i]))
+        if (_ApplySensitivity(gsl::at(one, i)) != _ApplySensitivity(gsl::at(two, i)))
         {
             return false;
         }

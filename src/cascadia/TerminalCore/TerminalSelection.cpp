@@ -472,7 +472,7 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 // Arguments:
 // - coordSelectionStart - Anchor point (start of selection) for the region to be colored
 // - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
-// - attr - Not used. 
+// - attr - Not used.
 void Terminal::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute)
 {
     SelectNewRegion(coordSelectionStart, coordSelectionEnd);
