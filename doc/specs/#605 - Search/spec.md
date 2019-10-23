@@ -20,20 +20,32 @@ One of the superior features of iTerm2 is it's content search. The search comes 
 Our ultimate goal is to provide both search within one tab and search from all tabs experiences. But we can start with one-tab search. The search experience should have following features:
 
 1. The search is triggered by keybindings "Ctrl + F". This coincides with other editors. In the future we will also consider adding a "Find" in the dropdown menu. 
-2. The user search in a 
-3. We can have multiple search methods. The simplest one is text exact match with case insensitive. Other match methods include case-sensitive exact match and regex match. In the first phrase, we will focus on case-insensitive exact match. 
-4. The search starts from the line that the cursor is on, and go up from most recent lines. We automatically go around if we reach the end of the text buffer. 
+2. The user search in a XAML AutoSuggestBox on the top right corner of the Terminal window. 
+3. We can have multiple search methods. The simplest one is text exact match. Other match methods include case-sensitive exact match and regex match. In the first phrase, we will focus on case sensitive/insensitive text exact match. 
+4. If currently there is no active selection, the search starts from the line that the cursor is on. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
 5. The search dialog should not block terminal's view. 
 
-Conhost already has a module for search. It realizes case sensitive or insensitive exact text match search, and it provides methods to select and color found word. However, we want to make search as a shared component between Terminal and Console host. Now search module is part of Conhost, and its dependencies include BufferOut and some other types in ConHost such as SCREEN_INFORMATION. In order to make Search a shared component, we need to remove its dependency on ConHost types. BufferOut is already a shared component, but we need to make sure there is no other Conhost dependency. 
+Conhost already has a module for search. It realizes case sensitive or insensitive exact text match search, and it provides methods to select the found word. However, we want to make search as a shared component between Terminal and Console host. Now search module is part of Conhost, and its dependencies include BufferOut and some other types in ConHost such as SCREEN_INFORMATION. In order to make Search a shared component, we need to remove its dependency on ConHost types. BufferOut is already a shared component, but we need to make sure there is no other Conhost dependency.
+
+Search process:
+
+Search is performed on a XAML AutoSuggestBox. Once the user click the "Find" icon, we start from the cursor (or the current selection), and try to find the exact text in the text buffer. The nearest searched one will be selected. And we set the search start point to the selected text. The next time "Find" button is clicked, the search will start before or after the previous searched text.
+The user can choose to search up or down by choosing up arrow or down arrow buttons.
+The user can choose to do case sensitive or insensitive match by clicking a button.
+If the user click the "X" button, the search stopped and the search box disappears. In phrase one we do not store any state, but in the future we can consider storing the search history. 
 
 ## UI/UX Design
 
-[comment]: # What will this fix/feature look like? How will it affect the end user?
+
 
 ## Capabilities
 
-[comment]: # Discuss how the proposed fixes/features impact the following key considerations:
+1. The user can search exact matched text in the text buffer of the Terminal Screen. 
+2. The user can choose to search case sensitively and insensitively. 
+3. The user can search up or down. 
+4. Found text will be selected. 
+5. The search will start from the active selected text (inclusive) if there is one, or where the cursor is. 
+5. The search will automatically go around when it reaches the starting point. 
 
 ### Accessibility
 
