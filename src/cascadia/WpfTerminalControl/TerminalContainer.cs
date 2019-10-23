@@ -100,12 +100,7 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
 
-            NativeMethods.TerminalTriggerResize(this.terminal, this.ActualWidth * dpiScale.DpiScaleX, this.ActualHeight * dpiScale.DpiScaleY, out var dimensions);
-
-            this.Rows = dimensions.Y;
-            this.Columns = dimensions.X;
-
-            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+            this.TriggerResize(this.RenderSize);
         }
 
         /// <summary>
