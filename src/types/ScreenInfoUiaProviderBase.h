@@ -38,7 +38,7 @@ namespace Microsoft::Console::Types
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData);
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;

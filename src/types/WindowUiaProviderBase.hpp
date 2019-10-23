@@ -36,7 +36,7 @@ namespace Microsoft::Console::Types
 
     protected:
         WindowUiaProviderBase() = default;
-        HRESULT RuntimeClassInitialize(IUiaWindow* baseWindow);
+        HRESULT RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept;
 
         WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
         WindowUiaProviderBase(WindowUiaProviderBase&&) = default;

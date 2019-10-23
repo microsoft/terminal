@@ -140,21 +140,21 @@ namespace Microsoft::Console::Types
     public:
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
-                                       _In_ IRawElementProviderSimple* const pProvider);
+                                       _In_ IRawElementProviderSimple* const pProvider) noexcept;
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Cursor& cursor);
+                                       const Cursor& cursor) noexcept;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Endpoint start,
                                        const Endpoint end,
-                                       const bool degenerate);
+                                       const bool degenerate) noexcept;
 
-        HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a);
+        HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
         UiaTextRangeBase(UiaTextRangeBase&&) = default;
         UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;

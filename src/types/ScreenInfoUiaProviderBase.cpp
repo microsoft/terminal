@@ -31,7 +31,7 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
     return psa;
 }
 
-HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData)
+HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     _pData = pData;

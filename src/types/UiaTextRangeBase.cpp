@@ -102,7 +102,7 @@ void UiaTextRangeBase::_outputObjectState()
 #endif // _DEBUG
 
 // degenerate range constructor.
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider)
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -127,7 +127,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
 
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
-                                                 const Cursor& cursor)
+                                                 const Cursor& cursor) noexcept
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
 
@@ -153,7 +153,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  const Endpoint start,
                                                  const Endpoint end,
-                                                 const bool degenerate)
+                                                 const bool degenerate) noexcept
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
     RETURN_HR_IF(E_INVALIDARG, !degenerate && start > end);
@@ -200,7 +200,7 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     _degenerate = true;
 }
 
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a)
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept
 {
     _pProvider = a._pProvider;
     _start = a._start;

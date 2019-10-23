@@ -8,7 +8,7 @@
 
 using namespace Microsoft::Console::Types;
 
-HRESULT WindowUiaProviderBase::RuntimeClassInitialize(IUiaWindow* baseWindow)
+HRESULT WindowUiaProviderBase::RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept
 {
     _signalEventFiring = {};
     _baseWindow = baseWindow;
