@@ -341,6 +341,11 @@ void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
 {
+    if (ch == '\t')
+    {
+        return;
+    }
+
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->SendCharEvent(ch);
 }
