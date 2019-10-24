@@ -1386,7 +1386,9 @@ namespace TerminalAppLocalTests
         VerifyParseSucceeded(settingsJson);
         CascadiaSettings settings;
         settings._ParseJsonString(settingsJson, false);
-        VERIFY_ARE_EQUAL(expectedPath, settings._profiles.at(0).GetExpandedIconPath());
+        settings.LayerJson(settings._userSettings);
+        VERIFY_IS_FALSE(settings._profiles.empty(), 0);
+        VERIFY_ARE_EQUAL(expectedPath, settings._profiles[0].GetExpandedIconPath());
     }
     void SettingsTests::TestProfileBackgroundImageWithEnvVar()
     {
@@ -1403,10 +1405,13 @@ namespace TerminalAppLocalTests
         })" };
 
         VerifyParseSucceeded(settingsJson);
-        CascadiaSettings settings;
+        CascadiaSettings settings{};
         settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+        VERIFY_IS_FALSE(settings._profiles.empty(), 0);
+
         GlobalAppSettings globalSettings{};
-        auto terminalSettings = settings._profiles.at(0).CreateTerminalSettings(globalSettings.GetColorSchemes());
+        auto terminalSettings = settings._profiles[0].CreateTerminalSettings(globalSettings.GetColorSchemes());
         VERIFY_ARE_EQUAL(expectedPath, terminalSettings.BackgroundImage());
     }
 }
