@@ -298,10 +298,10 @@ UiaEngine::UiaEngine() noexcept :
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const COLORREF /*colorForeground*/,
-                                                   const COLORREF /*colorBackground*/,
-                                                   const WORD /*legacyColorAttribute*/,
-                                                   const ExtendedAttributes /*extendedAttrs*/,
-                                                   const bool /*isSettingDefaultBrushes*/) noexcept
+                                                      const COLORREF /*colorBackground*/,
+                                                      const WORD /*legacyColorAttribute*/,
+                                                      const ExtendedAttributes /*extendedAttrs*/,
+                                                      const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;
 }
