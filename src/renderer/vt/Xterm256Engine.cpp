@@ -84,7 +84,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
             {
                 RETURN_IF_FAILED(endFn(this));
             }
-            WI_SetAllFlags(_lastExtendedAttrsState, attr);
+            WI_ToggleAllFlags(_lastExtendedAttrsState, attr);
         }
         return S_OK;
     };

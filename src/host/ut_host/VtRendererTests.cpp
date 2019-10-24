@@ -94,6 +94,7 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_METHOD_SETUP(MethodSetup)
     {
+        qExpectedInput.clear();
         _shutdownEvent.ResetEvent();
         return true;
     }
@@ -108,6 +109,7 @@ class Microsoft::Console::Render::VtRendererTest
     TEST_METHOD(Xterm256TestInvalidate);
     TEST_METHOD(Xterm256TestColors);
     TEST_METHOD(Xterm256TestCursor);
+    TEST_METHOD(Xterm256TestExtendedAttributes);
 
     TEST_METHOD(XtermTestInvalidate);
     TEST_METHOD(XtermTestColors);
@@ -129,6 +131,8 @@ class Microsoft::Console::Render::VtRendererTest
     bool WriteCallback(const char* const pch, size_t const cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
+
+    void VerifyExpectedInputsDrained();
 };
 
 Viewport VtRendererTest::SetUpViewport()
@@ -139,6 +143,18 @@ Viewport VtRendererTest::SetUpViewport()
     view.Right = 79;
 
     return Viewport::FromInclusive(view);
+}
+
+void VtRendererTest::VerifyExpectedInputsDrained()
+{
+    if (!qExpectedInput.empty())
+    {
+        for (const auto& exp : qExpectedInput)
+        {
+            Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: %hs", exp.c_str()));
+        }
+        VERIFY_FAIL(L"there should be no remaining un-drained expected input");
+    }
 }
 
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
@@ -610,6 +626,93 @@ void VtRendererTest::Xterm256TestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
+}
+
+void VtRendererTest::Xterm256TestExtendedAttributes()
+{
+    // Run this test for each and every possible combination of states.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES()
+
+    bool italics, blink, invisible, crossedOut;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"crossedOut", crossedOut));
+
+    ExtendedAttributes desiredAttrs{ ExtendedAttributes::Normal };
+    std::vector<std::string> onSequences, offSequences;
+
+    // Collect up a VT sequence to set the state given the method properties
+    if (italics)
+    {
+        WI_SetFlag(desiredAttrs, ExtendedAttributes::Italics);
+        onSequences.push_back("\x1b[3m");
+        offSequences.push_back("\x1b[23m");
+    }
+    if (blink)
+    {
+        WI_SetFlag(desiredAttrs, ExtendedAttributes::Blinking);
+        onSequences.push_back("\x1b[5m");
+        offSequences.push_back("\x1b[25m");
+    }
+    if (invisible)
+    {
+        WI_SetFlag(desiredAttrs, ExtendedAttributes::Invisible);
+        onSequences.push_back("\x1b[8m");
+        offSequences.push_back("\x1b[28m");
+    }
+    if (crossedOut)
+    {
+        WI_SetFlag(desiredAttrs, ExtendedAttributes::CrossedOut);
+        onSequences.push_back("\x1b[9m");
+        offSequences.push_back("\x1b[29m");
+    }
+
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), _shutdownEvent, p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    VERIFY_IS_TRUE(engine->_firstPaint);
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_FALSE(engine->_firstPaint);
+    });
+
+    Viewport view = SetUpViewport();
+
+    Log::Comment(NoThrowString().Format(
+        L"Test changing the text attributes"));
+
+    Log::Comment(NoThrowString().Format(
+        L"----Turn the extended attributes on----"));
+    TestPaint(*engine, [&]() {
+        // Merge the "on" sequences into expected input.
+        std::copy(onSequences.cbegin(), onSequences.cend(), std::back_inserter(qExpectedInput));
+        VERIFY_SUCCEEDED(engine->_UpdateExtendedAttrs(desiredAttrs));
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"----Turn the extended attributes off----"));
+    TestPaint(*engine, [&]() {
+        std::copy(offSequences.cbegin(), offSequences.cend(), std::back_inserter(qExpectedInput));
+        VERIFY_SUCCEEDED(engine->_UpdateExtendedAttrs(ExtendedAttributes::Normal));
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"----Turn the extended attributes back on----"));
+    TestPaint(*engine, [&]() {
+        std::copy(onSequences.cbegin(), onSequences.cend(), std::back_inserter(qExpectedInput));
+        VERIFY_SUCCEEDED(engine->_UpdateExtendedAttrs(desiredAttrs));
+    });
+
+    VerifyExpectedInputsDrained();
 }
 
 void VtRendererTest::XtermTestInvalidate()
