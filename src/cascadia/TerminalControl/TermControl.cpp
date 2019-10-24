@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TermControl.h"
+#include <regex>
 #include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
@@ -1206,6 +1207,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Replaces \r\n with \r, then invokes _SendInputToConnection()
+    //   with the new string. This ensures the behaviour will be as expected
+    //   when text containing Windows line endings is pasted to the terminal.
+    //   If we skip this step, we end up with double newlines.
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        const static std::wregex regex{ L"\r\n" };
+        const auto stripped = std::regex_replace(wstr, regex, L"\r");
+        _SendInputToConnection(stripped);
+    }
+
+    // Method Description:
     // - Update the font with the renderer. This will be called either when the
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
@@ -1442,7 +1455,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
         // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
