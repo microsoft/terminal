@@ -4,7 +4,7 @@ One way (currently the only way) to configure Windows Terminal is by editing the
 `profiles.json` settings file. At the time of writing you can open the settings
 file in your default editor by selecting `Settings` from the WT pull down menu.
 
-The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\profiles.json`.
+The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\profiles.json`.
 
 As of [#2515](https://github.com/microsoft/terminal/pull/2515), the settings are
 split into _two_ files: a hardcoded `defaults.json`, and `profiles.json`, which

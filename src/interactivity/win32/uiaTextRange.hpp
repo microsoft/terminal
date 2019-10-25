@@ -54,12 +54,6 @@ namespace Microsoft::Console::Interactivity::Win32
                                 _In_ BOOL ignoreCase,
                                 _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
-    protected:
-        void _ChangeViewport(const SMALL_RECT NewWindow) override;
-        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
-        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
-
-    private:
         // degenerate range
         UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider);
@@ -81,6 +75,12 @@ namespace Microsoft::Console::Interactivity::Win32
                      _In_ IRawElementProviderSimple* const pProvider,
                      const UiaPoint point);
 
+    protected:
+        void _ChangeViewport(const SMALL_RECT NewWindow) override;
+        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
+        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
+
+    private:
         HWND _getWindowHandle() const;
 
 #ifdef UNIT_TESTING

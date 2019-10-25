@@ -84,8 +84,6 @@ private:
     void _CancelMarkSelection();
     void _CancelMouseSelection();
 
-    static std::unique_ptr<Selection> _instance;
-
     // -------------------------------------------------------------------------------------------------------
     // input handling (selectionInput.cpp)
 public:

@@ -45,6 +45,7 @@ Settings::Settings() :
     _fCtrlKeyShortcutsDisabled(false),
     _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
     _fFilterOnPaste(false),
+    _LaunchFaceName{},
     _fTrimLeadingZeros(FALSE),
     _fEnableColorSelection(FALSE),
     _fAllowAltF4Close(true),
@@ -75,8 +76,6 @@ Settings::Settings() :
 
     ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
-
-    ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
 
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
@@ -404,13 +403,13 @@ void Settings::SetFilterOnPaste(const bool fFilterOnPaste)
     _fFilterOnPaste = fFilterOnPaste;
 }
 
-const WCHAR* const Settings::GetLaunchFaceName() const
+const std::wstring_view Settings::GetLaunchFaceName() const
 {
     return _LaunchFaceName;
 }
-void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength)
+void Settings::SetLaunchFaceName(const std::wstring_view launchFaceName)
 {
-    StringCchCopyW(_LaunchFaceName, cchLength, LaunchFaceName);
+    _LaunchFaceName = launchFaceName;
 }
 
 UINT Settings::GetCodePage() const
@@ -630,9 +629,10 @@ const WCHAR* const Settings::GetFaceName() const
 {
     return _FaceName;
 }
-void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength)
+void Settings::SetFaceName(const std::wstring_view faceName)
 {
-    StringCchCopyW(_FaceName, cchLength, pcszFaceName);
+    auto extent = std::min<size_t>(faceName.size(), ARRAYSIZE(_FaceName));
+    StringCchCopyW(_FaceName, extent, faceName.data());
 }
 
 UINT Settings::GetCursorSize() const

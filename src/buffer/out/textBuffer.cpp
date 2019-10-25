@@ -1065,14 +1065,10 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
 {
     try
     {
-        // TODO: GH 602 the font name needs to be passed and stored around as an actual bounded type, not an implicit bounds on LF_FACESIZE
-        const auto faceLength = wcsnlen_s(fontFaceName, LF_FACESIZE);
-        const std::wstring_view faceNameView{ fontFaceName, faceLength };
-
         std::ostringstream htmlBuilder;
 
         // First we have to add some standard
@@ -1096,7 +1092,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
             htmlBuilder << "font-family:";
             htmlBuilder << "'";
-            htmlBuilder << ConvertToA(CP_UTF8, faceNameView);
+            htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
             htmlBuilder << "',";
             // even with different font, add monospace as fallback
             htmlBuilder << "monospace;";

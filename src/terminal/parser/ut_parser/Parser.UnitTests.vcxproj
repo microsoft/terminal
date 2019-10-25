@@ -2,13 +2,27 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
 
-  <Import Project="Parser.UnitTests-common.vcxproj" />
+
+  <ItemGroup>
+    <ClInclude Include="..\precomp.h" />
+  </ItemGroup>
 
   <!-- Only add closed-source files, dependencies to this file.
       Any open-source files can go in Parser.UnitTests-common.vcxproj -->
   <ItemGroup>
     <ClCompile Include="InputEngineTest.cpp" />
+    <ClCompile Include="OutputEngineTest.cpp" />
+    <ClCompile Include="StateMachineTest.cpp" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">

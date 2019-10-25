@@ -259,6 +259,11 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     return translated && manuallyHandled;
 }
 
+bool Terminal::SendCharEvent(const wchar_t ch)
+{
+    return _terminalInput->HandleChar(ch);
+}
+
 // Method Description:
 // - Returns the keyboard's scan code for the given virtual key code.
 // Arguments:
@@ -363,6 +368,10 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     auto& cursor = _buffer->GetCursor();
     const Viewport bufferSize = _buffer->GetSize();
 
+    // Defer the cursor drawing while we are iterating the string, for a better performance.
+    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
+    cursor.StartDeferDrawing();
+
     for (size_t i = 0; i < stringView.size(); i++)
     {
         wchar_t wch = stringView[i];
@@ -416,18 +425,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
         }
 
-        // If we're about to try to place the cursor past the right edge of the buffer, move it down a row
-        // This is another patch that GH#780 should supersede. This is really correcting for other bad situations
-        // like bisecting (writing only the leading half because there's no room for the trailing) a wide character
-        // into the buffer. However, it's not really all-up correctable without implementing a full WriteStream here.
-        // Also, this particular code RIGHT HERE shouldn't need to know anything about the cursor or the cells advanced
-        // which also will be solved by GH#780 (hopefully).
-        if (proposedCursorPosition.X > bufferSize.RightInclusive())
-        {
-            proposedCursorPosition.X = 0;
-            proposedCursorPosition.Y++;
-        }
-
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
         const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         if (newRows > 0)
@@ -463,6 +460,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             _NotifyScrollEvent();
         }
     }
+
+    cursor.EndDeferDrawing();
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

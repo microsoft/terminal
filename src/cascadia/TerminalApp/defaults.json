@@ -45,8 +45,7 @@
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": true,
-            "acrylicOpacity": 0.75
+            "useAcrylic": false
         }
     ],
     "schemes":

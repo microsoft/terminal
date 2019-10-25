@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+  <PropertyGroup>
+    
+    <TargetFrameworks>net472</TargetFrameworks>
+    <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
+    <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
+
+    <RepoBinPath>$(MSBuildThisFileDirectory)..\..\..\bin\</RepoBinPath>
+    <IntermediateOutputPath>$(RepoBinPath)..\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
+    <OutputPath>$(RepoBinPath)$(Platform)\$(Configuration)\$(MSBuildProjectName)</OutputPath>
+    <BeforePack>CollectNativePackContents</BeforePack>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>0.5</Version>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\PublicTerminalCore\PublicTerminalCore.vcxproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json">
+      <Visible>true</Visible>
+      <Link>stylecop.json</Link>
+    </AdditionalFiles>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Page Include="**\*.xaml" Exclude="App.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Update="**\*.xaml.cs">
+      <DependentUpon>%(Filename)</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="CollectNativePackContents">
+    <ItemGroup>
+      <None Include="$(RepoBinPath)\Win32\$(Configuration)\PublicTerminalCore.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x86\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\x64\$(Configuration)\PublicTerminalCore.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x64\native\</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+      
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+</Project>
