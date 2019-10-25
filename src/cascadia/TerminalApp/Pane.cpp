@@ -560,7 +560,7 @@ void Pane::_CloseChild(const bool closeFirst)
     {
         // When the remaining child is a leaf, that means both our childern were
         // previously leaves, and the only difference in their borders is the
-        // border that we gave them. Take a logical AND of those two children to
+        // border that we gave them. Take a bitwise AND of those two children to
         // remove that border. Other borders the children might have, they
         // inherited from us, so the flag will be set for both children.
         _borders = _firstChild->_borders & _secondChild->_borders;
