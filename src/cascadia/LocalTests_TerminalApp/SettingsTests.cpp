@@ -1384,7 +1384,7 @@ namespace TerminalAppLocalTests
         })" };
 
         VerifyParseSucceeded(settingsJson);
-        CascadiaSettings settings;
+        CascadiaSettings settings{};
         settings._ParseJsonString(settingsJson, false);
         settings.LayerJson(settings._userSettings);
         VERIFY_IS_FALSE(settings._profiles.empty(), 0);
