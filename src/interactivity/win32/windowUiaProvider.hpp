@@ -49,14 +49,14 @@ namespace Microsoft::Console::Interactivity::Win32
                                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
         IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
 
+        WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow);
+        ~WindowUiaProvider();
+
     protected:
         const OLECHAR* AutomationIdPropertyName = L"Console Window";
         const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Console Host Window";
 
     private:
-        WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow);
-        ~WindowUiaProvider();
-
         ScreenInfoUiaProvider* _pScreenInfoProvider;
     };
 }

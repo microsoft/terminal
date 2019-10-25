@@ -28,6 +28,7 @@ Abstract:
 #include <stdlib.h>
 #include <string.h>
 #include <shellscalingapi.h>
+#include <windowsx.h>
 
 #include "../inc/LibraryIncludes.h"
 

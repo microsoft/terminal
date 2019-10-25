@@ -15,14 +15,7 @@ using namespace Microsoft::Console;
 // - a string representation of the GUID. On failure, throws E_INVALIDARG.
 std::wstring Utils::GuidToString(const GUID guid)
 {
-    // 39: 38, plus swprintf needs somewhere to store the NUL terminator.
-    std::array<wchar_t, 39> guid_cstr;
-    const int written = swprintf(guid_cstr.data(), guid_cstr.size(), L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-
-    THROW_HR_IF(E_INVALIDARG, written == -1);
-
-    // size - 1: The returned string should not be created including the NUL terminator.
-    return std::wstring(guid_cstr.data(), guid_cstr.size() - 1);
+    return wil::str_printf<std::wstring>(L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 }
 
 // Method Description:

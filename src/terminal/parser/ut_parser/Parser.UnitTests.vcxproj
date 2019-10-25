@@ -12,6 +12,7 @@
   <ItemGroup>
     <ClCompile Include="InputEngineTest.cpp" />
     <ClCompile Include="OutputEngineTest.cpp" />
+    <ClCompile Include="StateMachineTest.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
