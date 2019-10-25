@@ -4,11 +4,13 @@
 #include "precomp.h"
 
 #include "../TerminalApp/ColorScheme.h"
+#include "../TerminalApp/Profile.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace WEX::Common;
 
 namespace TerminalAppUnitTests
 {
@@ -20,10 +22,16 @@ namespace TerminalAppUnitTests
 
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
+        TEST_METHOD(ProfileGeneratesGuid);
+        TEST_METHOD(DiffProfile);
+        TEST_METHOD(DiffProfileWithNull);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
             reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
+
+            // Use 4 spaces to indent instead of \t
+            _builder.settings_["indentation"] = "    ";
             return true;
         }
 
@@ -32,6 +40,7 @@ namespace TerminalAppUnitTests
 
     private:
         std::unique_ptr<Json::CharReader> reader;
+        Json::StreamWriterBuilder _builder;
     };
 
     Json::Value JsonTests::VerifyParseSucceeded(std::string content)
@@ -76,7 +85,7 @@ namespace TerminalAppUnitTests
                                           "\"name\" : \"Campbell\","
                                           "\"purple\" : \"#881798\","
                                           "\"red\" : \"#C50F1F\","
-                                          "\"white\" : \"#CCCCCC\","
+                                          "\"white\" : \"#CCC\","
                                           "\"yellow\" : \"#C19C00\""
                                           "}" };
 
@@ -89,6 +98,7 @@ namespace TerminalAppUnitTests
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
         Utils::InitializeCampbellColorTable(campbellSpan);
+        Utils::SetColorTableAlpha(campbellSpan, 0);
 
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {
@@ -97,4 +107,114 @@ namespace TerminalAppUnitTests
             VERIFY_ARE_EQUAL(expected, actual);
         }
     }
+
+    void JsonTests::ProfileGeneratesGuid()
+    {
+        // Parse some profiles without guids. We should NOT generate new guids
+        // for them. If a profile doesn't have a GUID, we'll leave its _guid
+        // set to nullopt. CascadiaSettings::_ValidateProfilesHaveGuid will
+        // ensure all profiles have a GUID that's actually set.
+        // The null guid _is_ a valid guid, so we won't re-generate that
+        // guid. null is _not_ a valid guid, so we'll leave that nullopt
+
+        // See SettingsTests::ValidateProfilesGenerateGuids for a version of
+        // this test that includes synthesizing GUIDS for profiles without GUIDs
+        // set
+
+        const std::string profileWithoutGuid{ R"({
+                                              "name" : "profile0"
+                                              })" };
+        const std::string secondProfileWithoutGuid{ R"({
+                                              "name" : "profile1"
+                                              })" };
+        const std::string profileWithNullForGuid{ R"({
+                                              "name" : "profile2",
+                                              "guid" : null
+                                              })" };
+        const std::string profileWithNullGuid{ R"({
+                                              "name" : "profile3",
+                                              "guid" : "{00000000-0000-0000-0000-000000000000}"
+                                              })" };
+        const std::string profileWithGuid{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
+                                              })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
+        const auto profile1Json = VerifyParseSucceeded(secondProfileWithoutGuid);
+        const auto profile2Json = VerifyParseSucceeded(profileWithNullForGuid);
+        const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
+        const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
+
+        const auto profile0 = Profile::FromJson(profile0Json);
+        const auto profile1 = Profile::FromJson(profile1Json);
+        const auto profile2 = Profile::FromJson(profile2Json);
+        const auto profile3 = Profile::FromJson(profile3Json);
+        const auto profile4 = Profile::FromJson(profile4Json);
+        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const GUID nullGuid{ 0 };
+
+        VERIFY_IS_FALSE(profile0._guid.has_value());
+        VERIFY_IS_FALSE(profile1._guid.has_value());
+        VERIFY_IS_FALSE(profile2._guid.has_value());
+        VERIFY_IS_TRUE(profile3._guid.has_value());
+        VERIFY_IS_TRUE(profile4._guid.has_value());
+
+        VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+    }
+
+    void JsonTests::DiffProfile()
+    {
+        Profile profile0;
+        Profile profile1;
+
+        Log::Comment(NoThrowString().Format(
+            L"Both these profiles are the same, their diff should have _no_ values"));
+
+        auto diff = profile1.DiffToJson(profile0);
+
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+
+        VERIFY_ARE_EQUAL(0u, diff.getMemberNames().size());
+
+        profile1._name = L"profile1";
+        diff = profile1.DiffToJson(profile0);
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
+    }
+
+    void JsonTests::DiffProfileWithNull()
+    {
+        Profile profile0;
+        Profile profile1;
+
+        profile0._icon = L"foo";
+
+        Log::Comment(NoThrowString().Format(
+            L"Case 1: Base object has an optional that the derived does not - diff will have null for that value"));
+        auto diff = profile1.DiffToJson(profile0);
+
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+
+        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
+        VERIFY_IS_TRUE(diff.isMember("icon"));
+        VERIFY_IS_TRUE(diff["icon"].isNull());
+
+        Log::Comment(NoThrowString().Format(
+            L"Case 2: Add an optional to the derived object that's not present in the root."));
+
+        profile0._icon = std::nullopt;
+        profile1._icon = L"bar";
+
+        diff = profile1.DiffToJson(profile0);
+
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+
+        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
+        VERIFY_IS_TRUE(diff.isMember("icon"));
+        VERIFY_IS_TRUE(diff["icon"].isString());
+        VERIFY_IS_TRUE("bar" == diff["icon"].asString());
+    }
+
 }

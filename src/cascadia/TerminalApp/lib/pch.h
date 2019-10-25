@@ -18,11 +18,13 @@
 #undef GetCurrentTime
 #endif
 
+#include <wil/cppwinrt.h>
+
 #include <unknwn.h>
 
 #include <hstring.h>
 
-#include <winrt/Windows.ApplicationModel.Resources.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/windows.ui.core.h>
@@ -45,7 +47,7 @@
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
-TRACELOGGING_DECLARE_PROVIDER(g_hTerminalWin32Provider);
+TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <telemetry\ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 

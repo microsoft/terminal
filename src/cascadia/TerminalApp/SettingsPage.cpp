@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
     void SettingsPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
         // set the initial SelectedItem
-        for (int i = 0; i < SettingsNav().MenuItems().Size(); i++)
+        for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
             const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::NavigationViewItemBase>();
             const hstring globalsPage = L"Globals_Page";

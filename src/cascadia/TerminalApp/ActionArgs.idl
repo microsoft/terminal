@@ -1,0 +1,58 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    // An empty interface must specify an explicit [uuid] to ensure uniqueness.
+    // We also manually have to specify a "version" attribute to make the compiler happy.
+    [uuid("191C2BDE-1A60-4BAB-9765-D850F0EF2CAC")][version(1)] interface IActionArgs{};
+
+    interface IActionEventArgs
+    {
+        Boolean Handled;
+        IActionArgs ActionArgs { get; };
+    };
+
+    enum Direction
+    {
+        Left = 0,
+        Right,
+        Up,
+        Down
+    };
+
+    [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
+    {
+        ActionEventArgs(IActionArgs args);
+    };
+
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs
+    {
+        Boolean TrimWhitespace { get; };
+    };
+
+    [default_interface] runtimeclass NewTabWithProfileArgs : IActionArgs
+    {
+        Int32 ProfileIndex { get; };
+    };
+
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
+    {
+        Int32 TabIndex { get; };
+    };
+
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs
+    {
+        Direction Direction { get; };
+    };
+
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs
+    {
+        Direction Direction { get; };
+    };
+
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
+    {
+        Int32 Delta { get; };
+    };
+}

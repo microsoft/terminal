@@ -112,25 +112,6 @@ bool CheckLastError(HANDLE handle, PCWSTR pwszFunc)
     }
 }
 
-HRESULT ExpandPathToMutable(_In_ PCWSTR pwszPath, _Out_ wistd::unique_ptr<wchar_t[]>& MutablePath) noexcept
-{
-    // Find how many characters we need.
-    const DWORD cchExpanded = ExpandEnvironmentStringsW(pwszPath, nullptr, 0);
-    RETURN_LAST_ERROR_IF(0 == cchExpanded);
-
-    // Allocate space to hold result
-    wistd::unique_ptr<wchar_t[]> NewMutable = wil::make_unique_nothrow<wchar_t[]>(cchExpanded);
-    RETURN_IF_NULL_ALLOC(NewMutable);
-
-    // Expand string into allocated space
-    RETURN_LAST_ERROR_IF(0 == ExpandEnvironmentStringsW(pwszPath, NewMutable.get(), cchExpanded));
-
-    // On success, give our string back out (swapping with what was given and we'll free it for the caller.)
-    MutablePath.swap(NewMutable);
-
-    return S_OK;
-}
-
 bool CheckIfFileExists(_In_ PCWSTR pwszPath) noexcept
 {
     wil::unique_hfile hFile(CreateFileW(pwszPath,

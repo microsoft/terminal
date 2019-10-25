@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 #include "TerminalPage.h"
+#include "OptionsPage.h" // For InitializeCursorSize
 #include "ColorControl.h"
 #include <functional>
 
@@ -323,10 +324,22 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
     case IDD_TERMINAL_UNDERSCORE:
     case IDD_TERMINAL_EMPTYBOX:
     case IDD_TERMINAL_SOLIDBOX:
+    {
         gpStateInfo->CursorType = item - IDD_TERMINAL_LEGACY_CURSOR;
         UpdateApplyButton(hDlg);
+
+        // See GH#1219 - When the cursor state is something other than legacy,
+        // we need to manually check the "IDD_CURSOR_ADVANCED" radio button on
+        // the Options page. This will prevent the Options page from manually
+        // resetting the cursor to legacy.
+        if (g_hOptionsDlg != INVALID_HANDLE_VALUE)
+        {
+            InitializeCursorSize(g_hOptionsDlg);
+        }
+
         handled = true;
         break;
+    }
     case IDD_DISABLE_SCROLLFORWARD:
         gpStateInfo->TerminalScrolling = IsDlgButtonChecked(hDlg, IDD_DISABLE_SCROLLFORWARD);
         UpdateApplyButton(hDlg);

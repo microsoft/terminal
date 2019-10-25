@@ -26,7 +26,7 @@ using namespace Microsoft::Console::Interactivity;
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     FontInfo fiFont(gci.GetFaceName(),
-                    static_cast<BYTE>(gci.GetFontFamily()),
+                    gsl::narrow_cast<unsigned char>(gci.GetFontFamily()),
                     gci.GetFontWeight(),
                     gci.GetFontSize(),
                     gci.GetCodePage());
@@ -361,19 +361,6 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // If there was no clip rect, we'll clip to the entire buffer size.
     auto clip = Viewport::FromInclusive(clipRectGiven.value_or(buffer.ToInclusive()));
 
-    // Account for the scroll margins set by DECSTBM
-    // DECSTBM command can sometimes apply a clipping behavior as well. Check if we have any
-    // margins defined by DECSTBM and further restrict the clipping area here.
-    if (screenInfo.AreMarginsSet())
-    {
-        const auto margin = screenInfo.GetScrollingRegion();
-
-        // Update the clip rectangle to only include the area that is also in the margin.
-        clip = Viewport::Intersect(clip, margin);
-
-        // We'll also need to update the source rectangle, but we need to do that later.
-    }
-
     // OK, make sure that the clip rectangle also fits inside the buffer
     clip = Viewport::Intersect(buffer, clip);
 
@@ -414,18 +401,6 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         auto currentSourceOrigin = source.Origin();
         targetOrigin.X += currentSourceOrigin.X - originalSourceOrigin.X;
         targetOrigin.Y += currentSourceOrigin.Y - originalSourceOrigin.Y;
-    }
-
-    // See MSFT:20204600 - Update the source rectangle to only include the region
-    //      inside the scroll margins. We need to do this AFTER we calculate the
-    //      delta between the currentSourceOrigin and the originalSourceOrigin.
-    // Don't combine this with the above block, because if there are margins set
-    //      and the source rectangle was clipped by the buffer, we still want to
-    //      adjust the target origin point based on the clipping of the buffer.
-    if (screenInfo.AreMarginsSet())
-    {
-        const auto margin = screenInfo.GetScrollingRegion();
-        source = Viewport::Intersect(source, margin);
     }
 
     // And now the target viewport is the same size as the source viewport but at the different position.
@@ -499,10 +474,21 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     WriteToScreen(screenInfo, screenInfo.GetViewport());
 }
 
+// Routine Description:
+// - Dispatches final close event to connected clients or will run down and exit (and never return) if all clients
+//   are already gone.
+// - NOTE: MUST BE CALLED UNDER LOCK. We don't want clients joining or leaving while we're telling them to close and running down.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
+
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
@@ -514,14 +500,4 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
-
-    // Jiggle the handle: (see MSFT:19419231)
-    // When we call this function, we'll only actually close the console once
-    //      we're totally unlocked. If our caller has the console locked, great,
-    //      we'll displatch the ctrl event once they unlock. However, if they're
-    //      not running under lock (eg PtySignalInputThread::_GetData), then the
-    //      ctrl event will never actually get dispatched.
-    // So, lock and unlock here, to make sure the ctrl event gets handled.
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 }

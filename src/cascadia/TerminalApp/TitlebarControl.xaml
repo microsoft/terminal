@@ -13,7 +13,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     VerticalAlignment="Top"
     SizeChanged="Root_SizeChanged"
     d:DesignHeight="36"
-    Background="{ThemeResource SystemChromeLowColor}"
+    Background="{ThemeResource TabViewBackground}"
     d:DesignWidth="400">
 
     <!-- TODO:GH#1988
@@ -29,7 +29,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <ColumnDefinition Width="Auto"/>
     </Grid.ColumnDefinitions>
 
-    <Grid x:Name="ContentRoot" Grid.Column="0" />
+    <ContentPresenter x:Name="ContentRoot" Grid.Column="0" />
 
     <Border
         x:Name="DragBar"

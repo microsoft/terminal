@@ -92,6 +92,9 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
 
     _processes.remove(pProcessData);
 
+    // Attempt to dispatch events to registered listeners.
+    _NotifyOnLastFree();
+
     delete pProcessData;
 }
 
@@ -330,6 +333,19 @@ bool ConsoleProcessList::IsEmpty() const
 }
 
 // Routine Description:
+// - Gives us an event that we should notify when the last process is removed from this list
+// - NOTE: This is a function callback and not an event so the notification of state can occur under the
+//   same global lock state that is required to add/remove client processes from the list.
+// Arguments:
+// - func - A function to call while we're removing the last process.
+// Return Value:
+// - <none>
+void ConsoleProcessList::RegisterForNotifyOnLastFree(std::function<void()> func)
+{
+    _notifyOnLastFree.emplace_back(func);
+}
+
+// Routine Description:
 // - Requests the OS allow the console to set one of its child processes as the foreground window
 // Arguments:
 // - hProcess - Handle to the process to modify
@@ -339,4 +355,21 @@ bool ConsoleProcessList::IsEmpty() const
 void ConsoleProcessList::_ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const
 {
     LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
+}
+
+// Routine Description:
+// - Attempts to notify anyone listening for when the last client process is disconnecting.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConsoleProcessList::_NotifyOnLastFree() const
+{
+    if (_processes.empty())
+    {
+        for (auto& func : _notifyOnLastFree)
+        {
+            func();
+        }
+    }
 }

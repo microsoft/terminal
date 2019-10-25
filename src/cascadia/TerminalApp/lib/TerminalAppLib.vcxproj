@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <Import Project="..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.props')" />
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
   <!-- ========================= CppWinRT Metadata ======================== -->
   <PropertyGroup>
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -15,6 +17,7 @@
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -55,6 +58,7 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="../App.base.h" />
@@ -77,9 +81,16 @@
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
-    <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
+    <ClInclude Include="../DefaultProfileUtils.h" />
+    <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IDynamicProfileGenerator.h" />
+    <ClInclude Include="../PowershellCoreProfileGenerator.h" />
+    <ClInclude Include="../WslDistroGenerator.h" />
+    <ClInclude Include="../AzureCloudShellGenerator.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="ColorSchemesSettingsContent.h">
       <DependentUpon>ColorSchemesSettingsContent.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -92,9 +103,13 @@
       <DependentUpon>KeybindingsSettingsContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="../AppKeyBindings.h" />
-    <ClInclude Include="../App.h">
+    <ClInclude Include="../ActionArgs.h"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../AppKeyBindings.h" >
+      <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="../SettingsPage.h">
@@ -105,8 +120,10 @@
       <SubType>Code</SubType>
     </ClInclude>
   </ItemGroup>
+
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="../init.cpp" />
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
@@ -129,7 +146,13 @@
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
+    <ClCompile Include="../JsonUtils.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../DefaultProfileUtils.cpp" />
+    <ClCompile Include="../ScopedResourceLoader.cpp" />
+    <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
+    <ClCompile Include="../WslDistroGenerator.cpp" />
+    <ClCompile Include="../AzureCloudShellGenerator.cpp" />
     <ClCompile Include="ColorSchemesSettingsContent.cpp">
       <DependentUpon>ColorSchemesSettingsContent.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -145,18 +168,27 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="../AppKeyBindings.cpp">
+    <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="../App.cpp">
+    <ClCompile Include="../ActionArgs.cpp" >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../App.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../AppActionHandlers.cpp" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
+
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+
     <ClCompile Include="../SettingsPage.cpp">
       <DependentUpon>../SettingsPage.xaml</DependentUpon>
     </ClCompile>
@@ -169,10 +201,11 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
-    <Midl Include="../App.idl">
+    <Midl Include="../App.idl" >
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../ActionArgs.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -211,9 +244,11 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
+    <PRIResource Include="../Resources/en-US/Resources.resw" />
     <None Include="../packages.config" />
     <None Include="packages.config" />
   </ItemGroup>
+
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -222,45 +257,54 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below -->
   </ItemGroup>
+
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
     <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
     <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
   </PropertyGroup>
+
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
     https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
     just has a bug in it.-->
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>Warning</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
+
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as
     private=false and CopyLocalSatelliteAssemblies=false, so that we don't
     propogate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
+
     <Reference Include="Microsoft.Terminal.Settings">
       <HintPath>$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+
     <Reference Include="Microsoft.Terminal.TerminalControl">
       <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+
   </ItemGroup>
+
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
@@ -273,6 +317,7 @@
       <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+
   <!-- ========================= Globals ======================== -->
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
@@ -282,6 +327,7 @@
     <TargetName>TerminalAppLib</TargetName>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
+
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -290,8 +336,10 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
   <!-- Manually include MUX here, instead of importing its targets file. We need
   to reference its winmd, but very specifically with the
   CopyLocalSatelliteAssemblies and Private properties set to false, as to not
@@ -301,8 +349,8 @@
   <PropertyGroup>
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\</_MUXRoot>
-    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\</_MUXAppRoot>
+    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\</_MUXRoot>
+    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\</_MUXAppRoot>
   </PropertyGroup>
   <ItemGroup>
     <!-- Microsoft.UI.XAML -->
@@ -314,6 +362,7 @@
     </Reference>
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
+
     <!-- Microsoft.UI.XAML.Application -->
     <Reference Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.winmd">
       <Implementation>Microsoft.Toolkit.Win32.UI.XamlHost.dll</Implementation>
@@ -325,15 +374,18 @@
     <ReferenceCopyLocalPaths Include="$(_MUXAppRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.Toolkit.Win32.UI.XamlHost.*" />
   </ItemGroup>
   <!-- End MUX import -->
+
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
     <Error Condition="!Exists('..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
     <Error Condition="!Exists('..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
   </Target>
+
+
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.
@@ -353,5 +405,23 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
+
+  <!-- This target will take our defaults.json and stamp it into a .h file that
+  we can include in the code directly. This way, we don't need to worry about
+  failing to load the default settings at runtime. -->
+  <Target Name="_TerminalAppGenerateDefaultsH"
+          Inputs="..\defaults.json"
+          Outputs="Generated Files\defaults.h"
+          BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
+  </Target>
+  <!-- Same as above, but for the default profiles.json template -->
+  <Target Name="_TerminalAppGenerateUserSettingsH"
+          Inputs="..\userDefaults.json"
+          Outputs="Generated Files\userDefaults.h"
+          BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
+  </Target>
+
   <Import Project="..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\..\packages\Microsoft.Windows.CppWinRT.2.0.190722.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
 </Project>

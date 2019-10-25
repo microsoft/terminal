@@ -45,6 +45,8 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _boxSelection{ false },
     _selectionActive{ false },
+    _allowSingleCharSelection{ true },
+    _copyOnSelect{ false },
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
 {
@@ -135,6 +137,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _wordDelimiters = settings.WordDelimiters();
 
+    _copyOnSelect = settings.CopyOnSelect();
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -192,7 +196,7 @@ void Terminal::Write(std::wstring_view stringView)
 // - Send this particular key event to the terminal. The terminal will translate
 //   the key and the modifiers pressed into the appropriate VT sequence for that
 //   key chord. If we do translate the key, we'll return true. In that case, the
-//   event should NOT br processed any further. If we return false, the event
+//   event should NOT be processed any further. If we return false, the event
 //   was NOT translated, and we should instead use the event to try and get the
 //   real character out of the event.
 // Arguments:
@@ -201,25 +205,13 @@ void Terminal::Write(std::wstring_view stringView)
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
+bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
         auto lock = LockForWriting();
         _scrollOffset = 0;
         _NotifyScrollEvent();
-    }
-
-    // AltGr key combinations don't always contain any meaningful,
-    // pretranslated unicode character during WM_KEYDOWN.
-    // E.g. on a German keyboard AltGr+Q should result in a "@" character,
-    // but actually results in "Q" with Alt and Ctrl modifier states.
-    // By returning false though, we can abort handling this WM_KEYDOWN
-    // event and let the WM_CHAR handler kick in, which will be
-    // provided with an appropriate unicode character.
-    if (states.IsAltGrPressed())
-    {
-        return false;
     }
 
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
@@ -230,14 +222,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
     wchar_t ch = UNICODE_NULL;
     if (states.IsAltPressed() && vkey != VK_SPACE)
     {
-        ch = static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR)));
-        // MapVirtualKey will give us the capitalized version of the char.
-        // However, if shift isn't pressed, we want to send the lowercase version.
-        // (See GH#637)
-        if (!states.IsShiftPressed())
-        {
-            ch = towlower(ch);
-        }
+        ch = _CharacterFromKeyEvent(vkey, scanCode, states);
     }
 
     if (states.IsCtrlPressed())
@@ -268,10 +253,57 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
 
     const bool manuallyHandled = ch != UNICODE_NULL;
 
-    KeyEvent keyEv{ true, 0, vkey, 0, ch, states.Value() };
+    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
     const bool translated = _terminalInput->HandleKey(&keyEv);
 
     return translated && manuallyHandled;
+}
+
+bool Terminal::SendCharEvent(const wchar_t ch)
+{
+    return _terminalInput->HandleChar(ch);
+}
+
+// Method Description:
+// - Returns the keyboard's scan code for the given virtual key code.
+// Arguments:
+// - vkey: The virtual key code.
+// Return Value:
+// - The keyboard's scan code.
+WORD Terminal::_ScanCodeFromVirtualKey(const WORD vkey) noexcept
+{
+    return LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
+}
+
+// Method Description:
+// - Translates the specified virtual key code and keyboard state to the corresponding character.
+// Arguments:
+// - vkey: The virtual key code that initiated this keyboard event.
+// - scanCode: The scan code that initiated this keyboard event.
+// - states: The current keyboard state.
+// Return Value:
+// - The character that would result from this virtual key code and keyboard state.
+wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept
+{
+    const auto sc = scanCode != 0 ? scanCode : _ScanCodeFromVirtualKey(vkey);
+
+    // We might want to use GetKeyboardState() instead of building our own keyState.
+    // The question is whether that's necessary though. For now it seems to work fine as it is.
+    BYTE keyState[256] = {};
+    keyState[VK_SHIFT] = states.IsShiftPressed() ? 0x80 : 0;
+    keyState[VK_CONTROL] = states.IsCtrlPressed() ? 0x80 : 0;
+    keyState[VK_MENU] = states.IsAltPressed() ? 0x80 : 0;
+
+    // Technically ToUnicodeEx() can produce arbitrarily long sequences of diacritics etc.
+    // Since we only handle the case of a single UTF-16 code point, we can set the buffer size to 2 though.
+    constexpr size_t bufferSize = 2;
+    wchar_t buffer[bufferSize];
+
+    // wFlags: If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
+    const auto result = ToUnicodeEx(vkey, sc, keyState, buffer, bufferSize, 0b100, nullptr);
+
+    // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
+    return result == 1 || result == -1 ? buffer[0] : 0;
 }
 
 // Method Description:
@@ -336,6 +368,10 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     auto& cursor = _buffer->GetCursor();
     const Viewport bufferSize = _buffer->GetSize();
 
+    // Defer the cursor drawing while we are iterating the string, for a better performance.
+    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
+    cursor.StartDeferDrawing();
+
     for (size_t i = 0; i < stringView.size(); i++)
     {
         wchar_t wch = stringView[i];
@@ -362,6 +398,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             {
                 proposedCursorPosition.X--;
             }
+        }
+        else if (wch == UNICODE_BEL)
+        {
+            // TODO: GitHub #1883
+            // For now its empty just so we don't try to write the BEL character
         }
         else
         {
@@ -419,6 +460,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             _NotifyScrollEvent();
         }
     }
+
+    cursor.EndDeferDrawing();
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

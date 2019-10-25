@@ -5,11 +5,6 @@
 #include "ConhostConnection.h"
 #include "windows.h"
 #include <sstream>
-// STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
-// We're just gonna manually define it for this prototyping code
-#ifndef STARTF_USESTDHANDLES
-#define STARTF_USESTDHANDLES 0x00000100
-#endif
 
 #include "ConhostConnection.g.cpp"
 
@@ -23,6 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(const hstring& commandline,
                                          const hstring& startingDirectory,
+                                         const hstring& startingTitle,
                                          const uint32_t initialRows,
                                          const uint32_t initialCols,
                                          const guid& initialGuid) :
@@ -30,6 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _initialCols{ initialCols },
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
+        _startingTitle{ startingTitle },
         _guid{ initialGuid }
     {
         if (_guid == guid{})
@@ -84,6 +81,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
+        STARTUPINFO si = { 0 };
+        si.cb = sizeof(STARTUPINFOW);
+
+        // If we have a startingTitle, create a mutable character buffer to add
+        // it to the STARTUPINFO.
+        std::unique_ptr<wchar_t[]> mutableTitle{ nullptr };
+        if (!_startingTitle.empty())
+        {
+            mutableTitle = std::make_unique<wchar_t[]>(_startingTitle.size() + 1);
+            THROW_IF_NULL_ALLOC(mutableTitle);
+            THROW_IF_FAILED(StringCchCopy(mutableTitle.get(), _startingTitle.size() + 1, _startingTitle.c_str()));
+            si.lpTitle = mutableTitle.get();
+        }
+
         THROW_IF_FAILED(
             CreateConPty(cmdline,
                          startingDirectory,
@@ -93,27 +104,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          &_outPipe,
                          &_signalPipe,
                          &_piConhost,
-                         CREATE_SUSPENDED,
+                         0,
+                         si,
                          extraEnvVars));
 
-        _hJob.reset(CreateJobObjectW(nullptr, nullptr));
-        THROW_LAST_ERROR_IF_NULL(_hJob);
-
-        // We want the conhost and all associated descendant processes
-        // to be terminated when the tab is closed. GUI applications
-        // spawned from the shell tend to end up in their own jobs.
-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedInformation{};
-        jobExtendedInformation.BasicLimitInformation.LimitFlags =
-            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-
-        THROW_IF_WIN32_BOOL_FALSE(SetInformationJobObject(_hJob.get(),
-                                                          JobObjectExtendedLimitInformation,
-                                                          &jobExtendedInformation,
-                                                          sizeof(jobExtendedInformation)));
-
-        THROW_IF_WIN32_BOOL_FALSE(AssignProcessToJobObject(_hJob.get(), _piConhost.hProcess));
+        _startTime = std::chrono::high_resolution_clock::now();
 
         // Create our own output handling thread
+        // This must be done after the pipes are populated.
         // Each connection needs to make sure to drain the output from its backing host.
         _hOutputThread.reset(CreateThread(nullptr,
                                           0,
@@ -122,8 +120,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                           0,
                                           nullptr));
 
-        // Wind up the conhost! We only do this after we've got everything in place.
-        THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));
+        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         _connected = true;
     }
@@ -212,6 +209,21 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (strView.empty())
             {
                 return 0;
+            }
+
+            if (!_recievedFirstByte)
+            {
+                auto now = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> delta = now - _startTime;
+
+                TraceLoggingWrite(g_hTerminalConnectionProvider,
+                                  "RecievedFirstByte",
+                                  TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
+                                  TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+                                  TraceLoggingFloat64(delta.count(), "Duration"),
+                                  TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                _recievedFirstByte = true;
             }
 
             // Convert buffer to hstring

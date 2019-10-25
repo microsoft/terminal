@@ -17,21 +17,35 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TermControlAutomationPeer.h">
+      <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="UiaTextRange.hpp" />
+    <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="TermControlAutomationPeer.cpp">
+      <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="UiaTextRange.cpp" />
+    <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
+    <Midl Include="TermControlAutomationPeer.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -39,6 +53,7 @@
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
+    <ProjectReference Include="..\..\types\lib\types.vcxproj" />
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
     <ProjectReference Include="..\..\renderer\dx\lib\dx.vcxproj" />
@@ -49,7 +64,7 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" >
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>

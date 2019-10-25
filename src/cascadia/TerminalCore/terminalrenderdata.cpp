@@ -117,6 +117,12 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
     return result;
 }
 
+void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+{
+    SetSelectionAnchor(coordStart);
+    SetEndSelectionPosition(coordEnd);
+}
+
 const std::wstring Terminal::GetConsoleTitle() const noexcept
 {
     return _title;

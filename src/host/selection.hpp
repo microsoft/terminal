@@ -21,7 +21,7 @@ Revision History:
 #include "input.h"
 
 #include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "..\types\IConsoleWindow.hpp"
 
 class Selection
 {
@@ -83,8 +83,6 @@ private:
 
     void _CancelMarkSelection();
     void _CancelMouseSelection();
-
-    static std::unique_ptr<Selection> _instance;
 
     // -------------------------------------------------------------------------------------------------------
     // input handling (selectionInput.cpp)

@@ -72,6 +72,7 @@ void NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
+    _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
@@ -110,14 +111,6 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _titlebar.Content(content);
-
-    // When the size of the titlebar content changes, we want to make sure to
-    // update the size of the drag region as well.
-    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
-    if (fwe)
-    {
-        fwe.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
-    }
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
@@ -268,7 +261,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
 //  https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
 //   corresponding to the area of the window that was hit
 // NOTE:
-// Largely taken from code on:
+// - Largely taken from code on:
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
 [[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
@@ -311,10 +304,11 @@ void NonClientIslandWindow::_UpdateDragRegion()
 
     // clang-format off
     // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
+    const auto topHt = fOnResizeBorder ? HTTOP : HTCAPTION;
     LRESULT hitTests[3][3] = {
-        { HTTOPLEFT,    fOnResizeBorder ? HTTOP : HTCAPTION, HTTOPRIGHT },
-        { HTLEFT,       HTNOWHERE,                           HTRIGHT },
-        { HTBOTTOMLEFT, HTBOTTOM,                            HTBOTTOMRIGHT },
+        { HTTOPLEFT,    topHt,      HTTOPRIGHT },
+        { HTLEFT,       HTNOWHERE,  HTRIGHT },
+        { HTBOTTOMLEFT, HTBOTTOM,   HTBOTTOMRIGHT },
     };
     // clang-format on
 
@@ -512,7 +506,6 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         if (lRet == 0)
         {
             lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
-
             if (lRet != HTNOWHERE)
             {
                 return lRet;
@@ -590,17 +583,18 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         return 0;
     }
 
-    case WM_LBUTTONDOWN:
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCXBUTTONDOWN:
+    case WM_NCXBUTTONUP:
     {
-        POINT point1 = {};
-        ::GetCursorPos(&point1);
-        const auto region = HitTestNCA(point1);
-        if (region == HTCAPTION)
-        {
-            const auto longParam = MAKELPARAM(point1.x, point1.y);
-            ::SetActiveWindow(_window.get());
-            ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_MOVE | HTCAPTION, longParam);
-        }
+        // If we clicked in the titlebar, raise an event so the app host can
+        // dispatch an appropriate event.
+        _DragRegionClickedHandlers();
         break;
     }
 
@@ -622,6 +616,12 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         {
             break;
         }
+    }
+    case WM_DPICHANGED:
+    {
+        auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
+        OnSize(RECT_WIDTH(lprcNewScale), RECT_HEIGHT(lprcNewScale));
+        break;
     }
     }
 
@@ -658,6 +658,17 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
     if (WI_IsFlagSet(windowPos->flags, SWP_NOSIZE))
     {
         return false;
+    }
+
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+    if (_titlebar)
+    {
+        _titlebar.SetWindowVisualState(isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
+                                                     isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                                   winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
     }
 
     // Figure out the suggested dimensions
@@ -706,9 +717,6 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
             }
         }
     }
-
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
 
     // If we're about to maximize the window, determine how much we're about to
     // overhang by, and adjust for that.
