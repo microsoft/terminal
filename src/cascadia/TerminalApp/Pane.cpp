@@ -134,7 +134,6 @@ bool Pane::_Resize(const Direction& direction)
     // resizing.
     auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
     actualDimension -= CombinedPaneBorderSize;
-    // actualDimension -= PaneBorderSize;
 
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
@@ -1033,10 +1032,8 @@ Size Pane::_GetMinSize() const
 
     const auto firstSize = _firstChild->_GetMinSize();
     const auto secondSize = _secondChild->_GetMinSize();
-    // const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneBorderSize : 0);
-    // const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneBorderSize : 0);
-    const auto newWidth = firstSize.Width + secondSize.Width; // + (_splitState == SplitState::Vertical ? PaneBorderSize : 0);
-    const auto newHeight = firstSize.Height + secondSize.Height; // + (_splitState == SplitState::Horizontal ? PaneBorderSize : 0);
+    const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? CombinedPaneBorderSize : 0);
+    const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? CombinedPaneBorderSize : 0);
     return { newWidth, newHeight };
 }
 
