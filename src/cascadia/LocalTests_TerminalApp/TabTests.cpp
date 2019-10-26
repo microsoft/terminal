@@ -10,6 +10,7 @@ using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 namespace TerminalAppLocalTests
 {
@@ -102,7 +103,8 @@ namespace TerminalAppLocalTests
         winrt::Microsoft::Terminal::TerminalControl::TermControl term{};
         VERIFY_IS_NOT_NULL(term);
 
-        auto newTab = std::make_shared<Tab>(profileGuid, term);
+        auto resourceLoader = std::make_shared<ScopedResourceLoader>(L"TerminalApp/Resources");
+        auto newTab = std::make_shared<Tab>(profileGuid, term, resourceLoader);
 
         VERIFY_IS_NOT_NULL(newTab);
     }

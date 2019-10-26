@@ -396,7 +396,7 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
-        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term, _resourceLoader));
 
         const auto* const profile = _settings->FindProfile(profileGuid);
 
@@ -1189,6 +1189,10 @@ namespace winrt::TerminalApp::implementation
         if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
         {
             _RemoveTabViewItem(sender.as<MUX::Controls::TabViewItem>());
+            eventArgs.Handled(true);
+        }
+        else if (eventArgs.GetCurrentPoint(*this).Properties().IsRightButtonPressed())
+        {
             eventArgs.Handled(true);
         }
     }

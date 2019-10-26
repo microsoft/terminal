@@ -4,11 +4,13 @@
 #pragma once
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Pane.h"
+#include "ColorPickupFlyout.h"
+#include "ScopedResourceLoader.h"
 
 class Tab
 {
 public:
-    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, std::shared_ptr<ScopedResourceLoader> resourceLoader);
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
@@ -35,16 +37,21 @@ public:
     void SetTabText(const winrt::hstring& text);
 
     void ClosePane();
-
+    
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
     winrt::hstring _lastIconPath{};
+    winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
+    std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
     void _MakeTabViewItem();
+    void _CreateContextMenu();
     void _Focus();
+    void _SetTabColor(const winrt::Windows::UI::Color& color);
+    void _ResetTabColor();
 };

@@ -1,0 +1,11 @@
+// BgLabelControl.idl
+namespace TerminalApp
+{
+	[default_interface]
+	runtimeclass ColorPickupFlyout : Windows.UI.Xaml.Controls.Flyout
+	{
+		ColorPickupFlyout();
+		Windows.UI.Color SelectedColor{ get; };
+		static Windows.UI.Xaml.DependencyProperty SelectedColorProperty{ get; };
+	}
+}
