@@ -1337,7 +1337,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // The terminal is already in the scroll position it wants, so no need
         // to tell it to scroll.
-        _ignoreScrollbarUpdate = false;
+        _ignoreScrollbarUpdate = true;
 
         const auto hiddenContent = bufferSize - viewHeight;
         scrollBar.Maximum(hiddenContent);
