@@ -31,8 +31,8 @@ None at this time. See issue [#607](https://github.com/microsoft/terminal/issues
 
 ## Multiple Tabs
 
-Additional shells can be started by hitting the <kbd>+</kbd> button from the tab bar -- a new instance of the
-default shell is displayed (default shortcut <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>).
+Additional shells can be started by hitting the `+` button from the tab bar -- a new instance of the
+default shell is displayed (default shortcut: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>).
 
 ## Running a Different Shell
 
