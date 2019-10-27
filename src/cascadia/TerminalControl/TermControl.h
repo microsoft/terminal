@@ -64,7 +64,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::Foundation::Size MinimumSize() const;
 
         void ScrollViewport(int viewTop);
-        void KeyboardScrollViewport(int viewTop);
         int GetScrollOffset();
         int GetViewHeight() const;
 
@@ -112,7 +111,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        bool _ignoreScrollbarUpdate;
+        bool _isTerminalInitiatedScroll;
+        std::atomic<bool> _willUpdateScrollBarToMatchViewport;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;

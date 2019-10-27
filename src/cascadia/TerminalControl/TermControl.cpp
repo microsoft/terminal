@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
-        _ignoreScrollbarUpdate{ false },
+        _isTerminalInitiatedScroll{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
@@ -1019,16 +1019,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        if (_ignoreScrollbarUpdate)
+        if (_isTerminalInitiatedScroll)
         {
             return;
         }
 
-        const auto newValue = args.NewValue();
+        const auto newValue = static_cast<int>(args.NewValue());
 
         // This is a scroll event that wasn't initiated by the termnial
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
-        this->ScrollViewport(static_cast<int>(newValue));
+        _terminal->UserScrollViewport(newValue);
+
+        // We've just told the terminal to update its viewport to reflect the
+        // new scroll value so the scroll bar matches the viewport now.
+        _willUpdateScrollBarToMatchViewport.store(false);
     }
 
     // Method Description:
@@ -1337,16 +1341,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // The terminal is already in the scroll position it wants, so no need
         // to tell it to scroll.
-        _ignoreScrollbarUpdate = true;
+        _isTerminalInitiatedScroll = true;
 
         const auto hiddenContent = bufferSize - viewHeight;
         scrollBar.Maximum(hiddenContent);
         scrollBar.Minimum(0);
         scrollBar.ViewportSize(viewHeight);
-
         scrollBar.Value(viewTop);
 
-        _ignoreScrollbarUpdate = false;
+        _isTerminalInitiatedScroll = false;
     }
 
     // Method Description:
@@ -1363,9 +1366,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        _willUpdateScrollBarToMatchViewport.store(true);
+
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
-            _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
+            if (_willUpdateScrollBarToMatchViewport.load())
+            {
+                _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
+            }
         });
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
@@ -1479,22 +1487,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::ScrollViewport(int viewTop)
-    {
-        _terminal->UserScrollViewport(viewTop);
-    }
-
     // Method Description:
-    // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
+    // - Scrolls the viewport of the terminal.
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    // The difference between this function and ScrollViewport is that this one also
-    // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
-    // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
-    void TermControl::KeyboardScrollViewport(int viewTop)
+    void TermControl::ScrollViewport(int viewTop)
     {
-        _terminal->UserScrollViewport(viewTop);
-        _scrollBar.Value(static_cast<int>(viewTop));
+        _scrollBar.Value(viewTop);
     }
 
     int TermControl::GetScrollOffset()
