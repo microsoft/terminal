@@ -8,6 +8,7 @@
 
 using namespace winrt;
 using namespace winrt::Microsoft::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -16,11 +17,8 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
-    // Method Description:
-    // - Bound in the Xaml editor to the [+] button.
-    // Arguments:
-    // <unused>
-    void TabRowControl::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
+    void TabRowControl::HideDragBar()
     {
+        DragBar().Visibility(Visibility::Collapsed);
     }
 }

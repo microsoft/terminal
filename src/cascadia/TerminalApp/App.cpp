@@ -654,7 +654,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Methods that proxy typed event handlers through TerminalPage
-    winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement> const& handler)
+    winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabRowControl> const& handler)
     {
         return _root->SetTitleBarContent(handler);
     }

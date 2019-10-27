@@ -26,7 +26,7 @@ private:
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
-                                const winrt::Windows::UI::Xaml::UIElement& arg);
+                                const winrt::TerminalApp::TabRowControl& arg);
     void _UpdateTheme(const winrt::TerminalApp::App&,
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
 };

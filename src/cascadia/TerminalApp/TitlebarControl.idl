@@ -16,6 +16,5 @@ namespace TerminalApp
         void SetWindowVisualState(WindowVisualState visualState);
 
         IInspectable Content;
-        Windows.UI.Xaml.Controls.Border DragBar { get; };
     }
 }

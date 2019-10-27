@@ -70,10 +70,6 @@ void NonClientIslandWindow::Initialize()
 
     // Create our titlebar control
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
-    _dragBar = _titlebar.DragBar();
-
-    _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
-    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -108,9 +104,14 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 // - content: the new UI element to use as the titlebar content
 // Return Value:
 // - <none>
-void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
+void NonClientIslandWindow::SetTitlebarContent(winrt::TerminalApp::TabRowControl content)
 {
     _titlebar.Content(content);
+
+    // TODO: leak?
+    _dragBar = content.DragBar();
+    _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept

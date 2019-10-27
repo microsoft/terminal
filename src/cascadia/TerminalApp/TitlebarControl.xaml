@@ -24,21 +24,14 @@ the MIT License. See LICENSE in the project root for license information. -->
     accent color. (which is GH#1963)-->
 
     <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto"/>
         <ColumnDefinition Width="*"/>
         <ColumnDefinition Width="Auto"/>
     </Grid.ColumnDefinitions>
 
     <ContentPresenter x:Name="ContentRoot" Grid.Column="0" />
 
-    <Border
-        x:Name="DragBar"
-        Grid.Column="1"
-        MinWidth="45.0"
-        DoubleTapped="DragBar_DoubleTapped"/>
-
     <local:MinMaxCloseControl
-        Grid.Column="2"
+        Grid.Column="1"
         x:Name="MinMaxCloseControl"
         HorizontalAlignment="Right" />
 </Grid>

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "..\TabRowControl.idl";
 
 namespace TerminalApp
 {
@@ -36,7 +37,7 @@ namespace TerminalApp
         void TitlebarClicked();
         void WindowCloseButtonClicked();
 
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
+        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.TabRowControl> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;

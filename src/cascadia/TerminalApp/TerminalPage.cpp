@@ -76,6 +76,10 @@ namespace winrt::TerminalApp::implementation
             // Inform the host that our titlebar content has changed.
             _setTitleBarContentHandlers(*this, _tabRow);
         }
+        else
+        {
+            _tabRow.HideDragBar();
+        }
 
         //Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
@@ -1330,6 +1334,6 @@ namespace winrt::TerminalApp::implementation
     // These macros will define them both for you.
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabRowControl);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
 }
