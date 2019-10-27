@@ -1488,7 +1488,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Scrolls the viewport of the terminal.
+    // - Scrolls the viewport of the terminal and updates the scroll bar accordingly.
     // Arguments:
     // - viewTop: the viewTop to scroll to
     void TermControl::ScrollViewport(int viewTop)
