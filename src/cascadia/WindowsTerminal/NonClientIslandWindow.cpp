@@ -108,7 +108,6 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::TerminalApp::TabRowControl
 {
     _titlebar.Content(content);
 
-    // TODO: leak?
     _dragBar = content.DragBar();
     _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });

@@ -11,7 +11,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     x:Name="Root"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
-    SizeChanged="Root_SizeChanged"
     d:DesignHeight="36"
     Background="{ThemeResource TabViewBackground}"
     d:DesignWidth="400">
