@@ -545,7 +545,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ Suppo
 
 #pragma endregion
 
-const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const
+const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const noexcept
 {
     return _getTextBuffer().GetSize().Dimensions();
 }

@@ -110,7 +110,7 @@ namespace Microsoft::Console::Types
         // mechanism for multi-threaded code.
         std::map<EVENTID, bool> _signalFiringMapping;
 
-        const COORD _getScreenBufferCoords() const;
+        const COORD _getScreenBufferCoords() const noexcept;
         const TextBuffer& _getTextBuffer() const noexcept;
         const Viewport _getViewport() const noexcept;
         void _LockConsole() noexcept;

@@ -111,7 +111,7 @@ public:
 
     const SHORT GetFirstRowIndex() const noexcept;
 
-    const Microsoft::Console::Types::Viewport GetSize() const;
+    const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
@@ -156,6 +156,8 @@ private:
 
     SHORT _firstRow; // indexes top row (not necessarily 0)
 
+    Microsoft::Console::Types::Viewport _size;
+
     TextAttribute _currentAttributes;
 
     // storage location for glyphs that can't fit into the buffer normally
@@ -163,11 +165,13 @@ private:
 
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
 
+    void _UpdateSize();
+
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const;
+    COORD _GetPreviousFromCursor() const noexcept;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);

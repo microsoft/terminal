@@ -33,6 +33,7 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{},
+    _size{ Viewport::Empty() },
     _renderTarget{ renderTarget }
 {
     // initialize ROWs
@@ -40,6 +41,8 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     {
         _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, _currentAttributes, this);
     }
+
+    _UpdateSize();
 }
 
 // Routine Description:
@@ -622,7 +625,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::View
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-COORD TextBuffer::_GetPreviousFromCursor() const
+COORD TextBuffer::_GetPreviousFromCursor() const noexcept
 {
     COORD coordPosition = GetCursor().GetPosition();
 
@@ -651,9 +654,10 @@ const SHORT TextBuffer::GetFirstRowIndex() const noexcept
 {
     return _firstRow;
 }
-const Viewport TextBuffer::GetSize() const
+
+const Viewport TextBuffer::GetSize() const noexcept
 {
-    return Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
+    return _size;
 }
 
 void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex) noexcept
@@ -844,6 +848,9 @@ void TextBuffer::Reset()
         // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
         // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
         _RefreshRowIDs(newSize.X);
+
+        // Update the buffer size.
+        _UpdateSize();
     }
     CATCH_RETURN();
 
@@ -894,6 +901,11 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
 
     // Give the new mapping to Unicode Storage
     _unicodeStorage.Remap(rowMap, newRowWidth);
+}
+
+void TextBuffer::_UpdateSize()
+{
+    _size = Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
 }
 
 void TextBuffer::_NotifyPaint(const Viewport& viewport) const

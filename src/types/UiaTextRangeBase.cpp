@@ -16,7 +16,7 @@ IdType UiaTextRangeBase::id = 1;
 
 UiaTextRangeBase::MoveState::MoveState(IUiaData* pData,
                                        const UiaTextRangeBase& range,
-                                       const MovementDirection direction) :
+                                       const MovementDirection direction) noexcept :
     StartScreenInfoRow{ UiaTextRangeBase::_endpointToScreenInfoRow(pData, range.GetStart()) },
     StartColumn{ UiaTextRangeBase::_endpointToColumn(pData, range.GetStart()) },
     EndScreenInfoRow{ UiaTextRangeBase::_endpointToScreenInfoRow(pData, range.GetEnd()) },
@@ -298,7 +298,7 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
+IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexcept
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -548,7 +548,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
 
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
-                                      _Out_ int* pRetVal)
+                                      _Out_ int* pRetVal) noexcept
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -579,7 +579,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     _outputRowConversions();
 #endif
 
-    auto moveFunc = &_moveByDocument;
+    std::pair<unsigned, unsigned> (*moveFunc)(gsl::not_null<IUiaData*>, int, MoveState, gsl::not_null<int*>) = &_moveByDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveByCharacter;
@@ -587,6 +587,11 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     else if (unit <= TextUnit::TextUnit_Line)
     {
         moveFunc = &_moveByLine;
+    }
+
+    if (moveFunc == nullptr)
+    {
+        return S_OK;
     }
 
     const MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
@@ -620,7 +625,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                     _In_ TextUnit unit,
                                                     _In_ int count,
-                                                    _Out_ int* pRetVal)
+                                                    _Out_ int* pRetVal) noexcept
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -655,7 +660,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 
     const MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
 
-    auto moveFunc = &_moveEndpointByUnitDocument;
+    std::tuple<unsigned, unsigned, bool> (*moveFunc)(gsl::not_null<IUiaData*>, int, TextPatternRangeEndpoint, MoveState, gsl::not_null<int*>) = &_moveEndpointByUnitDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveEndpointByUnitCharacter;
@@ -663,6 +668,11 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     else if (unit <= TextUnit::TextUnit_Line)
     {
         moveFunc = &_moveEndpointByUnitLine;
+    }
+
+    if (moveFunc == nullptr)
+    {
+        return S_OK;
     }
 
     std::tuple<Endpoint, Endpoint, bool> moveResults;
@@ -687,7 +697,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                                      _In_ ITextRangeProvider* pTargetRange,
-                                                     _In_ TextPatternRangeEndpoint targetEndpoint)
+                                                     _In_ TextPatternRangeEndpoint targetEndpoint) noexcept
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -924,7 +934,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY
 
 #pragma endregion
 
-const COORD UiaTextRangeBase::_getScreenBufferCoords(gsl::not_null<IUiaData*> pData)
+const COORD UiaTextRangeBase::_getScreenBufferCoords(gsl::not_null<IUiaData*> pData) noexcept
 {
     return pData->GetTextBuffer().GetSize().Dimensions();
 }
@@ -957,7 +967,7 @@ const unsigned int UiaTextRangeBase::_getTotalRows(gsl::not_null<IUiaData*> pDat
 // - <none>
 // Return Value:
 // - The row width
-const unsigned int UiaTextRangeBase::_getRowWidth(gsl::not_null<IUiaData*> pData)
+const unsigned int UiaTextRangeBase::_getRowWidth(gsl::not_null<IUiaData*> pData) noexcept
 {
     // make sure that we can't leak a 0
     return std::max(static_cast<unsigned int>(_getScreenBufferCoords(pData).X), 1u);
@@ -969,7 +979,7 @@ const unsigned int UiaTextRangeBase::_getRowWidth(gsl::not_null<IUiaData*> pData
 // - endpoint - the endpoint to translate
 // Return Value:
 // - the column value
-const Column UiaTextRangeBase::_endpointToColumn(gsl::not_null<IUiaData*> pData, const Endpoint endpoint)
+const Column UiaTextRangeBase::_endpointToColumn(gsl::not_null<IUiaData*> pData, const Endpoint endpoint) noexcept
 {
     return endpoint % _getRowWidth(pData);
 }
@@ -981,7 +991,7 @@ const Column UiaTextRangeBase::_endpointToColumn(gsl::not_null<IUiaData*> pData,
 // Return Value:
 // - the text buffer row value
 const TextBufferRow UiaTextRangeBase::_endpointToTextBufferRow(gsl::not_null<IUiaData*> pData,
-                                                               const Endpoint endpoint)
+                                                               const Endpoint endpoint) noexcept
 {
     return endpoint / _getRowWidth(pData);
 }
@@ -993,7 +1003,7 @@ const TextBufferRow UiaTextRangeBase::_endpointToTextBufferRow(gsl::not_null<IUi
 // - <none>
 // Return Value:
 // - The number of rows in the range.
-const unsigned int UiaTextRangeBase::_rowCountInRange(gsl::not_null<IUiaData*> pData) const
+const unsigned int UiaTextRangeBase::_rowCountInRange(gsl::not_null<IUiaData*> pData) const noexcept
 {
     if (_degenerate)
     {
@@ -1127,7 +1137,7 @@ const TextBufferRow UiaTextRangeBase::_screenInfoRowToTextBufferRow(gsl::not_nul
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the TextBufferRow.
-const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row)
+const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row) noexcept
 {
     return _getRowWidth(pData) * row;
 }
@@ -1139,7 +1149,7 @@ const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(gsl::not_null<IUiaData
 // Return Value:
 // - the equivalent Endpoint.
 const Endpoint UiaTextRangeBase::_screenInfoRowToEndpoint(gsl::not_null<IUiaData*> pData,
-                                                          const ScreenInfoRow row)
+                                                          const ScreenInfoRow row) noexcept
 {
     return _textBufferRowToEndpoint(pData, _screenInfoRowToTextBufferRow(pData, row));
 }
@@ -1151,7 +1161,7 @@ const Endpoint UiaTextRangeBase::_screenInfoRowToEndpoint(gsl::not_null<IUiaData
 // Return Value:
 // - the equivalent ScreenInfoRow.
 const ScreenInfoRow UiaTextRangeBase::_endpointToScreenInfoRow(gsl::not_null<IUiaData*> pData,
-                                                               const Endpoint endpoint)
+                                                               const Endpoint endpoint) noexcept
 {
     return _textBufferRowToScreenInfoRow(pData, _endpointToTextBufferRow(pData, endpoint));
 }
@@ -1255,7 +1265,7 @@ const Column UiaTextRangeBase::_getFirstColumnIndex() noexcept
 // - <none>
 // Return Value:
 // - the index of the last column (0-indexed) of the screen info rows
-const Column UiaTextRangeBase::_getLastColumnIndex(gsl::not_null<IUiaData*> pData)
+const Column UiaTextRangeBase::_getLastColumnIndex(gsl::not_null<IUiaData*> pData) noexcept
 {
     return _getRowWidth(pData) - 1;
 }
@@ -1275,7 +1285,7 @@ const int UiaTextRangeBase::_compareScreenCoords(gsl::not_null<IUiaData*> pData,
                                                  const ScreenInfoRow rowA,
                                                  const Column colA,
                                                  const ScreenInfoRow rowB,
-                                                 const Column colB)
+                                                 const Column colB) noexcept
 {
     FAIL_FAST_IF(!(rowA >= _getFirstScreenInfoRowIndex()));
     FAIL_FAST_IF(!(rowA <= _getLastScreenInfoRowIndex(pData)));
@@ -1441,7 +1451,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(gsl::no
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByLine(gsl::not_null<IUiaData*> pData,
                                                             const int moveCount,
                                                             const MoveState moveState,
-                                                            _Out_ gsl::not_null<int*> const pAmountMoved)
+                                                            _Out_ gsl::not_null<int*> const pAmountMoved) noexcept
 {
     *pAmountMoved = 0;
     Endpoint start = _screenInfoRowToEndpoint(pData, moveState.StartScreenInfoRow) + moveState.StartColumn;
@@ -1488,7 +1498,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByLine(gsl::not_null<IUiaDa
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByDocument(gsl::not_null<IUiaData*> pData,
                                                                 const int /*moveCount*/,
                                                                 const MoveState moveState,
-                                                                _Out_ gsl::not_null<int*> const pAmountMoved)
+                                                                _Out_ gsl::not_null<int*> const pAmountMoved) noexcept
 {
     // We can't move by anything larger than a line, so move by document will apply and will
     // just report that it can't do that.
@@ -1722,7 +1732,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitLine(g
                                                                                const int moveCount,
                                                                                const TextPatternRangeEndpoint endpoint,
                                                                                const MoveState moveState,
-                                                                               _Out_ gsl::not_null<int*> const pAmountMoved)
+                                                                               _Out_ gsl::not_null<int*> const pAmountMoved) noexcept
 {
     *pAmountMoved = 0;
     int count = moveCount;
@@ -1881,7 +1891,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitDocume
                                                                                    const int moveCount,
                                                                                    const TextPatternRangeEndpoint endpoint,
                                                                                    const MoveState moveState,
-                                                                                   _Out_ gsl::not_null<int*> const pAmountMoved)
+                                                                                   _Out_ gsl::not_null<int*> const pAmountMoved) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1944,13 +1954,13 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitDocume
     return std::make_tuple(start, end, degenerate);
 }
 
-COORD UiaTextRangeBase::_endpointToCoord(gsl::not_null<IUiaData*> pData, const Endpoint endpoint)
+COORD UiaTextRangeBase::_endpointToCoord(gsl::not_null<IUiaData*> pData, const Endpoint endpoint) noexcept
 {
     return { gsl::narrow<short>(_endpointToColumn(pData, endpoint)), gsl::narrow<short>(_endpointToScreenInfoRow(pData, endpoint)) };
 }
 
 Endpoint UiaTextRangeBase::_coordToEndpoint(gsl::not_null<IUiaData*> pData,
-                                            const COORD coord)
+                                            const COORD coord) noexcept
 {
     return _screenInfoRowToEndpoint(pData, coord.Y) + coord.X;
 }

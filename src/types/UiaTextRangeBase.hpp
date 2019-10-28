@@ -119,7 +119,7 @@ namespace Microsoft::Console::Types
 
             MoveState(IUiaData* pData,
                       const UiaTextRangeBase& range,
-                      const MovementDirection direction);
+                      const MovementDirection direction) noexcept;
 
         private:
             MoveState(const ScreenInfoRow startScreenInfoRow,
@@ -159,7 +159,7 @@ namespace Microsoft::Console::Types
                                         _In_ ITextRangeProvider* pTargetRange,
                                         _In_ TextPatternRangeEndpoint targetEndpoint,
                                         _Out_ int* pRetVal) noexcept override;
-        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) override;
+        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) noexcept override;
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                      _In_ VARIANT val,
                                      _In_ BOOL searchBackward,
@@ -176,14 +176,14 @@ namespace Microsoft::Console::Types
                                _Out_ BSTR* pRetVal) override;
         IFACEMETHODIMP Move(_In_ TextUnit unit,
                             _In_ int count,
-                            _Out_ int* pRetVal) override;
+                            _Out_ int* pRetVal) noexcept override;
         IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                           _In_ TextUnit unit,
                                           _In_ int count,
-                                          _Out_ int* pRetVal) override;
+                                          _Out_ int* pRetVal) noexcept override;
         IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                            _In_ ITextRangeProvider* pTargetRange,
-                                           _In_ TextPatternRangeEndpoint targetEndpoint) override;
+                                           _In_ TextPatternRangeEndpoint targetEndpoint) noexcept override;
         IFACEMETHODIMP Select() override;
         IFACEMETHODIMP AddToSelection() noexcept override;
         IFACEMETHODIMP RemoveFromSelection() noexcept override;
@@ -255,41 +255,41 @@ namespace Microsoft::Console::Types
 
         RECT _getTerminalRect() const;
 
-        static const COORD _getScreenBufferCoords(gsl::not_null<IUiaData*> pData);
+        static const COORD _getScreenBufferCoords(gsl::not_null<IUiaData*> pData) noexcept;
         virtual const COORD _getScreenFontSize() const;
 
         static const unsigned int _getTotalRows(gsl::not_null<IUiaData*> pData) noexcept;
-        static const unsigned int _getRowWidth(gsl::not_null<IUiaData*> pData);
+        static const unsigned int _getRowWidth(gsl::not_null<IUiaData*> pData) noexcept;
 
         static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
         static const unsigned int _getLastScreenInfoRowIndex(gsl::not_null<IUiaData*> pData) noexcept;
 
         static const Column _getFirstColumnIndex() noexcept;
-        static const Column _getLastColumnIndex(gsl::not_null<IUiaData*> pData);
+        static const Column _getLastColumnIndex(gsl::not_null<IUiaData*> pData) noexcept;
 
-        const unsigned int _rowCountInRange(gsl::not_null<IUiaData*> pData) const;
+        const unsigned int _rowCountInRange(gsl::not_null<IUiaData*> pData) const noexcept;
 
         static const TextBufferRow _endpointToTextBufferRow(gsl::not_null<IUiaData*> pData,
-                                                            const Endpoint endpoint);
+                                                            const Endpoint endpoint) noexcept;
         static const ScreenInfoRow _textBufferRowToScreenInfoRow(gsl::not_null<IUiaData*> pData,
                                                                  const TextBufferRow row) noexcept;
 
         static const TextBufferRow _screenInfoRowToTextBufferRow(gsl::not_null<IUiaData*> pData,
                                                                  const ScreenInfoRow row) noexcept;
-        static const Endpoint _textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row);
+        static const Endpoint _textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row) noexcept;
 
         static const ScreenInfoRow _endpointToScreenInfoRow(gsl::not_null<IUiaData*> pData,
-                                                            const Endpoint endpoint);
+                                                            const Endpoint endpoint) noexcept;
         static const Endpoint _screenInfoRowToEndpoint(gsl::not_null<IUiaData*> pData,
-                                                       const ScreenInfoRow row);
+                                                       const ScreenInfoRow row) noexcept;
 
         static COORD _endpointToCoord(gsl::not_null<IUiaData*> pData,
-                                      const Endpoint endpoint);
+                                      const Endpoint endpoint) noexcept;
         static Endpoint _coordToEndpoint(gsl::not_null<IUiaData*> pData,
-                                         const COORD coord);
+                                         const COORD coord) noexcept;
 
         static const Column _endpointToColumn(gsl::not_null<IUiaData*> pData,
-                                              const Endpoint endpoint);
+                                              const Endpoint endpoint) noexcept;
 
         static const Row _normalizeRow(gsl::not_null<IUiaData*> pData, const Row row) noexcept;
 
@@ -324,7 +324,7 @@ namespace Microsoft::Console::Types
                                               const ScreenInfoRow rowA,
                                               const Column colA,
                                               const ScreenInfoRow rowB,
-                                              const Column colB);
+                                              const Column colB) noexcept;
 
         static std::pair<Endpoint, Endpoint> _moveByCharacter(gsl::not_null<IUiaData*> pData,
                                                               const int moveCount,
@@ -344,12 +344,12 @@ namespace Microsoft::Console::Types
         static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
-                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                         _Out_ gsl::not_null<int*> const pAmountMoved) noexcept;
 
         static std::pair<Endpoint, Endpoint> _moveByDocument(gsl::not_null<IUiaData*> pData,
                                                              const int moveCount,
                                                              const MoveState moveState,
-                                                             _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                             _Out_ gsl::not_null<int*> const pAmountMoved) noexcept;
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
@@ -377,14 +377,14 @@ namespace Microsoft::Console::Types
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
-                                _Out_ gsl::not_null<int*> const pAmountMoved);
+                                _Out_ gsl::not_null<int*> const pAmountMoved) noexcept;
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
                                     const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
-                                    _Out_ gsl::not_null<int*> const pAmountMoved);
+                                    _Out_ gsl::not_null<int*> const pAmountMoved) noexcept;
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
