@@ -139,8 +139,8 @@ bool Pane::_Resize(const Direction& direction)
     const auto secondMinSize = _secondChild->_GetMinSize();
 
     // These are the minimum amount of space we need for each of our children
-    const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
-    const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
+    const auto firstMinDimension = (changeWidth ? firstMinSize.Width : firstMinSize.Height) + PaneBorderSize;
+    const auto secondMinDimension = (changeWidth ? secondMinSize.Width : secondMinSize.Height) + PaneBorderSize;
 
     const auto firstMinPercent = firstMinDimension / actualDimension;
     const auto secondMinPercent = secondMinDimension / actualDimension;
@@ -1008,6 +1008,8 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
         THROW_HR(E_FAIL);
     }
 
+    // If you subtract the CPBS here, then the panes will get smaller for each nesting
+    // const auto sizeMinusSeparator = fullSize - CombinedPaneBorderSize;
     const auto sizeMinusSeparator = fullSize;
     const auto firstSize = sizeMinusSeparator * _firstPercent.value();
     const auto secondSize = sizeMinusSeparator * _secondPercent.value();
@@ -1017,7 +1019,7 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
 //   have 1x1 character visible, in each of its children. This includes the
-//   space needed for the separator.
+//   space needed for borders _within_ us, but it might not include our own border size.
 // Arguments:
 // - <none>
 // Return Value:
