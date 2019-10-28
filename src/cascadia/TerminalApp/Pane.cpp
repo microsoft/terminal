@@ -133,14 +133,16 @@ bool Pane::_Resize(const Direction& direction)
     // actualDimension is the size in DIPs of this pane in the direction we're
     // resizing.
     auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
-    actualDimension -= CombinedPaneBorderSize;
+    // actualDimension -= CombinedPaneBorderSize;
 
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
 
     // These are the minimum amount of space we need for each of our children
-    const auto firstMinDimension = (changeWidth ? firstMinSize.Width : firstMinSize.Height) + PaneBorderSize;
-    const auto secondMinDimension = (changeWidth ? secondMinSize.Width : secondMinSize.Height) + PaneBorderSize;
+    // const auto firstMinDimension = (changeWidth ? firstMinSize.Width : firstMinSize.Height) + PaneBorderSize;
+    // const auto secondMinDimension = (changeWidth ? secondMinSize.Width : secondMinSize.Height) + PaneBorderSize;
+    const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
+    const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
 
     const auto firstMinPercent = firstMinDimension / actualDimension;
     const auto secondMinPercent = secondMinDimension / actualDimension;
@@ -1029,13 +1031,31 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        return _control.MinimumSize();
+        // return _control.MinimumSize();
+        ///////////////
+        auto controlSize = _control.MinimumSize();
+        auto newWidth = controlSize.Width;
+        auto newHeight = controlSize.Height;
+
+        newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+
+        newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+        return { newWidth, newHeight };
     }
 
     const auto firstSize = _firstChild->_GetMinSize();
     const auto secondSize = _secondChild->_GetMinSize();
-    const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? CombinedPaneBorderSize : 0);
-    const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? CombinedPaneBorderSize : 0);
+    // const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? CombinedPaneBorderSize : 0);
+    // const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? CombinedPaneBorderSize : 0);
+    auto newWidth = firstSize.Width + secondSize.Width;
+    // newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+    // newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+    auto newHeight = firstSize.Height + secondSize.Height;
+    // newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+    // newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+
     return { newWidth, newHeight };
 }
 
