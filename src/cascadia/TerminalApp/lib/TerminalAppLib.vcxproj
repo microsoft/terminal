@@ -114,7 +114,6 @@
     <ClCompile Include="../JsonUtils.cpp" />
     <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../DefaultProfileUtils.cpp" />
-    <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp" />
@@ -184,6 +183,11 @@
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
 
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below -->
@@ -235,7 +239,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\src\cascadia\WinRTUtils\inc;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
