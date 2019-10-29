@@ -12,13 +12,6 @@ using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
-    void AppKeyBindings::SetKeyBinding(const TerminalApp::ShortcutAction& action,
-                                       const Settings::KeyChord& chord)
-    {
-        DebugBreak();
-        // _keyShortcuts[chord] = action;
-    }
-
     void AppKeyBindings::SetKeyBinding(const TerminalApp::ActionAndArgs& actionAndArgs,
                                        const Settings::KeyChord& chord)
     {

@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
         AppKeyBindings() = default;
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
-        void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+
         void SetKeyBinding(TerminalApp::ActionAndArgs const& actionAndArgs,
                            winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
