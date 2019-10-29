@@ -133,7 +133,6 @@ bool Pane::_Resize(const Direction& direction)
     // actualDimension is the size in DIPs of this pane in the direction we're
     // resizing.
     auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
-    actualDimension -= CombinedPaneBorderSize;
 
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
@@ -604,7 +603,6 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.RowDefinitions().Clear();
 
         // Reattach the TermControl to our grid.
-        // _root.Children().Append(_control);
         _root.Children().Append(_border);
         _border.Child(_control);
 
@@ -998,11 +996,11 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
-//   should fill. Accounts for the size of the separator that should be between
-//   them as well.
+//   should fill. Since these children own their own separators (borders), this
+//   size is their portion of our _entire_ size.
 // Arguments:
 // - fullSize: the amount of space in pixels that should be filled by our
-//   children and their separator
+//   children and their separators
 // Return Value:
 // - a pair with the size of our first child and the size of our second child,
 //   respectively.
@@ -1013,18 +1011,16 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
         THROW_HR(E_FAIL);
     }
 
-    // If you subtract the CPBS here, then the panes will get smaller for each nesting
-    // const auto sizeMinusSeparator = fullSize - CombinedPaneBorderSize;
-    const auto sizeMinusSeparator = fullSize;
-    const auto firstSize = sizeMinusSeparator * _firstPercent.value();
-    const auto secondSize = sizeMinusSeparator * _secondPercent.value();
+    const auto firstSize = fullSize * _firstPercent.value();
+    const auto secondSize = fullSize * _secondPercent.value();
+
     return { firstSize, secondSize };
 }
 
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
-//   have 1x1 character visible, in each of its children. This includes the
-//   space needed for borders _within_ us, but it might not include our own border size.
+//   have 1x1 character visible, in each of its children. If we're a leaf, we'll
+//   include the space needed for borders _within_ us.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1034,35 +1030,27 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        // return _control.MinimumSize();
-        ///////////////
         auto controlSize = _control.MinimumSize();
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
-
-        // newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
-        // newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
-        // newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
-        // newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
 
         newWidth += WI_IsFlagSet(_borders, Borders::Left) ? CombinedPaneBorderSize : 0;
         newWidth += WI_IsFlagSet(_borders, Borders::Right) ? CombinedPaneBorderSize : 0;
         newHeight += WI_IsFlagSet(_borders, Borders::Top) ? CombinedPaneBorderSize : 0;
         newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? CombinedPaneBorderSize : 0;
 
-        // newWidth += PaneBorderSize;
-        // newWidth += PaneBorderSize;
-        // newHeight += PaneBorderSize;
-        // newHeight += PaneBorderSize;
+        return { newWidth, newHeight };
+    }
+    else
+    {
+        const auto firstSize = _firstChild->_GetMinSize();
+        const auto secondSize = _secondChild->_GetMinSize();
+
+        const auto newWidth = firstSize.Width + secondSize.Width;
+        const auto newHeight = firstSize.Height + secondSize.Height;
 
         return { newWidth, newHeight };
     }
-
-    const auto firstSize = _firstChild->_GetMinSize();
-    const auto secondSize = _secondChild->_GetMinSize();
-    const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? CombinedPaneBorderSize : 0);
-    const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? CombinedPaneBorderSize : 0);
-    return { newWidth, newHeight };
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
