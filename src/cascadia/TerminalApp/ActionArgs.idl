@@ -55,4 +55,5 @@ namespace TerminalApp
     {
         Int32 Delta { get; };
     };
+
 }

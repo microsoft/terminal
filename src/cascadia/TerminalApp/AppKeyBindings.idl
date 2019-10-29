@@ -56,12 +56,20 @@ namespace TerminalApp
         OpenSettings
     };
 
+    [default_interface] runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        IActionArgs Args;
+        ShortcutAction Action;
+    };
+
     [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
+        // void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
+        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.Settings.KeyChord chord);
         void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
+
         Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
 
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CopyText;

@@ -42,6 +42,8 @@ namespace winrt::TerminalApp::implementation
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
         void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+        void SetKeyBinding(TerminalApp::ActionAndArgs const& actionAndArgs,
+                           winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
@@ -78,8 +80,9 @@ namespace winrt::TerminalApp::implementation
         // clang-format on
 
     private:
-        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
-        bool _DoAction(ShortcutAction action);
+        // std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
+        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
+        bool _DoAction(ActionAndArgs actionAndArgs);
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::KeyBindingsTests;

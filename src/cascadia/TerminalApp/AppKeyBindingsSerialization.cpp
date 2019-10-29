@@ -8,6 +8,7 @@
 
 #include "pch.h"
 #include "AppKeyBindings.h"
+#include "ActionAndArgs.h"
 #include "KeyChordSerialization.h"
 #include "Utils.h"
 #include "JsonUtils.h"
@@ -130,6 +131,18 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { UnboundKey, ShortcutAction::Invalid },
 };
 
+// winrt::TerminalApp::IActionArgs ParseCopyArgs(Json::Value json)
+// {
+//     auto args = winrt::TerminalApp::CopyTextArgs();
+//     return args;
+// };
+
+// static const std::map<std::string_view, std::function<winrt::TerminalApp::IActionArgs(Json::Value)>, std::less<>> argParsers{
+//     { CopyTextKey, ParseCopyArgs },
+//     { CopyTextWithoutNewlinesKey, ParseCopyArgs },
+//     { UnboundKey, nullptr },
+// };
+
 // Function Description:
 // - Small helper to create a json value serialization of a single
 //   KeyBinding->Action maping. The created object is of schema:
@@ -251,7 +264,19 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
                 // found.
                 if (action != ShortcutAction::Invalid)
                 {
-                    SetKeyBinding(action, chord);
+                    // auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+                    auto actionAndArgs = winrt::make_self<ActionAndArgs>();
+                    actionAndArgs->Action(action);
+                    actionAndArgs->Args(nullptr);
+                    // auto foo = *actionAndArgs;
+                    SetKeyBinding(*actionAndArgs, chord);
+
+                    // // So this is an implementation::ActionAndArgs...
+                    // ActionAndArgs actionAndArgs{};
+                    // actionAndArgs.Action(action);
+                    // actionAndArgs.Args(nullptr);
+                    // SetKeyBinding(actionAndArgs, chord);
+                    // // And compiles, but doesn't link
                 }
                 else
                 {

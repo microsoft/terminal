@@ -15,7 +15,14 @@ namespace winrt::TerminalApp::implementation
     void AppKeyBindings::SetKeyBinding(const TerminalApp::ShortcutAction& action,
                                        const Settings::KeyChord& chord)
     {
-        _keyShortcuts[chord] = action;
+        DebugBreak();
+        // _keyShortcuts[chord] = action;
+    }
+
+    void AppKeyBindings::SetKeyBinding(const TerminalApp::ActionAndArgs& actionAndArgs,
+                                       const Settings::KeyChord& chord)
+    {
+        _keyShortcuts[chord] = actionAndArgs;
     }
 
     // Method Description:
@@ -33,7 +40,7 @@ namespace winrt::TerminalApp::implementation
     {
         for (auto& kv : _keyShortcuts)
         {
-            if (kv.second == action)
+            if (kv.second.Action() == action)
             {
                 return kv.first;
             }
@@ -46,14 +53,15 @@ namespace winrt::TerminalApp::implementation
         const auto keyIter = _keyShortcuts.find(kc);
         if (keyIter != _keyShortcuts.end())
         {
-            const auto action = keyIter->second;
-            return _DoAction(action);
+            const auto actionAndArgs = keyIter->second;
+            return _DoAction(actionAndArgs);
         }
         return false;
     }
 
-    bool AppKeyBindings::_DoAction(ShortcutAction action)
+    bool AppKeyBindings::_DoAction(ActionAndArgs actionAndArgs)
     {
+        auto action = actionAndArgs.Action();
         switch (action)
         {
         case ShortcutAction::CopyText:

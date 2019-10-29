@@ -78,6 +78,9 @@
     <ClInclude Include="../ActionArgs.h"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../ActionAndArgs.h"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../AppKeyBindings.h" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClInclude>
@@ -123,6 +126,9 @@
     </ClCompile>
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../ActionAndArgs.cpp"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="../ActionArgs.cpp" >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
