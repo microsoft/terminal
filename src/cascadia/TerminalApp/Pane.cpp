@@ -149,6 +149,11 @@ bool Pane::_Resize(const Direction& direction)
     // to reserve for the second.
     const auto firstMaxPercent = 1.0f - secondMinPercent;
 
+    if (firstMaxPercent < firstMinPercent)
+    {
+        return false;
+    }
+
     _firstPercent = std::clamp(_firstPercent.value() - amount, firstMinPercent, firstMaxPercent);
     // Update the other child to fill the remaining percent
     _secondPercent = 1.0f - _firstPercent.value();
@@ -1029,7 +1034,28 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        return _control.MinimumSize();
+        // return _control.MinimumSize();
+        ///////////////
+        auto controlSize = _control.MinimumSize();
+        auto newWidth = controlSize.Width;
+        auto newHeight = controlSize.Height;
+
+        // newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+        // newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+        // newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+        // newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+
+        newWidth += WI_IsFlagSet(_borders, Borders::Left) ? CombinedPaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_borders, Borders::Right) ? CombinedPaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Top) ? CombinedPaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? CombinedPaneBorderSize : 0;
+
+        // newWidth += PaneBorderSize;
+        // newWidth += PaneBorderSize;
+        // newHeight += PaneBorderSize;
+        // newHeight += PaneBorderSize;
+
+        return { newWidth, newHeight };
     }
 
     const auto firstSize = _firstChild->_GetMinSize();
