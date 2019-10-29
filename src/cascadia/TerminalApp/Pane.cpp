@@ -50,12 +50,12 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
         if (res.HasKey(accentColorKey))
         {
-            const auto thing = res.Lookup(accentColorKey);
+            const auto colorFromResources = res.Lookup(accentColorKey);
             // If SystemAccentColor is _not_ a Color for some reason, use
             // Transparent as the color, so we don't do this process again on
             // the next pane (by leaving s_focusedBorderBrush nullptr)
-            auto c = winrt::unbox_value_or<Color>(thing, Colors::Transparent());
-            s_focusedBorderBrush = SolidColorBrush(c);
+            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Transparent());
+            s_focusedBorderBrush = SolidColorBrush(actualColor);
         }
         else
         {
