@@ -168,13 +168,6 @@ public:
     SCREEN_INFORMATION* Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
-    WCHAR LineChar[6];
-#define UPPER_LEFT_CORNER 0
-#define UPPER_RIGHT_CORNER 1
-#define HORIZONTAL_LINE 2
-#define VERTICAL_LINE 3
-#define BOTTOM_LEFT_CORNER 4
-#define BOTTOM_RIGHT_CORNER 5
 
     // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;
