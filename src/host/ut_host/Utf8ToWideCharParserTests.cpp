@@ -264,6 +264,54 @@ class Utf8ToWideCharParserTests
         }
     }
 
+    TEST_METHOD(NonMinimalFormTest)
+    {
+        Log::Comment(L"Testing that non-minimal forms of a character are tolerated don't stop the rest");
+
+        // clang-format off
+
+        // Test data
+        const unsigned char data[] = {
+            0x60, 0x12, 0x00, 0x7f, // single byte points
+            0xc0, 0x80, // U+0000 as a 2-byte sequence (non-minimal)
+            0x41, 0x48, 0x06, 0x55, // more single byte points
+            0xe0, 0x80, 0x80, // U+0000 as a 3-byte sequence (non-minimal)
+            0x18, 0x77, 0x40, 0x31, // more single byte points
+            0xf0, 0x80, 0x80, 0x80, // U+0000 as a 4-byte sequence (non-minimal)
+            0x59, 0x1f, 0x68, 0x20 // more single byte points
+        };
+
+        // Expected conversion
+        const wchar_t wideData[] = {
+            0x0060, 0x0012, 0x0000, 0x007f,
+            0xfffd, 0xfffd,
+            0x0041, 0x0048, 0x0006, 0x0055,
+            0xfffd, 0xfffd,
+            0x0018, 0x0077, 0x0040, 0x0031,
+            0xfffd, 0xfffd, 0xfffd,
+            0x0059, 0x001f, 0x0068, 0x0020
+        };
+
+        // clang-format on
+
+        const unsigned int count = gsl::narrow_cast<unsigned int>(ARRAYSIZE(data));
+        const unsigned int wideCount = gsl::narrow_cast<unsigned int>(ARRAYSIZE(wideData));
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
+        unique_ptr<wchar_t[]> output{ nullptr };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
+
+        VERIFY_SUCCEEDED(parser.Parse(data, count, consumed, output, generated));
+        VERIFY_ARE_EQUAL(count, consumed);
+        VERIFY_ARE_EQUAL(wideCount, generated);
+        VERIFY_IS_NOT_NULL(output.get());
+
+        for (int i = 0; i < wideCount; i++)
+        {
+            VERIFY_ARE_EQUAL(wideData[i], output.get()[i]);
+        }
+    }
+
     TEST_METHOD(PartialBytesAreDroppedOnCodePageChangeTest)
     {
         Log::Comment(L"Testing that a saved partial sequence is cleared when the codepage changes");
