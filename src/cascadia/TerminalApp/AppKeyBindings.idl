@@ -30,6 +30,7 @@ namespace TerminalApp
         PrevTab,
         SplitVertical,
         SplitHorizontal,
+        SwitchToTab,
         SwitchToTab0,
         SwitchToTab1,
         SwitchToTab2,

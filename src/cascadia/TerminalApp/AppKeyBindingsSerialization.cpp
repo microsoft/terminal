@@ -19,6 +19,7 @@ using namespace winrt::TerminalApp;
 
 static constexpr std::string_view KeysKey{ "keys" };
 static constexpr std::string_view CommandKey{ "command" };
+static constexpr std::string_view ArgsKey{ "args" };
 
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
@@ -51,6 +52,7 @@ static constexpr std::string_view ScrollupKey{ "scrollUp" };
 static constexpr std::string_view ScrolldownKey{ "scrollDown" };
 static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
+static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view SwitchToTab0Key{ "switchToTab0" };
 static constexpr std::string_view SwitchToTab1Key{ "switchToTab1" };
 static constexpr std::string_view SwitchToTab2Key{ "switchToTab2" };
@@ -108,6 +110,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { ScrolldownKey, ShortcutAction::ScrollDown },
     { ScrolluppageKey, ShortcutAction::ScrollUpPage },
     { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
+    { SwitchToTabKey, ShortcutAction::SwitchToTab },
     { SwitchToTab0Key, ShortcutAction::SwitchToTab0 },
     { SwitchToTab1Key, ShortcutAction::SwitchToTab1 },
     { SwitchToTab2Key, ShortcutAction::SwitchToTab2 },
@@ -130,6 +133,53 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { OpenSettingsKey, ShortcutAction::OpenSettings },
     { UnboundKey, ShortcutAction::Invalid },
 };
+
+std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)> ParseSwitchToTabArgs2(int index)
+{
+    auto pfn = [index](const Json::Value& value) -> winrt::TerminalApp::IActionArgs {
+        auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
+        args->TabIndex(index);
+        return *args;
+    };
+    return pfn;
+}
+
+winrt::TerminalApp::IActionArgs ParseSwitchToTabArgs(const Json::Value& json)
+{
+    auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
+    args->InitializeFromJson(json);
+    return *args;
+};
+
+winrt::TerminalApp::IActionArgs ParseCopyArgs(const Json::Value& json)
+{
+    auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
+    args->TrimWhitespace(false);
+    return *args;
+};
+
+// static const std::map<std::string_view,
+//                       std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)>,
+//                       std::less<>>
+//     argParsers2{
+//         { CopyTextKey, ParseCopyArgs },
+//         { CopyTextWithoutNewlinesKey, ParseCopyArgs },
+//         { SwitchToTabKey, ParseSwitchToTabArgs },
+//         { SwitchToTab0Key, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
+//         { UnboundKey, nullptr },
+//     };
+
+static const std::map<ShortcutAction,
+                      std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)>,
+                      std::less<>>
+    argParsers{
+        { ShortcutAction::CopyText, ParseCopyArgs },
+        { ShortcutAction::CopyTextWithoutNewlines, ParseCopyArgs },
+        { ShortcutAction::SwitchToTab, ParseSwitchToTabArgs },
+        { ShortcutAction::SwitchToTab0, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
+        { ShortcutAction::SwitchToTab1, ParseSwitchToTabArgs2(1) },
+        { ShortcutAction::Invalid, nullptr },
+    };
 
 // winrt::TerminalApp::IActionArgs ParseCopyArgs(Json::Value json)
 // {
@@ -227,6 +277,7 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
 
         const auto commandVal = value[JsonKey(CommandKey)];
         const auto keys = value[JsonKey(KeysKey)];
+        const auto argsVal = value[JsonKey(ArgsKey)];
 
         if (keys)
         {
@@ -253,6 +304,21 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
                 }
             }
 
+            winrt::TerminalApp::IActionArgs args{ nullptr };
+            if (argsVal)
+            {
+                // The binding included args. Lets create try parsing them.
+                const auto deserializersIter = argParsers.find(action);
+                if (deserializersIter != argParsers.end())
+                {
+                    auto pfn = deserializersIter->second;
+                    if (pfn)
+                    {
+                        args = pfn(argsVal);
+                    }
+                }
+            }
+
             // Try parsing the chord
             try
             {
@@ -264,19 +330,10 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
                 // found.
                 if (action != ShortcutAction::Invalid)
                 {
-                    // auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
                     auto actionAndArgs = winrt::make_self<ActionAndArgs>();
                     actionAndArgs->Action(action);
-                    actionAndArgs->Args(nullptr);
-                    // auto foo = *actionAndArgs;
+                    actionAndArgs->Args(args);
                     SetKeyBinding(*actionAndArgs, chord);
-
-                    // // So this is an implementation::ActionAndArgs...
-                    // ActionAndArgs actionAndArgs{};
-                    // actionAndArgs.Action(action);
-                    // actionAndArgs.Args(nullptr);
-                    // SetKeyBinding(actionAndArgs, chord);
-                    // // And compiles, but doesn't link
                 }
                 else
                 {

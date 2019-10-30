@@ -54,22 +54,28 @@ namespace winrt::TerminalApp::implementation
 
     bool AppKeyBindings::_DoAction(ActionAndArgs actionAndArgs)
     {
-        auto action = actionAndArgs.Action();
+        const auto& action = actionAndArgs.Action();
+        const auto& args = actionAndArgs.Args();
+
         switch (action)
         {
         case ShortcutAction::CopyText:
         {
-            auto args = winrt::make_self<CopyTextArgs>();
-            args->TrimWhitespace(true);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<CopyTextArgs>();
+            // args->TrimWhitespace(true);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _CopyTextHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::CopyTextWithoutNewlines:
         {
-            auto args = winrt::make_self<CopyTextArgs>();
-            args->TrimWhitespace(false);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<CopyTextArgs>();
+            // args->TrimWhitespace(false);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _CopyTextHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
@@ -106,73 +112,91 @@ namespace winrt::TerminalApp::implementation
 
         case ShortcutAction::NewTabProfile0:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(0);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(0);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile1:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(1);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(1);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile2:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(2);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(2);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile3:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(3);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(3);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile4:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(4);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(4);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile5:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(5);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(5);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile6:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(6);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(6);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile7:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(7);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(7);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile8:
         {
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
-            args->ProfileIndex(8);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<NewTabWithProfileArgs>();
+            // args->ProfileIndex(8);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _NewTabWithProfileHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
@@ -255,153 +279,191 @@ namespace winrt::TerminalApp::implementation
 
         case ShortcutAction::SwitchToTab0:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(0);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(0);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab1:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(1);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(1);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab2:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(2);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(2);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab3:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(3);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(3);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab4:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(4);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(4);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab5:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(5);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(5);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab6:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(6);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(6);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab7:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(7);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(7);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::SwitchToTab8:
         {
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            args->TabIndex(8);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(8);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _SwitchToTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::ResizePaneLeft:
         {
-            auto args = winrt::make_self<ResizePaneArgs>();
-            args->Direction(Direction::Left);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<ResizePaneArgs>();
+            // args->Direction(Direction::Left);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _ResizePaneHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::ResizePaneRight:
         {
-            auto args = winrt::make_self<ResizePaneArgs>();
-            args->Direction(Direction::Right);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<ResizePaneArgs>();
+            // args->Direction(Direction::Right);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _ResizePaneHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::ResizePaneUp:
         {
-            auto args = winrt::make_self<ResizePaneArgs>();
-            args->Direction(Direction::Up);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<ResizePaneArgs>();
+            // args->Direction(Direction::Up);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _ResizePaneHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::ResizePaneDown:
         {
-            auto args = winrt::make_self<ResizePaneArgs>();
-            args->Direction(Direction::Down);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<ResizePaneArgs>();
+            // args->Direction(Direction::Down);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _ResizePaneHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::MoveFocusLeft:
         {
-            auto args = winrt::make_self<MoveFocusArgs>();
-            args->Direction(Direction::Left);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<MoveFocusArgs>();
+            // args->Direction(Direction::Left);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _MoveFocusHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::MoveFocusRight:
         {
-            auto args = winrt::make_self<MoveFocusArgs>();
-            args->Direction(Direction::Right);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<MoveFocusArgs>();
+            // args->Direction(Direction::Right);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _MoveFocusHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::MoveFocusUp:
         {
-            auto args = winrt::make_self<MoveFocusArgs>();
-            args->Direction(Direction::Up);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<MoveFocusArgs>();
+            // args->Direction(Direction::Up);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _MoveFocusHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::MoveFocusDown:
         {
-            auto args = winrt::make_self<MoveFocusArgs>();
-            args->Direction(Direction::Down);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<MoveFocusArgs>();
+            // args->Direction(Direction::Down);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _MoveFocusHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::IncreaseFontSize:
         {
-            auto args = winrt::make_self<AdjustFontSizeArgs>();
-            args->Delta(1);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<AdjustFontSizeArgs>();
+            // args->Delta(1);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _AdjustFontSizeHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::DecreaseFontSize:
         {
-            auto args = winrt::make_self<AdjustFontSizeArgs>();
-            args->Delta(-1);
-            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            // auto args = winrt::make_self<AdjustFontSizeArgs>();
+            // args->Delta(-1);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
             _AdjustFontSizeHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }

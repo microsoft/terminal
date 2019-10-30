@@ -14,6 +14,7 @@
 #include "AdjustFontSizeArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "Utils.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
@@ -48,6 +49,28 @@ namespace winrt::TerminalApp::implementation
     {
         SwitchToTabArgs() = default;
         GETSET_PROPERTY(int32_t, TabIndex, 0);
+
+        static constexpr std::string_view TabIndexKey{ "index" };
+
+    public:
+        void InitializeFromJson(const Json::Value& json)
+        {
+            // SwitchToTabArgs args{};
+            if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
+            {
+                _TabIndex = tabIndex.asInt();
+            }
+            // return args;
+        }
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            SwitchToTabArgs args{};
+            if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
+            {
+                args._TabIndex = tabIndex.asInt();
+            }
+            return args;
+        }
     };
 
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
