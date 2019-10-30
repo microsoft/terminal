@@ -9,6 +9,8 @@
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
+using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -35,11 +37,25 @@ namespace TerminalAppLocalTests
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(UnbindKeybindings);
 
+        TEST_METHOD(TestArbitraryArgs);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
             return true;
         }
+
+        static const ActionAndArgs KeyBindingsTests::GetActionAndArgs(const implementation::AppKeyBindings& bindings,
+                                                                      const KeyChord& kc)
+        {
+            const auto keyIter = bindings._keyShortcuts.find(kc);
+            VERIFY_IS_TRUE(keyIter != bindings._keyShortcuts.end(), L"Expected to find an action bound to the given KeyChord");
+            if (keyIter != bindings._keyShortcuts.end())
+            {
+                return keyIter->second;
+            }
+            return nullptr;
+        };
     };
 
     void KeyBindingsTests::ManyKeysSameAction()
@@ -156,4 +172,28 @@ namespace TerminalAppLocalTests
         appKeyBindings->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
     }
+
+    void KeyBindingsTests::TestArbitraryArgs()
+    {
+        const std::string bindings0String{ R"([
+            { "command": "copy", "keys": ["ctrl+c"] }
+        ])" };
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
+        VERIFY_IS_NOT_NULL(appKeyBindings);
+        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        appKeyBindings->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+        }
+    }
+
 }
