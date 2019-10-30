@@ -13,15 +13,16 @@ namespace TerminalApp
         NewTab,
         OpenNewTabDropdown,
         DuplicateTab,
-        NewTabProfile0,
-        NewTabProfile1,
-        NewTabProfile2,
-        NewTabProfile3,
-        NewTabProfile4,
-        NewTabProfile5,
-        NewTabProfile6,
-        NewTabProfile7,
-        NewTabProfile8,
+        NewTabWithProfile,
+        NewTabProfile0, // Legacy
+        NewTabProfile1, // Legacy
+        NewTabProfile2, // Legacy
+        NewTabProfile3, // Legacy
+        NewTabProfile4, // Legacy
+        NewTabProfile5, // Legacy
+        NewTabProfile6, // Legacy
+        NewTabProfile7, // Legacy
+        NewTabProfile8, // Legacy
         NewWindow,
         CloseWindow,
         CloseTab,
@@ -31,29 +32,31 @@ namespace TerminalApp
         SplitVertical,
         SplitHorizontal,
         SwitchToTab,
-        SwitchToTab0,
-        SwitchToTab1,
-        SwitchToTab2,
-        SwitchToTab3,
-        SwitchToTab4,
-        SwitchToTab5,
-        SwitchToTab6,
-        SwitchToTab7,
-        SwitchToTab8,
+        SwitchToTab0, // Legacy
+        SwitchToTab1, // Legacy
+        SwitchToTab2, // Legacy
+        SwitchToTab3, // Legacy
+        SwitchToTab4, // Legacy
+        SwitchToTab5, // Legacy
+        SwitchToTab6, // Legacy
+        SwitchToTab7, // Legacy
+        SwitchToTab8, // Legacy
         IncreaseFontSize,
         DecreaseFontSize,
         ScrollUp,
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
-        ResizePaneLeft,
-        ResizePaneRight,
-        ResizePaneUp,
-        ResizePaneDown,
-        MoveFocusLeft,
-        MoveFocusRight,
-        MoveFocusUp,
-        MoveFocusDown,
+        ResizePane,
+        ResizePaneLeft, // Legacy
+        ResizePaneRight, // Legacy
+        ResizePaneUp, // Legacy
+        ResizePaneDown, // Legacy
+        MoveFocus,
+        MoveFocusLeft, // Legacy
+        MoveFocusRight, // Legacy
+        MoveFocusUp, // Legacy
+        MoveFocusDown, // Legacy
         OpenSettings
     };
 

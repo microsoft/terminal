@@ -43,12 +43,13 @@ namespace winrt::TerminalApp::implementation
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            CopyTextArgs args{};
+            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<CopyTextArgs>();
             if (auto trimWhitespace{ json[JsonKey(TrimWhitespaceKey)] })
             {
-                args._TrimWhitespace = trimWhitespace.asBool();
+                args->_TrimWhitespace = trimWhitespace.asBool();
             }
-            return args;
+            return *args;
         }
     };
 
@@ -56,6 +57,20 @@ namespace winrt::TerminalApp::implementation
     {
         NewTabWithProfileArgs() = default;
         GETSET_PROPERTY(int32_t, ProfileIndex, 0);
+
+        static constexpr std::string_view ProfileIndexKey{ "index" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NewTabWithProfileArgs>();
+            if (auto profileIndex{ json[JsonKey(ProfileIndexKey)] })
+            {
+                args->_ProfileIndex = profileIndex.asInt();
+            }
+            return *args;
+        }
     };
 
     struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
@@ -68,24 +83,7 @@ namespace winrt::TerminalApp::implementation
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            SwitchToTabArgs args{};
-            if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
-            {
-                args._TabIndex = tabIndex.asInt();
-            }
-            return args;
-        }
-        // static winrt::com_ptr<SwitchToTabArgs> FromJson2(const Json::Value& json)
-        // {
-        //     auto args = winrt::make_self<SwitchToTabArgs>();
-        //     if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
-        //     {
-        //         args->_TabIndex = tabIndex.asInt();
-        //     }
-        //     return args;
-        // }
-        static winrt::TerminalApp::IActionArgs FromJson2(const Json::Value& json)
-        {
+            // IMPORTANT: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SwitchToTabArgs>();
             if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
             {
@@ -95,16 +93,78 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
+    // Possible Direction values
+    static constexpr std::string_view LeftString{ "left" };
+    static constexpr std::string_view RightString{ "right" };
+    static constexpr std::string_view UpString{ "up" };
+    static constexpr std::string_view DownString{ "down" };
+
+    // Function Description:
+    // - Helper function for parsing a Direction from a string
+    // Arguments:
+    // - directionString: the string to attempt to parse
+    // Return Value:
+    // - The encoded Direction value, or Direction::Left if it was an invalid string
+    static TerminalApp::Direction ParseDirection(const std::string& directionString)
+    {
+        if (directionString == LeftString)
+        {
+            return TerminalApp::Direction::Left;
+        }
+        else if (directionString == RightString)
+        {
+            return TerminalApp::Direction::Right;
+        }
+        else if (directionString == UpString)
+        {
+            return TerminalApp::Direction::Up;
+        }
+        else if (directionString == DownString)
+        {
+            return TerminalApp::Direction::Down;
+        }
+        // default behavior for invalid data
+        return TerminalApp::Direction::Left;
+    };
+
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
         GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ResizePaneArgs>();
+            if (auto directionString{ json[JsonKey(DirectionKey)] })
+            {
+                args->_Direction = ParseDirection(directionString.asString());
+            }
+            return *args;
+        }
     };
 
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
         GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MoveFocusArgs>();
+            if (auto directionString{ json[JsonKey(DirectionKey)] })
+            {
+                args->_Direction = ParseDirection(directionString.asString());
+            }
+            return *args;
+        }
     };
 
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
