@@ -277,6 +277,16 @@ namespace winrt::TerminalApp::implementation
             return eventArgs->Handled();
         }
 
+        case ShortcutAction::SwitchToTab:
+        {
+            // auto args = winrt::make_self<SwitchToTabArgs>();
+            // args->TabIndex(0);
+
+            // auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(args);
+            _SwitchToTabHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
         case ShortcutAction::SwitchToTab0:
         {
             // auto args = winrt::make_self<SwitchToTabArgs>();

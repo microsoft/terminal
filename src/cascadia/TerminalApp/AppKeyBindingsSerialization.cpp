@@ -134,9 +134,9 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { UnboundKey, ShortcutAction::Invalid },
 };
 
-std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)> ParseSwitchToTabArgs2(int index)
+std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int index)
 {
-    auto pfn = [index](const Json::Value& value) -> winrt::TerminalApp::IActionArgs {
+    auto pfn = [index](const Json::Value& value) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
         args->TabIndex(index);
         return *args;
@@ -144,54 +144,50 @@ std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)> ParseSwitchTo
     return pfn;
 }
 
-winrt::TerminalApp::IActionArgs ParseSwitchToTabArgs(const Json::Value& json)
-{
-    auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
-    args->InitializeFromJson(json);
-    return *args;
-};
-
-winrt::TerminalApp::IActionArgs ParseCopyArgs(const Json::Value& json)
+IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& json)
 {
     auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
-    args->TrimWhitespace(false);
+    args->TrimWhitespace(true);
     return *args;
 };
 
-// static const std::map<std::string_view,
-//                       std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)>,
-//                       std::less<>>
-//     argParsers2{
-//         { CopyTextKey, ParseCopyArgs },
-//         { CopyTextWithoutNewlinesKey, ParseCopyArgs },
-//         { SwitchToTabKey, ParseSwitchToTabArgs },
-//         { SwitchToTab0Key, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
-//         { UnboundKey, nullptr },
-//     };
-
 static const std::map<ShortcutAction,
-                      std::function<winrt::TerminalApp::IActionArgs(const Json::Value&)>,
+                      std::function<IActionArgs(const Json::Value&)>,
                       std::less<>>
     argParsers{
-        { ShortcutAction::CopyText, ParseCopyArgs },
-        { ShortcutAction::CopyTextWithoutNewlines, ParseCopyArgs },
-        { ShortcutAction::SwitchToTab, ParseSwitchToTabArgs },
-        { ShortcutAction::SwitchToTab0, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
-        { ShortcutAction::SwitchToTab1, ParseSwitchToTabArgs2(1) },
+        { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
+        { ShortcutAction::CopyTextWithoutNewlines, LegacyParseCopyTextWithoutNewlinesArgs },
+        { ShortcutAction::SwitchToTab, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson2 },
+        { ShortcutAction::SwitchToTab0, LegacyParseSwitchToTabArgs(0) },
+        { ShortcutAction::SwitchToTab1, LegacyParseSwitchToTabArgs(1) },
+        { ShortcutAction::SwitchToTab2, LegacyParseSwitchToTabArgs(2) },
+        { ShortcutAction::SwitchToTab3, LegacyParseSwitchToTabArgs(3) },
+        { ShortcutAction::SwitchToTab4, LegacyParseSwitchToTabArgs(4) },
+        { ShortcutAction::SwitchToTab5, LegacyParseSwitchToTabArgs(5) },
+        { ShortcutAction::SwitchToTab6, LegacyParseSwitchToTabArgs(6) },
+        { ShortcutAction::SwitchToTab7, LegacyParseSwitchToTabArgs(7) },
+        { ShortcutAction::SwitchToTab8, LegacyParseSwitchToTabArgs(8) },
         { ShortcutAction::Invalid, nullptr },
     };
 
-// winrt::TerminalApp::IActionArgs ParseCopyArgs(Json::Value json)
-// {
-//     auto args = winrt::TerminalApp::CopyTextArgs();
-//     return args;
-// };
-
-// static const std::map<std::string_view, std::function<winrt::TerminalApp::IActionArgs(Json::Value)>, std::less<>> argParsers{
-//     { CopyTextKey, ParseCopyArgs },
-//     { CopyTextWithoutNewlinesKey, ParseCopyArgs },
-//     { UnboundKey, nullptr },
-// };
+// static const std::map<ShortcutAction,
+//                       std::function<IActionArgs(const Json::Value&)>,
+//                       std::less<>>
+//     argParsers2{
+//         // { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
+//         // { ShortcutAction::CopyTextWithoutNewlines, LegacyParseCopyTextWithoutNewlinesArgs },
+//         { ShortcutAction::SwitchToTab, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson2 },
+//         // { ShortcutAction::SwitchToTab0, LegacyParseSwitchToTabArgs(0) },
+//         // { ShortcutAction::SwitchToTab1, LegacyParseSwitchToTabArgs(1) },
+//         // { ShortcutAction::SwitchToTab2, LegacyParseSwitchToTabArgs(2) },
+//         // { ShortcutAction::SwitchToTab3, LegacyParseSwitchToTabArgs(3) },
+//         // { ShortcutAction::SwitchToTab4, LegacyParseSwitchToTabArgs(4) },
+//         // { ShortcutAction::SwitchToTab5, LegacyParseSwitchToTabArgs(5) },
+//         // { ShortcutAction::SwitchToTab6, LegacyParseSwitchToTabArgs(6) },
+//         // { ShortcutAction::SwitchToTab7, LegacyParseSwitchToTabArgs(7) },
+//         // { ShortcutAction::SwitchToTab8, LegacyParseSwitchToTabArgs(8) },
+//         { ShortcutAction::Invalid, nullptr },
+//     };
 
 // Function Description:
 // - Small helper to create a json value serialization of a single
@@ -304,7 +300,7 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
                 }
             }
 
-            winrt::TerminalApp::IActionArgs args{ nullptr };
+            IActionArgs args{ nullptr };
             if (argsVal)
             {
                 // The binding included args. Lets create try parsing them.
@@ -318,6 +314,15 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
                     }
                 }
             }
+
+            // IActionArgs args{ nullptr };
+            // if (argsVal)
+            // {
+            //     auto testArgs = winrt::make_self<SwitchToTabArgs>();
+            //     testArgs->TabIndex(5);
+            //     // auto foo = *testArgs;
+            //     args = *testArgs;
+            // }
 
             // Try parsing the chord
             try

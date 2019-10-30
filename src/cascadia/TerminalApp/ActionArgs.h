@@ -37,6 +37,19 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, TrimWhitespace, false);
+
+        static constexpr std::string_view TrimWhitespaceKey{ "TrimWhitespace" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            CopyTextArgs args{};
+            if (auto trimWhitespace{ json[JsonKey(TrimWhitespaceKey)] })
+            {
+                args._TrimWhitespace = trimWhitespace.asBool();
+            }
+            return args;
+        }
     };
 
     struct NewTabWithProfileArgs : public NewTabWithProfileArgsT<NewTabWithProfileArgs>
@@ -53,15 +66,6 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view TabIndexKey{ "index" };
 
     public:
-        void InitializeFromJson(const Json::Value& json)
-        {
-            // SwitchToTabArgs args{};
-            if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
-            {
-                _TabIndex = tabIndex.asInt();
-            }
-            // return args;
-        }
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             SwitchToTabArgs args{};
@@ -70,6 +74,24 @@ namespace winrt::TerminalApp::implementation
                 args._TabIndex = tabIndex.asInt();
             }
             return args;
+        }
+        // static winrt::com_ptr<SwitchToTabArgs> FromJson2(const Json::Value& json)
+        // {
+        //     auto args = winrt::make_self<SwitchToTabArgs>();
+        //     if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
+        //     {
+        //         args->_TabIndex = tabIndex.asInt();
+        //     }
+        //     return args;
+        // }
+        static winrt::TerminalApp::IActionArgs FromJson2(const Json::Value& json)
+        {
+            auto args = winrt::make_self<SwitchToTabArgs>();
+            if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
+            {
+                args->_TabIndex = tabIndex.asInt();
+            }
+            return *args;
         }
     };
 
