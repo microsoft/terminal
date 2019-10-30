@@ -27,10 +27,9 @@ static constexpr std::string_view UnboundKey{ "unbound" };
 static constexpr std::string_view CopyTextKey{ "copy" };
 static constexpr std::string_view CopyTextWithoutNewlinesKey{ "copyTextWithoutNewlines" }; // Legacy
 static constexpr std::string_view PasteTextKey{ "paste" };
-static constexpr std::string_view NewTabKey{ "newTab" };
 static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
-static constexpr std::string_view NewTabWithProfileKey{ "newTabWithProfile" };
+static constexpr std::string_view NewTabKey{ "newTab" };
 static constexpr std::string_view NewTabWithProfile0Key{ "newTabProfile0" }; // Legacy
 static constexpr std::string_view NewTabWithProfile1Key{ "newTabProfile1" }; // Legacy
 static constexpr std::string_view NewTabWithProfile2Key{ "newTabProfile2" }; // Legacy
@@ -89,10 +88,9 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { CopyTextKey, ShortcutAction::CopyText },
     { CopyTextWithoutNewlinesKey, ShortcutAction::CopyTextWithoutNewlines },
     { PasteTextKey, ShortcutAction::PasteText },
-    { NewTabKey, ShortcutAction::NewTab },
     { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
     { DuplicateTabKey, ShortcutAction::DuplicateTab },
-    { NewTabWithProfileKey, ShortcutAction::NewTabWithProfile },
+    { NewTabKey, ShortcutAction::NewTab },
     { NewTabWithProfile0Key, ShortcutAction::NewTabProfile0 },
     { NewTabWithProfile1Key, ShortcutAction::NewTabProfile1 },
     { NewTabWithProfile2Key, ShortcutAction::NewTabProfile2 },
@@ -193,7 +191,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Directi
 std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(int index)
 {
     auto pfn = [index](const Json::Value& value) -> IActionArgs {
-        auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabWithProfileArgs>();
+        auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
         args->ProfileIndex(index);
         return *args;
     };
@@ -243,7 +241,7 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
     { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
     { ShortcutAction::CopyTextWithoutNewlines, LegacyParseCopyTextWithoutNewlinesArgs },
 
-    { ShortcutAction::NewTabWithProfile, winrt::TerminalApp::implementation::NewTabWithProfileArgs::FromJson },
+    { ShortcutAction::NewTab, winrt::TerminalApp::implementation::NewTabArgs::FromJson },
     { ShortcutAction::NewTabProfile0, LegacyParseNewTabWithProfileArgs(0) },
     { ShortcutAction::NewTabProfile1, LegacyParseNewTabWithProfileArgs(1) },
     { ShortcutAction::NewTabProfile2, LegacyParseNewTabWithProfileArgs(2) },

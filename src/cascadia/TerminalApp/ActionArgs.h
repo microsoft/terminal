@@ -7,7 +7,7 @@
 //          *.g.cpp to ActionArgs.cpp!
 #include "ActionEventArgs.g.h"
 #include "CopyTextArgs.g.h"
-#include "NewTabWithProfileArgs.g.h"
+#include "NewTabArgs.g.h"
 #include "SwitchToTabArgs.g.h"
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
@@ -53,9 +53,9 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
-    struct NewTabWithProfileArgs : public NewTabWithProfileArgsT<NewTabWithProfileArgs>
+    struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
-        NewTabWithProfileArgs() = default;
+        NewTabArgs() = default;
         GETSET_PROPERTY(int32_t, ProfileIndex, 0);
 
         static constexpr std::string_view ProfileIndexKey{ "index" };
@@ -64,7 +64,7 @@ namespace winrt::TerminalApp::implementation
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             // IMPORTANT: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<NewTabWithProfileArgs>();
+            auto args = winrt::make_self<NewTabArgs>();
             if (auto profileIndex{ json[JsonKey(ProfileIndexKey)] })
             {
                 args->_ProfileIndex = profileIndex.asInt();

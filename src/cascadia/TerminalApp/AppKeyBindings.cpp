@@ -76,11 +76,6 @@ namespace winrt::TerminalApp::implementation
             _PasteTextHandlers(*this, *eventArgs);
             break;
         }
-        case ShortcutAction::NewTab:
-        {
-            _NewTabHandlers(*this, *eventArgs);
-            break;
-        }
         case ShortcutAction::OpenNewTabDropdown:
         {
             _OpenNewTabDropdownHandlers(*this, *eventArgs);
@@ -97,7 +92,7 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
-        case ShortcutAction::NewTabWithProfile:
+        case ShortcutAction::NewTab:
         case ShortcutAction::NewTabProfile0:
         case ShortcutAction::NewTabProfile1:
         case ShortcutAction::NewTabProfile2:
@@ -108,7 +103,7 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::NewTabProfile7:
         case ShortcutAction::NewTabProfile8:
         {
-            _NewTabWithProfileHandlers(*this, *eventArgs);
+            _NewTabHandlers(*this, *eventArgs);
             break;
         }
 

@@ -31,8 +31,9 @@ namespace TerminalApp
         Boolean TrimWhitespace { get; };
     };
 
-    [default_interface] runtimeclass NewTabWithProfileArgs : IActionArgs
+    [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
+        // Windows.Foundation.IReference<Int32>?
         Int32 ProfileIndex { get; };
     };
 

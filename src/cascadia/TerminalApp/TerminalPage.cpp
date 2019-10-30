@@ -539,7 +539,6 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
 
-        bindings.NewTab({ this, &TerminalPage::_HandleNewTab });
         bindings.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
         bindings.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
         bindings.CloseTab({ this, &TerminalPage::_HandleCloseTab });
@@ -555,7 +554,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         bindings.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         bindings.PasteText({ this, &TerminalPage::_HandlePasteText });
-        bindings.NewTabWithProfile({ this, &TerminalPage::_HandleNewTabWithProfile });
+        bindings.NewTab({ this, &TerminalPage::_HandleNewTab });
         bindings.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
         bindings.ResizePane({ this, &TerminalPage::_HandleResizePane });
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });

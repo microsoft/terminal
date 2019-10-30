@@ -56,10 +56,9 @@ namespace winrt::TerminalApp::implementation
         // clang-format off
         TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(OpenNewTabDropdown,TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(DuplicateTab,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewTabWithProfile, TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(NewWindow,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(CloseWindow,       TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(CloseTab,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);

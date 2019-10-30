@@ -26,12 +26,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
-                                     const TerminalApp::ActionEventArgs& args)
-    {
-        _OpenNewTab(std::nullopt);
-        args.Handled(true);
-    }
     void TerminalPage::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
                                                  const TerminalApp::ActionEventArgs& args)
     {
@@ -138,10 +132,15 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleNewTabWithProfile(const IInspectable& /*sender*/,
-                                                const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
+                                     const TerminalApp::ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabWithProfileArgs>())
+        if (args == nullptr)
+        {
+            _OpenNewTab(std::nullopt);
+            args.Handled(true);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabArgs>())
         {
             _OpenNewTab({ realArgs.ProfileIndex() });
             args.Handled(true);
