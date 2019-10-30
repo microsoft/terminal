@@ -94,6 +94,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         ScrollbarState ScrollState() const noexcept;
         void ScrollState(winrt::Microsoft::Terminal::Settings::ScrollbarState const& value) noexcept;
 
+        uint32_t SelectionBackground();
+        void SelectionBackground(uint32_t value);
+
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
@@ -125,6 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;
+        uint32_t _selectionBackground;
     };
 }
 

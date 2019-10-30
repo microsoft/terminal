@@ -34,7 +34,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImageHorizontalAlignment{ winrt::Windows::UI::Xaml::HorizontalAlignment::Center },
         _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
-        _scrollbarState{ ScrollbarState::Visible }
+        _scrollbarState{ ScrollbarState::Visible },
+        _selectionBackground{ DEFAULT_FOREGROUND }
     {
     }
 
@@ -328,6 +329,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::ScrollState(Settings::ScrollbarState const& value) noexcept
     {
         _scrollbarState = value;
+    }
+
+    uint32_t TerminalSettings::SelectionBackground()
+    {
+        return _selectionBackground;
+    }
+
+    void TerminalSettings::SelectionBackground(uint32_t value)
+    {
+        _selectionBackground = value;
     }
 
 }
