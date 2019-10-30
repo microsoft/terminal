@@ -377,8 +377,16 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
         _currentState = _State::AwaitingMoreBytes;
         return 0;
     }
+
+    // By this point, all obviously invalid sequences have been removed.
+    // But non-minimal forms of sequences might still exist.
+    // MB2WC will fail non-minimal forms with MB_ERR_INVALID_CHARS at this point.
+    // So we call with flags = 0 such that non-minimal forms get the U+FFFD
+    // replacement character treatment.
+    // This issue and related concerns are fully captured in future work item GH#3378
+    // for future cleanup and reconciliation.
     int bufferSize = MultiByteToWideChar(_currentCodePage,
-                                         MB_ERR_INVALID_CHARS,
+                                         0,
                                          reinterpret_cast<LPCCH>(validSequence.first.get()),
                                          validSequence.second,
                                          nullptr,
