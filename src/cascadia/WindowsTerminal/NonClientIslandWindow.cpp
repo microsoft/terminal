@@ -502,6 +502,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
                 // We only have to do this for the title bar because it's the
                 // only part of the frame that we change.
                 const auto resizeBorderHeight =
+                    // there isn't a SM_CYPADDEDBORDER for the Y axis
                     GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) +
                     GetSystemMetricsForDpi(SM_CYFRAME, dpi);
                 clientTop += resizeBorderHeight;
