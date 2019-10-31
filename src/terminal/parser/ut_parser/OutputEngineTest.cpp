@@ -718,13 +718,13 @@ public:
         return true;
     }
 
-    bool CursorSavePosition() override
+    bool CursorSaveState() override
     {
         _fCursorSave = true;
         return true;
     }
 
-    bool CursorRestorePosition() override
+    bool CursorRestoreState() override
     {
         _fCursorLoad = true;
         return true;

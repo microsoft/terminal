@@ -1617,11 +1617,11 @@ public:
         _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
         _testGetSet->_coordExpectedCursorPos = coordExpected;
 
-        VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"By default, restore to top left corner (0,0 offset from viewport).");
+        VERIFY_IS_TRUE(_pDispatch->CursorRestoreState(), L"By default, restore to top left corner (0,0 offset from viewport).");
 
         Log::Comment(L"Test 2: Place cursor in center. Save. Move cursor to corner. Restore. Should come back to center.");
         _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        VERIFY_IS_TRUE(_pDispatch->CursorSavePosition(), L"Succeed at saving position.");
+        VERIFY_IS_TRUE(_pDispatch->CursorSaveState(), L"Succeed at saving position.");
 
         Log::Comment(L"Backup expected cursor (in the middle). Move cursor to corner. Then re-set expected cursor to middle.");
         // save expected cursor position
@@ -1633,7 +1633,7 @@ public:
         // restore expected cursor position to center.
         _testGetSet->_coordExpectedCursorPos = coordExpected;
 
-        VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
+        VERIFY_IS_TRUE(_pDispatch->CursorRestoreState(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
     }
 
     TEST_METHOD(CursorHideShowTest)

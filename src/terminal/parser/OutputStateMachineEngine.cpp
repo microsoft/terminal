@@ -194,11 +194,11 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
             break;
         case VTActionCodes::DECSC_CursorSave:
-            fSuccess = _dispatch->CursorSavePosition();
+            fSuccess = _dispatch->CursorSaveState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
             break;
         case VTActionCodes::DECRC_CursorRestore:
-            fSuccess = _dispatch->CursorRestorePosition();
+            fSuccess = _dispatch->CursorRestoreState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
             break;
         case VTActionCodes::DECKPAM_KeypadApplicationMode:
@@ -452,11 +452,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
                 break;
             case VTActionCodes::ANSISYSSC_CursorSave:
-                fSuccess = _dispatch->CursorSavePosition();
+                fSuccess = _dispatch->CursorSaveState();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
                 break;
             case VTActionCodes::ANSISYSRC_CursorRestore:
-                fSuccess = _dispatch->CursorRestorePosition();
+                fSuccess = _dispatch->CursorRestoreState();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
                 break;
             case VTActionCodes::IL_InsertLine:

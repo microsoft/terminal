@@ -48,8 +48,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorHorizontalPositionAbsolute(_In_ unsigned int const uiColumn) override; // CHA
         bool VerticalLinePositionAbsolute(_In_ unsigned int const uiLine) override; // VPA
         bool CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned int const uiColumn) override; // CUP
-        bool CursorSavePosition() override; // DECSC
-        bool CursorRestorePosition() override; // DECRC
+        bool CursorSaveState() override; // DECSC
+        bool CursorRestoreState() override; // DECRC
         bool CursorVisibility(const bool fIsVisible) override; // DECTCEM
         bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
         bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL

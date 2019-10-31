@@ -417,7 +417,7 @@ bool AdaptDispatch::CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned
 // - <none>
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorSavePosition()
+bool AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -456,7 +456,7 @@ bool AdaptDispatch::CursorSavePosition()
 // - <none>
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorRestorePosition()
+bool AdaptDispatch::CursorRestoreState()
 {
     auto& savedCursorState = _savedCursorState[_usingAltBuffer];
 
@@ -1369,7 +1369,7 @@ bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseAlternateScreenBuffer()
 {
-    bool fSuccess = CursorSavePosition();
+    bool fSuccess = CursorSaveState();
     if (fSuccess)
     {
         fSuccess = !!_conApi->PrivateUseAlternateScreenBuffer();
@@ -1396,7 +1396,7 @@ bool AdaptDispatch::UseMainScreenBuffer()
         _usingAltBuffer = false;
         if (fSuccess)
         {
-            fSuccess = CursorRestorePosition();
+            fSuccess = CursorRestoreState();
         }
     }
     return fSuccess;
