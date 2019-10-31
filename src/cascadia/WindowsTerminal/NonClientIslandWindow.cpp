@@ -148,46 +148,19 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         return;
     }
 
+    WINDOWPLACEMENT placement;
+    winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
+
     const auto scale = GetCurrentDpiScale();
-    const auto dpi = ::GetDpiForWindow(_window.get());
+    const auto topBorder = placement.showCmd == SW_MAXIMIZE ? 0 : static_cast<int>(1 * scale);
 
-    const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
-    const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-
-    // If we're maximized, we don't want to use the frame as our margins,
-    // instead we want to use the margins from the maximization. If we included
-    // the left&right sides of the frame in this calculation while maximized,
-    // you' have a few pixels of the window border on the sides while maximized,
-    // which most apps do not have.
-    const auto bordersWidth = _isMaximized ?
-                                  (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
-                                  (dragX * 2);
-    const auto bordersHeight = _isMaximized ?
-                                   (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
-                                   (dragY * 2);
-
-    const auto windowsWidth = width - bordersWidth;
-    const auto windowsHeight = height - bordersHeight;
-    const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-    const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
-
-    if (_rootGrid)
-    {
-        winrt::Windows::Foundation::Size size{ (windowsWidth / scale) + 0.5f, (windowsHeight / scale) + 0.5f };
-        _rootGrid.Height(size.Height);
-        _rootGrid.Width(size.Width);
-        _rootGrid.Measure(size);
-        winrt::Windows::Foundation::Rect finalRect{};
-        _rootGrid.Arrange(finalRect);
-    }
-
-    // I'm not sure that HWND_BOTTOM does anything differnet than HWND_TOP for us.
+    // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   xPos + 30,
-                                   yPos + 30,
-                                   windowsWidth - 60,
-                                   windowsHeight - 60,
+                                   0,
+                                   topBorder,
+                                   width,
+                                   height - topBorder,
                                    SWP_SHOWWINDOW));
 }
 
