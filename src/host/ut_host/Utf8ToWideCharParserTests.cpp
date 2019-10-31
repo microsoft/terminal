@@ -272,7 +272,7 @@ class Utf8ToWideCharParserTests
 
         // Test data
         const unsigned char data[] = {
-            0x60, 0x12, 0x00, 0x7f, // single byte points
+            0x60, 0x12, 0x08, 0x7f, // single byte points
             0xc0, 0x80, // U+0000 as a 2-byte sequence (non-minimal)
             0x41, 0x48, 0x06, 0x55, // more single byte points
             0xe0, 0x80, 0x80, // U+0000 as a 3-byte sequence (non-minimal)
@@ -283,12 +283,12 @@ class Utf8ToWideCharParserTests
 
         // Expected conversion
         const wchar_t wideData[] = {
-            0x0060, 0x0012, 0x0000, 0x007f,
-            0xfffd, 0xfffd,
+            0x0060, 0x0012, 0x0008, 0x007f,
+            0xfffd, 0xfffd, // The number of replacements per invalid sequence is not intended to be load-bearing
             0x0041, 0x0048, 0x0006, 0x0055,
-            0xfffd, 0xfffd,
+            0xfffd, 0xfffd, 0xfffd, // It is just representative of what it looked like when fixing this for GH#3380
             0x0018, 0x0077, 0x0040, 0x0031,
-            0xfffd, 0xfffd, 0xfffd,
+            0xfffd, 0xfffd, 0xfffd, // Change if necessary when completing GH#3378
             0x0059, 0x001f, 0x0068, 0x0020
         };
 
@@ -306,10 +306,9 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(wideCount, generated);
         VERIFY_IS_NOT_NULL(output.get());
 
-        for (int i = 0; i < wideCount; i++)
-        {
-            VERIFY_ARE_EQUAL(wideData[i], output.get()[i]);
-        }
+        const auto expected = WEX::Common::String(wideData, wideCount);
+        const auto actual = WEX::Common::String(output.get(), generated);
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(PartialBytesAreDroppedOnCodePageChangeTest)

@@ -385,6 +385,7 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
     // replacement character treatment.
     // This issue and related concerns are fully captured in future work item GH#3378
     // for future cleanup and reconciliation.
+    // The original issue introducing this was GH#3320.
     int bufferSize = MultiByteToWideChar(_currentCodePage,
                                          0,
                                          reinterpret_cast<LPCCH>(validSequence.first.get()),
