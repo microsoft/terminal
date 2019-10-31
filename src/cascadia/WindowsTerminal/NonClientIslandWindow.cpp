@@ -184,10 +184,10 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     // I'm not sure that HWND_BOTTOM does anything differnet than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   xPos,
-                                   yPos,
-                                   windowsWidth,
-                                   windowsHeight,
+                                   xPos + 30,
+                                   yPos + 30,
+                                   windowsWidth - 60,
+                                   windowsHeight - 60,
                                    SWP_SHOWWINDOW));
 }
 
@@ -265,7 +265,9 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
 [[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
-    // Get the window rectangle.
+    ptMouse;
+    return HTTOP;
+    /* // Get the window rectangle.
     RECT rcWindow = BaseWindow::GetWindowRect();
 
     MARGINS margins = GetFrameMargins();
@@ -312,7 +314,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
     };
     // clang-format on
 
-    return hitTests[uRow][uCol];
+    return hitTests[uRow][uCol]; */
 }
 
 // Method Description:
@@ -353,10 +355,11 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     // especially don't want a top margin - that's where the caption buttons
     // are, and we're drawing those. So just set a single pixel on the bottom,
     // because the method won't work with {0}.
-    MARGINS margins = { 0, 0, 0, 1 };
+    MARGINS margins = { 50, 50, 50, 50 };
 
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
+    // return S_OK;
 }
 
 // Routine Description:
@@ -486,10 +489,20 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             // Calculate new NCCALCSIZE_PARAMS based on custom NCA inset.
             NCCALCSIZE_PARAMS* pncsp = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
 
-            pncsp->rgrc[0].left = pncsp->rgrc[0].left + 0;
-            pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0;
-            pncsp->rgrc[0].right = pncsp->rgrc[0].right - 0;
-            pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - 0;
+            const auto dpi = ::GetDpiForWindow(_window.get());
+            if (dpi == 0)
+            {
+                winrt::throw_last_error();
+            }
+
+            RECT frameRc = {};
+            ::AdjustWindowRectExForDpi(&frameRc, WS_OVERLAPPEDWINDOW, FALSE, 0, dpi);
+
+            // keep the standard frame, except ... 
+            pncsp->rgrc[0].left = pncsp->rgrc[0].left - frameRc.left;
+            pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0; // ... remove the titlebar
+            pncsp->rgrc[0].right = pncsp->rgrc[0].right - frameRc.right;
+            pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - frameRc.bottom;
 
             return 0;
         }
@@ -527,7 +540,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             return 0;
         }
 
-        PAINTSTRUCT ps{ 0 };
+        /* PAINTSTRUCT ps{ 0 };
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())
         {
@@ -578,7 +591,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             // Draw the right window border
             clientRect = { cx - xPos, 0, cx, cy };
             ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-        }
+        } */
 
         return 0;
     }
