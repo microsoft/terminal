@@ -83,6 +83,8 @@ namespace winrt::TerminalApp::implementation
         void _ReloadSettings();
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
+
+        FORWARDED_TYPED_EVENT(ToggleFullscreen, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs, _root, ToggleFullscreen);
     };
 }
 

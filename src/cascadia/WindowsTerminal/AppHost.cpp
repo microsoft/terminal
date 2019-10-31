@@ -80,6 +80,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
 
     _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _app.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
 
     _app.Create();
 
@@ -295,4 +296,10 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
 {
     _window->UpdateTheme(arg);
+}
+
+void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+{
+    _window->ToggleFullscreen();
 }

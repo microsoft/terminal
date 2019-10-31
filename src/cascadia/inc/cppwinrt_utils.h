@@ -71,6 +71,11 @@ public:                                                                         
 private:                                                                                                                                    \
     winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
 
+#define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                                        \
+public:                                                                                                                        \
+    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler->handlerName(h); } \
+    void name(winrt::event_token const& token) noexcept { handler->handlerName(token); }
+
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.

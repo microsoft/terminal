@@ -681,6 +681,15 @@ namespace winrt::TerminalApp::implementation
         return _root->LastTabClosed(token);
     }
 
+    // winrt::event_token App::ToggleFullscreen(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs> const& handler)
+    // {
+    //     return _root->_ToggleFullscreen(handler);
+    // }
+    // void App::ToggleFullscreen(winrt::event_token const& token) noexcept
+    // {
+    //     return _root->_ToggleFullscreen(token);
+    // }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

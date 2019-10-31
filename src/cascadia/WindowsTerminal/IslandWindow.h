@@ -36,6 +36,8 @@ public:
 
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
+    void ToggleFullscreen();
+
 #pragma region IUiaWindow
     void ChangeViewport(const SMALL_RECT /*NewWindow*/)
     {
@@ -89,4 +91,14 @@ protected:
     std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+
+    bool _fullscreen{ false };
+    RECT _rcFullscreenWindowSize;
+    RECT _rcNonFullscreenWindowSize;
+
+    void SetIsFullscreen(const bool fFullscreenEnabled);
+
+    void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
+
+    void _ApplyWindowSize();
 };
