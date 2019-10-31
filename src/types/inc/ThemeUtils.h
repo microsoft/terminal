@@ -4,5 +4,5 @@
 
 namespace Microsoft::Console::ThemeUtils
 {
-    HRESULT SetDwmImmersiveDarkMode(HWND hwnd, bool enabled);
+    HRESULT SetDwmImmersiveDarkMode(HWND hwnd, bool enabled) noexcept;
 }
