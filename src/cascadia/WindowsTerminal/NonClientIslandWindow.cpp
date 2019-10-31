@@ -350,16 +350,22 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    // Set frame margins with just a single pixel on the bottom. We don't
-    // really want a window frame at all - we're drawing all of it. We
-    // especially don't want a top margin - that's where the caption buttons
-    // are, and we're drawing those. So just set a single pixel on the bottom,
-    // because the method won't work with {0}.
-    MARGINS margins = { 50, 50, 50, 50 };
+    const auto dpi = ::GetDpiForWindow(_window.get());
+    if (dpi == 0)
+    {
+        winrt::throw_last_error();
+    }
+
+    RECT frameRc = {};
+    ::AdjustWindowRectExForDpi(&frameRc, WS_OVERLAPPEDWINDOW, FALSE, 0, dpi);
+
+    // We removed the titlebar from the non client area (see handling of
+    // WM_NCCALCSIZE) and now we add it back, but into the client area to paint
+    // over it with our XAML island.
+    MARGINS margins = { 0, 0, -frameRc.top, 0 };
 
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
-    // return S_OK;
 }
 
 // Routine Description:
