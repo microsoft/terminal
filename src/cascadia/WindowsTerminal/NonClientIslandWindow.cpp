@@ -115,8 +115,10 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 
 int NonClientIslandWindow::_GetTopBorderHeight()
 {
-    WINDOWPLACEMENT placement;
+    WINDOWPLACEMENT placement = {};
+    placement.length = sizeof(placement);
     winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
+
     bool isMaximized = placement.showCmd == SW_MAXIMIZE;
     if (isMaximized)
     {
@@ -338,7 +340,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     }
 
     RECT frameRc = {};
-    ::AdjustWindowRectExForDpi(&frameRc, WS_OVERLAPPEDWINDOW, FALSE, 0, dpi);
+    ::AdjustWindowRectExForDpi(&frameRc, GetWindowStyle(_window.get()), FALSE, 0, dpi);
 
     // We removed the titlebar from the non client area (see handling of
     // WM_NCCALCSIZE) and now we add it back, but into the client area to paint
@@ -476,12 +478,38 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
                 winrt::throw_last_error();
             }
 
+            const auto windowStyle = GetWindowStyle(_window.get());
+
             RECT frameRc = {};
-            ::AdjustWindowRectExForDpi(&frameRc, WS_OVERLAPPEDWINDOW, FALSE, 0, dpi);
+            if (::AdjustWindowRectExForDpi(&frameRc, windowStyle, FALSE, 0, dpi) == 0)
+            {
+                winrt::throw_last_error();
+            }
+
+            auto clientTop = pncsp->rgrc[0].top + 0;
+
+            WINDOWPLACEMENT placement = {};
+            placement.length = sizeof(placement);
+            winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
+
+            if (placement.showCmd == SW_MAXIMIZE)
+            {
+                // When a window is maximized, its size is actually a little
+                // bit more than the monitor work area. The window borders'
+                // size is added to the window size so that the borders do not
+                // appear on the monitor.
+
+                // We only have to do this for the title bar because it's the
+                // only part of the frame that we change.
+                const auto resizeBorderHeight =
+                    GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) +
+                    GetSystemMetricsForDpi(SM_CYFRAME, dpi);
+                clientTop += resizeBorderHeight;
+            }
 
             // keep the standard frame, except ...
             pncsp->rgrc[0].left = pncsp->rgrc[0].left - frameRc.left;
-            pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0; // ... remove the titlebar
+            pncsp->rgrc[0].top = clientTop; // ... remove the titlebar
             pncsp->rgrc[0].right = pncsp->rgrc[0].right - frameRc.right;
             pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - frameRc.bottom;
 

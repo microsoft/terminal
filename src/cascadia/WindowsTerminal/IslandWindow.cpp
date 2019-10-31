@@ -42,6 +42,7 @@ void IslandWindow::MakeWindow() noexcept
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
     wc.lpszClassName = XAML_HOSTING_WINDOW_CLASS_NAME;
+    wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
     RegisterClass(&wc);
