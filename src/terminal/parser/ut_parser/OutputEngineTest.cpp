@@ -1054,6 +1054,8 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
         TestCsiCursorMovement(L'G', uiDistance, true, &pDispatch->_fCursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
+        TestCsiCursorMovement(L'`', uiDistance, true, &pDispatch->_fCursorHorizontalPositionAbsolute, mach, *pDispatch);
+        pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, true, &pDispatch->_fVerticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, true, &pDispatch->_fInsertCharacter, mach, *pDispatch);
@@ -1081,6 +1083,8 @@ class StateMachineExternalTest final
         TestCsiCursorMovement(L'F', uiDistance, false, &pDispatch->_fCursorPreviousLine, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'G', uiDistance, false, &pDispatch->_fCursorHorizontalPositionAbsolute, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'`', uiDistance, false, &pDispatch->_fCursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, false, &pDispatch->_fVerticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();

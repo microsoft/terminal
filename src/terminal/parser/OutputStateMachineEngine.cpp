@@ -312,6 +312,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case VTActionCodes::CNL_CursorNextLine:
         case VTActionCodes::CPL_CursorPrevLine:
         case VTActionCodes::CHA_CursorHorizontalAbsolute:
+        case VTActionCodes::HPA_HorizontalPositionAbsolute:
         case VTActionCodes::VPA_VerticalLinePositionAbsolute:
         case VTActionCodes::ICH_InsertCharacter:
         case VTActionCodes::DCH_DeleteCharacter:
@@ -399,6 +400,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
                 break;
             case VTActionCodes::CHA_CursorHorizontalAbsolute:
+            case VTActionCodes::HPA_HorizontalPositionAbsolute:
                 fSuccess = _dispatch->CursorHorizontalPositionAbsolute(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
                 break;
