@@ -33,7 +33,7 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    MARGINS GetFrameMargins() const noexcept;
+    int GetTopBorderHeight();
 
     void Initialize() override;
 
@@ -52,11 +52,9 @@ private:
     bool _isMaximized;
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
-    int _GetTopBorderHeight();
-
     RECT GetDragAreaRect() const noexcept;
 
-    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
 
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 

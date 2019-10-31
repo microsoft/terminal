@@ -115,7 +115,14 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     _titlebar.Content(content);
 }
 
-int NonClientIslandWindow::_GetTopBorderHeight()
+// Method Description:
+// - This method is computes the height of the frame border at the top of the
+//   title bar and returns it. If the border is disabled, then this method will
+//   return 0.
+// Return Value:
+// - the height of the frame border at the top of the title bar or zero to
+//   disable it
+int NonClientIslandWindow::GetTopBorderHeight()
 {
     WINDOWPLACEMENT placement = {};
     placement.length = sizeof(placement);
@@ -166,7 +173,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         return;
     }
 
-    const auto topBorderHeight = _GetTopBorderHeight();
+    const auto topBorderHeight = GetTopBorderHeight();
 
     // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
@@ -238,19 +245,14 @@ void NonClientIslandWindow::_UpdateDragRegion()
 }
 
 // Method Description:
-// Hit test the frame for resizing and moving.
-// Method Description:
 // - Hit test the frame for resizing and moving.
 // Arguments:
 // - ptMouse: the mouse point being tested, in absolute (NOT WINDOW) coordinates.
 // Return Value:
 // - one of the values from
-//  https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
+//   https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
 //   corresponding to the area of the window that was hit
-// NOTE:
-// - Largely taken from code on:
-// https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
-[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcHitTest(POINT ptMouse) const noexcept
 {
     // This will handle the left, right and bottom parts of the frame because
     // we didn't change them.
@@ -287,7 +289,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
         // - explorer.exe: 9 pixels
         // - Settings app: 4 pixels
         // - Skype: 4 pixels
-        const auto resizeBorderHeight = 4 * scale;
+        const auto resizeBorderHeight = 8 * scale;
 
         if (ptMouse.y < windowRc.top + resizeBorderHeight)
         {
@@ -300,31 +302,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
     }
 
     return result;
-}
-
-// Method Description:
-// - Get the size of the borders we want to use. The sides and bottom will just
-//   be big enough for resizing, but the top will be as big as we need for the
-//   non-client content.
-// Return Value:
-// - A MARGINS struct containing the border dimensions we want.
-MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
-{
-    const auto scale = GetCurrentDpiScale();
-    const auto dpi = ::GetDpiForWindow(_window.get());
-    const auto windowMarginSides = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-    const auto windowMarginBottom = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-
-    const auto dragBarRect = GetDragAreaRect();
-    const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
-
-    MARGINS margins{ 0 };
-    margins.cxLeftWidth = windowMarginSides;
-    margins.cxRightWidth = windowMarginSides;
-    margins.cyBottomHeight = windowMarginBottom;
-    margins.cyTopHeight = nonClientHeight + windowMarginBottom;
-
-    return margins;
 }
 
 // Method Description:
@@ -521,9 +498,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         break;
     }
     case WM_NCHITTEST:
-    {
-        return HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
-    }
+        return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
 
     case WM_EXITSIZEMOVE:
     {
@@ -542,7 +517,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())
         {
-            const auto topBorderHeight = _GetTopBorderHeight();
+            const auto topBorderHeight = GetTopBorderHeight();
 
             RECT rcTopBorder = ps.rcPaint;
             rcTopBorder.top = 0;
@@ -561,6 +536,8 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
                 RECT rcRest = ps.rcPaint;
                 rcRest.top = topBorderHeight;
 
+                // To paint on top of the original title bar, we have to set
+                // alpha channel to 255. This is a hack to do it with GDI.
                 HDC opaqueDc;
                 BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
                 HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
@@ -568,9 +545,8 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
                 {
                     winrt::throw_last_error();
                 }
-
                 ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
-                ::BufferedPaintSetAlpha(buf, NULL, 255); // set to opaque to draw over the default title bar
+                ::BufferedPaintSetAlpha(buf, NULL, 255);
                 ::EndBufferedPaint(buf, TRUE);
             }
         }
@@ -633,11 +609,26 @@ void NonClientIslandWindow::_HandleActivateWindow()
     THROW_IF_FAILED(_UpdateFrameMargins());
 }
 
+// Method Description:
+// - This method is called when the window receives the WM_NCCREATE message.
+// Return Value:
+// - <none>
 void NonClientIslandWindow::_OnNcCreate() noexcept
 {
+    IslandWindow::_OnNcCreate();
+
+    // Set the frame's theme before it is rendered (WM_NCPAINT) so that it is
+    // rendered with the correct theme.
     _UpdateFrameTheme();
 }
 
+// Method Description:
+// - Updates the window frame's theme depending on the application theme (light
+//   or dark). If this is called after the frame is rendered, the old frame is
+//   not invalidated so the frame doesn't update until the user resizes or
+//   focuses/unfocuses the window.
+// Return Value:
+// - <none>
 void NonClientIslandWindow::_UpdateFrameTheme()
 {
     BOOL darkMode = static_cast<BOOL>(Application::Current().RequestedTheme() == ApplicationTheme::Dark);
