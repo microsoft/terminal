@@ -2040,7 +2040,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          WindowSize,
                                                          GetAttributes(),
                                                          *GetPopupAttributes(),
-                                                         CURSOR_SMALL_SIZE,
+                                                         Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
