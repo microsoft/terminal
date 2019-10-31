@@ -52,6 +52,8 @@ private:
     bool _isMaximized;
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
+    int _GetTopBorderHeight();
+
     RECT GetDragAreaRect() const noexcept;
 
     [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;

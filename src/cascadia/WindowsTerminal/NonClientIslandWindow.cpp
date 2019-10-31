@@ -113,6 +113,20 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     _titlebar.Content(content);
 }
 
+int NonClientIslandWindow::_GetTopBorderHeight()
+{
+    WINDOWPLACEMENT placement;
+    winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
+    bool isMaximized = placement.showCmd == SW_MAXIMIZE;
+    if (isMaximized)
+    {
+        // no border when maximized
+        return 0;
+    }
+
+    return static_cast<int>(1 * GetCurrentDpiScale());
+}
+
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
 {
     if (_dragBar)
@@ -148,19 +162,15 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         return;
     }
 
-    WINDOWPLACEMENT placement;
-    winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
-
-    const auto scale = GetCurrentDpiScale();
-    const auto topBorder = placement.showCmd == SW_MAXIMIZE ? 0 : static_cast<int>(1 * scale);
+    const auto topBorderHeight = _GetTopBorderHeight();
 
     // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
                                    0,
-                                   topBorder,
+                                   topBorderHeight,
                                    width,
-                                   height - topBorder,
+                                   height - topBorderHeight,
                                    SWP_SHOWWINDOW));
 }
 
@@ -497,58 +507,42 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             return 0;
         }
 
-        /* PAINTSTRUCT ps{ 0 };
+        PAINTSTRUCT ps{ 0 };
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())
         {
-            const auto scale = GetCurrentDpiScale();
-            const auto dpi = ::GetDpiForWindow(_window.get());
-            // Get the dimensions of the drag borders for the sides of the window.
-            const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
-            const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-            const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-            const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
+            const auto topBorderHeight = _GetTopBorderHeight();
 
-            // Create brush for borders, titlebar color.
-            const auto backgroundBrush = _titlebar.Background();
-            const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-            const auto backgroundColor = backgroundSolidBrush.Color();
-            const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
-            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+            RECT rcTopBorder = ps.rcPaint;
+            rcTopBorder.top = 0;
+            rcTopBorder.bottom = topBorderHeight;
+            ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
 
-            RECT windowRect = {};
-            ::GetWindowRect(_window.get(), &windowRect);
-            const auto cx = windowRect.right - windowRect.left;
-            const auto cy = windowRect.bottom - windowRect.top;
+            if (ps.rcPaint.bottom > topBorderHeight)
+            {
+                // Create brush for borders, titlebar color.
+                const auto backgroundBrush = _titlebar.Background();
+                const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
+                const auto backgroundColor = backgroundSolidBrush.Color();
+                const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+                _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
-            // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
-            // window rect here, the single pixel of the bottom border (set in
-            // _UpdateFrameMargins) will be drawn, and blend with whatever the
-            // border color is.
-            RECT dragBarRect = GetDragAreaRect();
-            const auto dragHeight = RECT_HEIGHT(&dragBarRect);
-            dragBarRect.left = 0;
-            dragBarRect.right = cx;
-            dragBarRect.top = 0;
-            dragBarRect.bottom = dragHeight + yPos;
-            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+                RECT rcRest = ps.rcPaint;
+                rcRest.top = topBorderHeight;
 
-            // Draw the top window border
-            RECT clientRect = { 0, 0, cx, yPos };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+                HDC opaqueDc;
+                BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
+                HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+                if (!buf || !opaqueDc)
+                {
+                    winrt::throw_last_error();
+                }
 
-            // Draw the left window border
-            clientRect = { 0, 0, xPos, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-            // Draw the bottom window border
-            clientRect = { 0, cy - yPos, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-            // Draw the right window border
-            clientRect = { cx - xPos, 0, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-        } */
+                ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
+                ::BufferedPaintSetAlpha(buf, NULL, 255); // set to opaque to draw over the default title bar
+                ::EndBufferedPaint(buf, TRUE);
+            }
+        }
 
         return 0;
     }
