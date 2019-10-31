@@ -286,7 +286,7 @@ class Utf8ToWideCharParserTests
             0x0060, 0x0012, 0x0008, 0x007f,
             0xfffd, 0xfffd, // The number of replacements per invalid sequence is not intended to be load-bearing
             0x0041, 0x0048, 0x0006, 0x0055,
-            0xfffd, 0xfffd, 0xfffd, // It is just representative of what it looked like when fixing this for GH#3380
+            0xfffd, 0xfffd, // It is just representative of what it looked like when fixing this for GH#3380
             0x0018, 0x0077, 0x0040, 0x0031,
             0xfffd, 0xfffd, 0xfffd, // Change if necessary when completing GH#3378
             0x0059, 0x001f, 0x0068, 0x0020
