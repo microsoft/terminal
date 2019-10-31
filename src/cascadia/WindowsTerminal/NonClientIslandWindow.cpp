@@ -265,56 +265,54 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
 [[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
-    ptMouse;
-    return HTTOP;
-    /* // Get the window rectangle.
-    RECT rcWindow = BaseWindow::GetWindowRect();
+    // This will handle the left, right and bottom parts of the frame because
+    // we didn't change them.
+    LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
+    LRESULT result = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
 
-    MARGINS margins = GetFrameMargins();
-
-    // Get the frame rectangle, adjusted for the style without a caption.
-    RECT rcFrame = { 0 };
-    auto expectedStyle = WS_OVERLAPPEDWINDOW;
-    WI_ClearAllFlags(expectedStyle, WS_CAPTION);
-    AdjustWindowRectEx(&rcFrame, expectedStyle, false, 0);
-
-    // Determine if the hit test is for resizing. Default middle (1,1).
-    unsigned short uRow = 1;
-    unsigned short uCol = 1;
-    bool fOnResizeBorder = false;
-
-    // Determine if the point is at the top or bottom of the window.
-    if (ptMouse.y >= rcWindow.top && ptMouse.y < rcWindow.top + margins.cyTopHeight)
+    if (result == HTCLIENT)
     {
-        fOnResizeBorder = (ptMouse.y < (rcWindow.top - rcFrame.top));
-        uRow = 0;
-    }
-    else if (ptMouse.y < rcWindow.bottom && ptMouse.y >= rcWindow.bottom - margins.cyBottomHeight)
-    {
-        uRow = 2;
+        // The cursor might be in the title bar, because the client area was
+        // extended to include the title bar (see
+        // NonClientIslandWindow::_UpdateFrameMargins).
+
+        // We have our own minimize, maximize and close buttons so we cannot
+        // use DwmDefWindowProc.
+
+        // TODO: return HTMINBUTTON, HTMAXBUTTON and HTCLOSE instead of
+        //  HTCAPTION for the buttons?
+
+        // At this point, we ruled out the left, right and bottom parts of
+        // the frame and the minimize, maximize and close buttons in the
+        // title bar. It has to be either the drag bar or something else in
+        // the XAML island. But the XAML islands handles WM_NCHITTEST on its
+        // own so actually it cannot be the XAML islands. Then it must be the
+        // drag bar.
+
+        RECT windowRc;
+        winrt::check_bool(::GetWindowRect(_window.get(), &windowRc));
+
+        const auto scale = GetCurrentDpiScale();
+
+        // This doesn't appear to be consistent between all apps on Windows.
+        // From Windows 18362.418 with 96 DPI:
+        // - conhost.exe: 8 pixels
+        // - explorer.exe: 9 pixels
+        // - Settings app: 4 pixels
+        // - Skype: 4 pixels
+        const auto resizeBorderHeight = 4 * scale;
+
+        if (ptMouse.y < windowRc.top + resizeBorderHeight)
+        {
+            result = HTTOP;
+        }
+        else
+        {
+            result = HTCAPTION;
+        }
     }
 
-    // Determine if the point is at the left or right of the window.
-    if (ptMouse.x >= rcWindow.left && ptMouse.x < rcWindow.left + margins.cxLeftWidth)
-    {
-        uCol = 0; // left side
-    }
-    else if (ptMouse.x < rcWindow.right && ptMouse.x >= rcWindow.right - margins.cxRightWidth)
-    {
-        uCol = 2; // right side
-    }
-
-    // clang-format off
-    // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
-    const auto topHt = fOnResizeBorder ? HTTOP : HTCAPTION;
-    LRESULT hitTests[3][3] = {
-        { HTTOPLEFT,    topHt,      HTTOPRIGHT },
-        { HTLEFT,       HTNOWHERE,  HTRIGHT },
-        { HTBOTTOMLEFT, HTBOTTOM,   HTBOTTOMRIGHT },
-    };
-    // clang-format on
-
-    return hitTests[uRow][uCol]; */
+    return result;
 }
 
 // Method Description:
@@ -470,12 +468,6 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
                                                             WPARAM const wParam,
                                                             LPARAM const lParam) noexcept
 {
-    LRESULT lRet = 0;
-
-    // First call DwmDefWindowProc. This might handle things like the
-    // min/max/close buttons for us.
-    const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
-
     switch (message)
     {
     case WM_ACTIVATE:
@@ -504,7 +496,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             RECT frameRc = {};
             ::AdjustWindowRectExForDpi(&frameRc, WS_OVERLAPPEDWINDOW, FALSE, 0, dpi);
 
-            // keep the standard frame, except ... 
+            // keep the standard frame, except ...
             pncsp->rgrc[0].left = pncsp->rgrc[0].left - frameRc.left;
             pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0; // ... remove the titlebar
             pncsp->rgrc[0].right = pncsp->rgrc[0].right - frameRc.right;
@@ -516,21 +508,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     }
     case WM_NCHITTEST:
     {
-        if (dwmHandledMessage)
-        {
-            return lRet;
-        }
-
-        // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
-        if (lRet == 0)
-        {
-            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
-            if (lRet != HTNOWHERE)
-            {
-                return lRet;
-            }
-        }
-        break;
+        return HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     }
 
     case WM_EXITSIZEMOVE:
