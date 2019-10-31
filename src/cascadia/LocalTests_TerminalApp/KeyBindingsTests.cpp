@@ -176,7 +176,20 @@ namespace TerminalAppLocalTests
     void KeyBindingsTests::TestArbitraryArgs()
     {
         const std::string bindings0String{ R"([
-            { "command": "copy", "keys": ["ctrl+c"] }
+            { "command": "copy", "keys": ["ctrl+c"] },
+            { "command": "copyTextWithoutNewlines", "keys": ["alt+c"] },
+            { "command": "copy", "keys": ["ctrl+shift+c"], "args":{ "trimWhitespace": false } },
+            { "command": "copy", "keys": ["alt+shift+c"], "args":{ "trimWhitespace": true } },
+
+            { "command": "newTab", "keys": ["ctrl+t"] },
+            { "command": "newTab", "keys": ["ctrl+shift+t"], "args":{ "index": 0 } },
+            { "command": "newTabProfile0", "keys": ["alt+shift+t"] },
+            { "command": "newTab", "keys": ["ctrl+shift+y"], "args":{ "index": 11 } },
+            { "command": "newTabProfile8", "keys": ["alt+shift+y"] },
+
+            { "command": "copy", "keys": ["ctrl+b"], "args":{ "madeUpBool": true } },
+            { "command": "copy", "keys": ["ctrl+b"], "args":null
+
         ])" };
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
@@ -184,11 +197,131 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
         appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(11u, appKeyBindings->_keyShortcuts.size());
 
         {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `copy` without args parses as Copy(TrimWhitespace=false)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `copyTextWithoutNewlines` parses as Copy(TrimWhitespace=true)"));
+            KeyChord kc{ false, true, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `copy` with args parses them correctly"));
+            KeyChord kc{ true, false, true, static_cast<int32_t>('C') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `copy` with args parses them correctly"));
+            KeyChord kc{ false, true, true, static_cast<int32_t>('C') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `newTab` without args parses as NewTab(Index=null)"));
+            KeyChord kc{ true, false, false, static_cast<int32_t>('T') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.ProfileIndex());
+        }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `newTab` parses args correctly"));
+            KeyChord kc{ true, false, true, static_cast<int32_t>('T') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(0, realArgs.ProfileIndex().Value());
+        }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `newTabProfile0` parses as NewTab(Index=0)"));
+            KeyChord kc{ false, true, true, static_cast<int32_t>('T') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTabProfile0, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(0, realArgs.ProfileIndex().Value());
+        }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `newTab` with an index greater than the legacy "
+                L"args afforded parses correctly"));
+            KeyChord kc{ true, false, true, static_cast<int32_t>('Y') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(11, realArgs.ProfileIndex().Value());
+        }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `newTabProfile8` parses as NewTab(Index=8)"));
+            KeyChord kc{ false, true, true, static_cast<int32_t>('Y') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTabProfile8, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
+            VERIFY_ARE_EQUAL(8, realArgs.ProfileIndex().Value());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `copy` ignores args it doesn't understand"));
+            KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::Copy, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `copy` null as it's `args` parses as the default option"));
+            KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::Copy, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value

@@ -33,8 +33,9 @@ namespace TerminalApp
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        // Windows.Foundation.IReference<Int32>?
-        Int32 ProfileIndex { get; };
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs

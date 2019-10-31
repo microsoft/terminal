@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, TrimWhitespace, false);
 
-        static constexpr std::string_view TrimWhitespaceKey{ "TrimWhitespace" };
+        static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
 
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
@@ -56,7 +56,7 @@ namespace winrt::TerminalApp::implementation
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
         NewTabArgs() = default;
-        GETSET_PROPERTY(int32_t, ProfileIndex, 0);
+        GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
 
         static constexpr std::string_view ProfileIndexKey{ "index" };
 
