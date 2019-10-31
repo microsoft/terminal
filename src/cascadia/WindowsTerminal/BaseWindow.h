@@ -38,6 +38,8 @@ public:
 
             EnableNonClientDpiScaling(window);
             that->_currentDpi = GetDpiForWindow(window);
+
+            that->_OnNcCreate();
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -245,6 +247,8 @@ protected:
     std::wstring _title = L"";
 
     bool _minimized = false;
+
+    virtual void _OnNcCreate() noexcept{};
 };
 
 template<typename T>

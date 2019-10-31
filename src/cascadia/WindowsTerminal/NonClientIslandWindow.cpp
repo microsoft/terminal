@@ -57,6 +57,8 @@ void NonClientIslandWindow::Initialize()
 {
     IslandWindow::Initialize();
 
+    _UpdateFrameTheme();
+
     // Set up our grid of content. We'll use _rootGrid as our root element.
     // There will be two children of this grid - the TitlebarControl, and the
     // "client content"
@@ -629,6 +631,26 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 void NonClientIslandWindow::_HandleActivateWindow()
 {
     THROW_IF_FAILED(_UpdateFrameMargins());
+}
+
+void NonClientIslandWindow::_OnNcCreate() noexcept
+{
+    _UpdateFrameTheme();
+}
+
+void NonClientIslandWindow::_UpdateFrameTheme()
+{
+    BOOL darkMode = static_cast<BOOL>(Application::Current().RequestedTheme() == ApplicationTheme::Dark);
+
+    // Copied from src\interactivity\win32\windowtheme.cpp.
+    // TODO: DRY
+    constexpr const DWORD useImmersiveDarkModeAttr = 19;
+
+    if (FAILED(DwmSetWindowAttribute(_window.get(), useImmersiveDarkModeAttr, reinterpret_cast<LPCVOID>(&darkMode), sizeof(darkMode))))
+    {
+        // it's ok if it doesn't work
+        LOG_LAST_ERROR();
+    }
 }
 
 // Method Description:

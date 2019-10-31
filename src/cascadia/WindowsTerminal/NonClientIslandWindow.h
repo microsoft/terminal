@@ -64,6 +64,10 @@ private:
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
     void _UpdateDragRegion();
 
+    virtual void _OnNcCreate() noexcept;
+
+    void _UpdateFrameTheme();
+
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
