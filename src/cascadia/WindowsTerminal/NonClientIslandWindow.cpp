@@ -5,6 +5,7 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
+#include "../types/inc/ThemeUtils.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -13,6 +14,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
 constexpr int RECT_WIDTH(const RECT* const pRect)
@@ -631,15 +633,10 @@ void NonClientIslandWindow::_OnNcCreate() noexcept
 // - <none>
 void NonClientIslandWindow::_UpdateFrameTheme()
 {
-    BOOL darkMode = static_cast<BOOL>(Application::Current().RequestedTheme() == ApplicationTheme::Dark);
+    const auto isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
 
-    // Copied from src\interactivity\win32\windowtheme.cpp.
-    // TODO: DRY
-    constexpr const DWORD useImmersiveDarkModeAttr = 19;
-
-    if (FAILED(DwmSetWindowAttribute(_window.get(), useImmersiveDarkModeAttr, reinterpret_cast<LPCVOID>(&darkMode), sizeof(darkMode))))
+    if (FAILED(ThemeUtils::SetDwmImmersiveDarkMode(_window.get(), isDarkMode)))
     {
-        // it's ok if it doesn't work
         LOG_LAST_ERROR();
     }
 }

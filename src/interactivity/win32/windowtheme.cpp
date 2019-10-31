@@ -2,14 +2,15 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "windowtheme.hpp"
 
 #include <dwmapi.h>
 
+#include "..\types\inc\ThemeUtils.h"
+
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-#define DWMWA_USE_IMMERSIVE_DARK_MODE 19
 #define DARK_MODE_STRING_NAME L"DarkMode_Explorer"
 #define UXTHEME_DLL_NAME L"uxtheme.dll"
 #define UXTHEME_SHOULDAPPSUSEDARKMODE_ORDINAL 132
@@ -33,19 +34,18 @@ WindowTheme::WindowTheme()
 // - S_OK or suitable HRESULT from theming or DWM engines.
 [[nodiscard]] HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const noexcept
 {
-    // I have to be a big B BOOL or DwnSetWindowAttribute will be upset (E_INVALIDARG) when I am passed in.
-    const BOOL isDarkMode = !!_IsDarkMode();
+    const auto isDarkMode = _IsDarkMode();
 
     if (isDarkMode)
     {
         RETURN_IF_FAILED(SetWindowTheme(hwnd, DARK_MODE_STRING_NAME, nullptr));
-        RETURN_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &isDarkMode, sizeof(isDarkMode)));
     }
     else
     {
         RETURN_IF_FAILED(SetWindowTheme(hwnd, L"", nullptr));
-        RETURN_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &isDarkMode, sizeof(isDarkMode)));
     }
+
+    RETURN_IF_FAILED(ThemeUtils::SetDwmImmersiveDarkMode(hwnd, isDarkMode));
 
     return S_OK;
 }
