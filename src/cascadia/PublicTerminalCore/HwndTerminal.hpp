@@ -35,6 +35,8 @@ __declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalThe
 __declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam);
 __declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch);
+__declspec(dllexport) void _stdcall BlinkCursor(void* terminal);
+__declspec(dllexport) void _stdcall SetCursorVisible(void* terminal, const bool visible);
 };
 
 struct HwndTerminal
@@ -69,5 +71,7 @@ private:
     friend void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam);
     friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch);
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+    friend void _stdcall BlinkCursor(void* terminal);
+    friend void _stdcall SetCursorVisible(void* terminal, const bool visible);
     void _UpdateFont(int newDpi);
 };

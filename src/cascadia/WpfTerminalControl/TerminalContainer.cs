@@ -10,6 +10,7 @@ namespace Microsoft.Terminal.Wpf
     using System.Windows;
     using System.Windows.Interop;
     using System.Windows.Media;
+    using System.Windows.Threading;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
@@ -22,7 +23,7 @@ namespace Microsoft.Terminal.Wpf
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-
+        private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
@@ -34,6 +35,21 @@ namespace Microsoft.Terminal.Wpf
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
+
+            var blinkTime = NativeMethods.GetCaretBlinkTime();
+
+            if (blinkTime != uint.MaxValue)
+            {
+                this.blinkTimer = new DispatcherTimer();
+                this.blinkTimer.Interval = TimeSpan.FromMilliseconds(blinkTime);
+                this.blinkTimer.Tick += (_, __) =>
+                {
+                    if (this.terminal != IntPtr.Zero)
+                    {
+                        NativeMethods.BlinkCursor(this.terminal);
+                    }
+                };
+            }
         }
 
         /// <summary>
@@ -171,6 +187,15 @@ namespace Microsoft.Terminal.Wpf
                 NativeMethods.TerminalDpiChanged(this.terminal, (int)dpiScale.PixelsPerInchX);
             }
 
+            if (NativeMethods.GetFocus() == this.hwnd)
+            {
+                this.blinkTimer?.Start();
+            }
+            else
+            {
+                NativeMethods.SetCursorVisible(this.terminal, false);
+            }
+
             return new HandleRef(this, this.hwnd);
         }
 
@@ -193,6 +218,13 @@ namespace Microsoft.Terminal.Wpf
             {
                 switch ((NativeMethods.WindowMessage)msg)
                 {
+                    case NativeMethods.WindowMessage.WM_SETFOCUS:
+                        this.blinkTimer?.Start();
+                        break;
+                    case NativeMethods.WindowMessage.WM_KILLFOCUS:
+                        this.blinkTimer?.Stop();
+                        NativeMethods.SetCursorVisible(this.terminal, false);
+                        break;
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
@@ -215,8 +247,10 @@ namespace Microsoft.Terminal.Wpf
                         this.MouseMoveHandler((int)wParam, (int)lParam);
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
+                        NativeMethods.SetCursorVisible(this.terminal, true);
                         NativeMethods.TerminalClearSelection(this.terminal);
                         NativeMethods.TerminalSendKeyEvent(this.terminal, wParam);
+                        this.blinkTimer?.Start();
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:
                         NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam);
