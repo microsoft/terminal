@@ -392,7 +392,12 @@ void NonClientIslandWindow::_UpdateDragRegion()
     const auto topBorderHeight = GetTopBorderHeight();
 
     // We removed the whole top part of the frame (see handling of
-    // WM_NCCALCSIZE) so the top border is now missing. We add it back here.
+    // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
+    // Note: You might wonder why we don't remove just the title bar (the part
+    //  that we don't want) instead of removing the whole top part of the frame
+    //  and then adding the border (what we want) back. I tried to do this but
+    //  it didn't work: DWM drew the whole title bar anyways. It seems that DWM
+    //  only wants to draw either nothing or the whole title bar at the top.
     MARGINS margins = { 0, 0, topBorderHeight, 0 };
 
     // Extend the frame into the client area.
