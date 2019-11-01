@@ -32,6 +32,7 @@
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ui.xaml.media.imaging.h>
 #include <winrt/Windows.ui.xaml.input.h>
+#include "winrt/Windows.UI.Xaml.Markup.h"
 
 #include <windows.ui.xaml.media.dxinterop.h>
 

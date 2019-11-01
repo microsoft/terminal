@@ -1,0 +1,77 @@
+﻿<UserControl
+    x:Class="Microsoft.Terminal.TerminalControl.SearchBoxControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Microsoft.Terminal.TerminalControl"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    x:Name="Root"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Top"
+    SizeChanged="Root_SizeChanged"
+    d:DesignHeight="90"
+    d:DesignWidth="300">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Button x:Name="Close" Height="35" Width="35" HorizontalAlignment="Right" Padding="1" Click="_CloseClick" Background="Transparent">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" Foreground="White"/>
+            </Button>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <AutoSuggestBox PlaceholderText="Search" QueryIcon="Find"
+                QuerySubmitted="AutoSuggestBox_QuerySubmitted"
+                Grid.Column="0" Height="30" Width="240" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="SetGoBackwardButton" Height="35" Width="35" HorizontalAlignment="Right" Grid.Column="0" Click="_GoBackwardClick" Padding="1"
+                        BorderBrush="Blue" BorderThickness="0" Background="Transparent">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Foreground="DimGray"/>
+                </Button>
+                <Button x:Name="SetGoForwardButton" Height="35" Width="35" Grid.Column="1" Click="_GoForwardClick" Padding="1"
+                        BorderBrush="Blue" BorderThickness="0" Background="Transparent">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Foreground="DimGray"/>
+                </Button>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="1" Width="120" HorizontalAlignment="Right">
+                <CheckBox x:Name="CaseSensitivityCheckBox"
+                          Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" HorizontalAlignment="Right"  Grid.Column="1">
+                    <CheckBox.Resources>
+                        <ResourceDictionary>
+                            <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
+                            <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
+                            <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
+                        </ResourceDictionary>
+                    </CheckBox.Resources>
+                    <TextBlock Text="Case Sensitive" Foreground="White"/>
+                </CheckBox>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
