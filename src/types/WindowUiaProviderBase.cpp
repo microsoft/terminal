@@ -8,9 +8,10 @@
 
 using namespace Microsoft::Console::Types;
 
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT WindowUiaProviderBase::RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept
 {
-    _signalEventFiring = {};
+    _signalEventFiring.clear();
     _baseWindow = baseWindow;
     return S_OK;
 }

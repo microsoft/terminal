@@ -31,6 +31,7 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
     return psa;
 }
 
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
