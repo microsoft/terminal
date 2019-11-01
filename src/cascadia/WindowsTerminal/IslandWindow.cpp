@@ -329,38 +329,41 @@ void IslandWindow::SetIsFullscreen(const bool fFullscreenEnabled)
     bool fOldIsInFullscreen = _fullscreen;
     _fullscreen = fFullscreenEnabled;
 
-    HWND const hWnd = GetWindowHandle();
+    if (_ShouldUpdateStylesOnFullscreen())
+    {
+        HWND const hWnd = GetWindowHandle();
 
-    // First, modify regular window styles as appropriate
-    LONG dwWindowStyle = GetWindowLongW(hWnd, GWL_STYLE);
-    if (_fullscreen)
-    {
-        // moving to fullscreen. remove WS_OVERLAPPEDWINDOW, which specifies styles for non-fullscreen windows (e.g.
-        // caption bar). add the WS_POPUP style to allow us to size ourselves to the monitor size.
-        WI_ClearAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
-        WI_SetFlag(dwWindowStyle, WS_POPUP);
-    }
-    else
-    {
-        // coming back from fullscreen. undo what we did to get in to fullscreen in the first place.
-        WI_ClearFlag(dwWindowStyle, WS_POPUP);
-        WI_SetAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
-    }
-    SetWindowLongW(hWnd, GWL_STYLE, dwWindowStyle);
+        // First, modify regular window styles as appropriate
+        LONG dwWindowStyle = GetWindowLongW(hWnd, GWL_STYLE);
+        if (_fullscreen)
+        {
+            // moving to fullscreen. remove WS_OVERLAPPEDWINDOW, which specifies styles for non-fullscreen windows (e.g.
+            // caption bar). add the WS_POPUP style to allow us to size ourselves to the monitor size.
+            WI_ClearAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
+            WI_SetFlag(dwWindowStyle, WS_POPUP);
+        }
+        else
+        {
+            // coming back from fullscreen. undo what we did to get in to fullscreen in the first place.
+            WI_ClearFlag(dwWindowStyle, WS_POPUP);
+            WI_SetAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
+        }
+        SetWindowLongW(hWnd, GWL_STYLE, dwWindowStyle);
 
-    // Now modify extended window styles as appropriate
-    LONG dwExWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
-    if (_fullscreen)
-    {
-        // moving to fullscreen. remove the window edge style to avoid an ugly border when not focused.
-        WI_ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
+        // Now modify extended window styles as appropriate
+        LONG dwExWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
+        if (_fullscreen)
+        {
+            // moving to fullscreen. remove the window edge style to avoid an ugly border when not focused.
+            WI_ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
+        }
+        else
+        {
+            // coming back from fullscreen.
+            WI_SetFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
+        }
+        SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
     }
-    else
-    {
-        // coming back from fullscreen.
-        WI_SetFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
-    }
-    SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
 
     _BackupWindowSizes(fOldIsInFullscreen);
     _ApplyWindowSize();

@@ -99,4 +99,5 @@ protected:
     virtual void SetIsFullscreen(const bool fFullscreenEnabled);
     void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
     void _ApplyWindowSize();
+    virtual bool _ShouldUpdateStylesOnFullscreen() const { return true; };
 };

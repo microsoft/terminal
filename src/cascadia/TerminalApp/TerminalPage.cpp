@@ -609,11 +609,13 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes in tab layout.
     void TerminalPage::_UpdateTabView()
     {
+        // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
-                               (_tabs.size() > 1) ||
-                               _settings->GlobalSettings().GetAlwaysShowTabs();
+        const bool isVisible = (!_isFullscreen) &&
+                               (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                                (_tabs.size() > 1) ||
+                                _settings->GlobalSettings().GetAlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -1332,12 +1334,13 @@ namespace winrt::TerminalApp::implementation
 
         _isFullscreen = !_isFullscreen;
 
-        // collapse/show the tabs themselves
-        _tabView.Visibility(!_isFullscreen ? Visibility::Visible : Visibility::Collapsed);
+        _UpdateTabView();
+        // // collapse/show the tabs themselves
+        // _tabView.Visibility(!_isFullscreen ? Visibility::Visible : Visibility::Collapsed);
 
-        // collapse/show the row that the tabs are in.
-        // NaN is the special value XAML uses for "Auto" sizing.
-        _tabRow.Height(!_isFullscreen ? NAN : 0);
+        // // collapse/show the row that the tabs are in.
+        // // NaN is the special value XAML uses for "Auto" sizing.
+        // _tabRow.Height(!_isFullscreen ? NAN : 0);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

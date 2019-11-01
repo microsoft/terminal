@@ -234,6 +234,6 @@
         { "command": "switchToTab8", "keys": ["ctrl+alt+9"] },
         { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
         { "command": "increaseFontSize", "keys": ["ctrl+="] },
-        { "command": "toggleFullscreen", "keys": ["ctrl+x"] }
+        { "command": "toggleFullscreen", "keys": ["alt+enter"] }
     ]
 }
