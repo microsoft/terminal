@@ -293,9 +293,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
         // We have our own minimize, maximize and close buttons so we cannot
         // use DwmDefWindowProc.
 
-        // TODO: return HTMINBUTTON, HTMAXBUTTON and HTCLOSE instead of
-        //  HTCAPTION for the buttons?
-
         // At this point, we ruled out the left, right and bottom parts of
         // the frame and the minimize, maximize and close buttons in the
         // title bar. It has to be either the drag bar or something else in
