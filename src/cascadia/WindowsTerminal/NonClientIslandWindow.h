@@ -55,14 +55,16 @@ private:
 
     RECT _GetDragAreaRect() const noexcept;
 
+    [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
 
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();
 
-    void _OnMaximizeChange();
+    void _OnMaximizeChange() noexcept;
 
+    void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateDragRegion();
     void _UpdateFrameTheme();

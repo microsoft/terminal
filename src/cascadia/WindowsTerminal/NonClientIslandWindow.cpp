@@ -173,6 +173,20 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 //   if the window went from maximized to minimized or the opposite.
 void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 {
+    _UpdateMaximizedState();
+
+    if (_interopWindowHandle)
+    {
+        _UpdateIslandPosition(width, height);
+    }
+}
+// Method Description:
+// - Checks if the window has been maximized or restored since the last time.
+//   If it has been maximized or restored, then it updates the _isMaximized
+//   flags and notifies of the change by calling
+//   NonClientIslandWindow::_OnMaximizeChange.
+void NonClientIslandWindow::_UpdateMaximizedState()
+{
     const auto windowStyle = GetWindowStyle(_window.get());
     const auto newIsMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
 
@@ -181,26 +195,27 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _isMaximized = newIsMaximized;
         _OnMaximizeChange();
     }
-
-    if (_interopWindowHandle)
-    {
-        _UpdateIslandPosition(width, height);
-    }
 }
 
 // Method Description:
 // - Called when the the windows goes from restored to maximized or from
 //   maximized to restore. Updates the maximize button's icon.
-void NonClientIslandWindow::_OnMaximizeChange()
+void NonClientIslandWindow::_OnMaximizeChange() noexcept
 {
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
-
     if (_titlebar)
     {
-        _titlebar.SetWindowVisualState(_isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                                                      isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                                                    winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
+        const auto windowStyle = GetWindowStyle(_window.get());
+        const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+        const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+
+        try
+        {
+            _titlebar.SetWindowVisualState(state);
+        }
+        CATCH_LOG();
     }
 }
 
@@ -267,6 +282,53 @@ void NonClientIslandWindow::_UpdateDragRegion()
 
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, clientWithoutDragBarRegion.get(), true));
     }
+}
+
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
+{
+    if (wParam == false)
+    {
+        return 0;
+    }
+
+    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+
+    // Store the original top before the default window proc applies the
+    // default frame.
+    const auto originalTop = params->rgrc[0].top;
+
+    // apply the default frame
+    auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    auto newTop = originalTop;
+
+    // WM_NCCALCSIZE is called before WM_SIZE
+    _UpdateMaximizedState();
+
+    if (_isMaximized)
+    {
+        // When a window is maximized, its size is actually a little
+        // bit more than the monitor work area. The window borders'
+        // size is added to the window size so that the borders do not
+        // appear on the monitor.
+
+        // We only have to do this for the title bar because it's the
+        // only part of the frame that we change.
+        const auto resizeBorderHeight =
+            // there isn't a SM_CYPADDEDBORDER for the Y axis
+            GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
+            GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
+        newTop += resizeBorderHeight;
+    }
+
+    // only modify the top of the frame to remove the title bar
+    params->rgrc[0].top = newTop;
+
+    return 0;
 }
 
 // Method Description:
@@ -367,57 +429,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
         break;
     }
     case WM_NCCALCSIZE:
-    {
-        if (wParam == false)
-        {
-            return 0;
-        }
-        // Handle the non-client size message.
-        if (wParam == TRUE && lParam)
-        {
-            // Calculate new NCCALCSIZE_PARAMS based on custom NCA inset.
-            NCCALCSIZE_PARAMS* pncsp = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-
-            const auto windowStyle = GetWindowStyle(_window.get());
-
-            RECT frameRc = {};
-            if (::AdjustWindowRectExForDpi(&frameRc, windowStyle, FALSE, 0, _currentDpi) == 0)
-            {
-                winrt::throw_last_error();
-            }
-
-            auto clientTop = pncsp->rgrc[0].top + 0;
-
-            WINDOWPLACEMENT placement = {};
-            placement.length = sizeof(placement);
-            winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
-
-            if (placement.showCmd == SW_MAXIMIZE)
-            {
-                // When a window is maximized, its size is actually a little
-                // bit more than the monitor work area. The window borders'
-                // size is added to the window size so that the borders do not
-                // appear on the monitor.
-
-                // We only have to do this for the title bar because it's the
-                // only part of the frame that we change.
-                const auto resizeBorderHeight =
-                    // there isn't a SM_CYPADDEDBORDER for the Y axis
-                    GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
-                    GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
-                clientTop += resizeBorderHeight;
-            }
-
-            // keep the standard frame, except ...
-            pncsp->rgrc[0].left = pncsp->rgrc[0].left - frameRc.left;
-            pncsp->rgrc[0].top = clientTop; // ... remove the titlebar
-            pncsp->rgrc[0].right = pncsp->rgrc[0].right - frameRc.right;
-            pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - frameRc.bottom;
-
-            return 0;
-        }
-        break;
-    }
+        return _OnNcCalcSize(wParam, lParam);
     case WM_NCHITTEST:
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
 
