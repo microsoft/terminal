@@ -204,7 +204,8 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 // - <none>
 void NonClientIslandWindow::_UpdateDragRegion()
 {
-    if (_dragBar && !_fullscreen)
+    // If we're fullscreen, we'll want the entire
+    if (_dragBar && _IsTitlebarVisible())
     {
         // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
         // better than that.
@@ -248,7 +249,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
         winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
     }
-    else if (_fullscreen)
+    else if (!_IsTitlebarVisible())
     {
         const auto windowRect = GetWindowRect();
         const auto width = windowRect.right - windowRect.left;
@@ -564,7 +565,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             // maybe a hack - we should probably actually just be extending all
             // the way to the borders of the monitor, but that's not working
             // currently.
-            if (!_fullscreen)
+            if (_IsTitlebarVisible())
             {
                 // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
                 // window rect here, the single pixel of the bottom border (set in
@@ -817,8 +818,30 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
     return true;
 }
 
-void NonClientIslandWindow::SetIsFullscreen(const bool fFullscreenEnabled)
+// Method Description:
+// - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
+//   need to manually hide the entire titlebar.
+// - See also IslandWindow::_SetIsFullscreen, which does additional work.
+// Arguments:
+// - fFullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
 {
-    IslandWindow::SetIsFullscreen(fFullscreenEnabled);
+    IslandWindow::_SetIsFullscreen(fFullscreenEnabled);
     _titlebar.Visibility(!fFullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+}
+
+// Method Description:
+// - Returns true if the titlebar is visible. For things like fullscreen mode,
+//   borderless mode, this will return false.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the titlebar is visible
+bool NonClientIslandWindow::_IsTitlebarVisible() const
+{
+    // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
+    // updated to include that mode.
+    return !_fullscreen;
 }

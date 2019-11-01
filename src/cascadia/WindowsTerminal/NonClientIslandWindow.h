@@ -62,10 +62,13 @@ private:
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
     void _UpdateDragRegion();
 
-    void SetIsFullscreen(const bool fFullscreenEnabled) override;
-
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
+
+    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    // See IslandWindow::_SetIsFullscreen for details on this method.
     bool _ShouldUpdateStylesOnFullscreen() const override { return false; };
+
+    bool _IsTitlebarVisible() const;
 };

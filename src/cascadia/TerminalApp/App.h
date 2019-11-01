@@ -84,6 +84,9 @@ namespace winrt::TerminalApp::implementation
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
+        // These are events that are handled by the TerminalPage, but are
+        // exposed through the App. This macro is used to forward the event
+        // directly to them.
         FORWARDED_TYPED_EVENT(ToggleFullscreen, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs, _root, ToggleFullscreen);
     };
 }

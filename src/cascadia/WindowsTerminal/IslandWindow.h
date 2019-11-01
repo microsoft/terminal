@@ -96,8 +96,10 @@ protected:
     RECT _rcFullscreenWindowSize;
     RECT _rcNonFullscreenWindowSize;
 
-    virtual void SetIsFullscreen(const bool fFullscreenEnabled);
+    virtual void _SetIsFullscreen(const bool fFullscreenEnabled);
     void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
     void _ApplyWindowSize();
+
+    // See _SetIsFullscreen for details on this method.
     virtual bool _ShouldUpdateStylesOnFullscreen() const { return true; };
 };

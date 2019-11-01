@@ -317,14 +317,34 @@ void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& req
     ::InvalidateRect(_window.get(), nullptr, false);
 }
 
+// Method Description:
+// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::ToggleFullscreen()
 {
-    SetIsFullscreen(!_fullscreen);
+    _SetIsFullscreen(!_fullscreen);
 }
 
-void IslandWindow::SetIsFullscreen(const bool fFullscreenEnabled)
+// Method Description:
+// - Controls setting us into or out of fullscreen mode. Largely taken from
+//   Window::SetIsFullscreen in conhost.
+// - When entering fullscreen mode, we'll save the current window size and
+//   location, and expand to take the entire monitor size. When leaving, we'll
+//   use that saved size to restore back to.
+// - When we're entering fullscreen we need to do some additional modification
+//   of our window styles. However, the NonClientIslandWindow very explicitly
+//   _doesn't_ ned to do these steps. Subclasses should override
+//   _ShouldUpdateStylesOnFullscreen to disable setting these window styles.
+// Arguments:
+// - fFullscreenEnabled true if we should enable fullscreen mode, false to disable.
+// Return Value:
+// - <none>
+void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
 {
-    // It is possible to enter SetIsFullScreen even if we're already in full screen.
+    // It is possible to enter _SetIsFullscreen even if we're already in full screen.
     // Use the old is in fullscreen flag to gate checks that rely on the current state.
     bool fOldIsInFullscreen = _fullscreen;
     _fullscreen = fFullscreenEnabled;
