@@ -60,6 +60,9 @@ namespace winrt::TerminalApp::implementation
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
 
+        auto settingsPage = winrt::make_self<SettingsPage>(_settings);
+        this->SettingsPageHolder().Content(settingsPage.as<IInspectable>());
+
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
 

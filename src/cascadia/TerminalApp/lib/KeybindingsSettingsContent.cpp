@@ -6,12 +6,20 @@
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
+using namespace ::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
     KeybindingsSettingsContent::KeybindingsSettingsContent()
     {
         InitializeComponent();
+    }
+
+    KeybindingsSettingsContent::KeybindingsSettingsContent(std::shared_ptr<::TerminalApp::CascadiaSettings> settings)
+    {
+        InitializeComponent();
+
+        _settings = settings;
     }
 
     int32_t KeybindingsSettingsContent::MyProperty()

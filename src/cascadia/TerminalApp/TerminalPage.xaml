@@ -17,7 +17,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Grid.RowDefinitions>
 
         <local:TabRowControl x:Name="TabRow" Grid.Row="1" />
-        <local:SettingsPage x:Name="SettingsPage"
+        <ContentPresenter x:Name="SettingsPageHolder"
                                   Grid.Row="0" />
         <Grid x:Name="TabContent" Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
     </Grid>

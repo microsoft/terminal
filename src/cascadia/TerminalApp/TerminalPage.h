@@ -6,6 +6,8 @@
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 
 #include "TerminalPage.g.h"
+#include "SettingsPage.h"
+#include "SettingsPage.g.h"
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
@@ -57,6 +59,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
+        TerminalApp::SettingsPage _settingsUI{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 

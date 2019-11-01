@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "SettingsPage.h"
-#include "TerminalPage.h"
 #include "GlobalSettingsContent.h"
 #include "ProfilesSettingsContent.h"
 #include "ColorSchemesSettingsContent.h"
@@ -14,12 +13,30 @@
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
+using namespace ::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
     SettingsPage::SettingsPage()
     {
         InitializeComponent();
+    }
+
+    SettingsPage::SettingsPage(std::shared_ptr<::TerminalApp::CascadiaSettings> settings)
+    {
+        InitializeComponent();
+
+        _settings = settings;
+    }
+
+    void SettingsPage::Create()
+    {
+        _globalSettingsPage = winrt::make_self<TerminalApp::GlobalSettingsContent>();
+        _profileSettingsPage = winrt::make_self<TerminalApp::ProfilesSettingsContent>();
+        _colorSchemesSettingsPage = winrt::make_self<TerminalApp::ColorSchemesSettingsContent>();
+
+        // TODO: THIS IS THE PROPER WAY OF DOING IT. THE ABOVE NEED SUPPORT FOR PASSING IN THE SETTINGS.
+        _keybindingsSettingsPage = winrt::make_self<TerminalApp::KeybindingsSettingsContent>(_settings);
     }
 
     void SettingsPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
