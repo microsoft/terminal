@@ -305,14 +305,8 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    const auto dpi = ::GetDpiForWindow(_window.get());
-    if (dpi == 0)
-    {
-        winrt::throw_last_error();
-    }
-
     RECT frameRc = {};
-    ::AdjustWindowRectExForDpi(&frameRc, GetWindowStyle(_window.get()), FALSE, 0, dpi);
+    ::AdjustWindowRectExForDpi(&frameRc, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi);
 
     // We removed the titlebar from the non client area (see handling of
     // WM_NCCALCSIZE) and now we add it back, but into the client area to paint
@@ -355,16 +349,10 @@ void NonClientIslandWindow::_UpdateDragRegion()
             // Calculate new NCCALCSIZE_PARAMS based on custom NCA inset.
             NCCALCSIZE_PARAMS* pncsp = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
 
-            const auto dpi = ::GetDpiForWindow(_window.get());
-            if (dpi == 0)
-            {
-                winrt::throw_last_error();
-            }
-
             const auto windowStyle = GetWindowStyle(_window.get());
 
             RECT frameRc = {};
-            if (::AdjustWindowRectExForDpi(&frameRc, windowStyle, FALSE, 0, dpi) == 0)
+            if (::AdjustWindowRectExForDpi(&frameRc, windowStyle, FALSE, 0, _currentDpi) == 0)
             {
                 winrt::throw_last_error();
             }
@@ -386,8 +374,8 @@ void NonClientIslandWindow::_UpdateDragRegion()
                 // only part of the frame that we change.
                 const auto resizeBorderHeight =
                     // there isn't a SM_CYPADDEDBORDER for the Y axis
-                    GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi) +
-                    GetSystemMetricsForDpi(SM_CYFRAME, dpi);
+                    GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
+                    GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
                 clientTop += resizeBorderHeight;
             }
 
@@ -456,47 +444,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
         }
 
         return 0;
-    }
-
-    case WM_NCLBUTTONDOWN:
-    case WM_NCLBUTTONUP:
-    case WM_NCMBUTTONDOWN:
-    case WM_NCMBUTTONUP:
-    case WM_NCRBUTTONDOWN:
-    case WM_NCRBUTTONUP:
-    case WM_NCXBUTTONDOWN:
-    case WM_NCXBUTTONUP:
-    {
-        // If we clicked in the titlebar, raise an event so the app host can
-        // dispatch an appropriate event.
-        _DragRegionClickedHandlers();
-        break;
-    }
-
-    case WM_WINDOWPOSCHANGING:
-    {
-        // Enforce maximum size here instead of WM_GETMINMAXINFO. If we return
-        // it in WM_GETMINMAXINFO, then it will be enforced when snapping across
-        // DPI boundaries (bad.)
-        LPWINDOWPOS lpwpos = reinterpret_cast<LPWINDOWPOS>(lParam);
-        if (lpwpos == nullptr)
-        {
-            break;
-        }
-        if (_HandleWindowPosChanging(lpwpos))
-        {
-            return 0;
-        }
-        else
-        {
-            break;
-        }
-    }
-    case WM_DPICHANGED:
-    {
-        auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
-        OnSize(RECT_WIDTH(lprcNewScale), RECT_HEIGHT(lprcNewScale));
-        break;
     }
     }
 
