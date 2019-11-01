@@ -29,7 +29,7 @@ Settings::Settings() :
     _uFontFamily(0),
     _uFontWeight(0),
     // FaceName initialized below
-    _uCursorSize(CURSOR_SMALL_SIZE),
+    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
     _bFullScreen(false),
     _bQuickEdit(true),
     _bInsertMode(true),
