@@ -422,14 +422,13 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 void IslandWindow::_ApplyWindowSize()
 {
     const auto newSize = _fullscreen ? _fullscreenWindowSize : _nonFullscreenWindowSize;
-
-    LOG_IF_WIN32_BOOL_FAILED(SetWindowPos(GetWindowHandle(),
-                                          HWND_TOP,
-                                          newSize.left,
-                                          newSize.top,
-                                          newSize.right - newSize.left,
-                                          newSize.bottom - newSize.top,
-                                          SWP_FRAMECHANGED));
+    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(GetWindowHandle(),
+                                         HWND_TOP,
+                                         newSize.left,
+                                         newSize.top,
+                                         newSize.right - newSize.left,
+                                         newSize.bottom - newSize.top,
+                                         SWP_FRAMECHANGED));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

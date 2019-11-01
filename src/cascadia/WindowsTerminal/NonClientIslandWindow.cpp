@@ -206,13 +206,17 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 //   of our child xaml-island window to that region. That way, the parent window
 //   will still get NCHITTEST'ed _outside_ the XAML content area, for things
 //   like dragging and resizing.
+// - We won't cut this region out if we're fullscreen/borderless. Instead, we'll
+//   make sure to update our region to take the entirety of the window.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void NonClientIslandWindow::_UpdateDragRegion()
 {
-    // If we're fullscreen, we'll want the entire
+    // If we're fullscreen/borderless, we want the entire window to be given to
+    // the XAML island, instead of cutting a chunk out of it for the drag
+    // handle.
     if (_dragBar && _IsTitlebarVisible())
     {
         // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
@@ -569,10 +573,8 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
-            // Don't fill in the drag region when we're fullscreen. This is
-            // maybe a hack - we should probably actually just be extending all
-            // the way to the borders of the monitor, but that's not working
-            // currently.
+            // Don't fill in the drag region when we're fullscreen.
+            // TODO:GH#3411 - We should also not draw the borders when fullscreen.
             if (_IsTitlebarVisible())
             {
                 // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
