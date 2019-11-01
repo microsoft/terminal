@@ -9,7 +9,6 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
-#include "ScopedResourceLoader.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
@@ -23,8 +22,6 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         TerminalPage();
-
-        TerminalPage(std::shared_ptr<ScopedResourceLoader> resourceLoader);
 
         void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
@@ -59,8 +56,6 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
-
-        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();

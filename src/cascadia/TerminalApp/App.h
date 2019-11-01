@@ -58,8 +58,6 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
-        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
-
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};
 
