@@ -562,7 +562,7 @@ void Pane::_CloseChild(const bool closeFirst)
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
-        // When the remaining child is a leaf, that means both our childern were
+        // When the remaining child is a leaf, that means both our children were
         // previously leaves, and the only difference in their borders is the
         // border that we gave them. Take a bitwise AND of those two children to
         // remove that border. Other borders the children might have, they
