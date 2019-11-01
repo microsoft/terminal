@@ -71,6 +71,12 @@ public:                                                                         
 private:                                                                                                                                    \
     winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
 
+// This is a helper macro for both declaring the signature and body of an event
+// which is exposed by one class, but actually handled entirely by one of the
+// class's members. This type of event could be considered "forwarded" or
+// "proxied" to the handling type. Case in point: many of the events on App are
+// just forwarded straight to TerminalPage. This macro will both declare the
+// method signatures and define them both for you.
 #define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                                        \
 public:                                                                                                                        \
     winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler->handlerName(h); } \

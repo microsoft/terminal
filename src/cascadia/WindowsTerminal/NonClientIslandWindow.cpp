@@ -148,6 +148,13 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         return;
     }
 
+    // TODO: Currently, when we enter fullscreen mode, we draw the border around
+    // even the fullscreen window. That's mostly due to code here, that's giving
+    // the island HWND a margin. We should remove that. HOWEVER, there's a _lot_
+    // of work that's coming in this area to solve microsoft/terminal#3064. I'm
+    // leaving the work of fixing fullscreen mode till after the #3064 is
+    // complete, to prevent this from becoming a worse mess.
+
     const auto scale = GetCurrentDpiScale();
     const auto dpi = ::GetDpiForWindow(_window.get());
 

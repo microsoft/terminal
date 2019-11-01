@@ -17,15 +17,6 @@ using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
-constexpr int RECT_WIDTH(const RECT* const pRect)
-{
-    return pRect->right - pRect->left;
-}
-constexpr int RECT_HEIGHT(const RECT* const pRect)
-{
-    return pRect->bottom - pRect->top;
-}
-
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
@@ -344,11 +335,16 @@ void IslandWindow::ToggleFullscreen()
 // - <none>
 void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
 {
-    // It is possible to enter _SetIsFullscreen even if we're already in full screen.
-    // Use the old is in fullscreen flag to gate checks that rely on the current state.
+    // It is possible to enter _SetIsFullscreen even if we're already in full
+    // screen. Use the old is in fullscreen flag to gate checks that rely on the
+    // current state.
     bool fOldIsInFullscreen = _fullscreen;
     _fullscreen = fFullscreenEnabled;
 
+    // Note: The NonClientIslandWindow _doesn't_ need these style modifications,
+    // so it's overriden _ShouldUpdateStylesOnFullscreen to return false. Doing
+    // these modifications to that window will cause a vista-style window frame
+    // to briefly appear when entering and exiting fullscreen.
     if (_ShouldUpdateStylesOnFullscreen())
     {
         HWND const hWnd = GetWindowHandle();
@@ -357,14 +353,16 @@ void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
         LONG dwWindowStyle = GetWindowLongW(hWnd, GWL_STYLE);
         if (_fullscreen)
         {
-            // moving to fullscreen. remove WS_OVERLAPPEDWINDOW, which specifies styles for non-fullscreen windows (e.g.
-            // caption bar). add the WS_POPUP style to allow us to size ourselves to the monitor size.
+            // moving to fullscreen. remove WS_OVERLAPPEDWINDOW, which specifies
+            // styles for non-fullscreen windows (e.g. caption bar). add the
+            // WS_POPUP style to allow us to size ourselves to the monitor size.
             WI_ClearAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
             WI_SetFlag(dwWindowStyle, WS_POPUP);
         }
         else
         {
-            // coming back from fullscreen. undo what we did to get in to fullscreen in the first place.
+            // coming back from fullscreen. undo what we did to get in to
+            // fullscreen in the first place.
             WI_ClearFlag(dwWindowStyle, WS_POPUP);
             WI_SetAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
         }
@@ -374,7 +372,8 @@ void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
         LONG dwExWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
         if (_fullscreen)
         {
-            // moving to fullscreen. remove the window edge style to avoid an ugly border when not focused.
+            // moving to fullscreen. remove the window edge style to avoid an
+            // ugly border when not focused.
             WI_ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
         }
         else
@@ -389,12 +388,20 @@ void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
     _ApplyWindowSize();
 }
 
+// Method Description:
+// - Used in entering/exiting fullscreen mode. Saves the current window size,
+//   and the full size of the monitor, for use in _ApplyWindowSize.
+// - Taken from conhost's Window::_BackupWindowSizes
+// Arguments:
+// - fCurrentIsInFullscreen: true if we're currently in fullscreen mode.
+// Return Value:
+// - <none>
 void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 {
     if (_fullscreen)
     {
-        // Note: the current window size depends on the current state of the window.
-        // So don't back it up if we're already in full screen.
+        // Note: the current window size depends on the current state of the
+        // window. So don't back it up if we're already in full screen.
         if (!fCurrentIsInFullscreen)
         {
             _rcNonFullscreenWindowSize = GetWindowRect();
@@ -411,6 +418,13 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
     }
 }
 
+// Method Description:
+// - Applys the appropriate window size for transitioning to/from fullscreen mode.
+// - Taken from conhost's Window::_ApplyWindowSize
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::_ApplyWindowSize()
 {
     const RECT rcNewSize = _fullscreen ? _rcFullscreenWindowSize : _rcNonFullscreenWindowSize;
@@ -419,12 +433,9 @@ void IslandWindow::_ApplyWindowSize()
                  HWND_TOP,
                  rcNewSize.left,
                  rcNewSize.top,
-                 RECT_WIDTH(&rcNewSize),
-                 RECT_HEIGHT(&rcNewSize),
+                 rcNewSize.right - rcNewSize.left,
+                 rcNewSize.bottom - rcNewSize.top,
                  SWP_FRAMECHANGED);
-
-    // SCREEN_INFORMATION& siAttached = GetScreenInfo();
-    // siAttached.MakeCurrentCursorVisible();
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
