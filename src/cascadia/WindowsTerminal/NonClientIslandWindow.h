@@ -33,7 +33,7 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    int GetTopBorderHeight();
+    int GetTopBorderHeight() const noexcept;
 
     void Initialize() override;
 
@@ -48,6 +48,8 @@ private:
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
+    COLORREF _backgroundBrushColor;
+
     wil::unique_hrgn _dragBarRegion;
 
     bool _isMaximized;
@@ -57,10 +59,9 @@ private:
 
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT _OnPaint() noexcept;
 
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
-
-    void _HandleActivateWindow();
 
     void _OnMaximizeChange() noexcept;
 

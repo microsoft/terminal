@@ -17,15 +17,6 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
-constexpr int RECT_WIDTH(const RECT* const pRect)
-{
-    return pRect->right - pRect->left;
-}
-constexpr int RECT_HEIGHT(const RECT* const pRect)
-{
-    return pRect->bottom - pRect->top;
-}
-
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{},
     _oldIslandX{ -1 },
@@ -61,7 +52,7 @@ void NonClientIslandWindow::Initialize()
 {
     IslandWindow::Initialize();
 
-    _UpdateFrameTheme();
+    THROW_IF_FAILED(_UpdateFrameMargins());
 
     // Set up our grid of content. We'll use _rootGrid as our root element.
     // There will be two children of this grid - the TitlebarControl, and the
@@ -126,7 +117,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // Return Value:
 // - the height of the frame border at the top of the title bar or zero to
 //   disable it
-int NonClientIslandWindow::GetTopBorderHeight()
+int NonClientIslandWindow::GetTopBorderHeight() const noexcept
 {
     if (_isMaximized)
     {
@@ -195,7 +186,8 @@ void NonClientIslandWindow::_UpdateMaximizedState()
 
 // Method Description:
 // - Called when the the windows goes from restored to maximized or from
-//   maximized to restore. Updates the maximize button's icon.
+//   maximized to restore. Updates the maximize button's icon and the frame
+//   margins.
 void NonClientIslandWindow::_OnMaximizeChange() noexcept
 {
     if (_titlebar)
@@ -213,6 +205,9 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         }
         CATCH_LOG();
     }
+
+    // no frame margin when maximized
+    THROW_IF_FAILED(_UpdateFrameMargins());
 }
 
 // Method Description:
@@ -370,8 +365,10 @@ void NonClientIslandWindow::_UpdateDragRegion()
         // - Settings app: 4 pixels
         // - Skype: 4 pixels
         const auto resizeBorderHeight = 8 * scale;
+        const auto isOnResizeBorder = ptMouse.y < windowRc.top + resizeBorderHeight;
 
-        if (ptMouse.y < windowRc.top + resizeBorderHeight)
+        // no top resize handle when maximized
+        if (!_isMaximized && isOnResizeBorder)
         {
             result = HTTOP;
         }
@@ -392,13 +389,11 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    RECT frameRc = {};
-    ::AdjustWindowRectExForDpi(&frameRc, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi);
+    const auto topBorderHeight = GetTopBorderHeight();
 
-    // We removed the titlebar from the non client area (see handling of
-    // WM_NCCALCSIZE) and now we add it back, but into the client area to paint
-    // over it with our XAML island.
-    MARGINS margins = { 0, 0, -frameRc.top, 0 };
+    // We removed the whole top part of the frame (see handling of
+    // WM_NCCALCSIZE) so the top border is now missing. We add it back here.
+    MARGINS margins = { 0, 0, topBorderHeight, 0 };
 
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
@@ -419,82 +414,43 @@ void NonClientIslandWindow::_UpdateDragRegion()
 {
     switch (message)
     {
-    case WM_ACTIVATE:
-    {
-        _HandleActivateWindow();
-        break;
-    }
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
     case WM_NCHITTEST:
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
-
-    case WM_EXITSIZEMOVE:
-    {
-        ForceResize();
-        break;
-    }
-
     case WM_PAINT:
-    {
-        if (!_dragBar)
-        {
-            return 0;
-        }
-
-        PAINTSTRUCT ps{ 0 };
-        const auto hdc = wil::BeginPaint(_window.get(), &ps);
-        if (hdc.get())
-        {
-            const auto topBorderHeight = GetTopBorderHeight();
-
-            RECT rcTopBorder = ps.rcPaint;
-            rcTopBorder.top = 0;
-            rcTopBorder.bottom = topBorderHeight;
-            ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
-
-            if (ps.rcPaint.bottom > topBorderHeight)
-            {
-                // Create brush for borders, titlebar color.
-                const auto backgroundBrush = _titlebar.Background();
-                const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-                const auto backgroundColor = backgroundSolidBrush.Color();
-                const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
-                _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
-
-                RECT rcRest = ps.rcPaint;
-                rcRest.top = topBorderHeight;
-
-                // To paint on top of the original title bar, we have to set
-                // alpha channel to 255. This is a hack to do it with GDI.
-                HDC opaqueDc;
-                BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
-                HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
-                if (!buf || !opaqueDc)
-                {
-                    winrt::throw_last_error();
-                }
-                ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
-                ::BufferedPaintSetAlpha(buf, NULL, 255);
-                ::EndBufferedPaint(buf, TRUE);
-            }
-        }
-
-        return 0;
-    }
+        return _OnPaint();
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
 }
 
-// Method Description:
-// - Handle a WM_ACTIVATE message. Called during the creation of the window, and
-//   used as an opprotunity to get the dimensions of the caption buttons (the
-//   min, max, close buttons). We'll use these dimensions to help size the
-//   non-client area of the window.
-void NonClientIslandWindow::_HandleActivateWindow()
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnPaint() noexcept
 {
-    THROW_IF_FAILED(_UpdateFrameMargins());
+    if (!_titlebar)
+    {
+        return 0;
+    }
+
+    PAINTSTRUCT ps{ 0 };
+    const auto hdc = wil::BeginPaint(_window.get(), &ps);
+    if (hdc.get())
+    {
+        const auto backgroundBrush = _titlebar.Background();
+        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
+        const auto backgroundColor = backgroundSolidBrush.Color();
+        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+
+        if (!_backgroundBrush || color != _backgroundBrushColor)
+        {
+            // Create brush for titlebar color.
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+        }
+
+        ::FillRect(hdc.get(), &ps.rcPaint, _backgroundBrush.get());
+    }
+
+    return 0;
 }
 
 // Method Description:
