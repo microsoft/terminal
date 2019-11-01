@@ -849,7 +849,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         {
             if (dirtyView.TrimToViewport(&rect))
             {
-                LOG_IF_FAILED(pEngine->PaintSelection(rect));
+                LOG_IF_FAILED(pEngine->PaintSelection(_pData->GetSelectionBackground, rect));
             }
         }
     }

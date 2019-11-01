@@ -294,7 +294,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::PaintSelection(const COLORREF selectionBackground, const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }
