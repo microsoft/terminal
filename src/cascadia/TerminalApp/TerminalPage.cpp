@@ -1329,6 +1329,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ToggleFullscreen()
     {
         _toggleFullscreenHandlers(*this, nullptr);
+
+        _isFullscreen = !_isFullscreen;
+
+        // collapse/show the tabs themselves
+        _tabView.Visibility(!_isFullscreen ? Visibility::Visible : Visibility::Collapsed);
+
+        // collapse/show the row that the tabs are in.
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _tabRow.Height(!_isFullscreen ? NAN : 0);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -63,6 +63,8 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
+        bool _isFullscreen{ false };
+
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
 

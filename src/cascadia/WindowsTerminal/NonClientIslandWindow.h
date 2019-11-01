@@ -62,6 +62,8 @@ private:
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
     void _UpdateDragRegion();
 
+    void SetIsFullscreen(const bool fFullscreenEnabled) override;
+
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);

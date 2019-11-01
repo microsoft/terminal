@@ -204,7 +204,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 // - <none>
 void NonClientIslandWindow::_UpdateDragRegion()
 {
-    if (_dragBar)
+    if (_dragBar && !_fullscreen)
     {
         // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
         // better than that.
@@ -247,6 +247,15 @@ void NonClientIslandWindow::_UpdateDragRegion()
         auto clientRegion = wil::unique_hrgn(CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight));
         winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
+    }
+    else if (_fullscreen)
+    {
+        const auto windowRect = GetWindowRect();
+        const auto width = windowRect.right - windowRect.left;
+        const auto height = windowRect.bottom - windowRect.top;
+
+        auto windowRegion = wil::unique_hrgn(CreateRectRgn(0, 0, width, height));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, windowRegion.get(), true));
     }
 }
 
@@ -551,17 +560,24 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
-            // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
-            // window rect here, the single pixel of the bottom border (set in
-            // _UpdateFrameMargins) will be drawn, and blend with whatever the
-            // border color is.
-            RECT dragBarRect = GetDragAreaRect();
-            const auto dragHeight = RECT_HEIGHT(&dragBarRect);
-            dragBarRect.left = 0;
-            dragBarRect.right = cx;
-            dragBarRect.top = 0;
-            dragBarRect.bottom = dragHeight + yPos;
-            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+            // Don't fill in the drag region when we're fullscreen. This is
+            // maybe a hack - we should probably actually just be extending all
+            // the way to the borders of the monitor, but that's not working
+            // currently.
+            if (!_fullscreen)
+            {
+                // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
+                // window rect here, the single pixel of the bottom border (set in
+                // _UpdateFrameMargins) will be drawn, and blend with whatever the
+                // border color is.
+                RECT dragBarRect = GetDragAreaRect();
+                const auto dragHeight = RECT_HEIGHT(&dragBarRect);
+                dragBarRect.left = 0;
+                dragBarRect.right = cx;
+                dragBarRect.top = 0;
+                dragBarRect.bottom = dragHeight + yPos;
+                ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+            }
 
             // Draw the top window border
             RECT clientRect = { 0, 0, cx, yPos };
@@ -799,4 +815,10 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         _isMaximized = false;
     }
     return true;
+}
+
+void NonClientIslandWindow::SetIsFullscreen(const bool fFullscreenEnabled)
+{
+    IslandWindow::SetIsFullscreen(fFullscreenEnabled);
+    _titlebar.Visibility(!fFullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
 }
