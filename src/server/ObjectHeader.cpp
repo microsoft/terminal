@@ -39,10 +39,8 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
     try
     {
         // Allocate all necessary state.
-        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(ulHandleType,
-                                                                                             amDesired,
-                                                                                             ulShareMode,
-                                                                                             this);
+        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(amDesired,
+                                                                                             ulShareMode);
 
         // Check the share mode.
         if (((pHandleData->IsReadAllowed()) && (_ulOpenCount > _ulReadShareCount)) ||
@@ -50,7 +48,7 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
             ((pHandleData->IsWriteAllowed()) && (_ulOpenCount > _ulWriteShareCount)) ||
             ((!pHandleData->IsWriteShared()) && (_ulWriterCount > 0)))
         {
-            RETURN_WIN32(ERROR_SHARING_VIOLATION);
+            return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);          
         }
 
         // Update share/open counts and store handle information.
@@ -75,6 +73,10 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
         {
             _ulWriteShareCount++;
         }
+
+        // Commit the object into the handle now that we've determined we have the rights to use it and have counted up appropriately.
+        // This way, the handle will only try to cleanup and decrement its counts after we've validated rights and incremented.
+        pHandleData->Initialize(ulHandleType, this);
 
         out.swap(pHandleData);
     }
