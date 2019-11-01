@@ -42,17 +42,18 @@ public:
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
 
 private:
+    int _oldIslandX, _oldIslandY;
+
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
     wil::unique_hrgn _dragBarRegion;
 
-    MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
-    RECT GetDragAreaRect() const noexcept;
+    RECT _GetDragAreaRect() const noexcept;
 
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
 
@@ -67,6 +68,4 @@ private:
     void _UpdateFrameTheme();
 
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
-
-    RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 };

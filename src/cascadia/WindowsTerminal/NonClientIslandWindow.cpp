@@ -28,6 +28,8 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{},
+    _oldIslandX {-1},
+    _oldIslandY {-1},
     _isMaximized{ false }
 {
 }
@@ -140,7 +142,7 @@ int NonClientIslandWindow::GetTopBorderHeight()
     return static_cast<int>(1 * GetCurrentDpiScale());
 }
 
-RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
+RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 {
     if (_dragBar)
     {
@@ -177,14 +179,32 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 
     const auto topBorderHeight = GetTopBorderHeight();
 
+    const auto newIslandX = 0;
+    const auto newIslandY = topBorderHeight;
+
     // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   0,
-                                   topBorderHeight,
+                                   newIslandX,
+                                   newIslandY,
                                    width,
                                    height - topBorderHeight,
                                    SWP_SHOWWINDOW));
+
+    // This happens when we go from maximized to minimized or the opposite
+    // because topBorderHeight changes.
+    if (newIslandX != _oldIslandX || newIslandY != _oldIslandY)
+    {
+        // The drag bar's position changed compared to the client area because
+        // the island moved but we will not be notified about this in the
+        // NonClientIslandWindow::OnDragBarSizeChanged method because this
+        // method is only called when the position of the drag bar changes
+        // **inside** the island which is not the case here.
+        _UpdateDragRegion();
+    }
+
+    _oldIslandX = newIslandX;
+    _oldIslandY = newIslandY;
 }
 
 // Method Description:
@@ -202,47 +222,18 @@ void NonClientIslandWindow::_UpdateDragRegion()
 {
     if (_dragBar)
     {
-        // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
-        // better than that.
-        const auto windowRect = GetWindowRect();
-        const auto width = windowRect.right - windowRect.left;
-        const auto height = windowRect.bottom - windowRect.top;
+        RECT rcClient;
+        winrt::check_bool(GetClientRect(_window.get(), &rcClient));
 
-        const auto scale = GetCurrentDpiScale();
-        const auto dpi = ::GetDpiForWindow(_window.get());
+        const auto rcDragBar = _GetDragAreaRect();
+        const auto topBorderHeight = GetTopBorderHeight();
 
-        const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
-        const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+        const auto clientRegion = wil::unique_hrgn(CreateRectRgn(rcClient.left, rcClient.top, rcClient.right, rcClient.bottom));
+        const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
+        const auto clientWithoutDragBarRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+        winrt::check_bool(CombineRgn(clientWithoutDragBarRegion.get(), clientRegion.get(), dragBarRegion.get(), RGN_DIFF));
 
-        // If we're maximized, we don't want to use the frame as our margins,
-        // instead we want to use the margins from the maximization. If we included
-        // the left&right sides of the frame in this calculation while maximized,
-        // you' have a few pixels of the window border on the sides while maximized,
-        // which most apps do not have.
-        const auto bordersWidth = _isMaximized ?
-                                      (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
-                                      (dragX * 2);
-        const auto bordersHeight = _isMaximized ?
-                                       (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
-                                       (dragY * 2);
-
-        const auto windowsWidth = width - bordersWidth;
-        const auto windowsHeight = height - bordersHeight;
-        const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-        const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
-
-        const auto dragBarRect = GetDragAreaRect();
-        const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
-
-        auto nonClientRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
-        auto nonClientLeftRegion = wil::unique_hrgn(CreateRectRgn(0, 0, dragBarRect.left, nonClientHeight));
-        auto nonClientRightRegion = wil::unique_hrgn(CreateRectRgn(dragBarRect.right, 0, windowsWidth, nonClientHeight));
-        winrt::check_bool(CombineRgn(nonClientRegion.get(), nonClientLeftRegion.get(), nonClientRightRegion.get(), RGN_OR));
-
-        _dragBarRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
-        auto clientRegion = wil::unique_hrgn(CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight));
-        winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
-        winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, clientWithoutDragBarRegion.get(), true));
     }
 }
 
@@ -330,95 +321,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
 
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
-}
-
-// Routine Description:
-// - Gets the maximum possible window rectangle in pixels. Based on the monitor
-//   the window is on or the primary monitor if no window exists yet.
-// Arguments:
-// - prcSuggested - If we were given a suggested rectangle for where the window
-//                  is going, we can pass it in here to find out the max size
-//                  on that monitor.
-//                - If this value is zero and we had a valid window handle,
-//                  we'll use that instead. Otherwise the value of 0 will make
-//                  us use the primary monitor.
-// - pDpiSuggested - The dpi that matches the suggested rect. We will attempt to
-//                   compute this during the function, but if we fail for some
-//                   reason, the original value passed in will be left untouched.
-// Return Value:
-// - RECT containing the left, right, top, and bottom positions from the desktop
-//   origin in pixels. Measures the outer edges of the potential window.
-// NOTE:
-// Heavily taken from WindowMetrics::GetMaxWindowRectInPixels in conhost.
-RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested)
-{
-    // prepare rectangle
-    RECT rc = *prcSuggested;
-
-    // use zero rect to compare.
-    RECT rcZero;
-    SetRectEmpty(&rcZero);
-
-    // First get the monitor pointer from either the active window or the default location (0,0,0,0)
-    HMONITOR hMonitor = nullptr;
-
-    // NOTE: We must use the nearest monitor because sometimes the system moves
-    // the window around into strange spots while performing snap and Win+D
-    // operations. Those operations won't work correctly if we use
-    // MONITOR_DEFAULTTOPRIMARY.
-    if (!EqualRect(&rc, &rcZero))
-    {
-        // For invalid window handles or when we were passed a non-zero
-        // suggestion rectangle, get the monitor from the rect.
-        hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
-    }
-    else
-    {
-        // Otherwise, get the monitor from the window handle.
-        hMonitor = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
-    }
-
-    // If for whatever reason there is no monitor, we're going to give back
-    // whatever we got since we can't figure anything out. We won't adjust the
-    // DPI either. That's OK. DPI doesn't make much sense with no display.
-    if (nullptr == hMonitor)
-    {
-        return rc;
-    }
-
-    // Now obtain the monitor pixel dimensions
-    MONITORINFO MonitorInfo = { 0 };
-    MonitorInfo.cbSize = sizeof(MONITORINFO);
-
-    GetMonitorInfoW(hMonitor, &MonitorInfo);
-
-    // We have to make a correction to the work area. If we actually consume the
-    // entire work area (by maximizing the window). The window manager will
-    // render the borders off-screen. We need to pad the work rectangle with the
-    // border dimensions to represent the actual max outer edges of the window
-    // rect.
-    WINDOWINFO wi = { 0 };
-    wi.cbSize = sizeof(WINDOWINFO);
-    GetWindowInfo(_window.get(), &wi);
-
-    // In non-full screen, we want to only use the work area (avoiding the task bar space)
-    rc = MonitorInfo.rcWork;
-
-    if (pDpiSuggested != nullptr)
-    {
-        UINT monitorDpiX;
-        UINT monitorDpiY;
-        if (SUCCEEDED(GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &monitorDpiX, &monitorDpiY)))
-        {
-            *pDpiSuggested = monitorDpiX;
-        }
-        else
-        {
-            *pDpiSuggested = GetDpiForWindow(_window.get());
-        }
-    }
-
-    return rc;
 }
 
 // Method Description:
@@ -644,9 +546,7 @@ void NonClientIslandWindow::_UpdateFrameTheme()
 // Method Description:
 // - Handle a WM_WINDOWPOSCHANGING message. When the window is changing, or the
 //   dpi is changing, this handler is triggered to give us a chance to adjust
-//   the window size and position manually. We use this handler during a maxiize
-//   to figure out by how much the window will overhang the edges of the
-//   monitor, and set up some padding to adjust for that.
+//   the window size and position manually.
 // Arguments:
 // - windowPos: A pointer to a proposed window location and size. Should we wish
 //   to manually position the window, we could change the values of this struct.
@@ -674,132 +574,5 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
                                                                    winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
     }
 
-    // Figure out the suggested dimensions
-    RECT rcSuggested;
-    rcSuggested.left = windowPos->x;
-    rcSuggested.top = windowPos->y;
-    rcSuggested.right = rcSuggested.left + windowPos->cx;
-    rcSuggested.bottom = rcSuggested.top + windowPos->cy;
-    SIZE szSuggested;
-    szSuggested.cx = RECT_WIDTH(&rcSuggested);
-    szSuggested.cy = RECT_HEIGHT(&rcSuggested);
-
-    // Figure out the current dimensions for comparison.
-    RECT rcCurrent = GetWindowRect();
-
-    // Determine whether we're being resized by someone dragging the edge or
-    // completely moved around.
-    bool fIsEdgeResize = false;
-    {
-        // We can only be edge resizing if our existing rectangle wasn't empty.
-        // If it was empty, we're doing the initial create.
-        if (!IsRectEmpty(&rcCurrent))
-        {
-            // If one or two sides are changing, we're being edge resized.
-            unsigned int cSidesChanging = 0;
-            if (rcCurrent.left != rcSuggested.left)
-            {
-                cSidesChanging++;
-            }
-            if (rcCurrent.right != rcSuggested.right)
-            {
-                cSidesChanging++;
-            }
-            if (rcCurrent.top != rcSuggested.top)
-            {
-                cSidesChanging++;
-            }
-            if (rcCurrent.bottom != rcSuggested.bottom)
-            {
-                cSidesChanging++;
-            }
-
-            if (cSidesChanging == 1 || cSidesChanging == 2)
-            {
-                fIsEdgeResize = true;
-            }
-        }
-    }
-
-    // If we're about to maximize the window, determine how much we're about to
-    // overhang by, and adjust for that.
-    // We need to do this because maximized windows will typically overhang the
-    // actual monitor bounds by roughly the size of the old "thick: window
-    // borders. For normal windows, this is fine, but because we're using
-    // DwmExtendFrameIntoClientArea, that means some of our client content will
-    // now overhang, and get cut off.
-    if (isMaximized)
-    {
-        // Find the related monitor, the maximum pixel size,
-        // and the dpi for the suggested rect.
-        UINT dpiOfMaximum;
-        RECT rcMaximum;
-
-        if (fIsEdgeResize)
-        {
-            // If someone's dragging from the edge to resize in one direction,
-            // we want to make sure we never grow past the current monitor.
-            rcMaximum = GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
-        }
-        else
-        {
-            // In other circumstances, assume we're snapping around or some
-            // other jump (TS). Just do whatever we're told using the new
-            // suggestion as the restriction monitor.
-            rcMaximum = GetMaxWindowRectInPixels(&rcSuggested, &dpiOfMaximum);
-        }
-
-        const auto suggestedWidth = szSuggested.cx;
-        const auto suggestedHeight = szSuggested.cy;
-
-        const auto maxWidth = RECT_WIDTH(&rcMaximum);
-        const auto maxHeight = RECT_HEIGHT(&rcMaximum);
-
-        // Only apply the maximum size restriction if the current DPI matches
-        // the DPI of the maximum rect. This keeps us from applying the wrong
-        // restriction if the monitor we're moving to has a different DPI but
-        // we've yet to get notified of that DPI change. If we do apply it, then
-        // we'll restrict the console window BEFORE its been resized for the DPI
-        // change, so we're likely to shrink the window too much or worse yet,
-        // keep it from moving entirely. We'll get a WM_DPICHANGED, resize the
-        // window, and then process the restriction in a few window messages.
-        if (((int)dpiOfMaximum == _currentDpi) &&
-            ((suggestedWidth > maxWidth) ||
-             (suggestedHeight > maxHeight)))
-        {
-            RECT frame{};
-            // Calculate the maxmized window overhang by getting the size of the window frame.
-            // We use the style without WS_CAPTION otherwise the caption height is included.
-            // Only remove WS_DLGFRAME since WS_CAPTION = WS_DLGFRAME | WS_BORDER,
-            // but WS_BORDER is needed as it modifies the calculation of the width of the frame.
-            const auto targetStyle = windowStyle & ~WS_DLGFRAME;
-            AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), _currentDpi);
-
-            // Frame left and top will be negative
-            _maximizedMargins.cxLeftWidth = frame.left * -1;
-            _maximizedMargins.cyTopHeight = frame.top * -1;
-            _maximizedMargins.cxRightWidth = frame.right;
-            _maximizedMargins.cyBottomHeight = frame.bottom;
-
-            _isMaximized = true;
-            THROW_IF_FAILED(_UpdateFrameMargins());
-        }
-    }
-    else
-    {
-        // Clear our maximization state
-        _maximizedMargins = { 0 };
-
-        // Immediately after resoring down, don't update our frame margins. If
-        // you do this here, then a small gap will appear between the titlebar
-        // and the content, until the window is moved. However, we do need to
-        // keep this here _in general_ for dragging across DPI boundaries.
-        if (!_isMaximized)
-        {
-            THROW_IF_FAILED(_UpdateFrameMargins());
-        }
-
-        _isMaximized = false;
-    }
     return true;
 }
