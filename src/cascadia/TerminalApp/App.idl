@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "../TerminalPage.idl";
+
 namespace TerminalApp
 {
     enum LaunchMode
@@ -8,9 +10,6 @@ namespace TerminalApp
         DefaultMode,
         MaximizedMode,
     };
-
-    delegate void LastTabClosedEventArgs();
-    delegate void ToggleFullscreenEventArgs();
 
     [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
     {

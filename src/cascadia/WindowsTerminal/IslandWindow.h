@@ -93,11 +93,11 @@ protected:
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 
     bool _fullscreen{ false };
-    RECT _rcFullscreenWindowSize;
-    RECT _rcNonFullscreenWindowSize;
+    RECT _fullscreenWindowSize;
+    RECT _nonFullscreenWindowSize;
 
-    virtual void _SetIsFullscreen(const bool fFullscreenEnabled);
-    void _BackupWindowSizes(const bool fCurrentIsInFullscreen);
+    virtual void _SetIsFullscreen(const bool fullscreenEnabled);
+    void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
 
     // See _SetIsFullscreen for details on this method.

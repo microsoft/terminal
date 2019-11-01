@@ -148,12 +148,13 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         return;
     }
 
-    // TODO: Currently, when we enter fullscreen mode, we draw the border around
-    // even the fullscreen window. That's mostly due to code here, that's giving
-    // the island HWND a margin. We should remove that. HOWEVER, there's a _lot_
-    // of work that's coming in this area to solve microsoft/terminal#3064. I'm
-    // leaving the work of fixing fullscreen mode till after the #3064 is
-    // complete, to prevent this from becoming a worse mess.
+    // TODO:GH #3411 Currently, when we enter fullscreen mode, we draw the
+    // border around even the fullscreen window. That's mostly due to code here,
+    // that's giving the island HWND a margin. We should remove that. HOWEVER,
+    // there's a _lot_ of work that's coming in this area to solve
+    // microsoft/terminal#3064. I'm leaving the work of fixing fullscreen mode
+    // till after the #3064 is complete, to prevent this from becoming a worse
+    // mess.
 
     const auto scale = GetCurrentDpiScale();
     const auto dpi = ::GetDpiForWindow(_window.get());
@@ -830,13 +831,13 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
 //   need to manually hide the entire titlebar.
 // - See also IslandWindow::_SetIsFullscreen, which does additional work.
 // Arguments:
-// - fFullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
+// - fullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
 // Return Value:
 // - <none>
-void NonClientIslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
+void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
-    IslandWindow::_SetIsFullscreen(fFullscreenEnabled);
-    _titlebar.Visibility(!fFullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    IslandWindow::_SetIsFullscreen(fullscreenEnabled);
+    _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
 }
 
 // Method Description:

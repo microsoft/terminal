@@ -327,19 +327,19 @@ void IslandWindow::ToggleFullscreen()
 //   use that saved size to restore back to.
 // - When we're entering fullscreen we need to do some additional modification
 //   of our window styles. However, the NonClientIslandWindow very explicitly
-//   _doesn't_ ned to do these steps. Subclasses should override
+//   _doesn't_ need to do these steps. Subclasses should override
 //   _ShouldUpdateStylesOnFullscreen to disable setting these window styles.
 // Arguments:
-// - fFullscreenEnabled true if we should enable fullscreen mode, false to disable.
+// - fullscreenEnabled true if we should enable fullscreen mode, false to disable.
 // Return Value:
 // - <none>
-void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
+void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     // It is possible to enter _SetIsFullscreen even if we're already in full
     // screen. Use the old is in fullscreen flag to gate checks that rely on the
     // current state.
-    bool fOldIsInFullscreen = _fullscreen;
-    _fullscreen = fFullscreenEnabled;
+    const auto oldIsInFullscreen = _fullscreen;
+    _fullscreen = fullscreenEnabled;
 
     // Note: The NonClientIslandWindow _doesn't_ need these style modifications,
     // so it's overriden _ShouldUpdateStylesOnFullscreen to return false. Doing
@@ -384,7 +384,7 @@ void IslandWindow::_SetIsFullscreen(const bool fFullscreenEnabled)
         SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
     }
 
-    _BackupWindowSizes(fOldIsInFullscreen);
+    _BackupWindowSizes(oldIsInFullscreen);
     _ApplyWindowSize();
 }
 
@@ -404,7 +404,7 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
         // window. So don't back it up if we're already in full screen.
         if (!fCurrentIsInFullscreen)
         {
-            _rcNonFullscreenWindowSize = GetWindowRect();
+            _nonFullscreenWindowSize = GetWindowRect();
         }
 
         // get and back up the current monitor's size
@@ -413,7 +413,7 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
         currMonitorInfo.cbSize = sizeof(currMonitorInfo);
         if (GetMonitorInfo(hCurrentMonitor, &currMonitorInfo))
         {
-            _rcFullscreenWindowSize = currMonitorInfo.rcMonitor;
+            _fullscreenWindowSize = currMonitorInfo.rcMonitor;
         }
     }
 }
@@ -427,15 +427,15 @@ void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 // - <none>
 void IslandWindow::_ApplyWindowSize()
 {
-    const RECT rcNewSize = _fullscreen ? _rcFullscreenWindowSize : _rcNonFullscreenWindowSize;
+    const auto newSize = _fullscreen ? _fullscreenWindowSize : _nonFullscreenWindowSize;
 
-    SetWindowPos(GetWindowHandle(),
-                 HWND_TOP,
-                 rcNewSize.left,
-                 rcNewSize.top,
-                 rcNewSize.right - rcNewSize.left,
-                 rcNewSize.bottom - rcNewSize.top,
-                 SWP_FRAMECHANGED);
+    LOG_IF_WIN32_BOOL_FAILED(SetWindowPos(GetWindowHandle(),
+                                          HWND_TOP,
+                                          newSize.left,
+                                          newSize.top,
+                                          newSize.right - newSize.left,
+                                          newSize.bottom - newSize.top,
+                                          SWP_FRAMECHANGED));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

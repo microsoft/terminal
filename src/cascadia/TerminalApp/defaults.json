@@ -235,5 +235,6 @@
         { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
         { "command": "increaseFontSize", "keys": ["ctrl+="] },
         { "command": "toggleFullscreen", "keys": ["alt+enter"] }
+        { "command": "toggleFullscreen", "keys": ["f11"] }
     ]
 }
