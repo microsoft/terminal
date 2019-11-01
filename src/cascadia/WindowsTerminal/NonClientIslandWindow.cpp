@@ -28,8 +28,8 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{},
-    _oldIslandX {-1},
-    _oldIslandY {-1},
+    _oldIslandX{ -1 },
+    _oldIslandY{ -1 },
     _isMaximized{ false }
 {
 }
@@ -168,15 +168,47 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 }
 
 // Method Description:
-// - called when the size of the window changes for any reason. Updates the
-//   sizes of our child Xaml Islands to match our new sizing.
+// - Called when the size of the window changes for any reason. Updates the
+//   Xaml Island to match our new sizing and also updates the maximize icon
+//   if the window went from maximized to minimized or the opposite.
 void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 {
-    if (!_interopWindowHandle)
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto newIsMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+
+    if (_isMaximized != newIsMaximized)
     {
-        return;
+        _isMaximized = newIsMaximized;
+        _OnMaximizeChange();
     }
 
+    if (_interopWindowHandle)
+    {
+        _UpdateIslandPosition(width, height);
+    }
+}
+
+// Method Description:
+// - Called when the the windows goes from restored to maximized or from
+//   maximized to restore. Updates the maximize button's icon.
+void NonClientIslandWindow::_OnMaximizeChange()
+{
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+    if (_titlebar)
+    {
+        _titlebar.SetWindowVisualState(_isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
+                                                      isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                                    winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
+    }
+}
+
+// Method Description:
+// - called when the size of the window changes for any reason. Updates the
+//   sizes of our child Xaml Islands to match our new sizing.
+void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
+{
     const auto topBorderHeight = GetTopBorderHeight();
 
     const auto newIslandX = 0;
@@ -187,8 +219,8 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
                                    HWND_BOTTOM,
                                    newIslandX,
                                    newIslandY,
-                                   width,
-                                   height - topBorderHeight,
+                                   windowWidth,
+                                   windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW));
 
     // This happens when we go from maximized to minimized or the opposite
@@ -488,38 +520,4 @@ void NonClientIslandWindow::_UpdateFrameTheme()
     {
         LOG_LAST_ERROR();
     }
-}
-
-// Method Description:
-// - Handle a WM_WINDOWPOSCHANGING message. When the window is changing, or the
-//   dpi is changing, this handler is triggered to give us a chance to adjust
-//   the window size and position manually.
-// Arguments:
-// - windowPos: A pointer to a proposed window location and size. Should we wish
-//   to manually position the window, we could change the values of this struct.
-// Return Value:
-// - true if we handled this message, false otherwise. If we return false, the
-//   message should instead be handled by DefWindowProc
-// Note:
-// Largely taken from the conhost WM_WINDOWPOSCHANGING handler.
-bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
-{
-    // We only need to apply restrictions if the size is changing.
-    if (WI_IsFlagSet(windowPos->flags, SWP_NOSIZE))
-    {
-        return false;
-    }
-
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
-    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
-
-    if (_titlebar)
-    {
-        _titlebar.SetWindowVisualState(isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                                                     isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                                                   winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
-    }
-
-    return true;
 }

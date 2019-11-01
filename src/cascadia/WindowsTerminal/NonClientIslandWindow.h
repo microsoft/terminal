@@ -60,12 +60,15 @@ private:
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();
-    bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
+
+    void _OnMaximizeChange();
+
+    void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateDragRegion();
+    void _UpdateFrameTheme();
 
     virtual void _OnNcCreate() noexcept;
 
-    void _UpdateFrameTheme();
 
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 };
