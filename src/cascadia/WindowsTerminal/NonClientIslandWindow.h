@@ -71,6 +71,5 @@ private:
 
     virtual void _OnNcCreate() noexcept;
 
-
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 };
