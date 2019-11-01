@@ -131,12 +131,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.TerminalDisconnected([=]() {
             _connectionClosedHandlers();
         });
-
-        SearchBoxControl searchBox;
-        searchBox.Visibility(Visibility::Visible);
-        searchBox.HorizontalAlignment(HorizontalAlignment::Right);
-
-        container.Children().Append(searchBox);
     }
 
     // Method Description:
