@@ -128,12 +128,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 //   disable it
 int NonClientIslandWindow::GetTopBorderHeight()
 {
-    WINDOWPLACEMENT placement = {};
-    placement.length = sizeof(placement);
-    winrt::check_bool(::GetWindowPlacement(_window.get(), &placement));
-
-    bool isMaximized = placement.showCmd == SW_MAXIMIZE;
-    if (isMaximized)
+    if (_isMaximized)
     {
         // no border when maximized
         return 0;
@@ -180,6 +175,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _UpdateIslandPosition(width, height);
     }
 }
+
 // Method Description:
 // - Checks if the window has been maximized or restored since the last time.
 //   If it has been maximized or restored, then it updates the _isMaximized
@@ -238,7 +234,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW));
 
-    // This happens when we go from maximized to minimized or the opposite
+    // This happens when we go from maximized to restored or the opposite
     // because topBorderHeight changes.
     if (newIslandX != _oldIslandX || newIslandY != _oldIslandY)
     {
