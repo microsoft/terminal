@@ -412,7 +412,9 @@ bool AdaptDispatch::CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned
 }
 
 // Routine Description:
-// - DECSC - Saves the current cursor position into a memory buffer.
+// - DECSC - Saves the current "cursor state" into a memory buffer. This
+//   includes the cursor position, origin mode, graphic rendition, and
+//   active character set.
 // Arguments:
 // - <none>
 // Return Value:
@@ -450,8 +452,9 @@ bool AdaptDispatch::CursorSaveState()
 }
 
 // Routine Description:
-// - DECRC - Restores a saved cursor position from the DECSC command back into the console state.
-// - If no position was set, this defaults to the top left corner (see AdaptDispatch constructor.)
+// - DECRC - Restores a saved "cursor state" from the DECSC command back into
+//   the console state. This includes the cursor position, origin mode, graphic
+//   rendition, and active character set.
 // Arguments:
 // - <none>
 // Return Value:

@@ -156,6 +156,11 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _TermOutput;
 
+        // We have two instances of the saved cursor state, because we need
+        // one for the main buffer (at index 0), and another for the alt buffer
+        // (at index 1). The _usingAltBuffer property keeps tracks of which
+        // buffer is active, so can be used as an index into this array to
+        // obtain the saved state that should be currently active.
         CursorState _savedCursorState[2];
         bool _usingAltBuffer;
 
