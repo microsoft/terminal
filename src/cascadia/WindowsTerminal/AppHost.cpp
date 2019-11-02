@@ -188,16 +188,16 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         auto initialSize = _app.GetLaunchDimensions(dpix);
 
-        const short _currentWidth = Utils::ClampToShortMax(
+        const short currentWidth = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.X)), 1);
-        const short _currentHeight = Utils::ClampToShortMax(
+        const short currentHeight = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.Y)), 1);
 
-        long nonClientWidth = _currentWidth;
-        long nonClientHeight = _currentHeight;
+        long nonClientWidth = currentWidth;
+        long nonClientHeight = currentHeight;
 
-        RECT rcFrame = {};
-        bool succeeded = AdjustWindowRectExForDpi(&rcFrame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+        RECT frame = {};
+        bool succeeded = AdjustWindowRectExForDpi(&frame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
         if (!succeeded)
         {
             // If we failed to get the correct window size for whatever reason, log
@@ -211,13 +211,13 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
         if (_useNonClientArea)
         {
             const auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-            nonClientWidth += -rcFrame.left + rcFrame.right;
-            nonClientHeight += pNcWindow->GetTopBorderHeight() + rcFrame.bottom; // don't include title bar
+            nonClientWidth += -frame.left + frame.right;
+            nonClientHeight += pNcWindow->GetTopBorderHeight() + frame.bottom; // don't include title bar
         }
         else
         {
-            nonClientWidth += -rcFrame.left + rcFrame.right;
-            nonClientHeight += -rcFrame.top + rcFrame.bottom;
+            nonClientWidth += -frame.left + frame.right;
+            nonClientHeight += -frame.top + frame.bottom;
         }
 
         adjustedWidth = nonClientWidth;

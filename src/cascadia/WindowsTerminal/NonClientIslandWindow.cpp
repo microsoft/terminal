@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 #include "../types/inc/ThemeUtils.h"
+#include "../types/inc/utils.hpp"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -19,8 +20,7 @@ using namespace ::Microsoft::Console::Types;
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{},
-    _oldIslandX{ -1 },
-    _oldIslandY{ -1 },
+    _backgroundBrushColor{ RGB(0, 0, 0) },
     _isMaximized{ false }
 {
 }
@@ -37,10 +37,10 @@ NonClientIslandWindow::~NonClientIslandWindow()
 // - <unused>
 // Return Value:
 // - <none>
-void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                 winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
+void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                 winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/) const
 {
-    _UpdateDragRegion();
+    _UpdateIslandRegion();
 }
 
 void NonClientIslandWindow::OnAppInitialized()
@@ -69,8 +69,8 @@ void NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
-    _dragBar.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
-    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+    _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -186,7 +186,7 @@ void NonClientIslandWindow::_UpdateMaximizedState()
 
 // Method Description:
 // - Called when the the windows goes from restored to maximized or from
-//   maximized to restore. Updates the maximize button's icon and the frame
+//   maximized to restored. Updates the maximize button's icon and the frame
 //   margins.
 void NonClientIslandWindow::_OnMaximizeChange() noexcept
 {
@@ -215,34 +215,32 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
 //   sizes of our child Xaml Islands to match our new sizing.
 void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
 {
-    const auto topBorderHeight = GetTopBorderHeight();
+    const auto topBorderHeight = Utils::ClampToShortMax(GetTopBorderHeight(), 0);
 
-    const auto newIslandX = 0;
-    const auto newIslandY = topBorderHeight;
+    const COORD newIslandPos = { 0, topBorderHeight };
 
     // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   newIslandX,
-                                   newIslandY,
+                                   newIslandPos.X,
+                                   newIslandPos.Y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW));
 
     // This happens when we go from maximized to restored or the opposite
     // because topBorderHeight changes.
-    if (newIslandX != _oldIslandX || newIslandY != _oldIslandY)
+    if (!_oldIslandPos || *_oldIslandPos != newIslandPos)
     {
         // The drag bar's position changed compared to the client area because
         // the island moved but we will not be notified about this in the
         // NonClientIslandWindow::OnDragBarSizeChanged method because this
         // method is only called when the position of the drag bar changes
         // **inside** the island which is not the case here.
-        _UpdateDragRegion();
-    }
+        _UpdateIslandRegion();
 
-    _oldIslandX = newIslandX;
-    _oldIslandY = newIslandY;
+        _oldIslandPos = { newIslandPos };
+    }
 }
 
 // Method Description:
@@ -256,7 +254,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 // - <none>
 // Return Value:
 // - <none>
-void NonClientIslandWindow::_UpdateDragRegion()
+void NonClientIslandWindow::_UpdateIslandRegion() const
 {
     if (!_interopWindowHandle || !_dragBar)
     {
@@ -272,10 +270,11 @@ void NonClientIslandWindow::_UpdateDragRegion()
     const auto rcDragBar = _GetDragAreaRect();
     const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
 
-    const auto withoutDragBarRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
-    winrt::check_bool(CombineRgn(withoutDragBarRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
+    // island region = total region - drag bar region
+    const auto islandRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+    winrt::check_bool(CombineRgn(islandRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
 
-    winrt::check_bool(SetWindowRgn(_interopWindowHandle, withoutDragBarRegion.get(), true));
+    winrt::check_bool(SetWindowRgn(_interopWindowHandle, islandRegion.get(), true));
 }
 
 // Method Description:
@@ -291,6 +290,9 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
            ::GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
 }
 
+// Method Description:
+// - Responds to the WM_NCCALCSIZE message by calculating and creating the new
+//   window frame.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
 {
     if (wParam == false)
@@ -434,6 +436,13 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
     return IslandWindow::MessageHandler(message, wParam, lParam);
 }
 
+// Method Description:
+// - This method is called when the window receives the WM_PAINT message. It
+//   paints the background of the window to the color of the drag bar because
+//   the drag bar cannot be painted on the window by the XAML island (see
+//   NonClientIslandWindow::_UpdateIslandRegion).
+// Return Value:
+// - The value returned from the window proc.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnPaint() noexcept
 {
     if (!_titlebar)
@@ -465,14 +474,20 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 // Method Description:
 // - This method is called when the window receives the WM_NCCREATE message.
 // Return Value:
-// - <none>
-void NonClientIslandWindow::_OnNcCreate() noexcept
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
-    IslandWindow::_OnNcCreate();
+    auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
+    if (ret == FALSE)
+    {
+        return ret;
+    }
 
     // Set the frame's theme before it is rendered (WM_NCPAINT) so that it is
     // rendered with the correct theme.
     _UpdateFrameTheme();
+
+    return TRUE;
 }
 
 // Method Description:
@@ -482,7 +497,7 @@ void NonClientIslandWindow::_OnNcCreate() noexcept
 //   focuses/unfocuses the window.
 // Return Value:
 // - <none>
-void NonClientIslandWindow::_UpdateFrameTheme()
+void NonClientIslandWindow::_UpdateFrameTheme() const
 {
     const auto isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
 

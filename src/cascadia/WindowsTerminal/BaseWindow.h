@@ -35,7 +35,7 @@ public:
             WINRT_ASSERT(!that->_window);
             that->_window = wil::unique_hwnd(window);
 
-            that->_OnNcCreate();
+            return that->_OnNcCreate(wparam, lparam);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -247,13 +247,15 @@ protected:
     // Method Description:
     // - This method is called when the window receives the WM_NCCREATE message.
     // Return Value:
-    // - <none>
-    virtual void _OnNcCreate() noexcept
+    // - The value returned from the window proc.
+    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
     {
         SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
         EnableNonClientDpiScaling(_window.get());
         _currentDpi = GetDpiForWindow(_window.get());
+
+        return DefWindowProc(_window.get(), WM_NCCREATE, wParam, lParam);
     };
 };
 
