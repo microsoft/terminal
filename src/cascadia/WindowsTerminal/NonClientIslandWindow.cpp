@@ -359,12 +359,8 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
     // extended to include the title bar (see
     // NonClientIslandWindow::_UpdateFrameMargins).
 
-    // We have our own minimize, maximize and close buttons so we cannot
-    // use DwmDefWindowProc.
-
     // At this point, we ruled out the left, right and bottom parts of
-    // the frame and the minimize, maximize and close buttons in the
-    // title bar. It has to be either the drag bar or something else in
+    // the frame. It has to be either the drag bar or something else in
     // the XAML island. But the XAML islands handles WM_NCHITTEST on its
     // own so actually it cannot be the XAML islands. Then it must be the
     // drag bar.
@@ -408,7 +404,7 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
     //  part of the frame instead and then we will hide everything that we
     //  don't need (that is, the whole thing but the little 1 pixel wide border
     //  at the top) in the WM_PAINT handler. This eliminates the transparency
-    //  bug, and it's also recommended in .
+    //  bug.
     MARGINS margins = { 0, 0, -frame.top, 0 };
 
     // Extend the frame into the client area.
