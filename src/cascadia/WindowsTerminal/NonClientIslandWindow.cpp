@@ -349,42 +349,39 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
     // This will handle the left, right and bottom parts of the frame because
     // we didn't change them.
     LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
-    LRESULT result = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
-
-    if (result == HTCLIENT)
+    const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
+    if (originalRet != HTCLIENT)
     {
-        // The cursor might be in the title bar, because the client area was
-        // extended to include the title bar (see
-        // NonClientIslandWindow::_UpdateFrameMargins).
-
-        // We have our own minimize, maximize and close buttons so we cannot
-        // use DwmDefWindowProc.
-
-        // At this point, we ruled out the left, right and bottom parts of
-        // the frame and the minimize, maximize and close buttons in the
-        // title bar. It has to be either the drag bar or something else in
-        // the XAML island. But the XAML islands handles WM_NCHITTEST on its
-        // own so actually it cannot be the XAML islands. Then it must be the
-        // drag bar.
-
-        RECT windowRc;
-        winrt::check_bool(::GetWindowRect(_window.get(), &windowRc));
-
-        const auto resizeBorderHeight = _GetResizeBorderHeight();
-        const auto isOnResizeBorder = ptMouse.y < windowRc.top + resizeBorderHeight;
-
-        // no top resize handle when maximized
-        if (!_isMaximized && isOnResizeBorder)
-        {
-            result = HTTOP;
-        }
-        else
-        {
-            result = HTCAPTION;
-        }
+        return originalRet;
     }
 
-    return result;
+    // The cursor might be in the title bar, because the client area was
+    // extended to include the title bar (see
+    // NonClientIslandWindow::_UpdateFrameMargins).
+
+    // We have our own minimize, maximize and close buttons so we cannot
+    // use DwmDefWindowProc.
+
+    // At this point, we ruled out the left, right and bottom parts of
+    // the frame and the minimize, maximize and close buttons in the
+    // title bar. It has to be either the drag bar or something else in
+    // the XAML island. But the XAML islands handles WM_NCHITTEST on its
+    // own so actually it cannot be the XAML islands. Then it must be the
+    // drag bar.
+
+    RECT rcWindow;
+    winrt::check_bool(::GetWindowRect(_window.get(), &rcWindow));
+
+    const auto resizeBorderHeight = _GetResizeBorderHeight();
+    const auto isOnResizeBorder = ptMouse.y < rcWindow.top + resizeBorderHeight;
+
+    // the top of the drag bar is used to resize the window
+    if (!_isMaximized && isOnResizeBorder)
+    {
+        return HTTOP;
+    }
+
+    return HTCAPTION;
 }
 
 // Method Description:
@@ -519,7 +516,7 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 // - The value returned from the window proc.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
-    auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
+    const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
     if (ret == FALSE)
     {
         return ret;

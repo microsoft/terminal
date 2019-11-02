@@ -12,11 +12,13 @@ namespace Microsoft::Console::ThemeUtils
     // - hwnd - Window to the attribute to
     // Return Value:
     // - S_OK or suitable HRESULT from DWM engines.
-    HRESULT SetDwmImmersiveDarkMode(HWND hwnd, bool enabled) noexcept
+    [[nodiscard]] HRESULT SetDwmImmersiveDarkMode(HWND hwnd, bool enabled) noexcept
     {
         constexpr const int useImmersiveDarkModeAttr = 19;
 
-        const BOOL enabledBool = static_cast<BOOL>(enabled);
+        // I have to be a big B BOOL or DwnSetWindowAttribute will be upset (E_INVALIDARG) when I am passed in.
+        const BOOL enabledBool = enabled;
+
         return DwmSetWindowAttribute(hwnd, useImmersiveDarkModeAttr, &enabledBool, sizeof(enabledBool));
     }
 }
