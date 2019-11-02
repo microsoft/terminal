@@ -258,21 +258,24 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 // - <none>
 void NonClientIslandWindow::_UpdateDragRegion()
 {
-    if (_dragBar)
+    if (!_interopWindowHandle || !_dragBar)
     {
-        RECT rcClient;
-        winrt::check_bool(GetClientRect(_window.get(), &rcClient));
-
-        const auto rcDragBar = _GetDragAreaRect();
-        const auto topBorderHeight = GetTopBorderHeight();
-
-        const auto clientRegion = wil::unique_hrgn(CreateRectRgn(rcClient.left, rcClient.top, rcClient.right, rcClient.bottom));
-        const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
-        const auto clientWithoutDragBarRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
-        winrt::check_bool(CombineRgn(clientWithoutDragBarRegion.get(), clientRegion.get(), dragBarRegion.get(), RGN_DIFF));
-
-        winrt::check_bool(SetWindowRgn(_interopWindowHandle, clientWithoutDragBarRegion.get(), true));
+        return;
     }
+
+    RECT rcIsland;
+    winrt::check_bool(::GetWindowRect(_interopWindowHandle, &rcIsland));
+    const auto islandWidth = rcIsland.right - rcIsland.left;
+    const auto islandHeight = rcIsland.bottom - rcIsland.top;
+    const auto totalRegion = wil::unique_hrgn(CreateRectRgn(0, 0, islandWidth, islandHeight));
+
+    const auto rcDragBar = _GetDragAreaRect();
+    const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
+
+    const auto withoutDragBarRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+    winrt::check_bool(CombineRgn(withoutDragBarRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
+
+    winrt::check_bool(SetWindowRgn(_interopWindowHandle, withoutDragBarRegion.get(), true));
 }
 
 // Method Description:
@@ -285,7 +288,7 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 {
     // there isn't a SM_CYPADDEDBORDER for the Y axis
     return ::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
-        ::GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
+           ::GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
 }
 
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
