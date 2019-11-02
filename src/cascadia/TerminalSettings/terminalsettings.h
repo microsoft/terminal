@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void WordDelimiters(hstring const& value);
         bool CopyOnSelect();
         void CopyOnSelect(bool value);
+        uint32_t SelectionBackground();
+        void SelectionBackground(uint32_t value);
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();
@@ -94,9 +96,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         ScrollbarState ScrollState() const noexcept;
         void ScrollState(winrt::Microsoft::Terminal::Settings::ScrollbarState const& value) noexcept;
 
-        uint32_t SelectionBackground();
-        void SelectionBackground(uint32_t value);
-
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
@@ -109,6 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         Settings::CursorStyle _cursorShape;
         uint32_t _cursorHeight;
         hstring _wordDelimiters;
+        uint32_t _selectionBackground;
 
         bool _useAcrylic;
         bool _closeOnExit;
@@ -128,7 +128,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;
-        uint32_t _selectionBackground;
     };
 }
 

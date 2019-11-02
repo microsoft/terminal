@@ -145,3 +145,8 @@ void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock_shared();
 }
+
+const COLORREF Terminal::GetSelectionBackground() const noexcept
+{
+    return _selectionBg;
+}

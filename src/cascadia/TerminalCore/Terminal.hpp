@@ -118,6 +118,7 @@ public:
     bool IsCursorDoubleWidth() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
+    const COLORREF GetSelectionBackground() const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -162,6 +163,7 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    COLORREF _selectionBg;
 
     bool _snapOnInput;
 

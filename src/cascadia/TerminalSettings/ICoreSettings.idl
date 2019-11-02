@@ -29,6 +29,8 @@ namespace Microsoft.Terminal.Settings
         UInt32 CursorHeight;
         String WordDelimiters;
         Boolean CopyOnSelect;
+
+		UInt32 SelectionBackground;
     };
 
 }
