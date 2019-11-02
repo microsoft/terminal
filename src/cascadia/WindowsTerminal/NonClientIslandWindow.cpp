@@ -38,7 +38,7 @@ NonClientIslandWindow::~NonClientIslandWindow()
 // Return Value:
 // - <none>
 void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                 winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/) const
+                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/) const
 {
     _UpdateIslandRegion();
 }
@@ -395,16 +395,24 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    const auto topBorderHeight = GetTopBorderHeight();
+    RECT frame = {};
+    winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
 
     // We removed the whole top part of the frame (see handling of
     // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
-    // Note: You might wonder why we don't remove just the title bar (the part
-    //  that we don't want) instead of removing the whole top part of the frame
-    //  and then adding the border (what we want) back. I tried to do this but
-    //  it didn't work: DWM drew the whole title bar anyways. It seems that DWM
-    //  only wants to draw either nothing or the whole title bar at the top.
-    MARGINS margins = { 0, 0, topBorderHeight, 0 };
+    // Note #1: You might wonder why we don't remove just the title bar instead
+    //  of removing the whole top part of the frame and then adding the border
+    //  back. I tried to do this but it didn't work: DWM drew the whole title
+    //  bar anyways. It seems that DWM only wants to draw either nothing or the
+    //  whole title bar at the top.
+    // Note #2: For some reason if you try to set the top margin to just the
+    //  top border height (what we want to do), then there is a transparency
+    //  bug when the window is inactive, so I've decided to add the whole top
+    //  part of the frame instead and then we will hide everything that we
+    //  don't need (that is, the whole thing but the little 1 pixel wide border
+    //  at the top) in the WM_PAINT handler. This eliminates the transparency
+    //  bug, and it's also recommended in .
+    MARGINS margins = { 0, 0, -frame.top, 0 };
 
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
@@ -452,8 +460,30 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 
     PAINTSTRUCT ps{ 0 };
     const auto hdc = wil::BeginPaint(_window.get(), &ps);
-    if (hdc.get())
+    if (!hdc)
     {
+        return 0;
+    }
+
+    const auto topBorderHeight = GetTopBorderHeight();
+
+    if (ps.rcPaint.top < topBorderHeight)
+    {
+        RECT rcTopBorder = ps.rcPaint;
+        rcTopBorder.bottom = topBorderHeight;
+
+        // To show the original top border, we have to paint on top of it with
+        // the alpha component set to 0. This page recommends to paint the area
+        // in black using the stock BLACK_BRUSH to do this:
+        // https://docs.microsoft.com/en-us/windows/win32/dwm/customframe#extending-the-client-frame
+        ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
+    }
+
+    if (ps.rcPaint.bottom > topBorderHeight)
+    {
+        RECT rcRest = ps.rcPaint;
+        rcRest.top = topBorderHeight;
+
         const auto backgroundBrush = _titlebar.Background();
         const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
         const auto backgroundColor = backgroundSolidBrush.Color();
@@ -465,7 +495,19 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
         }
 
-        ::FillRect(hdc.get(), &ps.rcPaint, _backgroundBrush.get());
+        // To hide the original title bar, we have to paint on top of it with
+        // the alpha component set to 255. This is a hack to do it with GDI.
+        // See NonClientIslandWindow::_UpdateFrameMargins for more information.
+        HDC opaqueDc;
+        BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
+        HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+        if (!buf || !opaqueDc)
+        {
+            winrt::throw_last_error();
+        }
+        ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
+        ::BufferedPaintSetAlpha(buf, NULL, 255);
+        ::EndBufferedPaint(buf, TRUE);
     }
 
     return 0;
