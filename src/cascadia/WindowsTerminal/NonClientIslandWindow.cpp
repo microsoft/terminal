@@ -275,6 +275,19 @@ void NonClientIslandWindow::_UpdateDragRegion()
     }
 }
 
+// Method Description:
+// - Returns the height of the little space at the top of the window used to
+//   resize the window.
+// Return Value:
+// - the height of the space at the top of the window used to resize the
+//   window
+int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
+{
+    // there isn't a SM_CYPADDEDBORDER for the Y axis
+    return ::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
+        ::GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
+}
+
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
 {
     if (wParam == false)
@@ -307,13 +320,9 @@ void NonClientIslandWindow::_UpdateDragRegion()
         // size is added to the window size so that the borders do not
         // appear on the monitor.
 
-        // We only have to do this for the title bar because it's the
-        // only part of the frame that we change.
-        const auto resizeBorderHeight =
-            // there isn't a SM_CYPADDEDBORDER for the Y axis
-            GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
-            GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
-        newTop += resizeBorderHeight;
+        // We only have to do this for the top part of the frame because it's
+        // the only part of the frame that we change.
+        newTop += _GetResizeBorderHeight();
     }
 
     // only modify the top of the frame to remove the title bar
@@ -356,15 +365,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
         RECT windowRc;
         winrt::check_bool(::GetWindowRect(_window.get(), &windowRc));
 
-        const auto scale = GetCurrentDpiScale();
-
-        // This doesn't appear to be consistent between all apps on Windows.
-        // From Windows 18362.418 with 96 DPI:
-        // - conhost.exe: 8 pixels
-        // - explorer.exe: 9 pixels
-        // - Settings app: 4 pixels
-        // - Skype: 4 pixels
-        const auto resizeBorderHeight = 8 * scale;
+        const auto resizeBorderHeight = _GetResizeBorderHeight();
         const auto isOnResizeBorder = ptMouse.y < windowRc.top + resizeBorderHeight;
 
         // no top resize handle when maximized

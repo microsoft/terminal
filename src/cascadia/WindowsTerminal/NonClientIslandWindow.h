@@ -55,6 +55,7 @@ private:
     bool _isMaximized;
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
+    int _GetResizeBorderHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
 
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
