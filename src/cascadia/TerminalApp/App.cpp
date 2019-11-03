@@ -397,6 +397,17 @@ namespace winrt::TerminalApp::implementation
         return point;
     }
 
+    winrt::Windows::UI::Xaml::ElementTheme App::GetRequestedTheme()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings->GlobalSettings().GetRequestedTheme();
+    }
+
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)

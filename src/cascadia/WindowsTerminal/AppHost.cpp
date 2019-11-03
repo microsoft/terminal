@@ -22,7 +22,7 @@ AppHost::AppHost() noexcept :
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>();
+        _window = std::make_unique<NonClientIslandWindow>(_app.GetRequestedTheme());
     }
     else
     {
@@ -280,5 +280,5 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - <none>
 void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
 {
-    _window->UpdateTheme(arg);
+    _window->OnApplicationThemeChanged(arg);
 }

@@ -26,7 +26,7 @@ Author(s):
 class NonClientIslandWindow : public IslandWindow
 {
 public:
-    NonClientIslandWindow() noexcept;
+    NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
     virtual void OnSize(const UINT width, const UINT height) override;
@@ -40,6 +40,7 @@ public:
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
+    void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
     std::optional<COORD> _oldIslandPos;
@@ -53,9 +54,11 @@ private:
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hrgn _dragBarRegion;
 
+    winrt::Windows::UI::Xaml::ElementTheme _theme;
+
     bool _isMaximized;
 
-    int _GetResizeBorderHeight() const noexcept;
+    int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
 
     [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;

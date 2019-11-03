@@ -18,9 +18,10 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
-NonClientIslandWindow::NonClientIslandWindow() noexcept :
+NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
     _backgroundBrushColor{ RGB(0, 0, 0) },
+    _theme{ requestedTheme },
     _isMaximized{ false }
 {
 }
@@ -111,12 +112,10 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 }
 
 // Method Description:
-// - This method is computes the height of the frame border at the top of the
-//   title bar and returns it. If the border is disabled, then this method will
-//   return 0.
+// - This method computes the height of the little border above the title bar
+//   and returns it. If the border is disabled, then this method will return 0.
 // Return Value:
-// - the height of the frame border at the top of the title bar or zero to
-//   disable it
+// - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::GetTopBorderHeight() const noexcept
 {
     if (_isMaximized)
@@ -125,6 +124,7 @@ int NonClientIslandWindow::GetTopBorderHeight() const noexcept
         return 0;
     }
 
+    // this is from the default theme in Windows 10
     return static_cast<int>(1 * GetCurrentDpiScale());
 }
 
@@ -155,8 +155,8 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 
 // Method Description:
 // - Called when the size of the window changes for any reason. Updates the
-//   Xaml Island to match our new sizing and also updates the maximize icon
-//   if the window went from maximized to minimized or the opposite.
+//   XAML island to match our new sizing and also updates the maximize icon
+//   if the window went from maximized to restored or the opposite.
 void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 {
     _UpdateMaximizedState();
@@ -211,8 +211,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
 }
 
 // Method Description:
-// - called when the size of the window changes for any reason. Updates the
-//   sizes of our child Xaml Islands to match our new sizing.
+// - Called when the size of the window changes for any reason. Updates the
+//   sizes of our child XAML Islands to match our new sizing.
 void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
 {
     const auto topBorderHeight = Utils::ClampToShortMax(GetTopBorderHeight(), 0);
@@ -281,9 +281,8 @@ void NonClientIslandWindow::_UpdateIslandRegion() const
 // - Returns the height of the little space at the top of the window used to
 //   resize the window.
 // Return Value:
-// - the height of the space at the top of the window used to resize the
-//   window
-int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
+// - the height of the window's top resize handle
+int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 {
     // there isn't a SM_CYPADDEDBORDER for the Y axis
     return ::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
@@ -320,14 +319,13 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 
     if (_isMaximized)
     {
-        // When a window is maximized, its size is actually a little
-        // bit more than the monitor work area. The window borders'
-        // size is added to the window size so that the borders do not
-        // appear on the monitor.
-
-        // We only have to do this for the top part of the frame because it's
-        // the only part of the frame that we change.
-        newTop += _GetResizeBorderHeight();
+        // When a window is maximized, its size is actually a little bit more
+        // than the monitor's work area. The window is positioned and sized in
+        // such a way that the resize handles are outside of the monitor and
+        // then the window is clipped to the monitor so that the resize handle
+        // do not appear because you don't need them (because you can't resize
+        // a window when it's maximized unless you restore it).
+        newTop += _GetResizeHandleHeight();
     }
 
     // only modify the top of the frame to remove the title bar
@@ -355,20 +353,17 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
         return originalRet;
     }
 
-    // The cursor might be in the title bar, because the client area was
-    // extended to include the title bar (see
-    // NonClientIslandWindow::_UpdateFrameMargins).
-
-    // At this point, we ruled out the left, right and bottom parts of
-    // the frame. It has to be either the drag bar or something else in
-    // the XAML island. But the XAML islands handles WM_NCHITTEST on its
-    // own so actually it cannot be the XAML islands. Then it must be the
-    // drag bar.
+    // At this point, we know that the cursor is inside the client area so it
+    // has to be either the little border at the top of our custom title bar,
+    // the drag bar or something else in the XAML island. But the XAML Island
+    // handles WM_NCHITTEST on its own so actually it cannot be the XAML
+    // Island. Then it must be the drag bar or the little border at the top
+    // which the user can use to move or resize the window.
 
     RECT rcWindow;
     winrt::check_bool(::GetWindowRect(_window.get(), &rcWindow));
 
-    const auto resizeBorderHeight = _GetResizeBorderHeight();
+    const auto resizeBorderHeight = _GetResizeHandleHeight();
     const auto isOnResizeBorder = ptMouse.y < rcWindow.top + resizeBorderHeight;
 
     // the top of the drag bar is used to resize the window
@@ -388,24 +383,30 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    RECT frame = {};
-    winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
+    MARGINS margins = {};
 
-    // We removed the whole top part of the frame (see handling of
-    // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
-    // Note #1: You might wonder why we don't remove just the title bar instead
-    //  of removing the whole top part of the frame and then adding the border
-    //  back. I tried to do this but it didn't work: DWM drew the whole title
-    //  bar anyways. It seems that DWM only wants to draw either nothing or the
-    //  whole title bar at the top.
-    // Note #2: For some reason if you try to set the top margin to just the
-    //  top border height (what we want to do), then there is a transparency
-    //  bug when the window is inactive, so I've decided to add the whole top
-    //  part of the frame instead and then we will hide everything that we
-    //  don't need (that is, the whole thing but the little 1 pixel wide border
-    //  at the top) in the WM_PAINT handler. This eliminates the transparency
-    //  bug.
-    MARGINS margins = { 0, 0, -frame.top, 0 };
+    if (GetTopBorderHeight() != 0)
+    {
+        RECT frame = {};
+        winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
+
+        // We removed the whole top part of the frame (see handling of
+        // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
+        // Note #1: You might wonder why we don't remove just the title bar instead
+        //  of removing the whole top part of the frame and then adding the little
+        //  top border back. I tried to do this but it didn't work: DWM drew the
+        //  whole title bar anyways on top of the window. It seems that DWM only
+        //  wants to draw either nothing or the whole top part of the frame.
+        // Note #2: For some reason if you try to set the top margin to just the
+        //  top border height (what we want to do), then there is a transparency
+        //  bug when the window is inactive, so I've decided to add the whole top
+        //  part of the frame instead and then we will hide everything that we
+        //  don't need (that is, the whole thing but the little 1 pixel wide border
+        //  at the top) in the WM_PAINT handler. This eliminates the transparency
+        //  bug and it's what a lot of Win32 apps that customize the title bar do
+        //  so it should work fine.
+        margins.cyTopHeight = -frame.top;
+    }
 
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
@@ -440,7 +441,7 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 // Method Description:
 // - This method is called when the window receives the WM_PAINT message. It
 //   paints the background of the window to the color of the drag bar because
-//   the drag bar cannot be painted on the window by the XAML island (see
+//   the drag bar cannot be painted on the window by the XAML Island (see
 //   NonClientIslandWindow::_UpdateIslandRegion).
 // Return Value:
 // - The value returned from the window proc.
@@ -527,17 +528,44 @@ int NonClientIslandWindow::_GetResizeBorderHeight() const noexcept
 
 // Method Description:
 // - Updates the window frame's theme depending on the application theme (light
-//   or dark). If this is called after the frame is rendered, the old frame is
-//   not invalidated so the frame doesn't update until the user resizes or
-//   focuses/unfocuses the window.
+//   or dark). This doesn't invalidate the old frame so it will not be
+//   rerendered until the user resizes or focuses/unfocuses the window.
 // Return Value:
 // - <none>
 void NonClientIslandWindow::_UpdateFrameTheme() const
 {
-    const auto isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
+    bool isDarkMode;
+
+    switch (_theme)
+    {
+    case ElementTheme::Light:
+        isDarkMode = false;
+        break;
+    case ElementTheme::Dark:
+        isDarkMode = true;
+        break;
+    default:
+        isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
+        break;
+    }
 
     if (FAILED(ThemeUtils::SetDwmImmersiveDarkMode(_window.get(), isDarkMode)))
     {
         LOG_LAST_ERROR();
     }
+}
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll update the frame
+//   theme to match the new theme.
+// Arguments:
+// - requestedTheme: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& requestedTheme)
+{
+    IslandWindow::OnApplicationThemeChanged(requestedTheme);
+
+    _theme = requestedTheme;
+    _UpdateFrameTheme();
 }
