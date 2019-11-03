@@ -4,21 +4,16 @@
 namespace Microsoft::Console::ThemeUtils
 {
     // Routine Description:
-    // - Attempts to enable/disable the DWM immersive dark mode on the given
-    //   HWND.
-    // - Enabling the DWM immersive dark mode on a window makes the title bar
-    //   and the window's frame dark.
+    // - Attempts to enable/disable the dark mode on the frame of a window.
     // Arguments:
-    // - hwnd - Window to the attribute to
+    // - hwnd: handle to the window to change
+    // - enabled: whether to enable or not the dark mode on the window's frame
     // Return Value:
     // - S_OK or suitable HRESULT from DWM engines.
-    [[nodiscard]] HRESULT SetDwmImmersiveDarkMode(HWND hwnd, bool enabled) noexcept
+    [[nodiscard]] HRESULT SetWindowFrameDarkMode(HWND /* hwnd */, bool /* enabled */) noexcept
     {
-        constexpr const int useImmersiveDarkModeAttr = 19;
-
-        // I have to be a big B BOOL or DwnSetWindowAttribute will be upset (E_INVALIDARG) when I am passed in.
-        const BOOL enabledBool = enabled;
-
-        return DwmSetWindowAttribute(hwnd, useImmersiveDarkModeAttr, &enabledBool, sizeof(enabledBool));
+        // TODO:GH #3425 implement the new DWM API and change
+        //  src/interactivity/win32/windowtheme.cpp to use it.
+        return S_OK;
     }
 }

@@ -549,10 +549,7 @@ void NonClientIslandWindow::_UpdateFrameTheme() const
         break;
     }
 
-    if (FAILED(ThemeUtils::SetDwmImmersiveDarkMode(_window.get(), isDarkMode)))
-    {
-        LOG_LAST_ERROR();
-    }
+    LOG_IF_FAILED(ThemeUtils::SetWindowFrameDarkMode(_window.get(), isDarkMode));
 }
 
 // Method Description:

@@ -198,13 +198,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         RECT frame = {};
         bool succeeded = AdjustWindowRectExForDpi(&frame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-        if (!succeeded)
-        {
-            // If we failed to get the correct window size for whatever reason, log
-            // the error and go on. We'll use whatever the control proposed as the
-            // size of our window, which will be at least close.
-            LOG_LAST_ERROR();
-        }
+        // If we failed to get the correct window size for whatever reason, log
+        // the error and go on. We'll use whatever the control proposed as the
+        // size of our window, which will be at least close.
+        LOG_LAST_ERROR_IF(!succeeded);
 
         // Get the size of a window we'd need to host that client rect. This will
         // add the titlebar space.
