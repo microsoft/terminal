@@ -340,7 +340,7 @@ namespace winrt::TerminalApp::implementation
         // TODO GH:2061 - If the global setting "Always show tab bar" is
         //  set, then we'll need to add the height of the tab bar here.
         //  If the global setting "Show tabs in title bar" is set,
-        //  then we'lee need to add the height of the title bar here.
+        //  then we'll need to add the height of the title bar here.
 
         return TermControl::GetProposedDimensions(settings, dpi);
     }
