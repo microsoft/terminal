@@ -46,7 +46,7 @@ namespace Microsoft.Terminal.Wpf
                 {
                     if (this.terminal != IntPtr.Zero)
                     {
-                        NativeMethods.BlinkCursor(this.terminal);
+                        NativeMethods.TerminalBlinkCursor(this.terminal);
                     }
                 };
             }
@@ -193,7 +193,7 @@ namespace Microsoft.Terminal.Wpf
             }
             else
             {
-                NativeMethods.SetCursorVisible(this.terminal, false);
+                NativeMethods.TerminalSetCursorVisible(this.terminal, false);
             }
 
             return new HandleRef(this, this.hwnd);
@@ -223,7 +223,7 @@ namespace Microsoft.Terminal.Wpf
                         break;
                     case NativeMethods.WindowMessage.WM_KILLFOCUS:
                         this.blinkTimer?.Stop();
-                        NativeMethods.SetCursorVisible(this.terminal, false);
+                        NativeMethods.TerminalSetCursorVisible(this.terminal, false);
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
@@ -247,7 +247,7 @@ namespace Microsoft.Terminal.Wpf
                         this.MouseMoveHandler((int)wParam, (int)lParam);
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
-                        NativeMethods.SetCursorVisible(this.terminal, true);
+                        NativeMethods.TerminalSetCursorVisible(this.terminal, true);
                         NativeMethods.TerminalClearSelection(this.terminal);
                         NativeMethods.TerminalSendKeyEvent(this.terminal, wParam);
                         this.blinkTimer?.Start();
