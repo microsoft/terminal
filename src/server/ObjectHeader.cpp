@@ -48,7 +48,7 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
             ((pHandleData->IsWriteAllowed()) && (_ulOpenCount > _ulWriteShareCount)) ||
             ((!pHandleData->IsWriteShared()) && (_ulWriterCount > 0)))
         {
-            return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);          
+            return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
         }
 
         // Update share/open counts and store handle information.
