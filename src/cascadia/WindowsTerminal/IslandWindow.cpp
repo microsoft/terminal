@@ -367,7 +367,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
             WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
         }
 
-        LOG_IF_WIN32_BOOL_FALSE(SetWindowLongW(hWnd, GWL_STYLE, windowStyle));
+        LOG_LAST_ERROR_IF(0 == SetWindowLongW(hWnd, GWL_STYLE, windowStyle));
 
         // Now modify extended window styles as appropriate
         // When moving to fullscreen, remove the window edge style to avoid an
@@ -375,7 +375,7 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
         auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
         // WI_ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
         WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
-        LOG_IF_WIN32_BOOL_FALSE(SetWindowLongW(hWnd, GWL_EXSTYLE, exWindowStyle));
+        LOG_LAST_ERROR_IF(0 == SetWindowLongW(hWnd, GWL_EXSTYLE, exWindowStyle));
     }
 
     _BackupWindowSizes(oldIsInFullscreen);
