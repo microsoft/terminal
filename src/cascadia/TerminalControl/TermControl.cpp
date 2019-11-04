@@ -630,8 +630,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = static_cast<WORD>(e.OriginalKey());
-        const auto scanCode = e.KeyStatus().ScanCode;
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
         // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
@@ -1020,7 +1020,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();
@@ -1276,11 +1276,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        const short lastVisibleRow = std::max(_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max(_terminal->GetViewport().Width() - 1, 0);
+        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
+        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
-        terminalPosition.Y = std::clamp(terminalPosition.Y, short{ 0 }, lastVisibleRow);
-        terminalPosition.X = std::clamp(terminalPosition.X, short{ 0 }, lastVisibleCol);
+        terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
+        terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
         // save location (for rendering) + render
         _terminal->SetEndSelectionPosition(terminalPosition);
