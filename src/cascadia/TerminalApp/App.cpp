@@ -335,7 +335,8 @@ namespace winrt::TerminalApp::implementation
         TerminalSettings settings = _settings->MakeSettings(std::nullopt);
 
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
-        // set, then we'll need to add the height of the tab bar here.
+        // set or if "Show tabs in title bar" is set, then we'll need to add
+        // the height of the tab bar here.
 
         return TermControl::GetProposedDimensions(settings, dpi);
     }
@@ -392,6 +393,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         return point;
+    }
+
+    winrt::Windows::UI::Xaml::ElementTheme App::GetRequestedTheme()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings->GlobalSettings().GetRequestedTheme();
     }
 
     bool App::GetShowTabsInTitlebar()

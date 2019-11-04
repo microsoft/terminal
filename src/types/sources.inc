@@ -41,6 +41,7 @@ SOURCES= \
     ..\convert.cpp \
     ..\Utf16Parser.cpp \
     ..\utils.cpp \
+    ..\ThemeUtils.cpp \
 
 INCLUDES= \
     $(INCLUDES); \
