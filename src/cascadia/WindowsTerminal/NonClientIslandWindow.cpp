@@ -111,12 +111,13 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     _titlebar.Content(content);
 }
 
+
 // Method Description:
 // - This method computes the height of the little border above the title bar
 //   and returns it. If the border is disabled, then this method will return 0.
 // Return Value:
 // - the height of the border above the title bar or 0 if it's disabled
-int NonClientIslandWindow::GetTopBorderHeight() const noexcept
+int NonClientIslandWindow::_GetCurrentTopBorderHeight() const noexcept
 {
     if (_isMaximized)
     {
@@ -124,8 +125,7 @@ int NonClientIslandWindow::GetTopBorderHeight() const noexcept
         return 0;
     }
 
-    // this is from the default theme in Windows 10
-    return static_cast<int>(1 * GetCurrentDpiScale());
+    return static_cast<int>(topBorderHeightDIP * GetCurrentDpiScale());
 }
 
 RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
@@ -215,7 +215,7 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
 //   sizes of our child XAML Islands to match our new sizing.
 void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
 {
-    const auto topBorderHeight = Utils::ClampToShortMax(GetTopBorderHeight(), 0);
+    const auto topBorderHeight = Utils::ClampToShortMax(_GetCurrentTopBorderHeight(), 0);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
@@ -230,7 +230,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     // This happens when we go from maximized to restored or the opposite
     // because topBorderHeight changes.
-    if (!_oldIslandPos || *_oldIslandPos != newIslandPos)
+    if (!_oldIslandPos.has_value() || _oldIslandPos.value() != newIslandPos)
     {
         // The drag bar's position changed compared to the client area because
         // the island moved but we will not be notified about this in the
@@ -385,7 +385,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 {
     MARGINS margins = {};
 
-    if (GetTopBorderHeight() != 0)
+    if (_GetCurrentTopBorderHeight() != 0)
     {
         RECT frame = {};
         winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
@@ -459,7 +459,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return 0;
     }
 
-    const auto topBorderHeight = GetTopBorderHeight();
+    const auto topBorderHeight = _GetCurrentTopBorderHeight();
 
     if (ps.rcPaint.top < topBorderHeight)
     {

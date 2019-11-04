@@ -26,14 +26,14 @@ Author(s):
 class NonClientIslandWindow : public IslandWindow
 {
 public:
+    static constexpr const int topBorderHeightDIP = 1;
+
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
     virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
-
-    int GetTopBorderHeight() const noexcept;
 
     void Initialize() override;
 
@@ -60,6 +60,7 @@ private:
 
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
+    int _GetCurrentTopBorderHeight() const noexcept;
 
     [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;

@@ -188,37 +188,28 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         auto initialSize = _app.GetLaunchDimensions(dpix);
 
-        const short currentWidth = Utils::ClampToShortMax(
+        const short islandWidth = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.X)), 1);
-        const short currentHeight = Utils::ClampToShortMax(
+        const short islandHeight = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.Y)), 1);
 
-        long nonClientWidth = currentWidth;
-        long nonClientHeight = currentHeight;
-
-        RECT frame = {};
-        bool succeeded = AdjustWindowRectExForDpi(&frame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+        RECT islandFrame = {};
+        bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
         // If we failed to get the correct window size for whatever reason, log
         // the error and go on. We'll use whatever the control proposed as the
         // size of our window, which will be at least close.
         LOG_LAST_ERROR_IF(!succeeded);
 
-        // Get the size of a window we'd need to host that client rect. This will
-        // add the titlebar space.
         if (_useNonClientArea)
         {
-            const auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-            nonClientWidth += -frame.left + frame.right;
-            nonClientHeight += pNcWindow->GetTopBorderHeight() + frame.bottom; // don't include title bar
-        }
-        else
-        {
-            nonClientWidth += -frame.left + frame.right;
-            nonClientHeight += -frame.top + frame.bottom;
+            const auto scale = static_cast<float>(dpiy) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+            const auto topBorderHeight = static_cast<int>(NonClientIslandWindow::topBorderHeightDIP * scale);
+
+            islandFrame.top = -topBorderHeight;
         }
 
-        adjustedWidth = nonClientWidth;
-        adjustedHeight = nonClientHeight;
+        adjustedWidth = -islandFrame.left + islandWidth + islandFrame.right;
+        adjustedHeight = -islandFrame.top + islandHeight + islandFrame.bottom;
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
