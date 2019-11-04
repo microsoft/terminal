@@ -286,7 +286,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 {
     // there isn't a SM_CYPADDEDBORDER for the Y axis
     return ::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
-           ::GetSystemMetricsForDpi(SM_CYFRAME, _currentDpi);
+           ::GetSystemMetricsForDpi(SM_CYSIZEFRAME, _currentDpi);
 }
 
 // Method Description:
