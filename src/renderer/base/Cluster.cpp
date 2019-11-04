@@ -9,6 +9,12 @@
 
 using namespace Microsoft::Console::Render;
 
+Cluster::Cluster() :
+    _text(L" "),
+    _columns(1)
+{
+}
+
 // Routine Description:
 // - Instantiates a new cluster structure
 // Arguments:
@@ -58,4 +64,17 @@ const std::wstring_view& Cluster::GetText() const noexcept
 const size_t Cluster::GetColumns() const noexcept
 {
     return _columns;
+}
+
+Cluster::Cluster(const Cluster& other)
+{
+    _text = other.GetText();
+    _columns = other.GetColumns();
+} 
+
+Cluster& Cluster::operator=(const Cluster& other)
+{
+    _text = other.GetText();
+    _columns = other.GetColumns();
+    return *this;
 }

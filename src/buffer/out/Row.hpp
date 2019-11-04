@@ -27,6 +27,8 @@ Revision History:
 #include "RowCellIterator.hpp"
 #include "UnicodeStorage.hpp"
 
+#include "../renderer/inc/Cluster.hpp"
+
 class TextBuffer;
 
 class ROW final
@@ -50,6 +52,7 @@ public:
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const;
+    std::vector<Microsoft::Console::Render::Cluster> GetClusters() const;
 
     RowCellIterator AsCellIter(const size_t startIndex) const;
     RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const;
@@ -68,6 +71,7 @@ public:
 private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
+    std::vector<Microsoft::Console::Render::Cluster> _clusters;
     SHORT _id;
     size_t _rowWidth;
     TextBuffer* _pParent; // non ownership pointer

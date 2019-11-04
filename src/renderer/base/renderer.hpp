@@ -98,6 +98,10 @@ namespace Microsoft::Console::Render
                                       TextBufferCellIterator it,
                                       const COORD target);
 
+        void _PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
+                                          ROW& row,
+                                          const COORD target);
+
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,

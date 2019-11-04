@@ -23,6 +23,10 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
     _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
     _pParent{ pParent }
 {
+    for (size_t i = 0; i < rowWidth; i++)
+    {
+        _clusters.emplace_back(_charRow.GlyphAt(i), _charRow.GlyphAt(i).operator std::basic_string_view<wchar_t>().size());
+    }
 }
 
 size_t ROW::size() const noexcept
@@ -90,6 +94,7 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]] HRESULT ROW::Resize(const size_t width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
+    _clusters.resize(width);
     try
     {
         _attrRow.Resize(width);
@@ -120,6 +125,11 @@ void ROW::ClearColumn(const size_t column)
 std::wstring ROW::GetText() const
 {
     return _charRow.GetText();
+}
+
+std::vector<Microsoft::Console::Render::Cluster> ROW::GetClusters() const
+{
+    return _clusters;
 }
 
 RowCellIterator ROW::AsCellIter(const size_t startIndex) const
@@ -156,6 +166,10 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
     size_t currentIndex = index;
+
+    // how many dbcs are there?
+    size_t dbcsCount = _rowWidth - _clusters.size();
+    size_t clusterIndex = currentIndex - dbcsCount;
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
     const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
@@ -199,6 +213,24 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             {
                 _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
                 _charRow.GlyphAt(currentIndex) = it->Chars();
+
+                if (it->DbcsAttr().IsDbcs())
+                {
+                    if (it->DbcsAttr().IsLeading())
+                    {
+                        clusterIndex -= 1;
+                    }
+                    if (it->DbcsAttr().IsTrailing())
+                    {
+                        _clusters.resize(_clusters.size() - 1);
+                        _clusters.at(clusterIndex) = Microsoft::Console::Render::Cluster(it->Chars(), it->Columns());
+                    }
+                }
+                else
+                {
+                    _clusters.at(clusterIndex) = Microsoft::Console::Render::Cluster(it->Chars(), it->Columns());
+                }
+
                 ++it;
             }
 
@@ -220,6 +252,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
         // Move to the next cell for the next time through the loop.
         ++currentIndex;
+        ++clusterIndex;
     }
 
     return it;

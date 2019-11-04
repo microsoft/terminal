@@ -582,11 +582,11 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
             const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
 
-            // Retrieve the cell information iterator limited to just this line we want to redraw.
-            auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
+            //auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
+            //_PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
 
-            // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
+            auto rowData = buffer.GetRowByOffset(row);
+            _PaintBufferLineOutputHelper(pEngine, rowData, screenLine.Origin());
         }
     }
 }
@@ -661,6 +661,59 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
             }
         }
+    }
+}
+
+void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
+                                            ROW& row,
+                                            const COORD target)
+{
+    size_t cols = 0;
+    ATTR_ROW& attrRow = row.GetAttrRow();
+    std::vector<Cluster> rowClusters = row.GetClusters();
+
+    const size_t length = row.size();
+
+    // And hold the point where we should start drawing.
+    auto screenPoint = target;
+
+    // This outer loop will continue until we reach the end of the text we are trying to draw.
+    while (cols < length)
+    {
+        size_t runLength = 0;
+        TextAttribute attr = attrRow.GetAttrByColumn(cols, &runLength);
+
+        // Hold onto the current run color right here for the length of the outer loop.
+        // We'll be changing the persistent one as we run through the inner loops to detect
+        // when a run changes, but we will still need to know this color at the bottom
+        // when we go to draw gridlines for the length of the run.
+        const auto currentRunColor = attr;
+
+        // Update the drawing brushes with our color.
+        THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
+
+        // Advance the point by however many columns we've just outputted and reset the accumulator.
+        screenPoint.X += gsl::narrow<SHORT>(cols);
+
+        std::vector<Cluster> clusters;
+
+        for (auto i = rowClusters.cbegin() + cols; i != rowClusters.cbegin() + cols + runLength; i++)
+        {
+            clusters.emplace_back((*i).GetText(), (*i).GetColumns());
+        }
+
+        // Do the painting.
+        // TODO: Calculate when trim left should be TRUE
+        THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, false));
+
+        // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+        if (_pData->IsGridLineDrawingAllowed())
+        {
+            // We're only allowed to draw the grid lines under certain circumstances.
+           _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+        }
+
+        cols += runLength;
     }
 }
 

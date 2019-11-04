@@ -21,6 +21,8 @@ namespace Microsoft::Console::Render
     class Cluster
     {
     public:
+        Cluster();
+
         Cluster(const std::wstring_view text, const size_t columns);
 
         const wchar_t GetTextAsSingle() const noexcept;
@@ -29,11 +31,15 @@ namespace Microsoft::Console::Render
 
         const size_t GetColumns() const noexcept;
 
+        Cluster(const Cluster&);
+
+        Cluster& operator=(const Cluster&);
+
     private:
         // This is the UTF-16 string of characters that form a particular drawing cluster
-        const std::wstring_view _text;
+        std::wstring_view _text;
 
         // This is how many columns we're expecting this cluster to take in the display grid
-        const size_t _columns;
+        size_t _columns;
     };
 }
