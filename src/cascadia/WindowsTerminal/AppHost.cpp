@@ -202,10 +202,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         if (_useNonClientArea)
         {
-            const auto scale = static_cast<float>(dpiy) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-            const auto topBorderHeight = static_cast<int>(NonClientIslandWindow::topBorderHeightDIP * scale);
-
-            islandFrame.top = -topBorderHeight;
+            islandFrame.top = -NonClientIslandWindow::topBorderVisibleHeight;
         }
 
         adjustedWidth = -islandFrame.left + islandWidth + islandFrame.right;

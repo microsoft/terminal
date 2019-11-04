@@ -26,7 +26,8 @@ Author(s):
 class NonClientIslandWindow : public IslandWindow
 {
 public:
-    static constexpr const int topBorderHeightDIP = 1;
+    // this is the same for all DPIs
+    static constexpr const int topBorderVisibleHeight = 1;
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
@@ -60,7 +61,7 @@ private:
 
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
-    int _GetCurrentTopBorderHeight() const noexcept;
+    int _GetTopBorderHeight() const noexcept;
 
     [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;

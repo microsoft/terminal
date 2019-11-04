@@ -117,7 +117,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 //   and returns it. If the border is disabled, then this method will return 0.
 // Return Value:
 // - the height of the border above the title bar or 0 if it's disabled
-int NonClientIslandWindow::_GetCurrentTopBorderHeight() const noexcept
+int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
     if (_isMaximized)
     {
@@ -125,7 +125,7 @@ int NonClientIslandWindow::_GetCurrentTopBorderHeight() const noexcept
         return 0;
     }
 
-    return static_cast<int>(topBorderHeightDIP * GetCurrentDpiScale());
+    return topBorderVisibleHeight;
 }
 
 RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
@@ -215,7 +215,7 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
 //   sizes of our child XAML Islands to match our new sizing.
 void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
 {
-    const auto topBorderHeight = Utils::ClampToShortMax(_GetCurrentTopBorderHeight(), 0);
+    const auto topBorderHeight = Utils::ClampToShortMax(_GetTopBorderHeight(), 0);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
@@ -385,7 +385,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 {
     MARGINS margins = {};
 
-    if (_GetCurrentTopBorderHeight() != 0)
+    if (_GetTopBorderHeight() != 0)
     {
         RECT frame = {};
         winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
@@ -459,7 +459,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return 0;
     }
 
-    const auto topBorderHeight = _GetCurrentTopBorderHeight();
+    const auto topBorderHeight = _GetTopBorderHeight();
 
     if (ps.rcPaint.top < topBorderHeight)
     {
