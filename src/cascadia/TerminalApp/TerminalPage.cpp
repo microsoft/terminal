@@ -5,6 +5,8 @@
 #include "TerminalPage.h"
 #include "Utils.h"
 
+#include <LibraryResources.h>
+
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -32,14 +34,10 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage() {}
-
-    TerminalPage::TerminalPage(std::shared_ptr<ScopedResourceLoader> resourceLoader) :
+    TerminalPage::TerminalPage() :
         _tabs{}
     {
         InitializeComponent();
-
-        _resourceLoader = resourceLoader;
     }
 
     void TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
@@ -102,9 +100,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ShowOkDialog(const winrt::hstring& titleKey,
                                     const winrt::hstring& contentKey)
     {
-        auto title = _resourceLoader->GetLocalizedString(titleKey);
-        auto message = _resourceLoader->GetLocalizedString(contentKey);
-        auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
+        auto title = GetLibraryResourceString(titleKey);
+        auto message = GetLibraryResourceString(contentKey);
+        auto buttonText = RS_(L"Ok");
 
         WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -120,14 +118,14 @@ namespace winrt::TerminalApp::implementation
     //   Notes link.
     void TerminalPage::_ShowAboutDialog()
     {
-        const auto title = _resourceLoader->GetLocalizedString(L"AboutTitleText");
-        const auto versionLabel = _resourceLoader->GetLocalizedString(L"VersionLabelText");
-        const auto gettingStartedLabel = _resourceLoader->GetLocalizedString(L"GettingStartedLabelText");
-        const auto documentationLabel = _resourceLoader->GetLocalizedString(L"DocumentationLabelText");
-        const auto releaseNotesLabel = _resourceLoader->GetLocalizedString(L"ReleaseNotesLabelText");
-        const auto gettingStartedUriValue = _resourceLoader->GetLocalizedString(L"GettingStartedUriValue");
-        const auto documentationUriValue = _resourceLoader->GetLocalizedString(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = _resourceLoader->GetLocalizedString(L"ReleaseNotesUriValue");
+        const auto title = RS_(L"AboutTitleText");
+        const auto versionLabel = RS_(L"VersionLabelText");
+        const auto gettingStartedLabel = RS_(L"GettingStartedLabelText");
+        const auto documentationLabel = RS_(L"DocumentationLabelText");
+        const auto releaseNotesLabel = RS_(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = RS_(L"GettingStartedUriValue");
+        const auto documentationUriValue = RS_(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = RS_(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -171,7 +169,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring aboutText{ aboutTextStream.str() };
         about.Text(aboutText);
 
-        const auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
+        const auto buttonText = RS_(L"Ok");
 
         WUX::Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
@@ -197,9 +195,9 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
     {
-        auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
-        auto primaryButtonText = _resourceLoader->GetLocalizedString(L"CloseAll");
-        auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
+        auto title = RS_(L"CloseWindowWarningTitle");
+        auto primaryButtonText = RS_(L"CloseAll");
+        auto secondaryButtonText = RS_(L"Cancel");
 
         WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -279,7 +277,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = WUX::Controls::MenuFlyoutItem{};
-            settingsItem.Text(_resourceLoader->GetLocalizedString(L"SettingsMenuItem"));
+            settingsItem.Text(RS_(L"SettingsMenuItem"));
 
             WUX::Controls::SymbolIcon ico{};
             ico.Symbol(WUX::Controls::Symbol::Setting);
@@ -296,7 +294,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the feedback button.
             auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(_resourceLoader->GetLocalizedString(L"FeedbackMenuItem"));
+            feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
 
             WUX::Controls::FontIcon feedbackIcon{};
             feedbackIcon.Glyph(L"\xE939");
@@ -308,7 +306,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
-            aboutFlyout.Text(_resourceLoader->GetLocalizedString(L"AboutMenuItem"));
+            aboutFlyout.Text(RS_(L"AboutMenuItem"));
 
             WUX::Controls::SymbolIcon aboutIcon{};
             aboutIcon.Symbol(WUX::Controls::Symbol::Help);
@@ -509,7 +507,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_FeedbackButtonOnClick(const IInspectable&,
                                               const RoutedEventArgs&)
     {
-        const auto feedbackUriValue = _resourceLoader->GetLocalizedString(L"FeedbackUriValue");
+        const auto feedbackUriValue = RS_(L"FeedbackUriValue");
 
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
