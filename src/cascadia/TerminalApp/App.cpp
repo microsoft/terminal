@@ -337,9 +337,10 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         TerminalSettings settings = _settings->MakeSettings(std::nullopt);
 
-        // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
-        // set or if "Show tabs in title bar" is set, then we'll need to add
-        // the height of the tab bar here.
+        // TODO GH:2061 - If the global setting "Always show tab bar" is
+        //  set, then we'll need to add the height of the tab bar here.
+        //  If the global setting "Show tabs in title bar" is set,
+        //  then we'lee need to add the height of the title bar here.
 
         return TermControl::GetProposedDimensions(settings, dpi);
     }
