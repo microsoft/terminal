@@ -696,6 +696,7 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
 
         size_t count = 0;
         std::vector<Cluster> clusters;
+        clusters.reserve(runLength);
         for (auto it = rowClusters.cbegin() + runStart;
            cols < runLength && it != rowClusters.cend(); ++it)
         {
