@@ -99,13 +99,13 @@ private:
     void _FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange);
 
     std::pair<float, float> _GetPaneSizes(const float fullSize) const;
-    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next) const;
-    std::pair<float, float> _SnapDimension(const bool widthOrHeight, const float dimension) const;
-    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
+    ChildrenSnapBounds _CalcSnappedPaneDimensions(const bool snapToWidth, const float fullSize) const;
+    SnapSizeBounds _GetProposedSnapSizes(const bool snapToWidth, const float dimension) const;
+    void _SnapSizeUpwards(const bool snapToWidth, LayoutSizeNode& sizeNode) const;
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
-    LayoutSizeNode _GetMinSizeTree(const bool widthOrHeight) const;
-    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
+    LayoutSizeNode _GetMinSizeTree(const bool snapToWidth) const;
+    float _ClampSplitPosition(const bool snapToWidth, const float requestedValue, const float totalSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
@@ -141,6 +141,11 @@ private:
         return false;
     }
 
+    static constexpr bool SnapDirectionIsParallelToSplit(const bool snapToWidth, const SplitState& splitType)
+    {
+        return splitType == (snapToWidth ? SplitState::Horizontal : SplitState::Vertical)
+    }
+
     // Helper structure that builds a (roughly) binary tree corresponding
     // to the pane tree. Used for layouting panes with snapped sizes.
     struct LayoutSizeNode
@@ -160,4 +165,12 @@ private:
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
+
+    struct SnapSizeBounds
+    {
+        float lower;
+        float higher;
+    };
+
+    using ChildrenSnapBounds = std::pair<SnapSizeBounds, SnapSizeBounds>;
 };
