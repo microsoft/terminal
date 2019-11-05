@@ -115,9 +115,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo _actualFont;
         Windows::UI::Xaml::Thickness _padding;
 
-        // Cached since _scrollBar.ActualWidth() became bottle-neck when resizing
-        std::optional<float> _scrollBarWidth;
-
         std::optional<int> _lastScrollOffset;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
