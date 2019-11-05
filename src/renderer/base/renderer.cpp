@@ -585,7 +585,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             //auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
             //_PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
 
-            auto rowData = buffer.GetRowByOffset(row);
+            const auto rowData = buffer.GetRowByOffset(row);
             _PaintBufferLineOutputHelper(pEngine, rowData, screenLine.Origin());
         }
     }
@@ -665,11 +665,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 }
 
 void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
-                                            ROW& row,
+                                            const ROW& row,
                                             const COORD target)
 {
     size_t cols = 0;
-    ATTR_ROW& attrRow = row.GetAttrRow();
+    const ATTR_ROW& attrRow = row.GetAttrRow();
     std::vector<Cluster> rowClusters = row.GetClusters();
 
     const size_t length = row.size();
@@ -681,7 +681,7 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
     while (cols < length)
     {
         size_t runLength = 0;
-        TextAttribute attr = attrRow.GetAttrByColumn(cols, &runLength);
+        const TextAttribute attr = attrRow.GetAttrByColumn(cols, &runLength);
 
         // Hold onto the current run color right here for the length of the outer loop.
         // We'll be changing the persistent one as we run through the inner loops to detect
@@ -696,7 +696,7 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
         screenPoint.X += gsl::narrow<SHORT>(cols);
 
         std::vector<Cluster> clusters(
-            rowClusters.cbegin() + cols,
+            rowClusters.cbegin() + std::min(cols, rowClusters.size()),
             rowClusters.cbegin() + std::min(cols + runLength, rowClusters.size()));
 
         // Do the painting.

@@ -99,7 +99,7 @@ namespace Microsoft::Console::Render
                                       const COORD target);
 
         void _PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
-                                          ROW& row,
+                                          const ROW& row,
                                           const COORD target);
 
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;

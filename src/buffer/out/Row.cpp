@@ -23,7 +23,7 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
     _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
     _pParent{ pParent }
 {
-    for (size_t i = 0; i < rowWidth; i++)
+    for (size_t i = 0; i < rowWidth; ++i)
     {
         _clusters.emplace_back(_charRow.GlyphAt(i), _charRow.GlyphAt(i).operator std::basic_string_view<wchar_t>().size());
     }
@@ -74,6 +74,11 @@ bool ROW::Reset(const TextAttribute Attr)
 {
     _charRow.Reset();
     _clusters.clear();
+    for (size_t i = 0; i < _rowWidth; ++i)
+    {
+        _clusters.emplace_back(_charRow.GlyphAt(i), _charRow.GlyphAt(i).operator std::basic_string_view<wchar_t>().size());
+    }
+
     try
     {
         _attrRow.Reset(Attr);
@@ -226,9 +231,6 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                         _clusters.at(clusterIndex).SetColumns(2);
                         _clusters.erase(_clusters.begin() + clusterIndex + 1);
                     }
-                }
-                else
-                {
                 }
 
                 ++it;
