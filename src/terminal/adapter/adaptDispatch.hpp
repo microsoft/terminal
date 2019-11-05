@@ -21,8 +21,6 @@ Author(s):
 #include "terminalOutput.hpp"
 #include <math.h>
 
-#define XTERM_COLOR_TABLE_SIZE (256)
-
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch

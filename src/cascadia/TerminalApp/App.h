@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
+        winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
 
@@ -57,8 +58,6 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
-
-        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};

@@ -9,8 +9,8 @@
 
 #pragma hdrstop
 
-#define DEFAULT_NUMBER_OF_COMMANDS 25
-#define DEFAULT_NUMBER_OF_BUFFERS 4
+constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
+constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
@@ -29,7 +29,7 @@ Settings::Settings() :
     _uFontFamily(0),
     _uFontWeight(0),
     // FaceName initialized below
-    _uCursorSize(CURSOR_SMALL_SIZE),
+    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
     _bFullScreen(false),
     _bQuickEdit(true),
     _bInsertMode(true),

@@ -243,15 +243,6 @@ IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
     return _pUiaProvider;
 }
 
-RECT IslandWindow::GetFrameBorderMargins(unsigned int currentDpi)
-{
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto targetStyle = windowStyle & ~WS_DLGFRAME;
-    RECT frame{};
-    AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), currentDpi);
-    return frame;
-}
-
 // Method Description:
 // - Called when the window has been resized (or maximized)
 // Arguments:
@@ -300,7 +291,7 @@ void IslandWindow::OnAppInitialized()
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
 {
     _rootGrid.RequestedTheme(requestedTheme);
     // Invalidate the window rect, so that we'll repaint any elements we're

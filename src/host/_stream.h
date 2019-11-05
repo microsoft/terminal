@@ -40,8 +40,6 @@ Return Value:
                                             const BOOL fKeepCursorVisible,
                                             _Inout_opt_ PSHORT psScrollY);
 
-#define LOCAL_BUFFER_SIZE 100
-
 /*++
 Routine Description:
     This routine writes a string to the screen, processing any embedded

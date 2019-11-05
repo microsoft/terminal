@@ -24,7 +24,6 @@
 
 #include <hstring.h>
 
-#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/windows.ui.core.h>
