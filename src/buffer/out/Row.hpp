@@ -69,6 +69,9 @@ public:
 #endif
 
 private:
+
+    void RefreshClusters(const size_t width);
+
     CharRow _charRow;
     ATTR_ROW _attrRow;
     std::vector<Microsoft::Console::Render::Cluster> _clusters;

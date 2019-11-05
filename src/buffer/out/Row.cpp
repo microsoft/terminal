@@ -23,10 +23,7 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
     _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
     _pParent{ pParent }
 {
-    for (size_t i = 0; i < rowWidth; ++i)
-    {
-        _clusters.emplace_back(_charRow.GlyphAt(i), _charRow.GlyphAt(i).operator std::basic_string_view<wchar_t>().size());
-    }
+    RefreshClusters(rowWidth);
 }
 
 size_t ROW::size() const noexcept
@@ -73,11 +70,7 @@ void ROW::SetId(const SHORT id) noexcept
 bool ROW::Reset(const TextAttribute Attr)
 {
     _charRow.Reset();
-    _clusters.clear();
-    for (size_t i = 0; i < _rowWidth; ++i)
-    {
-        _clusters.emplace_back(_charRow.GlyphAt(i), _charRow.GlyphAt(i).operator std::basic_string_view<wchar_t>().size());
-    }
+    RefreshClusters(_rowWidth);
 
     try
     {
@@ -100,7 +93,8 @@ bool ROW::Reset(const TextAttribute Attr)
 [[nodiscard]] HRESULT ROW::Resize(const size_t width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
-    _clusters.resize(width);
+    RefreshClusters(width);
+
     try
     {
         _attrRow.Resize(width);
@@ -108,6 +102,7 @@ bool ROW::Reset(const TextAttribute Attr)
     CATCH_RETURN();
 
     _rowWidth = width;
+
 
     return S_OK;
 }
@@ -255,4 +250,26 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     }
 
     return it;
+}
+
+void ROW::RefreshClusters(const size_t width)
+{
+    _clusters.clear();
+
+    for (size_t i = 0; i < width; ++i)
+    {
+        _clusters.emplace_back(_charRow.GlyphAt(i), _charRow.GlyphAt(i).operator std::basic_string_view<wchar_t>().size());
+        const auto dbcsAttr = _charRow.DbcsAttrAt(i);
+        if (dbcsAttr.IsDbcs())
+        {
+            if (dbcsAttr.IsLeading())
+            {
+                _clusters.at(i).SetColumns(0);
+            }
+            if (dbcsAttr.IsTrailing())
+            {
+                _clusters.at(i).SetColumns(2);
+            }
+        }
+    }
 }
