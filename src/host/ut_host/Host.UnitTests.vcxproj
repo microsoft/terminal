@@ -16,6 +16,7 @@
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
+    <ClCompile Include="ObjectTests.cpp" />
     <ClCompile Include="OutputCellIteratorTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
     <ClCompile Include="SearchTests.cpp" />
