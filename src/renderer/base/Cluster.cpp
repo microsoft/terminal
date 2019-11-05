@@ -78,3 +78,8 @@ Cluster& Cluster::operator=(const Cluster& other)
     _columns = other.GetColumns();
     return *this;
 }
+
+void Cluster::SetColumns(size_t column)
+{
+    _columns = column;
+}

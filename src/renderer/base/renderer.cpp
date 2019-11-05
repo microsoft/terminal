@@ -695,12 +695,9 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
         // Advance the point by however many columns we've just outputted and reset the accumulator.
         screenPoint.X += gsl::narrow<SHORT>(cols);
 
-        std::vector<Cluster> clusters;
-
-        for (auto i = rowClusters.cbegin() + cols; i != rowClusters.cbegin() + cols + runLength; i++)
-        {
-            clusters.emplace_back((*i).GetText(), (*i).GetColumns());
-        }
+        std::vector<Cluster> clusters(
+            rowClusters.cbegin() + cols,
+            rowClusters.cbegin() + std::min(cols + runLength, rowClusters.size()));
 
         // Do the painting.
         // TODO: Calculate when trim left should be TRUE

@@ -35,6 +35,8 @@ namespace Microsoft::Console::Render
 
         Cluster& operator=(const Cluster&);
 
+        void SetColumns(size_t column);
+
     private:
         // This is the UTF-16 string of characters that form a particular drawing cluster
         std::wstring_view _text;

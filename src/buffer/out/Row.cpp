@@ -73,6 +73,7 @@ void ROW::SetId(const SHORT id) noexcept
 bool ROW::Reset(const TextAttribute Attr)
 {
     _charRow.Reset();
+    _clusters.clear();
     try
     {
         _attrRow.Reset(Attr);
@@ -222,13 +223,12 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                     }
                     if (it->DbcsAttr().IsTrailing())
                     {
-                        _clusters.resize(_clusters.size() - 1);
-                        _clusters.at(clusterIndex) = Microsoft::Console::Render::Cluster(it->Chars(), it->Columns());
+                        _clusters.at(clusterIndex).SetColumns(2);
+                        _clusters.erase(_clusters.begin() + clusterIndex + 1);
                     }
                 }
                 else
                 {
-                    _clusters.at(clusterIndex) = Microsoft::Console::Render::Cluster(it->Chars(), it->Columns());
                 }
 
                 ++it;
