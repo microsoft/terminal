@@ -695,6 +695,7 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
         cols = 0;
 
         size_t count = 0;
+        std::vector<Cluster> clusters;
         for (auto it = rowClusters.cbegin() + runStart;
            cols < runLength && it != rowClusters.cend(); ++it)
         {
@@ -702,11 +703,14 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
             const auto columnCount = cluster.GetColumns();
             cols += columnCount;
             count++;
-        }
 
-        std::vector<Cluster> clusters(
-            rowClusters.cbegin() + runStart,
-            rowClusters.cbegin() + runStart + count);
+            if (cluster.GetColumns() <= 0)
+            {
+                continue;
+            }
+
+            clusters.emplace_back(cluster);
+        }
 
         // Do the painting.
         // TODO: Calculate when trim left should be TRUE

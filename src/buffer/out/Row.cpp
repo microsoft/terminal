@@ -173,9 +173,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
     size_t currentIndex = index;
 
-    // how many dbcs are there?
-    size_t dbcsCount = _rowWidth - _clusters.size();
-    size_t clusterIndex = currentIndex - dbcsCount;
+    size_t clusterIndex = index;
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
     const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
@@ -224,12 +222,11 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 {
                     if (it->DbcsAttr().IsLeading())
                     {
-                        clusterIndex -= 1;
+                        _clusters.at(clusterIndex).SetColumns(0);
                     }
                     if (it->DbcsAttr().IsTrailing())
                     {
                         _clusters.at(clusterIndex).SetColumns(2);
-                        _clusters.erase(_clusters.begin() + clusterIndex + 1);
                     }
                 }
 

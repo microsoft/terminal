@@ -791,8 +791,7 @@ void TextBuffer::Reset()
 
     for (auto& row : _storage)
     {
-        row.GetCharRow().Reset();
-        row.GetAttrRow().Reset(attr);
+        row.Reset(attr);
     }
 }
 
