@@ -23,18 +23,16 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     IRawElementProviderSimple* _GetUiaProvider();
-    RECT GetFrameBorderMargins(unsigned int currentDpi);
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
     virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
-
-    void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
     void ToggleFullscreen();
 

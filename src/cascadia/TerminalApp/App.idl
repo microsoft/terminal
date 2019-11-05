@@ -31,6 +31,7 @@ namespace TerminalApp
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();

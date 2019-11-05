@@ -243,15 +243,6 @@ IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
     return _pUiaProvider;
 }
 
-RECT IslandWindow::GetFrameBorderMargins(unsigned int currentDpi)
-{
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto targetStyle = windowStyle & ~WS_DLGFRAME;
-    RECT frame{};
-    AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), currentDpi);
-    return frame;
-}
-
 // Method Description:
 // - Called when the window has been resized (or maximized)
 // Arguments:
@@ -300,7 +291,7 @@ void IslandWindow::OnAppInitialized()
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
 {
     _rootGrid.RequestedTheme(requestedTheme);
     // Invalidate the window rect, so that we'll repaint any elements we're
@@ -317,6 +308,25 @@ void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& req
 void IslandWindow::ToggleFullscreen()
 {
     _SetIsFullscreen(!_fullscreen);
+}
+
+// From GdiEngine::s_SetWindowLongWHelper
+void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
+{
+    // SetWindowLong has strange error handling. On success, it returns the
+    // previous Window Long value and doesn't modify the Last Error state. To
+    // deal with this, we set the last error to 0/S_OK first, call it, and if
+    // the previous long was 0, we check if the error was non-zero before
+    // reporting. Otherwise, we'll get an "Error: The operation has completed
+    // successfully." and there will be another screenshot on the internet
+    // making fun of Windows. See:
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591(v=vs.85).aspx
+    SetLastError(0);
+    LONG const lResult = SetWindowLongW(hWnd, nIndex, dwNewLong);
+    if (0 == lResult)
+    {
+        LOG_LAST_ERROR_IF(0 != GetLastError());
+    }
 }
 
 // Method Description:
@@ -367,15 +377,14 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
             WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
         }
 
-        LOG_LAST_ERROR_IF(0 == SetWindowLongW(hWnd, GWL_STYLE, windowStyle));
+        _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
         // Now modify extended window styles as appropriate
         // When moving to fullscreen, remove the window edge style to avoid an
         // ugly border when not focused.
         auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
-        // WI_ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
         WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
-        LOG_LAST_ERROR_IF(0 == SetWindowLongW(hWnd, GWL_EXSTYLE, exWindowStyle));
+        _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
     }
 
     _BackupWindowSizes(oldIsInFullscreen);
