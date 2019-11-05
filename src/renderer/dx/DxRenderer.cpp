@@ -1082,12 +1082,12 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintSelection(COLORREF const selectionBackground, const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintSelection(const COLORREF selectionBackground, const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto selectionColor = D2D1::ColorF(GetRValue(selectionBackground),
-                                             GetGValue(selectionBackground),
-                                             GetBValue(selectionBackground),
+    const auto selectionColor = D2D1::ColorF(GetRValue(selectionBackground)/255.0f,
+                                             GetGValue(selectionBackground)/255.0f,
+                                             GetBValue(selectionBackground)/255.0f,
                                              0.5f);
 
     _d2dBrushForeground->SetColor(selectionColor);

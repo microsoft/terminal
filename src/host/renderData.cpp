@@ -335,7 +335,8 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const n
 
 const COLORREF RenderData::GetSelectionBackground() const noexcept
 {
-    // TODO: What do I return here?
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetDefaultForegroundColor();
 }
 
 #pragma endregion

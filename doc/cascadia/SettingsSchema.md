@@ -57,6 +57,7 @@ Properties listed below are specific to each color scheme. [ColorTool](https://g
 | `name` | _Required_ | String | Name of the color scheme. |
 | `foreground` | _Required_ | String | Sets the foreground color of the color scheme. |
 | `background` | _Required_ | String | Sets the background color of the color scheme. |
+| `selectionBackground` | Optional | String | Sets the selection background color of the color scheme. Uses foreground if not specified. |
 | `black` | _Required_ | String | Sets the color used as ANSI black. |
 | `blue` | _Required_ | String | Sets the color used as ANSI blue. |
 | `brightBlack` | _Required_ | String | Sets the color used as ANSI bright black. |
