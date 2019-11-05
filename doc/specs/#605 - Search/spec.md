@@ -49,7 +49,7 @@ Above is the SearchBoxControl. The two buttons with up/down arrows controls the 
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
 
-The search box should be on the top right corner of the Terminal window. If the current tab is splitted into panes, each pane will have a individual searchbox. We need to avoid it blocking too much screen contents. 
+The search box should be on the top right corner of the Terminal window. If the current tab is split into panes, each pane will have a individual searchbox. We need to avoid it blocking too much screen contents. 
 
 ## Capabilities
 
