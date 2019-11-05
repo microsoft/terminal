@@ -298,12 +298,12 @@ addressed using the `\\wsl$\` prefix. For any WSL distro who's name is
 the root of that distro's filesystem.
 
 For example, the following works as a profile to launch the "Ubuntu-18.04"
-distro in it's root:
+distro in it's home path:
 
 ```json
 {
     "name": "Ubuntu-18.04",
     "commandline" : "wsl -d Ubuntu-18.04",
-    "startingDirectory" : "//wsl$/Ubuntu-18.04/home/zadjii",
+    "startingDirectory" : "//wsl$/Ubuntu-18.04/home/<Your Ubuntu Username>",
 }
 ```
