@@ -19,7 +19,7 @@ using namespace winrt::TerminalApp;
 
 static constexpr std::string_view KeysKey{ "keys" };
 static constexpr std::string_view CommandKey{ "command" };
-static constexpr std::string_view ArgsKey{ "args" };
+static constexpr std::string_view ActionKey{ "action" };
 
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
@@ -340,6 +340,21 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
     return bindingsArray;
 }
 
+// Function Description:
+// - Attempts to match a string to a ShortcutAction. If there's no match, then
+//   returns ShortcutAction::Invalid
+// Arguments:
+// - actionString: the string to match to a ShortcutAction
+// Return Value:
+// - The ShortcutAction corresponding to the given string, if a match exists.
+static ShortcutAction GetActionFromString(const std::string_view actionString)
+{
+    // Try matching the command to one we have. If we can't find the
+    // action name in our list of names, let's just unbind that key.
+    const auto found = commandNames.find(actionString);
+    return found != commandNames.end() ? found->second : ShortcutAction::Invalid;
+}
+
 // Method Description:
 // - Deserialize an AppKeyBindings from the key mappings that are in the array
 //   `json`. The json array should contain an array of objects with both a
@@ -364,7 +379,6 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
 
         const auto commandVal = value[JsonKey(CommandKey)];
         const auto keys = value[JsonKey(KeysKey)];
-        const auto argsVal = value[JsonKey(ArgsKey)];
 
         if (keys)
         {
@@ -376,18 +390,35 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             // Invalid is our placeholder that the action was not parsed.
             ShortcutAction action = ShortcutAction::Invalid;
 
+            // Keybindings can be serialized in two styles:
+            // { "command": "switchToTab0", "keys": ["ctrl+1"] },
+            // { "command": { "action": "switchToTab", "index": 0 }, "keys": ["ctrl+alt+1"] },
+
+            // 1. In the first case, the "command" is a string, that's the
+            //    action name. There are no provided args, so we'll pass
+            //    Json::Value::null to the parse function.
+            // 2. In the second case, the "command" is an object. We'll use the
+            //    "action" in that object as the action name. We'll then pass
+            //    the "command" object to the arg parser, for furhter parsing.
+
+            // auto argsVal = value[JsonKey(ArgsKey)];
+            auto argsVal = Json::Value::null;
+
             // Only try to parse the action if it's actually a string value.
             // `null` will not pass this check.
             if (commandVal.isString())
             {
                 auto commandString = commandVal.asString();
-
-                // Try matching the command to one we have. If we can't find the
-                // action name in our list of names, let's just unbind that key.
-                const auto found = commandNames.find(commandString);
-                if (found != commandNames.end())
+                action = GetActionFromString(commandString);
+            }
+            else if (commandVal.isObject())
+            {
+                const auto actionVal = commandVal[JsonKey(ActionKey)];
+                if (actionVal.isString())
                 {
-                    action = found->second;
+                    auto actionString = actionVal.asString();
+                    action = GetActionFromString(actionString);
+                    argsVal = commandVal;
                 }
             }
 

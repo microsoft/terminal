@@ -178,19 +178,20 @@ namespace TerminalAppLocalTests
         const std::string bindings0String{ R"([
             { "command": "copy", "keys": ["ctrl+c"] },
             { "command": "copyTextWithoutNewlines", "keys": ["alt+c"] },
-            { "command": "copy", "keys": ["ctrl+shift+c"], "args":{ "trimWhitespace": false } },
-            { "command": "copy", "keys": ["alt+shift+c"], "args":{ "trimWhitespace": true } },
+            { "command": { "action": "copy", "trimWhitespace": false }, "keys": ["ctrl+shift+c"] },
+            { "command": { "action": "copy", "trimWhitespace": true }, "keys": ["alt+shift+c"] },
 
             { "command": "newTab", "keys": ["ctrl+t"] },
-            { "command": "newTab", "keys": ["ctrl+shift+t"], "args":{ "index": 0 } },
+            { "command": { "action": "newTab", "index": 0 }, "keys": ["ctrl+shift+t"] },
             { "command": "newTabProfile0", "keys": ["alt+shift+t"] },
-            { "command": "newTab", "keys": ["ctrl+shift+y"], "args":{ "index": 11 } },
+            { "command": { "action": "newTab", "index": 11 }, "keys": ["ctrl+shift+y"] },
             { "command": "newTabProfile8", "keys": ["alt+shift+y"] },
 
-            { "command": "copy", "keys": ["ctrl+b"], "args":{ "madeUpBool": true } },
-            { "command": "copy", "keys": ["ctrl+b"], "args":null
+            { "command": { "action": "copy", "madeUpBool": true }, "keys": ["ctrl+b"] },
+            { "command": { "action": "copy" }, "keys": ["ctrl+shift+b"] }
 
         ])" };
+
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
@@ -309,7 +310,7 @@ namespace TerminalAppLocalTests
                 L"Verify that `copy` ignores args it doesn't understand"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::Copy, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -321,7 +322,7 @@ namespace TerminalAppLocalTests
                 L"Verify that `copy` null as it's `args` parses as the default option"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::Copy, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
