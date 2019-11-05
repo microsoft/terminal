@@ -34,6 +34,8 @@ public:
 
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
 
+    void ToggleFullscreen();
+
 #pragma region IUiaWindow
     void ChangeViewport(const SMALL_RECT /*NewWindow*/)
     {
@@ -87,4 +89,15 @@ protected:
     std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+
+    bool _fullscreen{ false };
+    RECT _fullscreenWindowSize;
+    RECT _nonFullscreenWindowSize;
+
+    virtual void _SetIsFullscreen(const bool fullscreenEnabled);
+    void _BackupWindowSizes(const bool currentIsInFullscreen);
+    void _ApplyWindowSize();
+
+    // See _SetIsFullscreen for details on this method.
+    virtual bool _ShouldUpdateStylesOnFullscreen() const { return true; };
 };

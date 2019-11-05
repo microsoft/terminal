@@ -70,6 +70,11 @@ private:
     void _OnMaximizeChange() noexcept;
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
 
+    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    // See IslandWindow::_SetIsFullscreen for details on this method.
+    bool _ShouldUpdateStylesOnFullscreen() const override { return false; };
+    bool _IsTitlebarVisible() const;
+
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);

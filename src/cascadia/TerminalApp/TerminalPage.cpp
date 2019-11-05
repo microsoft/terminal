@@ -558,6 +558,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
     // Method Description:
@@ -605,11 +606,13 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes in tab layout.
     void TerminalPage::_UpdateTabView()
     {
+        // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
-                               (_tabs.size() > 1) ||
-                               _settings->GlobalSettings().GetAlwaysShowTabs();
+        const bool isVisible = (!_isFullscreen) &&
+                               (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                                (_tabs.size() > 1) ||
+                                _settings->GlobalSettings().GetAlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -1322,6 +1325,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Toggles fullscreen mode. Hides the tab row, and raises our
+    //   ToggleFullscreen event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ToggleFullscreen()
+    {
+        _toggleFullscreenHandlers(*this, nullptr);
+
+        _isFullscreen = !_isFullscreen;
+
+        _UpdateTabView();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
@@ -1329,4 +1348,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
 }

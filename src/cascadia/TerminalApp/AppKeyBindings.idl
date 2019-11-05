@@ -56,6 +56,7 @@ namespace TerminalApp
         MoveFocusRight, // Legacy
         MoveFocusUp, // Legacy
         MoveFocusDown, // Legacy
+        ToggleFullscreen,
         OpenSettings
     };
 
@@ -96,5 +97,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenSettings;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ResizePane;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> MoveFocus;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ToggleFullscreen;
     }
 }
