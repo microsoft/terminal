@@ -33,3 +33,35 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
     "startingDirectory" : "%USERPROFILE%"
 }
 ```
+
+## Cygwin
+
+Assuming that you've installed Cygwin into `C:/Cygwin`:
+
+```json
+{
+    "name" : "Cygwin",
+    "commandline" : "C:/Cygwin/bin/bash --login -i",
+    "icon" : "C:/Cygwin/Cygwin.ico",
+    "startingDirectory" : "C:/Cygwin/bin"
+}
+```
+
+Note that the starting directory of Cygwin is set as it is to make the path
+work. The default directory opened when starting Cygwin will be `$HOME` because
+of the `--login` flag.
+
+## Git Bash
+
+Assuming that you've installed Git Bash into `C:/Program Files/Git`:
+
+```json
+{
+    "name" : "Git Bash",
+    "commandline" : "C:/Program Files/Git/bin/bash.exe",
+    "icon" : "C:/Program Files/Git/mingw64/share/git/git-for-windows.ico",
+    "startingDirectory" : "%USERPROFILE%"
+}
+````
+
+<!-- Adding a tool here? Make sure to add it in alphabetical order! -->
