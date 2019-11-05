@@ -1234,7 +1234,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.WriteInput(stripped);
     }
 
-
     // Method Description:
     // - Update the font with the renderer. This will be called either when the
     //      font changes or the DPI changes, as DPI changes will necessitate a
