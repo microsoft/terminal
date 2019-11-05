@@ -37,6 +37,7 @@ public:
                                   size_t* const pApplies) const;
 
     size_t GetNumberOfRuns() const noexcept;
+    TextAttributeRun GetRunByIndex(size_t index) const;
 
     size_t FindAttrIndex(const size_t index,
                          size_t* const pApplies) const;

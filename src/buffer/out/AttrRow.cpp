@@ -120,6 +120,11 @@ size_t ATTR_ROW::GetNumberOfRuns() const noexcept
     return _list.size();
 }
 
+TextAttributeRun ATTR_ROW::GetRunByIndex(size_t index) const
+{
+    return _list.at(index);
+}
+
 // Routine Description:
 // - This routine finds the nth attribute in this ATTR_ROW.
 // Arguments:

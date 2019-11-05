@@ -585,7 +585,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             //auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
             //_PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
 
-            const auto rowData = buffer.GetRowByOffset(row);
+            const auto& rowData = buffer.GetRowByOffset(row);
             _PaintBufferLineOutputHelper(pEngine, rowData, screenLine.Origin());
         }
     }
@@ -670,23 +670,21 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
 {
     size_t cols = 0;
     const ATTR_ROW& attrRow = row.GetAttrRow();
-    std::vector<Cluster> rowClusters = row.GetClusters();
+    const std::vector<Cluster> rowClusters = row.GetClusters();
 
-    const size_t length = row.size();
-
+    const size_t runCount = attrRow.GetNumberOfRuns();
+    size_t runIndex = 0;
     // And hold the point where we should start drawing.
     auto screenPoint = target;
 
+    size_t runStart = 0;
     // This outer loop will continue until we reach the end of the text we are trying to draw.
-    while (cols < length)
+    while (runIndex < runCount)
     {
-        size_t runLength = 0;
-        const TextAttribute attr = attrRow.GetAttrByColumn(cols, &runLength);
+        const TextAttributeRun run = attrRow.GetRunByIndex(runIndex);
+        const TextAttribute attr = run.GetAttributes();
+        const size_t runLength = run.GetLength();
 
-        // Hold onto the current run color right here for the length of the outer loop.
-        // We'll be changing the persistent one as we run through the inner loops to detect
-        // when a run changes, but we will still need to know this color at the bottom
-        // when we go to draw gridlines for the length of the run.
         const auto currentRunColor = attr;
 
         // Update the drawing brushes with our color.
@@ -694,10 +692,21 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
 
         // Advance the point by however many columns we've just outputted and reset the accumulator.
         screenPoint.X += gsl::narrow<SHORT>(cols);
+        cols = 0;
+
+        size_t count = 0;
+        for (auto it = rowClusters.cbegin() + runStart;
+           cols < runLength && it != rowClusters.cend(); ++it)
+        {
+            auto cluster = (*it);
+            const auto columnCount = cluster.GetColumns();
+            cols += columnCount;
+            count++;
+        }
 
         std::vector<Cluster> clusters(
-            rowClusters.cbegin() + std::min(cols, rowClusters.size()),
-            rowClusters.cbegin() + std::min(cols + runLength, rowClusters.size()));
+            rowClusters.cbegin() + runStart,
+            rowClusters.cbegin() + runStart + count);
 
         // Do the painting.
         // TODO: Calculate when trim left should be TRUE
@@ -710,7 +719,8 @@ void Renderer::_PaintBufferLineOutputHelper(_In_ IRenderEngine* const pEngine,
            _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
         }
 
-        cols += runLength;
+        runStart += count;
+        ++runIndex;
     }
 }
 
