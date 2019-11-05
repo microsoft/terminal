@@ -118,7 +118,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
-    if (_isMaximized)
+    if (_isMaximized || _fullscreen)
     {
         // no border when maximized
         return 0;
@@ -249,6 +249,8 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 //   of our child xaml-island window to that region. That way, the parent window
 //   will still get NCHITTEST'ed _outside_ the XAML content area, for things
 //   like dragging and resizing.
+// - We won't cut this region out if we're fullscreen/borderless. Instead, we'll
+//   make sure to update our region to take the entirety of the window.
 // Arguments:
 // - <none>
 // Return Value:
@@ -260,20 +262,35 @@ void NonClientIslandWindow::_UpdateIslandRegion() const
         return;
     }
 
-    RECT rcIsland;
-    winrt::check_bool(::GetWindowRect(_interopWindowHandle, &rcIsland));
-    const auto islandWidth = rcIsland.right - rcIsland.left;
-    const auto islandHeight = rcIsland.bottom - rcIsland.top;
-    const auto totalRegion = wil::unique_hrgn(CreateRectRgn(0, 0, islandWidth, islandHeight));
+    // If we're showing the titlebar (when we're not fullscreen/borderless), cut
+    // a region of the window out for the drag bar. Otherwise we want the entire
+    // window to be given to the XAML island
+    if (_IsTitlebarVisible())
+    {
+        RECT rcIsland;
+        winrt::check_bool(::GetWindowRect(_interopWindowHandle, &rcIsland));
+        const auto islandWidth = rcIsland.right - rcIsland.left;
+        const auto islandHeight = rcIsland.bottom - rcIsland.top;
+        const auto totalRegion = wil::unique_hrgn(CreateRectRgn(0, 0, islandWidth, islandHeight));
 
-    const auto rcDragBar = _GetDragAreaRect();
-    const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
+        const auto rcDragBar = _GetDragAreaRect();
+        const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
 
-    // island region = total region - drag bar region
-    const auto islandRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
-    winrt::check_bool(CombineRgn(islandRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
+        // island region = total region - drag bar region
+        const auto islandRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+        winrt::check_bool(CombineRgn(islandRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
 
-    winrt::check_bool(SetWindowRgn(_interopWindowHandle, islandRegion.get(), true));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, islandRegion.get(), true));
+    }
+    else
+    {
+        const auto windowRect = GetWindowRect();
+        const auto width = windowRect.right - windowRect.left;
+        const auto height = windowRect.bottom - windowRect.top;
+
+        auto windowRegion = wil::unique_hrgn(CreateRectRgn(0, 0, width, height));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, windowRegion.get(), true));
+    }
 }
 
 // Method Description:
@@ -313,22 +330,36 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
     auto newTop = originalTop;
 
-    // WM_NCCALCSIZE is called before WM_SIZE
-    _UpdateMaximizedState();
-
-    if (_isMaximized)
+    if (_fullscreen)
     {
-        // When a window is maximized, its size is actually a little bit more
-        // than the monitor's work area. The window is positioned and sized in
-        // such a way that the resize handles are outside of the monitor and
-        // then the window is clipped to the monitor so that the resize handle
-        // do not appear because you don't need them (because you can't resize
-        // a window when it's maximized unless you restore it).
-        newTop += _GetResizeHandleHeight();
+        // When we're fullscreen, we don't actually want to have any borders at
+        // all. This will remove them for us. Otherrwise, we'll have the
+        // transparent "grab handle" borders appear on the sides of the window
+        // when fullscreen, and we won't really be "fullscreen".
+        params->rgrc[0].left = params->lppos->x;
+        params->rgrc[0].top = params->lppos->y;
+        params->rgrc[0].right = params->lppos->cx;
+        params->rgrc[0].bottom = params->lppos->cy;
     }
+    else
+    {
+        // WM_NCCALCSIZE is called before WM_SIZE
+        _UpdateMaximizedState();
 
-    // only modify the top of the frame to remove the title bar
-    params->rgrc[0].top = newTop;
+        if (_isMaximized)
+        {
+            // When a window is maximized, its size is actually a little bit more
+            // than the monitor's work area. The window is positioned and sized in
+            // such a way that the resize handles are outside of the monitor and
+            // then the window is clipped to the monitor so that the resize handle
+            // do not appear because you don't need them (because you can't resize
+            // a window when it's maximized unless you restore it).
+            newTop += _GetResizeHandleHeight();
+        }
+
+        // only modify the top of the frame to remove the title bar
+        params->rgrc[0].top = newTop;
+    }
 
     return 0;
 }
@@ -498,6 +529,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         {
             winrt::throw_last_error();
         }
+
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
         ::BufferedPaintSetAlpha(buf, NULL, 255);
         ::EndBufferedPaint(buf, TRUE);
@@ -564,4 +596,32 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
 
     _theme = requestedTheme;
     _UpdateFrameTheme();
+}
+
+// Method Description:
+// - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
+//   need to manually hide the entire titlebar.
+// - See also IslandWindow::_SetIsFullscreen, which does additional work.
+// Arguments:
+// - fullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
+{
+    IslandWindow::_SetIsFullscreen(fullscreenEnabled);
+    _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+}
+
+// Method Description:
+// - Returns true if the titlebar is visible. For things like fullscreen mode,
+//   borderless mode, this will return false.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the titlebar is visible
+bool NonClientIslandWindow::_IsTitlebarVisible() const
+{
+    // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
+    // updated to include that mode.
+    return !_fullscreen;
 }

@@ -662,34 +662,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Methods that proxy typed event handlers through TerminalPage
-    winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement> const& handler)
-    {
-        return _root->SetTitleBarContent(handler);
-    }
-    void App::SetTitleBarContent(winrt::event_token const& token) noexcept
-    {
-        return _root->SetTitleBarContent(token);
-    }
-
-    winrt::event_token App::TitleChanged(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::hstring> const& handler)
-    {
-        return _root->TitleChanged(handler);
-    }
-    void App::TitleChanged(winrt::event_token const& token) noexcept
-    {
-        return _root->TitleChanged(token);
-    }
-
-    winrt::event_token App::LastTabClosed(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs> const& handler)
-    {
-        return _root->LastTabClosed(handler);
-    }
-    void App::LastTabClosed(winrt::event_token const& token) noexcept
-    {
-        return _root->LastTabClosed(token);
-    }
-
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
