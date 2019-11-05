@@ -99,10 +99,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Propsheet.DLL", "src\propsh
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build Common", "_Build Common", "{04170EEF-983A-4195-BFEF-2321E5E38A1E}"
 	ProjectSection(SolutionItems) = preProject
-		src\common.build.dll.props = src\common.build.dll.props
-		src\common.build.exe.or.dll.props = src\common.build.exe.or.dll.props
-		src\common.build.exe.props = src\common.build.exe.props
-		src\common.build.lib.props = src\common.build.lib.props
 		src\common.build.post.props = src\common.build.post.props
 		src\common.build.pre.props = src\common.build.pre.props
 		src\common.build.tests.props = src\common.build.tests.props
