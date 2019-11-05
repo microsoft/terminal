@@ -288,12 +288,12 @@ we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`
 
 By default, the `startingDirectory` of a profile is `%USERPROFILE%`
 (`C:\Users\<YourUsername>`). This is a Windows path. However, for WSL, you might
-want to use the WSL hope path instead. At the time of writing (26decf1 / Nov.
-1st, 2019), `startingDirectory` only accepts a Windows-stlye path, so setting it
+want to use the WSL home path instead. At the time of writing (26decf1 / Nov.
+1st, 2019), `startingDirectory` only accepts a Windows-style path, so setting it
 to start within the WSL distro can be a little tricky.
 
 Fortunately, with Windows 1903, the filesystems of WSL distros can easily be
-addressed using the `\\wsl$\` prefix. For any WSL distro who's name is
+addressed using the `\\wsl$\` prefix. For any WSL distro whose name is
 `DistroName`, you can use `\\wsl$\DistroName` as a Windows path that points to
 the root of that distro's filesystem.
 
