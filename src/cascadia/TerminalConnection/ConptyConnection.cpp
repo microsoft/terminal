@@ -5,7 +5,6 @@
 #include "ConptyConnection.h"
 
 #include <windows.h>
-#include <sstream>
 
 #include "ConptyConnection.g.cpp"
 
