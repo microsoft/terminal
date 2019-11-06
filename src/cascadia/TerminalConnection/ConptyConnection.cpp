@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
     // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
     // - phPty: Receives a token value to identify this conpty
-    static HRESULT _CreatePseudoConsoleAndPipes(COORD size, DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC)
+    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC)
     {
         RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
 
@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         siEx.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
         size_t size{};
+        // This call will return an error (by design); we are ignoring it.
         InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size);
         auto attrList{ std::make_unique<std::byte[]>(size) };
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList.get());
@@ -171,7 +172,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Start()
     try
     {
-        COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
+        const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
         THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, 0, &_inPipe, &_outPipe, &_hPC));
         THROW_IF_FAILED(_LaunchAttachedClient());
 
@@ -209,7 +210,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         const auto hr = wil::ResultFromCaughtException();
         // TODO GH#2563 - signal a transition into failed state here!
-        (void)hr;
+        LOG_HR(hr);
 
         _disconnectHandlers();
     }
@@ -234,9 +235,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
+        // TODO GH#3378 reconcile and unify UTF-8 converters
         std::string str = winrt::to_string(data);
-        bool fSuccess = !!WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr);
-        fSuccess;
+        LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
     }
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
@@ -248,7 +249,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else if (!_closing.load())
         {
-            ResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) });
+            THROW_IF_FAILED(ResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
         }
     }
 
@@ -270,11 +271,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // Tear down our output thread -- now that the output pipe was closed on the
             // far side, we can run down our local reader.
-            WaitForSingleObject(_hOutputThread.get(), INFINITE);
+            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
             _hOutputThread.reset();
 
             // Wait for the client to terminate.
-            WaitForSingleObject(_piClient.hProcess, INFINITE);
+            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_piClient.hProcess, INFINITE));
             _piClient.reset();
         }
     }
