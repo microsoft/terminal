@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - size: The size of the conpty to create, in characters.
     // - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
     // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
-    // - phPty: Receives a token value to identify this conpty
+    // - phPc: Receives a token value to identify this conpty
     static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC)
     {
         RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
