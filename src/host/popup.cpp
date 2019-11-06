@@ -93,15 +93,15 @@ void Popup::_DrawBorder()
     _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // draw upper left corner
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[UPPER_LEFT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT, 1), WriteCoord);
 
     // draw upper bar
     WriteCoord.X += 1;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[HORIZONTAL_LINE], Width()), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
 
     // draw upper right corner
     WriteCoord.X = _region.Right;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[UPPER_RIGHT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT, 1), WriteCoord);
 
     for (SHORT i = 0; i < Height(); i++)
     {
@@ -111,10 +111,10 @@ void Popup::_DrawBorder()
         // fill attributes
         _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
-        _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[VERTICAL_LINE], 1), WriteCoord);
+        _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
 
         WriteCoord.X = _region.Right;
-        _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[VERTICAL_LINE], 1), WriteCoord);
+        _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
     }
 
     // Draw bottom line.
@@ -125,15 +125,15 @@ void Popup::_DrawBorder()
 
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[BOTTOM_LEFT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT, 1), WriteCoord);
 
     // Draw lower bar.
     WriteCoord.X += 1;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[HORIZONTAL_LINE], Width()), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
 
     // draw lower right corner
     WriteCoord.X = _region.Right;
-    _screenInfo.Write(OutputCellIterator(_screenInfo.LineChar[BOTTOM_RIGHT_CORNER], 1), WriteCoord);
+    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT, 1), WriteCoord);
 }
 
 // Routine Description:

@@ -580,9 +580,9 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 
 // Method Description:
 // - Finds a color scheme from our list of color schemes that matches the given
-//   json object. Uses ColorScheme::ShouldBeLayered to determine if the
-//   Json::Value is a match or not. This method should be used to find a color
-//   scheme to layer the given settings upon.
+//   json object. Uses ColorScheme::GetNameFromJson to find the name and then
+//   performs a lookup in the global map. This method should be used to find a
+//   color scheme to layer the given settings upon.
 // - Returns nullptr if no such match exists.
 // Arguments:
 // - json: an object which should be a partial serialization of a ColorScheme object.
@@ -591,15 +591,17 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 //   color scheme exists.
 ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
-    for (auto& scheme : _globals.GetColorSchemes())
+    if (auto schemeName = ColorScheme::GetNameFromJson(schemeJson))
     {
-        if (scheme.second.ShouldBeLayered(schemeJson))
+        auto& schemes = _globals.GetColorSchemes();
+        auto iterator = schemes.find(*schemeName);
+        if (iterator != schemes.end())
         {
             // HERE BE DRAGONS: Returning a pointer to a type in the vector is
             // maybe not the _safest_ thing, but we have a mind to make Profile
             // and ColorScheme winrt types in the future, so this will be safer
             // then.
-            return &scheme.second;
+            return &iterator->second;
         }
     }
     return nullptr;

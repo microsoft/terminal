@@ -383,14 +383,14 @@ std::string GlobalAppSettings::_SerializeInitialPosition(const std::optional<int
     std::string serializedInitialPos = "";
     if (initialX.has_value())
     {
-        serializedInitialPos += initialX.value();
+        serializedInitialPos += std::to_string(initialX.value());
     }
 
     serializedInitialPos += ", ";
 
     if (initialY.has_value())
     {
-        serializedInitialPos += initialY.value();
+        serializedInitialPos += std::to_string(initialY.value());
     }
 
     return serializedInitialPos;

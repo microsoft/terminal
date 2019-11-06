@@ -27,17 +27,14 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
                              AdaptDefaults* const pDefaults) :
     _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
+    _usingAltBuffer(false),
     _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
-    _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
     _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _fChangedBackground(false),
     _fChangedForeground(false),
     _fChangedMetaAttrs(false),
     _TermOutput()
 {
-    // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
-    _coordSavedCursor.X = 1;
-    _coordSavedCursor.Y = 1;
     _srScrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
@@ -415,12 +412,14 @@ bool AdaptDispatch::CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned
 }
 
 // Routine Description:
-// - DECSC - Saves the current cursor position into a memory buffer.
+// - DECSC - Saves the current "cursor state" into a memory buffer. This
+//   includes the cursor position, origin mode, graphic rendition, and
+//   active character set.
 // Arguments:
 // - <none>
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorSavePosition()
+bool AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -428,6 +427,9 @@ bool AdaptDispatch::CursorSavePosition()
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
     bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
+
+    TextAttribute attributes;
+    fSuccess = fSuccess && !!(_conApi->PrivateGetTextAttributes(&attributes));
 
     if (fSuccess)
     {
@@ -438,32 +440,53 @@ bool AdaptDispatch::CursorSavePosition()
         SMALL_RECT const srViewport = csbiex.srWindow;
 
         // VT is also 1 based, not 0 based, so correct by 1.
-        _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1;
-        _coordSavedCursor.Y = coordCursor.Y - srViewport.Top + 1;
-        _fIsSavedOriginModeRelative = _fIsOriginModeRelative;
+        auto& savedCursorState = _savedCursorState[_usingAltBuffer];
+        savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
+        savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
+        savedCursorState.IsOriginModeRelative = _fIsOriginModeRelative;
+        savedCursorState.Attributes = attributes;
+        savedCursorState.TermOutput = _TermOutput;
     }
 
     return fSuccess;
 }
 
 // Routine Description:
-// - DECRC - Restores a saved cursor position from the DECSC command back into the console state.
-// - If no position was set, this defaults to the top left corner (see AdaptDispatch constructor.)
+// - DECRC - Restores a saved "cursor state" from the DECSC command back into
+//   the console state. This includes the cursor position, origin mode, graphic
+//   rendition, and active character set.
 // Arguments:
 // - <none>
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorRestorePosition()
+bool AdaptDispatch::CursorRestoreState()
 {
-    unsigned int const uiRow = _coordSavedCursor.Y;
-    unsigned int const uiCol = _coordSavedCursor.X;
+    auto& savedCursorState = _savedCursorState[_usingAltBuffer];
+
+    auto uiRow = savedCursorState.Row;
+    auto uiCol = savedCursorState.Column;
+
+    // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
+    // we need to make sure the restored position is clamped within the margins.
+    if (savedCursorState.IsOriginModeRelative && _srScrollMargins.Bottom != 0)
+    {
+        // VT origin is at 1,1 so we need to add 1 to these margins.
+        uiRow = std::clamp(uiRow, _srScrollMargins.Top + 1u, _srScrollMargins.Bottom + 1u);
+    }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _fIsOriginModeRelative = false;
-    bool const fSuccess = _CursorMovePosition(&uiRow, &uiCol);
+    bool fSuccess = _CursorMovePosition(&uiRow, &uiCol);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _fIsOriginModeRelative = _fIsSavedOriginModeRelative;
+    _fIsOriginModeRelative = savedCursorState.IsOriginModeRelative;
+
+    // Restore text attributes.
+    fSuccess = !!(_conApi->PrivateSetTextAttributes(savedCursorState.Attributes)) && fSuccess;
+
+    // Restore designated character set.
+    _TermOutput = savedCursorState.TermOutput;
+
     return fSuccess;
 }
 
@@ -1349,7 +1372,16 @@ bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseAlternateScreenBuffer()
 {
-    return !!_conApi->PrivateUseAlternateScreenBuffer();
+    bool fSuccess = CursorSaveState();
+    if (fSuccess)
+    {
+        fSuccess = !!_conApi->PrivateUseAlternateScreenBuffer();
+        if (fSuccess)
+        {
+            _usingAltBuffer = true;
+        }
+    }
+    return fSuccess;
 }
 
 // Routine Description:
@@ -1361,7 +1393,16 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseMainScreenBuffer()
 {
-    return !!_conApi->PrivateUseMainScreenBuffer();
+    bool fSuccess = !!_conApi->PrivateUseMainScreenBuffer();
+    if (fSuccess)
+    {
+        _usingAltBuffer = false;
+        if (fSuccess)
+        {
+            fSuccess = CursorRestoreState();
+        }
+    }
+    return fSuccess;
 }
 
 //Routine Description:
@@ -1501,9 +1542,11 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        // Save cursor state: Home position; Absolute addressing.
-        _coordSavedCursor = { 1, 1 };
-        _fIsSavedOriginModeRelative = false;
+        // Reset the saved cursor state.
+        // Note that XTerm only resets the main buffer state, but that
+        // seems likely to be a bug. Most other terminals reset both.
+        _savedCursorState[0] = {}; // Main buffer
+        _savedCursorState[1] = {}; // Alt buffer
     }
 
     return fSuccess;

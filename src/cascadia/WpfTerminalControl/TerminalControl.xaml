@@ -13,6 +13,6 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <local:TerminalContainer x:Name="termContainer"/>
-        <ScrollBar x:Name="scrollbar" Scroll="Scrollbar_Scroll" Grid.Column="1" />
+        <ScrollBar x:Name="scrollbar" Scroll="Scrollbar_Scroll" SmallChange="1" Grid.Column="1" />
     </Grid>
 </UserControl>
