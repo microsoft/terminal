@@ -199,7 +199,7 @@ namespace winrt::TerminalApp::implementation
         dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
 
         // Display the dialog.
-        Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown

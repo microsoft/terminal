@@ -11,23 +11,23 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         return false;
     }
-    AzureConnection::AzureConnection(uint32_t rows, uint32_t columns)
+    AzureConnection::AzureConnection(uint32_t /*rows*/, uint32_t /*columns*/)
     {
         throw hresult_not_implemented();
     }
-    winrt::event_token AzureConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
+    winrt::event_token AzureConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& /*handler*/)
     {
         throw hresult_not_implemented();
     }
-    void AzureConnection::TerminalOutput(winrt::event_token const& token)
+    void AzureConnection::TerminalOutput(winrt::event_token const& /*token*/)
     {
         throw hresult_not_implemented();
     }
-    winrt::event_token AzureConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
+    winrt::event_token AzureConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& /*handler*/)
     {
         throw hresult_not_implemented();
     }
-    void AzureConnection::TerminalDisconnected(winrt::event_token const& token)
+    void AzureConnection::TerminalDisconnected(winrt::event_token const& /*token*/)
     {
         throw hresult_not_implemented();
     }
@@ -35,11 +35,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         throw hresult_not_implemented();
     }
-    void AzureConnection::WriteInput(hstring const& data)
+    void AzureConnection::WriteInput(hstring const& /*data*/)
     {
         throw hresult_not_implemented();
     }
-    void AzureConnection::Resize(uint32_t rows, uint32_t columns)
+    void AzureConnection::Resize(uint32_t /*rows*/, uint32_t /*columns*/)
     {
         throw hresult_not_implemented();
     }

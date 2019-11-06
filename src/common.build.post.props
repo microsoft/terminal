@@ -1,35 +1,57 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- By default, binplace our output under the bin/ directory in the root of
-       the project. The other non-cppwinrt projects are binplaced there as well.
-       However, Cascadia projects want to be built into an appx, and the wapproj
-       that consumes them will complain if you do this. So they'll set
-       NoOutputRedirection before including this props file.
-  -->
-  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <!-- Definition the program database type has to come after Microsoft.Cpp.props or it will be
-       rewritten to /ZI (edit-and-continue) type every time. -->
+
   <ItemDefinitionGroup>
+    <!-- Definition the program database type has to come after Microsoft.Cpp.props or it will be
+         rewritten to /ZI (edit-and-continue) type every time. -->
     <ClCompile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
+    <Link>
+      <!--
+        There's a property that dictates which libraries are linked by default: MinimalCoreWin.
+        When it's enabled, only a sparing few libraries are injected into Link.AdditionalDependencies.
+
+        ARM/ARM64 set it to true, whereas x86/64 do not.
+        Because the rules check whether MinimalCoreWin is "true" or explicitly blank,
+        *AND* it being blank is used to determine whether to override it to _be_ "true", we can't actually
+        set it to something that'll disable it.
+        (cf. $(VCTargetsPath)/Microsoft.Cpp.CoreWin.props)
+
+        Re-inject some necessary libs when MinimalCoreWin has been enabled.
+      -->
+      <AdditionalDependencies Condition="'$(MinimalCoreWin)'=='true'">gdi32.lib;advapi32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecore_apiset.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;uxtheme.lib;dwmapi.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
-  <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
+
+  <!-- DLLs Only -->
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'DynamicLibrary'">
+    <ClCompile>
+      <PreprocessorDefinitions>_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Static Libs Only -->
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'StaticLibrary'">
+    <ClCompile>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->
   <PropertyGroup>
     <CAExcludePath>$(SolutionDir)\dep\;$(CAExcludePath)</CAExcludePath>
   </PropertyGroup>
+
   <Target Name="_ComputePrecompToCleanUp">
     <ItemGroup>
       <PCHFileToClean Include="$(IntDir)\**\*.pch" />

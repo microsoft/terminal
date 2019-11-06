@@ -68,3 +68,5 @@ BOOL UnadjustWindowRectEx(
 
 HANDLE GetStdInputHandle();
 HANDLE GetStdOutputHandle();
+
+bool IsConsoleStillRunning();

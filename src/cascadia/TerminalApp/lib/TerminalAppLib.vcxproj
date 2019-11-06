@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
-  <!-- ========================= CppWinRT Metadata ======================== -->
-  <PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalApp</RootNamespace>
+    <ProjectName>TerminalAppLib</ProjectName>
+    <TargetName>TerminalAppLib</TargetName>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+
     <!--
       This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
       We have to do this to overcome a layout issue in the WAP packaging project.
@@ -15,6 +25,8 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
   </PropertyGroup>
+
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <!-- ========================= XAML files ======================== -->
@@ -255,25 +267,7 @@
   </ItemDefinitionGroup>
 
   <!-- ========================= Globals ======================== -->
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>TerminalApp</RootNamespace>
-    <ProjectName>TerminalAppLib</ProjectName>
-    <TargetName>TerminalAppLib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
-  </PropertyGroup>
 
-  <PropertyGroup>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-  </PropertyGroup>
-
-  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <!-- Manually include MUX here, instead of importing its targets file. We need
