@@ -152,7 +152,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
 //   MoveFocus[Direction] args.
 std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Direction direction)
 {
-    auto pfn = [direction](const Json::Value& value) -> IActionArgs {
+    auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::MoveFocusArgs>();
         args->Direction(direction);
         return *args;
@@ -172,7 +172,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Directio
 //   ResizePane[Direction] args.
 std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Direction direction)
 {
-    auto pfn = [direction](const Json::Value& value) -> IActionArgs {
+    auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::ResizePaneArgs>();
         args->Direction(direction);
         return *args;
@@ -192,7 +192,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Directi
 //   NewTabWithProfile[Index] args.
 std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(int index)
 {
-    auto pfn = [index](const Json::Value& value) -> IActionArgs {
+    auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
         args->ProfileIndex(index);
         return *args;
@@ -212,7 +212,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(
 //   SwitchToTab[Index] args.
 std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int index)
 {
-    auto pfn = [index](const Json::Value& value) -> IActionArgs {
+    auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
         args->TabIndex(index);
         return *args;
@@ -227,7 +227,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int in
 // - direction: the direction to create the parse function for.
 // Return Value:
 // - A CopyTextArgs with TrimWhitespace set to true, to emulate "CopyTextWithoutNewlines".
-IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& json)
+IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 {
     auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
     args->TrimWhitespace(true);
