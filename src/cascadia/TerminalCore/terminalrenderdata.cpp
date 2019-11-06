@@ -121,8 +121,24 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
 
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
-    SetSelectionAnchor(coordStart);
-    SetEndSelectionPosition(coordEnd);
+    //int visibleStartIndex = _VisibleStartIndex();
+    COORD realCoordStart = coordStart;
+    COORD realCoordEnd = coordEnd;
+
+    /*if (coordStart.Y < visibleStartIndex)
+    {
+        const auto newViewTop = std::max(coordStart.Y - 5, 0);
+        _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
+
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _NotifyScrollEvent();
+    }*/
+
+    realCoordStart.Y -= gsl::narrow<short>(_VisibleStartIndex());
+    realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
+
+    SetSelectionAnchor(realCoordStart);
+    SetEndSelectionPosition(realCoordEnd);
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept
