@@ -8,7 +8,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `alwaysShowTabs` | _Required_ | Boolean | `true` | When set to `true`, tabs are always displayed. When set to `false` and `showTabsInTitlebar` is set to `false`, tabs only appear after typing <kbd>Ctrl</kbd> + <kbd>T</kbd>. |
 | `copyOnSelect` | Optional | Boolean | `false` | When set to `true`, a selection is immediately copied to your clipboard upon creation. When set to `false`, the selection persists and awaits further action. |
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
-| `defaultSettings` | Optional | Object (Profile) | | Default settings to use with each profile. Settings in each profile in profiles will override these values. |
+| `defaultSettings` | Optional | Object (Profile) | | This is a set of default settings to use with every profile. Settings here will apply to each of the profiles in `profiles`, unless they're set in the profile. Settings in each profile in `profiles` will override these values. For more details, see [our guide on using json settings](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md#default-settings) |
 | `initialCols` | _Required_ | Integer | `120` | The number of columns displayed in the window upon first load. |
 | `initialRows` | _Required_ | Integer | `30` | The number of rows displayed in the window upon first load. |
 | `requestedTheme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
