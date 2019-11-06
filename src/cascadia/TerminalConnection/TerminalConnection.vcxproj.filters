@@ -15,22 +15,21 @@
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="EchoConnection.cpp" />
-    <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="AzureConnection.cpp" />
+    <ClCompile Include="init.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="EchoConnection.h" />
-    <ClInclude Include="ConhostConnection.h" />
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
-    <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
+    <Midl Include="ConptyConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
