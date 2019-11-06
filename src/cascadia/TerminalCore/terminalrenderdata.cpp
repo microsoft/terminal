@@ -52,6 +52,11 @@ const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noe
     return bgColor;
 }
 
+const COLORREF Terminal::GetSelectionBackground() const noexcept
+{
+    return _selectionBg;
+}
+
 COORD Terminal::GetCursorPosition() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
@@ -146,7 +151,3 @@ void Terminal::UnlockConsole() noexcept
     _readWriteLock.unlock_shared();
 }
 
-const COLORREF Terminal::GetSelectionBackground() const noexcept
-{
-    return _selectionBg;
-}

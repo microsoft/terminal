@@ -59,6 +59,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _defaultBackground = value;
     }
 
+    uint32_t TerminalSettings::SelectionBackground()
+    {
+        return _selectionBackground;
+    }
+
+    void TerminalSettings::SelectionBackground(uint32_t value)
+    {
+        _selectionBackground = value;
+    }
+
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const
     {
         return _colorTable[index];
@@ -329,16 +339,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::ScrollState(Settings::ScrollbarState const& value) noexcept
     {
         _scrollbarState = value;
-    }
-
-    uint32_t TerminalSettings::SelectionBackground()
-    {
-        return _selectionBackground;
-    }
-
-    void TerminalSettings::SelectionBackground(uint32_t value)
-    {
-        _selectionBackground = value;
     }
 
 }

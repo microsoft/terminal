@@ -102,6 +102,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
+    _selectionBg = settings.SelectionBackground();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (settings.CursorShape())
@@ -138,8 +139,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _wordDelimiters = settings.WordDelimiters();
 
     _copyOnSelect = settings.CopyOnSelect();
-
-    _selectionBg = settings.SelectionBackground();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
