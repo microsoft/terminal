@@ -27,7 +27,7 @@ Cluster::Cluster(const std::wstring_view text, const size_t columns) :
 // - <none>
 // Return Value:
 // - The only wchar_t in the string or the Unicode replacement character as appropriate.
-const wchar_t Cluster::GetTextAsSingle() const noexcept
+wchar_t Cluster::GetTextAsSingle() const noexcept
 {
     try
     {
@@ -43,7 +43,7 @@ const wchar_t Cluster::GetTextAsSingle() const noexcept
 // - <none>
 // Return Value:
 // - String view of wchar_ts.
-const std::wstring_view& Cluster::GetText() const noexcept
+std::wstring_view& Cluster::GetText() noexcept
 {
     return _text;
 }
@@ -55,7 +55,7 @@ const std::wstring_view& Cluster::GetText() const noexcept
 // - <none>
 // Return Value:
 // - Number of columns to use when drawing (not a pixel count).
-const size_t Cluster::GetColumns() const noexcept
+size_t Cluster::GetColumns() const noexcept
 {
     return _columns;
 }

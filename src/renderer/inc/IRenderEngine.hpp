@@ -15,11 +15,12 @@ Author(s):
 #pragma once
 
 #include "../../inc/conattrs.hpp"
-#include "Cluster.hpp"
+#include "RenderClusterIterator.hpp"
 #include "FontInfoDesired.hpp"
 
 namespace Microsoft::Console::Render
 {
+
     class IRenderEngine
     {
     public:
@@ -91,7 +92,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(const RenderClusterIterator clusters,
                                                       const COORD coord,
                                                       const bool fTrimLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLines lines,

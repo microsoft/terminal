@@ -117,11 +117,11 @@ using namespace Microsoft::Console::Types;
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
                                                 const COORD coord,
                                                 const bool /*trimLeft*/) noexcept
 {
-    return VtEngine::_PaintAsciiBufferLine(clusters, coord);
+    return VtEngine::_PaintAsciiBufferLine(clusterIter, coord);
 }
 
 // Method Description:
@@ -333,7 +333,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const RenderClusterIterator clusterIter,
                                                       const COORD coord) noexcept
 {
     try
@@ -341,13 +341,16 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(coord));
 
         std::wstring wstr;
-        wstr.reserve(clusters.size());
 
         short totalWidth = 0;
-        for (const auto& cluster : clusters)
+        RenderClusterIterator it = clusterIter;
+        while (it)
         {
+            auto cluster = (*it);
             wstr.append(cluster.GetText());
-            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+            const auto columnCount = cluster.GetColumns();
+            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(columnCount), &totalWidth));
+            it += columnCount > 0 ? columnCount : 1;
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
@@ -368,7 +371,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const RenderClusterIterator clusterIter,
                                                      const COORD coord) noexcept
 {
     if (coord.Y < _virtualTop)
@@ -379,13 +382,18 @@ using namespace Microsoft::Console::Types;
     RETURN_IF_FAILED(_MoveCursor(coord));
 
     std::wstring unclusteredString;
-    unclusteredString.reserve(clusters.size());
     short totalWidth = 0;
-    for (const auto& cluster : clusters)
+    unclusteredString.reserve(40);
+    RenderClusterIterator it = clusterIter;
+    while (it)
     {
+        auto cluster = (*it);
+        const auto columnCount = cluster.GetColumns();
         unclusteredString.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(columnCount), &totalWidth));
+        it += columnCount > 0 ? columnCount : 1;
     }
+
     const size_t cchLine = unclusteredString.size();
 
     bool foundNonspace = false;

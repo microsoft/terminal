@@ -598,15 +598,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
     // If we have valid data, let's figure out how to draw it.
     if (it)
     {
-        // TODO: MSFT: 20961091 -  This is a perf issue. Instead of rebuilding this and allocing memory to hold the reinterpretation,
-        // we should have an iterator/view adapter for the rendering.
-        // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
-        // Retrieve the iterator for one line of information.
-        std::vector<Cluster> clusters;
         size_t cols = 0;
-
-        // Retrieve the first color.
-        auto color = it->TextAttr();
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -614,11 +606,13 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // This outer loop will continue until we reach the end of the text we are trying to draw.
         while (it)
         {
+            TextBufferCellIterator runStartIt(it);
+            RenderClusterIterator clusterIter(it);
             // Hold onto the current run color right here for the length of the outer loop.
             // We'll be changing the persistent one as we run through the inner loops to detect
             // when a run changes, but we will still need to know this color at the bottom
             // when we go to draw gridlines for the length of the run.
-            const auto currentRunColor = color;
+            const auto currentRunColor = it->TextAttr();
 
             // Update the drawing brushes with our color.
             THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
@@ -627,32 +621,19 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
 
-            // Ensure that our cluster vector is clear.
-            clusters.clear();
-
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
             do
             {
-                if (color != it->TextAttr())
-                {
-                    color = it->TextAttr();
-                    break;
-                }
-
-                // Walk through the text data and turn it into rendering clusters.
-                clusters.emplace_back(it->Chars(), it->Columns());
-
                 // Advance the cluster and column counts.
-                const auto columnCount = clusters.back().GetColumns();
-                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                const auto columnCount = (*clusterIter).GetColumns();
                 cols += columnCount;
-
-            } while (it);
+                clusterIter += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+            } while (clusterIter);
 
             // Do the painting.
             // TODO: Calculate when trim left should be TRUE
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, false));
+            THROW_IF_FAILED(pEngine->PaintBufferLine(RenderClusterIterator(runStartIt), screenPoint, false));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())

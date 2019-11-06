@@ -10,7 +10,7 @@
 #include <wrl/client.h>
 #include <wrl/implements.h>
 
-#include "../inc/Cluster.hpp"
+#include "../inc/RenderClusterIterator.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -23,7 +23,7 @@ namespace Microsoft::Console::Render
                          gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                          gsl::not_null<IDWriteTextFormat*> const format,
                          gsl::not_null<IDWriteFontFace1*> const font,
-                         const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
+                         const RenderClusterIterator clusters,
                          size_t const width);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);

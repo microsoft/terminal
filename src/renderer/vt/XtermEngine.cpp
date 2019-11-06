@@ -417,13 +417,13 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/) noexcept
 {
     return _fUseAsciiOnly ?
-               VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintAsciiBufferLine(clusterIter, coord) :
+               VtEngine::_PaintUtf8BufferLine(clusterIter, coord);
 }
 
 // Method Description:

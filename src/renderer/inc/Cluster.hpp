@@ -23,17 +23,17 @@ namespace Microsoft::Console::Render
     public:
         Cluster(const std::wstring_view text, const size_t columns);
 
-        const wchar_t GetTextAsSingle() const noexcept;
+        wchar_t GetTextAsSingle() const noexcept;
 
-        const std::wstring_view& GetText() const noexcept;
+        std::wstring_view& GetText() noexcept;
 
-        const size_t GetColumns() const noexcept;
+        size_t GetColumns() const noexcept;
 
     private:
         // This is the UTF-16 string of characters that form a particular drawing cluster
-        const std::wstring_view _text;
+        std::wstring_view _text;
 
         // This is how many columns we're expecting this cluster to take in the display grid
-        const size_t _columns;
+        size_t _columns;
     };
 }

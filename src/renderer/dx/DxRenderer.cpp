@@ -1147,7 +1147,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/) noexcept
 {
@@ -1163,7 +1163,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
                                 _dwriteFontFace.Get(),
-                                clusters,
+                                clusterIter,
                                 _glyphCell.cx);
 
         // Get the baseline for this font as that's where we draw from
@@ -1657,16 +1657,16 @@ float DxEngine::GetScaling() const noexcept
     {
         const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-        // Create the text layout
-        CustomTextLayout layout(_dwriteFactory.Get(),
-                                _dwriteTextAnalyzer.Get(),
-                                _dwriteTextFormat.Get(),
-                                _dwriteFontFace.Get(),
-                                { &cluster, 1 },
-                                _glyphCell.cx);
+        //// Create the text layout
+        //CustomTextLayout layout(_dwriteFactory.Get(),
+        //                        _dwriteTextAnalyzer.Get(),
+        //                        _dwriteTextFormat.Get(),
+        //                        _dwriteFontFace.Get(),
+        //                        { &cluster, 1 },
+        //                        _glyphCell.cx);
 
         UINT32 columns = 0;
-        RETURN_IF_FAILED(layout.GetColumns(&columns));
+        //RETURN_IF_FAILED(layout.GetColumns(&columns));
 
         *pResult = columns != 1;
     }

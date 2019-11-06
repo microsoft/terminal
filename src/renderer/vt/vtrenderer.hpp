@@ -55,7 +55,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(const RenderClusterIterator clusterIter,
                                                       const COORD coord,
                                                       const bool trimLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
@@ -203,10 +203,10 @@ namespace Microsoft::Console::Render
 
         bool _WillWriteSingleChar() const;
 
-        [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(const RenderClusterIterator clusterIter,
                                                    const COORD coord) noexcept;
 
-        [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(const RenderClusterIterator clusterIter,
                                                     const COORD coord) noexcept;
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;

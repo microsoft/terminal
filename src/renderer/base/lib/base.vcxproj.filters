@@ -42,6 +42,9 @@
     <ClCompile Include="..\Cluster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RenderClusterIterator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\IRenderTarget.hpp">
+      <Filter>Header Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\RenderClusterIterator.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
   </ItemGroup>

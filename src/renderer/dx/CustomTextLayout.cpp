@@ -24,7 +24,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
                                    gsl::not_null<IDWriteFontFace1*> const font,
-                                   std::basic_string_view<Cluster> const clusters,
+                                   RenderClusterIterator const clusterIter,
                                    size_t const width) :
     _factory{ factory.get() },
     _analyzer{ analyzer.get() },
@@ -42,11 +42,14 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
-    for (const auto& cluster : clusters)
+    RenderClusterIterator it = clusterIter;
+    while (it)
     {
+        auto cluster = (*it);
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
         _textClusterColumns.push_back(cols);
         _text += cluster.GetText();
+        it += cols > 0 ? cols : 1;
     }
 }
 

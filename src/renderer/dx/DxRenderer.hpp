@@ -27,6 +27,8 @@
 
 namespace Microsoft::Console::Render
 {
+    class RenderClusterIterator;
+
     class DxEngine final : public RenderEngineBase
     {
     public:
@@ -70,7 +72,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const RenderClusterIterator clusters,
                                               COORD const coord,
                                               bool const fTrimLeft) noexcept override;
 
