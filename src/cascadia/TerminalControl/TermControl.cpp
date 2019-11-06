@@ -206,9 +206,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         uint32_t bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
+        // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
         auto existingMargin = _swapChainPanel.Margin();
-        // Apply padding as swapChainPanel's margin
         _swapChainPanel.Margin(newMargin);
 
         if (newMargin != existingMargin && newMargin != Thickness{ 0 })
@@ -1645,7 +1645,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Reserve additional space if scrollbar is intended to be visible
         if (_settings.ScrollState() == ScrollbarState::Visible)
         {
-            width += gsl::narrow_cast<float>(_scrollBar.ActualWidth());
+            width += _scrollBar.ActualWidth();
         }
 
         // Account for the size of any padding

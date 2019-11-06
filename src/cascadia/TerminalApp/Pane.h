@@ -33,7 +33,7 @@ public:
         Horizontal = 2
     };
 
-    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, Pane* const rootPane, const bool lastFocused = false);
+    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, const bool isRoot, const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetFocusedPane();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
@@ -56,8 +56,11 @@ public:
     void Close();
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+    DECLARE_EVENT(ShouldRelayout, _shouldRelayoutHandlers, winrt::delegate<>);
 
 private:
+    struct SnapSizeResult;
+    struct SnapChildrenSizeResult;
     struct LayoutSizeNode;
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
@@ -99,8 +102,8 @@ private:
     void _FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange);
 
     std::pair<float, float> _GetPaneSizes(const float fullSize) const;
-    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next) const;
-    std::pair<float, float> _SnapDimension(const bool widthOrHeight, const float dimension) const;
+    SnapChildrenSizeResult _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize) const;
+    SnapSizeResult _SnapDimension(const bool widthOrHeight, const float dimension) const;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
@@ -140,6 +143,18 @@ private:
         }
         return false;
     }
+
+    struct SnapSizeResult
+    {
+        float lower;
+        float higher;
+    };
+
+    struct SnapChildrenSizeResult
+    {
+        std::pair<float, float> lower;
+        std::pair<float, float> higher;
+    };
 
     // Helper structure that builds a (roughly) binary tree corresponding
     // to the pane tree. Used for layouting panes with snapped sizes.

@@ -89,7 +89,7 @@ protected:
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
     std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
-    std::function<float(bool widthOrHeight, float dimension)> _pfnSnapDimensionCallback;
+    std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

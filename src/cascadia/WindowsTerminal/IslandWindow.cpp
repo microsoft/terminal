@@ -108,7 +108,7 @@ void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, 
 //      * A dimension of client area that the window should resize to.
 // Return Value:
 // - <none>
-void IslandWindow::SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept
+void IslandWindow::SetSnapDimensionCallback(std::function<float(bool, float)> pfn) noexcept
 {
     _pfnSnapDimensionCallback = pfn;
 }

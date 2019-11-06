@@ -17,7 +17,7 @@ namespace winrt
 
 Tab::Tab(const GUID& profile, const TermControl& control)
 {
-    _rootPane = std::make_shared<Pane>(profile, control, nullptr, true);
+    _rootPane = std::make_shared<Pane>(profile, control, true, true);
 
     _rootPane->Closed([=]() {
         _closedHandlers();
