@@ -32,7 +32,6 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 #include <thread>
 #include <tuple>
 #include <utility>
