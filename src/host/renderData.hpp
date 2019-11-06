@@ -38,6 +38,7 @@ public:
 
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
     const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
+    const COLORREF GetSelectionBackground() const noexcept override;
 
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
@@ -53,8 +54,6 @@ public:
     const bool IsGridLineDrawingAllowed() noexcept override;
 
     const std::wstring GetConsoleTitle() const noexcept override;
-
-    const COLORREF GetSelectionBackground() const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

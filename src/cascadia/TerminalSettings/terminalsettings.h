@@ -99,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
+        uint32_t _selectionBackground;
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
         int32_t _historySize;
         int32_t _initialRows;
@@ -108,7 +109,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         Settings::CursorStyle _cursorShape;
         uint32_t _cursorHeight;
         hstring _wordDelimiters;
-        uint32_t _selectionBackground;
 
         bool _useAcrylic;
         bool _closeOnExit;

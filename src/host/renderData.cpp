@@ -333,6 +333,11 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const n
     return gci.LookupBackgroundColor(attr);
 }
 
+// Routine Description:
+// - Gets the selection background color. Returns the default foreground, but won't be used
+//   because conhost inverts the selection.
+// Return Value:
+// - ARGB color value
 const COLORREF RenderData::GetSelectionBackground() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

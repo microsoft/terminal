@@ -489,6 +489,10 @@
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI red."
           },
+          "selectionBackground": {
+            "$ref": "#/definitions/Color",
+            "description": "Sets the selection background color of the color scheme."
+          },
           "white": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI white."

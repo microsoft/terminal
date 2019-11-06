@@ -41,7 +41,7 @@ ColorScheme::ColorScheme() :
     _table{},
     _defaultForeground{ RGB(242, 242, 242) },
     _defaultBackground{ RGB(12, 12, 12) },
-    _selectionBackground{ RGB(242, 242, 242) }
+    _selectionBackground{ _defaultForeground }
 {
 }
 
