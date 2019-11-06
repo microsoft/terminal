@@ -9,6 +9,7 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include "SearchBoxControl.g.h"
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -34,6 +35,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CaseSensitivityUnChecked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         void Root_SizeChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs const& e);
+
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CreateSearch, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
     };
 }
 

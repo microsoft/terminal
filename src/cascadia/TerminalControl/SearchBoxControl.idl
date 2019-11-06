@@ -2,6 +2,8 @@ namespace Microsoft.Terminal.TerminalControl
 {
     [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
     {
-        SearchBoxControl
+        SearchBoxControl();
+
+        event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> CreateSearch;
     }
 }

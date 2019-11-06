@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void SearchBoxControl::AutoSuggestBox_QuerySubmitted(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs const& e)
     {
+        _searchEventHandler(*this, e.QueryText());
     }
 
     void SearchBoxControl::_GoBackwardClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
@@ -79,4 +80,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void SearchBoxControl::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
     }
+
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CreateSearch, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
 }

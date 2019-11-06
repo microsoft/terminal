@@ -9,6 +9,7 @@
 #include <Utf16Parser.hpp>
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
+#include "..\buffer\out\search.h"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -131,6 +132,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.TerminalDisconnected([=]() {
             _connectionClosedHandlers();
         });
+
+        SearchBoxControl searchBox;
+        searchBox.Visibility(Visibility::Visible);
+        searchBox.HorizontalAlignment(HorizontalAlignment::Right);
+
+        container.Children().Append(searchBox);
+
+        searchBox.CreateSearch({this, &TermControl::_CreateSearch });
+    }
+
+    void TermControl::_CreateSearch(const SearchBoxControl& sender, winrt::hstring text)
+    {
+        Search search(*GetUiaData(), text.c_str(), Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
+
+        _terminal->LockConsole();
+        if (search.FindNext())
+        {
+            _terminal->SetBoxSelection(false);
+            search.Select();
+            _renderer->TriggerSelection();
+        }
+        _terminal->UnlockConsole();
     }
 
     // Method Description:

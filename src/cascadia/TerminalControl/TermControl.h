@@ -80,6 +80,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
+        void _CreateSearch(const SearchBoxControl& sender, winrt::hstring text);
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
