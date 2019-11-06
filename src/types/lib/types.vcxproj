@@ -12,6 +12,7 @@
   <ItemGroup>
     <ClCompile Include="..\CodepointWidthDetector.cpp" />
     <ClCompile Include="..\convert.cpp" />
+    <ClCompile Include="..\Environment.cpp" />
     <ClCompile Include="..\GlyphWidth.cpp" />
     <ClCompile Include="..\MouseEvent.cpp" />
     <ClCompile Include="..\FocusEvent.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="..\IConsoleWindow.hpp" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
+    <ClInclude Include="..\inc\Environment.hpp" />
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\ThemeUtils.h" />
