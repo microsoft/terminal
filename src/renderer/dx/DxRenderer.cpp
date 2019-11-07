@@ -1791,10 +1791,6 @@ float DxEngine::GetScaling() const noexcept
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
 
-    const auto rVal = GetRValue(color);
-    const auto gVal = GetGValue(color);
-    const auto bVal = GetBValue(color);
-
     switch (_chainMode)
     {
     case SwapChainMode::ForHwnd:
