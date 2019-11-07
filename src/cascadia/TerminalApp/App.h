@@ -14,6 +14,8 @@ namespace winrt::TerminalApp::implementation
         App();
         void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const&);
 
+        TerminalApp::AppLogic Logic();
+
     private:
         bool _isUwp = false;
     };

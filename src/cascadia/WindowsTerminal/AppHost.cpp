@@ -16,14 +16,13 @@ using namespace ::Microsoft::Console::Types;
 
 AppHost::AppHost() noexcept :
     _app{},
-    _logic{},
     _window{ nullptr }
 {
-    _useNonClientArea = _logic.GetShowTabsInTitlebar();
+    _useNonClientArea = _app.Logic().GetShowTabsInTitlebar();
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
+        _window = std::make_unique<NonClientIslandWindow>(_app.Logic().GetRequestedTheme());
     }
     else
     {
@@ -69,30 +68,30 @@ void AppHost::Initialize()
         // Register our callbar for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
-        _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
+        _app.Logic().SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
-    _window->WindowCloseButtonClicked([this]() { _logic.WindowCloseButtonClicked(); });
+    _window->WindowCloseButtonClicked([this]() { _app.Logic().WindowCloseButtonClicked(); });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
-    _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
+    _window->DragRegionClicked([this]() { _app.Logic().TitlebarClicked(); });
 
-    _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
+    _app.Logic().RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _app.Logic().ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
 
-    _logic.Create();
+    _app.Logic().Create();
 
-    _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
-    _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
+    _app.Logic().TitleChanged({ this, &AppHost::AppTitleChanged });
+    _app.Logic().LastTabClosed({ this, &AppHost::LastTabClosed });
 
-    _window->UpdateTitle(_logic.Title());
+    _window->UpdateTitle(_app.Logic().Title());
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
-    _window->SetContent(_logic.GetRoot());
+    _window->SetContent(_app.Logic().GetRoot());
     _window->OnAppInitialized();
 }
 
@@ -137,10 +136,10 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - None
 void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
 {
-    launchMode = _logic.GetLaunchMode();
+    launchMode = _app.Logic().GetLaunchMode();
 
     // Acquire the actual intial position
-    winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
+    winrt::Windows::Foundation::Point initialPosition = _app.Logic().GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
     proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
     proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
 
@@ -188,7 +187,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
             proposedRect.top = monitorInfo.rcWork.top;
         }
 
-        auto initialSize = _logic.GetLaunchDimensions(dpix);
+        auto initialSize = _app.Logic().GetLaunchDimensions(dpix);
 
         const short islandWidth = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.X)), 1);

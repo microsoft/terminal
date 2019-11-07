@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
         Initialize();
     }
 
-    static AppLogic& Logic()
+    AppLogic App::Logic()
     {
         static AppLogic logic;
         return logic;
@@ -48,7 +48,7 @@ namespace winrt::TerminalApp::implementation
             auto content = Window::Current().Content();
             if (content == nullptr)
             {
-                auto& logic = Logic();
+                auto logic = Logic();
                 logic.LoadSettings();
                 logic.Create();
 

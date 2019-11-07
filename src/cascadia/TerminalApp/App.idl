@@ -1,12 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "../AppLogic.idl";
+
 namespace TerminalApp
 {
-	// ADD ARBITRARY APP LOGIC TO APPLOGIC.IDL, NOT HERE.
-	// This is for XAML platform setup only.
+    // ADD ARBITRARY APP LOGIC TO APPLOGIC.IDL, NOT HERE.
+    // This is for XAML platform setup only.
     [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
     {
         App();
+
+        AppLogic Logic { get; };
     }
 }
