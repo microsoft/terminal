@@ -1657,13 +1657,13 @@ float DxEngine::GetScaling() const noexcept
     {
         const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-        //// Create the text layout
-        //CustomTextLayout layout(_dwriteFactory.Get(),
-        //                        _dwriteTextAnalyzer.Get(),
-        //                        _dwriteTextFormat.Get(),
-        //                        _dwriteFontFace.Get(),
-        //                        { &cluster, 1 },
-        //                        _glyphCell.cx);
+        // Create the text layout
+        CustomTextLayout layout(_dwriteFactory.Get(),
+                                _dwriteTextAnalyzer.Get(),
+                                _dwriteTextFormat.Get(),
+                                _dwriteFontFace.Get(),
+                                { &cluster, 1 },
+                                _glyphCell.cx);
 
         UINT32 columns = 0;
         //RETURN_IF_FAILED(layout.GetColumns(&columns));

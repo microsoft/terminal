@@ -27,7 +27,7 @@ Cluster::Cluster(const std::wstring_view text, const size_t columns) :
 // - <none>
 // Return Value:
 // - The only wchar_t in the string or the Unicode replacement character as appropriate.
-wchar_t Cluster::GetTextAsSingle() const noexcept
+const wchar_t Cluster::GetTextAsSingle() const noexcept
 {
     try
     {

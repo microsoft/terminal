@@ -23,7 +23,7 @@ namespace Microsoft::Console::Render
     public:
         Cluster(const std::wstring_view text, const size_t columns);
 
-        wchar_t GetTextAsSingle() const noexcept;
+        const wchar_t GetTextAsSingle() const noexcept;
 
         std::wstring_view& GetText() noexcept;
 

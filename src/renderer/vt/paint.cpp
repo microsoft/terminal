@@ -340,9 +340,15 @@ using namespace Microsoft::Console::Types;
     {
         RETURN_IF_FAILED(_MoveCursor(coord));
 
-        std::wstring wstr;
-
         short totalWidth = 0;
+
+        short dirtyRectLeft = gsl::narrow<SHORT>(_invalidRect.Left());
+        short dirtyRectRight = gsl::narrow<SHORT>(_invalidRect.RightInclusive());
+        short preallocateSize = dirtyRectRight - dirtyRectLeft;
+
+        std::wstring wstr;
+        wstr.reserve(preallocateSize);
+
         RenderClusterIterator it = clusterIter;
         while (it)
         {
@@ -381,9 +387,13 @@ using namespace Microsoft::Console::Types;
 
     RETURN_IF_FAILED(_MoveCursor(coord));
 
-    std::wstring unclusteredString;
     short totalWidth = 0;
-    unclusteredString.reserve(40);
+    short dirtyRectLeft = gsl::narrow<SHORT>(_invalidRect.Left());
+    short dirtyRectRight = gsl::narrow<SHORT>(_invalidRect.RightExclusive());
+    short preallocateSize = dirtyRectRight - dirtyRectLeft;
+
+    std::wstring unclusteredString;
+    unclusteredString.reserve(preallocateSize);
     RenderClusterIterator it = clusterIter;
     while (it)
     {
