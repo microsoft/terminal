@@ -31,13 +31,10 @@
   <!-- This is magic that tells msbuild to link against the Desktop platform
        instead of the App platform. This you definitely want, because we're not
        building a true universal "app", we're building a desktop application
-       with xaml. Without this, we'll link against the app CRT, and the
-       unpackaged story _will not_ work. Furthermore, APIs like
-       CreatePseudoConsole won't be linkable without this.
+       with xaml. Furthermore, APIs like CreatePseudoConsole won't be linkable without this.
   -->
   <PropertyGroup>
     <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
-    <_VC_Target_Library_Platform>Desktop</_VC_Target_Library_Platform>
     <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
   </PropertyGroup>
 
