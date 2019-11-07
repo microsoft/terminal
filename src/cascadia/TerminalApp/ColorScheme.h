@@ -35,7 +35,7 @@ class TerminalApp::ColorScheme
 {
 public:
     ColorScheme();
-    ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF selectionBg);
+    ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg);
     ~ColorScheme();
 
     void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;

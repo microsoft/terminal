@@ -41,16 +41,16 @@ ColorScheme::ColorScheme() :
     _table{},
     _defaultForeground{ RGB(242, 242, 242) },
     _defaultBackground{ RGB(12, 12, 12) },
-    _selectionBackground{ _defaultForeground }
+    _selectionBackground{ RGB(242, 242, 242) }
 {
 }
 
-ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF selectionBg) :
+ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg) :
     _schemeName{ name },
     _table{},
     _defaultForeground{ defaultFg },
     _defaultBackground{ defaultBg },
-    _selectionBackground{ selectionBg }
+    _selectionBackground{ RGB(242, 242, 242) }
 {
 }
 
@@ -60,7 +60,7 @@ ColorScheme::~ColorScheme()
 
 // Method Description:
 // - Apply our values to the given TerminalSettings object. Sets the foreground,
-//      background, and color table of the settings object.
+//      background, selection background, and color table of the settings object.
 // Arguments:
 // - terminalSettings: the object to apply our settings to.
 // Return Value:
