@@ -212,8 +212,8 @@ namespace winrt::TerminalApp::implementation
     // - titleKey: The key to use to lookup the title text from our resources.
     // - contentKey: The key to use to lookup the content text from our resources.
     void AppLogic::_ShowLoadErrorsDialog(const winrt::hstring& titleKey,
-                                    const winrt::hstring& contentKey,
-                                    HRESULT settingsLoadedResult)
+                                         const winrt::hstring& contentKey,
+                                         HRESULT settingsLoadedResult)
     {
         auto title = GetLibraryResourceString(titleKey);
         auto buttonText = RS_(L"Ok");
@@ -296,7 +296,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <unused>
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
-                        const RoutedEventArgs& /*eventArgs*/)
+                             const RoutedEventArgs& /*eventArgs*/)
     {
         if (FAILED(_settingsLoadedResult))
         {
