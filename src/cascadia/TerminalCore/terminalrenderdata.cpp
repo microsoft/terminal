@@ -150,4 +150,3 @@ void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock_shared();
 }
-
