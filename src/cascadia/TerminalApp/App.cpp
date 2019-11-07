@@ -50,6 +50,7 @@ namespace winrt::TerminalApp::implementation
             {
                 auto logic = Logic();
                 logic.LoadSettings();
+                logic.RunAsUwp();
                 logic.Create();
 
                 auto page = logic.GetRoot().as<TerminalPage>();
