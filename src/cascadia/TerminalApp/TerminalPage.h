@@ -9,7 +9,6 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
-#include "ScopedResourceLoader.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
@@ -23,8 +22,6 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         TerminalPage();
-
-        TerminalPage(std::shared_ptr<ScopedResourceLoader> resourceLoader);
 
         void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
@@ -45,6 +42,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
 
     private:
         // If you add controls here, but forget to null them either here or in
@@ -62,7 +60,7 @@ namespace winrt::TerminalApp::implementation
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
-        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
+        bool _isFullscreen{ false };
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -127,6 +125,8 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshUIForSettingsReload();
 
+        void _ToggleFullscreen();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
@@ -151,6 +151,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-  <PropertyGroup>
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <SubSystem>Console</SubSystem>
-    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-  </PropertyGroup>
-  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</ProjectGuid>
     <ProjectName>TerminalConnection</ProjectName>
     <RootNamespace>Microsoft.Terminal.TerminalConnection</RootNamespace>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
   <PropertyGroup Condition="'$(Platform)' == 'x64'">
     <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x64-windows</VcpkgTriplet>
   </PropertyGroup>
@@ -21,6 +28,7 @@
   <PropertyGroup Condition="'$(Platform)' == 'arm64'">
     <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">arm64-windows</VcpkgTriplet>
   </PropertyGroup>
+
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="AzureConnection.h" Condition="'$(Platform)'!='ARM64'" />
@@ -58,11 +66,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
+
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -74,16 +78,9 @@
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
   </ItemGroup>
-  <PropertyGroup>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-  </PropertyGroup>
-  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
   <Import Project="..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets" Condition="Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

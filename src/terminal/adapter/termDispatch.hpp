@@ -33,8 +33,8 @@ public:
     bool CursorHorizontalPositionAbsolute(const unsigned int /*uiColumn*/) override { return false; } // CHA
     bool VerticalLinePositionAbsolute(const unsigned int /*uiLine*/) override { return false; } // VPA
     bool CursorPosition(const unsigned int /*uiLine*/, const unsigned int /*uiColumn*/) override { return false; } // CUP
-    bool CursorSavePosition() override { return false; } // DECSC
-    bool CursorRestorePosition() override { return false; } // DECRC
+    bool CursorSaveState() override { return false; } // DECSC
+    bool CursorRestoreState() override { return false; } // DECRC
     bool CursorVisibility(const bool /*fIsVisible*/) override { return false; } // DECTCEM
     bool InsertCharacter(const unsigned int /*uiCount*/) override { return false; } // ICH
     bool DeleteCharacter(const unsigned int /*uiCount*/) override { return false; } // DCH

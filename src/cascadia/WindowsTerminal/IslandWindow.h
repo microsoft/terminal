@@ -23,12 +23,12 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     IRawElementProviderSimple* _GetUiaProvider();
-    RECT GetFrameBorderMargins(unsigned int currentDpi);
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
     virtual SIZE GetNonClientSize(const UINT dpix) const noexcept;
 
     virtual void Initialize();
@@ -36,7 +36,7 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
-    void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    void ToggleFullscreen();
 
 #pragma region IUiaWindow
     void ChangeViewport(const SMALL_RECT /*NewWindow*/)
@@ -92,4 +92,15 @@ protected:
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+
+    bool _fullscreen{ false };
+    RECT _fullscreenWindowSize;
+    RECT _nonFullscreenWindowSize;
+
+    virtual void _SetIsFullscreen(const bool fullscreenEnabled);
+    void _BackupWindowSizes(const bool currentIsInFullscreen);
+    void _ApplyWindowSize();
+
+    // See _SetIsFullscreen for details on this method.
+    virtual bool _ShouldUpdateStylesOnFullscreen() const { return true; };
 };

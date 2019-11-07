@@ -17,7 +17,7 @@ ScopedResourceLoader::ScopedResourceLoader(const std::wstring_view resourceLocat
 // - Gets the resource map associated with the scoped resource subcompartment.
 // Return Value:
 // - the resource map associated with the scoped resource subcompartment.
-ResourceMap ScopedResourceLoader::GetResourceMap()
+ResourceMap ScopedResourceLoader::GetResourceMap() const
 {
     return _resourceMap;
 }
@@ -31,7 +31,18 @@ ResourceMap ScopedResourceLoader::GetResourceMap()
 // - resourceName: the key up by which to look the resource
 // Return Value:
 // - The final localized string for the given key.
-winrt::hstring ScopedResourceLoader::GetLocalizedString(const std::wstring_view resourceName)
+winrt::hstring ScopedResourceLoader::GetLocalizedString(const std::wstring_view resourceName) const
 {
     return _resourceMap.GetValue(resourceName, _resourceContext).ValueAsString();
+}
+
+// Method Description:
+// - Returns whether this resource loader can find a resource with the given key.
+// Arguments:
+// - resourceName: the key up by which to look the resource
+// Return Value:
+// - A boolean indicating whether the resource was found
+bool ScopedResourceLoader::HasResourceWithName(const std::wstring_view resourceName) const
+{
+    return _resourceMap.HasKey(resourceName);
 }

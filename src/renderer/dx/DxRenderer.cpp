@@ -1599,32 +1599,27 @@ float DxEngine::GetScaling() const noexcept
         // Get the locale name out so at least the caller knows what locale this name goes with.
         UINT32 length = 0;
         THROW_IF_FAILED(familyNames->GetLocaleNameLength(index, &length));
+        localeName.resize(length);
 
         // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalenamelength
         // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalename
         // GetLocaleNameLength does not include space for null terminator, but GetLocaleName needs it so add one.
-        length++;
-
-        localeName.resize(length);
-
-        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length));
+        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length + 1));
     }
 
     // OK, now that we've decided which family name and the locale that it's in... let's go get it.
     UINT32 length = 0;
     THROW_IF_FAILED(familyNames->GetStringLength(index, &length));
 
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
-    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
-    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
-    length++;
-
     // Make our output buffer and resize it so it is allocated.
     std::wstring retVal;
     retVal.resize(length);
 
     // FINALLY, go fetch the string name.
-    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length));
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
+    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
+    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length + 1));
 
     // and return it.
     return retVal;

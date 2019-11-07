@@ -133,6 +133,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusRight
 - moveFocusUp
 - moveFocusDown
+- toggleFullscreen
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).

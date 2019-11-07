@@ -23,6 +23,16 @@
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+enum class Borders : int
+{
+    None = 0x0,
+    Top = 0x1,
+    Bottom = 0x2,
+    Left = 0x4,
+    Right = 0x8
+};
+DEFINE_ENUM_FLAG_OPERATORS(Borders);
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -64,8 +74,9 @@ private:
     struct LayoutSizeNode;
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
-    winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Border _border{};
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
 
     Pane* _rootPane;
     std::shared_ptr<Pane> _firstChild{ nullptr };
@@ -82,6 +93,8 @@ private:
 
     std::shared_mutex _createCloseLock{};
 
+    Borders _borders{ Borders::None };
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
@@ -91,6 +104,7 @@ private:
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
+    void _UpdateBorders();
 
     bool _Resize(const winrt::TerminalApp::Direction& direction);
     bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);

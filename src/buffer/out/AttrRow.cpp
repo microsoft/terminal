@@ -278,31 +278,71 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         {
             return S_OK;
         }
-        // .. otherwise if we internally have a list of 2 and we're about to insert a single color
-        // it's probable that we're just walking left-to-right through the row and changing each
-        // cell one at a time.
-        // e.g.
-        // AAAAABBBBBBB
-        // AAAAAABBBBBB
-        // AAAAAAABBBBB
-        // Check for that circumstance by seeing if we're inserting a single run of the
-        // left side color right at the boundary and just adjust the counts in the existing
-        // two elements in our internal list.
-        else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)
+        // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
+        // it's possible that we just walk left-to-right through the row and find a quick exit.
+        else if (iStart > 0 && iStart == iEnd)
         {
-            const auto left = _list.begin();
-            if (iStart == left->GetLength() && NewAttr == left->GetAttributes())
+            // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
+            // where we are curretly at.
+            size_t lowerBound = 0;
+            size_t upperBound = 0;
+            for (size_t i = 0; i < _list.size(); i++)
             {
-                const auto right = left + 1;
-                left->IncrementLength();
-                right->DecrementLength();
-
-                // If we just reduced the right half to zero, just erase it out of the list.
-                if (right->GetLength() == 0)
+                upperBound += _list.at(i).GetLength();
+                if (iStart >= lowerBound && iStart < upperBound)
                 {
-                    _list.erase(right);
+                    const auto curr = std::next(_list.begin(), i);
+
+                    // The run that we try to insert into has the same color as the new one.
+                    // e.g.
+                    // AAAAABBBBBBBCCC
+                    //       ^
+                    // AAAAABBBBBBBCCC
+                    //
+                    // 'B' is the new color and '^' represents where iStart is. We don't have to
+                    // do anything.
+                    if (curr->GetAttributes() == NewAttr)
+                    {
+                        return S_OK;
+                    }
+
+                    // If the insertion happens at current run's lower boundary...
+                    if (iStart == lowerBound)
+                    {
+                        const auto prev = std::prev(curr, 1);
+                        // ... and the previous run has the same color as the new one, we can
+                        // just adjust the counts in the existing two elements in our internal list.
+                        // e.g.
+                        // AAAAABBBBBBBCCC
+                        //      ^
+                        // AAAAAABBBBBBCCC
+                        //
+                        // Here 'A' is the new color.
+                        if (NewAttr == prev->GetAttributes())
+                        {
+                            prev->IncrementLength();
+                            curr->DecrementLength();
+
+                            // If we just reduced the right half to zero, just erase it out of the list.
+                            if (curr->GetLength() == 0)
+                            {
+                                _list.erase(curr);
+                            }
+
+                            return S_OK;
+                        }
+                    }
                 }
-                return S_OK;
+
+                // Advance one run in the _list.
+                lowerBound = upperBound;
+
+                // The lowerBound is larger than iStart, which means we fail to find an early exit at the run
+                // where the insertion happens. We can just break out.
+                if (lowerBound > iStart)
+                {
+                    break;
+                }
             }
         }
     }

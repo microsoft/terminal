@@ -22,7 +22,7 @@ AppHost::AppHost() noexcept :
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>();
+        _window = std::make_unique<NonClientIslandWindow>(_app.GetRequestedTheme());
     }
     else
     {
@@ -85,6 +85,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
 
     _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _app.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
 
     _app.Create();
 
@@ -193,21 +194,16 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         auto initialSize = _app.GetLaunchDimensions(dpix);
 
-        const short _currentWidth = Utils::ClampToShortMax(
+        const short islandWidth = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.X)), 1);
-        const short _currentHeight = Utils::ClampToShortMax(
+        const short islandHeight = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.Y)), 1);
-
-        // Create a RECT from our requested client size
-        const auto clientRect = Viewport::FromDimensions({ _currentWidth,
-                                                           _currentHeight })
-                                    .ToRect();
 
         // Get the size of a window we'd need to host that client rect. This will
         // add the titlebar space.
         const auto nonClientSize = _window->GetNonClientSize(dpix);
-        adjustedHeight = clientRect.bottom - clientRect.top + nonClientSize.cx;
-        adjustedWidth = clientRect.right - clientRect.left + nonClientSize.cy;
+        adjustedWidth = islandWidth + nonClientSize.cx;
+        adjustedHeight = islandHeight + nonClientSize.cy;
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
@@ -266,5 +262,11 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - <none>
 void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
 {
-    _window->UpdateTheme(arg);
+    _window->OnApplicationThemeChanged(arg);
+}
+
+void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+{
+    _window->ToggleFullscreen();
 }
