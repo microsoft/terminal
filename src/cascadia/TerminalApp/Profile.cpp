@@ -591,7 +591,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
 
-        JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
+    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
     // TODO:GH#1069 deprecate old settings key
     JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
 

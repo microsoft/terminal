@@ -29,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void DefaultForeground(uint32_t value);
         uint32_t DefaultBackground();
         void DefaultBackground(uint32_t value);
+        uint32_t SelectionBackground();
+        void SelectionBackground(uint32_t value);
         uint32_t GetColorTableEntry(int32_t index) const;
         void SetColorTableEntry(int32_t index, uint32_t value);
         int32_t HistorySize();
@@ -49,8 +51,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void WordDelimiters(hstring const& value);
         bool CopyOnSelect();
         void CopyOnSelect(bool value);
-        uint32_t SelectionBackground();
-        void SelectionBackground(uint32_t value);
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();

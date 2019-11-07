@@ -386,7 +386,7 @@
           },
           "selectionBackground": {
             "$ref": "#/definitions/Color",
-            "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white)."
+            "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
           },
           "snapOnInput": {
             "default": true,
