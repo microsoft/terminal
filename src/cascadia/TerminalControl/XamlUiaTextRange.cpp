@@ -60,18 +60,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(_uiaProvider->ExpandToEnclosingUnit(static_cast<UIA::TextUnit>(unit)));
     }
 
-    XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindAttribute(int32_t textAttributeId,
-                                                                       winrt::Windows::Foundation::IInspectable val,
-                                                                       bool searchBackward)
+    XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindAttribute(int32_t /*textAttributeId*/,
+                                                                       winrt::Windows::Foundation::IInspectable /*val*/,
+                                                                       bool /*searchBackward*/)
     {
         // TODO GitHub #2161: potential accessibility improvement
         // we don't support this currently
         throw winrt::hresult_not_implemented();
     }
 
-    XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindText(winrt::hstring text,
-                                                                  bool searchBackward,
-                                                                  bool ignoreCase)
+    XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindText(winrt::hstring /*text*/,
+                                                                  bool /*searchBackward*/,
+                                                                  bool /*ignoreCase*/)
     {
         // TODO GitHub #605: Search functionality
         // we need to wrap this around the UiaTextRange FindText() function

@@ -7,6 +7,14 @@ using WEX::Logging::Log;
 using namespace WEX::Common;
 
 HANDLE Common::_hConsole = INVALID_HANDLE_VALUE;
+extern wil::unique_process_information pi;
+
+bool IsConsoleStillRunning()
+{
+    DWORD exitCode = S_OK;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetExitCodeProcess(pi.hProcess, &exitCode));
+    return exitCode == STILL_ACTIVE;
+}
 
 void VerifySucceededGLE(BOOL bResult)
 {
