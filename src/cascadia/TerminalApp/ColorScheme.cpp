@@ -218,3 +218,20 @@ COLORREF ColorScheme::GetSelectionBackground() const noexcept
 {
     return _selectionBackground;
 }
+
+// Method Description:
+// - Parse the name from the JSON representation of a ColorScheme.
+// Arguments:
+// - json: an object which should be a serialization of a ColorScheme object.
+// Return Value:
+// - the name of the color scheme represented by `json` as a std::wstring optional
+//   i.e. the value of the `name` property.
+// - returns std::nullopt if `json` doesn't have the `name` property
+std::optional<std::wstring> TerminalApp::ColorScheme::GetNameFromJson(const Json::Value& json)
+{
+    if (const auto name{ json[JsonKey(NameKey)] })
+    {
+        return GetWstringFromJson(name);
+    }
+    return std::nullopt;
+}

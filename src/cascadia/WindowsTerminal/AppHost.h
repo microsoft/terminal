@@ -29,4 +29,6 @@ private:
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::TerminalApp::App&,
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
+    void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,
+                           const winrt::TerminalApp::ToggleFullscreenEventArgs& arg);
 };

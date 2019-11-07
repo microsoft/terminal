@@ -82,6 +82,10 @@ Try {
             Throw "Failed to find cpprest_2_10.dll -- check the WAP packaging project"
         }
     }
+
+    If ($null -eq (Get-Item "$AppxPackageRootPath\conpty.dll" -EA:Ignore)) {
+        Throw "Failed to find conpty.dll -- check the wapproj and winconpty.vcxproj"
+    }
 } Finally {
     Remove-Item -Recurse -Force $AppxPackageRootPath
 }

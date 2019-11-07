@@ -36,8 +36,8 @@ public:
     virtual bool CursorHorizontalPositionAbsolute(const unsigned int uiColumn) = 0; // CHA
     virtual bool VerticalLinePositionAbsolute(const unsigned int uiLine) = 0; // VPA
     virtual bool CursorPosition(const unsigned int uiLine, const unsigned int uiColumn) = 0; // CUP
-    virtual bool CursorSavePosition() = 0; // DECSC
-    virtual bool CursorRestorePosition() = 0; // DECRC
+    virtual bool CursorSaveState() = 0; // DECSC
+    virtual bool CursorRestoreState() = 0; // DECRC
     virtual bool CursorVisibility(const bool fIsVisible) = 0; // DECTCEM
     virtual bool InsertCharacter(const unsigned int uiCount) = 0; // ICH
     virtual bool DeleteCharacter(const unsigned int uiCount) = 0; // DCH
