@@ -459,12 +459,12 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            auto conhostConn = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                                     settings.StartingDirectory(),
-                                                                     settings.StartingTitle(),
-                                                                     settings.InitialRows(),
-                                                                     settings.InitialCols(),
-                                                                     winrt::guid());
+            auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
+                                                                    settings.StartingDirectory(),
+                                                                    settings.StartingTitle(),
+                                                                    settings.InitialRows(),
+                                                                    settings.InitialCols(),
+                                                                    winrt::guid());
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;
         }
