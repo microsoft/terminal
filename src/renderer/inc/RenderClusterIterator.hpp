@@ -34,6 +34,6 @@ namespace Microsoft::Console::Render
         Cluster _cluster;
         TextAttribute _attr;
         TextBufferCellIterator& _cellIter;
-        bool _exceeded{};
+        bool _exceeded;
     };
 }

@@ -343,7 +343,7 @@ using namespace Microsoft::Console::Types;
         short totalWidth = 0;
 
         short dirtyRectLeft = gsl::narrow<SHORT>(_invalidRect.Left());
-        short dirtyRectRight = gsl::narrow<SHORT>(_invalidRect.RightInclusive());
+        short dirtyRectRight = gsl::narrow<SHORT>(_invalidRect.RightExclusive());
         short preallocateSize = dirtyRectRight - dirtyRectLeft;
 
         std::wstring wstr;
