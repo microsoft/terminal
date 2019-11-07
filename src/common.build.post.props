@@ -26,7 +26,7 @@
         Re-inject some necessary libs when MinimalCoreWin has been enabled.
       -->
       <AdditionalDependencies Condition="'$(MinimalCoreWin)'=='true'">gdi32.lib;advapi32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies>onecoreuap.lib;onecore_apiset.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;uxtheme.lib;dwmapi.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecoreuap_apiset.lib;onecore_apiset.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;uxtheme.lib;dwmapi.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
