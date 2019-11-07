@@ -1079,15 +1079,16 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Routine Description:
 // - Paints an overlay highlight on a portion of the frame to represent selected text
 // Arguments:
+//  - selectionBackground - The color to use to paint the selection area.
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const COLORREF selectionBackground, const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto selectionColor = D2D1::ColorF(GetRValue(selectionBackground)/255.0f,
-                                             GetGValue(selectionBackground)/255.0f,
-                                             GetBValue(selectionBackground)/255.0f,
+    const auto selectionColor = D2D1::ColorF(GetRValue(selectionBackground) / 255.0f,
+                                             GetGValue(selectionBackground) / 255.0f,
+                                             GetBValue(selectionBackground) / 255.0f,
                                              0.5f);
 
     _d2dBrushForeground->SetColor(selectionColor);
@@ -1789,6 +1790,10 @@ float DxEngine::GetScaling() const noexcept
 {
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
+
+    const auto rVal = GetRValue(color);
+    const auto gVal = GetGValue(color);
+    const auto bVal = GetBValue(color);
 
     switch (_chainMode)
     {
