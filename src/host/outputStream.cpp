@@ -299,6 +299,31 @@ BOOL ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttri
     return TRUE;
 }
 
+// Method Description:
+// - Retrieves the current TextAttribute of the active screen buffer.
+// Arguments:
+// - pAttrs: Receives the TextAttribute value.
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute* const pAttrs) const
+{
+    *pAttrs = _io.GetActiveOutputBuffer().GetAttributes();
+    return TRUE;
+}
+
+// Method Description:
+// - Sets the current TextAttribute of the active screen buffer. Text
+//   written to this buffer will be written with these attributes.
+// Arguments:
+// - attrs: The new TextAttribute to use
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
+{
+    _io.GetActiveOutputBuffer().SetAttributes(attrs);
+    return TRUE;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:

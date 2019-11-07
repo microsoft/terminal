@@ -630,8 +630,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = static_cast<WORD>(e.OriginalKey());
-        const auto scanCode = e.KeyStatus().ScanCode;
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
         // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
@@ -1020,7 +1020,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();
@@ -1206,6 +1206,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Pre-process text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection, converting
+    //   Windows-space \r\n line-endings to \r line-endings
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        // Some notes on this implementation:
+        //
+        // - std::regex can do this in a single line, but is somewhat
+        //   overkill for a simple search/replace operation (and its
+        //   performance guarantees aren't exactly stellar)
+        // - The STL doesn't have a simple string search/replace method.
+        //   This fact is lamentable.
+        // - This line-ending converstion is intentionally fairly
+        //   conservative, to avoid stripping out lone \n characters
+        //   where they could conceivably be intentional.
+
+        std::wstring stripped{ wstr };
+
+        std::wstring::size_type pos = 0;
+
+        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
+        {
+            stripped.replace(pos, 2, L"\r");
+        }
+
+        _connection.WriteInput(stripped);
+    }
+
+    // Method Description:
     // - Update the font with the renderer. This will be called either when the
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
@@ -1276,11 +1305,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        const short lastVisibleRow = std::max(_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max(_terminal->GetViewport().Width() - 1, 0);
+        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
+        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
-        terminalPosition.Y = std::clamp(terminalPosition.Y, short{ 0 }, lastVisibleRow);
-        terminalPosition.X = std::clamp(terminalPosition.X, short{ 0 }, lastVisibleCol);
+        terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
+        terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
         // save location (for rendering) + render
         _terminal->SetEndSelectionPosition(terminalPosition);
@@ -1375,8 +1404,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        // Since this callback fires from non-UI thread, we might be already
+        // closed/closing.
+        if (_closing.load())
+        {
+            return;
+        }
+
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            // Even if we weren't closed/closing few lines above, we might be
+            // while waiting for this block of code to be dispatched.
+            if (_closing.load())
+            {
+                return;
+            }
+
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
@@ -1442,7 +1485,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
         // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp

@@ -12,13 +12,13 @@ Abstract:
 
 #pragma once
 
-// CommandHistory Flags
-#define CLE_ALLOCATED 0x00000001
-#define CLE_RESET 0x00000002
-
 class CommandHistory
 {
 public:
+    // CommandHistory Flags
+    static constexpr int CLE_ALLOCATED = 0x00000001;
+    static constexpr int CLE_RESET = 0x00000002;
+
     static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
     static CommandHistory* s_Find(const HANDLE processHandle);
     static CommandHistory* s_FindByExe(const std::wstring_view appName);

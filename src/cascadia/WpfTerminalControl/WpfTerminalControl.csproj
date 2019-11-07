@@ -17,10 +17,6 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\PublicTerminalCore\PublicTerminalCore.vcxproj" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json">
       <Visible>true</Visible>
       <Link>stylecop.json</Link>

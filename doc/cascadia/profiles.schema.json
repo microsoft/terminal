@@ -65,7 +65,8 @@
             "switchToTab5",
             "switchToTab6",
             "switchToTab7",
-            "switchToTab8"
+            "switchToTab8",
+            "toggleFullscreen"
           ],
           "type": "string"
         },

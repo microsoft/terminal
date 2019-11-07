@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
+        winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
 
@@ -43,9 +44,6 @@ namespace winrt::TerminalApp::implementation
         void WindowCloseButtonClicked();
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabRowControl);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 
     private:
@@ -57,8 +55,6 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
-
-        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};
@@ -83,6 +79,14 @@ namespace winrt::TerminalApp::implementation
         void _ReloadSettings();
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
+
+        // These are events that are handled by the TerminalPage, but are
+        // exposed through the App. This macro is used to forward the event
+        // directly to them.
+        FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabRowControl, _root, SetTitleBarContent);
+        FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
+        FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
+        FORWARDED_TYPED_EVENT(ToggleFullscreen, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs, _root, ToggleFullscreen);
     };
 }
 

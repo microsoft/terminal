@@ -5,6 +5,8 @@
 #include "App.h"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include <LibraryResources.h>
+
 #include "App.g.cpp"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -27,13 +29,13 @@ namespace winrt
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
 static const std::array<std::wstring_view, 3> settingsLoadWarningsLabels {
-   L"MissingDefaultProfileText",
-   L"DuplicateProfileText",
-   L"UnknownColorSchemeText"
+    USES_RESOURCE(L"MissingDefaultProfileText"),
+    USES_RESOURCE(L"DuplicateProfileText"),
+    USES_RESOURCE(L"UnknownColorSchemeText")
 };
 static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
-    L"NoProfilesText",
-    L"AllProfilesHiddenText"
+    USES_RESOURCE(L"NoProfilesText"),
+    USES_RESOURCE(L"AllProfilesHiddenText")
 };
 // clang-format on
 
@@ -46,15 +48,14 @@ static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
 // Arguments:
 // - key: the value to use to look for a resource key in the given map
 // - map: A map of keys->Resource keys.
-// - loader: the ScopedResourceLoader to use to look up the localized string.
 // Return Value:
 // - the localized string for the given type, if it exists.
 template<std::size_t N>
-static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, ScopedResourceLoader& loader)
+static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys)
 {
     if (index < keys.size())
     {
-        return loader.GetLocalizedString(keys.at(index));
+        return GetLibraryResourceString(keys.at(index));
     }
     return {};
 }
@@ -65,12 +66,11 @@ static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_vi
 // - The warning should have an entry in settingsLoadWarningsLabels.
 // Arguments:
 // - warning: the SettingsLoadWarnings value to get the localized text for.
-// - loader: the ScopedResourceLoader to use to look up the localized string.
 // Return Value:
 // - localized text for the given warning
-static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader& loader)
+static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning)
 {
-    return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels, loader);
+    return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels);
 }
 
 // Function Description:
@@ -79,12 +79,11 @@ static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warnin
 // - The warning should have an entry in settingsLoadErrorsLabels.
 // Arguments:
 // - error: the SettingsLoadErrors value to get the localized text for.
-// - loader: the ScopedResourceLoader to use to look up the localized string.
 // Return Value:
 // - localized text for the given error
-static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader& loader)
+static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error)
 {
-    return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels, loader);
+    return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
 
 // Function Description:
@@ -128,12 +127,10 @@ namespace winrt::TerminalApp::implementation
         // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
         Initialize();
 
-        _resourceLoader = std::make_shared<ScopedResourceLoader>(L"TerminalApp/Resources");
-
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
-        _root = winrt::make_self<TerminalPage>(_resourceLoader);
+        _root = winrt::make_self<TerminalPage>();
     }
 
     // Method Description:
@@ -202,7 +199,7 @@ namespace winrt::TerminalApp::implementation
         dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
 
         // Display the dialog.
-        Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown
@@ -222,8 +219,8 @@ namespace winrt::TerminalApp::implementation
                                     const winrt::hstring& contentKey,
                                     HRESULT settingsLoadedResult)
     {
-        auto title = _resourceLoader->GetLocalizedString(titleKey);
-        auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
+        auto title = GetLibraryResourceString(titleKey);
+        auto buttonText = RS_(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
         // Make sure you can copy-paste
@@ -232,7 +229,7 @@ namespace winrt::TerminalApp::implementation
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
         winrt::Windows::UI::Xaml::Documents::Run errorRun;
-        const auto errorLabel = _resourceLoader->GetLocalizedString(contentKey);
+        const auto errorLabel = GetLibraryResourceString(contentKey);
         errorRun.Text(errorLabel);
         warningsTextBlock.Inlines().Append(errorRun);
 
@@ -246,7 +243,7 @@ namespace winrt::TerminalApp::implementation
 
         // Add a note that we're using the default settings in this case.
         winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
-        const auto usingDefaultsText = _resourceLoader->GetLocalizedString(L"UsingDefaultSettingsText");
+        const auto usingDefaultsText = RS_(L"UsingDefaultSettingsText");
         usingDefaultsRun.Text(usingDefaultsText);
         warningsTextBlock.Inlines().Append(usingDefaultsRun);
 
@@ -266,8 +263,8 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void App::_ShowLoadWarningsDialog()
     {
-        auto title = _resourceLoader->GetLocalizedString(L"SettingsValidateErrorTitle");
-        auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
+        auto title = RS_(L"SettingsValidateErrorTitle");
+        auto buttonText = RS_(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
         // Make sure you can copy-paste
@@ -279,7 +276,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& warning : warnings)
         {
             // Try looking up the warning message key for each warning.
-            const auto warningText = _GetWarningText(warning, *_resourceLoader);
+            const auto warningText = _GetWarningText(warning);
             if (!warningText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
@@ -307,8 +304,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (FAILED(_settingsLoadedResult))
         {
-            const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
-            const winrt::hstring textKey = L"InitialJsonParseErrorText";
+            const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"InitialJsonParseErrorText");
             _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
         }
         else if (_settingsLoadedResult == S_FALSE)
@@ -338,7 +335,8 @@ namespace winrt::TerminalApp::implementation
         TerminalSettings settings = _settings->MakeSettings(std::nullopt);
 
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
-        // set, then we'll need to add the height of the tab bar here.
+        // set or if "Show tabs in title bar" is set, then we'll need to add
+        // the height of the tab bar here.
 
         return TermControl::GetProposedDimensions(settings, dpi);
     }
@@ -397,6 +395,17 @@ namespace winrt::TerminalApp::implementation
         return point;
     }
 
+    winrt::Windows::UI::Xaml::ElementTheme App::GetRequestedTheme()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings->GlobalSettings().GetRequestedTheme();
+    }
+
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
@@ -432,7 +441,7 @@ namespace winrt::TerminalApp::implementation
         catch (const ::TerminalApp::SettingsException& ex)
         {
             hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(ex.Error(), *_resourceLoader);
+            _settingsLoadExceptionText = _GetErrorText(ex.Error());
         }
         catch (...)
         {
@@ -561,8 +570,8 @@ namespace winrt::TerminalApp::implementation
         if (FAILED(_settingsLoadedResult))
         {
             _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-                const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
-                const winrt::hstring textKey = L"ReloadJsonParseErrorText";
+                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
                 _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
             });
 
@@ -651,34 +660,6 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
-    }
-
-    // Methods that proxy typed event handlers through TerminalPage
-    winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabRowControl> const& handler)
-    {
-        return _root->SetTitleBarContent(handler);
-    }
-    void App::SetTitleBarContent(winrt::event_token const& token) noexcept
-    {
-        return _root->SetTitleBarContent(token);
-    }
-
-    winrt::event_token App::TitleChanged(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::hstring> const& handler)
-    {
-        return _root->TitleChanged(handler);
-    }
-    void App::TitleChanged(winrt::event_token const& token) noexcept
-    {
-        return _root->TitleChanged(token);
-    }
-
-    winrt::event_token App::LastTabClosed(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs> const& handler)
-    {
-        return _root->LastTabClosed(handler);
-    }
-    void App::LastTabClosed(winrt::event_token const& token) noexcept
-    {
-        return _root->LastTabClosed(token);
     }
 
     // -------------------------------- WinRT Events ---------------------------------
