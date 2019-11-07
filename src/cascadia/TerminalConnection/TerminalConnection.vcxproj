@@ -33,7 +33,6 @@
     <ClInclude Include="AzureClientID.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="AzureConnection.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="AzureConnection-ARM64.h" Condition="'$(Platform)'=='ARM64'" />
-    <ClInclude Include="AzureConnectionStrings.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
@@ -64,6 +63,7 @@
     <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>
+    <PRIResource Include="Resources/en-US/Resources.resw" />
     <None Include="packages.config" />
   </ItemGroup>
 
@@ -77,6 +77,12 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
     <ProjectReference Include="..\..\winconpty\winconpty.vcxproj">
       <Project>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</Project>
     </ProjectReference>

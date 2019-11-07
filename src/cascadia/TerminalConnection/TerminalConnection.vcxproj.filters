@@ -8,6 +8,9 @@
     <Filter Include="Generated Files">
       <UniqueIdentifier>{926ab91d-31b4-48c3-b9a4-e681349f27f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\en-US">
+      <UniqueIdentifier>{ee3ff32f-d013-49cb-8eb9-1ec084585086}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -21,7 +24,6 @@
     <ClInclude Include="EchoConnection.h" />
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
-    <ClInclude Include="AzureConnectionStrings.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
@@ -34,5 +36,10 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources/en-US/Resources.resw">
+      <Filter>Resources\en-US</Filter>
+    </PRIResource>
   </ItemGroup>
 </Project>
