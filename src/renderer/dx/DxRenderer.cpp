@@ -683,14 +683,14 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 }
 
 // Routine Description:
-// - Helper to create a DirectWrite text _shaderInputLayout object
+// - Helper to create a DirectWrite text layout object
 //   out of a string.
 // Arguments:
-// - string - The text to attempt to _shaderInputLayout
+// - string - The text to attempt to layout
 // - stringLength - Length of string above in characters
-// - ppTextLayout - Location to receive new _shaderInputLayout object
+// - ppTextLayout - Location to receive new layout object
 // Return Value:
-// - S_OK if _shaderInputLayout created successfully, otherwise a DirectWrite error
+// - S_OK if layout created successfully, otherwise a DirectWrite error
 [[nodiscard]] HRESULT DxEngine::_CreateTextLayout(
     _In_reads_(stringLength) PCWCHAR string,
     _In_ size_t stringLength,
@@ -1269,7 +1269,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         origin.x = static_cast<float>(coord.X * _glyphCell.cx);
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
-        // Create the text _shaderInputLayout
+        // Create the text layout
         CustomTextLayout layout(_dwriteFactory.Get(),
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
@@ -1764,9 +1764,9 @@ float DxEngine::GetScaling() const noexcept
 
     try
     {
-        const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not _shaderInputLayout.
+        const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-        // Create the text _shaderInputLayout
+        // Create the text layout
         CustomTextLayout layout(_dwriteFactory.Get(),
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
