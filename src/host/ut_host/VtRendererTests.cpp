@@ -6,6 +6,7 @@
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../../renderer/inc/DummyRenderTarget.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
 #include "../../renderer/vt/WinTelnetEngine.hpp"
@@ -1302,21 +1303,22 @@ void VtRendererTest::TestWrapping()
 
         const wchar_t* const line1 = L"asdfghjkl";
         const wchar_t* const line2 = L"zxcvbnm,.";
-        const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
-        std::vector<Cluster> clusters1;
-        for (size_t i = 0; i < wcslen(line1); i++)
-        {
-            clusters1.emplace_back(std::wstring_view{ &line1[i], 1 }, static_cast<size_t>(rgWidths[i]));
-        }
-        std::vector<Cluster> clusters2;
-        for (size_t i = 0; i < wcslen(line2); i++)
-        {
-            clusters2.emplace_back(std::wstring_view{ &line2[i], 1 }, static_cast<size_t>(rgWidths[i]));
-        }
+        const COORD screenBufferSize{ 119, 9029 };
+        const TextAttribute attr{};
+        const UINT cursorSize = 12;
+        TextBuffer textBuffer1{ screenBufferSize, attr, cursorSize, DummyRenderTarget() };
+        textBuffer1.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
+        const auto& buffer1 = textBuffer1;
+        TextBufferCellIterator cellIter(buffer1, { 0, 0 });
 
-        //VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters1.data(), clusters1.size() }, { 0, 0 }, false));
-        //VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters2.data(), clusters2.size() }, { 0, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(RenderClusterIterator(cellIter), { 0, 0 }, false));
+
+        TextBuffer textBuffer2{ screenBufferSize, attr, cursorSize, DummyRenderTarget() };
+        textBuffer2.WriteLine(OutputCellIterator(line2, attr), { 0, 0 });
+        const auto& buffer2 = textBuffer2;
+        TextBufferCellIterator cellIter(buffer2, { 0, 0 });
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(RenderClusterIterator(cellIter), { 0, 1 }, false));
     });
 }
 

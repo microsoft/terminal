@@ -1666,7 +1666,7 @@ float DxEngine::GetScaling() const noexcept
                                 _glyphCell.cx);
 
         UINT32 columns = 0;
-        //RETURN_IF_FAILED(layout.GetColumns(&columns));
+        RETURN_IF_FAILED(layout.GetColumns(&columns));
 
         *pResult = columns != 1;
     }
