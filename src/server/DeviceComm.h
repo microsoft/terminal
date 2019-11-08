@@ -36,8 +36,6 @@ public:
 
     [[nodiscard]] HRESULT AllowUIAccess() const;
 
-    void Shutdown();
-
 private:
     [[nodiscard]] HRESULT _CallIoctl(_In_ DWORD dwIoControlCode,
                                      _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
@@ -46,5 +44,4 @@ private:
                                      _In_ DWORD cbOutBufferSize) const;
 
     wil::unique_handle _Server;
-    bool _shutdown;
 };

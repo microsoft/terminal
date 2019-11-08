@@ -61,6 +61,7 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
 
     DWORD dwProcessId;
     DWORD dwThreadId;
@@ -993,10 +994,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
 
-    // When the setup event is triggered, the I/O thread has told us that it is
-    // officially holding the global lock on our behalf and we're free to setup.
-    ServiceLocator::LocateGlobals().consoleInputSetupEvent.wait();
-
+    LockConsole();
     HHOOK hhook = nullptr;
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1015,17 +1013,15 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         ServiceLocator::LocatePseudoWindow();
     }
 
-    // Now we must pass back virtual ownership of the global lock by telling the I/O
-    // thread that we're done and what our status is.
-    ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
-    ServiceLocator::LocateGlobals().consoleInputInitializedEvent.SetEvent();
-
-    // If not successful, end the thread by returning the status.
-    // If successful, proceed down below to the message pump loop.
+    UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
+        ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
+        ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
         return Status;
     }
+
+    ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
 
     for (;;)
     {
