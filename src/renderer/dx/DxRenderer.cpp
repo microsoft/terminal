@@ -16,9 +16,7 @@
 #include <d3dcompiler.h>
 #include <DirectXColors.h>
 
-#pragma comment(lib, "d3dcompiler.lib")
 using namespace DirectX;
-
 
 // Quad where we draw the terminal.
 // pos is world space coordinates where origin is at the center of screen.
@@ -175,7 +173,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     Texture2D input = shaderTexture;
 
     float4 color = input.Sample(samplerState, tex);
-    color += Blur2(input, tex, 2)*0.2;
+    color += Blur2(input, tex, 2)*0.3;
     color = Scanline(color, pos);
     // color *= greener;
 
@@ -288,17 +286,6 @@ DxEngine::~DxEngine()
     return S_OK;
 }
 
-int DbgPrint(const char* format, ...)
-{
-    static char s_printf_buf[1024];
-    va_list args;
-    va_start(args, format);
-    _vsnprintf_s(s_printf_buf, sizeof(s_printf_buf), format, args);
-    va_end(args);
-    OutputDebugStringA(s_printf_buf);
-    return 0;
-}
-
 Microsoft::WRL::ComPtr<ID3DBlob>
 _CompileShader(
     std::string source,
@@ -323,10 +310,12 @@ _CompileShader(
 
     if (FAILED(hr))
     {
-        DbgPrint("D3DCompile failed with %x\n", hr);
+        LOG_HR_MSG(hr, "D3DCompile failed with %x.");
         if (error)
         {
-            DbgPrint("D3DCompile error: %*s\n", (int)error->GetBufferSize(), (char *)error->GetBufferPointer());
+            LOG_HR_MSG(hr, "D3DCompile error\n%*S",
+                (int)error->GetBufferSize(),
+                (char *)error->GetBufferPointer());
         }
 
         THROW_HR(hr);
@@ -346,7 +335,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     // Setup _framebufferCapture, to where we'll copy current frame when rendering effects.
     D3D11_TEXTURE2D_DESC framebufferCaptureDesc{};
     swapBuffer->GetDesc(&framebufferCaptureDesc);
-    framebufferCaptureDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    WI_SetFlag(framebufferCaptureDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
     RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferCaptureDesc, NULL, &_framebufferCapture));
 
     // Setup the viewport.
@@ -555,7 +544,11 @@ HRESULT DxEngine::_SetupTerminalEffects()
                 THROW_HR(E_NOTIMPL);
             }
 
-            RETURN_IF_FAILED(_SetupTerminalEffects());
+            HRESULT hr = _SetupTerminalEffects();
+            if (FAILED(hr))
+            {
+                LOG_HR_MSG(hr, "Failed to setup terminal effects. Non fatal so continuing.");
+            }
         }
         CATCH_RETURN();
 
@@ -1526,11 +1519,12 @@ enum class CursorPaintType
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::PaintTerminalEffects() noexcept
 {
-    assert(_framebufferCapture && "You should have initialized this");
+    // Should have been initialized.
+    RETURN_HR_IF(TYPE_E_INVALIDSTATE, !_framebufferCapture);
 
     // Capture current frame in swap chain to a texture.
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
-    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&swapBuffer)));
     _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
 
     // Prepare captured texture as input resource to shader program.
