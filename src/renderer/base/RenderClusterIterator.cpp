@@ -55,7 +55,8 @@ RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& moveme
     size_t cols = 0;
     while (move > 0 && !_exceeded)
     {
-        if (!(*newCellIter).DbcsAttr().IsTrailing())
+        bool skip = (*newCellIter).DbcsAttr().IsTrailing();
+        if (!skip)
         {
             cols += (*newCellIter).Columns();
         }
@@ -65,9 +66,10 @@ RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& moveme
     }
     while (move < 0 && !_exceeded)
     {
-        if (!(*newCellIter).DbcsAttr().IsTrailing())
+        bool skip = (*newCellIter).DbcsAttr().IsTrailing();
+        if (!skip)
         {
-            cols += (*newCellIter).Columns();
+            cols -= (*newCellIter).Columns();
         }
         --newCellIter;
         _exceeded = !(newCellIter && (*newCellIter).TextAttr() == _attr);

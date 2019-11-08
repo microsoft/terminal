@@ -314,15 +314,15 @@ using namespace Microsoft::Console::Render;
         while (clusterIter)
         {
             const auto& cluster = (*clusterIter);
+            const auto columnCount = cluster.GetColumns();
+
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
             pwsPoly += cluster.GetTextAsSingle();
-            rgdxPoly.emplace_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            rgdxPoly.emplace_back(gsl::narrow<int>(columnCount) * coordFontSize.X);
             cchCharWidths += rgdxPoly.at(i);
 
-            const auto columnCount = cluster.GetColumns();
-
-            ++clusterIter;
+            clusterIter += columnCount > 0 ? columnCount : 1;
             ++i;
         }
 
