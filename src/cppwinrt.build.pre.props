@@ -32,7 +32,7 @@
        instead of the App platform. This you definitely want, because we're not
        building a true universal "app", we're building a desktop application
        with xaml. APIs like CreatePseudoConsole won't always be linkable without Desktop platform,
-	     but we now carry our own copy of them in the winconpty library which works everywhere.
+       but we now carry our own copy of them in the winconpty library which works everywhere.
        For future reference, _VC_Target_Library_Platform can be configured to say which CRT to link against.
        Now that this doesn't say anything, the implicit is 'Store' which links against the App CRT.
        The alternative is 'Desktop' which links against the usual CRT redistributable.
