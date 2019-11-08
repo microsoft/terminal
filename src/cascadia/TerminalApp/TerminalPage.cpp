@@ -59,23 +59,23 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-         _tabView.TabDragStarting([this](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragStarting([this](auto&& /*o*/, auto&& /*a*/) {
             _rearranging = true;
             _rearrangeFrom = std::nullopt;
             _rearrangeTo = std::nullopt;
         });
 
         _tabView.TabDragCompleted([this](auto&& /*o*/, auto&& /*a*/) {
-             if (_rearrangeFrom.has_value() && _rearrangeTo.has_value() && _rearrangeTo != _rearrangeFrom)
+            if (_rearrangeFrom.has_value() && _rearrangeTo.has_value() && _rearrangeTo != _rearrangeFrom)
             {
                 auto tab = _tabs.at(_rearrangeFrom.value());
                 _tabs.erase(_tabs.begin() + _rearrangeFrom.value());
                 _tabs.insert(_tabs.begin() + _rearrangeTo.value(), tab);
             }
 
-             _rearranging = false;
-             _rearrangeFrom = std::nullopt;
-             _rearrangeTo = std::nullopt;
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
         });
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
