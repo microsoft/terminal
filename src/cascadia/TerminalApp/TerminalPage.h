@@ -10,7 +10,6 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
-#include <optional>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
