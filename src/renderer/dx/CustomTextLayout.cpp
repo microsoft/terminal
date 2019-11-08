@@ -144,7 +144,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
         }
 
-        RETURN_IF_FAILED(_AnalyzeGlyphWidth(_text.c_str(), textLength));
+        RETURN_IF_FAILED(_AnalyzeTextWideness(_text.c_str(), textLength));
 
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
@@ -1025,7 +1025,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 }
 
 
-[[nodiscard]] HRESULT CustomTextLayout::_AnalyzeGlyphWidth(_In_count_(cwch) const WCHAR* text, const UINT32 cwch)
+[[nodiscard]] HRESULT CustomTextLayout::_AnalyzeTextWideness(_In_count_(cwch) const WCHAR* text, const UINT32 cwch)
 {
     bool fWide = false;
     bool fDecided = false;

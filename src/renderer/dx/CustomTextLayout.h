@@ -135,7 +135,7 @@ namespace Microsoft::Console::Render
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
 
-        [[nodiscard]] HRESULT _AnalyzeGlyphWidth(_In_count_(cwch) const WCHAR* text, const UINT32 cwch);
+        [[nodiscard]] HRESULT _AnalyzeTextWideness(_In_count_(cwch) const WCHAR* text, const UINT32 cwch);
         [[nodiscard]] HRESULT _SetGlyphWideness(UINT32 textIndex, UINT32 textLength, const bool fWide);
 
 
