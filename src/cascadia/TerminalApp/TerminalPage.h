@@ -10,6 +10,7 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
+#include <optional>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
@@ -62,8 +63,8 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
 
         bool _rearranging;
-        int _rearrangeFrom;
-        int _rearrangeTo;
+        std::optional<int> _rearrangeFrom;
+        std::optional<int> _rearrangeTo;
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
