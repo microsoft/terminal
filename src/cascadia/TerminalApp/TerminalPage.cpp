@@ -1191,7 +1191,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to changes in the TabView's item list by changing the tabview's
-    //      visibility.
+    //      visibility.  This method is also invoked when tabs are dragged / dropped as part of tab reordering
+    //      and this method hands that case as well in concert with TabDragStarting and TabDragCompleted handlers
+    //      that are set up in TerminalPage::Create()
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
@@ -1229,7 +1231,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to the TabView control's Selection Changed event (to move a
-    //      new terminal control into focus.) when not in in the middle of a tab rearrangement
+    //      new terminal control into focus) when not in in the middle of a tab rearrangement.
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
