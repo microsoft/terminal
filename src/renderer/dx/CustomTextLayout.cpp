@@ -237,8 +237,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 }, // calt
         { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_HALF_WIDTH, 1 } // hwid
     };
-    static DWRITE_TYPOGRAPHIC_FEATURES fwidFeatureSet = { fwidFeatureArray, _countof(fwidFeatureArray) };
-    static DWRITE_TYPOGRAPHIC_FEATURES hwidFeatureSet = { hwidFeatureArray, _countof(hwidFeatureArray) };
+    static DWRITE_TYPOGRAPHIC_FEATURES fwidFeatureSet = { (DWRITE_FONT_FEATURE*) fwidFeatureArray, _countof(fwidFeatureArray) };
+    static DWRITE_TYPOGRAPHIC_FEATURES hwidFeatureSet = { (DWRITE_FONT_FEATURE*) hwidFeatureArray, _countof(hwidFeatureArray) };
 
     try
     {
@@ -283,7 +283,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         // Get the glyphs from the text, retrying if needed.
         const DWRITE_TYPOGRAPHIC_FEATURES* featureSet = run.isWide ? &fwidFeatureSet : &hwidFeatureSet;
-        UINT32 featureRangeLengths[] = { textLength };
+        const UINT32 featureRangeLengths[] = { textLength };
 
         int tries = 0;
 
@@ -300,7 +300,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
                 &featureSet, // features
-                featureRangeLengths, // featureLengths
+                (UINT32*) featureRangeLengths, // featureLengths
                 1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
@@ -350,7 +350,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             &run.script,
             _localeName.data(),
             &featureSet, // features
-            featureRangeLengths, // featureLengths
+            (UINT32*) featureRangeLengths, // featureLengths
             1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
