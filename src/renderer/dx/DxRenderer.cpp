@@ -1522,7 +1522,7 @@ enum class CursorPaintType
 [[nodiscard]] HRESULT DxEngine::_PaintTerminalEffects() noexcept
 {
     // Should have been initialized.
-    RETURN_HR_IF(TYPE_E_INVALIDSTATE, !_framebufferCapture);
+    RETURN_HR_IF(E_NOT_VALID_STATE, !_framebufferCapture);
 
     // Capture current frame in swap chain to a texture.
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
