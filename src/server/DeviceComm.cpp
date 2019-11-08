@@ -5,21 +5,13 @@
 #include "DeviceComm.h"
 
 DeviceComm::DeviceComm(_In_ HANDLE Server) :
-    _Server(Server),
-    _shutdown(false)
+    _Server(Server)
 {
     THROW_HR_IF(E_HANDLE, Server == INVALID_HANDLE_VALUE);
 }
 
 DeviceComm::~DeviceComm()
 {
-}
-
-// Routine Description:
-// - Intentionally shut down our communications channel
-void DeviceComm::Shutdown()
-{
-    _shutdown = true;
 }
 
 // Routine Description:
@@ -49,17 +41,6 @@ void DeviceComm::Shutdown()
 [[nodiscard]] HRESULT DeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
                                          _Out_ CONSOLE_API_MSG* const pMessage) const
 {
-    // If we've been told to shutdown, we should allow a reply to go through to finish things off,
-    // but no more reads of new messages are allowed.
-    if (_shutdown)
-    {
-        if (pReplyMsg)
-        {
-            LOG_IF_FAILED(CompleteIo(&pReplyMsg->Complete));
-        }
-        return E_APPLICATION_EXITING;
-    }
-
     HRESULT hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
                             pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
                             pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
