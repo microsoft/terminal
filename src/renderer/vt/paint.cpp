@@ -117,7 +117,7 @@ using namespace Microsoft::Console::Types;
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                 const COORD coord,
                                                 const bool /*trimLeft*/) noexcept
 {
@@ -333,7 +333,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const RenderClusterIterator clusterIter,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                       const COORD coord) noexcept
 {
     try
@@ -349,14 +349,13 @@ using namespace Microsoft::Console::Types;
         std::wstring wstr;
         wstr.reserve(preallocateSize);
 
-        RenderClusterIterator it = clusterIter;
-        while (it)
+        while (clusterIter)
         {
-            auto cluster = (*it);
+            auto cluster = (*clusterIter);
             wstr.append(cluster.GetText());
             const auto columnCount = cluster.GetColumns();
             RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(columnCount), &totalWidth));
-            it += columnCount > 0 ? columnCount : 1;
+            clusterIter += columnCount > 0 ? columnCount : 1;
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
@@ -377,7 +376,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const RenderClusterIterator clusterIter,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                      const COORD coord) noexcept
 {
     if (coord.Y < _virtualTop)
@@ -394,14 +393,13 @@ using namespace Microsoft::Console::Types;
 
     std::wstring unclusteredString;
     unclusteredString.reserve(preallocateSize);
-    RenderClusterIterator it = clusterIter;
-    while (it)
+    while (clusterIter)
     {
-        auto cluster = (*it);
+        auto cluster = (*clusterIter);
         const auto columnCount = cluster.GetColumns();
         unclusteredString.append(cluster.GetText());
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(columnCount), &totalWidth));
-        it += columnCount > 0 ? columnCount : 1;
+        clusterIter += columnCount > 0 ? columnCount : 1;
     }
 
     const size_t cchLine = unclusteredString.size();

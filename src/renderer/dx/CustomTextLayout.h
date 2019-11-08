@@ -30,7 +30,7 @@ namespace Microsoft::Console::Render
                                            gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                            gsl::not_null<IDWriteTextFormat*> const format,
                                            gsl::not_null<IDWriteFontFace1*> const font,
-                                           const RenderClusterIterator clusters,
+                                           RenderClusterIterator& clusters,
                                            size_t const width);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);

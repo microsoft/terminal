@@ -1311,15 +1311,17 @@ void VtRendererTest::TestWrapping()
         TextBuffer textBuffer1{ screenBufferSize, attr, cursorSize, dummyRenderTarget };
         textBuffer1.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
         const auto& buffer1 = textBuffer1;
-        TextBufferCellIterator cellIter(buffer1, { 0, 0 });
+        TextBufferCellIterator cellIter1(buffer1, { 0, 0 });
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(RenderClusterIterator(cellIter), { 0, 0 }, false));
+        RenderClusterIterator clusterIter1(cellIter1);
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter1, { 0, 0 }, false));
 
         TextBuffer textBuffer2{ screenBufferSize, attr, cursorSize, dummyRenderTarget };
         textBuffer2.WriteLine(OutputCellIterator(line2, attr), { 0, 0 });
         const auto& buffer2 = textBuffer2;
         TextBufferCellIterator cellIter2(buffer2, { 0, 0 });
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(RenderClusterIterator(cellIter), { 0, 1 }, false));
+        RenderClusterIterator clusterIter2(cellIter2);
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter2, { 0, 1 }, false));
     });
 }
 

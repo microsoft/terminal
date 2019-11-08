@@ -274,7 +274,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const RenderClusterIterator /*clusterIter*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(_Inout_ RenderClusterIterator& /*clusterIter*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/) noexcept
 {

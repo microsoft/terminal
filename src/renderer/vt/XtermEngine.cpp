@@ -417,7 +417,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/) noexcept
 {

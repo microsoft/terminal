@@ -28,12 +28,15 @@ namespace Microsoft::Console::Render
         const Cluster& operator*() const noexcept;
         const Cluster* operator->() const noexcept;
 
+        ptrdiff_t GetClusterDistance(RenderClusterIterator other) const noexcept;
+
     protected:
         void _GenerateCluster();
 
+        TextBufferCellIterator& _cellIter;
         Cluster _cluster;
         TextAttribute _attr;
-        TextBufferCellIterator& _cellIter;
+        size_t _distance;
         bool _exceeded;
     };
 }

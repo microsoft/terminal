@@ -606,7 +606,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // This outer loop will continue until we reach the end of the text we are trying to draw.
         while (it)
         {
-            TextBufferCellIterator runStartIt(it);
+            RenderClusterIterator runStartIt(it);
             RenderClusterIterator clusterIter(it);
             // Hold onto the current run color right here for the length of the outer loop.
             // We'll be changing the persistent one as we run through the inner loops to detect
@@ -619,22 +619,12 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
-            cols = 0;
-
-            // This inner loop will accumulate clusters until the color changes.
-            // When the color changes, it will save the new color off and break.
-            do
-            {
-                // Advance the cluster and column counts.
-                const auto columnCount = (*clusterIter).GetColumns();
-                cols += columnCount;
-                clusterIter += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
-            } while (clusterIter);
 
             // Do the painting.
             // TODO: Calculate when trim left should be TRUE
-            THROW_IF_FAILED(pEngine->PaintBufferLine(RenderClusterIterator(runStartIt), screenPoint, false));
+            THROW_IF_FAILED(pEngine->PaintBufferLine(clusterIter, screenPoint, false));
 
+            cols = clusterIter.GetClusterDistance(runStartIt);
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
             {

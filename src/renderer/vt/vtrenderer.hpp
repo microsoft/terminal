@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "../inc/RenderEngineBase.hpp"
+#include "../inc/RenderClusterIterator.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
 #include "../../inc/ITerminalOwner.hpp"
@@ -55,7 +56,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(const RenderClusterIterator clusterIter,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                       const COORD coord,
                                                       const bool trimLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
@@ -203,10 +204,10 @@ namespace Microsoft::Console::Render
 
         bool _WillWriteSingleChar() const;
 
-        [[nodiscard]] HRESULT _PaintUtf8BufferLine(const RenderClusterIterator clusterIter,
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                    const COORD coord) noexcept;
 
-        [[nodiscard]] HRESULT _PaintAsciiBufferLine(const RenderClusterIterator clusterIter,
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                     const COORD coord) noexcept;
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;

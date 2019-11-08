@@ -1147,7 +1147,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/) noexcept
 {

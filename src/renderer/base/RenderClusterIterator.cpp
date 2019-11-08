@@ -12,6 +12,7 @@ RenderClusterIterator::RenderClusterIterator(TextBufferCellIterator& cellIter) :
     _cellIter(cellIter),
     _cluster(L"", 0),
     _attr((*cellIter).TextAttr()),
+    _distance(0),
     _exceeded(false)
 {
     _GenerateCluster();
@@ -32,6 +33,7 @@ bool RenderClusterIterator::operator==(const RenderClusterIterator& it) const
 {
     return _attr == it._attr &&
            &_cellIter == &it._cellIter &&
+           &_distance == &it._distance &&
            _exceeded == it._exceeded;
 }
 
@@ -50,14 +52,23 @@ RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& moveme
 {
     ptrdiff_t move = movement;
     auto newCellIter = _cellIter;
+    size_t cols = 0;
     while (move > 0 && !_exceeded)
     {
+        if (!(*newCellIter).DbcsAttr().IsTrailing())
+        {
+            cols += (*newCellIter).Columns();
+        }
         ++newCellIter;
         _exceeded = !(newCellIter && (*newCellIter).TextAttr() == _attr);
         move--;
     }
     while (move < 0 && !_exceeded)
     {
+        if (!(*newCellIter).DbcsAttr().IsTrailing())
+        {
+            cols += (*newCellIter).Columns();
+        }
         --newCellIter;
         _exceeded = !(newCellIter && (*newCellIter).TextAttr() == _attr);
         move++;
@@ -65,6 +76,8 @@ RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& moveme
 
     _cellIter += movement;
     _GenerateCluster();
+    _distance += cols;
+
     return (*this);
 }
 
@@ -158,4 +171,9 @@ const Cluster& RenderClusterIterator::operator*() const noexcept
 const Cluster* RenderClusterIterator::operator->() const noexcept
 {
     return &_cluster;
+}
+
+ptrdiff_t RenderClusterIterator::GetClusterDistance(RenderClusterIterator other) const noexcept
+{
+    return _distance - other._distance;
 }

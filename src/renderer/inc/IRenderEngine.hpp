@@ -92,7 +92,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(const RenderClusterIterator clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(_Inout_ RenderClusterIterator& clusters,
                                                       const COORD coord,
                                                       const bool fTrimLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLines lines,

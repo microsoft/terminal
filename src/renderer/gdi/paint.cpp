@@ -284,13 +284,13 @@ using namespace Microsoft::Console::Render;
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const RenderClusterIterator clusterIter,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                                  const COORD coord,
                                                  const bool trimLeft) noexcept
 {
     try
     {
-        const size_t preallocateSize = _rcInvalid.right - _rcInvalid.left;
+        const size_t preallocateSize = (_rcInvalid.right - _rcInvalid.left) / 8;
   
         POINT ptDraw = { 0 };
         RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
@@ -311,10 +311,9 @@ using namespace Microsoft::Console::Render;
 
         // Convert data from clusters into the text array and the widths array.
         size_t i = 0;
-        RenderClusterIterator it(clusterIter);
-        while (it)
+        while (clusterIter)
         {
-            const auto& cluster = (*it);
+            const auto& cluster = (*clusterIter);
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
             pwsPoly += cluster.GetTextAsSingle();
@@ -322,8 +321,8 @@ using namespace Microsoft::Console::Render;
             cchCharWidths += rgdxPoly.at(i);
 
             const auto columnCount = cluster.GetColumns();
-            it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
 
+            ++clusterIter;
             ++i;
         }
 

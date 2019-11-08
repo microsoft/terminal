@@ -46,7 +46,7 @@ namespace Microsoft::Console::Render
                                                            const WORD legacyColorAttribute,
                                                            const ExtendedAttributes extendedAttrs,
                                                            const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(const RenderClusterIterator clusterIter,
+        [[nodiscard]] HRESULT PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
                                               const COORD coord,
                                               const bool trimLeft) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
