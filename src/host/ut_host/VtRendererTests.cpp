@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <wextestclass.h>
+#include <WexTestClass.h>
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
@@ -1304,20 +1304,21 @@ void VtRendererTest::TestWrapping()
         const wchar_t* const line1 = L"asdfghjkl";
         const wchar_t* const line2 = L"zxcvbnm,.";
 
+        DummyRenderTarget dummyRenderTarget;
         const COORD screenBufferSize{ 119, 9029 };
         const TextAttribute attr{};
         const UINT cursorSize = 12;
-        TextBuffer textBuffer1{ screenBufferSize, attr, cursorSize, DummyRenderTarget() };
+        TextBuffer textBuffer1{ screenBufferSize, attr, cursorSize, dummyRenderTarget };
         textBuffer1.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
         const auto& buffer1 = textBuffer1;
         TextBufferCellIterator cellIter(buffer1, { 0, 0 });
 
         VERIFY_SUCCEEDED(engine->PaintBufferLine(RenderClusterIterator(cellIter), { 0, 0 }, false));
 
-        TextBuffer textBuffer2{ screenBufferSize, attr, cursorSize, DummyRenderTarget() };
+        TextBuffer textBuffer2{ screenBufferSize, attr, cursorSize, dummyRenderTarget };
         textBuffer2.WriteLine(OutputCellIterator(line2, attr), { 0, 0 });
         const auto& buffer2 = textBuffer2;
-        TextBufferCellIterator cellIter(buffer2, { 0, 0 });
+        TextBufferCellIterator cellIter2(buffer2, { 0, 0 });
         VERIFY_SUCCEEDED(engine->PaintBufferLine(RenderClusterIterator(cellIter), { 0, 1 }, false));
     });
 }

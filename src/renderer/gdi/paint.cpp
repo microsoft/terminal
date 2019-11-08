@@ -290,23 +290,20 @@ using namespace Microsoft::Console::Render;
 {
     try
     {
-        size_t cchLine = 120;
-
-        // Exit early if there are no lines to draw.
-        RETURN_HR_IF(S_OK, 0 == cchLine);
-
+        const size_t preallocateSize = _rcInvalid.right - _rcInvalid.left;
+  
         POINT ptDraw = { 0 };
         RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
 
-        const auto pPolyTextLine = &_pPolyText[_cPolyText];
+        const auto pPolyTextLine = &_polyText[_cPolyText];
 
-        auto pwsPoly = std::make_unique<wchar_t[]>(cchLine);
-        RETURN_IF_NULL_ALLOC(pwsPoly);
+        std::wstring& pwsPoly = _polyStrings[_cPolyText];
+        pwsPoly.reserve(preallocateSize);
 
         COORD const coordFontSize = _GetFontSize();
 
-        auto rgdxPoly = std::make_unique<int[]>(cchLine);
-        RETURN_IF_NULL_ALLOC(rgdxPoly);
+        std::vector<int>& rgdxPoly = _polyWidths[_cPolyText];
+        rgdxPoly.reserve(preallocateSize);
 
         // Sum up the total widths the entire line/run is expected to take while
         // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
@@ -320,9 +317,9 @@ using namespace Microsoft::Console::Render;
             const auto& cluster = (*it);
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
-            pwsPoly[i] = cluster.GetTextAsSingle();
-            rgdxPoly[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
-            cchCharWidths += rgdxPoly[i];
+            pwsPoly += cluster.GetTextAsSingle();
+            rgdxPoly.emplace_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            cchCharWidths += rgdxPoly.at(i);
 
             const auto columnCount = cluster.GetColumns();
             it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
@@ -330,13 +327,18 @@ using namespace Microsoft::Console::Render;
             ++i;
         }
 
+        const size_t cchLine = i;
+
+        // Exit early if there are no lines to draw.
+        RETURN_HR_IF(S_OK, 0 == cchLine);
+
         // Detect and convert for raster font...
         if (!_isTrueTypeFont)
         {
             // dispatch conversion into our codepage
 
             // Find out the bytes required
-            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.c_str(), (int)cchLine, nullptr, 0, nullptr, nullptr);
 
             if (cbRequired != 0)
             {
@@ -344,7 +346,7 @@ using namespace Microsoft::Console::Render;
                 auto psConverted = std::make_unique<char[]>(cbRequired);
 
                 // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.c_str(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
 
                 // If successful...
                 if (cbConverted != 0)
@@ -354,10 +356,11 @@ using namespace Microsoft::Console::Render;
 
                     if (cchRequired != 0)
                     {
-                        auto pwsConvert = std::make_unique<wchar_t[]>(cchRequired);
+                        std::wstring pwsConvert;
+                        pwsConvert.reserve(cchRequired);
 
                         // Then do the actual conversion.
-                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, pwsConvert.get(), cchRequired);
+                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, pwsConvert.data(), cchRequired);
 
                         if (cchConverted != 0)
                         {
@@ -369,7 +372,7 @@ using namespace Microsoft::Console::Render;
             }
         }
 
-        pPolyTextLine->lpstr = pwsPoly.release();
+        pPolyTextLine->lpstr = _polyStrings[_cPolyText].c_str();
         pPolyTextLine->n = gsl::narrow<UINT>(cchLine);
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
@@ -378,7 +381,7 @@ using namespace Microsoft::Console::Render;
         pPolyTextLine->rcl.top = pPolyTextLine->y;
         pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
         pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
-        pPolyTextLine->pdx = rgdxPoly.release();
+        pPolyTextLine->pdx = _polyWidths[_cPolyText].data();
 
         if (trimLeft)
         {
@@ -410,26 +413,13 @@ using namespace Microsoft::Console::Render;
 
     if (_cPolyText > 0)
     {
-        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText.data(), (UINT)_cPolyText))
+        if (!PolyTextOutW(_hdcMemoryContext, _polyText.data(), (UINT)_cPolyText))
         {
             hr = E_FAIL;
         }
 
-        for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
-        {
-            if (nullptr != _pPolyText[iPoly].lpstr)
-            {
-                delete[] _pPolyText[iPoly].lpstr;
-                _pPolyText[iPoly].lpstr = nullptr;
-            }
-
-            if (nullptr != _pPolyText[iPoly].pdx)
-            {
-                delete[] _pPolyText[iPoly].pdx;
-                _pPolyText[iPoly].pdx = nullptr;
-            }
-        }
-
+        _polyStrings = {};
+        _polyWidths = {};
         _cPolyText = 0;
     }
 

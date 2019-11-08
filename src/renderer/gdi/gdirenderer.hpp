@@ -91,7 +91,10 @@ namespace Microsoft::Console::Render
         TEXTMETRICW _tmFontMetrics;
 
         static constexpr size_t s_cPolyTextCache = 80;
-        std::array<POLYTEXTW, s_cPolyTextCache> _pPolyText;
+        std::array<POLYTEXTW, s_cPolyTextCache> _polyText;
+        std::array<std::wstring, s_cPolyTextCache> _polyStrings;
+        std::array<std::vector<int>, s_cPolyTextCache> _polyWidths;
+
         size_t _cPolyText;
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 

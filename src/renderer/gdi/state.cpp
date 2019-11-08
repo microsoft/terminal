@@ -32,7 +32,7 @@ GdiEngine::GdiEngine() :
     _fPaintStarted(false),
     _hfont((HFONT)INVALID_HANDLE_VALUE)
 {
-    _pPolyText = { };
+    _polyText = { };
     _rcInvalid = { 0 };
     _szInvalidScroll = { 0 };
     _szMemorySurface = { 0 };
@@ -68,14 +68,6 @@ GdiEngine::GdiEngine() :
 // - <none>
 GdiEngine::~GdiEngine()
 {
-    for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
-    {
-        if (_pPolyText[iPoly].lpstr != nullptr)
-        {
-            delete[] _pPolyText[iPoly].lpstr;
-        }
-    }
-
     if (_hbitmapMemorySurface != nullptr)
     {
         LOG_HR_IF(E_FAIL, !(DeleteObject(_hbitmapMemorySurface)));
