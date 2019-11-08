@@ -3,9 +3,12 @@
 
 #include "precomp.h"
 #include <WexTestClass.h>
+#include "CommonState.hpp"
+
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../../interactivity/base/ServiceLocator.cpp"
 #include "../../renderer/inc/DummyRenderTarget.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
@@ -60,6 +63,10 @@ class Microsoft::Console::Render::VtRendererTest
 {
     TEST_CLASS(VtRendererTest);
 
+    wil::shared_event _shutdownEvent;
+
+    CommonState* m_state;
+
     TEST_CLASS_SETUP(ClassSetup)
     {
         // clang-format off
@@ -80,6 +87,13 @@ class Microsoft::Console::Render::VtRendererTest
         g_ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
         g_ColorTable[15] = RGB(242, 242, 242); // White
         // clang-format on
+        _shutdownEvent.create(wil::EventOptions::ManualReset);
+
+        m_state = new CommonState();
+
+        m_state->PrepareGlobalFont();
+        m_state->PrepareGlobalScreenBuffer();
+
         return true;
     }
 
@@ -1304,22 +1318,19 @@ void VtRendererTest::TestWrapping()
         const wchar_t* const line1 = L"asdfghjkl";
         const wchar_t* const line2 = L"zxcvbnm,.";
 
-        DummyRenderTarget dummyRenderTarget;
-        const COORD screenBufferSize{ 119, 9029 };
         const TextAttribute attr{};
-        const UINT cursorSize = 12;
-        TextBuffer textBuffer1{ screenBufferSize, attr, cursorSize, dummyRenderTarget };
-        textBuffer1.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
-        const auto& buffer1 = textBuffer1;
-        TextBufferCellIterator cellIter1(buffer1, { 0, 0 });
 
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+        TextBuffer& tbi = si.GetTextBuffer();
+
+        tbi.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
+        TextBufferCellIterator cellIter1(tbi, { 0, 0 });
         RenderClusterIterator clusterIter1(cellIter1);
         VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter1, { 0, 0 }, false));
 
-        TextBuffer textBuffer2{ screenBufferSize, attr, cursorSize, dummyRenderTarget };
-        textBuffer2.WriteLine(OutputCellIterator(line2, attr), { 0, 0 });
-        const auto& buffer2 = textBuffer2;
-        TextBufferCellIterator cellIter2(buffer2, { 0, 0 });
+        tbi.WriteLine(OutputCellIterator(line2, attr), { 0, 0 });
+        TextBufferCellIterator cellIter2(tbi, { 0, 0 });
         RenderClusterIterator clusterIter2(cellIter2);
         VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter2, { 0, 1 }, false));
     });
