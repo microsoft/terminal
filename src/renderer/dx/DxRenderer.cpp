@@ -175,7 +175,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     Texture2D input = shaderTexture;
 
     float4 color = input.Sample(samplerState, tex);
-    color += Blur2(input, tex, 2)*0.5;
+    color += Blur2(input, tex, 2)*0.2;
     color = Scanline(color, pos);
     // color *= greener;
 
