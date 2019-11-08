@@ -31,12 +31,12 @@ namespace winrt::TerminalApp::implementation
 
     void SettingsPage::Create()
     {
-        _globalSettingsPage = winrt::make_self<TerminalApp::GlobalSettingsContent>();
-        _profileSettingsPage = winrt::make_self<TerminalApp::ProfilesSettingsContent>();
-        _colorSchemesSettingsPage = winrt::make_self<TerminalApp::ColorSchemesSettingsContent>();
+        //_globalSettingsPage = winrt::make_self<TerminalApp::GlobalSettingsContent>(); // comment out to build
+        //_profileSettingsPage = winrt::make_self<TerminalApp::ProfilesSettingsContent>(); // comment out to build
+        //_colorSchemesSettingsPage = winrt::make_self<TerminalApp::ColorSchemesSettingsContent>(); // comment out to build
 
         // TODO: THIS IS THE PROPER WAY OF DOING IT. THE ABOVE NEED SUPPORT FOR PASSING IN THE SETTINGS.
-        _keybindingsSettingsPage = winrt::make_self<TerminalApp::KeybindingsSettingsContent>(_settings);
+        //_keybindingsSettingsPage = winrt::make_self<TerminalApp::KeybindingsSettingsContent>(_settings); // comment out to build
     }
 
     void SettingsPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
