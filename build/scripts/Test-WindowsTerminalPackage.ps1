@@ -75,12 +75,9 @@ Try {
         Throw "Failed to find App.xbf (TerminalApp project) in resources.pri"
     }
 
-    If ($Manifest.Package.Identity.ProcessorArchitecture -Ne "arm64") {
-        ### ARM64 doesn't package cpprest_2_10.
-        If (($null -eq (Get-Item "$AppxPackageRootPath\cpprest_2_10.dll" -EA:Ignore)) -And
-            ($null -eq (Get-Item "$AppxPackageRootPath\cpprest_2_10d.dll" -EA:Ignore))) {
-            Throw "Failed to find cpprest_2_10.dll -- check the WAP packaging project"
-        }
+    If (($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10.dll" -EA:Ignore)) -And
+        ($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10d.dll" -EA:Ignore))) {
+        Throw "Failed to find cpprest142_2_10.dll -- check the WAP packaging project"
     }
 
 } Finally {
