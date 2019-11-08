@@ -25,6 +25,9 @@ to enable custom launch scenarios. This need was amplified by requests like:
 * [#1060] - being able to right-click in explorer to "open a Windows Terminal
   Here" is great, but would be more powerful if it could also provide options to
   open specific profiles in that directory.
+* [#2068] - We want the user to be able to (from inside the Terminal) not only
+  open a new window with the default profile, but also open the new window with
+  a specific profile.
 
 Additionally, the final design for the arguments was heavily inspired by the
 arguments available to `tmux`, which also enables robust startup configuration
@@ -65,7 +68,7 @@ use commandline arguments, to help guide the design.
 
 ## Solution Design
 
-### Style 1 - Parameters
+### Proposal 1 - Parameters
 
 Initially, I had considered arguments in the following style:
 
@@ -87,7 +90,7 @@ tabs or panes simultaneously. How would a user start multiple panes, each with a
 different commandline? As configurations become more complex, these commandlines
 would quickly become hard to parse and understand for the user.
 
-### Style 2 - Commands and Parameters
+### Proposal 2 - Commands and Parameters
 
 Instead, we'll try to seperate these arguments by their responsibilities. Some
 of these arguments cause something to happen, like `help`, `version`, or
@@ -150,46 +153,106 @@ wt -p "Windows Powershell" -d "c:/Users/Foo/dev/MyProject"
 
 # open a new tab with the "Windows Powershell" profile, and another with the
 #  "cmd" profile (user story 12)
-wt new-window --profile "Windows Powershell" ; new-tab --profile "cmd"
+wt new-tab --profile "Windows Powershell" ; new-tab --profile "cmd"
 wt --profile "Windows Powershell" ; new-tab --profile "cmd"
-wt --p "Windows Powershell" ; new-tab --p "cmd"
+wt --profile "Windows Powershell" ; --profile "cmd"
+wt --p "Windows Powershell" ; --p "cmd"
 
 # run "my-commandline.exe with some args" in a new tab
-wt new-window my-commandline.exe with some args
+wt new-tab my-commandline.exe with some args
 wt my-commandline.exe with some args
 
 # run "my-commandline.exe with some args and a ; literal semicolon" in a new
 #  tab, and in another tab, run "another.exe running in a second tab"
 wt my-commandline.exe with some args and a \; literal semicolon ; new-tab another.exe running in a second tab
 
-# Start cmd.exe, then split it vertically (with the first taking 50% of it's
-#  space), and run wsl.exe in that pane (user story 13)
-wt cmd.exe ; split-pane -t 0 -v -p 50 wsl.exe
-wt cmd.exe ; split-pane wsl.exe
+# Start cmd.exe, then split it vertically (with the first taking 70% of it's
+#  space, and the new pane taking 30%), and run wsl.exe in that pane (user story 13)
+wt cmd.exe ; split-pane -t 0 -v -P 30 wsl.exe
+wt cmd.exe ; split-pane -P 30 wsl.exe
 
 # Create a new window with the default profile, create a vertical split with the
 #  default profile, then create a horizontal split in the second pane and run
 #  "media.exe" (user story 13)
-wt new-window ; split-pane -v ; split-pane -t 1 -h media.exe
+wt new-tab ; split-pane -v ; split-pane -t 1 -h media.exe
 
 ```
 
 ## `wt` Syntax
 
-TODO: `wt [flags?] [commands]`
-Describe this
+The `wt` commandline is divided into two main sections: "Options", and "Commands":
 
-### Commands:
+`wt [options] [command ; ]...`
+
+Options are a list of flags and other parameters that can control the behavior
+of the `wt` commandline as a whole. Commands are a semicolon-delimited list of
+commands and arguments for those commands.
+
+If no command is specified in a `command`, then the command is assumed to be a
+`new-tab` command by default. So, for example, `wt cmd.exe` is interpreted the
+same as `wt new-tab cmd.exe`.
+
+<!--
+### Aside: What should the default command be?
+
+These are notes from my draft intentionally left here to help understand the
+conclusion that new-tab should be the default command.
+
+Should the default command be `new-window` or `new-tab`?
+
+`new-window` makes sense to take params like `--initialPosition`,
+`--initialRows`/`--initialCols`, and _implies_ `new-tab`. However, chained
+commands that want to open in the same window _need_ to specify `new-tab`,
+otherwise they'll all appear in new windows.
+
+If it's `new-tab`, then how do `--initialRows` (etc) work? `new-tab` generally
+_doesn't_ accept those parameters, because it's going to be inheriting the
+parent's window size. Do we just ignore them for subsequent invocations? I
+suppose that makes sense, once the first tab has set those, then the other tabs
+can't really change them.
+
+When dealing with a file full of startup commands, we'll assume all of them are
+intended for the given window. So the first `new-tab` in the file will create
+the window, and all subsequent `new-tab` commands will create tabs in that same
+window.
+ -->
+
+TODO: What should we do with an entirely empty command? My gut says _ignore it_.
+For example, `wt ; ; ; ` should not just open 4 tabs. But then what about `wt`
+by itself? We want that to open a new tab with the default profile. So maybe we
+should allow them? Or allow them on the first command only?
+
+
+### Options
+
+#### `--help,-h,-?`
+Runs the `help` command.
+
+#### `--version,-v`
+Runs the `version` command.
+
+#### `--session,-s session-id`
+Run these commands in the given Windows Terminal session. Enables opening new
+tabs in already running Windows Terminal windows. This feature is dependent upon
+other planned work landing, so is only provided as an example, of what it might
+look like. See [Future Considerations](#Future-Considerations) for more details.
+
+#### `--file,-f congifuration-file`
+Run these commands in the given Windows Terminal session. Enables opening new
+tabs in already running Windows Terminal windows. See [Future
+Considerations](#Future-Considerations) for more details.
+
+### Commands
 
 #### `help`
 
-`help` (aliased as `--help`,`-h`,`-?`)
+`help`
 
 Display the help message
 
 #### `version`
 
-`version` (aliased as `--version`,`-v`)
+`version`
 
 Display version info for the Windows Terminal
 
@@ -218,65 +281,77 @@ name, seperated by newlines.
 
 #### `new-tab`
 
-`new-tab [--profile,-p profile-name]|[--guid,-g profile-guid] [--startingDirectory,-d starting-directory] [commandline]`
+`new-tab [--initialPosition x,y]|[--maximized]|[--fullscreen] [--initialRows rows] [--initialCols cols] [terminal_parameters]`
 
-Opens a new tab with the given customizations.
+Opens a new tab with the given customizations. On it's _first_ invocation, also
+opens a new window. Subsequent `new-tab` commands will all open new tabs in the
+same window.
 
-* `--profile,-p profile-name`: Open a tab with the given profile, where
-  `profile-name` is the `name` of a profile. If `name` does not match _any_
-  profiles, uses the default. If both `--profile` and `--guid` are omitted, uses
-  the default profile.
-* `--guid,-g profile-guid`: Open a tab with the given profile, where
-  `profile-guid` is the `guid` of a profile. If `guid` does not match _any_
-  profiles, uses the default. If both `--profile` and `--guid` are omitted, uses
-  the default profile. If both `--profile` and `--guid` are specified at the
-  same time, `--guid` takes precedence.
-* `--startingDirectory,-d starting-directory`: Overrides the value of `startingDirectory` of the specified profile, to start in `starting-directory` instead.
-* `commandline`:
+**Parameters**:
+* `--initialPosition x,y`: Create the new Windows Terminal window at the given
+  location on the screen in pixels. This parameter is only used when initially
+  creating the window, and ignored for subsequent `new-tab` commands. When
+  combined with any of `--maximized` or `--fullscreen`, TODO: what do?
+* `--initialRows rows`: Create the terminal window with `rows` rows (in
+  characters). If omitted, uses the value from the user's settings. This
+  parameter is only used when initially creating the window, and ignored for
+  subsequent `new-tab` commands. When combined with any of `--maximized` or
+  `--fullscreen`, TODO: what do?
+* `--initialCols cols`: Create the terminal window with `cols` cols (in
+  characters). If omitted, uses the value from the user's settings. This
+  parameter is only used when initially creating the window, and ignored for
+  subsequent `new-tab` commands. When combined with any of `--maximized` or
+  `--fullscreen`, TODO: what do?
+* `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
+
 
 #### `split-pane`
 
-`split-pane [--target,-t target-pane] [-h|v] [--percent,-p split-percentage] [--profile,-p profile-name]|[--guid,-g profile-guid] [--startingDirectory,-d starting-directory] [commandline]`
+`split-pane [--target,-t target-pane] [-h]|[-v] [--percent,-P split-percentage] [terminal_parameters]`
 
-* `--all,-A`: Show all profiles, including profiles marked `"hidden": true`.
-* `--showGuids,-g`:  In addition to showing names, also list each profile's
+<!-- `--percent,-P` is pretty close to `-p` from `--profile`. Is this okay? -->
+
+Creates a new pane by splitting the given pane vertically or horizontally.
+
+**Parameters**:
+* `--target,-t target-pane`: Creates a new split in the given `target-pane`.
+  Each pane has a unique index (per-tab) which can be used to identify them. If
+  omitted, defaults to `0` (the first pane).
+* `-h`, `-v`: Used to indicate which direction to split the pane. `-v` is
+  "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
+  omitted, defaults to vertical. If both `-h` and `-v` are provided, defaults to
+  vertical.
+* `--percent,-P split-percentage`: Designtates the amount of space that the new
+  pane should take, as a percentage of the parent's space. If omitted, the pane
+  will take 50% by default.
+* `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
 
-### TODO: Default command: `new-tab` vs `new-window`
 
-What should the default command be?
+#### `[terminal_parameters]`
 
-TODO: The "default command" is `new-window`. Or should it be `new-tab`? We don't
-currently support attaching, but when we do, how would that feel? For now, we'll
-just assume that any command _doesn't_ attach by default, but there should
-probably be a way.
+Some of the preceeding commands are used to create a new terminal instance.
+These commands are listed above as accepting `[terminal_parameters]` as a
+parameter. For these commands, `[terminal_parameters]` can be any of the
+following:
 
-If it's `new-window`, then chained commands that want to open in the same window
-_need_ to specify `new-tab`, otherwise they'll all appear in new windows.
+`[--profile,-p profile-name]|[--guid,-g profile-guid] [--startingDirectory,-d starting-directory] [commandline]`
 
-If it's `new-tab`, then how do `--initialRows` (etc) work? `new-tab` generally
-_doesn't_ accept those parameters, because it's going to be inheriting the
-parent's window size. Do we just ignore them for subsequent invocations?
-
-Let's make `new-window` the default. `new-window` can take params like
-`--initialPosition`, `--initialRows`/`--initialCols`, and _implies_ `new-tab`.
-
-What if we assumed that new-window was the default for the _first_ command, and
-subsequent commands defaulted to `new-tab`?
-
-That seems sketchy, and then how would files full of commands work?
-
-We could assume that the _first_ `new-tab` command _always_ creates a new window, and subsequent `new-tab` calls are all intended for the window of that created window.
-
-When dealing with a file full of startup commands, we'll assume all of them are
-intended for the given window. So the first `new-tab` in the file will create
-the window, and all subsequent `new-tab` commands will create tabs in that same
-window.
-
-Okay I think I'm happy with `new-tab` creates a window if there isn't one by
-default, and it accepts `--initialPosition`, `--initialRows`/`--initialCols`,
-but those are ignored on subsequent launches. Let's clean this section up.
-
+* `--profile,-p profile-name`: Use the given profile to open the new tab/pane,
+  where `profile-name` is the `name` of a profile. If `name` does not match
+  _any_ profiles, uses the default. If both `--profile` and `--guid` are
+  omitted, uses the default profile.
+* `--guid,-g profile-guid`: Use the given profile to open the new tab/pane,
+  where `profile-guid` is the `guid` of a profile. If `guid` does not match
+  _any_ profiles, uses the default. If both `--profile` and `--guid` are
+  omitted, uses the default profile. If both `--profile` and `--guid` are
+  specified at the same time, `--guid` takes precedence.
+* `--startingDirectory,-d starting-directory`: Overrides the value of
+  `startingDirectory` of the specified profile, to start in `starting-directory`
+  instead.
+* `commandline`: A commadline to replace the default commandline of the selected
+  profile. If the user wants to use a `;` in this commandline, it should be
+  escaped as `\;`.
 
 ### Graceful Upgrading
 
@@ -347,9 +422,13 @@ wt -p "Windows Powershell" -d "c:/Users/Foo/dev/MyProject"
 
 ```
 
+## Implementation Details
 
-
-## UI/UX Design
+TODO: I'm leaving this empty for the time being. I want to get some feedback on
+the proposal in this state, before starting work on implementation details. This
+style of arguments might be controversial, so I want to make sure we settle on a
+syntax before I get too far into the details of parsing and passing these args
+around.
 
 ## Capabilities
 
@@ -363,11 +442,14 @@ terminals will be reliant upon their accessibility implementations.
 
 ### Security
 
-[comment]: # How will the proposed change impact security?
+As we'll be parsing user input, that's always subject to worries about buffer
+length, input values, etc. Fortunately, most of this should be handled for us by
+the operating system, and passed to us as a commandline via `winMain` and
+`CommandLineToArgvW`. We should still take extra care in parsing these args.
 
 ### Reliability
 
-[comment]: # Will the proposed change improve reliabilty? If not, why make the change?
+This change should not have any particular reliability concerns.
 
 ### Compatibility
 
@@ -375,9 +457,17 @@ This change should not regress any existing behaviors.
 
 ### Performance, Power, and Efficiency
 
+This change should not particularily impact startup time or any of these other categories.
+
 ## Potential Issues
 
-[comment]: # What are some of the things that might cause problems with the fixes/features proposed? Consider how the user might be negatively impacted.
+#### Commandline escaping
+
+Escaping commandlines is notoriously tricky to do correctly. Since we're using
+`;` to delimit commands, which might want to also use `;` in the commandline
+itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
+we've been caught in before, so extensive testing will be necessary to make sure
+this works as expected.
 
 ## Future considerations
 
@@ -414,6 +504,9 @@ This change should not regress any existing behaviors.
   file on window creation just the same as if it was parsed on the commandline.
   If the user provides a file on the commandline, we'll just ignore that value
   from `profiles.json`.
+* When working on "New Window", we'll want the user to be able to open a new
+  window with not only the default profile, but also a specific profile. This
+  will help us enable that scenario.
 
 ## Resources
 
@@ -428,6 +521,8 @@ Spec for tab tear off and default app [#2080]
 
 [Question] Configuring Windows Terminal profile to always launch elevated [#632]
 
+New window key binding not working [#2068]
+
 <!-- Footnotes -->
 
 [#576]: https://github.com/microsoft/terminal/issues/576
@@ -435,4 +530,5 @@ Spec for tab tear off and default app [#2080]
 [#632]: https://github.com/microsoft/terminal/issues/632
 [#1060]: https://github.com/microsoft/terminal/issues/1060
 [#1357]: https://github.com/microsoft/terminal/pull/1357
+[#2068]: https://github.com/microsoft/terminal/issues/2068
 [#2080]: https://github.com/microsoft/terminal/pull/2080
