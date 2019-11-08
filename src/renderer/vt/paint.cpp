@@ -155,11 +155,6 @@ using namespace Microsoft::Console::Types;
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtEngine::PaintTerminalEffects() noexcept
-{
-    return S_OK;
-}
-
 // Routine Description:
 //  - Inverts the selected region on the current screen buffer.
 //  - Reads the selected area, selection mode, and active screen buffer

@@ -102,8 +102,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT PaintTerminalEffects() noexcept = 0;
-
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,

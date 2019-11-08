@@ -153,6 +153,7 @@ float4 Scanline(float4 color, float4 pos)
 {
     float wave = SquareWave(pos.y);
 
+    // Remove the && false to draw scanlines everywhere.
     if (length(color.rgb) < 0.2 && false)
     {
         return color + wave*0.1;
@@ -165,17 +166,12 @@ float4 Scanline(float4 color, float4 pos)
 
 float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
-    // return float4(0, 0.5f, 0.5f, 1);
-    // return shaderTexture.Sample(SampleType, tex) * float4(1.0, 0.5, 0.5, 1.0);
-    // return float4( 1.0f, 1.0f, 0.0f, 1.0f );    // Yellow, with Alpha = 1
-    // return color;
-    float4 greener = float4(0.5, 2, 0.5, 1);
     Texture2D input = shaderTexture;
 
+    // TODO: Make these configurable in some way.
     float4 color = input.Sample(samplerState, tex);
     color += Blur2(input, tex, 2)*0.3;
     color = Scanline(color, pos);
-    // color *= greener;
 
     return color;
 }
@@ -1131,6 +1127,12 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
     _invalidScroll = { 0 };
 
+    HRESULT hr2 = _PaintTerminalEffects();
+    if (FAILED(hr2))
+    {
+        LOG_HR_MSG(hr2, "Failed to paint terminal effects. Non fatal, continuing.");
+    }
+
     return hr;
 }
 
@@ -1517,7 +1519,7 @@ enum class CursorPaintType
 // Arguments:
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintTerminalEffects() noexcept
+[[nodiscard]] HRESULT DxEngine::_PaintTerminalEffects() noexcept
 {
     // Should have been initialized.
     RETURN_HR_IF(TYPE_E_INVALIDSTATE, !_framebufferCapture);

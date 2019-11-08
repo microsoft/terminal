@@ -139,9 +139,6 @@ Renderer::~Renderer()
     // Force scope exit end paint to finish up collecting information and possibly painting
     endPaint.reset();
 
-    // 7. Paint terminal effects
-    RETURN_IF_FAILED(_PaintTerminalEffects(pEngine));
-
     // Force scope exit unlock to let go of global lock so other threads can run
     unlock.reset();
 
@@ -857,17 +854,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         }
     }
     CATCH_LOG();
-}
-
-// Routine Description:
-// - Paint helper to draw the shader terminal effects..
-// Arguments:
-// - pEngine - The render engine that we're targeting.
-// Return Value:
-// - <none>
-[[nodiscard]] HRESULT Renderer::_PaintTerminalEffects(_In_ IRenderEngine* const pEngine)
-{
-    return pEngine->PaintTerminalEffects();
 }
 
 // Routine Description:

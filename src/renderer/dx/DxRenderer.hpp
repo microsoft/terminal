@@ -77,8 +77,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] HRESULT PaintTerminalEffects() noexcept override;
-
         [[nodiscard]] HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
                                                    COLORREF const colorBackground,
                                                    const WORD legacyColorAttribute,
@@ -103,6 +101,7 @@ namespace Microsoft::Console::Render
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
 
     private:
         enum class SwapChainMode

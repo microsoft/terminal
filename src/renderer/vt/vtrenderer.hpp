@@ -66,8 +66,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] HRESULT PaintTerminalEffects() noexcept override;
-
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,
