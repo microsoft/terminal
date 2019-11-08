@@ -160,7 +160,7 @@ wt my-commandline.exe with some args
 
 # run "my-commandline.exe with some args and a ; literal semicolon" in a new
 #  tab, and in another tab, run "another.exe running in a second tab"
-wt my-commandline.exe with some args and a \; literal semicolon ; another.exe running in a second tab
+wt my-commandline.exe with some args and a \; literal semicolon ; new-tab another.exe running in a second tab
 
 # Start cmd.exe, then split it vertically (with the first taking 50% of it's
 #  space), and run wsl.exe in that pane (user story 13)
@@ -242,13 +242,41 @@ Opens a new tab with the given customizations.
 * `--showGuids,-g`:  In addition to showing names, also list each profile's
 
 
+### TODO: Default command: `new-tab` vs `new-window`
+
+What should the default command be?
 
 TODO: The "default command" is `new-window`. Or should it be `new-tab`? We don't
 currently support attaching, but when we do, how would that feel? For now, we'll
 just assume that any command _doesn't_ attach by default, but there should
 probably be a way.
 
-Let's make `new-window` the default. `new-window` can take params like `initialPosition`, `initialRows`/`initialCols`, and _implies_ `new-tab`.
+If it's `new-window`, then chained commands that want to open in the same window
+_need_ to specify `new-tab`, otherwise they'll all appear in new windows.
+
+If it's `new-tab`, then how do `--initialRows` (etc) work? `new-tab` generally
+_doesn't_ accept those parameters, because it's going to be inheriting the
+parent's window size. Do we just ignore them for subsequent invocations?
+
+Let's make `new-window` the default. `new-window` can take params like
+`--initialPosition`, `--initialRows`/`--initialCols`, and _implies_ `new-tab`.
+
+What if we assumed that new-window was the default for the _first_ command, and
+subsequent commands defaulted to `new-tab`?
+
+That seems sketchy, and then how would files full of commands work?
+
+We could assume that the _first_ `new-tab` command _always_ creates a new window, and subsequent `new-tab` calls are all intended for the window of that created window.
+
+When dealing with a file full of startup commands, we'll assume all of them are
+intended for the given window. So the first `new-tab` in the file will create
+the window, and all subsequent `new-tab` commands will create tabs in that same
+window.
+
+Okay I think I'm happy with `new-tab` creates a window if there isn't one by
+default, and it accepts `--initialPosition`, `--initialRows`/`--initialCols`,
+but those are ignored on subsequent launches. Let's clean this section up.
+
 
 ### Graceful Upgrading
 
@@ -357,17 +385,35 @@ This change should not regress any existing behaviors.
   that might not land for a long time. These features were still considered as a
   part of the design of this solution, though their implementation is purely
   hypothetical for the time being.
-  * Instead of launching a new Windows Terminal window, attach this new terminal
-    to an existing one. This would require the work outlined in [#2080], so
-    support a "manager" process that could coordinate sessions like this.
-    - This would be something like `wt session [some-session-id]
-      [more-commands]`, where `session [some-session-id]` would tell us that
-      `[more-commands]` are intended for the given other session/window. That
-      way, you could open a new tab in another window with `wt session 0
-      cmd.exe` (for example).
-  * `--elevated`: Should it be possible for us to request an elevated session of
-    ourselves, this argument could be used to indicate the process should launch
-    in an _elevated_ context. This is considered in pursuit of [#632].
+    * Instead of launching a new Windows Terminal window, attach this new
+      terminal to an existing one. This would require the work outlined in
+      [#2080], so support a "manager" process that could coordinate sessions
+      like this.
+        - This would be something like `wt --session [some-session-id]
+          [commands]`, where `--session [some-session-id]` would tell us that
+          `[more-commands]` are intended for the given other session/window.
+          That way, you could open a new tab in another window with `wt --session
+          0 cmd.exe` (for example).
+    * `list-sessions`: A command to display all the active Windows terminal
+      instances and their session ID's, in a way compatible with the above
+      command. Again, heavily dependent upon the implementation of [#2080].
+    * `--elevated`: Should it be possible for us to request an elevated session
+      of ourselves, this argument could be used to indicate the process should
+      launch in an _elevated_ context. This is considered in pursuit of [#632].
+    * `--file,-f configuration-file`: Used for loading a configuration file to
+      give a list of commands. This file can enable a user to have a re-usable
+      configuration saved somewhere on their machine. When dealing with a file
+      full of startup commands, we'll assume all of them are intended for the
+      given window. So the first `new-tab` in the file will create the window,
+      and all subsequent `new-tab` commands will create tabs in that same
+      window.
+* In the past we've had requests for having the terminal start with multiple
+  tabs/panes by default. This might be a path to enabling that scenario. One
+  could imagine the `profiles.json` file including a `defaultConfiguration`
+  property, with a path to a .conf file filled with commands. We'd parse that
+  file on window creation just the same as if it was parsed on the commandline.
+  If the user provides a file on the commandline, we'll just ignore that value
+  from `profiles.json`.
 
 ## Resources
 
