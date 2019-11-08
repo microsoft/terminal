@@ -144,6 +144,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
         }
 
+        RETURN_IF_FAILED(_AnalyzeGlyphWidth(_text.c_str(), textLength));
+
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
         {
@@ -227,6 +229,17 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 // - S_OK or suitable DirectWrite or STL error code
 [[nodiscard]] HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept
 {
+    static DWRITE_FONT_FEATURE fwidFeatureArray[] = {
+        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 }, // calt
+        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_FULL_WIDTH, 1 }             // fwid
+    };
+    static DWRITE_FONT_FEATURE hwidFeatureArray[] = {
+        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 }, // calt
+        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_HALF_WIDTH, 1 }   // hwid
+    };
+    static DWRITE_TYPOGRAPHIC_FEATURES fwidFeatureSet = { fwidFeatureArray, _countof(fwidFeatureArray) };
+    static DWRITE_TYPOGRAPHIC_FEATURES hwidFeatureSet = { hwidFeatureArray, _countof(hwidFeatureArray) };
+
     try
     {
         // Shapes a single run of text into glyphs.
@@ -269,6 +282,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
         // Get the glyphs from the text, retrying if needed.
+        const DWRITE_TYPOGRAPHIC_FEATURES* featureSet = run.isWide ? &fwidFeatureSet : &hwidFeatureSet;
+        UINT32 featureRangeLengths[] = { textLength };
 
         int tries = 0;
 
@@ -284,9 +299,9 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                 &run.script,
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
-                nullptr, // features
-                nullptr, // featureLengths
-                0, // featureCount
+                &featureSet, // features
+                featureRangeLengths, // featureLengths
+                1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
                 &textProps.at(0),
@@ -334,9 +349,9 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            NULL, // features
-            NULL, // featureRangeLengths
-            0, // featureRanges
+            &featureSet, // features
+            featureRangeLengths, // featureLengths
+            1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
 
@@ -1008,4 +1023,55 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     frontHalf.nextRunIndex = gsl::narrow<UINT32>(totalRuns);
     _runIndex = gsl::narrow<UINT32>(totalRuns);
 }
+
+
+[[nodiscard]] HRESULT CustomTextLayout::_AnalyzeGlyphWidth(_In_count_(cwch) const WCHAR* text, const UINT32 cwch)
+{
+    bool fWide = false;
+    bool fDecided = false;
+    UINT32 lastRunCharIndex = 0;
+    if (text == nullptr || cwch <= 0)
+        return S_FALSE; // Nothing to do, return
+
+    UINT32 ci;
+    for (ci = 0; ci < cwch; ci++)
+    {
+        const bool fCharIsWide = IsGlyphFullWidth(text[ci]);
+        if (!fDecided)
+        {
+            fWide = fCharIsWide;
+            fDecided = true;
+            lastRunCharIndex = ci;
+        }
+        else if (fCharIsWide != fWide)
+        {
+            if (ci > lastRunCharIndex)
+                RETURN_IF_FAILED(_SetGlyphWideness(lastRunCharIndex, ci - lastRunCharIndex, fWide));
+            fWide = fCharIsWide;
+            lastRunCharIndex = ci;
+        }
+    }
+    if (ci > lastRunCharIndex)
+        RETURN_IF_FAILED(_SetGlyphWideness(lastRunCharIndex, ci - lastRunCharIndex, fWide));
+    
+    return S_OK;
+};
+
+[[nodiscard]] HRESULT CustomTextLayout::_SetGlyphWideness(UINT32 textPosition, UINT32 textLength, const bool fWide)
+{
+    try
+    {
+        _SetCurrentRun(textPosition);
+        _SplitCurrentRun(textPosition);
+        while (textLength > 0)
+        {
+            auto& run = _FetchNextRun(textLength);
+            run.isWide = fWide;
+        }
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
+
 #pragma endregion

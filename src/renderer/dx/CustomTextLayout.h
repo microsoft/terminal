@@ -11,6 +11,7 @@
 #include <wrl/implements.h>
 
 #include "../inc/Cluster.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -77,6 +78,7 @@ namespace Microsoft::Console::Render
                 script(),
                 isNumberSubstituted(),
                 isSideways(),
+                isWide(),
                 fontFace{ nullptr },
                 fontScale{ 1.0 }
             {
@@ -90,6 +92,7 @@ namespace Microsoft::Console::Render
             UINT8 bidiLevel;
             bool isNumberSubstituted;
             bool isSideways;
+            bool isWide;
             ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
             FLOAT fontScale;
 
@@ -131,6 +134,10 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
+
+        [[nodiscard]] HRESULT _AnalyzeGlyphWidth(_In_count_(cwch) const WCHAR* text, const UINT32 cwch);
+        [[nodiscard]] HRESULT _SetGlyphWideness(UINT32 textIndex, UINT32 textLength, const bool fWide);
+
 
         [[nodiscard]] static constexpr UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
