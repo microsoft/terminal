@@ -90,8 +90,8 @@ namespace Microsoft::Console::Render
         HFONT _hfont;
         TEXTMETRICW _tmFontMetrics;
 
-        static const size_t s_cPolyTextCache = 80;
-        POLYTEXTW _pPolyText[s_cPolyTextCache];
+        static constexpr size_t s_cPolyTextCache = 80;
+        std::array<POLYTEXTW, s_cPolyTextCache> _pPolyText;
         size_t _cPolyText;
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 

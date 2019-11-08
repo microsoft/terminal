@@ -11,7 +11,8 @@ using namespace Microsoft::Console::Render;
 RenderClusterIterator::RenderClusterIterator(TextBufferCellIterator& cellIter) :
     _cellIter(cellIter),
     _cluster(L"", 0),
-    _attr((*cellIter).TextAttr())
+    _attr((*cellIter).TextAttr()),
+    _exceeded(false)
 {
     _GenerateCluster();
 }

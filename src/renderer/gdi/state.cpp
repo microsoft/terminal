@@ -32,7 +32,7 @@ GdiEngine::GdiEngine() :
     _fPaintStarted(false),
     _hfont((HFONT)INVALID_HANDLE_VALUE)
 {
-    ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
+    _pPolyText = { };
     _rcInvalid = { 0 };
     _szInvalidScroll = { 0 };
     _szMemorySurface = { 0 };

@@ -410,7 +410,7 @@ using namespace Microsoft::Console::Render;
 
     if (_cPolyText > 0)
     {
-        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
+        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText.data(), (UINT)_cPolyText))
         {
             hr = E_FAIL;
         }

@@ -81,7 +81,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
-    RenderClusterIterator it = clusterIter;
+    RenderClusterIterator it(clusterIter);
     while (it)
     {
         auto cluster = (*it);
