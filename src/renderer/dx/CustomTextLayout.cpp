@@ -231,11 +231,11 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 {
     static DWRITE_FONT_FEATURE fwidFeatureArray[] = {
         { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 }, // calt
-        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_FULL_WIDTH, 1 }             // fwid
+        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_FULL_WIDTH, 1 } // fwid
     };
     static DWRITE_FONT_FEATURE hwidFeatureArray[] = {
         { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 }, // calt
-        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_HALF_WIDTH, 1 }   // hwid
+        { DWRITE_FONT_FEATURE_TAG::DWRITE_FONT_FEATURE_TAG_HALF_WIDTH, 1 } // hwid
     };
     static DWRITE_TYPOGRAPHIC_FEATURES fwidFeatureSet = { fwidFeatureArray, _countof(fwidFeatureArray) };
     static DWRITE_TYPOGRAPHIC_FEATURES hwidFeatureSet = { hwidFeatureArray, _countof(hwidFeatureArray) };
@@ -1024,7 +1024,6 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     _runIndex = gsl::narrow<UINT32>(totalRuns);
 }
 
-
 [[nodiscard]] HRESULT CustomTextLayout::_AnalyzeTextWideness(_In_count_(cwch) const WCHAR* text, const UINT32 cwch)
 {
     bool fWide = false;
@@ -1053,7 +1052,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     }
     if (ci > lastRunCharIndex)
         RETURN_IF_FAILED(_SetGlyphWideness(lastRunCharIndex, ci - lastRunCharIndex, fWide));
-    
+
     return S_OK;
 };
 

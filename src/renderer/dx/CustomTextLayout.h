@@ -138,7 +138,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _AnalyzeTextWideness(_In_count_(cwch) const WCHAR* text, const UINT32 cwch);
         [[nodiscard]] HRESULT _SetGlyphWideness(UINT32 textIndex, UINT32 textLength, const bool fWide);
 
-
         [[nodiscard]] static constexpr UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
     private:
