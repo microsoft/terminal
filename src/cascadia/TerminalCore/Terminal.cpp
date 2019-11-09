@@ -337,15 +337,25 @@ short Terminal::GetBufferHeight() const noexcept
 }
 
 // _ViewStartIndex is also the length of the scrollback
-int Terminal::_ViewStartIndex() const noexcept
+int Terminal::ViewStartIndex() const noexcept
 {
     return _mutableViewport.Top();
+}
+
+int Terminal::_ViewEndIndex() const noexcept
+{
+    return _mutableViewport.BottomInclusive();
 }
 
 // _VisibleStartIndex is the first visible line of the buffer
 int Terminal::_VisibleStartIndex() const noexcept
 {
-    return std::max(0, _ViewStartIndex() - _scrollOffset);
+    return std::max(0, ViewStartIndex() - _scrollOffset);
+}
+
+int Terminal::_VisibleEndIndex() const noexcept
+{
+    return std::max(0, _ViewEndIndex() - _scrollOffset);
 }
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
@@ -479,7 +489,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 void Terminal::UserScrollViewport(const int viewTop)
 {
     const auto clampedNewTop = std::max(0, viewTop);
-    const auto realTop = _ViewStartIndex();
+    const auto realTop = ViewStartIndex();
     const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
 

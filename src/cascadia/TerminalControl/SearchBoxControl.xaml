@@ -32,7 +32,7 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <AutoSuggestBox PlaceholderText="Search" QueryIcon="Find"
+            <AutoSuggestBox x:Name="AutosuggestBox" PlaceholderText="Search" QueryIcon="Find"
                 QuerySubmitted="AutoSuggestBox_QuerySubmitted"
                 Grid.Column="0" Height="30" Width="240" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 

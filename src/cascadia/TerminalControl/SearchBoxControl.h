@@ -19,8 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void AutoSuggestBox_QuerySubmitted(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs const& e);
 
-        bool getGoForward();
-        bool getIsCaseSensitive();
+        bool GetGoForward();
+        bool GetIsCaseSensitive();
 
         bool _goForward; // The the direction of the search, controlled by the buttons with arrows
         bool _isCaseSensitive; // If the search should be case sensitive, controlled by the checkbox
@@ -46,5 +46,3 @@ namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
     {
     };
 }
-
-

@@ -108,14 +108,18 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 }
 
 // Method Description:
-// - Get the current anchor position
+// - Get the current anchor position relative to the whole text buffer
 // Arguments:
 // - None
 // Return Value:
 // - None
 const COORD Terminal::GetSelectionAnchor() const
 {
-    return _selectionAnchor;
+    COORD _selectionAnchorPos;
+    _selectionAnchorPos.X = _selectionAnchor.X;
+    _selectionAnchorPos.Y = _selectionAnchor.Y + gsl::narrow<short>(ViewStartIndex());
+
+    return _selectionAnchorPos;
 }
 
 // Method Description:
@@ -242,13 +246,13 @@ void Terminal::DoubleClickSelection(const COORD position)
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
     _selectionAnchor = _ExpandDoubleClickSelectionLeft(positionWithOffsets);
-    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_selectionAnchor.Y));
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_selectionAnchor.Y));
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
     _endSelectionPosition = _ExpandDoubleClickSelectionRight(positionWithOffsets);
-    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_endSelectionPosition.Y));
+    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_endSelectionPosition.Y));
 
     _selectionActive = true;
     _multiClickSelectionMode = SelectionExpansionMode::Word;
@@ -279,7 +283,7 @@ void Terminal::SetSelectionAnchor(const COORD position)
 
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     _selectionActive = true;
     _allowSingleCharSelection = (_copyOnSelect) ? false : true;
@@ -302,7 +306,7 @@ void Terminal::SetEndSelectionPosition(const COORD position)
 
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     if (_copyOnSelect && !_IsSingleCellSelection())
     {
@@ -463,7 +467,7 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
     _buffer->GetSize().Clamp(positionWithOffsets);
 
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
-    THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;
 }
 

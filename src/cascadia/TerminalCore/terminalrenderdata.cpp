@@ -121,18 +121,31 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
 
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
-    //int visibleStartIndex = _VisibleStartIndex();
     COORD realCoordStart = coordStart;
     COORD realCoordEnd = coordEnd;
 
-    /*if (coordStart.Y < visibleStartIndex)
+    bool notifyScrollChange = false;
+    if (coordStart.Y < _VisibleStartIndex())
     {
-        const auto newViewTop = std::max(coordStart.Y - 5, 0);
-        _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
+        // recalculate the scrollOffset
+        _scrollOffset = ViewStartIndex() - coordStart.Y;
+        notifyScrollChange = true;
+    }
+    else if (coordEnd.Y > _VisibleEndIndex())
+    {
+        // recalculate the scrollOffset, note that if the found text is
+        // beneath the current visible viewport, it may be within the
+        // current mutableViewport and the scrollOffset will be smaller
+        // than 0
+        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.Y);
+        notifyScrollChange = true;
+    }
 
+    if (notifyScrollChange)
+    {
         _buffer->GetRenderTarget().TriggerRedrawAll();
         _NotifyScrollEvent();
-    }*/
+    }
 
     realCoordStart.Y -= gsl::narrow<short>(_VisibleStartIndex());
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());

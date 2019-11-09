@@ -9,7 +9,6 @@
 #include <Utf16Parser.hpp>
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
-#include "..\buffer\out\search.h"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -45,7 +44,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _lastMouseClick{},
-        _lastMouseClickPos{}
+        _lastMouseClickPos{},
+        _searchBox{ nullptr }
     {
         _Create();
     }
@@ -133,19 +133,54 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _connectionClosedHandlers();
         });
 
-        SearchBoxControl searchBox;
-        searchBox.Visibility(Visibility::Visible);
-        searchBox.HorizontalAlignment(HorizontalAlignment::Right);
+        _CreateSearchBoxControl();
+    }
 
-        container.Children().Append(searchBox);
+    void TermControl::_CreateSearchBoxControl()
+    {
+        if (!_searchBox)
+        {
+            SearchBoxControl searchBox;
+            searchBox.Visibility(Visibility::Visible);
+            searchBox.HorizontalAlignment(HorizontalAlignment::Right);
 
-        searchBox.CreateSearch({this, &TermControl::_CreateSearch });
+            _searchBox = searchBox;
+            _root.Children().Append(_searchBox);
+
+            // Event handlers
+            _searchBox.CreateSearch({ this, &TermControl::_CreateSearch });
+        }
     }
 
     void TermControl::_CreateSearch(const SearchBoxControl& sender, winrt::hstring text)
     {
-        Search search(*GetUiaData(), text.c_str(), Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
+        Search::Direction direction = _searchBox.GetGoForward() ?
+                                          Search::Direction::Forward :
+                                          Search::Direction::Backward;
 
+        Search::Sensitivity sensitivity = _searchBox.GetIsCaseSensitive() ?
+                                              Search::Sensitivity::CaseSensitive :
+                                              Search::Sensitivity::CaseInsensitive;
+
+        std::unique_ptr<Search> search;
+        if (!_terminal->IsSelectionActive())
+        {
+            // If there is no active selection, we set the anchor to the current
+            // cursor position
+            COORD cursorPos = _terminal->GetCursorPosition();
+            cursorPos.Y += _terminal->ViewStartIndex();
+            search = std::make_unique<Search>(*GetUiaData(), text.c_str(), direction, sensitivity, cursorPos);
+            _search(*search.get());
+        }
+        else
+        {
+            search = std::make_unique<Search>(*GetUiaData(), text.c_str(), direction, sensitivity);
+            _search(*search.get());
+        }
+    }
+
+    void TermControl::_search(Search search)
+    {
         _terminal->LockConsole();
         if (search.FindNext())
         {
@@ -618,9 +653,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.Handled(handled);
     }
 
-    void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                       Input::KeyRoutedEventArgs const& e)
     {
+        // If the current focused element is a kind of input box, we do not send this event up to
+        // terminal
+        auto focusedElement = Input::FocusManager::GetFocusedElement(_root.XamlRoot());
+        if (focusedElement.try_as<Controls::AutoSuggestBox>() ||
+            focusedElement.try_as<Controls::TextBox>())
+        {
+            return;
+        }
+
         // mark event as handled and do nothing if...
         //   - closing
         //   - key modifier is pressed

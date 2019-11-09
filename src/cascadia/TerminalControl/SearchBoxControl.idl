@@ -3,6 +3,8 @@ namespace Microsoft.Terminal.TerminalControl
     [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
     {
         SearchBoxControl();
+        Boolean GetGoForward();
+        Boolean GetIsCaseSensitive();
 
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> CreateSearch;
     }

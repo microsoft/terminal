@@ -20,14 +20,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Button>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Button>();
+
+        Controls::AutoSuggestBox inputBox = this->FindName(L"AutosuggestBox").try_as<Controls::AutoSuggestBox>();
     }
 
-    bool SearchBoxControl::getGoForward()
+    bool SearchBoxControl::GetGoForward()
     {
         return _goForward;
     }
 
-    bool SearchBoxControl::getIsCaseSensitive()
+    bool SearchBoxControl::GetIsCaseSensitive()
     {
         return _isCaseSensitive;
     }

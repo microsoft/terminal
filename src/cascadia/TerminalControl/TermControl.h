@@ -12,6 +12,7 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "..\buffer\out\search.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -80,8 +81,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
-        void _CreateSearch(const SearchBoxControl& sender, winrt::hstring text);
-
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -100,6 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
+        SearchBoxControl _searchBox;
         event_token _connectionOutputEventToken;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
@@ -193,6 +193,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        void _CreateSearchBoxControl();
+        void _CreateSearch(const SearchBoxControl& sender, winrt::hstring text);
+        void _search(Search search);
     };
 }
 
