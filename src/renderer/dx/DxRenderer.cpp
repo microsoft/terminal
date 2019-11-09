@@ -121,7 +121,7 @@ float4 Blur2(Texture2D input, float2 tex_coord, float sigma)
     float4 color = { 0, 0, 0, 0 };
     float factor = 1;
 
-    int sampleCount = 21;
+    int sampleCount = 13;
 
     for (int x = 0; x < sampleCount; x++) 
     {
