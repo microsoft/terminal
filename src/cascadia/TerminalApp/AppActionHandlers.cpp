@@ -221,6 +221,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
+                                            const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetFocusedControl();
+        termControl.ResetFontSize();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {

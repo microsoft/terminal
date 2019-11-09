@@ -990,6 +990,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Reset the font size of the terminal to its default size.
+    // Arguments:
+    // - none
+    void TermControl::ResetFontSize()
+    {
+        const auto currentSize = _desiredFont.GetEngineSize().Y;
+        const auto defaultSize = _settings.FontSize();
+        AdjustFontSize(defaultSize - currentSize);
+    }
+
+    // Method Description:
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.

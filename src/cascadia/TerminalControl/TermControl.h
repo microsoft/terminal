@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         int GetViewHeight() const;
 
         void AdjustFontSize(int fontSizeDelta);
+        void ResetFontSize();
 
         void SwapChainChanged();
         ~TermControl();
