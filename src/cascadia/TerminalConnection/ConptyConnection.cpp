@@ -106,6 +106,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             siEx.StartupInfo.lpTitle = mutableTitle.data();
         }
 
+        const wchar_t* const startingDirectory = _startingDirectory.size() > 0 ? _startingDirectory.c_str() : nullptr;
+
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),
@@ -114,7 +116,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             false, // bInheritHandles
             EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
             lpEnvironment, // lpEnvironment
-            _startingDirectory.c_str(),
+            startingDirectory,
             &siEx.StartupInfo, // lpStartupInfo
             &_piClient // lpProcessInformation
             ));
