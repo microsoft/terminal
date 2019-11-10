@@ -99,6 +99,11 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
+        m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalFont();
+
+        delete m_state;
+
         return true;
     }
 
@@ -140,6 +145,7 @@ class Microsoft::Console::Render::VtRendererTest
     bool WriteCallback(const char* const pch, size_t const cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
+    TextBuffer& GetTbi();
 
     void VerifyExpectedInputsDrained();
 };
@@ -152,6 +158,12 @@ Viewport VtRendererTest::SetUpViewport()
     view.Right = 79;
 
     return Viewport::FromInclusive(view);
+}
+
+TextBuffer& VtRendererTest::GetTbi()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
 void VtRendererTest::VerifyExpectedInputsDrained()
@@ -611,15 +623,14 @@ void VtRendererTest::Xterm256TestCursor()
         qExpectedInput.push_back("asdfghjkl");
 
         const wchar_t* const line = L"asdfghjkl";
-        const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
-        std::vector<Cluster> clusters;
-        for (size_t i = 0; i < wcslen(line); i++)
-        {
-            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
-        }
+        TextBuffer& tbi = GetTbi();
+        const TextAttribute attr{};
+        tbi.WriteLine(OutputCellIterator(line, attr), { 0, 0 });
+        TextBufferCellIterator cellIter(tbi, { 0, 0 });
+        RenderClusterIterator clusterIter(cellIter);
 
-        // VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1257,15 +1268,14 @@ void VtRendererTest::WinTelnetTestCursor()
         qExpectedInput.push_back("asdfghjkl");
 
         const wchar_t* const line = L"asdfghjkl";
-        const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
-        std::vector<Cluster> clusters;
-        for (size_t i = 0; i < wcslen(line); i++)
-        {
-            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
-        }
+        TextBuffer& tbi = GetTbi();
+        const TextAttribute attr{};
+        tbi.WriteLine(OutputCellIterator(line, attr), { 0, 0 });
+        TextBufferCellIterator cellIter(tbi, { 0, 0 });
+        RenderClusterIterator clusterIter(cellIter);
 
-        // VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1320,9 +1330,7 @@ void VtRendererTest::TestWrapping()
 
         const TextAttribute attr{};
 
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-        TextBuffer& tbi = si.GetTextBuffer();
+        TextBuffer& tbi = GetTbi();
 
         tbi.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
         TextBufferCellIterator cellIter1(tbi, { 0, 0 });
