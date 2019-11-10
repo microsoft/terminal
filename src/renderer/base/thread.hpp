@@ -47,5 +47,6 @@ namespace Microsoft::Console::Render
         IRenderer* _pRenderer; // Non-ownership pointer
 
         bool _fKeepRunning;
+        volatile bool _fPainting;
     };
 }

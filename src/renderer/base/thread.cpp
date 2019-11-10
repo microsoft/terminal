@@ -15,6 +15,7 @@ RenderThread::RenderThread() :
     _hEvent(nullptr),
     _hPaintCompletedEvent(nullptr),
     _fKeepRunning(true),
+    _fPainting(false),
     _hPaintEnabledEvent(nullptr)
 {
 }
@@ -162,8 +163,9 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
         ResetEvent(_hPaintCompletedEvent);
 
-        LOG_IF_FAILED(_pRenderer->PaintFrame());
+        _fPainting = true;
 
+        LOG_IF_FAILED(_pRenderer->PaintFrame());
         SetEvent(_hPaintCompletedEvent);
 
         // extra check before we sleep since it's a "long" activity, relatively speaking.
@@ -171,6 +173,8 @@ DWORD WINAPI RenderThread::_ThreadProc()
         {
             Sleep(s_FrameLimitMilliseconds);
         }
+
+        _fPainting = false;
     }
 
     return S_OK;
@@ -178,6 +182,11 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
 void RenderThread::NotifyPaint()
 {
+    if (_fPainting)
+    {
+        return;
+    }
+
     SetEvent(_hEvent);
 }
 
