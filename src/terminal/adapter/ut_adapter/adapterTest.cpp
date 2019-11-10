@@ -376,19 +376,6 @@ public:
         return TRUE;
     }
 
-    bool MoveCursorVertically(const ptrdiff_t lines) override
-    {
-        Log::Comment(L"MoveCursorVertically MOCK called...");
-        short l;
-        VERIFY_SUCCEEDED(PtrdiffTToShort(lines, &l));
-        if (_moveCursorVerticallyResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedLines, l);
-            _cursorPos = { _cursorPos.X, _cursorPos.Y + l };
-        }
-        return !!_moveCursorVerticallyResult;
-    }
-
     bool SetConsoleTitleW(const std::wstring_view title)
     {
         Log::Comment(L"SetConsoleTitleW MOCK called...");
@@ -745,8 +732,6 @@ public:
         // Attribute default is gray on black.
         _attribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
         _expectedAttribute = _attribute;
-
-        _expectedLines = 0;
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -862,7 +847,6 @@ public:
     bool _expectedMeta = false;
     unsigned int _expectedOutputCP = 0;
     bool _isPty = false;
-    short _expectedLines = 0;
     bool _privateBoldTextResult = false;
     bool _expectedIsBold = false;
     bool _isBold = false;
@@ -921,7 +905,6 @@ public:
     COLORREF _expectedCursorColor = 0;
     bool _getConsoleOutputCPResult = false;
     bool _isConsolePtyResult = false;
-    bool _moveCursorVerticallyResult = false;
     bool _privateSetDefaultAttributesResult = false;
     bool _moveToBottomResult = false;
 
@@ -1041,24 +1024,6 @@ public:
         Log::Comment(L"Test 1: Cursor doesn't move when placed in corner of viewport.");
         _testGetSet->PrepData(direction);
 
-        switch (direction)
-        {
-        case CursorDirection::UP:
-            Log::Comment(L"Testing up direction.");
-            _testGetSet->_expectedLines = -1;
-            _testGetSet->_moveCursorVerticallyResult = true;
-            break;
-        case CursorDirection::DOWN:
-            Log::Comment(L"Testing down direction.");
-            _testGetSet->_expectedLines = 1;
-            _testGetSet->_moveCursorVerticallyResult = true;
-            break;
-        default:
-            _testGetSet->_expectedLines = 0;
-            _testGetSet->_moveCursorVerticallyResult = false;
-            break;
-        }
-
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(1));
 
         Log::Comment(L"Test 1b: Cursor moves to left of line with next/prev line command when cursor can't move higher/lower.");
@@ -1095,13 +1060,9 @@ public:
         {
         case CursorDirection::UP:
             _testGetSet->_expectedCursorPos.Y--;
-            _testGetSet->_expectedLines = -1;
-            _testGetSet->_moveCursorVerticallyResult = true;
             break;
         case CursorDirection::DOWN:
             _testGetSet->_expectedCursorPos.Y++;
-            _testGetSet->_expectedLines = 1;
-            _testGetSet->_moveCursorVerticallyResult = true;
             break;
         case CursorDirection::RIGHT:
             _testGetSet->_expectedCursorPos.X++;
@@ -1131,13 +1092,9 @@ public:
         {
         case CursorDirection::UP:
             _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
-            _testGetSet->_expectedLines = -100;
-            _testGetSet->_moveCursorVerticallyResult = true;
             break;
         case CursorDirection::DOWN:
             _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
-            _testGetSet->_expectedLines = 100;
-            _testGetSet->_moveCursorVerticallyResult = true;
             break;
         case CursorDirection::RIGHT:
             _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Right - 1;
@@ -1196,7 +1153,6 @@ public:
         Log::Comment(L"Test 6: When SetConsoleCursorPosition throws a failure, call fails and cursor doesn't move.");
         _testGetSet->PrepData(direction);
         _testGetSet->_setConsoleCursorPositionResult = FALSE;
-        _testGetSet->_moveCursorVerticallyResult = false;
 
         VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(0));
         VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
@@ -1205,7 +1161,6 @@ public:
         Log::Comment(L"Test 7: When GetConsoleScreenBufferInfo throws a failure, call fails and cursor doesn't move.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
         _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
-        _testGetSet->_moveCursorVerticallyResult = true;
         Log::Comment(NoThrowString().Format(
             L"Cursor Up and Down don't need GetConsoleScreenBufferInfoEx, so they will succeed"));
         if (direction == CursorDirection::UP || direction == CursorDirection::DOWN)
