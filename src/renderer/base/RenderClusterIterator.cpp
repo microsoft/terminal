@@ -11,11 +11,11 @@ using namespace Microsoft::Console::Render;
 // Routine Description:
 // - Creates a new read-only iterator to seek through cluster data stored in cells
 // Arguments:
-// - cellIter - Text buffer cells to seek through
-RenderClusterIterator::RenderClusterIterator(TextBufferCellIterator& cellIter) :
-    _cellIter(cellIter),
+// - cellIt - Text buffer cells to seek through
+RenderClusterIterator::RenderClusterIterator(TextBufferCellIterator& cellIt) :
+    _cellIt(cellIt),
     _cluster(L"", 0),
-    _attr((*cellIter).TextAttr()),
+    _attr((*cellIt).TextAttr()),
     _distance(0),
     _exceeded(false)
 {
@@ -43,7 +43,7 @@ RenderClusterIterator::operator bool() const noexcept
 bool RenderClusterIterator::operator==(const RenderClusterIterator& it) const
 {
     return _attr == it._attr &&
-           &_cellIter == &it._cellIter &&
+           &_cellIt == &it._cellIt &&
            &_distance == &it._distance &&
            _exceeded == it._exceeded;
 }
@@ -68,7 +68,7 @@ bool RenderClusterIterator::operator!=(const RenderClusterIterator& it) const
 RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& movement)
 {
     ptrdiff_t move = movement;
-    auto newCellIter = _cellIter;
+    auto newCellIter = _cellIt;
     size_t cols = 0;
     while (move > 0 && !_exceeded)
     {
@@ -93,7 +93,7 @@ RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& moveme
         move++;
     }
 
-    _cellIter += movement;
+    _cellIt += movement;
     _GenerateCluster();
     _distance += cols;
 
@@ -182,7 +182,7 @@ RenderClusterIterator RenderClusterIterator::operator-(const ptrdiff_t& movement
 // - Updates the internal cluster. Call after updating underlying cell position.
 void RenderClusterIterator::_GenerateCluster()
 {
-    _cluster = Cluster((*_cellIter).Chars(), (*_cellIter).Columns());
+    _cluster = Cluster((*_cellIt).Chars(), (*_cellIt).Columns());
 }
 
 // Routine Description:

@@ -63,8 +63,6 @@ class Microsoft::Console::Render::VtRendererTest
 {
     TEST_CLASS(VtRendererTest);
 
-    wil::shared_event _shutdownEvent;
-
     CommonState* m_state;
 
     TEST_CLASS_SETUP(ClassSetup)
@@ -87,8 +85,6 @@ class Microsoft::Console::Render::VtRendererTest
         g_ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
         g_ColorTable[15] = RGB(242, 242, 242); // White
         // clang-format on
-        _shutdownEvent.create(wil::EventOptions::ManualReset);
-
         m_state = new CommonState();
 
         m_state->PrepareGlobalFont();
@@ -627,10 +623,10 @@ void VtRendererTest::Xterm256TestCursor()
         TextBuffer& tbi = GetTbi();
         const TextAttribute attr{};
         tbi.WriteLine(OutputCellIterator(line, attr), { 0, 0 });
-        TextBufferCellIterator cellIter(tbi, { 0, 0 });
-        RenderClusterIterator clusterIter(cellIter);
+        TextBufferCellIterator cellIt(tbi, { 0, 0 });
+        RenderClusterIterator clusterIt(cellIt);
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIt, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1042,10 +1038,10 @@ void VtRendererTest::XtermTestCursor()
         TextBuffer& tbi = GetTbi();
         const TextAttribute attr{};
         tbi.WriteLine(OutputCellIterator(line, attr), { 0, 0 });
-        TextBufferCellIterator cellIter(tbi, { 0, 0 });
-        RenderClusterIterator clusterIter(cellIter);
+        TextBufferCellIterator cellIt(tbi, { 0, 0 });
+        RenderClusterIterator clusterIt(cellIt);
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIt, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1271,10 +1267,10 @@ void VtRendererTest::WinTelnetTestCursor()
         TextBuffer& tbi = GetTbi();
         const TextAttribute attr{};
         tbi.WriteLine(OutputCellIterator(line, attr), { 0, 0 });
-        TextBufferCellIterator cellIter(tbi, { 0, 0 });
-        RenderClusterIterator clusterIter(cellIter);
+        TextBufferCellIterator cellIt(tbi, { 0, 0 });
+        RenderClusterIterator clusterIt(cellIt);
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIt, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1332,14 +1328,14 @@ void VtRendererTest::TestWrapping()
         TextBuffer& tbi = GetTbi();
 
         tbi.WriteLine(OutputCellIterator(line1, attr), { 0, 0 });
-        TextBufferCellIterator cellIter1(tbi, { 0, 0 });
-        RenderClusterIterator clusterIter1(cellIter1);
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter1, { 0, 0 }, false));
+        TextBufferCellIterator cellIt1(tbi, { 0, 0 });
+        RenderClusterIterator clusterIt1(cellIt1);
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIt1, { 0, 0 }, false));
 
         tbi.WriteLine(OutputCellIterator(line2, attr), { 0, 0 });
-        TextBufferCellIterator cellIter2(tbi, { 0, 0 });
-        RenderClusterIterator clusterIter2(cellIter2);
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter2, { 0, 1 }, false));
+        TextBufferCellIterator cellIt2(tbi, { 0, 0 });
+        RenderClusterIterator clusterIt2(cellIt2);
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIt2, { 0, 1 }, false));
     });
 }
 

@@ -600,16 +600,14 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
     {
         size_t cols = 0;
 
-        // And hold the point where we should start drawing.
+        // Hold the point where we should start drawing.
         auto screenPoint = target;
 
         // This outer loop will continue until we reach the end of the text we are trying to draw.
         while (it)
         {
-            RenderClusterIterator runStartIt(it);
-            RenderClusterIterator clusterIter(it);
             // Hold onto the current run color right here for the length of the outer loop.
-            // We'll be changing the persistent one as we run through the inner loops to detect
+            // We'll be changing the persistent one as we run through the text buffer to detect
             // when a run changes, but we will still need to know this color at the bottom
             // when we go to draw gridlines for the length of the run.
             const auto currentRunColor = it->TextAttr();
@@ -620,11 +618,20 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
 
-            // Do the painting.
-            // TODO: Calculate when trim left should be TRUE
-            THROW_IF_FAILED(pEngine->PaintBufferLine(clusterIter, screenPoint, false));
+            // Construct cluster iterator for rendering.
+            RenderClusterIterator clusterIt(it);
 
+            // Keep track of the current text buffer cell position with runStartIt for distance calculation.
+            RenderClusterIterator runStartIt(it);
+
+            // Do the painting. Here clusterIter (together with TextBufferCellIterator "it") will advance until the point
+            // where we hit the end of current run.
+            // TODO: Calculate when trim left should be TRUE
+            THROW_IF_FAILED(pEngine->PaintBufferLine(clusterIt, screenPoint, false));
+
+            // Get the number of columns consumed throughout the rendering of current run.
             cols = clusterIter.GetClusterDistance(runStartIt);
+
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
             {

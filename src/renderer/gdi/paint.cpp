@@ -270,7 +270,7 @@ using namespace Microsoft::Console::Render;
 // - Draws one line of the buffer to the screen.
 // - This will now be cached in a PolyText buffer and flushed periodically instead of drawing every individual segment. Note this means that the PolyText buffer must be flushed before some operations (changing the brush color, drawing lines on top of the characters, inverting for cursor/selection, etc.)
 // Arguments:
-// - clusters - text to be written and columns expected per cluster
+// - clusterIt - Iterator of text to be written and columns expected
 // - coord - character coordinate target to render within viewport
 // - trimLeft - This specifies whether to trim one character width off the left side of the output. Used for drawing the right-half only of a double-wide character.
 // Return Value:
@@ -284,7 +284,7 @@ using namespace Microsoft::Console::Render;
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                                  const COORD coord,
                                                  const bool trimLeft) noexcept
 {
@@ -311,9 +311,9 @@ using namespace Microsoft::Console::Render;
 
         // Convert data from clusters into the text array and the widths array.
         size_t i = 0;
-        while (clusterIter)
+        while (clusterIt)
         {
-            const auto& cluster = (*clusterIter);
+            const auto& cluster = (*clusterIt);
             const auto columnCount = cluster.GetColumns();
 
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
@@ -322,7 +322,7 @@ using namespace Microsoft::Console::Render;
             rgdxPoly.emplace_back(gsl::narrow<int>(columnCount) * coordFontSize.X);
             cchCharWidths += rgdxPoly.at(i);
 
-            clusterIter += columnCount > 0 ? columnCount : 1;
+            clusterIt += columnCount > 0 ? columnCount : 1;
             ++i;
         }
 

@@ -1142,12 +1142,12 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Routine Description:
 // - Places one line of text onto the screen at the given position
 // Arguments:
-// - clusters - Iterable collection of cluster information (text and columns it should consume)
+// - clusterIt - Iterator of cluster information (text and columns it should consume)
 // - coord - Character coordinate position in the cell grid
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/) noexcept
 {
@@ -1163,7 +1163,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
                                 _dwriteFontFace.Get(),
-                                clusterIter,
+                                clusterIt,
                                 _glyphCell.cx);
 
         // Get the baseline for this font as that's where we draw from

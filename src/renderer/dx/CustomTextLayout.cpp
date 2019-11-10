@@ -57,13 +57,13 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 // - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
 // - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
-// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
+// - clusterIt - From the backing buffer, an iterator of the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
                                    gsl::not_null<IDWriteFontFace1*> const font,
-                                   RenderClusterIterator& clusterIter,
+                                   RenderClusterIterator& clusterIt,
                                    size_t const width) :
     _factory{ factory.get() },
     _analyzer{ analyzer.get() },
@@ -81,13 +81,13 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
-    while (clusterIter)
+    while (clusterIt)
     {
-        auto cluster = (*clusterIter);
+        auto cluster = (*clusterIt);
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
         _textClusterColumns.push_back(cols);
         _text += cluster.GetText();
-        clusterIter += cols > 0 ? cols : 1;
+        clusterIt += cols > 0 ? cols : 1;
     }
 }
 

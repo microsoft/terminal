@@ -111,7 +111,7 @@ using namespace Microsoft::Console::Types;
 //      pipe. If the characters are outside the ASCII range (0-0x7f), then
 //      instead writes a '?'
 // Arguments:
-// - clusters - text and column count data to be written
+// - clusterIt - text and column count data to be written
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
@@ -329,11 +329,11 @@ using namespace Microsoft::Console::Types;
 //      characters to telnet, it will likely end up drawing them wrong, which
 //      will make the client appear buggy and broken.
 // Arguments:
-// - clusters - text and column width data to be written
+// - clusterIt - text and column width data to be written
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(_Inout_ RenderClusterIterator& clusterIter,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                                       const COORD coord) noexcept
 {
     try
@@ -349,13 +349,13 @@ using namespace Microsoft::Console::Types;
         std::wstring wstr;
         wstr.reserve(preallocateSize);
 
-        while (clusterIter)
+        while (clusterIt)
         {
-            auto cluster = (*clusterIter);
+            auto cluster = (*clusterIt);
             wstr.append(cluster.GetText());
             const auto columnCount = cluster.GetColumns();
             RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(columnCount), &totalWidth));
-            clusterIter += columnCount > 0 ? columnCount : 1;
+            clusterIt += columnCount > 0 ? columnCount : 1;
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
@@ -372,11 +372,11 @@ using namespace Microsoft::Console::Types;
 // - Draws one line of the buffer to the screen. Writes the characters to the
 //      pipe, encoded in UTF-8.
 // Arguments:
-// - clusters - text and column widths to be written
+// - clusterIt - text and column widths to be written
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(_Inout_ RenderClusterIterator& clusterIter,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                                      const COORD coord) noexcept
 {
     if (coord.Y < _virtualTop)
@@ -393,13 +393,13 @@ using namespace Microsoft::Console::Types;
 
     std::wstring unclusteredString;
     unclusteredString.reserve(preallocateSize);
-    while (clusterIter)
+    while (clusterIt)
     {
-        auto cluster = (*clusterIter);
+        auto cluster = (*clusterIt);
         const auto columnCount = cluster.GetColumns();
         unclusteredString.append(cluster.GetText());
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(columnCount), &totalWidth));
-        clusterIter += columnCount > 0 ? columnCount : 1;
+        clusterIt += columnCount > 0 ? columnCount : 1;
     }
 
     const size_t cchLine = unclusteredString.size();

@@ -72,7 +72,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
+        [[nodiscard]] HRESULT PaintBufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                               COORD const coord,
                                               bool const fTrimLeft) noexcept override;
 

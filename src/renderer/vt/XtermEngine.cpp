@@ -410,20 +410,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      pipe, encoded in UTF-8 or ASCII only, depending on the VtIoMode.
 //      (See descriptions of both implementations for details.)
 // Arguments:
-// - clusters - text and column counts for each piece of text.
+// - clusterIt - Iterator of text and column counts for each piece of text.
 // - coord - character coordinate target to render within viewport
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/) noexcept
 {
     return _fUseAsciiOnly ?
-               VtEngine::_PaintAsciiBufferLine(clusterIter, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusterIter, coord);
+               VtEngine::_PaintAsciiBufferLine(clusterIt, coord) :
+               VtEngine::_PaintUtf8BufferLine(clusterIt, coord);
 }
 
 // Method Description:

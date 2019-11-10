@@ -269,12 +269,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Places one line of text onto the screen at the given position
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
-// - clusters - Iterable collection of cluster information (text and columns it should consume)
+// - clusterIt - Iterator of cluster information (text and columns it should consume)
 // - coord - Character coordinate position in the cell grid
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(_Inout_ RenderClusterIterator& /*clusterIter*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(_Inout_ RenderClusterIterator& /*clusterIt*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/) noexcept
 {

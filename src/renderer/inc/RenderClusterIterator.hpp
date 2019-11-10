@@ -50,7 +50,7 @@ namespace Microsoft::Console::Render
     protected:
         void _GenerateCluster();
 
-        TextBufferCellIterator& _cellIter;
+        TextBufferCellIterator& _cellIt;
         Cluster _cluster;
         TextAttribute _attr;
         size_t _distance;
