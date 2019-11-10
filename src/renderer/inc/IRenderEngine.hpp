@@ -20,7 +20,6 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
-
     class IRenderEngine
     {
     public:

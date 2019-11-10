@@ -291,7 +291,7 @@ using namespace Microsoft::Console::Render;
     try
     {
         const size_t preallocateSize = (_rcInvalid.right - _rcInvalid.left) / 8;
-  
+
         POINT ptDraw = { 0 };
         RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
 

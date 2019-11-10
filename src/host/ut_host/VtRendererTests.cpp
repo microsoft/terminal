@@ -1038,15 +1038,14 @@ void VtRendererTest::XtermTestCursor()
         qExpectedInput.push_back("asdfghjkl");
 
         const wchar_t* const line = L"asdfghjkl";
-        const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
-        std::vector<Cluster> clusters;
-        for (size_t i = 0; i < wcslen(line); i++)
-        {
-            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
-        }
+        TextBuffer& tbi = GetTbi();
+        const TextAttribute attr{};
+        tbi.WriteLine(OutputCellIterator(line, attr), { 0, 0 });
+        TextBufferCellIterator cellIter(tbi, { 0, 0 });
+        RenderClusterIterator clusterIter(cellIter);
 
-        // VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine(clusterIter, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));

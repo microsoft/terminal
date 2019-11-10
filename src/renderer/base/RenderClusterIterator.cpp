@@ -8,6 +8,10 @@
 
 using namespace Microsoft::Console::Render;
 
+// Routine Description:
+// - Creates a new read-only iterator to seek through cluster data stored in cells
+// Arguments:
+// - cellIter - Text buffer cells to seek through
 RenderClusterIterator::RenderClusterIterator(TextBufferCellIterator& cellIter) :
     _cellIter(cellIter),
     _cluster(L"", 0),
@@ -18,17 +22,24 @@ RenderClusterIterator::RenderClusterIterator(TextBufferCellIterator& cellIter) :
     _GenerateCluster();
 }
 
+// Routine Description:
+// - Tells if the iterator is still valid. The iterator will be invalidated when it meets a text cell that
+//     has different text attribute from the cell where the iteration starts, which pratically separate each
+//     runs of the text.
+// - See also: Microsoft::Console::Render::Renderer::_PaintBufferOutputHelper
+// Return Value:
+// - True if this iterator is still inside the bounds of current run. False if we've passed the run boundary.
 RenderClusterIterator::operator bool() const noexcept
 {
     return !_exceeded;
 }
 
 // Routine Description:
-// - Compares two iterators to see if they're pointing to the same position in the same buffer
+// - Compares two iterators to see if they're pointing to the same cluster in the same text buffer
 // Arguments:
 // - it - The other iterator to compare to this one.
 // Return Value:
-// - True if it's the same text buffer and same cell position. False otherwise.
+// - True if it's the same text buffer and same cluster position. False otherwise.
 bool RenderClusterIterator::operator==(const RenderClusterIterator& it) const
 {
     return _attr == it._attr &&
@@ -38,16 +49,22 @@ bool RenderClusterIterator::operator==(const RenderClusterIterator& it) const
 }
 
 // Routine Description:
-// - Compares two iterators to see if they're pointing to the different positions in the same buffer or different buffers entirely.
+// - Compares two iterators to see if they're pointing to the different cluster in the same buffer or different buffer entirely.
 // Arguments:
 // - it - The other iterator to compare to this one.
 // Return Value:
-// - True if it's the same text buffer and different cell position or if they're different buffers. False otherwise.
+// - True if it's the same text buffer and different cluster or if they're different buffers. False otherwise.
 bool RenderClusterIterator::operator!=(const RenderClusterIterator& it) const
 {
     return !(*this == it);
 }
 
+// Routine Description:
+// - Advances the iterator forward relative to the underlying text buffer by the specified movement
+// Arguments:
+// - movement - Magnitude and direction of movement.
+// Return Value:
+// - Reference to self after movement.
 RenderClusterIterator& RenderClusterIterator::operator+=(const ptrdiff_t& movement)
 {
     ptrdiff_t move = movement;
@@ -160,21 +177,40 @@ RenderClusterIterator RenderClusterIterator::operator-(const ptrdiff_t& movement
     return temp;
 }
 
+
+// Routine Description:
+// - Updates the internal cluster. Call after updating underlying cell position.
 void RenderClusterIterator::_GenerateCluster()
 {
     _cluster = Cluster((*_cellIter).Chars(), (*_cellIter).Columns());
 }
 
+// Routine Description:
+// - Provides cluster data of the corresponding text buffer cell.
+// Arguments:
+// - <none> - Uses current position
+// Return Value:
+// - Cluster data of current text buffer cell.
 const Cluster& RenderClusterIterator::operator*() const noexcept
 {
     return _cluster;
 }
 
+// Routine Description:
+// - Provides cluster data of the corresponding text buffer cell.
+// Arguments:
+// - <none> - Uses current position
+// Return Value:
+// - Cluster data of current text buffer cell.
 const Cluster* RenderClusterIterator::operator->() const noexcept
 {
     return &_cluster;
 }
 
+// Routine Description:
+// - Gets the distance between two iterators relative to the number of columns needed for rendering.
+// Return Value:
+// - The number of columns consumed for rendering between these two iterators.
 ptrdiff_t RenderClusterIterator::GetClusterDistance(RenderClusterIterator other) const noexcept
 {
     return _distance - other._distance;

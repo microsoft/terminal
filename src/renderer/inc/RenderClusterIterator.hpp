@@ -1,4 +1,21 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- RenderClusterIterator.hpp
+
+Abstract:
+- A Read-only iterator to extract cluster data for rendering while walking through text cells.
+- This is done for performance reasons (avoid heap allocs and copies).
+
+Author:
+- Chester Liu (skyline75489) 10-Nov-2019
+
+--*/
+
 #pragma once
+
 #include "../inc/Cluster.hpp"
 #include "../../buffer/out/TextAttribute.hpp"
 
