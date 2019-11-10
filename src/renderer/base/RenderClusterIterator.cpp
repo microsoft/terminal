@@ -177,7 +177,6 @@ RenderClusterIterator RenderClusterIterator::operator-(const ptrdiff_t& movement
     return temp;
 }
 
-
 // Routine Description:
 // - Updates the internal cluster. Call after updating underlying cell position.
 void RenderClusterIterator::_GenerateCluster()

@@ -117,11 +117,11 @@ using namespace Microsoft::Console::Types;
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIter,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(_Inout_ RenderClusterIterator& clusterIt,
                                                 const COORD coord,
                                                 const bool /*trimLeft*/) noexcept
 {
-    return VtEngine::_PaintAsciiBufferLine(clusterIter, coord);
+    return VtEngine::_PaintAsciiBufferLine(clusterIt, coord);
 }
 
 // Method Description:

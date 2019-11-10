@@ -630,7 +630,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             THROW_IF_FAILED(pEngine->PaintBufferLine(clusterIt, screenPoint, false));
 
             // Get the number of columns consumed throughout the rendering of current run.
-            cols = clusterIter.GetClusterDistance(runStartIt);
+            cols = clusterIt.GetClusterDistance(runStartIt);
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
