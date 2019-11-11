@@ -15,7 +15,7 @@ RenderThread::RenderThread() :
     _hEvent(nullptr),
     _hPaintCompletedEvent(nullptr),
     _fKeepRunning(true),
-    _fPainting(false),
+    _fNextFrameRequested(false),
     _hPaintEnabledEvent(nullptr)
 {
 }
@@ -159,11 +159,18 @@ DWORD WINAPI RenderThread::_ThreadProc()
     while (_fKeepRunning)
     {
         WaitForSingleObject(_hPaintEnabledEvent, INFINITE);
-        WaitForSingleObject(_hEvent, INFINITE);
+
+        // Skip waiting if next frame is requested.
+        if (!_fNextFrameRequested)
+        {
+            WaitForSingleObject(_hEvent, INFINITE);
+        }
+
+        _fNextFrameRequested = false;
 
         ResetEvent(_hPaintCompletedEvent);
 
-        _fPainting = true;
+        _fPainting.test_and_set(std::memory_order_acquire);
 
         LOG_IF_FAILED(_pRenderer->PaintFrame());
         SetEvent(_hPaintCompletedEvent);
@@ -174,7 +181,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
             Sleep(s_FrameLimitMilliseconds);
         }
 
-        _fPainting = false;
+        _fPainting.clear(std::memory_order_release);
     }
 
     return S_OK;
@@ -182,8 +189,11 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
 void RenderThread::NotifyPaint()
 {
-    if (_fPainting)
+    // If we are currently painting a frame, set _fNextFrameRequested flag
+    // to indicate we want to paint next frame immediately.
+    if (_fPainting.test_and_set(std::memory_order_acquire))
     {
+        _fNextFrameRequested = true;
         return;
     }
 
