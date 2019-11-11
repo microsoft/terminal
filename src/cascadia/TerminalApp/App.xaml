@@ -49,9 +49,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     is unfortunately static. -->
                     <SolidColorBrush x:Name="ErrorTextBrush" Color="{ThemeResource SystemErrorTextColor}" />
 
-                    <!-- Suppress all padding around the tabs. The TabView looks far better like this. -->
-                    <Thickness x:Key="TabViewHeaderPadding">0,0,0,0</Thickness>
-
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->
