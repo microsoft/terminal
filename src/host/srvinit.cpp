@@ -260,8 +260,7 @@ void ConsoleCheckDebug()
 {
     auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
-    RETURN_IF_FAILED(g.consoleInputSetupEvent.create(wil::EventOptions::ManualReset));
-    RETURN_IF_FAILED(g.consoleInputInitializedEvent.create(wil::EventOptions::ManualReset));
+    RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
     RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
@@ -576,12 +575,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         {
             ServiceLocator::LocateGlobals().dwInputThreadId = pNewThread->GetThreadId();
 
-            // The ConsoleInputThread needs to perform things under lock,
-            // but if we unlock it, we don't know who will get the lock.
-            // So we will signal that it is safe for the other thread to do its work as
-            // we hold the lock on its behalf and wait for it to tell us that it is done.
-            g.consoleInputSetupEvent.SetEvent();
-            g.consoleInputInitializedEvent.wait();
+            // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
+            UnlockConsole();
+            g.hConsoleInputInitEvent.wait();
+            LockConsole();
 
             // OK, we've been told that the input thread is done initializing under lock.
             // Cleanup the handles and events we used to maintain our virtual lock passing dance.
@@ -680,8 +677,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
         HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
-            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) ||
-                hr == E_APPLICATION_EXITING)
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
             {
                 fShouldExit = true;
 

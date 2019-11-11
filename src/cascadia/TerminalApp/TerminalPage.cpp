@@ -5,6 +5,8 @@
 #include "TerminalPage.h"
 #include "Utils.h"
 
+#include <LibraryResources.h>
+
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -32,14 +34,10 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage() {}
-
-    TerminalPage::TerminalPage(std::shared_ptr<ScopedResourceLoader> resourceLoader) :
+    TerminalPage::TerminalPage() :
         _tabs{}
     {
         InitializeComponent();
-
-        _resourceLoader = resourceLoader;
     }
 
     void TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
@@ -59,6 +57,26 @@ namespace winrt::TerminalApp::implementation
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
+        _rearranging = false;
+
+        _tabView.TabDragStarting([this](auto&& /*o*/, auto&& /*a*/) {
+            _rearranging = true;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
+        });
+
+        _tabView.TabDragCompleted([this](auto&& /*o*/, auto&& /*a*/) {
+            if (_rearrangeFrom.has_value() && _rearrangeTo.has_value() && _rearrangeTo != _rearrangeFrom)
+            {
+                auto tab = _tabs.at(_rearrangeFrom.value());
+                _tabs.erase(_tabs.begin() + _rearrangeFrom.value());
+                _tabs.insert(_tabs.begin() + _rearrangeTo.value(), tab);
+            }
+
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
+        });
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
@@ -102,9 +120,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ShowOkDialog(const winrt::hstring& titleKey,
                                     const winrt::hstring& contentKey)
     {
-        auto title = _resourceLoader->GetLocalizedString(titleKey);
-        auto message = _resourceLoader->GetLocalizedString(contentKey);
-        auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
+        auto title = GetLibraryResourceString(titleKey);
+        auto message = GetLibraryResourceString(contentKey);
+        auto buttonText = RS_(L"Ok");
 
         WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -120,14 +138,14 @@ namespace winrt::TerminalApp::implementation
     //   Notes link.
     void TerminalPage::_ShowAboutDialog()
     {
-        const auto title = _resourceLoader->GetLocalizedString(L"AboutTitleText");
-        const auto versionLabel = _resourceLoader->GetLocalizedString(L"VersionLabelText");
-        const auto gettingStartedLabel = _resourceLoader->GetLocalizedString(L"GettingStartedLabelText");
-        const auto documentationLabel = _resourceLoader->GetLocalizedString(L"DocumentationLabelText");
-        const auto releaseNotesLabel = _resourceLoader->GetLocalizedString(L"ReleaseNotesLabelText");
-        const auto gettingStartedUriValue = _resourceLoader->GetLocalizedString(L"GettingStartedUriValue");
-        const auto documentationUriValue = _resourceLoader->GetLocalizedString(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = _resourceLoader->GetLocalizedString(L"ReleaseNotesUriValue");
+        const auto title = RS_(L"AboutTitleText");
+        const auto versionLabel = RS_(L"VersionLabelText");
+        const auto gettingStartedLabel = RS_(L"GettingStartedLabelText");
+        const auto documentationLabel = RS_(L"DocumentationLabelText");
+        const auto releaseNotesLabel = RS_(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = RS_(L"GettingStartedUriValue");
+        const auto documentationUriValue = RS_(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = RS_(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -171,7 +189,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring aboutText{ aboutTextStream.str() };
         about.Text(aboutText);
 
-        const auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
+        const auto buttonText = RS_(L"Ok");
 
         WUX::Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
@@ -197,9 +215,9 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
     {
-        auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
-        auto primaryButtonText = _resourceLoader->GetLocalizedString(L"CloseAll");
-        auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
+        auto title = RS_(L"CloseWindowWarningTitle");
+        auto primaryButtonText = RS_(L"CloseAll");
+        auto secondaryButtonText = RS_(L"Cancel");
 
         WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -279,7 +297,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = WUX::Controls::MenuFlyoutItem{};
-            settingsItem.Text(_resourceLoader->GetLocalizedString(L"SettingsMenuItem"));
+            settingsItem.Text(RS_(L"SettingsMenuItem"));
 
             WUX::Controls::SymbolIcon ico{};
             ico.Symbol(WUX::Controls::Symbol::Setting);
@@ -296,7 +314,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the feedback button.
             auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(_resourceLoader->GetLocalizedString(L"FeedbackMenuItem"));
+            feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
 
             WUX::Controls::FontIcon feedbackIcon{};
             feedbackIcon.Glyph(L"\xE939");
@@ -308,7 +326,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
-            aboutFlyout.Text(_resourceLoader->GetLocalizedString(L"AboutMenuItem"));
+            aboutFlyout.Text(RS_(L"AboutMenuItem"));
 
             WUX::Controls::SymbolIcon aboutIcon{};
             aboutIcon.Symbol(WUX::Controls::Symbol::Help);
@@ -461,12 +479,12 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            auto conhostConn = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                                     settings.StartingDirectory(),
-                                                                     settings.StartingTitle(),
-                                                                     settings.InitialRows(),
-                                                                     settings.InitialCols(),
-                                                                     winrt::guid());
+            auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
+                                                                    settings.StartingDirectory(),
+                                                                    settings.StartingTitle(),
+                                                                    settings.InitialRows(),
+                                                                    settings.InitialCols(),
+                                                                    winrt::guid());
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;
         }
@@ -509,7 +527,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_FeedbackButtonOnClick(const IInspectable&,
                                               const RoutedEventArgs&)
     {
-        const auto feedbackUriValue = _resourceLoader->GetLocalizedString(L"FeedbackUriValue");
+        const auto feedbackUriValue = RS_(L"FeedbackUriValue");
 
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
@@ -561,6 +579,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
     // Method Description:
@@ -620,11 +639,13 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes in tab layout.
     void TerminalPage::_UpdateTabView()
     {
+        // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
-                               (_tabs.size() > 1) ||
-                               _settings->GlobalSettings().GetAlwaysShowTabs();
+        const bool isVisible = (!_isFullscreen) &&
+                               (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                                (_tabs.size() > 1) ||
+                                _settings->GlobalSettings().GetAlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -677,7 +698,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItems().RemoveAt(tabIndex);
 
         auto focusedTabIndex = _GetFocusedTabIndex();
-        if (tabIndex == focusedTabIndex)
+        if (gsl::narrow_cast<int>(tabIndex) == focusedTabIndex)
         {
             auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
             if (focusedTabIndex >= tabCount)
@@ -1182,12 +1203,27 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to changes in the TabView's item list by changing the tabview's
-    //      visibility.
+    //      visibility.  This method is also invoked when tabs are dragged / dropped as part of tab reordering
+    //      and this method hands that case as well in concert with TabDragStarting and TabDragCompleted handlers
+    //      that are set up in TerminalPage::Create()
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
+    void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
+        if (_rearranging)
+        {
+            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemRemoved)
+            {
+                _rearrangeFrom = eventArgs.Index();
+            }
+
+            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemInserted)
+            {
+                _rearrangeTo = eventArgs.Index();
+            }
+        }
+
         _UpdateTabView();
     }
 
@@ -1207,34 +1243,37 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to the TabView control's Selection Changed event (to move a
-    //      new terminal control into focus.)
+    //      new terminal control into focus) when not in in the middle of a tab rearrangement.
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& eventArgs)
+    void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
     {
-        auto tabView = sender.as<MUX::Controls::TabView>();
-        auto selectedIndex = tabView.SelectedIndex();
-
-        // Unfocus all the tabs.
-        for (auto tab : _tabs)
+        if (!_rearranging)
         {
-            tab->SetFocused(false);
-        }
+            auto tabView = sender.as<MUX::Controls::TabView>();
+            auto selectedIndex = tabView.SelectedIndex();
 
-        if (selectedIndex >= 0)
-        {
-            try
+            // Unfocus all the tabs.
+            for (auto tab : _tabs)
             {
-                auto tab = _tabs.at(selectedIndex);
-
-                _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab->GetRootElement());
-
-                tab->SetFocused(true);
-                _titleChangeHandlers(*this, Title());
+                tab->SetFocused(false);
             }
-            CATCH_LOG();
+
+            if (selectedIndex >= 0)
+            {
+                try
+                {
+                    auto tab = _tabs.at(selectedIndex);
+
+                    _tabContent.Children().Clear();
+                    _tabContent.Children().Append(tab->GetRootElement());
+
+                    tab->SetFocused(true);
+                    _titleChangeHandlers(*this, Title());
+                }
+                CATCH_LOG();
+            }
         }
     }
 
@@ -1263,7 +1302,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabCloseRequested(const IInspectable& sender, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
+    void TerminalPage::_OnTabCloseRequested(const IInspectable& /*sender*/, const MUX::Controls::TabViewTabCloseRequestedEventArgs& eventArgs)
     {
         const auto tabViewItem = eventArgs.Tab();
         _RemoveTabViewItem(tabViewItem);
@@ -1337,6 +1376,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Toggles fullscreen mode. Hides the tab row, and raises our
+    //   ToggleFullscreen event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ToggleFullscreen()
+    {
+        _toggleFullscreenHandlers(*this, nullptr);
+
+        _isFullscreen = !_isFullscreen;
+
+        _UpdateTabView();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
@@ -1344,4 +1399,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
 }

@@ -19,14 +19,14 @@ Revision History:
 
 #include "../inc/conattrs.hpp"
 
-// the following values are used to create the textmode cursor.
-#define CURSOR_SMALL_SIZE 25 // large enough to be one pixel on a six pixel font
 class TextBuffer;
 
 class Cursor final
 {
 public:
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
+    // the following values are used to create the textmode cursor.
+    static constexpr unsigned int CURSOR_SMALL_SIZE = 25; // large enough to be one pixel on a six pixel font
 
     Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept;
 

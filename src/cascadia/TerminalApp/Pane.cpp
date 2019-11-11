@@ -5,21 +5,28 @@
 #include "Pane.h"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
-static const int PaneSeparatorSize = 4;
+static const int PaneBorderSize = 2;
+static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const float Half = 0.50f;
+
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
-    _root.Children().Append(_control);
+    _root.Children().Append(_border);
+    _border.Child(_control);
+
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
@@ -35,6 +42,24 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         if (style)
         {
             _root.Style(style);
+        }
+    }
+
+    if (s_focusedBorderBrush == nullptr)
+    {
+        const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+        if (res.HasKey(accentColorKey))
+        {
+            const auto colorFromResources = res.Lookup(accentColorKey);
+            // If SystemAccentColor is _not_ a Color for some reason, use
+            // Transparent as the color, so we don't do this process again on
+            // the next pane (by leaving s_focusedBorderBrush nullptr)
+            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Transparent());
+            s_focusedBorderBrush = SolidColorBrush(actualColor);
+        }
+        else
+        {
+            s_focusedBorderBrush = SolidColorBrush{ Colors::Transparent() };
         }
     }
 }
@@ -108,14 +133,13 @@ bool Pane::_Resize(const Direction& direction)
     // actualDimension is the size in DIPs of this pane in the direction we're
     // resizing.
     auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
-    actualDimension -= PaneSeparatorSize;
 
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
 
     // These are the minimum amount of space we need for each of our children
-    const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
-    const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
+    const auto firstMinDimension = (changeWidth ? firstMinSize.Width : firstMinSize.Height) + PaneBorderSize;
+    const auto secondMinDimension = (changeWidth ? secondMinSize.Width : secondMinSize.Height) + PaneBorderSize;
 
     const auto firstMinPercent = firstMinDimension / actualDimension;
     const auto secondMinPercent = secondMinDimension / actualDimension;
@@ -123,6 +147,11 @@ bool Pane::_Resize(const Direction& direction)
     // Make sure that the first pane doesn't get bigger than the space we need
     // to reserve for the second.
     const auto firstMaxPercent = 1.0f - secondMinPercent;
+
+    if (firstMaxPercent < firstMinPercent)
+    {
+        return false;
+    }
 
     _firstPercent = std::clamp(_firstPercent.value() - amount, firstMinPercent, firstMaxPercent);
     // Update the other child to fill the remaining percent
@@ -446,10 +475,13 @@ void Pane::UpdateFocus()
                                     _control.FocusState() != FocusState::Unfocused;
 
         _lastFocused = controlFocused;
+
+        _border.BorderBrush(_lastFocused ? s_focusedBorderBrush : nullptr);
     }
     else
     {
         _lastFocused = false;
+
         _firstChild->UpdateFocus();
         _secondChild->UpdateFocus();
     }
@@ -530,6 +562,13 @@ void Pane::_CloseChild(const bool closeFirst)
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
+        // When the remaining child is a leaf, that means both our children were
+        // previously leaves, and the only difference in their borders is the
+        // border that we gave them. Take a bitwise AND of those two children to
+        // remove that border. Other borders the children might have, they
+        // inherited from us, so the flag will be set for both children.
+        _borders = _firstChild->_borders & _secondChild->_borders;
+
         // take the control and profile of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
@@ -554,15 +593,18 @@ void Pane::_CloseChild(const bool closeFirst)
         // re-attach the TermControl to our Grid.
         _firstChild->_root.Children().Clear();
         _secondChild->_root.Children().Clear();
+        _firstChild->_border.Child(nullptr);
+        _secondChild->_border.Child(nullptr);
 
         // Reset our UI:
         _root.Children().Clear();
+        _border.Child(nullptr);
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
-        _separatorRoot = { nullptr };
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_control);
+        _root.Children().Append(_border);
+        _border.Child(_control);
 
         if (_lastFocused)
         {
@@ -571,12 +613,26 @@ void Pane::_CloseChild(const bool closeFirst)
 
         _splitState = SplitState::None;
 
+        _UpdateBorders();
+
         // Release our children.
         _firstChild = nullptr;
         _secondChild = nullptr;
     }
     else
     {
+        // Determine which border flag we gave to the child when we first split
+        // it, so that we can take just that flag away from them.
+        Borders clearBorderFlag = Borders::None;
+        if (_splitState == SplitState::Horizontal)
+        {
+            clearBorderFlag = closeFirst ? Borders::Top : Borders::Bottom;
+        }
+        else if (_splitState == SplitState::Vertical)
+        {
+            clearBorderFlag = closeFirst ? Borders::Left : Borders::Right;
+        }
+
         // First stash away references to the old panes and their tokens
         const auto oldFirstToken = _firstClosedToken;
         const auto oldSecondToken = _secondClosedToken;
@@ -585,7 +641,6 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
-        _separatorRoot = remainingChild->_separatorRoot;
         _firstChild = remainingChild->_firstChild;
         _secondChild = remainingChild->_secondChild;
 
@@ -603,6 +658,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Reset our UI:
         _root.Children().Clear();
+        _border.Child(nullptr);
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
@@ -626,10 +682,18 @@ void Pane::_CloseChild(const bool closeFirst)
         // Remove the child's UI elements from the child's grid, so we can
         // attach them to us instead.
         remainingChild->_root.Children().Clear();
+        remainingChild->_border.Child(nullptr);
 
         _root.Children().Append(_firstChild->GetRootElement());
-        _root.Children().Append(_separatorRoot);
         _root.Children().Append(_secondChild->GetRootElement());
+
+        // Take the flag away from the children that they inherited from their
+        // parent, and update their borders to visually match
+        WI_ClearAllFlags(_firstChild->_borders, clearBorderFlag);
+        WI_ClearAllFlags(_secondChild->_borders, clearBorderFlag);
+        _UpdateBorders();
+        _firstChild->_UpdateBorders();
+        _secondChild->_UpdateBorders();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastFocused)
@@ -640,7 +704,6 @@ void Pane::_CloseChild(const bool closeFirst)
         // Release the pointers that the child was holding.
         remainingChild->_firstChild = nullptr;
         remainingChild->_secondChild = nullptr;
-        remainingChild->_separatorRoot = { nullptr };
     }
 }
 
@@ -682,10 +745,7 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
     {
         _root.ColumnDefinitions().Clear();
 
-        // Create three columns in this grid: one for each pane, and one for the separator.
-        auto separatorColDef = Controls::ColumnDefinition();
-        separatorColDef.Width(GridLengthHelper::Auto());
-
+        // Create two columns in this grid: one for each pane
         const auto paneSizes = _GetPaneSizes(rootSize.Width);
 
         auto firstColDef = Controls::ColumnDefinition();
@@ -695,17 +755,13 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         secondColDef.Width(GridLengthHelper::FromPixels(paneSizes.second));
 
         _root.ColumnDefinitions().Append(firstColDef);
-        _root.ColumnDefinitions().Append(separatorColDef);
         _root.ColumnDefinitions().Append(secondColDef);
     }
     else if (_splitState == SplitState::Horizontal)
     {
         _root.RowDefinitions().Clear();
 
-        // Create three rows in this grid: one for each pane, and one for the separator.
-        auto separatorRowDef = Controls::RowDefinition();
-        separatorRowDef.Height(GridLengthHelper::Auto());
-
+        // Create two rows in this grid: one for each pane
         const auto paneSizes = _GetPaneSizes(rootSize.Height);
 
         auto firstRowDef = Controls::RowDefinition();
@@ -715,7 +771,6 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         secondRowDef.Height(GridLengthHelper::FromPixels(paneSizes.second));
 
         _root.RowDefinitions().Append(firstRowDef);
-        _root.RowDefinitions().Append(separatorRowDef);
         _root.RowDefinitions().Append(secondRowDef);
     }
 }
@@ -734,23 +789,36 @@ void Pane::_CreateSplitContent()
                      gsl::narrow_cast<float>(_root.ActualHeight()) };
 
     _CreateRowColDefinitions(actualSize);
+}
 
-    if (_splitState == SplitState::Vertical)
+// Method Description:
+// - Sets the thickness of each side of our borders to match our _borders state.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_UpdateBorders()
+{
+    double top = 0, bottom = 0, left = 0, right = 0;
+
+    Thickness newBorders{ 0 };
+    if (WI_IsFlagSet(_borders, Borders::Top))
     {
-        // Create the pane separator
-        _separatorRoot = Controls::Grid{};
-        _separatorRoot.Width(PaneSeparatorSize);
-        // NaN is the special value XAML uses for "Auto" sizing.
-        _separatorRoot.Height(NAN);
+        top = PaneBorderSize;
     }
-    else if (_splitState == SplitState::Horizontal)
+    if (WI_IsFlagSet(_borders, Borders::Bottom))
     {
-        // Create the pane separator
-        _separatorRoot = Controls::Grid{};
-        _separatorRoot.Height(PaneSeparatorSize);
-        // NaN is the special value XAML uses for "Auto" sizing.
-        _separatorRoot.Width(NAN);
+        bottom = PaneBorderSize;
     }
+    if (WI_IsFlagSet(_borders, Borders::Left))
+    {
+        left = PaneBorderSize;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Right))
+    {
+        right = PaneBorderSize;
+    }
+    _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
 
 // Method Description:
@@ -764,14 +832,28 @@ void Pane::_ApplySplitDefinitions()
     if (_splitState == SplitState::Vertical)
     {
         Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
-        Controls::Grid::SetColumn(_separatorRoot, 1);
-        Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
+        Controls::Grid::SetColumn(_secondChild->GetRootElement(), 1);
+
+        _firstChild->_borders = _borders | Borders::Right;
+        _secondChild->_borders = _borders | Borders::Left;
+        _borders = Borders::None;
+
+        _UpdateBorders();
+        _firstChild->_UpdateBorders();
+        _secondChild->_UpdateBorders();
     }
     else if (_splitState == SplitState::Horizontal)
     {
         Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
-        Controls::Grid::SetRow(_separatorRoot, 1);
-        Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
+        Controls::Grid::SetRow(_secondChild->GetRootElement(), 1);
+
+        _firstChild->_borders = _borders | Borders::Bottom;
+        _secondChild->_borders = _borders | Borders::Top;
+        _borders = Borders::None;
+
+        _UpdateBorders();
+        _firstChild->_UpdateBorders();
+        _secondChild->_UpdateBorders();
     }
 }
 
@@ -845,7 +927,7 @@ bool Pane::_CanSplit(SplitState splitType)
 
     if (splitType == SplitState::Vertical)
     {
-        const auto widthMinusSeparator = actualSize.Width - PaneSeparatorSize;
+        const auto widthMinusSeparator = actualSize.Width - CombinedPaneBorderSize;
         const auto newWidth = widthMinusSeparator * Half;
 
         return newWidth > minSize.Width;
@@ -853,7 +935,7 @@ bool Pane::_CanSplit(SplitState splitType)
 
     if (splitType == SplitState::Horizontal)
     {
-        const auto heightMinusSeparator = actualSize.Height - PaneSeparatorSize;
+        const auto heightMinusSeparator = actualSize.Height - CombinedPaneBorderSize;
         const auto newHeight = heightMinusSeparator * Half;
 
         return newHeight > minSize.Height;
@@ -891,6 +973,7 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
     _root.Children().Clear();
+    _border.Child(nullptr);
 
     // Create two new Panes
     //   Move our control, guid into the first one.
@@ -901,7 +984,6 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     _secondChild = std::make_shared<Pane>(profile, control);
 
     _root.Children().Append(_firstChild->GetRootElement());
-    _root.Children().Append(_separatorRoot);
     _root.Children().Append(_secondChild->GetRootElement());
 
     _ApplySplitDefinitions();
@@ -914,11 +996,11 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
-//   should fill. Accounts for the size of the separator that should be between
-//   them as well.
+//   should fill. Since these children own their own separators (borders), this
+//   size is their portion of our _entire_ size.
 // Arguments:
 // - fullSize: the amount of space in pixels that should be filled by our
-//   children and their separator
+//   children and their separators
 // Return Value:
 // - a pair with the size of our first child and the size of our second child,
 //   respectively.
@@ -929,16 +1011,16 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
         THROW_HR(E_FAIL);
     }
 
-    const auto sizeMinusSeparator = fullSize - PaneSeparatorSize;
-    const auto firstSize = sizeMinusSeparator * _firstPercent.value();
-    const auto secondSize = sizeMinusSeparator * _secondPercent.value();
+    const auto firstSize = fullSize * _firstPercent.value();
+    const auto secondSize = fullSize * _secondPercent.value();
+
     return { firstSize, secondSize };
 }
 
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
-//   have 1x1 character visible, in each of its children. This includes the
-//   space needed for the separator.
+//   have 1x1 character visible, in each of its children. If we're a leaf, we'll
+//   include the space needed for borders _within_ us.
 // Arguments:
 // - <none>
 // Return Value:
@@ -948,14 +1030,27 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        return _control.MinimumSize();
-    }
+        auto controlSize = _control.MinimumSize();
+        auto newWidth = controlSize.Width;
+        auto newHeight = controlSize.Height;
 
-    const auto firstSize = _firstChild->_GetMinSize();
-    const auto secondSize = _secondChild->_GetMinSize();
-    const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneSeparatorSize : 0);
-    const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneSeparatorSize : 0);
-    return { newWidth, newHeight };
+        newWidth += WI_IsFlagSet(_borders, Borders::Left) ? CombinedPaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_borders, Borders::Right) ? CombinedPaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Top) ? CombinedPaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? CombinedPaneBorderSize : 0;
+
+        return { newWidth, newHeight };
+    }
+    else
+    {
+        const auto firstSize = _firstChild->_GetMinSize();
+        const auto secondSize = _secondChild->_GetMinSize();
+
+        const auto newWidth = firstSize.Width + secondSize.Width;
+        const auto newHeight = firstSize.Height + secondSize.Height;
+
+        return { newWidth, newHeight };
+    }
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
