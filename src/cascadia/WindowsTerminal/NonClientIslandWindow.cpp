@@ -408,13 +408,13 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // Method Description:
 // - Gets the difference between window and client area size.
 // Arguments:
-// - dpix: dpi of a monitor on which the window is placed
+// - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE NonClientIslandWindow::GetNonClientSize(UINT dpix) const noexcept
+SIZE NonClientIslandWindow::GetNonClientSize(UINT dpi) const noexcept
 {
     RECT islandFrame{};
-    bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+    bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi);
     if (!succeeded)
     {
         // If we failed to get the correct window size for whatever reason, log
@@ -425,7 +425,12 @@ SIZE NonClientIslandWindow::GetNonClientSize(UINT dpix) const noexcept
 
     islandFrame.top = -topBorderVisibleHeight;
 
-    return { islandFrame.right - islandFrame.left, islandFrame.bottom - islandFrame.top };
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+
+    return {
+        islandFrame.right - islandFrame.left,
+        islandFrame.bottom - islandFrame.top + titleBarHeight
+    };
 }
 
 // Method Description:
