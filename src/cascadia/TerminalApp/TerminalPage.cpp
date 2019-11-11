@@ -591,7 +591,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        tab->SetTabText(newTabTitle);
+        // tab->SetTabText(newTabTitle);
 
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
@@ -725,34 +725,43 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr](auto newTitle) {
-            auto tab = weakTabPtr.lock();
-            if (!tab)
-            {
-                return;
-            }
-            // The title of the control changed, but not necessarily the title
-            // of the tab. Get the title of the focused pane of the tab, and set
-            // the tab's text to the focused panes' text.
-            _UpdateTitle(tab);
-        });
+        // term.TitleChanged([this, weakTabPtr](auto newTitle) {
+        //     auto tab = weakTabPtr.lock();
+        //     if (!tab)
+        //     {
+        //         return;
+        //     }
+        //     // The title of the control changed, but not necessarily the title
+        //     // of the tab. Get the title of the focused pane of the tab, and set
+        //     // the tab's text to the focused panes' text.
+        //     _UpdateTitle(tab);
+        // });
 
-        term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
+        hostingTab->pfnFocusChanged = ([this, weakTabPtr]() {
             auto tab = weakTabPtr.lock();
-            if (!tab)
-            {
-                return;
-            }
-            // // Update the focus of the tab's panes
-            // tab->UpdateFocus();
+            // Possibly update the icon of the tab.
+            _UpdateTabIcon(tab);
 
             // Possibly update the title of the tab, window to match the newly
             // focused pane.
             _UpdateTitle(tab);
-
-            // Possibly update the icon of the tab.
-            _UpdateTabIcon(tab);
         });
+        // term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
+        //     auto tab = weakTabPtr.lock();
+        //     if (!tab)
+        //     {
+        //         return;
+        //     }
+        //     // // Update the focus of the tab's panes
+        //     // tab->UpdateFocus();
+
+        //     // Possibly update the title of the tab, window to match the newly
+        //     // focused pane.
+        //     _UpdateTitle(tab);
+
+        //     // Possibly update the icon of the tab.
+        //     _UpdateTabIcon(tab);
+        // });
     }
 
     // Method Description:

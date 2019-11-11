@@ -921,23 +921,24 @@ bool Pane::CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
+void Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
+// std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            return _firstChild->Split(splitType, profile, control);
+            _firstChild->Split(splitType, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            return _secondChild->Split(splitType, profile, control);
+            _secondChild->Split(splitType, profile, control);
         }
 
-        return { nullptr, nullptr };
+        return;
     }
 
-    return _Split(splitType, profile, control);
+    _Split(splitType, profile, control);
 }
 
 // Method Description:
@@ -981,7 +982,8 @@ bool Pane::_CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+// std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -1021,9 +1023,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _lastFocused = false;
 
+    _firstChild->pfnGotFocus = pfnGotFocus;
+    _secondChild->pfnGotFocus = pfnGotFocus;
     pfnGotFocus = nullptr;
-
-    return { _firstChild, _secondChild };
 }
 
 // Method Description:

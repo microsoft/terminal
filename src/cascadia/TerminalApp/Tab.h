@@ -36,6 +36,7 @@ public:
 
     void ClosePane();
 
+    std::function<void()> pfnFocusChanged{ nullptr };
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:

@@ -62,7 +62,8 @@ public:
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     bool CanSplit(SplitState splitType);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    // std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void Close();
 
@@ -101,7 +102,7 @@ private:
     void _SetupChildCloseHandlers();
 
     bool _CanSplit(SplitState splitType);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();

@@ -32,6 +32,35 @@ Tab::Tab(const GUID& profile, const TermControl& control)
         _rootPane->ClearActive();
         _activePane = sender;
         _activePane->SetActive();
+
+        // // void TerminalPage::_UpdateTabIcon(std::shared_ptr<Tab> tab)
+        // {
+        //     const auto lastFocusedProfileOpt = this->GetFocusedProfile();
+        //     if (lastFocusedProfileOpt.has_value())
+        //     {
+        //         const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+        //         const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+        //         if (matchingProfile)
+        //         {
+        //             tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
+        //         }
+        //         else
+        //         {
+        //             tab->UpdateIcon({});
+        //         }
+        //     }
+        // }
+        if (pfnFocusChanged)
+        {
+            pfnFocusChanged();
+            auto newTabTitle = this->GetFocusedTitle();
+            this->SetTabText(newTabTitle);
+        }
+    });
+
+    control.TitleChanged([this](auto newTitle) {
+        auto newTabTitle = this->GetFocusedTitle();
+        this->SetTabText(newTabTitle);
     });
 
     _MakeTabViewItem();
@@ -243,21 +272,26 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - <none>
 void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    auto [firstNewPane, secondNewPane] = _rootPane->Split(splitType, profile, control);
+    _activePane->Split(splitType, profile, control);
+    // auto [firstNewPane, secondNewPane] = _activePane->Split(splitType, profile, control);
 
-    // TODO: Add an event handler to this pane's GotFocus event.
-    // When that pane gains focus, we'll mark it as the new active pane.
-    firstNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
-        // firstNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
-        _rootPane->ClearActive();
-        _activePane = sender;
-        _activePane->SetActive();
-    });
-    secondNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
-        // secondNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
-        _rootPane->ClearActive();
-        _activePane = sender;
-        _activePane->SetActive();
+    // // TODO: Add an event handler to this pane's GotFocus event.
+    // // When that pane gains focus, we'll mark it as the new active pane.
+    // firstNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
+    //     // firstNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
+    //     _rootPane->ClearActive();
+    //     _activePane = sender;
+    //     _activePane->SetActive();
+    // });
+    // secondNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
+    //     // secondNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
+    //     _rootPane->ClearActive();
+    //     _activePane = sender;
+    //     _activePane->SetActive();
+    // });
+    control.TitleChanged([this](auto newTitle) {
+        auto newTabTitle = this->GetFocusedTitle();
+        this->SetTabText(newTabTitle);
     });
 }
 
