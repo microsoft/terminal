@@ -82,6 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         utility::string_t _cloudShellUri;
         utility::string_t _terminalID;
 
+        void _WriteStringWithNewline(const winrt::hstring& str);
         web::json::value _RequestHelper(web::http::client::http_client theClient, web::http::http_request theRequest);
         web::json::value _GetDeviceCode();
         web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);

@@ -99,6 +99,9 @@
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../AppLogic.h" >
+      <DependentUpon>../AppLogic.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
@@ -150,6 +153,9 @@
     <ClCompile Include="../AppActionHandlers.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../AppLogic.cpp" >
+      <DependentUpon>../AppLogic.idl</DependentUpon>
+    </ClCompile>
 
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -167,6 +173,7 @@
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../AppLogic.idl" />
     <Midl Include="../ActionArgs.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>

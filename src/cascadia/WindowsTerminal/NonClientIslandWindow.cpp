@@ -53,7 +53,7 @@ void NonClientIslandWindow::Initialize()
 {
     IslandWindow::Initialize();
 
-    THROW_IF_FAILED(_UpdateFrameMargins());
+    _UpdateFrameMargins();
 
     // Set up our grid of content. We'll use _rootGrid as our root element.
     // There will be two children of this grid - the TitlebarControl, and the
@@ -206,7 +206,7 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
     }
 
     // no frame margin when maximized
-    THROW_IF_FAILED(_UpdateFrameMargins());
+    _UpdateFrameMargins();
 }
 
 // Method Description:
@@ -411,7 +411,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // - <none>
 // Return Value:
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
-[[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
+void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     MARGINS margins = {};
 
@@ -438,8 +438,11 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         margins.cyTopHeight = -frame.top;
     }
 
-    // Extend the frame into the client area.
-    return DwmExtendFrameIntoClientArea(_window.get(), &margins);
+    // Extend the frame into the client area. microsoft/terminal#2735 - Just log
+    // the failure here, don't crash. If DWM crashes for any reason, calling
+    // THROW_IF_FAILED() will cause us to take a trip upstate. Just log, and
+    // we'll fix ourselves when DWM comes back.
+    LOG_IF_FAILED(DwmExtendFrameIntoClientArea(_window.get(), &margins));
 }
 
 // Method Description:

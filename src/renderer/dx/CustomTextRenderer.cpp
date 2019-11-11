@@ -278,7 +278,8 @@ using namespace Microsoft::Console::Render;
 
     // First check if we want a color font and try to extract color emoji first.
     // Color emoji are only available on Windows 10+
-    if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT) && IsWindows10OrGreater())
+    static const bool s_isWindows10OrGreater = IsWindows10OrGreater();
+    if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT) && s_isWindows10OrGreater)
     {
         ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
         RETURN_IF_FAILED(d2dContext.As(&d2dContext4));
