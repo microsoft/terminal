@@ -1232,6 +1232,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _connection.WriteInput(stripped);
+        _terminal->TrySnapOnInput();
     }
 
     // Method Description:

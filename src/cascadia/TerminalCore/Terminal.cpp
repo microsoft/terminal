@@ -193,6 +193,24 @@ void Terminal::Write(std::wstring_view stringView)
 }
 
 // Method Description:
+// - Attempts to snap to the bottom of the buffer, if SnapOnInput is true. Does
+//   nothing if SnapOnInput is set to false, or we're already at the bottom of
+//   the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Terminal::TrySnapOnInput()
+{
+    if (_snapOnInput && _scrollOffset != 0)
+    {
+        auto lock = LockForWriting();
+        _scrollOffset = 0;
+        _NotifyScrollEvent();
+    }
+}
+
+// Method Description:
 // - Send this particular key event to the terminal. The terminal will translate
 //   the key and the modifiers pressed into the appropriate VT sequence for that
 //   key chord. If we do translate the key, we'll return true. In that case, the
@@ -207,12 +225,7 @@ void Terminal::Write(std::wstring_view stringView)
 // - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
 {
-    if (_snapOnInput && _scrollOffset != 0)
-    {
-        auto lock = LockForWriting();
-        _scrollOffset = 0;
-        _NotifyScrollEvent();
-    }
+    TrySnapOnInput();
 
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
