@@ -100,12 +100,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // If we have a startingTitle, create a mutable character buffer to add
         // it to the STARTUPINFO.
         std::wstring mutableTitle{};
-        if (!_startingTitle.empty())
-        {
-            mutableTitle = _startingTitle;
-            siEx.StartupInfo.lpTitle = mutableTitle.data();
-        }
-
+        /*if (!_suppressApplicationTitle)
+        {*/
+            if (!_startingTitle.empty())
+            {
+                mutableTitle = _startingTitle;
+                //siEx.StartupInfo.lpTitle = mutableTitle.data();
+            }
+        //}
+        
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),
@@ -127,6 +130,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     ConptyConnection::ConptyConnection(const hstring& commandline,
                                        const hstring& startingDirectory,
                                        const hstring& startingTitle,
+                                       const bool suppressApplicationTitle,
                                        const uint32_t initialRows,
                                        const uint32_t initialCols,
                                        const guid& initialGuid) :
@@ -135,6 +139,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
+        _suppressApplicationTitle{ suppressApplicationTitle },
         _guid{ initialGuid }
     {
         if (_guid == guid{})

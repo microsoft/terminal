@@ -482,6 +482,7 @@ namespace winrt::TerminalApp::implementation
             auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
                                                                     settings.StartingDirectory(),
                                                                     settings.StartingTitle(),
+                                                                    settings.SuppressApplicationTitle(),
                                                                     settings.InitialRows(),
                                                                     settings.InitialCols(),
                                                                     winrt::guid());
@@ -591,20 +592,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-
-        auto matchingProfile = _settings->FindProfile(lastFocusedProfile);
-        if (matchingProfile)
-        {
-            if (matchingProfile->GetSuppressApplicationTitle())
-            {
-                auto profileTabTitle = matchingProfile->GetTabTitle();
-                newTabTitle = profileTabTitle.empty() ? matchingProfile->GetName() : profileTabTitle;
-            }
-        }
-
-        tab->SetTabText(winrt::to_hstring(newTabTitle));
-
+        tab->SetTabText(newTabTitle);
+        
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {

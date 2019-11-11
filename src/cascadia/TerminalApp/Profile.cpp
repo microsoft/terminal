@@ -801,15 +801,15 @@ std::wstring_view Profile::GetName() const noexcept
     return _name;
 }
 
-// Method Description:
-// - Returns the tab title, if one is set. Otherwise returns the empty string.
-// Return Value:
-// - this profile's tab title, if one is set. Otherwise returns the empty string.
-std::wstring_view Profile::GetTabTitle() const noexcept
-{
-    return _tabTitle.has_value() ? std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
-                                   std::wstring_view{ L"", 0 };
-}
+//// Method Description:
+//// - Returns the tab title, if one is set. Otherwise returns the empty string.
+//// Return Value:
+//// - this profile's tab title, if one is set. Otherwise returns the empty string.
+//std::wstring_view Profile::GetTabTitle() const noexcept
+//{
+//    return _tabTitle.has_value() ? std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
+//                                   std::wstring_view{ L"", 0 };
+//}
 
 bool Profile::GetSuppressApplicationTitle() const noexcept
 {

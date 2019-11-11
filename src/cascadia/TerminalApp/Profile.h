@@ -58,7 +58,7 @@ public:
     bool HasGuid() const noexcept;
     bool HasSource() const noexcept;
     GUID GetGuid() const noexcept;
-    std::wstring_view GetTabTitle() const noexcept;
+    //std::wstring_view GetTabTitle() const noexcept;
     void SetSource(std::wstring_view sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
     bool HasConnectionType() const noexcept;

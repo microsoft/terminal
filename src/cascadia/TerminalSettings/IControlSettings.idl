@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Settings
         String Commandline;
         String StartingDirectory;
         String StartingTitle;
+        Boolean SuppressApplicationTitle;
         String EnvironmentVariables;
 
         String BackgroundImage;
