@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (!_startingTitle.empty())
             {
                 mutableTitle = _startingTitle;
-                //siEx.StartupInfo.lpTitle = mutableTitle.data();
+                siEx.StartupInfo.lpTitle = mutableTitle.data();
             }
         //}
         
