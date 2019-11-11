@@ -468,12 +468,13 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 }
 
 // Method Description:
-// - Given two points in the buffer space, select the text only because we do not want to modify to the buffer in Terminal
+// - This method won't be used. We just throw and do nothing. For now we
+//   need this method to implement UiaData interface
 // Arguments:
-// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
-// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
+// - coordSelectionStart - Not used
+// - coordSelectionEnd - Not used
 // - attr - Not used.
-void Terminal::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute)
+void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
 {
-    SelectNewRegion(coordSelectionStart, coordSelectionEnd);
+    THROW_HR(E_NOTIMPL);
 }

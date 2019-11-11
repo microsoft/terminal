@@ -106,7 +106,7 @@ void Search::Select() const
 
 // Routine Description:
 // - In console host, we take the found word and apply the given color to it in the screen buffer
-// - In Windows Terminal, we just select the found word, but we do not ,modify the buffer
+// - In Windows Terminal, we just select the found word, but we do not modify the buffer
 // Arguments:
 // - ulAttr - The legacy color attribute to apply to the word
 void Search::Color(const TextAttribute attr) const
