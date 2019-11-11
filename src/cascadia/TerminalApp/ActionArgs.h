@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
             if (auto trimWhitespace{ json[JsonKey(TrimWhitespaceKey)] })
             {
@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             if (auto profileIndex{ json[JsonKey(ProfileIndexKey)] })
             {
@@ -83,7 +83,7 @@ namespace winrt::TerminalApp::implementation
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SwitchToTabArgs>();
             if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
             {
@@ -104,7 +104,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - directionString: the string to attempt to parse
     // Return Value:
-    // - The encoded Direction value, or Direction::Left if it was an invalid string
+    // - The encoded Direction value, or Direction::None if it was an invalid string
     static TerminalApp::Direction ParseDirection(const std::string& directionString)
     {
         if (directionString == LeftString)
@@ -124,20 +124,20 @@ namespace winrt::TerminalApp::implementation
             return TerminalApp::Direction::Down;
         }
         // default behavior for invalid data
-        return TerminalApp::Direction::Left;
+        return TerminalApp::Direction::None;
     };
 
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ResizePaneArgs>();
             if (auto directionString{ json[JsonKey(DirectionKey)] })
             {
@@ -150,14 +150,14 @@ namespace winrt::TerminalApp::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
-            // IMPORTANT: Not using make_self here _will_ break you in the future!
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MoveFocusArgs>();
             if (auto directionString{ json[JsonKey(DirectionKey)] })
             {

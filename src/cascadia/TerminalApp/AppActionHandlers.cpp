@@ -169,8 +169,16 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
         {
-            _ResizePane(realArgs.Direction());
-            args.Handled(true);
+            if (realArgs.Direction() == TerminalApp::Direction::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                _ResizePane(realArgs.Direction());
+                args.Handled(true);
+            }
         }
     }
 
@@ -179,8 +187,16 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
         {
-            _MoveFocus(realArgs.Direction());
-            args.Handled(true);
+            if (realArgs.Direction() == TerminalApp::Direction::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                _MoveFocus(realArgs.Direction());
+                args.Handled(true);
+            }
         }
     }
 

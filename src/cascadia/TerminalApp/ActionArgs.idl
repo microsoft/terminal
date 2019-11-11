@@ -15,7 +15,8 @@ namespace TerminalApp
 
     enum Direction
     {
-        Left = 0,
+        None = 0,
+        Left,
         Right,
         Up,
         Down

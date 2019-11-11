@@ -145,6 +145,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
 //   legacy MoveFocus[Direction] actions. These actions don't accept args from
 //   json, instead, they just return a MoveFocusArgs with the Direction already
 //   per-defined, based on the input param.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
 // Arguments:
 // - direction: the direction to create the parse function for.
 // Return Value:
@@ -165,6 +166,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Directio
 //   legacy ResizePane[Direction] actions. These actions don't accept args from
 //   json, instead, they just return a ResizePaneArgs with the Direction already
 //   per-defined, based on the input param.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
 // Arguments:
 // - direction: the direction to create the parse function for.
 // Return Value:
@@ -185,6 +187,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Directi
 //   the legacy NewTabWithProfile[Index] actions. These actions don't accept
 //   args from json, instead, they just return a NewTabWithProfileArgs with the
 //   index already per-defined, based on the input param.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
 // Arguments:
 // - index: the profile index to create the parse function for.
 // Return Value:
@@ -205,6 +208,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(
 //   legacy SwitchToTab[Index] actions. These actions don't accept args from
 //   json, instead, they just return a SwitchToTabArgs with the index already
 //   per-defined, based on the input param.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
 // Arguments:
 // - index: the tab index to create the parse function for.
 // Return Value:
@@ -223,6 +227,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int in
 // Function Description:
 // - Used to generate a CopyTextArgs for the legacy CopyTextWithoutNewlines
 //   action.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
 // Arguments:
 // - direction: the direction to create the parse function for.
 // Return Value:
