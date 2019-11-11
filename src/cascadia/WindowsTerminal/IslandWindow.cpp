@@ -51,17 +51,18 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-                              L"Windows Terminal",
-                              WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              nullptr,
-                              nullptr,
-                              wc.hInstance,
-                              this));
+    WINRT_VERIFY(CreateWindowEx(WS_EX_LAYERED,
+                                wc.lpszClassName,
+                                L"Windows Terminal",
+                                WS_OVERLAPPEDWINDOW,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                nullptr,
+                                nullptr,
+                                wc.hInstance,
+                                this));
 
     WINRT_ASSERT(_window);
 }
@@ -124,6 +125,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
 
     ShowWindow(_window.get(), nCmdShow);
     UpdateWindow(_window.get());
+
+    SetLayeredWindowAttributes(_window.get(), 0, 128, LWA_ALPHA);
 }
 
 void IslandWindow::Initialize()
