@@ -12,7 +12,7 @@ public:
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl() const;
     std::optional<GUID> GetFocusedProfile() const noexcept;
 
     bool IsFocused() const noexcept;
@@ -40,6 +40,7 @@ public:
 
 private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
+    std::shared_ptr<Pane> _activePane{ nullptr };
     winrt::hstring _lastIconPath{};
 
     bool _focused{ false };

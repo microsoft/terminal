@@ -23,6 +23,17 @@ Tab::Tab(const GUID& profile, const TermControl& control)
         _closedHandlers();
     });
 
+    _activePane = _rootPane;
+
+    // TODO: Add an event handler to this pane's GotFocus event.
+    // When that pane gains focus, we'll mark it as the new active pane.
+    _rootPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
+        // _rootPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
+        _rootPane->ClearActive();
+        _activePane = sender;
+        _activePane->SetActive();
+    });
+
     _MakeTabViewItem();
 }
 
@@ -47,9 +58,12 @@ UIElement Tab::GetRootElement()
 // Return Value:
 // - nullptr if no children were marked `_lastFocused`, else the TermControl
 //   that was last focused.
-TermControl Tab::GetFocusedTerminalControl()
+TermControl Tab::GetFocusedTerminalControl() const
 {
-    return _rootPane->GetFocusedTerminalControl();
+    // TODO: Probably just GetTerminalControl()
+    return _activePane->GetFocusedTerminalControl();
+
+    // return _rootPane->GetFocusedTerminalControl();
 }
 
 winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
@@ -99,7 +113,7 @@ void Tab::SetFocused(const bool focused)
 //   focused, else the GUID of the profile of the last control to be focused
 std::optional<GUID> Tab::GetFocusedProfile() const noexcept
 {
-    return _rootPane->GetFocusedProfile();
+    return _activePane->GetFocusedProfile();
 }
 
 // Method Description:
@@ -124,7 +138,7 @@ void Tab::_Focus()
 {
     _focused = true;
 
-    auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    auto lastFocusedControl = GetFocusedTerminalControl();
     if (lastFocusedControl)
     {
         lastFocusedControl.Focus(FocusState::Programmatic);
@@ -142,7 +156,8 @@ void Tab::_Focus()
 // - <none>
 void Tab::UpdateFocus()
 {
-    _rootPane->UpdateFocus();
+    // _rootPane->UpdateFocus();
+    // Maybe root->ClearActive, active->SetActive
 }
 
 void Tab::UpdateIcon(const winrt::hstring iconPath)
@@ -169,7 +184,8 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 // - the title string of the last focused terminal control in our tree.
 winrt::hstring Tab::GetFocusedTitle() const
 {
-    const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    // const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    const auto lastFocusedControl = GetFocusedTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }
 
@@ -213,7 +229,7 @@ void Tab::Scroll(const int delta)
 // - True if the focused pane can be split. False otherwise.
 bool Tab::CanSplitPane(Pane::SplitState splitType)
 {
-    return _rootPane->CanSplit(splitType);
+    return _activePane->CanSplit(splitType);
 }
 
 // Method Description:
@@ -227,7 +243,22 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - <none>
 void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    _rootPane->Split(splitType, profile, control);
+    auto [firstNewPane, secondNewPane] = _rootPane->Split(splitType, profile, control);
+
+    // TODO: Add an event handler to this pane's GotFocus event.
+    // When that pane gains focus, we'll mark it as the new active pane.
+    firstNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
+        // firstNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
+        _rootPane->ClearActive();
+        _activePane = sender;
+        _activePane->SetActive();
+    });
+    secondNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
+        // secondNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
+        _rootPane->ClearActive();
+        _activePane = sender;
+        _activePane->SetActive();
+    });
 }
 
 // Method Description:
@@ -239,7 +270,7 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
 // - <none>
 void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 {
-    _rootPane->ResizeContent(newSize);
+    _activePane->ResizeContent(newSize);
 }
 
 // Method Description:
@@ -251,7 +282,7 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 // - <none>
 void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 {
-    _rootPane->ResizePane(direction);
+    _activePane->ResizePane(direction);
 }
 
 // Method Description:
@@ -263,7 +294,7 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 {
-    _rootPane->NavigateFocus(direction);
+    _activePane->NavigateFocus(direction);
 }
 
 // Method Description:
@@ -276,7 +307,7 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::ClosePane()
 {
-    auto focused = _rootPane->GetFocusedPane();
+    auto focused = _activePane->GetFocusedPane();
     focused->Close();
 }
 

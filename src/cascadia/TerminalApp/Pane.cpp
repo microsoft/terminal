@@ -62,6 +62,16 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
             s_focusedBorderBrush = SolidColorBrush{ Colors::Transparent() };
         }
     }
+
+    // _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_GotFocusHandler });
+    // _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, [this](auto&&, const winrt::Windows::UI::Xaml::RoutedEventArgs& args) {
+    _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, [this](auto&&, auto&&) {
+        // _GotFocusHandler(shared_from_this(), args);
+        if (pfnGotFocus)
+        {
+            pfnGotFocus(shared_from_this());
+        }
+    });
 }
 
 // Method Description:
@@ -403,6 +413,23 @@ TermControl Pane::GetFocusedTerminalControl()
     return lastFocused ? lastFocused->_control : nullptr;
 }
 
+void Pane::ClearActive()
+{
+    _lastFocused = false;
+    if (!_IsLeaf())
+    {
+        _firstChild->ClearActive();
+        _secondChild->ClearActive();
+    }
+    UpdateFocus();
+}
+
+void Pane::SetActive()
+{
+    _lastFocused = true;
+    UpdateFocus();
+}
+
 // Method Description:
 // - Returns nullopt if no children of this pane were the last control to be
 //   focused, or the GUID of the profile of the last control to be focused (if
@@ -469,22 +496,23 @@ bool Pane::_HasFocusedChild() const noexcept
 // - <none>
 void Pane::UpdateFocus()
 {
-    if (_IsLeaf())
-    {
-        const auto controlFocused = _control &&
-                                    _control.FocusState() != FocusState::Unfocused;
+    _border.BorderBrush(_lastFocused ? s_focusedBorderBrush : nullptr);
+    // // TODO: Do we need this?
+    // if (_IsLeaf())
+    // {
+    //     const auto controlFocused = _control &&
+    //                                 _control.FocusState() != FocusState::Unfocused;
 
-        _lastFocused = controlFocused;
+    //     _lastFocused = controlFocused;
 
-        _border.BorderBrush(_lastFocused ? s_focusedBorderBrush : nullptr);
-    }
-    else
-    {
-        _lastFocused = false;
+    // }
+    // else
+    // {
+    //     _lastFocused = false;
 
-        _firstChild->UpdateFocus();
-        _secondChild->UpdateFocus();
-    }
+    //     _firstChild->UpdateFocus();
+    //     _secondChild->UpdateFocus();
+    // }
 }
 
 // Method Description:
@@ -893,23 +921,23 @@ bool Pane::CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            _firstChild->Split(splitType, profile, control);
+            return _firstChild->Split(splitType, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            _secondChild->Split(splitType, profile, control);
+            return _secondChild->Split(splitType, profile, control);
         }
 
-        return;
+        return { nullptr, nullptr };
     }
 
-    _Split(splitType, profile, control);
+    return _Split(splitType, profile, control);
 }
 
 // Method Description:
@@ -953,7 +981,7 @@ bool Pane::_CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -992,6 +1020,10 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     _SetupChildCloseHandlers();
 
     _lastFocused = false;
+
+    pfnGotFocus = nullptr;
+
+    return { _firstChild, _secondChild };
 }
 
 // Method Description:

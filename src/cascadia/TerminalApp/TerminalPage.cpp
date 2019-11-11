@@ -743,8 +743,8 @@ namespace winrt::TerminalApp::implementation
             {
                 return;
             }
-            // Update the focus of the tab's panes
-            tab->UpdateFocus();
+            // // Update the focus of the tab's panes
+            // tab->UpdateFocus();
 
             // Possibly update the title of the tab, window to match the newly
             // focused pane.
