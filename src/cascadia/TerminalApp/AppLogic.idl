@@ -11,8 +11,7 @@ namespace TerminalApp
         MaximizedMode,
     };
 
-    [default_interface] runtimeclass AppLogic
-    {
+    [default_interface] runtimeclass AppLogic {
         AppLogic();
 
         // For your own sanity, it's better to do setup outside the ctor.
@@ -34,6 +33,8 @@ namespace TerminalApp
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+
+        void SuppressStartupDirectory();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
