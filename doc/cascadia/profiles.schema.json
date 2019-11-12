@@ -6,7 +6,8 @@
     "Color": {
       "default": "#",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-      "type": "string"
+      "type": "string",
+      "format": "color"
     },
     "ProfileGuid": {
       "default": "{}",
