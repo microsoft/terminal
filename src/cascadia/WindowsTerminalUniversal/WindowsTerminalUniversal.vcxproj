@@ -112,9 +112,18 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest">
+    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Resources -->
+    <!-- This resw only defines things that are used in this package's AppxManifest,
+         so it's not in the common resource items. -->
+    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <ItemGroup>

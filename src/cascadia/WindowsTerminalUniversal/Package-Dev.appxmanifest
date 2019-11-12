@@ -6,14 +6,14 @@
          IgnorableNamespaces="uap mp">
          
   <Identity
-    Name="Microsoft.WindowsTerminal.Universal"
+    Name="WindowsTerminalUniversalDev"
     Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
-    Version="1.0.0.0" />
+    Version="0.0.1.0" />
   <mp:PhoneIdentity PhoneProductId="c0be251a-4cdd-4a6c-ab49-938ed9b6c262" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
     
   <Properties>
-    <DisplayName>ms-resource:AppName</DisplayName>
-    <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
+    <DisplayName>ms-resource:AppNameDev</DisplayName>
+    <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
   
@@ -30,8 +30,8 @@
       Executable="$targetnametoken$.exe" 
       EntryPoint="WindowsTerminalUniversal.App">
       <uap:VisualElements 
-        DisplayName="ms-resource:AppName" 
-        Description="ms-resource:AppDescription"
+        DisplayName="ms-resource:AppNameDev" 
+        Description="ms-resource:AppDescriptionDev"
         Square150x150Logo="Images\Square150x150Logo.png" 
         Square44x44Logo="Images\Square44x44Logo.png" 
         BackgroundColor="transparent">

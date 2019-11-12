@@ -11,15 +11,99 @@
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Assets">
-      <UniqueIdentifier>{db9086fe-bacc-4437-8272-1aa6642082db}</UniqueIdentifier>
+    <None Include="PropertySheet.props" />
+    <None Include="packages.config" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+    <None Include="@(Content)" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{4718a03b-f768-4d96-9106-096573a315a3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ProfileIcons">
-      <UniqueIdentifier>{6dd63dc2-5981-40ee-ae27-f241b65cd28e}</UniqueIdentifier>
+    <Filter Include="Resources\en-US">
+      <UniqueIdentifier>{943541d5-c1da-435d-9f61-85d1b118f041}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PropertySheet.props" />
-    <None Include="packages.config" />
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <Filter>Resources\en-US</Filter>
+    </PRIResource>
   </ItemGroup>
 </Project>
