@@ -11,6 +11,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Windows::ApplicationModel;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
@@ -66,10 +67,7 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
-    if (_suppressStartupDirectory)
-    {
-        _logic.SuppressStartupDirectory();
-    }
+    _ProcessCommandlineArgs();
 
     if (_useNonClientArea)
     {
@@ -101,6 +99,74 @@ void AppHost::Initialize()
     // set that content as well.
     _window->SetContent(_logic.GetRoot());
     _window->OnAppInitialized();
+}
+
+void AppHost::_ProcessCommandlineArgs()
+{
+    bool wasCommandlineLaunch = true;
+    // Heuristic 1: First check GetActivatedEventArgs. If it was a `Launch`, it
+    // definitely wasn't a commandline launch.
+
+    // For our commandline launches,
+    auto args = AppInstance::GetActivatedEventArgs();
+    if (args)
+    {
+        switch (args.Kind())
+        {
+        case Activation::ActivationKind::CommandLineLaunch:
+        {
+            // TODO: I haven't found a case where this works for us.
+            auto cmdlineArgs = args.try_as<Activation::CommandLineActivatedEventArgs>();
+            wasCommandlineLaunch = true;
+            break;
+        }
+        case Activation::ActivationKind::Launch:
+        {
+            wasCommandlineLaunch = false;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+    }
+
+    if (wasCommandlineLaunch)
+    {
+        // Heuristic 2: If the command being
+
+        std::wstring fullCommandline{ GetCommandLineW() };
+        fullCommandline;
+
+        // TODO: MAX_PATH is bad, don't do this.
+        // We might not need this at all - if we just suppress the first launch's
+        // `startingDirectory`, then we _should_ just silently inherit the previous
+        // CWD...
+        wchar_t workingDir[MAX_PATH * 4];
+        GetCurrentDirectory(ARRAYSIZE(workingDir), workingDir);
+        std::wstring cwdStr{ workingDir };
+        cwdStr;
+
+        HMODULE hModule = GetModuleHandle(nullptr);
+        THROW_LAST_ERROR_IF(hModule == nullptr);
+
+        std::wstring exePathString;
+        THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, exePathString));
+        // const std::filesystem::path exePath{ exePathString };
+        DebugBreak();
+        if (exePathString == fullCommandline && cwdStr == L"C:\\Windows\\System32")
+        {
+            wasCommandlineLaunch = false;
+        }
+
+        wasCommandlineLaunch = wasCommandlineLaunch;
+    }
+
+    if (wasCommandlineLaunch)
+    {
+        _logic.SuppressStartupDirectory();
+    }
 }
 
 // Method Description:
