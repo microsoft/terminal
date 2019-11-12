@@ -164,6 +164,7 @@ private:
     COLORREF _defaultBg;
 
     bool _snapOnInput;
+    bool _suppressApplicationTitle;
 
 #pragma region Text Selection
     enum class SelectionExpansionMode

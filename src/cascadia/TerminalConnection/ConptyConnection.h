@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>
     {
-        ConptyConnection(const hstring& cmdline, const hstring& startingDirectory, const hstring& startingTitle, const bool suppressApplicationTitle, const uint32_t rows, const uint32_t cols, const guid& guid);
+        ConptyConnection(const hstring& cmdline, const hstring& startingDirectory, const hstring& startingTitle, const uint32_t rows, const uint32_t cols, const guid& guid);
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
         void TerminalOutput(winrt::event_token const& token) noexcept;
@@ -40,7 +40,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _commandline;
         hstring _startingDirectory;
         hstring _startingTitle;
-        bool _suppressApplicationTitle;
         guid _guid{}; // A unique session identifier for connected client
 
         bool _connected{};

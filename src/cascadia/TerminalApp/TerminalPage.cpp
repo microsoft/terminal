@@ -482,7 +482,6 @@ namespace winrt::TerminalApp::implementation
             auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
                                                                     settings.StartingDirectory(),
                                                                     settings.StartingTitle(),
-                                                                    settings.SuppressApplicationTitle(),
                                                                     settings.InitialRows(),
                                                                     settings.InitialCols(),
                                                                     winrt::guid());
