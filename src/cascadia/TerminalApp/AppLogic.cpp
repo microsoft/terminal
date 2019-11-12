@@ -658,6 +658,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Used to tell us that the first launched Terminal should ignore the
+    //   "startingDirectory" setting, instead opting to inherit the current
+    //   working directory  of the application.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void AppLogic::SuppressStartupDirectory()
     {
         if (_root)

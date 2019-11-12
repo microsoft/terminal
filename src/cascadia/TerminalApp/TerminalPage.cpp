@@ -385,12 +385,18 @@ namespace winrt::TerminalApp::implementation
         }
 
         TerminalSettings settings = _settings->MakeSettings(profileGuid);
+
+        // microsoft/github#878: When called from a commandline context, we
+        // should ignore the "startingDirectory" property, and instead inherit
+        // the CWD of the application. For launches from the start menu, this
+        // will _not_ be set, and we'll use `startingDirectory`.
+        // Subsequent tabs, panes will all use `startingDirectory`.
         if (_suppressStartupDirectory)
         {
-            // TODO: This seems wrong
             settings.StartingDirectory(L".");
             _suppressStartupDirectory = false;
         }
+
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
@@ -1386,6 +1392,14 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabView();
     }
 
+    // Method Description:
+    // - Used to tell us that the first launched Terminal should ignore the
+    //   "startingDirectory" setting, instead opting to inherit the current
+    //   working directory  of the application.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::SuppressStartupDirectory()
     {
         _suppressStartupDirectory = true;
