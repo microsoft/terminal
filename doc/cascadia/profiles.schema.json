@@ -345,7 +345,8 @@
           },
           "foreground": {
             "$ref": "#/definitions/Color",
-            "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white)."
+            "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+            "type": ["string", "null"]
           },
           "guid": {
             "$ref": "#/definitions/ProfileGuid",
