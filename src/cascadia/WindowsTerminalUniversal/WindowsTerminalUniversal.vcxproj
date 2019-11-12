@@ -116,43 +116,7 @@
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png">
-      <Link>ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-200.png">
-      <Link>ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-200.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-100.png">
-      <Link>ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-100.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-200.png">
-      <Link>ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-200.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-100.png">
-      <Link>ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-100.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-200.png">
-      <Link>ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-200.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-100.png">
-      <Link>ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-100.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png">
-      <Link>ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-100.png">
-      <Link>ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-100.png</Link>
-    </Image>
-    <Image Include="..\CascadiaPackage\ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-200.png">
-      <Link>ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-200.png</Link>
-    </Image>
-    <Image Include="Assets\Logo.scale-100.png" />
-    <Image Include="Assets\SmallLogo.scale-100.png" />
-    <Image Include="Assets\StoreLogo.scale-100.png" />
-    <Image Include="Assets\SplashScreen.scale-100.png" />
-    <Image Include="Assets\WideLogo.scale-100.png" />
-  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
@@ -162,9 +126,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
-    <Text Include="readme.txt">
-      <DeploymentContent>false</DeploymentContent>
-    </Text>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TerminalApp\TerminalApp.vcxproj">
