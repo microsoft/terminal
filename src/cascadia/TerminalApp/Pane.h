@@ -47,15 +47,14 @@ public:
          const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
          const bool lastFocused = false);
 
-    std::shared_ptr<Pane> GetFocusedPane();
-    // winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
     std::optional<GUID> GetFocusedProfile();
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool WasLastFocused() const noexcept;
-    void UpdateFocus();
+    void UpdateVisuals();
     void ClearActive();
     void SetActive();
 
@@ -88,7 +87,7 @@ private:
     std::optional<float> _firstPercent{ std::nullopt };
     std::optional<float> _secondPercent{ std::nullopt };
 
-    bool _lastFocused{ false };
+    bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };
     winrt::event_token _connectionClosedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };

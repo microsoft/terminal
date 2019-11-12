@@ -321,6 +321,16 @@ void Tab::ClosePane()
     focused->Close();
 }
 
+// Method Description:
+// - Register any event handlers that we may need with the given TermControl.
+//   This should be called on each and every TermControl that we add to the tree
+//   of Panes in this tab. We'll add events too:
+//   * notify us when the control's title changed, so we can update our own
+//     title (if necessary)
+// Arguments:
+// - control: the TermControl to add events to.
+// Return Value:
+// - <none>
 void Tab::_AttachEventHandersToControl(const TermControl& control)
 {
     control.TitleChanged([this](auto newTitle) {
@@ -332,6 +342,15 @@ void Tab::_AttachEventHandersToControl(const TermControl& control)
     });
 }
 
+// Method Description:
+// - Register a callback function to be called when this Tab's active pane
+//   changes. The App will use this to lookup the appropriate icon for this Tab
+//   (based on the newly-active pane) and also to possibly propogate the new
+//   Pane's title to the window.
+// Arguments:
+// - pfnGotFocus: A function that should be called when this Tab's active pane changes
+// Return Value:
+// - <none>
 void Tab::SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChanged)
 {
     _pfnActivePaneChanged = pfnActivePaneChanged;

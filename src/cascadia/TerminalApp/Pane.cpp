@@ -21,7 +21,7 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { 
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
-    _lastFocused{ lastFocused },
+    _lastActive{ lastFocused },
     _profile{ profile }
 {
     _root.Children().Append(_border);
@@ -189,8 +189,8 @@ bool Pane::ResizePane(const Direction& direction)
     // If it is, and the requested resize direction matches our separator, then
     // we're the pane that needs to adjust its separator.
     // If our separator is the wrong direction, then we can't handle it.
-    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
-    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
         return _Resize(direction);
@@ -248,7 +248,7 @@ bool Pane::_NavigateFocus(const Direction& direction)
 
     // Transfer focus to our child, and update the focus of our tree.
     newlyFocusedChild->_FocusFirstChild();
-    UpdateFocus();
+    UpdateVisuals();
 
     return true;
 }
@@ -278,8 +278,8 @@ bool Pane::NavigateFocus(const Direction& direction)
     // Check if either our first or second child is the currently focused leaf.
     // If it is, and the requested move direction matches our separator, then
     // we're the pane that needs to handle this focus move.
-    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
-    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
         return _NavigateFocus(direction);
@@ -372,50 +372,63 @@ Controls::Grid Pane::GetRootElement()
 //   not currently focused.
 // Return Value:
 // - nullptr if we're a leaf and unfocused, or no children were marked
-//   `_lastFocused`, else returns this
-std::shared_ptr<Pane> Pane::GetFocusedPane()
+//   `_lastActive`, else returns this
+std::shared_ptr<Pane> Pane::GetActivePane()
 {
     if (_IsLeaf())
     {
-        return _lastFocused ? shared_from_this() : nullptr;
+        return _lastActive ? shared_from_this() : nullptr;
     }
 
-    auto firstFocused = _firstChild->GetFocusedPane();
+    auto firstFocused = _firstChild->GetActivePane();
     if (firstFocused != nullptr)
     {
         return firstFocused;
     }
-    return _secondChild->GetFocusedPane();
+    return _secondChild->GetActivePane();
 }
 
 // Method Description:
-// - TODO
+// - Gets the TermControl of this pane. If this Pane is not a leaf, this will return nullptr.
 // Arguments:
 // - <none>
 // Return Value:
-// - nullptr if no children were marked `_lastFocused`, else the TermControl
-//   that was last focused.
+// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
 TermControl Pane::GetTerminalControl()
 {
-    auto lastFocused = GetFocusedPane();
     return _IsLeaf() ? _control : nullptr;
 }
 
+// Method Description:
+// - Recursively remove the "Active" state from this Pane and all it's children.
+// - Updates our visuals to match our new state, including highlighting our borders.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void Pane::ClearActive()
 {
-    _lastFocused = false;
+    _lastActive = false;
     if (!_IsLeaf())
     {
         _firstChild->ClearActive();
         _secondChild->ClearActive();
     }
-    UpdateFocus();
+    UpdateVisuals();
 }
 
+// Method Description:
+// - Sets the "Active" state on this Pane. Only one Pane in a tree of Panes
+//   should be "active", and that pane should be a leaf.
+// - Updates our visuals to match our new state, including highlighting our borders.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void Pane::SetActive()
 {
-    _lastFocused = true;
-    UpdateFocus();
+    _lastActive = true;
+    UpdateVisuals();
 }
 
 // Method Description:
@@ -429,7 +442,7 @@ void Pane::SetActive()
 //   focused, else the GUID of the profile of the last control to be focused
 std::optional<GUID> Pane::GetFocusedProfile()
 {
-    auto lastFocused = GetFocusedPane();
+    auto lastFocused = GetActivePane();
     return lastFocused ? lastFocused->_profile : std::nullopt;
 }
 
@@ -441,7 +454,7 @@ std::optional<GUID> Pane::GetFocusedProfile()
 // - true iff we were the last pane focused in this tree of panes.
 bool Pane::WasLastFocused() const noexcept
 {
-    return _lastFocused;
+    return _lastActive;
 }
 
 // Method Description:
@@ -468,39 +481,21 @@ bool Pane::_HasFocusedChild() const noexcept
     // We're intentionally making this one giant expression, so the compiler
     // will skip the following lookups if one of the lookups before it returns
     // true
-    return (_control && _control.FocusState() != FocusState::Unfocused) ||
+    return (_control && _lastActive) ||
            (_firstChild && _firstChild->_HasFocusedChild()) ||
            (_secondChild && _secondChild->_HasFocusedChild());
 }
 
 // Method Description:
-// - Update the focus state of this pane, and all its descendants.
-//   * If this is a leaf node, and our control is actively focused, we'll mark
-//     ourselves as the _lastFocused.
-//   * If we're not a leaf, we'll recurse on our children to check them.
+// - Update the focus state of this pane. We'll make sure to colorize our
+//   borders depending on if we are the active pane or not.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void Pane::UpdateFocus()
+void Pane::UpdateVisuals()
 {
-    _border.BorderBrush(_lastFocused ? s_focusedBorderBrush : nullptr);
-    // // TODO: Do we need this?
-    // if (_IsLeaf())
-    // {
-    //     const auto controlFocused = _control &&
-    //                                 _control.FocusState() != FocusState::Unfocused;
-
-    //     _lastFocused = controlFocused;
-
-    // }
-    // else
-    // {
-    //     _lastFocused = false;
-
-    //     _firstChild->UpdateFocus();
-    //     _secondChild->UpdateFocus();
-    // }
+    _border.BorderBrush(_lastActive ? s_focusedBorderBrush : nullptr);
 }
 
 // Method Description:
@@ -609,7 +604,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // If either of our children was focused, we want to take that focus from
         // them.
-        _lastFocused = _firstChild->_lastFocused || _secondChild->_lastFocused;
+        _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
 
         // Remove all the ui elements of our children. This'll make sure we can
         // re-attach the TermControl to our Grid.
@@ -628,7 +623,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_border);
         _border.Child(_control);
 
-        if (_lastFocused)
+        if (_lastActive)
         {
             _control.Focus(FocusState::Programmatic);
         }
@@ -724,7 +719,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _secondChild->_UpdateBorders();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
-        if (closedChild->_lastFocused)
+        if (closedChild->_lastActive)
         {
             _FocusFirstChild();
         }
@@ -1019,7 +1014,7 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     // Register event handlers on our children to handle their Close events
     _SetupChildCloseHandlers();
 
-    _lastFocused = false;
+    _lastActive = false;
 
     _firstChild->_pfnGotFocus = _pfnGotFocus;
     _secondChild->_pfnGotFocus = _pfnGotFocus;
@@ -1085,6 +1080,14 @@ Size Pane::_GetMinSize() const
     }
 }
 
+// Event Description:
+// - Called when our control gains focus. We'll use this to trigger our GotFocus
+//   callback. The tab that's hosting us should have registered a callback which
+//   can be used to mark us as active.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
 void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                    RoutedEventArgs const& /* args */)
 {
@@ -1094,6 +1097,14 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     }
 }
 
+// Method Description:
+// - Register a callback function to be called when this Pane's control gains
+//   focused. This is used by the Tab hosting us so it can track which Pane in
+//   the tree was the last one to be focused.
+// Arguments:
+// - pfnGotFocus: A function that should be called when this pane's control gets focus.
+// Return Value:
+// - <none>
 void Pane::SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus)
 {
     _pfnGotFocus = pfnGotFocus;

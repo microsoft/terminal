@@ -599,15 +599,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Get the title of the currently focused terminal control, and set it's
-    //   tab's text to that text. If this tab is the focused tab, then also
-    //   bubble this title to any listeners of our TitleChanged event.
+    // - Get the title of the currently focused terminal control. If this tab is
+    //   the focused tab, then also bubble this title to any listeners of our
+    //   TitleChanged event.
     // Arguments:
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        // tab->SetTabText(newTabTitle);
 
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
@@ -723,10 +722,6 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
-    // TODO: This description is outdated
-    //    * the TitleChanged event, for changing the text of the tab
-    //    * the GotFocus event, for changing the title/icon in the tab when a new
-    //      control is focused
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
