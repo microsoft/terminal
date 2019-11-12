@@ -27,6 +27,16 @@ Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 }
 
 // Routine Description:
+// - Retrieves the end position of the text buffer. We use
+//   the cursor position as the text buffer end position
+// Return Value:
+// - COORD of the end position of the text buffer
+COORD RenderData::GetTextBufferEndPosition() const noexcept
+{
+    return GetCursorPosition();
+}
+
+// Routine Description:
 // - Provides access to the text data that can be presented. Check GetViewport() for
 //   the appropriate windowing.
 // Return Value:

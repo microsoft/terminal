@@ -13,6 +13,17 @@ Viewport Terminal::GetViewport() noexcept
     return _GetVisibleViewport();
 }
 
+COORD Terminal::GetTextBufferEndPosition() const noexcept
+{
+    // In terminal, we use the cursor position as the
+    // end of the text position, we need to add the
+    // top position of the current view
+    auto cursorPosition = GetCursorPosition();
+    cursorPosition.Y += gsl::narrow<short>(ViewStartIndex());
+
+    return cursorPosition;
+}
+
 const TextBuffer& Terminal::GetTextBuffer() noexcept
 {
     return *_buffer;

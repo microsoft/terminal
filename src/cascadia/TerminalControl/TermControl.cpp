@@ -162,21 +162,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                               Search::Sensitivity::CaseSensitive :
                                               Search::Sensitivity::CaseInsensitive;
 
-        std::unique_ptr<Search> search;
-        if (!_terminal->IsSelectionActive())
-        {
-            // If there is no active selection, we set the anchor to the current
-            // cursor position
-            COORD cursorPos = _terminal->GetCursorPosition();
-            cursorPos.Y += _terminal->ViewStartIndex();
-            search = std::make_unique<Search>(*GetUiaData(), text.c_str(), direction, sensitivity, cursorPos);
-            _search(*search.get());
-        }
-        else
-        {
-            search = std::make_unique<Search>(*GetUiaData(), text.c_str(), direction, sensitivity);
-            _search(*search.get());
-        }
+        Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        _search(search);
     }
 
     void TermControl::_search(Search search)

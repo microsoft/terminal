@@ -10,6 +10,8 @@
 #include "../types/inc/Utf16Parser.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 
+#include <iostream>
+
 using namespace Microsoft::Console::Types;
 
 // Routine Description:
@@ -163,8 +165,7 @@ COORD Search::_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
         }
         else
         {
-            const auto bufferSize = textBuffer.GetSize().Dimensions();
-            return { bufferSize.X - 1, bufferSize.Y - 1 };
+            return uiaData.GetTextBufferEndPosition();
         }
     }
 }
@@ -292,6 +293,26 @@ void Search::_UpdateNextPosition()
     else
     {
         THROW_HR(E_NOTIMPL);
+    }
+
+    // If the next position is larger than the end position of the text buffer
+    // We put the next position to:
+    // Forward: (0, 0)
+    // Backward: the position of the end of the text buffer
+    // This can reduce the wrap-around time
+    COORD bufferEndPosition = _uiaData.GetTextBufferEndPosition();
+
+    if (_coordNext.Y > bufferEndPosition.Y ||
+        (_coordNext.Y == bufferEndPosition.Y && _coordNext.X > bufferEndPosition.X))
+    {
+        if (_direction == Direction::Forward)
+        {
+            _coordNext = { 0 };
+        }
+        else
+        {
+            _coordNext = bufferEndPosition;
+        }
     }
 }
 
