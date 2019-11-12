@@ -1080,7 +1080,6 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Routine Description:
 // - Paints an overlay highlight on a portion of the frame to represent selected text
 // Arguments:
-//  - selectionBackground - The color to use to paint the selection area.
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
