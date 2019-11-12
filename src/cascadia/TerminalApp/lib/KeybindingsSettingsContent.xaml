@@ -10,71 +10,65 @@
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" MinHeight="155" />
+                <RowDefinition  Height="50" />
                 <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="91*" />
                 <ColumnDefinition Width="209*" />
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Row="0"
-                    Grid.Column="0" Margin="0,0,0,0">
-
-                <TextBlock Text="Keybinding Settings"
-                   Style="{StaticResource HeaderTextBlockStyle}"
-                   Grid.Row="0" Margin="50,42,16,0"/>
-
+            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,0">
+                <TextBlock Text="Keybinding Settings" Style="{StaticResource HeaderTextBlockStyle}" Grid.Row="0" Margin="50,42,16,0"/>
             </StackPanel>
             <StackPanel  Grid.Row="0"
-                    Grid.Column="1"  Margin="0,60,50,0"  HorizontalAlignment="Right">
+                Grid.Column="1"  Margin="835,60,50,0">
                 <Button x:Name="btn1" Content="Reset to default" Margin="5" Width="150" HorizontalAlignment="Left"/>
             </StackPanel>
-            <StackPanel Grid.Row="1"
-                    Grid.Column="0">
-                <StackPanel
-                        Orientation="Horizontal" Margin="0, 0, 0,30">
-                    <TextBlock Text="Action"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,0">
+                <TextBlock Text="Action"
+            Style="{StaticResource SubheaderTextBlockStyle}"
+            Grid.Row="0" Margin="50,0,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,0">
+                <TextBlock Text="Keybinding"
+            Style="{StaticResource SubheaderTextBlockStyle}"
+            Grid.Row="0"  Margin="50,0,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="0" >
+
+                <StackPanel Orientation="Horizontal" Margin="0, 20, 0,20" >
+                    <TextBlock Text="closePane" ToolTipService.ToolTip="Info about this action"  VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0" />
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0,20" >
-                    <SymbolIcon Symbol="Help" ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="closePane"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0" />
+                    Orientation="Horizontal" Margin="0, 20, 0,20">
+                    <TextBlock Text="closeWindow" ToolTipService.ToolTip="Info about this action"  VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0,20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="closeWindow"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0,20" >
+                    <TextBlock Text="copy" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0,20" >
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="copy"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="duplicateTab" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="duplicateTab"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="newTab" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
-                <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="newTab"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
-                </StackPanel>
-                <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <ComboBox  SelectedIndex="0" Width="150"  Margin="20,0,0,0">
+                <StackPanel 
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <ComboBox  SelectedIndex="0" Width="150"  Margin="50,0,0,0" ToolTipService.ToolTip="Info about this action">
                         <x:String>newTabProfile0</x:String>
                         <x:String>newTabProfile1</x:String>
                         <x:String>newTabProfile2</x:String>
@@ -87,72 +81,62 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="nextTab"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="nextTab" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="openNewTabDropdown"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="openNewTabDropdown" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="openSettings"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="openSettings" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action"/>
-                    <TextBlock Text="paste"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="paste" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="prevTab"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="prevTab" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
                     <TextBlock Text="scrollDown"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="scrollDownPage"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="scrollDownPage" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="scrollUp"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="scrollUp" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="scrollUpPage"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="scrollUpPage" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <ComboBox  SelectedIndex="0" Width="150">
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <ComboBox ToolTipService.ToolTip="Info about this action" SelectedIndex="0" Width="150" Margin="50,0,0,0">
                         <x:String>switchToTab0</x:String>
                         <x:String>switchToTab1</x:String>
                         <x:String>switchToTab2</x:String>
@@ -165,29 +149,21 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="decreaseFontSize"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="decreaseFontSize" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
                 <StackPanel
-                        Orientation="Horizontal" Margin="0, 20, 0, 20">
-                    <SymbolIcon Symbol="Help"  ToolTipService.ToolTip="Info about this action" />
-                    <TextBlock Text="increaseFontSize"  VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="20,0,0,0"/>
+                    Orientation="Horizontal" Margin="0, 20, 0, 20">
+                    <TextBlock Text="increaseFontSize" ToolTipService.ToolTip="Info about this action" VerticalAlignment="Center"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Grid.Row="0" Grid.ColumnSpan="2" Margin="50,0,0,0"/>
                 </StackPanel>
             </StackPanel>
-            <StackPanel Grid.Row="1"
+            <StackPanel Grid.Row="2"
                     Grid.Column="1" Margin="50,0,0,0">
-                <StackPanel Grid.Row="1"
-                        Grid.Column="0"
-                        Orientation="Horizontal" Margin="0,0,0,30">
-                    <TextBlock Text="Keybinding"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,0"/>
-                </StackPanel>
+
                 <StackPanel
                         Orientation="Horizontal" Margin="0, 20 0, 20">
                     <TextBox Text="ctrl+shift+w" Width="135" />
