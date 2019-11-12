@@ -19,16 +19,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html) :
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf) :
             _text(text),
-            _html(html) {}
+            _html(html),
+            _rtf(rtf) {}
 
         hstring Text() { return _text; };
         hstring Html() { return _html; };
+        hstring Rtf() { return _rtf; };
 
     private:
         hstring _text;
         hstring _html;
+        hstring _rtf;
     };
 
     struct PasteFromClipboardEventArgs :

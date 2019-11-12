@@ -1101,6 +1101,13 @@ namespace winrt::TerminalApp::implementation
                 dataPack.SetHtmlFormat(htmlData);
             }
 
+            // copy rtf data to dataPack
+            const auto rtfData = copiedData.Rtf();
+            if (!rtfData.empty())
+            {
+                dataPack.SetRtf(rtfData);
+            }
+
             try
             {
                 Clipboard::SetContent(dataPack);

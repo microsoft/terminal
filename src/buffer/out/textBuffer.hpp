@@ -150,6 +150,11 @@ public:
                                const COLORREF backgroundColor,
                                const std::string& htmlTitle);
 
+    static std::string GenRTF(const TextAndColor& rows,
+                              const int fontHeightPoints,
+                              const std::wstring_view fontFaceName,
+                              const COLORREF backgroundColor);
+
 private:
     std::deque<ROW> _storage;
     Cursor _cursor;

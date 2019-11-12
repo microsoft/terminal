@@ -1145,7 +1145,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 }
 
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
-                    if (col > startOffset)
+                    if (col >= startOffset)
                     {
                         const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
                         for (const auto c : unescapedText)
@@ -1233,6 +1233,181 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         clipHeaderBuilder << "EndSelection:" << std::setw(10) << fragEndPos << "\r\n";
 
         return clipHeaderBuilder.str() + htmlBuilder.str();
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return {};
+    }
+}
+
+// Routine Description:
+// - Generates an RTF document based on the passed in text and color data
+// Arguments:
+// - rows - the text and color data we will format & encapsulate
+// - backgroundColor - default background color for characters, also used in padding
+// - fontHeightPoints - the unscaled font height
+// - fontFaceName - the name of the font used
+// - htmlTitle - value used in title tag of html header. Used to name the application
+// Return Value:
+// - string containing the generated RTF
+std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
+{
+    try
+    {
+        std::ostringstream rtfBuilder;
+
+        // start rtf
+        rtfBuilder << "{";
+
+        // rtf header
+        rtfBuilder << "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
+
+        // font table
+        rtfBuilder << "{\\fonttbl{\\f0\\fmodern\\fcharset0 " << ConvertToA(CP_UTF8, fontFaceName) << ";}}";
+
+        // map to keep track of colors:
+        // keys are colors represented by COLORREF
+        // values are indices of the corresponding colors in the color table
+        std::unordered_map<COLORREF, int> colorMap;
+        int nextColorIndex = 1; // leave 0 for the default color and start from 1.
+
+        // RTF color table
+        std::ostringstream colorTableBuilder;
+        colorTableBuilder << "{\\colortbl ;";
+        colorTableBuilder << "\\red" << static_cast<int>(GetRValue(backgroundColor))
+                          << "\\green" << static_cast<int>(GetGValue(backgroundColor))
+                          << "\\blue" << static_cast<int>(GetBValue(backgroundColor))
+                          << ";";
+        colorMap[backgroundColor] = nextColorIndex++;
+
+        // content
+        std::ostringstream contentBuilder;
+        contentBuilder << "\\viewkind4\\uc4";
+
+        // paragraph styles
+        // \fs specificies font size in half-points i.e. \fs20 results in a font size
+        // of 10 pts. That's why, font size is multiplied by 2 here.
+        contentBuilder << "\\pard\\slmult1\\f0\\fs" << std::to_string(2 * fontHeightPoints)
+                       << "\\highlight1"
+                       << " ";
+
+        std::optional<COLORREF> fgColor = std::nullopt;
+        std::optional<COLORREF> bkColor = std::nullopt;
+        for (size_t row = 0; row < rows.text.size(); ++row)
+        {
+            size_t startOffset = 0;
+
+            if (row != 0)
+            {
+                contentBuilder << "\\line "; // new line
+            }
+
+            for (size_t col = 0; col < rows.text.at(row).length(); ++col)
+            {
+                const bool isLastCharInRow =
+                    col == rows.text.at(row).length() - 1 ||
+                    rows.text.at(row).at(col + 1) == '\r' ||
+                    rows.text.at(row).at(col + 1) == '\n';
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                {
+                    fgColor = rows.FgAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                {
+                    bkColor = rows.BkAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                const auto writeAccumulatedChars = [&](bool includeCurrent) {
+                    if (col >= startOffset)
+                    {
+                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
+                        for (const auto c : unescapedText)
+                        {
+                            switch (c)
+                            {
+                            case '\\':
+                            case '{':
+                            case '}':
+                                contentBuilder << "\\" << c;
+                                break;
+                            default:
+                                contentBuilder << c;
+                            }
+                        }
+
+                        startOffset = col;
+                    }
+                };
+
+                if (colorChanged)
+                {
+                    writeAccumulatedChars(false);
+
+                    int bkColorIndex, fgColorIndex;
+                    if (colorMap.find(bkColor.value()) != colorMap.end())
+                    {
+                        // color already exists in the map, just retrieve the index
+                        bkColorIndex = colorMap[bkColor.value()];
+                    }
+                    else
+                    {
+                        // color not present in the map, so add it
+                        colorTableBuilder << "\\red" << static_cast<int>(GetRValue(bkColor.value()))
+                                          << "\\green" << static_cast<int>(GetGValue(bkColor.value()))
+                                          << "\\blue" << static_cast<int>(GetBValue(bkColor.value()))
+                                          << ";";
+                        colorMap[bkColor.value()] = nextColorIndex;
+                        bkColorIndex = nextColorIndex++;
+                    }
+
+                    if (colorMap.find(fgColor.value()) != colorMap.end())
+                    {
+                        // color already exists in the map, just retrieve the index
+                        fgColorIndex = colorMap[fgColor.value()];
+                    }
+                    else
+                    {
+                        // color not present in the map, so add it
+                        colorTableBuilder << "\\red" << static_cast<int>(GetRValue(fgColor.value()))
+                                          << "\\green" << static_cast<int>(GetGValue(fgColor.value()))
+                                          << "\\blue" << static_cast<int>(GetBValue(fgColor.value()))
+                                          << ";";
+                        colorMap[fgColor.value()] = nextColorIndex;
+                        fgColorIndex = nextColorIndex++;
+                    }
+
+                    contentBuilder << "\\highglight" << bkColorIndex
+                                   << "\\cf" << fgColorIndex
+                                   << " ";
+                }
+
+                if (isLastCharInRow)
+                {
+                    writeAccumulatedChars(true);
+                    break;
+                }
+            }
+        }
+
+        // end colortbl
+        colorTableBuilder << "}";
+
+        // add color table to the final RTF
+        rtfBuilder << colorTableBuilder.str();
+
+        // add the text content to the final RTF
+        rtfBuilder << contentBuilder.str();
+
+        // end rtf
+        rtfBuilder << "}";
+
+        return rtfBuilder.str();
     }
     catch (...)
     {
