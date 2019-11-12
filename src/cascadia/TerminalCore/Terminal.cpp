@@ -102,7 +102,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
-    _selectionBg = settings.SelectionBackground();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (settings.CursorShape())

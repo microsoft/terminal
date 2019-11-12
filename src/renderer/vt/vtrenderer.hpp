@@ -62,8 +62,7 @@ namespace Microsoft::Console::Render
                                                    const COLORREF color,
                                                    const size_t cchLine,
                                                    const COORD coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const COLORREF selectionBackground,
-                                             const SMALL_RECT rect) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 

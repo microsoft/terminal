@@ -270,8 +270,7 @@ UiaEngine::UiaEngine() noexcept :
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintSelection(const COLORREF /*color*/,
-                                                const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_FALSE;
 }

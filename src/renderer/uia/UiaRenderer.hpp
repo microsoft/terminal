@@ -54,8 +54,7 @@ namespace Microsoft::Console::Render
                                               COORD const coord,
                                               bool const fTrimLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const COLORREF selectionBackground,
-                                             const SMALL_RECT rect) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 

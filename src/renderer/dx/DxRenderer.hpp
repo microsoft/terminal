@@ -73,8 +73,7 @@ namespace Microsoft::Console::Render
                                               bool const fTrimLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const COLORREF selectionBackground,
-                                             const SMALL_RECT rect) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
@@ -97,6 +96,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
 
         float GetScaling() const noexcept;
+
+        void SetSelectionBackground(const COLORREF color) noexcept;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -128,6 +129,7 @@ namespace Microsoft::Console::Render
 
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
+        D2D1_COLOR_F _selectionBackground;
 
         [[nodiscard]] RECT _GetDisplayRect() const noexcept;
 

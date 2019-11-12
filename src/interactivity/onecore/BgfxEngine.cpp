@@ -173,7 +173,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintSelection(const COLORREF /*color*/, const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }

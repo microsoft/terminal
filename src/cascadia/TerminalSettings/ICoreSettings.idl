@@ -16,7 +16,6 @@ namespace Microsoft.Terminal.Settings
     {
         UInt32 DefaultForeground;
         UInt32 DefaultBackground;
-        UInt32 SelectionBackground;
         UInt32 GetColorTableEntry(Int32 index);
         void SetColorTableEntry(Int32 index, UInt32 value);
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback

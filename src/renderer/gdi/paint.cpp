@@ -626,11 +626,10 @@ using namespace Microsoft::Console::Render;
 //  - Reads the selected area, selection mode, and active screen buffer
 //    from the global properties and dispatches a GDI invert on the selected text area.
 // Arguments:
-//  - selectionBackground - Not used in GDI because it just inverts.
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]] HRESULT GdiEngine::PaintSelection(const COLORREF /*color*/, const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 

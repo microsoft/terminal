@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "ColorScheme.h"
+#include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "Utils.h"
 #include "JsonUtils.h"
@@ -39,9 +40,9 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
     _table{},
-    _defaultForeground{ RGB(242, 242, 242) },
-    _defaultBackground{ RGB(12, 12, 12) },
-    _selectionBackground{ RGB(242, 242, 242) }
+    _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+    _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+    _selectionBackground{ DEFAULT_FOREGROUND }
 {
 }
 
@@ -50,7 +51,7 @@ ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF default
     _table{},
     _defaultForeground{ defaultFg },
     _defaultBackground{ defaultBg },
-    _selectionBackground{ RGB(242, 242, 242) }
+    _selectionBackground{ DEFAULT_FOREGROUND }
 {
 }
 

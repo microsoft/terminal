@@ -107,8 +107,7 @@ public:
     // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
-    const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
-    const COLORREF GetSelectionBackground() const noexcept override;
+    const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;    
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
@@ -163,7 +162,6 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
-    COLORREF _selectionBg;
 
     bool _snapOnInput;
 
