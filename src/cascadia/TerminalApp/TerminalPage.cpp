@@ -393,7 +393,7 @@ namespace winrt::TerminalApp::implementation
         // Subsequent tabs, panes will all use `startingDirectory`.
         if (_suppressStartupDirectory)
         {
-            settings.StartingDirectory(L".");
+            settings.StartingDirectory().clear();
             _suppressStartupDirectory = false;
         }
 
