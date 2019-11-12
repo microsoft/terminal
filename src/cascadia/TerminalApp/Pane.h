@@ -163,4 +163,6 @@ private:
         }
         return false;
     }
+
+    static void _SetupResources();
 };

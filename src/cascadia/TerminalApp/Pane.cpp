@@ -32,7 +32,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 
     // Set the background of the pane to match that of the theme's default grid
     // background. This way, we'll match the small underline under the tabs, and
-    // the UI will be consistent on bot light and dark modes.
+    // the UI will be consistent on both light and dark modes.
     const auto res = Application::Current().Resources();
     const auto key = winrt::box_value(L"BackgroundGridThemeStyle");
     if (res.HasKey(key))
@@ -46,63 +46,25 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         }
     }
 
-    if (s_focusedBorderBrush == nullptr)
+    // On the first Pane's creation, lookup resources we'll use to theme the
+    // Pane, including the brushed to use for the focused/unfocused border
+    // color.
+    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
     {
-        const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
-        if (res.HasKey(accentColorKey))
-        {
-            const auto colorFromResources = res.Lookup(accentColorKey);
-            // If SystemAccentColor is _not_ a Color for some reason, use
-            // Transparent as the color, so we don't do this process again on
-            // the next pane (by leaving s_focusedBorderBrush nullptr)
-            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-            s_focusedBorderBrush = SolidColorBrush(actualColor);
-        }
-        else
-        {
-            // DON'T use Transparent here - if it's "Transparent", then it won't
-            // be able to hittest for clicks, and then clicking on the border
-            // will eat focus.
-            s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
-        }
+        _SetupResources();
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (s_unfocusedBorderBrush == nullptr)
-    {
-        const auto accentColorKey = winrt::box_value(L"SystemAccentColorDark3");
-        if (res.HasKey(accentColorKey))
-        {
-            const auto colorFromResources = res.Lookup(accentColorKey);
-            // If SystemAccentColor is _not_ a Color for some reason, use
-            // Transparent as the color, so we don't do this process again on
-            // the next pane (by leaving s_unfocusedBorderBrush nullptr)
-            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-            s_unfocusedBorderBrush = SolidColorBrush(actualColor);
-        }
-        else
-        {
-            // DON'T use Transparent here - if it's "Transparent", then it won't
-            // be able to hittest for clicks, and then clicking on the border
-            // will eat focus.
-            s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
-        }
-    }
-    ////////////////////////////////////////////////////////////////////////////
-
+    // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
 
+    // When our border is tapped, make sure to transfer focus to our control.
+    // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
+    // Colors::Transparent! The border won't get Tapped events, and they'll fall
+    // through to something else.
     _border.Tapped([this](auto&, auto& e) {
         _FocusFirstChild();
         e.Handled(true);
     });
-    // _border.IsTabStop(true); // Apparently not a property
-
-    // // This does nothing?:
-    // _border.GotFocus([this](auto&&, auto&&) {
-    //     // _control.Focus(FocusState::Programmatic);
-    //     _FocusFirstChild();
-    // });
 }
 
 // Method Description:
@@ -1147,6 +1109,50 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
 void Pane::SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus)
 {
     _pfnGotFocus = pfnGotFocus;
+}
+
+// Function Description:
+// - Attempts to load some XAML resources that the Pane will need. This includes:
+//   * The Color we'll use for active Panes's borders - SystemAccentColor
+//   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
+//     color of the titlebar)
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_SetupResources()
+{
+    const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+    if (res.HasKey(accentColorKey))
+    {
+        const auto colorFromResources = res.Lookup(accentColorKey);
+        // If SystemAccentColor is _not_ a Color for some reason, use
+        // Transparent as the color, so we don't do this process again on
+        // the next pane (by leaving s_focusedBorderBrush nullptr)
+        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+        s_focusedBorderBrush = SolidColorBrush(actualColor);
+    }
+    else
+    {
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
+
+    const auto accentColorKey = winrt::box_value(L"TabViewBackground");
+    if (res.HasKey(accentColorKey))
+    {
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(accentColorKey);
+        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+    }
+    else
+    {
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
