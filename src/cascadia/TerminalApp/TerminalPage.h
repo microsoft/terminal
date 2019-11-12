@@ -36,6 +36,8 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
+        void SuppressStartupDirectory();
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
@@ -64,6 +66,8 @@ namespace winrt::TerminalApp::implementation
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
+
+        bool _suppressStartupDirectory{ false };
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();

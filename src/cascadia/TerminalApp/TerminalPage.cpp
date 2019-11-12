@@ -385,6 +385,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         TerminalSettings settings = _settings->MakeSettings(profileGuid);
+        if (_suppressStartupDirectory)
+        {
+            settings.StartingDirectory({ nullptr });
+            _suppressStartupDirectory = false;
+        }
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
@@ -1378,6 +1383,11 @@ namespace winrt::TerminalApp::implementation
         _isFullscreen = !_isFullscreen;
 
         _UpdateTabView();
+    }
+
+    void TerminalPage::SuppressStartupDirectory()
+    {
+        _suppressStartupDirectory = true;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

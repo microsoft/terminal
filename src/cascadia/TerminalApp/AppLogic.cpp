@@ -658,6 +658,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void AppLogic::SuppressStartupDirectory()
+    {
+        if (_root)
+        {
+            _root->SuppressStartupDirectory();
+        }
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

@@ -184,6 +184,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR /*cmdline*/, int /*nShowCmd*
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initalized.
+    host._suppressStartupDirectory = true;
     host.Initialize();
 
     MSG message;

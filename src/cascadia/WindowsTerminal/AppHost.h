@@ -17,6 +17,7 @@ public:
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
+    bool _suppressStartupDirectory{ false };
 
 private:
     bool _useNonClientArea;

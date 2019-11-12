@@ -66,6 +66,11 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
+    if (_suppressStartupDirectory)
+    {
+        _logic.SuppressStartupDirectory();
+    }
+
     if (_useNonClientArea)
     {
         // Register our callbar for when the app's non-client content changes.

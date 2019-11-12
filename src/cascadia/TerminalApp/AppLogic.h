@@ -43,6 +43,8 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
+        void SuppressStartupDirectory();
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
 
