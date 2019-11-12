@@ -33,23 +33,6 @@ Tab::Tab(const GUID& profile, const TermControl& control)
         _activePane = sender;
         _activePane->SetActive();
 
-        // // void TerminalPage::_UpdateTabIcon(std::shared_ptr<Tab> tab)
-        // {
-        //     const auto lastFocusedProfileOpt = this->GetFocusedProfile();
-        //     if (lastFocusedProfileOpt.has_value())
-        //     {
-        //         const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-        //         const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-        //         if (matchingProfile)
-        //         {
-        //             tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
-        //         }
-        //         else
-        //         {
-        //             tab->UpdateIcon({});
-        //         }
-        //     }
-        // }
         if (_pfnActivePaneChanged)
         {
             _pfnActivePaneChanged();
@@ -168,21 +151,6 @@ void Tab::_Focus()
     }
 }
 
-// Method Description:
-// - Update the focus state of this tab's tree of panes. If one of the controls
-//   under this tab is focused, then it will be marked as the last focused. If
-//   there are no focused panes, then there will not be a last focused control
-//   when this returns.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Tab::UpdateFocus()
-{
-    // _rootPane->UpdateFocus();
-    // Maybe root->ClearActive, active->SetActive
-}
-
 void Tab::UpdateIcon(const winrt::hstring iconPath)
 {
     // Don't reload our icon if it hasn't changed.
@@ -207,7 +175,6 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 // - the title string of the last focused terminal control in our tree.
 winrt::hstring Tab::GetFocusedTitle() const
 {
-    // const auto lastFocusedControl = _rootPane->GetActiveTerminalControl();
     const auto lastFocusedControl = GetActiveTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }

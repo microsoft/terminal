@@ -30,22 +30,6 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
-    // Set the background of the pane to match that of the theme's default grid
-    // background. This way, we'll match the small underline under the tabs, and
-    // the UI will be consistent on both light and dark modes.
-    const auto res = Application::Current().Resources();
-    const auto key = winrt::box_value(L"BackgroundGridThemeStyle");
-    if (res.HasKey(key))
-    {
-        const auto g = res.Lookup(key);
-        const auto style = g.try_as<winrt::Windows::UI::Xaml::Style>();
-        // try_as fails by returning nullptr
-        if (style)
-        {
-            _root.Style(style);
-        }
-    }
-
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
     // color.
@@ -1122,6 +1106,7 @@ void Pane::SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGot
 // - <none>
 void Pane::_SetupResources()
 {
+    const auto res = Application::Current().Resources();
     const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
     if (res.HasKey(accentColorKey))
     {
@@ -1140,10 +1125,10 @@ void Pane::_SetupResources()
         s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
     }
 
-    const auto accentColorKey = winrt::box_value(L"TabViewBackground");
+    const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
     if (res.HasKey(accentColorKey))
     {
-        winrt::Windows::Foundation::IInspectable obj = res.Lookup(accentColorKey);
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
     }
     else

@@ -23,7 +23,6 @@ public:
     bool CanSplitPane(Pane::SplitState splitType);
     void SplitPane(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void UpdateFocus();
     void UpdateIcon(const winrt::hstring iconPath);
 
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
