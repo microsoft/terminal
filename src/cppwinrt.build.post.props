@@ -1,17 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <!-- By default, binplace our output under the bin/ directory in the root of
-       the project. The other non-cppwinrt projects are binplaced there as well.
-       However, Cascadia projects want to be built into an appx, and the wapproj
-       that consumes them will complain if you do this. So they'll set
-       NoOutputRedirection before including this props file.
-  -->
-  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
-    <OutputPath>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
-    <OutDir>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(OpenConsoleDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)common.build.post.props" />
 
   <!-- For Cascadia projects, we want to copy the output dll up a directory
        from where it was binplaced.
@@ -27,18 +16,17 @@
       <Command>
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll*&quot; )
-        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName)FullPDB.pdb&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)FullPDB.pdb*&quot; )
       </Command>
     </PostBuildEvent>
     <PostBuildEvent Condition="'$(Platform)'=='Win32'">
       <Command>
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).dll*&quot; )
-        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName)FullPDB.pdb&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName)FullPDB.pdb*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
 
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this

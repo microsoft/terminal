@@ -22,6 +22,16 @@ namespace Microsoft.Terminal.Wpf
         public enum WindowMessage : int
         {
             /// <summary>
+            /// The WM_SETFOCUS message is sent to a window after it has gained the keyboard focus.
+            /// </summary>
+            WM_SETFOCUS = 0x0007,
+
+            /// <summary>
+            /// The WM_KILLFOCUS message is sent to a window immediately before it loses the keyboard focus.
+            /// </summary>
+            WM_KILLFOCUS = 0x0008,
+
+            /// <summary>
             /// The WM_MOUSEACTIVATE message is sent when the cursor is in an inactive window and the user presses a mouse button. The parent window receives this message only if the child window passes it to the DefWindowProc function.
             /// </summary>
             WM_MOUSEACTIVATE = 0x0021,
@@ -202,11 +212,23 @@ namespace Microsoft.Terminal.Wpf
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
 
+        [DllImport("PublicTerminalCore.dll", CallingConvention = CallingConvention.StdCall)]
+        public static extern void TerminalBlinkCursor(IntPtr terminal);
+
+        [DllImport("PublicTerminalCore.dll", CallingConvention = CallingConvention.StdCall)]
+        public static extern void TerminalSetCursorVisible(IntPtr terminal, bool visible);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);
 
         [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr GetFocus();
+
+        [DllImport("user32.dll", SetLastError = true)]
         public static extern short GetKeyState(int keyCode);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetCaretBlinkTime();
 
         [StructLayout(LayoutKind.Sequential)]
         public struct WINDOWPOS

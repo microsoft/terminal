@@ -16,13 +16,16 @@ using namespace ::Microsoft::Console::Types;
 
 AppHost::AppHost() noexcept :
     _app{},
+    _logic{ nullptr }, // don't make one, we're going to take a ref on app's
     _window{ nullptr }
 {
-    _useNonClientArea = _app.GetShowTabsInTitlebar();
+    _logic = _app.Logic(); // get a ref to app's logic
+
+    _useNonClientArea = _logic.GetShowTabsInTitlebar();
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>();
+        _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
     }
     else
     {
@@ -68,29 +71,30 @@ void AppHost::Initialize()
         // Register our callbar for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
-        _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
+        _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
-    _window->WindowCloseButtonClicked([this]() { _app.WindowCloseButtonClicked(); });
+    _window->WindowCloseButtonClicked([this]() { _logic.WindowCloseButtonClicked(); });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
-    _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
+    _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
-    _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
 
-    _app.Create();
+    _logic.Create();
 
-    _app.TitleChanged({ this, &AppHost::AppTitleChanged });
-    _app.LastTabClosed({ this, &AppHost::LastTabClosed });
+    _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
+    _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
 
-    _window->UpdateTitle(_app.Title());
+    _window->UpdateTitle(_logic.Title());
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
-    _window->SetContent(_app.GetRoot());
+    _window->SetContent(_logic.GetRoot());
     _window->OnAppInitialized();
 }
 
@@ -135,10 +139,10 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - None
 void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
 {
-    launchMode = _app.GetLaunchMode();
+    launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual intial position
-    winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
+    winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
     proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
     proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
 
@@ -186,56 +190,27 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
             proposedRect.top = monitorInfo.rcWork.top;
         }
 
-        auto initialSize = _app.GetLaunchDimensions(dpix);
+        auto initialSize = _logic.GetLaunchDimensions(dpix);
 
-        const short _currentWidth = Utils::ClampToShortMax(
+        const short islandWidth = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.X)), 1);
-        const short _currentHeight = Utils::ClampToShortMax(
+        const short islandHeight = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.Y)), 1);
 
-        // Create a RECT from our requested client size
-        auto nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                    _currentHeight })
-                             .ToRect();
+        RECT islandFrame = {};
+        bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+        // If we failed to get the correct window size for whatever reason, log
+        // the error and go on. We'll use whatever the control proposed as the
+        // size of our window, which will be at least close.
+        LOG_LAST_ERROR_IF(!succeeded);
 
-        // Get the size of a window we'd need to host that client rect. This will
-        // add the titlebar space.
         if (_useNonClientArea)
         {
-            // If we're in NC tabs mode, do the math ourselves. Get the margins
-            // we're using for the window - this will include the size of the
-            // titlebar content.
-            const auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-            const MARGINS margins = pNcWindow->GetFrameMargins();
-            nonClient.left = 0;
-            nonClient.top = 0;
-            nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
-            nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
-        }
-        else
-        {
-            bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-            if (!succeeded)
-            {
-                // If we failed to get the correct window size for whatever reason, log
-                // the error and go on. We'll use whatever the control proposed as the
-                // size of our window, which will be at least close.
-                LOG_LAST_ERROR();
-                nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                       _currentHeight })
-                                .ToRect();
-            }
-
-            // For client island scenario, there is an invisible border of 8 pixels.
-            // We need to remove this border to guarantee the left edge of the window
-            // coincides with the screen
-            const auto pCWindow = static_cast<IslandWindow*>(_window.get());
-            const RECT frame = pCWindow->GetFrameBorderMargins(dpix);
-            proposedRect.left += frame.left;
+            islandFrame.top = -NonClientIslandWindow::topBorderVisibleHeight;
         }
 
-        adjustedHeight = nonClient.bottom - nonClient.top;
-        adjustedWidth = nonClient.right - nonClient.left;
+        adjustedWidth = -islandFrame.left + islandWidth + islandFrame.right;
+        adjustedHeight = -islandFrame.top + islandHeight + islandFrame.bottom;
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
@@ -292,7 +267,13 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
 {
-    _window->UpdateTheme(arg);
+    _window->OnApplicationThemeChanged(arg);
+}
+
+void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+{
+    _window->ToggleFullscreen();
 }
