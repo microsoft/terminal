@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         bool _SelectTab(const int tabIndex);
         void _MoveFocus(const Direction& direction);
 
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         int _GetFocusedTabIndex() const;
         void _SetFocusedTabIndex(int tabIndex);
         void _CloseFocusedTab();

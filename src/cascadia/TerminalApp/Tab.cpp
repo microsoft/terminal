@@ -50,9 +50,9 @@ Tab::Tab(const GUID& profile, const TermControl& control)
         //         }
         //     }
         // }
-        if (pfnFocusChanged)
+        if (_pfnActivePaneChanged)
         {
-            pfnFocusChanged();
+            _pfnActivePaneChanged();
             auto newTabTitle = this->GetFocusedTitle();
             this->SetTabText(newTabTitle);
         }
@@ -84,12 +84,9 @@ UIElement Tab::GetRootElement()
 // Return Value:
 // - nullptr if no children were marked `_lastFocused`, else the TermControl
 //   that was last focused.
-TermControl Tab::GetFocusedTerminalControl() const
+TermControl Tab::GetActiveTerminalControl() const
 {
-    // TODO: Probably just GetTerminalControl()
-    return _activePane->GetFocusedTerminalControl();
-
-    // return _rootPane->GetFocusedTerminalControl();
+    return _activePane->GetTerminalControl();
 }
 
 winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
@@ -164,7 +161,7 @@ void Tab::_Focus()
 {
     _focused = true;
 
-    auto lastFocusedControl = GetFocusedTerminalControl();
+    auto lastFocusedControl = GetActiveTerminalControl();
     if (lastFocusedControl)
     {
         lastFocusedControl.Focus(FocusState::Programmatic);
@@ -210,8 +207,8 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 // - the title string of the last focused terminal control in our tree.
 winrt::hstring Tab::GetFocusedTitle() const
 {
-    // const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
-    const auto lastFocusedControl = GetFocusedTerminalControl();
+    // const auto lastFocusedControl = _rootPane->GetActiveTerminalControl();
+    const auto lastFocusedControl = GetActiveTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }
 
@@ -240,7 +237,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - <none>
 void Tab::Scroll(const int delta)
 {
-    auto control = GetFocusedTerminalControl();
+    auto control = GetActiveTerminalControl();
     control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
         const auto currentOffset = control.GetScrollOffset();
         control.KeyboardScrollViewport(currentOffset + delta);
@@ -327,9 +324,17 @@ void Tab::ClosePane()
 void Tab::_AttachEventHandersToControl(const TermControl& control)
 {
     control.TitleChanged([this](auto newTitle) {
-        auto newTabTitle = this->GetFocusedTitle();
-        this->SetTabText(newTabTitle);
+        // The title of the control changed, but not necessarily the title
+        // of the tab. Get the title of the active pane of the tab, and set
+        // the tab's text to the active panes' text.
+        auto newTabTitle = GetFocusedTitle();
+        SetTabText(newTabTitle);
     });
+}
+
+void Tab::SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChanged)
+{
+    _pfnActivePaneChanged = pfnActivePaneChanged;
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

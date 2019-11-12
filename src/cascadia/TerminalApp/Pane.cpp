@@ -389,20 +389,16 @@ std::shared_ptr<Pane> Pane::GetFocusedPane()
 }
 
 // Method Description:
-// - Returns nullptr if no children of this pane were the last control to be
-//   focused, or the TermControl that _was_ the last control to be focused (if
-//   there was one).
-// - This control might not currently be focused, if the tab itself is not
-//   currently focused.
+// - TODO
 // Arguments:
 // - <none>
 // Return Value:
 // - nullptr if no children were marked `_lastFocused`, else the TermControl
 //   that was last focused.
-TermControl Pane::GetFocusedTerminalControl()
+TermControl Pane::GetTerminalControl()
 {
     auto lastFocused = GetFocusedPane();
-    return lastFocused ? lastFocused->_control : nullptr;
+    return _IsLeaf() ? _control : nullptr;
 }
 
 void Pane::ClearActive()

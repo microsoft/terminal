@@ -12,7 +12,7 @@ public:
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl() const;
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
     std::optional<GUID> GetFocusedProfile() const noexcept;
 
     bool IsFocused() const noexcept;
@@ -36,7 +36,8 @@ public:
 
     void ClosePane();
 
-    std::function<void()> pfnFocusChanged{ nullptr };
+    void SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChanged);
+
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
@@ -46,6 +47,8 @@ private:
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
+
+    std::function<void()> _pfnActivePaneChanged{ nullptr };
 
     void _MakeTabViewItem();
     void _Focus();

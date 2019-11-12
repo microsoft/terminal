@@ -416,15 +416,31 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
-        const auto* const profile = _settings->FindProfile(profileGuid);
-
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
+
+        // Don't capture a strong ref to the tab. If the tab is removed as this
+        // is called, we don't really care anymore about handling the event.
+        std::weak_ptr<Tab> weakTabPtr = newTab;
+        // When the tab's active pane changes, we'll want to lookup a new icon
+        // for it, and possibly propogate the title up to the window.
+        newTab->SetActivePaneChangedCallback([this, weakTabPtr]() {
+            if (auto tab = weakTabPtr.lock())
+            {
+                // Possibly update the icon of the tab.
+                _UpdateTabIcon(tab);
+
+                // Possibly update the title of the tab, window to match the newly
+                // focused pane.
+                _UpdateTitle(tab);
+            }
+        });
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 
-        // Set this profile's tab to the icon the user specified
+        // Set this tab's icon to the icon from the user's profile
+        const auto* const profile = _settings->FindProfile(profileGuid);
         if (profile != nullptr && profile->HasIcon())
         {
             newTab->UpdateIcon(profile->GetExpandedIconPath());
@@ -707,6 +723,7 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
+    // TODO: This description is outdated
     //    * the TitleChanged event, for changing the text of the tab
     //    * the GotFocus event, for changing the title/icon in the tab when a new
     //      control is focused
@@ -721,47 +738,6 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
-
-        // Don't capture a strong ref to the tab. If the tab is removed as this
-        // is called, we don't really care anymore about handling the event.
-        std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        // term.TitleChanged([this, weakTabPtr](auto newTitle) {
-        //     auto tab = weakTabPtr.lock();
-        //     if (!tab)
-        //     {
-        //         return;
-        //     }
-        //     // The title of the control changed, but not necessarily the title
-        //     // of the tab. Get the title of the focused pane of the tab, and set
-        //     // the tab's text to the focused panes' text.
-        //     _UpdateTitle(tab);
-        // });
-
-        hostingTab->pfnFocusChanged = ([this, weakTabPtr]() {
-            auto tab = weakTabPtr.lock();
-            // Possibly update the icon of the tab.
-            _UpdateTabIcon(tab);
-
-            // Possibly update the title of the tab, window to match the newly
-            // focused pane.
-            _UpdateTitle(tab);
-        });
-        // term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
-        //     auto tab = weakTabPtr.lock();
-        //     if (!tab)
-        //     {
-        //         return;
-        //     }
-        //     // // Update the focus of the tab's panes
-        //     // tab->UpdateFocus();
-
-        //     // Possibly update the title of the tab, window to match the newly
-        //     // focused pane.
-        //     _UpdateTitle(tab);
-
-        //     // Possibly update the icon of the tab.
-        //     _UpdateTabIcon(tab);
-        // });
     }
 
     // Method Description:
@@ -806,11 +782,11 @@ namespace winrt::TerminalApp::implementation
         _tabs[focusedTabIndex]->NavigateFocus(direction);
     }
 
-    winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetFocusedControl()
+    winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
-        return focusedTab->GetFocusedTerminalControl();
+        return focusedTab->GetActiveTerminalControl();
     }
 
     // Method Description:
@@ -987,7 +963,7 @@ namespace winrt::TerminalApp::implementation
     {
         delta = std::clamp(delta, -1, 1);
         const auto focusedTabIndex = _GetFocusedTabIndex();
-        const auto control = _GetFocusedControl();
+        const auto control = _GetActiveControl();
         const auto termHeight = control.GetViewHeight();
         _tabs[focusedTabIndex]->Scroll(termHeight * delta);
     }
@@ -1008,7 +984,7 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    if (auto focusedControl{ _GetFocusedControl() })
+                    if (auto focusedControl{ _GetActiveControl() })
                     {
                         return focusedControl.Title();
                     }
@@ -1164,7 +1140,7 @@ namespace winrt::TerminalApp::implementation
     // - true iff we we able to copy text (if a selection was active)
     bool TerminalPage::_CopyText(const bool trimTrailingWhitespace)
     {
-        const auto control = _GetFocusedControl();
+        const auto control = _GetActiveControl();
         return control.CopySelectionToClipboard(trimTrailingWhitespace);
     }
 
@@ -1172,7 +1148,7 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
-        const auto control = _GetFocusedControl();
+        const auto control = _GetActiveControl();
         control.PasteTextFromClipboard();
     }
 
