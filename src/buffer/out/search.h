@@ -75,7 +75,7 @@ private:
     COORD _coordSelStart = { 0 };
     COORD _coordSelEnd = { 0 };
 
-    const COORD _coordAnchor = { 0 };
+    const COORD _coordAnchor;
     const std::vector<std::vector<wchar_t>> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
