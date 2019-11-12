@@ -61,7 +61,7 @@ ColorScheme::~ColorScheme()
 
 // Method Description:
 // - Apply our values to the given TerminalSettings object. Sets the foreground,
-//      background, selection background, and color table of the settings object.
+//      background, and color table of the settings object.
 // Arguments:
 // - terminalSettings: the object to apply our settings to.
 // Return Value:
@@ -161,9 +161,9 @@ void ColorScheme::LayerJson(const Json::Value& json)
         const auto color = Utils::ColorFromHexString(bgString.asString());
         _defaultBackground = color;
     }
-    if (auto selectionBgString{ json[JsonKey(SelectionBackgroundKey)] })
+    if (auto sbString{ json[JsonKey(SelectionBackgroundKey)] })
     {
-        const auto color = Utils::ColorFromHexString(selectionBgString.asString());
+        const auto color = Utils::ColorFromHexString(sbString.asString());
         _selectionBackground = color;
     }
 
