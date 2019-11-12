@@ -596,6 +596,12 @@ void Pane::_CloseChild(const bool closeFirst)
         // Add our new event handler before revoking the old one.
         _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
+        // Take the got focus callback back into ourselves, and clear it from
+        // our (abandoned) children.
+        _pfnGotFocus = remainingChild->_pfnGotFocus;
+        _firstChild->_pfnGotFocus = nullptr;
+        _secondChild->_pfnGotFocus = nullptr;
+
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
         // closing. At this point, if the remaining child's control is closed,
@@ -663,6 +669,12 @@ void Pane::_CloseChild(const bool closeFirst)
         _splitState = remainingChild->_splitState;
         _firstChild = remainingChild->_firstChild;
         _secondChild = remainingChild->_secondChild;
+
+        // Remove the got focus callback from the closed child.
+        // Our new children should both still have their old callback values.
+        // As we aren't a leaf, ours should definitely be null.
+        closedChild->_pfnGotFocus = nullptr;
+        _pfnGotFocus = nullptr;
 
         // Set up new close handlers on the children
         _SetupChildCloseHandlers();
