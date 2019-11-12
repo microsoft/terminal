@@ -80,6 +80,7 @@ private:
     winrt::Windows::UI::Xaml::Controls::Border _border{};
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };

@@ -317,8 +317,7 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::ClosePane()
 {
-    auto focused = _activePane->GetFocusedPane();
-    focused->Close();
+    _activePane->Close();
 }
 
 // Method Description:

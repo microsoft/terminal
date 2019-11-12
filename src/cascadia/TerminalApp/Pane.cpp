@@ -18,6 +18,7 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const float Half = 0.50f;
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -54,16 +55,54 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
             // If SystemAccentColor is _not_ a Color for some reason, use
             // Transparent as the color, so we don't do this process again on
             // the next pane (by leaving s_focusedBorderBrush nullptr)
-            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Transparent());
+            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
             s_focusedBorderBrush = SolidColorBrush(actualColor);
         }
         else
         {
-            s_focusedBorderBrush = SolidColorBrush{ Colors::Transparent() };
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    if (s_unfocusedBorderBrush == nullptr)
+    {
+        const auto accentColorKey = winrt::box_value(L"SystemAccentColorDark3");
+        if (res.HasKey(accentColorKey))
+        {
+            const auto colorFromResources = res.Lookup(accentColorKey);
+            // If SystemAccentColor is _not_ a Color for some reason, use
+            // Transparent as the color, so we don't do this process again on
+            // the next pane (by leaving s_unfocusedBorderBrush nullptr)
+            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+            s_unfocusedBorderBrush = SolidColorBrush(actualColor);
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
+    }
+    ////////////////////////////////////////////////////////////////////////////
+
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+
+    _border.Tapped([this](auto&, auto& e) {
+        _FocusFirstChild();
+        e.Handled(true);
+    });
+    // _border.IsTabStop(true); // Apparently not a property
+
+    // // This does nothing?:
+    // _border.GotFocus([this](auto&&, auto&&) {
+    //     // _control.Focus(FocusState::Programmatic);
+    //     _FocusFirstChild();
+    // });
 }
 
 // Method Description:
@@ -495,7 +534,7 @@ bool Pane::_HasFocusedChild() const noexcept
 // - <none>
 void Pane::UpdateVisuals()
 {
-    _border.BorderBrush(_lastActive ? s_focusedBorderBrush : nullptr);
+    _border.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
 }
 
 // Method Description:
