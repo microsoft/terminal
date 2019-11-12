@@ -63,15 +63,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         }
     }
 
-    // _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_GotFocusHandler });
-    // _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, [this](auto&&, const winrt::Windows::UI::Xaml::RoutedEventArgs& args) {
-    _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, [this](auto&&, auto&&) {
-        // _GotFocusHandler(shared_from_this(), args);
-        if (pfnGotFocus)
-        {
-            pfnGotFocus(shared_from_this());
-        }
-    });
+    _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
 }
 
 // Method Description:
@@ -1084,6 +1076,15 @@ Size Pane::_GetMinSize() const
         const auto newHeight = firstSize.Height + secondSize.Height;
 
         return { newWidth, newHeight };
+    }
+}
+
+void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+                                   RoutedEventArgs const& /* args */)
+{
+    if (pfnGotFocus)
+    {
+        pfnGotFocus(shared_from_this());
     }
 }
 
