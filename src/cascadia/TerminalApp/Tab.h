@@ -49,4 +49,6 @@ private:
 
     void _MakeTabViewItem();
     void _Focus();
+
+    void _AttachEventHandersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 };

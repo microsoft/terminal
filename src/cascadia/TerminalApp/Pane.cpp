@@ -914,7 +914,6 @@ bool Pane::CanSplit(SplitState splitType)
 // Return Value:
 // - <none>
 void Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
-// std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     if (!_IsLeaf())
     {
@@ -975,7 +974,6 @@ bool Pane::_CanSplit(SplitState splitType)
 // Return Value:
 // - <none>
 void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
-// std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -1015,9 +1013,9 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
 
     _lastFocused = false;
 
-    _firstChild->pfnGotFocus = pfnGotFocus;
-    _secondChild->pfnGotFocus = pfnGotFocus;
-    pfnGotFocus = nullptr;
+    _firstChild->_pfnGotFocus = _pfnGotFocus;
+    _secondChild->_pfnGotFocus = _pfnGotFocus;
+    _pfnGotFocus = nullptr;
 }
 
 // Method Description:
@@ -1082,10 +1080,15 @@ Size Pane::_GetMinSize() const
 void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                    RoutedEventArgs const& /* args */)
 {
-    if (pfnGotFocus)
+    if (_pfnGotFocus)
     {
-        pfnGotFocus(shared_from_this());
+        _pfnGotFocus(shared_from_this());
     }
+}
+
+void Pane::SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus)
+{
+    _pfnGotFocus = pfnGotFocus;
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);

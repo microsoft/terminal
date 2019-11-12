@@ -25,10 +25,10 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 
     _activePane = _rootPane;
 
-    // TODO: Add an event handler to this pane's GotFocus event.
-    // When that pane gains focus, we'll mark it as the new active pane.
-    _rootPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
-        // _rootPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
+    // Add an event handler to this pane's GotFocus event. When that pane gains
+    // focus, we'll mark it as the new active pane. This pane will propogate
+    // this function down as it is split, so only leaves will trigger this.
+    _rootPane->SetGotFocusCallback([this](std::shared_ptr<Pane> sender) {
         _rootPane->ClearActive();
         _activePane = sender;
         _activePane->SetActive();
@@ -58,10 +58,7 @@ Tab::Tab(const GUID& profile, const TermControl& control)
         }
     });
 
-    control.TitleChanged([this](auto newTitle) {
-        auto newTabTitle = this->GetFocusedTitle();
-        this->SetTabText(newTabTitle);
-    });
+    _AttachEventHandersToControl(control);
 
     _MakeTabViewItem();
 }
@@ -273,26 +270,8 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
     _activePane->Split(splitType, profile, control);
-    // auto [firstNewPane, secondNewPane] = _activePane->Split(splitType, profile, control);
 
-    // // TODO: Add an event handler to this pane's GotFocus event.
-    // // When that pane gains focus, we'll mark it as the new active pane.
-    // firstNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
-    //     // firstNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
-    //     _rootPane->ClearActive();
-    //     _activePane = sender;
-    //     _activePane->SetActive();
-    // });
-    // secondNewPane->pfnGotFocus = ([this](std::shared_ptr<Pane> sender) {
-    //     // secondNewPane->GotFocus([this](std::shared_ptr<Pane> sender, auto&&) {
-    //     _rootPane->ClearActive();
-    //     _activePane = sender;
-    //     _activePane->SetActive();
-    // });
-    control.TitleChanged([this](auto newTitle) {
-        auto newTabTitle = this->GetFocusedTitle();
-        this->SetTabText(newTabTitle);
-    });
+    _AttachEventHandersToControl(control);
 }
 
 // Method Description:
@@ -343,6 +322,14 @@ void Tab::ClosePane()
 {
     auto focused = _activePane->GetFocusedPane();
     focused->Close();
+}
+
+void Tab::_AttachEventHandersToControl(const TermControl& control)
+{
+    control.TitleChanged([this](auto newTitle) {
+        auto newTabTitle = this->GetFocusedTitle();
+        this->SetTabText(newTabTitle);
+    });
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

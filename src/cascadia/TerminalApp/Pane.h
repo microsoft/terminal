@@ -71,7 +71,7 @@ public:
 
     void Close();
 
-    std::function<void(std::shared_ptr<Pane>)> pfnGotFocus{ nullptr };
+    void SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
@@ -98,6 +98,8 @@ private:
     std::shared_mutex _createCloseLock{};
 
     Borders _borders{ Borders::None };
+
+    std::function<void(std::shared_ptr<Pane>)> _pfnGotFocus{ nullptr };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
