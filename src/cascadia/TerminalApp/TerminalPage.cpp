@@ -387,7 +387,8 @@ namespace winrt::TerminalApp::implementation
         TerminalSettings settings = _settings->MakeSettings(profileGuid);
         if (_suppressStartupDirectory)
         {
-            settings.StartingDirectory({ nullptr });
+            // TODO: This seems wrong
+            settings.StartingDirectory(L".");
             _suppressStartupDirectory = false;
         }
         _CreateNewTabFromSettings(profileGuid, settings);
