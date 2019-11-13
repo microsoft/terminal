@@ -387,6 +387,10 @@
             ],
             "type": "string"
           },
+          "selectionBackground": {
+            "$ref": "#/definitions/Color",
+            "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
+          },
           "snapOnInput": {
             "default": true,
             "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
@@ -491,6 +495,10 @@
           "red": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI red."
+          },
+          "selectionBackground": {
+            "$ref": "#/definitions/Color",
+            "description": "Sets the selection background color of the color scheme."
           },
           "white": {
             "$ref": "#/definitions/Color",

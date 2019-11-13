@@ -173,6 +173,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Update our control settings
             _ApplyUISettings();
+
+            // Update DxEngine's SelectionBackground
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
@@ -462,6 +466,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+
+        // Update DxEngine's SelectionBackground
+        dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
         const auto height = vp.Height();
