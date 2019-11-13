@@ -11,7 +11,6 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
@@ -93,6 +92,8 @@ public:
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
+
+    void TrySnapOnInput() override;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)

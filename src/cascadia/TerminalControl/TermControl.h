@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo _actualFont;
 
         std::optional<int> _lastScrollOffset;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastScrollTime;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -165,6 +166,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
+        void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);

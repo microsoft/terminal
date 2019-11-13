@@ -34,6 +34,7 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
             {
                 UiaTextRangeBase* temp = ranges[0];
                 ranges.pop_front();
+                temp->Release();
             }
             THROW_HR(E_INVALIDARG);
         }
@@ -50,7 +51,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData, pProvider);
+        return WRL::Make<UiaTextRange>(pData, pProvider).Detach();
     }
     catch (...)
     {
@@ -64,7 +65,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData, pProvider, cursor);
+        return WRL::Make<UiaTextRange>(pData, pProvider, cursor).Detach();
     }
     catch (...)
     {
@@ -80,11 +81,12 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData,
-                                pProvider,
-                                start,
-                                end,
-                                degenerate);
+        return WRL::Make<UiaTextRange>(pData,
+                                       pProvider,
+                                       start,
+                                       end,
+                                       degenerate)
+            .Detach();
     }
     catch (...)
     {
@@ -98,7 +100,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
 {
     try
     {
-        return new UiaTextRange(pData, pProvider, point);
+        return WRL::Make<UiaTextRange>(pData, pProvider, point).Detach();
     }
     catch (...)
     {
@@ -143,7 +145,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     try
     {
-        *ppRetVal = new UiaTextRange(*this);
+        *ppRetVal = WRL::Make<UiaTextRange>(*this).Detach();
     }
     catch (...)
     {
@@ -172,10 +174,10 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                      _In_ BOOL searchBackward,
-                                      _In_ BOOL ignoreCase,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
+                                      _In_ BOOL /*searchBackward*/,
+                                      _In_ BOOL /*ignoreCase*/,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
     // TODO GitHub #605: Search functionality
     return E_NOTIMPL;

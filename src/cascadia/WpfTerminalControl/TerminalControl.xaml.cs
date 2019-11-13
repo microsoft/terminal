@@ -67,10 +67,7 @@ namespace Microsoft.Terminal.Wpf
                 return;
             }
 
-            int dpiX;
-            dpiX = (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * source.CompositionTarget.TransformToDevice.M11);
-
-            this.termContainer.SetTheme(theme, fontFamily, fontSize, dpiX);
+            this.termContainer.SetTheme(theme, fontFamily, fontSize);
         }
 
         /// <summary>

@@ -32,13 +32,13 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
     ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
-        pWindowProvider = new WindowUiaProvider(baseWindow);
+        pWindowProvider = WRL::Make<WindowUiaProvider>(baseWindow).Detach();
 
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         IUiaData* uiaData = &gci.renderData;
 
-        pScreenInfoProvider = new ScreenInfoUiaProvider(uiaData, pWindowProvider);
+        pScreenInfoProvider = WRL::Make<ScreenInfoUiaProvider>(uiaData, pWindowProvider).Detach();
         pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree

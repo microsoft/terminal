@@ -33,7 +33,6 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 
 ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     _signalFiringMapping{},
-    _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
@@ -67,56 +66,6 @@ ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     Tracing::s_TraceUia(this, ApiCall::Signal, &apiMsg);*/
     return hr;
 }
-
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-ScreenInfoUiaProviderBase::AddRef()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-ScreenInfoUiaProviderBase::Release()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
-    const long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
-                                                         _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
-    if (riid == __uuidof(IUnknown) ||
-        riid == __uuidof(IRawElementProviderSimple) ||
-        riid == __uuidof(IRawElementProviderFragment) ||
-        riid == __uuidof(ITextProvider))
-    {
-        *ppInterface = this;
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-
-    return S_OK;
-}
-
-#pragma endregion
 
 #pragma region IRawElementProviderSimple
 

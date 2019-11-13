@@ -282,3 +282,28 @@ an interrupt to the commandline application using <kbd>Ctrl+C</kbd> when there's
 no text selection. Additionally, if you set `paste` to `"ctrl+v"`, commandline
 applications won't be able to read a ctrl+v from the input. For these reasons,
 we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`
+
+
+### Setting the `startingDirectory` of WSL Profiles to `~`
+
+By default, the `startingDirectory` of a profile is `%USERPROFILE%`
+(`C:\Users\<YourUsername>`). This is a Windows path. However, for WSL, you might
+want to use the WSL home path instead. At the time of writing (26decf1 / Nov.
+1st, 2019), `startingDirectory` only accepts a Windows-style path, so setting it
+to start within the WSL distro can be a little tricky.
+
+Fortunately, with Windows 1903, the filesystems of WSL distros can easily be
+addressed using the `\\wsl$\` prefix. For any WSL distro whose name is
+`DistroName`, you can use `\\wsl$\DistroName` as a Windows path that points to
+the root of that distro's filesystem.
+
+For example, the following works as a profile to launch the "Ubuntu-18.04"
+distro in it's home path:
+
+```json
+{
+    "name": "Ubuntu-18.04",
+    "commandline" : "wsl -d Ubuntu-18.04",
+    "startingDirectory" : "//wsl$/Ubuntu-18.04/home/<Your Ubuntu Username>",
+}
+```

@@ -15,48 +15,6 @@ WindowUiaProviderBase::WindowUiaProviderBase(IUiaWindow* baseWindow) :
 {
 }
 
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-WindowUiaProviderBase::AddRef()
-{
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-WindowUiaProviderBase::Release()
-{
-    const long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
-    if (riid == __uuidof(IUnknown) ||
-        riid == __uuidof(IRawElementProviderSimple) ||
-        riid == __uuidof(IRawElementProviderFragment) ||
-        riid == __uuidof(IRawElementProviderFragmentRoot))
-    {
-        *ppInterface = this;
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-
-    return S_OK;
-}
-
-#pragma endregion
-
 #pragma region IRawElementProviderSimple
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.

@@ -16,13 +16,16 @@ using namespace ::Microsoft::Console::Types;
 
 AppHost::AppHost() noexcept :
     _app{},
+    _logic{ nullptr }, // don't make one, we're going to take a ref on app's
     _window{ nullptr }
 {
-    _useNonClientArea = _app.GetShowTabsInTitlebar();
+    _logic = _app.Logic(); // get a ref to app's logic
+
+    _useNonClientArea = _logic.GetShowTabsInTitlebar();
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>();
+        _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
     }
     else
     {
@@ -33,7 +36,8 @@ AppHost::AppHost() noexcept :
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2);
+                         std::placeholders::_2,
+                         std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
     _window->MakeWindow();
@@ -67,29 +71,30 @@ void AppHost::Initialize()
         // Register our callbar for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
-        _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
+        _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
-    _window->WindowCloseButtonClicked([this]() { _app.WindowCloseButtonClicked(); });
+    _window->WindowCloseButtonClicked([this]() { _logic.WindowCloseButtonClicked(); });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
-    _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
+    _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
-    _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
 
-    _app.Create();
+    _logic.Create();
 
-    _app.TitleChanged({ this, &AppHost::AppTitleChanged });
-    _app.LastTabClosed({ this, &AppHost::LastTabClosed });
+    _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
+    _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
 
-    _window->UpdateTitle(_app.Title());
+    _window->UpdateTitle(_logic.Title());
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
-    _window->SetContent(_app.GetRoot());
+    _window->SetContent(_logic.GetRoot());
     _window->OnAppInitialized();
 }
 
@@ -129,63 +134,84 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - proposedRect: The location and size of the window that we're about to
 //   create. We'll use this rect to determine which monitor the window is about
 //   to appear on.
+// - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
-// - <none>
-void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
+// - None
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
 {
-    // Find nearest montitor.
-    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    launchMode = _logic.GetLaunchMode();
 
-    // This API guarantees that dpix and dpiy will be equal, but neither is an
-    // optional parameter so give two UINTs.
-    UINT dpix = USER_DEFAULT_SCREEN_DPI;
-    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+    // Acquire the actual intial position
+    winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
+    proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
+    proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
 
-    auto initialSize = _app.GetLaunchDimensions(dpix);
-
-    const short _currentWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
-    const short _currentHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
-
-    // Create a RECT from our requested client size
-    auto nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                _currentHeight })
-                         .ToRect();
-
-    // Get the size of a window we'd need to host that client rect. This will
-    // add the titlebar space.
-    if (_useNonClientArea)
+    long adjustedHeight = 0;
+    long adjustedWidth = 0;
+    if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
     {
-        // If we're in NC tabs mode, do the math ourselves. Get the margins
-        // we're using for the window - this will include the size of the
-        // titlebar content.
-        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-        const MARGINS margins = pNcWindow->GetFrameMargins();
-        nonClient.left = 0;
-        nonClient.top = 0;
-        nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
-        nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
-    }
-    else
-    {
-        bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-        if (!succeeded)
+        // Find nearest montitor.
+        HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+
+        // Get nearest monitor information
+        MONITORINFO monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hmon, &monitorInfo);
+
+        // This API guarantees that dpix and dpiy will be equal, but neither is an
+        // optional parameter so give two UINTs.
+        UINT dpix = USER_DEFAULT_SCREEN_DPI;
+        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+        // If this fails, we'll use the default of 96.
+        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+        // We need to check if the top left point of the titlebar of the window is within any screen
+        RECT offScreenTestRect;
+        offScreenTestRect.left = proposedRect.left;
+        offScreenTestRect.top = proposedRect.top;
+        offScreenTestRect.right = offScreenTestRect.left + 1;
+        offScreenTestRect.bottom = offScreenTestRect.top + 1;
+
+        bool isTitlebarIntersectWithMonitors = false;
+        EnumDisplayMonitors(
+            nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
+                auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+                *intersectWithMonitor = true;
+                // Continue the enumeration
+                return FALSE;
+            },
+            reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
+
+        if (!isTitlebarIntersectWithMonitors)
         {
-            // If we failed to get the correct window size for whatever reason, log
-            // the error and go on. We'll use whatever the control proposed as the
-            // size of our window, which will be at least close.
-            LOG_LAST_ERROR();
-            nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                   _currentHeight })
-                            .ToRect();
+            // If the title bar is out-of-screen, we set the initial position to
+            // the top left corner of the nearest monitor
+            proposedRect.left = monitorInfo.rcWork.left;
+            proposedRect.top = monitorInfo.rcWork.top;
         }
-    }
 
-    const auto adjustedHeight = nonClient.bottom - nonClient.top;
-    const auto adjustedWidth = nonClient.right - nonClient.left;
+        auto initialSize = _logic.GetLaunchDimensions(dpix);
+
+        const short islandWidth = Utils::ClampToShortMax(
+            static_cast<long>(ceil(initialSize.X)), 1);
+        const short islandHeight = Utils::ClampToShortMax(
+            static_cast<long>(ceil(initialSize.Y)), 1);
+
+        RECT islandFrame = {};
+        bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+        // If we failed to get the correct window size for whatever reason, log
+        // the error and go on. We'll use whatever the control proposed as the
+        // size of our window, which will be at least close.
+        LOG_LAST_ERROR_IF(!succeeded);
+
+        if (_useNonClientArea)
+        {
+            islandFrame.top = -NonClientIslandWindow::topBorderVisibleHeight;
+        }
+
+        adjustedWidth = -islandFrame.left + islandWidth + islandFrame.right;
+        adjustedHeight = -islandFrame.top + islandHeight + islandFrame.bottom;
+    }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };
@@ -193,7 +219,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
                             Utils::ClampToShortMax(adjustedHeight, 1) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
-
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
                                   newPos.Left(),
@@ -201,6 +226,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
                                   newPos.Width(),
                                   newPos.Height(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
+
+    // Refresh the dpi of HWND becuase the dpi where the window will launch may be different
+    // at this time
+    _window->RefreshCurrentDPI();
 
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
@@ -238,7 +267,13 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
 {
-    _window->UpdateTheme(arg);
+    _window->OnApplicationThemeChanged(arg);
+}
+
+void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+{
+    _window->ToggleFullscreen();
 }

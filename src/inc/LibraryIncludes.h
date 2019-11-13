@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <atomic>
 #include <deque>
-#include <future>
 #include <list>
 #include <memory>
 #include <map>

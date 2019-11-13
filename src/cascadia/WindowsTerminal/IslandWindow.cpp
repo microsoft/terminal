@@ -88,7 +88,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -110,12 +110,19 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
+    winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window.get(), rc);
+        _pfnCreateCallback(_window.get(), rc, launchMode);
     }
 
-    ShowWindow(_window.get(), SW_SHOW);
+    int nCmdShow = SW_SHOW;
+    if (launchMode == winrt::TerminalApp::LaunchMode::MaximizedMode)
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+
+    ShowWindow(_window.get(), nCmdShow);
     UpdateWindow(_window.get());
 }
 
@@ -284,12 +291,153 @@ void IslandWindow::OnAppInitialized()
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
 {
     _rootGrid.RequestedTheme(requestedTheme);
     // Invalidate the window rect, so that we'll repaint any elements we're
     // drawing ourselves to match the new theme
     ::InvalidateRect(_window.get(), nullptr, false);
+}
+
+// Method Description:
+// - Toggles our fullscreen state. See _SetIsFullscreen for more details.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::ToggleFullscreen()
+{
+    _SetIsFullscreen(!_fullscreen);
+}
+
+// From GdiEngine::s_SetWindowLongWHelper
+void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
+{
+    // SetWindowLong has strange error handling. On success, it returns the
+    // previous Window Long value and doesn't modify the Last Error state. To
+    // deal with this, we set the last error to 0/S_OK first, call it, and if
+    // the previous long was 0, we check if the error was non-zero before
+    // reporting. Otherwise, we'll get an "Error: The operation has completed
+    // successfully." and there will be another screenshot on the internet
+    // making fun of Windows. See:
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591(v=vs.85).aspx
+    SetLastError(0);
+    LONG const lResult = SetWindowLongW(hWnd, nIndex, dwNewLong);
+    if (0 == lResult)
+    {
+        LOG_LAST_ERROR_IF(0 != GetLastError());
+    }
+}
+
+// Method Description:
+// - Controls setting us into or out of fullscreen mode. Largely taken from
+//   Window::SetIsFullscreen in conhost.
+// - When entering fullscreen mode, we'll save the current window size and
+//   location, and expand to take the entire monitor size. When leaving, we'll
+//   use that saved size to restore back to.
+// - When we're entering fullscreen we need to do some additional modification
+//   of our window styles. However, the NonClientIslandWindow very explicitly
+//   _doesn't_ need to do these steps. Subclasses should override
+//   _ShouldUpdateStylesOnFullscreen to disable setting these window styles.
+// Arguments:
+// - fullscreenEnabled true if we should enable fullscreen mode, false to disable.
+// Return Value:
+// - <none>
+void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
+{
+    // It is possible to enter _SetIsFullscreen even if we're already in full
+    // screen. Use the old is in fullscreen flag to gate checks that rely on the
+    // current state.
+    const auto oldIsInFullscreen = _fullscreen;
+    _fullscreen = fullscreenEnabled;
+
+    // Note: The NonClientIslandWindow _doesn't_ need these style modifications,
+    // so it's overriden _ShouldUpdateStylesOnFullscreen to return false. Doing
+    // these modifications to that window will cause a vista-style window frame
+    // to briefly appear when entering and exiting fullscreen.
+    if (_ShouldUpdateStylesOnFullscreen())
+    {
+        HWND const hWnd = GetWindowHandle();
+
+        // First, modify regular window styles as appropriate
+        auto windowStyle = GetWindowLongW(hWnd, GWL_STYLE);
+
+        // When moving to fullscreen, remove WS_OVERLAPPEDWINDOW, which specifies
+        // styles for non-fullscreen windows (e.g. caption bar), and add the
+        // WS_POPUP style to allow us to size ourselves to the monitor size.
+        // To the reverse when restoring from fullscreen.
+        if (_fullscreen)
+        {
+            WI_ClearAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+            WI_SetFlag(windowStyle, WS_POPUP);
+        }
+        else
+        {
+            WI_ClearFlag(windowStyle, WS_POPUP);
+            WI_SetAllFlags(windowStyle, WS_OVERLAPPEDWINDOW);
+        }
+
+        _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
+
+        // Now modify extended window styles as appropriate
+        // When moving to fullscreen, remove the window edge style to avoid an
+        // ugly border when not focused.
+        auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
+        WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
+        _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
+    }
+
+    _BackupWindowSizes(oldIsInFullscreen);
+    _ApplyWindowSize();
+}
+
+// Method Description:
+// - Used in entering/exiting fullscreen mode. Saves the current window size,
+//   and the full size of the monitor, for use in _ApplyWindowSize.
+// - Taken from conhost's Window::_BackupWindowSizes
+// Arguments:
+// - fCurrentIsInFullscreen: true if we're currently in fullscreen mode.
+// Return Value:
+// - <none>
+void IslandWindow::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
+{
+    if (_fullscreen)
+    {
+        // Note: the current window size depends on the current state of the
+        // window. So don't back it up if we're already in full screen.
+        if (!fCurrentIsInFullscreen)
+        {
+            _nonFullscreenWindowSize = GetWindowRect();
+        }
+
+        // get and back up the current monitor's size
+        HMONITOR const hCurrentMonitor = MonitorFromWindow(GetWindowHandle(), MONITOR_DEFAULTTONEAREST);
+        MONITORINFO currMonitorInfo;
+        currMonitorInfo.cbSize = sizeof(currMonitorInfo);
+        if (GetMonitorInfo(hCurrentMonitor, &currMonitorInfo))
+        {
+            _fullscreenWindowSize = currMonitorInfo.rcMonitor;
+        }
+    }
+}
+
+// Method Description:
+// - Applys the appropriate window size for transitioning to/from fullscreen mode.
+// - Taken from conhost's Window::_ApplyWindowSize
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::_ApplyWindowSize()
+{
+    const auto newSize = _fullscreen ? _fullscreenWindowSize : _nonFullscreenWindowSize;
+    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(GetWindowHandle(),
+                                         HWND_TOP,
+                                         newSize.left,
+                                         newSize.top,
+                                         newSize.right - newSize.left,
+                                         newSize.bottom - newSize.top,
+                                         SWP_FRAMECHANGED));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

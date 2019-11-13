@@ -26,18 +26,13 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Creates the PTY Signal Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
-// - shutdownEvent - An event that will be signaled when the entire console is going down
-//                   We can use this to know when to cancel what we're doing and cleanup.
-PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe,
-                                           wil::shared_event shutdownEvent) :
+PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
-    _shutdownEvent{ shutdownEvent },
     _hThread{},
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
     _dwThreadId{ 0 },
     _consoleConnected{ false }
 {
-    THROW_HR_IF(E_HANDLE, !_shutdownEvent);
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
     THROW_IF_NULL_ALLOC(_pConApi.get());
 }
@@ -84,21 +79,15 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - Otherwise it may cause an application termination another route and never return.
 [[nodiscard]] HRESULT PtySignalInputThread::_InputThread()
 {
-    auto onExitTriggerShutdown = wil::scope_exit([&] {
-        _shutdownEvent.SetEvent();
-    });
-
-    while (true)
+    unsigned short signalId;
+    while (_GetData(&signalId, sizeof(signalId)))
     {
-        unsigned short signalId;
-        RETURN_IF_FAILED(_GetData(&signalId, sizeof(signalId)));
-
         switch (signalId)
         {
         case PTY_SIGNAL_RESIZE_WINDOW:
         {
             PTY_SIGNAL_RESIZE resizeMsg = { 0 };
-            RETURN_IF_FAILED(_GetData(&resizeMsg, sizeof(resizeMsg)));
+            _GetData(&resizeMsg, sizeof(resizeMsg));
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -128,7 +117,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
         }
         default:
         {
-            RETURN_HR(E_UNEXPECTED);
+            THROW_HR(E_UNEXPECTED);
         }
         }
     }
@@ -143,19 +132,34 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - cbBuffer - Count of bytes in the given buffer.
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
-[[nodiscard]] HRESULT PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
-                                                     const DWORD cbBuffer)
+bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
+                                    const DWORD cbBuffer)
 {
     DWORD dwRead = 0;
     // If we failed to read because the terminal broke our pipe (usually due
     //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
     // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
     //       we want to gracefully close in.
-    RETURN_IF_WIN32_BOOL_FALSE(ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr));
+    if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
+    {
+        DWORD lastError = GetLastError();
+        if (lastError == ERROR_BROKEN_PIPE)
+        {
+            _Shutdown();
+            return false;
+        }
+        else
+        {
+            THROW_WIN32(lastError);
+        }
+    }
+    else if (dwRead != cbBuffer)
+    {
+        _Shutdown();
+        return false;
+    }
 
-    RETURN_HR_IF(E_UNEXPECTED, dwRead != cbBuffer);
-
-    return S_OK;
+    return true;
 }
 
 // Method Description:
@@ -180,4 +184,32 @@ void PtySignalInputThread::ConnectConsole() noexcept
     _dwThreadId = dwThreadId;
 
     return S_OK;
+}
+
+// Method Description:
+// - Perform a shutdown of the console. This happens when the signal pipe is
+//      broken, which means either the parent terminal process has died, or they
+//      called ClosePseudoConsole.
+//  CloseConsoleProcessState is not enough by itself - it will disconnect
+//      clients as if the X was pressed, but then we need to actually still die,
+//      so then call RundownAndExit.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void PtySignalInputThread::_Shutdown()
+{
+    // Trigger process shutdown.
+    CloseConsoleProcessState();
+
+    // If we haven't terminated by now, that's because there's a client that's still attached.
+    // Force the handling of the control events by the attached clients.
+    // As of MSFT:19419231, CloseConsoleProcessState will make sure this
+    //      happens if this method is called outside of lock, but if we're
+    //      currently locked, we want to make sure ctrl events are handled
+    //      _before_ we RundownAndExit.
+    ProcessCtrlEvents();
+
+    // Make sure we terminate.
+    ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
 }
