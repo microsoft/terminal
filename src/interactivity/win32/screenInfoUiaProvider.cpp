@@ -18,7 +18,7 @@ HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Microsoft::Console::T
     RETURN_HR_IF_NULL(E_INVALIDARG, pUiaParent);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
 
-    RETURN_IF_FAILED(__super::RuntimeClassInitialize(pData));
+    RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(pData));
     _pUiaParent = pUiaParent;
     return S_OK;
 }
@@ -98,30 +98,34 @@ void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
 }
 
 HRESULT ScreenInfoUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
-try
 {
-    typename std::remove_reference<decltype(result)>::type temporaryResult;
-
-    std::deque<ComPtr<UiaTextRange>> ranges;
-    RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, ranges));
-
-    while (!ranges.empty())
+    try
     {
-        temporaryResult.emplace_back(std::move(ranges.back()));
-        ranges.pop_back();
-    }
+        result.clear();
+        typename std::remove_reference<decltype(result)>::type temporaryResult;
 
-    std::swap(result, temporaryResult);
-    return S_OK;
+        std::deque<ComPtr<UiaTextRange>> ranges;
+        RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, ranges));
+
+        while (!ranges.empty())
+        {
+            temporaryResult.emplace_back(std::move(ranges.back()));
+            ranges.pop_back();
+        }
+
+        std::swap(result, temporaryResult);
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
-CATCH_RETURN();
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider));
+    *ppUtr = result;
     return S_OK;
 }
 
@@ -130,9 +134,10 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* c
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider, cursor));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, cursor));
+    *ppUtr = result;
     return S_OK;
 }
 
@@ -143,9 +148,10 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* c
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider, start, end, degenerate));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, degenerate));
+    *ppUtr = result;
     return S_OK;
 }
 
@@ -154,8 +160,9 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* c
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider, point));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, point));
+    *ppUtr = result;
     return S_OK;
 }

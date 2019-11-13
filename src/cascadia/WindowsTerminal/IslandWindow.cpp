@@ -5,7 +5,6 @@
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
-#include <wrl.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 

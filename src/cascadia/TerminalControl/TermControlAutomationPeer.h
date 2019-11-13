@@ -24,8 +24,6 @@ Author(s):
 
 #pragma once
 
-#include <wrl.h>
-
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>

@@ -14,7 +14,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 HRESULT WindowUiaProvider::RuntimeClassInitialize(_In_ IConsoleWindow* baseWindow)
 {
-    RETURN_IF_FAILED(__super::RuntimeClassInitialize(baseWindow));
+    RETURN_IF_FAILED(WindowUiaProviderBase::RuntimeClassInitialize(baseWindow));
 
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();

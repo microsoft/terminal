@@ -18,7 +18,6 @@ Author(s):
 
 #include "precomp.h"
 #include "..\types\UiaTextRangeBase.hpp"
-#include <wrl.h>
 
 namespace Microsoft::Console::Interactivity::Win32
 {

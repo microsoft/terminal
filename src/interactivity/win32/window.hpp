@@ -15,7 +15,6 @@ Author(s):
 #pragma once
 
 #include "..\types\IConsoleWindow.hpp"
-#include <wrl.h>
 
 namespace Microsoft::Console::Interactivity::Win32
 {

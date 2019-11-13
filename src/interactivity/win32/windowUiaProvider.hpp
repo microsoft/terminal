@@ -22,7 +22,6 @@ Author(s):
 #include "precomp.h"
 #include "screenInfoUiaProvider.hpp"
 #include "../types/WindowUiaProviderBase.hpp"
-#include <wrl.h>
 
 namespace Microsoft::Console::Types
 {

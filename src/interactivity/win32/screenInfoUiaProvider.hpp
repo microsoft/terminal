@@ -23,7 +23,6 @@ Author(s):
 #include "..\types\ScreenInfoUiaProviderBase.h"
 #include "..\types\UiaTextRangeBase.hpp"
 #include "uiaTextRange.hpp"
-#include <wrl.h>
 
 namespace Microsoft::Console::Interactivity::Win32
 {

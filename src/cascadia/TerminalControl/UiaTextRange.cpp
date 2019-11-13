@@ -13,40 +13,42 @@ using namespace Microsoft::WRL;
 HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                                          _In_ IRawElementProviderSimple* pProvider,
                                          _Out_ std::deque<ComPtr<UiaTextRange>>& ranges)
-try
 {
-    typename std::remove_reference<decltype(ranges)>::type temporaryResult;
-
-    // get the selection rects
-    const auto rectangles = pData->GetSelectionRects();
-
-    // create a range for each row
-    for (const auto& rect : rectangles)
+    try
     {
-        ScreenInfoRow currentRow = rect.Top();
-        Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
-        Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
+        typename std::remove_reference<decltype(ranges)>::type temporaryResult;
 
-        ComPtr<UiaTextRange> range;
-        RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
-        temporaryResult.emplace_back(std::move(range));
+        // get the selection rects
+        const auto rectangles = pData->GetSelectionRects();
+
+        // create a range for each row
+        for (const auto& rect : rectangles)
+        {
+            ScreenInfoRow currentRow = rect.Top();
+            Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
+            Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
+
+            ComPtr<UiaTextRange> range;
+            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
+            temporaryResult.emplace_back(std::move(range));
+        }
+        std::swap(temporaryResult, ranges);
+        return S_OK;
     }
-    std::swap(temporaryResult, ranges);
-    return S_OK;
+    CATCH_RETURN();
 }
-CATCH_RETURN();
 
 // degenerate range constructor.
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider)
 {
-    return __super::RuntimeClassInitialize(pData, pProvider);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider);
 }
 
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const Cursor& cursor)
 {
-    return __super::RuntimeClassInitialize(pData, pProvider, cursor);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor);
 }
 
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
@@ -55,7 +57,7 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              const Endpoint end,
                                              const bool degenerate)
 {
-    return __super::RuntimeClassInitialize(pData, pProvider, start, end, degenerate);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, degenerate);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
@@ -63,14 +65,14 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const UiaPoint point)
 {
-    RETURN_IF_FAILED(__super::RuntimeClassInitialize(pData, pProvider));
+    RETURN_IF_FAILED(UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider));
     Initialize(point);
     return S_OK;
 }
 
 HRESULT UiaTextRange::RuntimeClassInitialize(const UiaTextRange& a)
 {
-    return __super::RuntimeClassInitialize(a);
+    return UiaTextRangeBase::RuntimeClassInitialize(a);
 }
 
 IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)

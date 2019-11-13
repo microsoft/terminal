@@ -1280,7 +1280,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
 {
     if (nullptr == _pUiaProvider)
     {
-        auto hr = WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this);
+        const auto hr = WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this);
         if (FAILED(hr))
         {
             LOG_HR(hr);

@@ -72,6 +72,9 @@
 // SAL
 #include <sal.h>
 
+// WRL
+#include <wrl.h>
+
 #pragma warning(pop)
 
 // clang-format on

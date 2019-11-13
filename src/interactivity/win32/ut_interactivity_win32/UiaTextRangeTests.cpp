@@ -7,7 +7,6 @@
 #include "CommonState.hpp"
 
 #include "uiaTextRange.hpp"
-#include <wrl.h>
 #include "../../../buffer/out/textBuffer.hpp"
 
 using namespace WEX::Common;

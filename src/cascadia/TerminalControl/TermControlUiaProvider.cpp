@@ -13,7 +13,7 @@ HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ winrt::Microsoft::Te
                                                        _In_ std::function<RECT(void)> GetBoundingRect)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, termControl);
-    RETURN_IF_FAILED(__super::RuntimeClassInitialize(termControl->GetUiaData()));
+    RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(termControl->GetUiaData()));
 
     _getBoundingRect = GetBoundingRect;
     _termControl = termControl;
@@ -96,30 +96,34 @@ const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() c
 }
 
 HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
-try
 {
-    typename std::remove_reference<decltype(result)>::type temporaryResult;
-
-    std::deque<ComPtr<UiaTextRange>> ranges;
-    RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, ranges));
-
-    while (!ranges.empty())
+    try
     {
-        temporaryResult.emplace_back(std::move(ranges.back()));
-        ranges.pop_back();
-    }
+        result.clear();
+        typename std::remove_reference<decltype(result)>::type temporaryResult;
 
-    std::swap(result, temporaryResult);
-    return S_OK;
+        std::deque<ComPtr<UiaTextRange>> ranges;
+        RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, ranges));
+
+        while (!ranges.empty())
+        {
+            temporaryResult.emplace_back(std::move(ranges.back()));
+            ranges.pop_back();
+        }
+
+        std::swap(result, temporaryResult);
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
-CATCH_RETURN();
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider));
+    *ppUtr = result;
     return S_OK;
 }
 
@@ -128,9 +132,10 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider, cursor));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, cursor));
+    *ppUtr = result;
     return S_OK;
 }
 
@@ -141,9 +146,10 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider, start, end, degenerate));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, degenerate));
+    *ppUtr = result;
     return S_OK;
 }
 
@@ -152,8 +158,9 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    UiaTextRange* temp = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&temp, _pData, pProvider, point));
-    *ppUtr = temp;
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, point));
+    *ppUtr = result;
     return S_OK;
 }
