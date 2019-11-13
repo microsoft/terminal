@@ -104,10 +104,10 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                      _In_ BOOL searchBackward,
-                                      _In_ BOOL ignoreCase,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
+                                      _In_ BOOL /*searchBackward*/,
+                                      _In_ BOOL /*ignoreCase*/,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
     // TODO GitHub #605: Search functionality
     return E_NOTIMPL;

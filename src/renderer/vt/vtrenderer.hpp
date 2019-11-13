@@ -18,6 +18,7 @@ Author(s):
 #include "../inc/RenderEngineBase.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
+#include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
 #include <string>
@@ -32,12 +33,11 @@ namespace Microsoft::Console::Render
         static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
         static const COORD INVALID_COORDS;
 
-        VtEngine(wil::unique_hfile hPipe,
-                 wil::shared_event shutdownEvent,
+        VtEngine(_In_ wil::unique_hfile hPipe,
                  const Microsoft::Console::IDefaultColorProvider& colorProvider,
                  const Microsoft::Console::Types::Viewport initialViewport);
 
-        ~VtEngine() override;
+        virtual ~VtEngine() override = default;
 
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
@@ -93,14 +93,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
 
+        void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
         void BeginResizeRequest();
         void EndResizeRequest();
 
     protected:
-        wil::shared_event _shutdownEvent;
-        std::future<void> _shutdownWatchdog;
-        std::atomic<DWORD> _blockedThreadId;
-
         wil::unique_hfile _hFile;
         std::string _buffer;
 
@@ -131,6 +128,10 @@ namespace Microsoft::Console::Render
         bool _skipCursor;
         bool _newBottomLine;
         COORD _deferredCursorPos;
+
+        bool _pipeBroken;
+        HRESULT _exitResult;
+        Microsoft::Console::ITerminalOwner* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         bool _inResizeRequest{ false };

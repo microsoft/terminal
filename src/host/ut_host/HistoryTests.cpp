@@ -51,12 +51,12 @@ class HistoryTests
         const auto history = CommandHistory::s_Allocate(app, handle);
         VERIFY_IS_NOT_NULL(history);
 
-        VERIFY_IS_TRUE(WI_IsFlagSet(history->Flags, CLE_ALLOCATED));
+        VERIFY_IS_TRUE(WI_IsFlagSet(history->Flags, CommandHistory::CLE_ALLOCATED));
         VERIFY_ARE_EQUAL(1ul, CommandHistory::s_historyLists.size());
 
         CommandHistory::s_Free(handle);
         // We preserve the app history list for re-use if it reattaches in this session and doesn't age out.
-        VERIFY_IS_TRUE(WI_IsFlagClear(history->Flags, CLE_ALLOCATED), L"Shouldn't actually be gone, just deallocated.");
+        VERIFY_IS_TRUE(WI_IsFlagClear(history->Flags, CommandHistory::CLE_ALLOCATED), L"Shouldn't actually be gone, just deallocated.");
         VERIFY_ARE_EQUAL(1ul, CommandHistory::s_historyLists.size());
     }
 

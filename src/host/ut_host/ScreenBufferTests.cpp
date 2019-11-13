@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -193,6 +193,8 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownAcrossMargins);
     TEST_METHOD(CursorUpDownOutsideMargins);
     TEST_METHOD(CursorUpDownExactlyAtMargins);
+
+    TEST_METHOD(CursorSaveRestore);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -5043,5 +5045,123 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
         VERIFY_ARE_EQUAL(L"4", iter->Chars());
     }
 
+    stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorSaveRestore()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    const auto defaultAttrs = TextAttribute{};
+    const auto colorAttrs = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+
+    const auto asciiText = L"lwkmvj";
+    const auto graphicText = L"┌┬┐└┴┘";
+
+    const auto selectAsciiChars = L"\x1b(B";
+    const auto selectGraphicsChars = L"\x1b(0";
+    const auto saveCursor = L"\x1b[s";
+    const auto restoreCursor = L"\x1b[u";
+    const auto setDECOM = L"\x1b[?6h";
+    const auto resetDECOM = L"\x1b[?6l";
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"Restore after save.");
+    // Set the cursor position, attributes, and character set.
+    cursor.SetPosition(COORD{ 20, 10 });
+    si.SetAttributes(colorAttrs);
+    stateMachine.ProcessString(selectGraphicsChars);
+    // Save state.
+    stateMachine.ProcessString(saveCursor);
+    // Reset the cursor position, attributes, and character set.
+    cursor.SetPosition(COORD{ 0, 0 });
+    si.SetAttributes(defaultAttrs);
+    stateMachine.ProcessString(selectAsciiChars);
+    // Restore state.
+    stateMachine.ProcessString(restoreCursor);
+    // Verify initial position, colors, and graphic character set.
+    VERIFY_ARE_EQUAL(COORD({ 20, 10 }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
+    stateMachine.ProcessString(asciiText);
+    VERIFY_IS_TRUE(_ValidateLineContains(COORD({ 20, 10 }), graphicText, colorAttrs));
+
+    Log::Comment(L"Restore again without save.");
+    // Reset the cursor position, attributes, and character set.
+    cursor.SetPosition(COORD{ 0, 0 });
+    si.SetAttributes(defaultAttrs);
+    stateMachine.ProcessString(selectAsciiChars);
+    // Restore state.
+    stateMachine.ProcessString(restoreCursor);
+    // Verify initial saved position, colors, and graphic character set.
+    VERIFY_ARE_EQUAL(COORD({ 20, 10 }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
+    stateMachine.ProcessString(asciiText);
+    VERIFY_IS_TRUE(_ValidateLineContains(COORD({ 20, 10 }), graphicText, colorAttrs));
+
+    Log::Comment(L"Restore after reset.");
+    // Soft reset.
+    stateMachine.ProcessString(L"\x1b[!p");
+    // Set the cursor position, attributes, and character set.
+    cursor.SetPosition(COORD{ 20, 10 });
+    si.SetAttributes(colorAttrs);
+    stateMachine.ProcessString(selectGraphicsChars);
+    // Restore state.
+    stateMachine.ProcessString(restoreCursor);
+    // Verify home position, default attributes, and ascii character set.
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(defaultAttrs, si.GetAttributes());
+    stateMachine.ProcessString(asciiText);
+    VERIFY_IS_TRUE(_ValidateLineContains(COORD({ 0, 0 }), asciiText, defaultAttrs));
+
+    Log::Comment(L"Restore origin mode.");
+    // Set margins and origin mode to relative.
+    stateMachine.ProcessString(L"\x1b[10;20r");
+    stateMachine.ProcessString(setDECOM);
+    // Verify home position inside margins.
+    VERIFY_ARE_EQUAL(COORD({ 0, 9 }), cursor.GetPosition());
+    // Save state and reset origin mode to absolute.
+    stateMachine.ProcessString(saveCursor);
+    stateMachine.ProcessString(resetDECOM);
+    // Verify home position at origin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    // Restore state and move to home position.
+    stateMachine.ProcessString(restoreCursor);
+    stateMachine.ProcessString(L"\x1b[H");
+    // Verify home position inside margins, i.e. relative origin mode restored.
+    VERIFY_ARE_EQUAL(COORD({ 0, 9 }), cursor.GetPosition());
+
+    Log::Comment(L"Clamp inside top margin.");
+    // Reset margins, with absolute origin, and set cursor position.
+    stateMachine.ProcessString(L"\x1b[r");
+    stateMachine.ProcessString(setDECOM);
+    cursor.SetPosition(COORD{ 5, 15 });
+    // Save state.
+    stateMachine.ProcessString(saveCursor);
+    // Set margins and restore state.
+    stateMachine.ProcessString(L"\x1b[20;25r");
+    stateMachine.ProcessString(restoreCursor);
+    // Verfify Y position is clamped inside the top margin
+    VERIFY_ARE_EQUAL(COORD({ 5, 19 }), cursor.GetPosition());
+
+    Log::Comment(L"Clamp inside bottom margin.");
+    // Reset margins, with absolute origin, and set cursor position.
+    stateMachine.ProcessString(L"\x1b[r");
+    stateMachine.ProcessString(setDECOM);
+    cursor.SetPosition(COORD{ 5, 15 });
+    // Save state.
+    stateMachine.ProcessString(saveCursor);
+    // Set margins and restore state.
+    stateMachine.ProcessString(L"\x1b[1;10r");
+    stateMachine.ProcessString(restoreCursor);
+    // Verfify Y position is clamped inside the top margin
+    VERIFY_ARE_EQUAL(COORD({ 5, 9 }), cursor.GetPosition());
+
+    // Reset origin mode and margins.
+    stateMachine.ProcessString(resetDECOM);
     stateMachine.ProcessString(L"\x1b[r");
 }
