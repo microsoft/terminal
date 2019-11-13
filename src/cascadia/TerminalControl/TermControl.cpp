@@ -20,6 +20,10 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 
+// Limit the rate of scroll update operation
+// See also: Microsoft::Console::Render::RenderThread::s_FrameLimitMilliseconds
+constexpr long long ScrollRateLimitMilliseconds = 8;
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -1412,15 +1416,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        // Throttle the update operation.
         const auto timeNow = std::chrono::high_resolution_clock::now();
 
         if (_lastScrollTime.has_value())
         {
-            // Limit update operation to frame rate
-            // See also: Microsoft::Console::Render::RenderThread::s_FrameLimitMilliseconds
-            static constexpr long long s_ScrollRateLimitMilliseconds = 8;
             const long long deltaTimeInMilliSec = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - _lastScrollTime.value()).count();
-            if (deltaTimeInMilliSec < s_ScrollRateLimitMilliseconds)
+            if (deltaTimeInMilliSec < ScrollRateLimitMilliseconds)
             {
                 _lastScrollTime = std::nullopt;
                 return;
