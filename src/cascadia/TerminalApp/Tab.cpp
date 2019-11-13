@@ -252,7 +252,9 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
 // - <none>
 void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 {
-    _activePane->ResizeContent(newSize);
+    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // throughout the entire tree.
+    _rootPane->ResizeContent(newSize);
 }
 
 // Method Description:
@@ -264,7 +266,9 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 // - <none>
 void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 {
-    _activePane->ResizePane(direction);
+    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // throughout the entire tree.
+    _rootPane->ResizePane(direction);
 }
 
 // Method Description:
@@ -276,7 +280,9 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 {
-    _activePane->NavigateFocus(direction);
+    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // throughout the entire tree.
+    _rootPane->NavigateFocus(direction);
 }
 
 // Method Description:
@@ -327,24 +333,34 @@ void Tab::SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChange
     _pfnActivePaneChanged = std::move(pfnActivePaneChanged);
 }
 
+// Method Description:
+// - Add an event handler to this pane's GotFocus event. When that pane gains
+//   focus, we'll mark it as the new active pane. We'll also query the title of
+//   that pane when it's focused to set our own text, and finally, we'll trigger
+//   our own ActivePaneChanged event.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 {
-    // Add an event handler to this pane's GotFocus event. When that pane gains
-    // focus, we'll mark it as the new active pane. This pane will propogate
-    // this function down as it is split, so only leaves will trigger this.
     pane->GotFocus([this](std::shared_ptr<Pane> sender) {
+        // Do nothing if it's the same pane as before.
         if (sender == _activePane)
         {
             return;
         }
-
+        // Clear the active state of the entire tree, and mark only the sender as active.
         _rootPane->ClearActive();
         _activePane = sender;
         _activePane->SetActive();
 
+        // Update our own title text to match the newly-active pane.
         auto newTabTitle = GetActiveTitle();
         std::wstring tabText{ newTabTitle };
         SetTabText(newTabTitle);
+
+        // Raise our own ActivePaneChanged event.
         if (_pfnActivePaneChanged)
         {
             _pfnActivePaneChanged();

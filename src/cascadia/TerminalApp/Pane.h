@@ -71,12 +71,8 @@ public:
 
     void Close();
 
-    // void SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus);
-
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
-
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-    // winrt::event<winrt::delegate<std::shared_ptr<Pane>>> m_accountIsInDebitEvent;
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
@@ -102,8 +98,6 @@ private:
     std::shared_mutex _createCloseLock{};
 
     Borders _borders{ Borders::None };
-
-    // std::function<void(std::shared_ptr<Pane>)> _pfnGotFocus{ nullptr };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
