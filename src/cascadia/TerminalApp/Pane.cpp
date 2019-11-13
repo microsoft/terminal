@@ -574,9 +574,9 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Take the got focus callback back into ourselves, and clear it from
         // our (abandoned) children.
-        _pfnGotFocus = remainingChild->_pfnGotFocus;
-        _firstChild->_pfnGotFocus = nullptr;
-        _secondChild->_pfnGotFocus = nullptr;
+        // _GotFocusHandlers = remainingChild->_GotFocusHandlers;
+        // _firstChild->_GotFocusHandlers = nullptr;
+        // _secondChild->_GotFocusHandlers = nullptr;
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -608,12 +608,14 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_border);
         _border.Child(_control);
 
+        _splitState = SplitState::None;
+        _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+
         if (_lastActive)
         {
             _control.Focus(FocusState::Programmatic);
+            _GotFocusHandlers(shared_from_this());
         }
-
-        _splitState = SplitState::None;
 
         _UpdateBorders();
 
@@ -649,8 +651,8 @@ void Pane::_CloseChild(const bool closeFirst)
         // Remove the got focus callback from the closed child.
         // Our new children should both still have their old callback values.
         // As we aren't a leaf, ours should definitely be null.
-        closedChild->_pfnGotFocus = nullptr;
-        _pfnGotFocus = nullptr;
+        // closedChild->_GotFocusHandlers = nullptr;
+        // _GotFocusHandlers = nullptr;
 
         // Set up new close handlers on the children
         _SetupChildCloseHandlers();
@@ -901,23 +903,23 @@ bool Pane::CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            _firstChild->Split(splitType, profile, control);
+            return _firstChild->Split(splitType, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            _secondChild->Split(splitType, profile, control);
+            return _secondChild->Split(splitType, profile, control);
         }
 
-        return;
+        return { nullptr, nullptr };
     }
 
-    _Split(splitType, profile, control);
+    return _Split(splitType, profile, control);
 }
 
 // Method Description:
@@ -961,7 +963,7 @@ bool Pane::_CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -970,6 +972,9 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     // revoke our handler - the child will take care of the control now.
     _control.ConnectionClosed(_connectionClosedToken);
     _connectionClosedToken.value = 0;
+
+    // _control.GotFocus(_gotFocusRevoker);
+    _gotFocusRevoker.revoke();
 
     _splitState = splitType;
 
@@ -1001,9 +1006,10 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
 
     _lastActive = false;
 
-    _firstChild->_pfnGotFocus = _pfnGotFocus;
-    _secondChild->_pfnGotFocus = _pfnGotFocus;
-    _pfnGotFocus = nullptr;
+    // _firstChild->_GotFocusHandlers = _GotFocusHandlers;
+    // _secondChild->_GotFocusHandlers = _GotFocusHandlers;
+    // _GotFocusHandlers = nullptr;
+    return { _firstChild, _secondChild };
 }
 
 // Method Description:
@@ -1076,24 +1082,25 @@ Size Pane::_GetMinSize() const
 void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                    RoutedEventArgs const& /* args */)
 {
-    if (_pfnGotFocus)
-    {
-        _pfnGotFocus(shared_from_this());
-    }
+    // if (_pfnGotFocus)
+    // {
+    //     _pfnGotFocus(shared_from_this());
+    // }
+    _GotFocusHandlers(shared_from_this());
 }
 
-// Method Description:
-// - Register a callback function to be called when this Pane's control gains
-//   focused. This is used by the Tab hosting us so it can track which Pane in
-//   the tree was the last one to be focused.
-// Arguments:
-// - pfnGotFocus: A function that should be called when this pane's control gets focus.
-// Return Value:
-// - <none>
-void Pane::SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus)
-{
-    _pfnGotFocus = pfnGotFocus;
-}
+// // Method Description:
+// // - Register a callback function to be called when this Pane's control gains
+// //   focused. This is used by the Tab hosting us so it can track which Pane in
+// //   the tree was the last one to be focused.
+// // Arguments:
+// // - pfnGotFocus: A function that should be called when this pane's control gets focus.
+// // Return Value:
+// // - <none>
+// void Pane::SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus)
+// {
+//     _pfnGotFocus = std::move(pfnGotFocus);
+// }
 
 // Function Description:
 // - Attempts to load some XAML resources that the Pane will need. This includes:
@@ -1141,3 +1148,4 @@ void Pane::_SetupResources()
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
+DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

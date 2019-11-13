@@ -65,15 +65,18 @@ public:
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     bool CanSplit(SplitState splitType);
-    void Split(SplitState splitType,
-               const GUID& profile,
-               const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(SplitState splitType,
+                                                                  const GUID& profile,
+                                                                  const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void Close();
 
-    void SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus);
+    // void SetGotFocusCallback(std::function<void(std::shared_ptr<Pane>)> pfnGotFocus);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+
+    DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+    // winrt::event<winrt::delegate<std::shared_ptr<Pane>>> m_accountIsInDebitEvent;
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
@@ -100,16 +103,16 @@ private:
 
     Borders _borders{ Borders::None };
 
-    std::function<void(std::shared_ptr<Pane>)> _pfnGotFocus{ nullptr };
+    // std::function<void(std::shared_ptr<Pane>)> _pfnGotFocus{ nullptr };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
     bool _CanSplit(SplitState splitType);
-    void _Split(SplitState splitType,
-                const GUID& profile,
-                const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(SplitState splitType,
+                                                                   const GUID& profile,
+                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();

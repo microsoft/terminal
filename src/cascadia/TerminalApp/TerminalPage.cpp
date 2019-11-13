@@ -606,7 +606,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
-        auto newTabTitle = tab->GetFocusedTitle();
+        auto newTabTitle = tab->GetActiveTitle();
 
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())

@@ -30,7 +30,7 @@ public:
     void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
-    winrt::hstring GetFocusedTitle() const;
+    winrt::hstring GetActiveTitle() const;
     void SetTabText(const winrt::hstring& text);
 
     void ClosePane();
@@ -52,5 +52,6 @@ private:
     void _MakeTabViewItem();
     void _Focus();
 
-    void _AttachEventHandersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 };

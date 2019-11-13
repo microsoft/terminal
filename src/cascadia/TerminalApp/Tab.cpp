@@ -25,23 +25,9 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 
     _activePane = _rootPane;
 
-    // Add an event handler to this pane's GotFocus event. When that pane gains
-    // focus, we'll mark it as the new active pane. This pane will propogate
-    // this function down as it is split, so only leaves will trigger this.
-    _rootPane->SetGotFocusCallback([this](std::shared_ptr<Pane> sender) {
-        _rootPane->ClearActive();
-        _activePane = sender;
-        _activePane->SetActive();
+    _AttachEventHandlersToPane(_rootPane);
 
-        if (_pfnActivePaneChanged)
-        {
-            _pfnActivePaneChanged();
-            auto newTabTitle = this->GetFocusedTitle();
-            this->SetTabText(newTabTitle);
-        }
-    });
-
-    _AttachEventHandersToControl(control);
+    _AttachEventHandlersToControl(control);
 
     _MakeTabViewItem();
 }
@@ -173,7 +159,7 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 // - <none>
 // Return Value:
 // - the title string of the last focused terminal control in our tree.
-winrt::hstring Tab::GetFocusedTitle() const
+winrt::hstring Tab::GetActiveTitle() const
 {
     const auto lastFocusedControl = GetActiveTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
@@ -233,9 +219,28 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - <none>
 void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    _activePane->Split(splitType, profile, control);
+    auto [first, second] = _activePane->Split(splitType, profile, control);
 
-    _AttachEventHandersToControl(control);
+    _AttachEventHandlersToControl(control);
+
+    _AttachEventHandlersToPane(first);
+    _AttachEventHandlersToPane(second);
+
+    // Add an event handler to this pane's GotFocus event. When that pane gains
+    // focus, we'll mark it as the new active pane. This pane will propogate
+    // this function down as it is split, so only leaves will trigger this.
+    second->GotFocus([this](std::shared_ptr<Pane> sender) {
+        _rootPane->ClearActive();
+        _activePane = sender;
+        _activePane->SetActive();
+
+        auto newTabTitle = this->GetActiveTitle();
+        this->SetTabText(newTabTitle);
+        if (_pfnActivePaneChanged)
+        {
+            _pfnActivePaneChanged();
+        }
+    });
 }
 
 // Method Description:
@@ -297,13 +302,13 @@ void Tab::ClosePane()
 // - control: the TermControl to add events to.
 // Return Value:
 // - <none>
-void Tab::_AttachEventHandersToControl(const TermControl& control)
+void Tab::_AttachEventHandlersToControl(const TermControl& control)
 {
     control.TitleChanged([this](auto newTitle) {
         // The title of the control changed, but not necessarily the title
         // of the tab. Get the title of the active pane of the tab, and set
         // the tab's text to the active panes' text.
-        auto newTabTitle = GetFocusedTitle();
+        auto newTabTitle = GetActiveTitle();
         SetTabText(newTabTitle);
     });
 }
@@ -319,7 +324,32 @@ void Tab::_AttachEventHandersToControl(const TermControl& control)
 // - <none>
 void Tab::SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChanged)
 {
-    _pfnActivePaneChanged = pfnActivePaneChanged;
+    _pfnActivePaneChanged = std::move(pfnActivePaneChanged);
+}
+
+void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
+{
+    // Add an event handler to this pane's GotFocus event. When that pane gains
+    // focus, we'll mark it as the new active pane. This pane will propogate
+    // this function down as it is split, so only leaves will trigger this.
+    pane->GotFocus([this](std::shared_ptr<Pane> sender) {
+        if (sender == _activePane)
+        {
+            return;
+        }
+
+        _rootPane->ClearActive();
+        _activePane = sender;
+        _activePane->SetActive();
+
+        auto newTabTitle = GetActiveTitle();
+        std::wstring tabText{ newTabTitle };
+        SetTabText(newTabTitle);
+        if (_pfnActivePaneChanged)
+        {
+            _pfnActivePaneChanged();
+        }
+    });
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
