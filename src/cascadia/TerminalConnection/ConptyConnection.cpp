@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                              NULL,
                                                              NULL));
 
-        std::wstring cmdline{ _commandline.c_str() }; // mutable copy -- required for CreateProcessW
+        std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
 
