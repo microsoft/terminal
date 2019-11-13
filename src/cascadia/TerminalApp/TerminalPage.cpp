@@ -561,6 +561,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        bindings.OpenSearchBox({ this, &TerminalPage::_HandleOpenNewSearchBox });
     }
 
     // Method Description:
@@ -1323,6 +1324,20 @@ namespace winrt::TerminalApp::implementation
         {
             _newTabButton.Flyout().Hide();
         }
+    }
+
+    // Method Description:
+    // - Called when the user tries to open a search using keybindings.
+    //   This will tell the current focused terminal control to create
+    //   a search box.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OpenNewSearchBoxInTermControl()
+    {
+        const auto termControl = _GetFocusedControl();
+        termControl.CreateSearchBoxControl();
     }
 
     // -------------------------------- WinRT Events ---------------------------------

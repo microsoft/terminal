@@ -123,6 +123,8 @@ namespace winrt::TerminalApp::implementation
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
 
+        void _OpenNewSearchBoxInTermControl();
+
         void _RefreshUIForSettingsReload();
 
 #pragma region ActionHandlers
@@ -149,6 +151,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenNewSearchBox(const IInspectable& /*sender*/, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

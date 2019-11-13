@@ -7,5 +7,6 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean GetIsCaseSensitive();
 
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> CreateSearch;
+        event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> CloseButtonClicked;
     }
 }

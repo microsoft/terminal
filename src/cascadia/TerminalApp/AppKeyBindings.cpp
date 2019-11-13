@@ -404,6 +404,12 @@ namespace winrt::TerminalApp::implementation
             _AdjustFontSizeHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
+        case ShortcutAction::OpenSearchBox:
+        {
+            auto eventArgs = winrt::make_self<ActionEventArgs>();
+            _OpenSearchBoxHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
         default:
             return false;
         }

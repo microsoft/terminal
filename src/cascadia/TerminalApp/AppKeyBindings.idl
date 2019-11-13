@@ -53,7 +53,8 @@ namespace TerminalApp
         MoveFocusRight,
         MoveFocusUp,
         MoveFocusDown,
-        OpenSettings
+        OpenSettings,
+        OpenSearchBox
     };
 
     [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -87,5 +88,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenSettings;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ResizePane;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> MoveFocus;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenSearchBox;
     }
 }

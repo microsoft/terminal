@@ -48,5 +48,7 @@ namespace Microsoft.Terminal.TerminalControl
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void AdjustFontSize(Int32 fontSizeDelta);
+
+		void CreateSearchBoxControl();
     }
 }

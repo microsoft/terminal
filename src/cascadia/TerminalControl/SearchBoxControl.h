@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Root_SizeChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs const& e);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CreateSearch, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
     };
 }
 

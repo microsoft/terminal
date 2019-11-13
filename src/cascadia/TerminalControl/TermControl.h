@@ -72,6 +72,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
 
         void SwapChainChanged();
+
+        void CreateSearchBoxControl();
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -194,8 +197,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        void _CreateSearchBoxControl();
-        void _CreateSearch(const SearchBoxControl& sender, winrt::hstring text);
+        void _CreateSearch(const SearchBoxControl& /*sender*/, winrt::hstring text);
+        void _CloseSearchBoxControl(const SearchBoxControl& /*sender*/, Windows::UI::Xaml::RoutedEventArgs const& /*args*/);
         void _search(Search search);
     };
 }

@@ -77,6 +77,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void SearchBoxControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
     {
+        _CloseButtonClickedHanlder(*this, e);
     }
 
     void SearchBoxControl::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
@@ -84,4 +85,5 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CreateSearch, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 }

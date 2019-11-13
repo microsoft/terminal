@@ -132,11 +132,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.TerminalDisconnected([=]() {
             _connectionClosedHandlers();
         });
-
-        _CreateSearchBoxControl();
     }
 
-    void TermControl::_CreateSearchBoxControl()
+    void TermControl::CreateSearchBoxControl()
     {
         if (!_searchBox)
         {
@@ -149,10 +147,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Event handlers
             _searchBox.CreateSearch({ this, &TermControl::_CreateSearch });
+            _searchBox.CloseButtonClicked({ this, &TermControl::_CloseSearchBoxControl });
         }
     }
 
-    void TermControl::_CreateSearch(const SearchBoxControl& sender, winrt::hstring text)
+    void TermControl::_CreateSearch(const SearchBoxControl&, winrt::hstring text)
     {
         Search::Direction direction = _searchBox.GetGoForward() ?
                                           Search::Direction::Forward :
@@ -164,6 +163,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         _search(search);
+    }
+
+    void TermControl::_CloseSearchBoxControl(const SearchBoxControl& /*sender*/, RoutedEventArgs const& /*args*/)
+    {
+        unsigned int idx;
+        _root.Children().IndexOf(_searchBox, idx);
+        _root.Children().RemoveAt(idx);
+
+        _searchBox = nullptr;
     }
 
     void TermControl::_search(Search search)

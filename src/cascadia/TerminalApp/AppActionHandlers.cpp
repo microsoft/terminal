@@ -198,4 +198,11 @@ namespace winrt::TerminalApp::implementation
             args.Handled(true);
         }
     }
+
+    void TerminalPage::_HandleOpenNewSearchBox(const IInspectable& /*sender*/,
+                                               const TerminalApp::ActionEventArgs& args)
+    {
+        _OpenNewSearchBoxInTermControl();
+        args.Handled(true);
+    }
 }
