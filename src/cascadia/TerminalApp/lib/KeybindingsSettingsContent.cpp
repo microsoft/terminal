@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
         throw hresult_not_implemented();
     }
 
-    winrt::hstring KeybindingsSettingsContent::getKeybinding()
+    winrt::hstring KeybindingsSettingsContent::getKeybinding(int32_t var)
     {
         winrt::hstring keybinding{ L"Hello, World!" };
         return keybinding;

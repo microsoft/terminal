@@ -5,6 +5,6 @@ namespace TerminalApp
     {
         KeybindingsSettingsContent();
         Int32 MyProperty;
-        String getKeybinding();
+        String getKeybinding(Int32 var);
     }
 }
