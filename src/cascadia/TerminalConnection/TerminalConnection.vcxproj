@@ -88,7 +88,7 @@
 
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>$(OpenConsoleCommonOutDir)\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OpenConsoleCommonOutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>
