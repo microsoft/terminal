@@ -71,7 +71,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\winconpty\winconpty.vcxproj">
+    <ProjectReference Include="..\..\winconpty\lib\winconptylib.vcxproj">
       <Project>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</Project>
     </ProjectReference>
   </ItemGroup>
