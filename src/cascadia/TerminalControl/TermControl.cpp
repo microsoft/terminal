@@ -153,8 +153,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connection.TerminalDisconnected([=]() {
-            _connectionClosedHandlers();
+        _connection.StateChanged([=](auto&& /*s*/, auto&& v) {
+            auto ff = wil::str_printf<std::wstring>(L"CONNECTION TRANSITIONED TO STATE %d\n", v);
+            OutputDebugStringW(ff.c_str());
+            if (v == TerminalConnection::ConnectionState::Closed)
+            {
+                _connectionClosedHandlers();
+            }
         });
     }
 

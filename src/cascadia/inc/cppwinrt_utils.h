@@ -71,6 +71,14 @@ public:                                                                         
 private:                                                                                                                                           \
     winrt::event<winrt::Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
 
+#define UNTYPED_EVENT(name, args)                                                            \
+public:                                                                                      \
+    winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); }  \
+    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); } \
+                                                                                             \
+private:                                                                                     \
+    winrt::event<args> _##name##Handlers;
+
 // This is a helper macro for both declaring the signature and body of an event
 // which is exposed by one class, but actually handled entirely by one of the
 // class's members. This type of event could be considered "forwarded" or

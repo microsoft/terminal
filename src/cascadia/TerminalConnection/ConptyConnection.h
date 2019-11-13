@@ -1,9 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
 
 #include "ConptyConnection.g.h"
+#include "../inc/cppwinrt_utils.h"
+
 #include <conpty-static.h>
 
 namespace wil
@@ -20,8 +22,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
         void TerminalOutput(winrt::event_token const& token) noexcept;
-        winrt::event_token TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler);
-        void TerminalDisconnected(winrt::event_token const& token) noexcept;
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
@@ -29,12 +29,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         winrt::guid Guid() const noexcept;
 
+        UNTYPED_EVENT(StateChanged, StateChangedEventArgs);
+
     private:
         HRESULT _LaunchAttachedClient() noexcept;
         void _ClientTerminated() noexcept;
+        void _transitionToState(const ConnectionState state) noexcept;
 
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
-        winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
@@ -43,6 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingTitle;
         guid _guid{}; // A unique session identifier for connected client
 
+        std::atomic<ConnectionState> _state{ ConnectionState::NotConnected };
         bool _connected{};
         std::atomic<bool> _closing{ false };
         bool _recievedFirstByte{ false };

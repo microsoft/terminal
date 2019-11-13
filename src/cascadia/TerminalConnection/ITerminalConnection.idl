@@ -3,13 +3,32 @@
 
 namespace Microsoft.Terminal.TerminalConnection
 {
+    enum ConnectionState
+    {
+        NotConnected = 0,
+        Connecting,
+        Connected,
+        Closing,
+        Closed,
+        Failed
+    };
+
     delegate void TerminalOutputEventArgs(String output);
-    delegate void TerminalDisconnectedEventArgs();
+    delegate void StateChangedEventArgs(ITerminalConnection connection, ConnectionState newState);
+
+    /*
+    [default_interface] runtimeclass StateChangedEventArgs
+    {
+        ConnectionState State { get; }
+    }
+    */
 
     interface ITerminalConnection
     {
         event TerminalOutputEventArgs TerminalOutput;
-        event TerminalDisconnectedEventArgs TerminalDisconnected;
+
+        event StateChangedEventArgs StateChanged;
+        //ConnectionState State { get; };
 
         void Start();
         void WriteInput(String data);

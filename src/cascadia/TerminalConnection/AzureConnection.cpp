@@ -76,28 +76,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
-    // - registers a terminal-disconnected event handler
-    // Arguments:
-    // - the handler
-    // Return value:
-    // - the event token for the handler
-    winrt::event_token AzureConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        return _disconnectHandlers.add(handler);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - revokes a terminal-disconnected event handler
-    // Arguments:
-    // - the event token for the handler
-    void AzureConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        _disconnectHandlers.remove(token);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
     // - creates the output thread (where we will do the authentication and actually connect to Azure)
     void AzureConnection::Start()
     {
@@ -111,6 +89,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                           nullptr));
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
+
+        _StateChangedHandlers(*this, ConnectionState::Connecting);
 
         _connected = true;
     }
@@ -271,6 +251,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (!_closing.exchange(true))
         {
+            _StateChangedHandlers(*this, ConnectionState::Closing);
+
             _canProceed.notify_all();
             if (_state == State::TermConnected)
             {
@@ -282,6 +264,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Tear down our output thread
             WaitForSingleObject(_hOutputThread.get(), INFINITE);
             _hOutputThread.reset();
+
+            _StateChangedHandlers(*this, ConnectionState::Closed);
         }
     }
 
@@ -359,6 +343,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // We are connected, continuously read from the websocket until its closed
                 case State::TermConnected:
                 {
+                    _StateChangedHandlers(*this, ConnectionState::Connected);
                     while (true)
                     {
                         // Read from websocket
@@ -374,7 +359,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             if (!_closing.load())
                             {
                                 _state = State::NoConnect;
-                                _disconnectHandlers();
+                                _StateChangedHandlers(*this, ConnectionState::Closed);
                                 return S_FALSE;
                             }
                             break;
@@ -394,7 +379,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 case State::NoConnect:
                 {
                     _WriteStringWithNewline(RS_(L"AzureInternetOrServerIssue"));
-                    _disconnectHandlers();
+                    _StateChangedHandlers(*this, ConnectionState::Failed);
                     return E_FAIL;
                 }
                 }

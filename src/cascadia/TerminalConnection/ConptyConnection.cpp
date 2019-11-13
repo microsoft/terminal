@@ -160,16 +160,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _outputHandlers.remove(token);
     }
 
-    winrt::event_token ConptyConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        return _disconnectHandlers.add(handler);
-    }
-
-    void ConptyConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        _disconnectHandlers.remove(token);
-    }
-
     void ConptyConnection::Start()
     try
     {
@@ -213,7 +203,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // TODO GH#2563 - signal a transition into failed state here!
         LOG_HR(hr);
 
-        _disconnectHandlers();
+        winrt::hstring failureText{ wil::str_printf<std::wstring>(L"[failed to spawn `%ls': %8.08x]\r\n", _commandline.c_str(), (unsigned int)hr) };
+        _outputHandlers(failureText);
+        _transitionToState(ConnectionState::Failed);
     }
 
     void ConptyConnection::_ClientTerminated() noexcept
@@ -224,8 +216,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        // TODO GH#2563 - get the exit code from the process and see whether it was a failing one.
-        _disconnectHandlers();
+        DWORD exitCode{ 0 };
+        GetExitCodeProcess(_piClient.hProcess, &exitCode);
+        if (exitCode == 0)
+        {
+            _transitionToState(ConnectionState::Closed);
+        }
+        else
+        {
+            winrt::hstring failureText{ wil::str_printf<std::wstring>(L"\r\n\x1b[1m[took a long walk off a short pier: %8.08llx]\r\n", (unsigned long long)exitCode) };
+            _outputHandlers(failureText);
+            _transitionToState(ConnectionState::Failed);
+        }
+    }
+
+    void ConptyConnection::_transitionToState(const ConnectionState state) noexcept
+    {
+        // only allow movement up the satte gradient
+        // old state must be < current.
+        if (_state.exchange(state) < state)
+        {
+            _StateChangedHandlers(*this, _state);
+        }
     }
 
     void ConptyConnection::WriteInput(hstring const& data)
@@ -263,6 +275,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (!_closing.exchange(true))
         {
+            _transitionToState(ConnectionState::Closing);
             _clientExitWait.reset(); // immediately stop waiting for the client to exit.
 
             _hPC.reset();
@@ -274,6 +287,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // far side, we can run down our local reader.
             LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
             _hOutputThread.reset();
+
+            _transitionToState(ConnectionState::Closed);
 
             // Wait for the client to terminate.
             LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_piClient.hProcess, INFINITE));
@@ -298,7 +313,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     return 0;
                 }
 
-                _disconnectHandlers();
+                _transitionToState(ConnectionState::Failed);
                 return (DWORD)-1;
             }
 

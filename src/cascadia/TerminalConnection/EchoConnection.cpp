@@ -23,17 +23,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _outputHandlers.remove(token);
     }
 
-    winrt::event_token EchoConnection::TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        handler;
-        throw hresult_not_implemented();
-    }
-
-    void EchoConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        token;
-    }
-
     void EchoConnection::Start()
     {
     }
