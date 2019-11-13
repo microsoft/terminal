@@ -365,6 +365,13 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
 bool Terminal::SetWindowTitle(std::wstring_view title)
 {
+    // Set the title on Terminal load
+    if (_title.empty())
+    {
+        _title = title;
+        _pfnTitleChanged(title);
+    }
+
     _title = title;
 
     if (_pfnTitleChanged && !_suppressApplicationTitle)

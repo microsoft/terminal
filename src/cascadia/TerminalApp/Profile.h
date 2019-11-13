@@ -68,6 +68,7 @@ public:
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
     std::optional<std::wstring>& GetSchemeName() noexcept;
     void SetTabTitle(std::wstring tabTitle) noexcept;
+    void SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;
     void SetStartingDirectory(std::wstring startingDirectory) noexcept;

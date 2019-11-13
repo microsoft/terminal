@@ -187,6 +187,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // use the profile name
     terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
 
+    if (_suppressApplicationTitle)
+    {
+        terminalSettings.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
+
     if (_schemeName)
     {
         const auto found = schemes.find(_schemeName.value());
@@ -312,6 +317,11 @@ Json::Value Profile::ToJson() const
     if (_tabTitle)
     {
         root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
+    }
+
+    if (_suppressApplicationTitle)
+    {
+        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
     }
 
     if (_startingDirectory)
@@ -762,6 +772,15 @@ bool Profile::HasIcon() const noexcept
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
     _tabTitle = std::move(tabTitle);
+}
+
+// Method Description
+// - Sets if the application title will be suppressed in this profile.
+// Arguments:
+// - suppressApplicationTitle: boolean
+void Profile::SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept
+{
+    _suppressApplicationTitle = suppressApplicationTitle;
 }
 
 // Method Description:
