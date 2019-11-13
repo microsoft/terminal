@@ -123,14 +123,18 @@ void AttrRowIterator::_decrement(size_t count)
 {
     while (count > 0)
     {
+        // If there's still space within this color attribute to move left, do so.
         if (count <= _currentAttributeIndex)
         {
             _currentAttributeIndex -= count;
             return;
         }
+        // If there's not space, move the whole color attribute left by one
+        // and just take one away from the remaining movement.
+        // We'll walk through above on the if branch to move left further (if necessary)
         else
         {
-            count -= _currentAttributeIndex;
+            --count;
             --_run;
             _currentAttributeIndex = _run->GetLength() - 1;
         }

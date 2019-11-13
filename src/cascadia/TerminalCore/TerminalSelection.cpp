@@ -366,7 +366,7 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
     while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
-        bufferIterator--;
+        --bufferIterator;
     }
 
     if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
@@ -404,7 +404,7 @@ COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
     while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
-        bufferIterator++;
+        ++bufferIterator;
     }
 
     if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
