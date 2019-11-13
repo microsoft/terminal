@@ -1243,6 +1243,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
 // Routine Description:
 // - Generates an RTF document based on the passed in text and color data
+//   RTF 1.5 Spec: https://www.biblioscape.com/rtf15_spec.htm
 // Arguments:
 // - rows - the text and color data we will format & encapsulate
 // - backgroundColor - default background color for characters, also used in padding
@@ -1260,7 +1261,12 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
         // start rtf
         rtfBuilder << "{";
 
-        // rtf header
+        // Standard RTF header.
+        // This is similar to the header gnerated by WordPad.
+        // \ansi - specifies that the ANSI char set is used in the current doc
+        // \ansicpg1252 - represents the ANSI code page which is used to perform the Unicode to ANSI conversion when writing RTF text
+        // \deff0 - specifes that the default font for the document is the one at index 0 in the font table
+        // \nouicompat - ?
         rtfBuilder << "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
 
         // font table
