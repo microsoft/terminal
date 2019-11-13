@@ -307,13 +307,19 @@ wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, c
     keyState[VK_CONTROL] = states.IsCtrlPressed() ? 0x80 : 0;
     keyState[VK_MENU] = states.IsAltPressed() ? 0x80 : 0;
 
+    // For the following use of ToUnicodeEx() please look here:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-tounicodeex
+
     // Technically ToUnicodeEx() can produce arbitrarily long sequences of diacritics etc.
     // Since we only handle the case of a single UTF-16 code point, we can set the buffer size to 2 though.
     constexpr size_t bufferSize = 2;
     wchar_t buffer[bufferSize];
 
-    // wFlags: If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
-    const auto result = ToUnicodeEx(vkey, sc, keyState, buffer, bufferSize, 0b100, nullptr);
+    // wFlags:
+    // * If bit 0 is set, a menu is active.
+    //   If this flag is not specified ToUnicodeEx will send us character events on certain Alt+Key combinations (e.g. Alt+Arrow-Up).
+    // * If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
+    const auto result = ToUnicodeEx(vkey, sc, keyState, buffer, bufferSize, 0b101, nullptr);
 
     // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
     return result == 1 || result == -1 ? buffer[0] : 0;
