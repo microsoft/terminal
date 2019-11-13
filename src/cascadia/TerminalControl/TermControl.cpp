@@ -995,9 +995,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - none
     void TermControl::ResetFontSize()
     {
-        const auto currentSize = _desiredFont.GetEngineSize().Y;
-        const auto defaultSize = _settings.FontSize();
-        AdjustFontSize(defaultSize - currentSize);
+        _SetFontSize(_settings.FontSize());
     }
 
     // Method Description:
@@ -1006,24 +1004,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void TermControl::AdjustFontSize(int fontSizeDelta)
     {
-        try
-        {
-            // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontSizeDelta), static_cast<short>(1));
-            const auto* fontFace = _settings.FontFace().c_str();
-            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
-            _desiredFont = { _actualFont };
-
-            // Refresh our font with the renderer
-            _UpdateFont();
-            // Resize the terminal's BUFFER to match the new font size. This does
-            // NOT change the size of the window, because that can lead to more
-            // problems (like what happens when you change the font size while the
-            // window is maximized?)
-            auto lock = _terminal->LockForWriting();
-            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
-        }
-        CATCH_LOG();
+        const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
+        _SetFontSize(newSize);
     }
 
     // Method Description:
@@ -1301,6 +1283,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+    }
+
+    // Method Description:
+    // - Set the font size of the terminal control.
+    // Arguments:
+    // - fontSize: The size of the font.
+    void TermControl::_SetFontSize(int fontSize)
+    {
+        try
+        {
+            // Make sure we have a non-zero font size
+            const auto newSize = std::max(gsl::narrow<short>(fontSize), static_cast<short>(1));
+            const auto* fontFace = _settings.FontFace().c_str();
+            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            _desiredFont = { _actualFont };
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+            // Resize the terminal's BUFFER to match the new font size. This does
+            // NOT change the size of the window, because that can lead to more
+            // problems (like what happens when you change the font size while the
+            // window is maximized?)
+            auto lock = _terminal->LockForWriting();
+            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
