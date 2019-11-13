@@ -1252,7 +1252,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
+std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor) noexcept
 {
     try
     {
@@ -1355,7 +1355,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                 {
                     writeAccumulatedChars(false);
 
-                    int bkColorIndex, fgColorIndex;
+                    int bkColorIndex = 0;
                     if (colorMap.find(bkColor.value()) != colorMap.end())
                     {
                         // color already exists in the map, just retrieve the index
@@ -1372,6 +1372,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                         bkColorIndex = nextColorIndex++;
                     }
 
+                    int fgColorIndex = 0;
                     if (colorMap.find(fgColor.value()) != colorMap.end())
                     {
                         // color already exists in the map, just retrieve the index

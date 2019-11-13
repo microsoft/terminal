@@ -153,7 +153,7 @@ public:
     static std::string GenRTF(const TextAndColor& rows,
                               const int fontHeightPoints,
                               const std::wstring_view fontFaceName,
-                              const COLORREF backgroundColor);
+                              const COLORREF backgroundColor) noexcept;
 
 private:
     std::deque<ROW> _storage;
