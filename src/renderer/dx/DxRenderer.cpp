@@ -41,7 +41,7 @@ DxEngine::DxEngine() :
     _displaySizePixels{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
-    _selectionBackground{ 0 },
+    _selectionBackground{ DEFAULT_FOREGROUND },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
