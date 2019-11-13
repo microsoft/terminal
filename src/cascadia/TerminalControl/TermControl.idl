@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.TerminalControl
     {
         String Text { get; };
         String Html { get; };
+        String Rtf { get; };
     }
 
     runtimeclass PasteFromClipboardEventArgs
