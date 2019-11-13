@@ -1252,7 +1252,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor) noexcept
+std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
 {
     try
     {
