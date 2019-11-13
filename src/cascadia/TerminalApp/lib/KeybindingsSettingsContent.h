@@ -14,6 +14,8 @@ namespace winrt::TerminalApp::implementation
         int32_t MyProperty();
         void MyProperty(int32_t value);
 
+         winrt::hstring getKeybinding();
+
     private:
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
     };

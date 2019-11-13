@@ -27,6 +27,12 @@ namespace winrt::TerminalApp::implementation
         throw hresult_not_implemented();
     }
 
+    winrt::hstring KeybindingsSettingsContent::getKeybinding()
+    {
+        winrt::hstring keybinding{ L"Hello, World!" };
+        return keybinding;
+    }
+
     void KeybindingsSettingsContent::MyProperty(int32_t /* value */)
     {
         throw hresult_not_implemented();

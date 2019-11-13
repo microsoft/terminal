@@ -166,7 +166,8 @@
 
                 <StackPanel
                         Orientation="Horizontal" Margin="0, 20 0, 20">
-                    <TextBox Text="ctrl+shift+w" Width="135" />
+                   <TextBox Text="{x:Bind getKeybinding()}" Width="135" />
+                    <!--   <TextBox Text="ctrl+shift+w" Width="135" IsReadOnly="True" /> -->
 
                 </StackPanel>
 
