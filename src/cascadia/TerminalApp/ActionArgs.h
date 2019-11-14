@@ -7,13 +7,14 @@
 //          *.g.cpp to ActionArgs.cpp!
 #include "ActionEventArgs.g.h"
 #include "CopyTextArgs.g.h"
-#include "NewTabWithProfileArgs.g.h"
+#include "NewTabArgs.g.h"
 #include "SwitchToTabArgs.g.h"
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "Utils.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
@@ -36,30 +37,135 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, TrimWhitespace, false);
+
+        static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<CopyTextArgs>();
+            if (auto trimWhitespace{ json[JsonKey(TrimWhitespaceKey)] })
+            {
+                args->_TrimWhitespace = trimWhitespace.asBool();
+            }
+            return *args;
+        }
     };
 
-    struct NewTabWithProfileArgs : public NewTabWithProfileArgsT<NewTabWithProfileArgs>
+    struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
-        NewTabWithProfileArgs() = default;
-        GETSET_PROPERTY(int32_t, ProfileIndex, 0);
+        NewTabArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
+
+        static constexpr std::string_view ProfileIndexKey{ "index" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NewTabArgs>();
+            if (auto profileIndex{ json[JsonKey(ProfileIndexKey)] })
+            {
+                args->_ProfileIndex = profileIndex.asInt();
+            }
+            return *args;
+        }
     };
 
     struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
     {
         SwitchToTabArgs() = default;
         GETSET_PROPERTY(int32_t, TabIndex, 0);
+
+        static constexpr std::string_view TabIndexKey{ "index" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SwitchToTabArgs>();
+            if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
+            {
+                args->_TabIndex = tabIndex.asInt();
+            }
+            return *args;
+        }
+    };
+
+    // Possible Direction values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
+    static constexpr std::string_view LeftString{ "left" };
+    static constexpr std::string_view RightString{ "right" };
+    static constexpr std::string_view UpString{ "up" };
+    static constexpr std::string_view DownString{ "down" };
+
+    // Function Description:
+    // - Helper function for parsing a Direction from a string
+    // Arguments:
+    // - directionString: the string to attempt to parse
+    // Return Value:
+    // - The encoded Direction value, or Direction::None if it was an invalid string
+    static TerminalApp::Direction ParseDirection(const std::string& directionString)
+    {
+        if (directionString == LeftString)
+        {
+            return TerminalApp::Direction::Left;
+        }
+        else if (directionString == RightString)
+        {
+            return TerminalApp::Direction::Right;
+        }
+        else if (directionString == UpString)
+        {
+            return TerminalApp::Direction::Up;
+        }
+        else if (directionString == DownString)
+        {
+            return TerminalApp::Direction::Down;
+        }
+        // default behavior for invalid data
+        return TerminalApp::Direction::None;
     };
 
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ResizePaneArgs>();
+            if (auto directionString{ json[JsonKey(DirectionKey)] })
+            {
+                args->_Direction = ParseDirection(directionString.asString());
+            }
+            return *args;
+        }
     };
 
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MoveFocusArgs>();
+            if (auto directionString{ json[JsonKey(DirectionKey)] })
+            {
+                args->_Direction = ParseDirection(directionString.asString());
+            }
+            return *args;
+        }
     };
 
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
