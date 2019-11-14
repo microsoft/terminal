@@ -102,6 +102,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;
+        TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 

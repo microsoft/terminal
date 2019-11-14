@@ -153,7 +153,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connection.StateChanged([=](auto&& /*s*/, auto&& v) {
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [=](auto&& s, auto&& /*v*/) {
+            auto v = s.State();
             auto ff = wil::str_printf<std::wstring>(L"CONNECTION TRANSITIONED TO STATE %d\n", v);
             OutputDebugStringW(ff.c_str());
             if (v == TerminalConnection::ConnectionState::Closed)
@@ -1538,8 +1539,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
-            // Stop accepting new output before we disconnect everything.
+            // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionStateChangedRevoker.revoke();
 
             // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
             if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })

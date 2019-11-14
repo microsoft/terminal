@@ -20,8 +20,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         ConptyConnection(const hstring& cmdline, const hstring& startingDirectory, const hstring& startingTitle, const uint32_t rows, const uint32_t cols, const guid& guid);
 
-        winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
-        void TerminalOutput(winrt::event_token const& token) noexcept;
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
@@ -29,14 +27,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         winrt::guid Guid() const noexcept;
 
-        UNTYPED_EVENT(StateChanged, StateChangedEventArgs);
+        ConnectionState State() const noexcept { return _state; }
+
+        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        TYPED_EVENT(StateChanged, ITerminalConnection, IInspectable);
 
     private:
         HRESULT _LaunchAttachedClient() noexcept;
         void _ClientTerminated() noexcept;
-        void _transitionToState(const ConnectionState state) noexcept;
-
-        winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
+        bool _transitionToState(const ConnectionState state) noexcept;
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
@@ -46,8 +45,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         guid _guid{}; // A unique session identifier for connected client
 
         std::atomic<ConnectionState> _state{ ConnectionState::NotConnected };
-        bool _connected{};
-        std::atomic<bool> _closing{ false };
+        mutable std::mutex _stateMutex;
+
         bool _recievedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 

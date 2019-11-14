@@ -13,17 +13,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         EchoConnection();
 
-        winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
-        void TerminalOutput(winrt::event_token const& token) noexcept;
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        UNTYPED_EVENT(StateChanged, StateChangedEventArgs);
+        ConnectionState State() const noexcept { return ConnectionState::Connected; }
 
-    private:
-        winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
+        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+        TYPED_EVENT(StateChanged, ITerminalConnection, IInspectable);
     };
 }
 

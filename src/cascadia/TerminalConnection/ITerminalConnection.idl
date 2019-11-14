@@ -13,27 +13,18 @@ namespace Microsoft.Terminal.TerminalConnection
         Failed
     };
 
-    delegate void TerminalOutputEventArgs(String output);
-    delegate void StateChangedEventArgs(ITerminalConnection connection, ConnectionState newState);
-
-    /*
-    [default_interface] runtimeclass StateChangedEventArgs
-    {
-        ConnectionState State { get; }
-    }
-    */
+    delegate void TerminalOutputHandler(String output);
 
     interface ITerminalConnection
     {
-        event TerminalOutputEventArgs TerminalOutput;
-
-        event StateChangedEventArgs StateChanged;
-        //ConnectionState State { get; };
-
         void Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();
-    };
 
+        event TerminalOutputHandler TerminalOutput;
+
+        event Windows.Foundation.TypedEventHandler<ITerminalConnection, Object> StateChanged;
+        ConnectionState State { get; };
+    };
 }

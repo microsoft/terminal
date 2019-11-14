@@ -205,4 +205,13 @@
     <value>n</value>
     <comment>The user must enter this character to signify NO</comment>
   </data>
+  <data name="ProcessExitedUnexpectedly" xml:space="preserve">
+    <value>[process terminated with exit code %u]</value>
+    <comment>The first argument (%u) is the (positive) error code of the process.</comment>
+  </data>
+  <data name="ProcessFailedToLaunch" xml:space="preserve">
+    <value>[error 0x%x when launching `%ls']</value>
+    <comment>The first argument is the hexadecimal error code. The second is the process name.
+If this resource spans multiple lines, it will not be displayed properly. Yeah.</comment>
+  </data>
 </root>
