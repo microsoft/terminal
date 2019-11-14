@@ -182,6 +182,10 @@ void CascadiaSettings::_ValidateSettings()
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
+
+    // TODO:GH#3522 With variable args to keybindings, it's possible that a user
+    // set a keybinding without all the required args for an action. Display a
+    // warning if an action didn't have a required arg.
 }
 
 // Method Description:

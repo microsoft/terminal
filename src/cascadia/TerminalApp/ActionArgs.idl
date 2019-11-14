@@ -15,7 +15,8 @@ namespace TerminalApp
 
     enum Direction
     {
-        Left = 0,
+        None = 0,
+        Left,
         Right,
         Up,
         Down
@@ -31,9 +32,11 @@ namespace TerminalApp
         Boolean TrimWhitespace { get; };
     };
 
-    [default_interface] runtimeclass NewTabWithProfileArgs : IActionArgs
+    [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        Int32 ProfileIndex { get; };
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
@@ -55,4 +58,5 @@ namespace TerminalApp
     {
         Int32 Delta { get; };
     };
+
 }

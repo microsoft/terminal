@@ -17,6 +17,11 @@ Revision History:
 
 #pragma once
 
+#include <WinConTypes.h>
+#include "TextAttribute.hpp"
+#include "textBuffer.hpp"
+#include "../types/IUiaData.h"
+
 // This used to be in find.h.
 #define SEARCH_STRING_LENGTH (80)
 
@@ -35,12 +40,12 @@ public:
         CaseSensitive
     };
 
-    Search(const SCREEN_INFORMATION& ScreenInfo,
+    Search(Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity);
 
-    Search(const SCREEN_INFORMATION& ScreenInfo,
+    Search(Microsoft::Console::Types::IUiaData& uiaData,
            const std::wstring& str,
            const Direction dir,
            const Sensitivity sensitivity,
@@ -53,15 +58,16 @@ public:
     std::pair<COORD, COORD> GetFoundLocation() const noexcept;
 
 private:
-    wchar_t _ApplySensitivity(const wchar_t wch) const;
+    wchar_t _ApplySensitivity(const wchar_t wch) const noexcept;
     bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
-    bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const;
+    bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept;
     void _UpdateNextPosition();
 
     void _IncrementCoord(COORD& coord) const;
     void _DecrementCoord(COORD& coord) const;
 
-    static COORD s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Direction dir);
+    static COORD s_GetInitialAnchor(Microsoft::Console::Types::IUiaData& uiaData, const Direction dir);
+
     static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
 
     bool _reachedEnd = false;
@@ -73,7 +79,7 @@ private:
     const std::vector<std::vector<wchar_t>> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
-    const SCREEN_INFORMATION& _screenInfo;
+    Microsoft::Console::Types::IUiaData& _uiaData;
 
 #ifdef UNIT_TESTING
     friend class SearchTests;

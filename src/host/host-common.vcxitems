@@ -44,7 +44,6 @@
     <ClCompile Include="..\screenInfo.cpp" />
     <ClCompile Include="..\ScreenBufferRenderTarget.cpp" />
     <ClCompile Include="..\scrolling.cpp" />
-    <ClCompile Include="..\search.cpp" />
     <ClCompile Include="..\selection.cpp" />
     <ClCompile Include="..\selectionInput.cpp" />
     <ClCompile Include="..\selectionState.cpp" />
@@ -105,7 +104,6 @@
     <ClInclude Include="..\screenInfo.hpp" />
     <ClInclude Include="..\ScreenBufferRenderTarget.hpp" />
     <ClInclude Include="..\scrolling.hpp" />
-    <ClInclude Include="..\search.h" />
     <ClInclude Include="..\selection.hpp" />
     <ClInclude Include="..\server.h" />
     <ClInclude Include="..\settings.hpp" />
