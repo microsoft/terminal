@@ -10,75 +10,55 @@
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     SizeChanged="Root_SizeChanged"
-    d:DesignHeight="60"
+    d:DesignHeight="70"
     d:DesignWidth="200">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition/>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
+    <StackPanel Height="70" Orientation="Vertical">
 
-        <Grid Grid.Row="0">
-            <Button x:Name="Close" Height="20" Width="20" HorizontalAlignment="Right" Padding="0" Click="_CloseClick" Background="Transparent">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" FontSize="15" Foreground="White"/>
-            </Button>
-        </Grid>
+        <Button x:Name="Close" Height="20" Width="20" HorizontalAlignment="Right" Padding="0" Click="_CloseClick" Background="Transparent">
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" FontSize="15" Foreground="White"/>
+        </Button>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="160"/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" Height="25">
 
             <AutoSuggestBox x:Name="AutosuggestBox" PlaceholderText="Search" QueryIcon="Find"
                 QuerySubmitted="AutoSuggestBox_QuerySubmitted"
-                Grid.Column="0" Height="30" Width="160" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                Height="25" Width="160" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-            <Grid Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
 
-                <Button x:Name="SetGoBackwardButton" Height="20" Width="20" HorizontalAlignment="Right" Grid.Column="0" Click="_GoBackwardClick" Padding="1"
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="SetGoBackwardButton" Height="20" Width="20" HorizontalAlignment="Right" Click="_GoBackwardClick" Padding="1"
                         BorderBrush="Blue" BorderThickness="0" Background="Transparent">
                     <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" FontSize="15" Foreground="DimGray"/>
                 </Button>
-                <Button x:Name="SetGoForwardButton" Height="20" Width="20" Grid.Column="1" Click="_GoForwardClick" Padding="1"
+                <Button x:Name="SetGoForwardButton" Height="20" Width="20" Click="_GoForwardClick" Padding="1"
                         BorderBrush="Blue" BorderThickness="0" Background="Transparent">
                     <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" FontSize="15" Foreground="DimGray"/>
                 </Button>
-            </Grid>
-        </Grid>
+            </StackPanel>
 
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="180"/>
-                <ColumnDefinition Width="20"/>
-            </Grid.ColumnDefinitions>
+            </StackPanel>
 
-            <Grid Grid.Column="0" Width="180" HorizontalAlignment="Right" Margin="20,0,0,0">
-                <CheckBox x:Name="CaseSensitivityCheckBox"
-                        Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" HorizontalAlignment="Right"  Grid.Column="1">
-                    <CheckBox.Resources>
-                        <ResourceDictionary>
-                            <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
-                            <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
-                            <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
-                        </ResourceDictionary>
-                    </CheckBox.Resources>
-                    <TextBlock Text="Case Sensitive" Foreground="White"/>
-                </CheckBox>
+        <StackPanel Orientation="Horizontal" Height="25" Width="200">
+            <Grid Width="60">
             </Grid>
+            <CheckBox x:Name="CaseSensitivityCheckBox"
+                      Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" Height="25">
+                
+                <CheckBox.Resources>
+                    <ResourceDictionary>
+                        <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
+                        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
+                        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
+                    </ResourceDictionary>
+                </CheckBox.Resources>
+                <TextBlock Text="Case Sensitive" Foreground="White"/>
+            </CheckBox>
 
-            <Grid Grid.Column="1" Width="20">
-                <Button x:Name="MoveSearchBoxPosition" Height="20" Width="20" HorizontalAlignment="Center"  Click="_MovePositionClick" Padding="0"
-                        Background="Transparent">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" FontSize="15" Foreground="DimGray"/>
-                </Button>
-            </Grid>
-        </Grid>
-    </Grid>
+            <Button x:Name="MoveSearchBoxPosition" Height="20" Width="20" HorizontalAlignment="Right" Click="_MovePositionClick" Padding="0"
+                            Background="Transparent">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" FontSize="15" Foreground="DimGray"/>
+            </Button>
+        </StackPanel>
+    </StackPanel>
 </UserControl>
