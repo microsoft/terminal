@@ -395,8 +395,26 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         DWRITE_FONT_METRICS1 metrics;
         run.fontFace->GetMetrics(&metrics);
 
+        UINT32 glyphCount = run.glyphStart + run.glyphCount;
+        size_t clusterCount = _textClusterColumns.size();
+        UINT32 runStartTemp = run.glyphStart;
+        UINT32 columnStart = 0;
+        while (runStartTemp > 0 && columnStart < _textClusterColumns.size())
+        {
+            const auto columns = _textClusterColumns.at(columnStart);
+            if (columns > 0)
+            {
+                ++columnStart;
+                --runStartTemp;
+            }
+            else
+            {
+                ++columnStart;
+            }
+        };
+
         // Walk through advances and space out characters that are too small to consume their box.
-        for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
+        for (UINT32 i = run.glyphStart, j = columnStart; i < glyphCount && j < clusterCount; j++)
         {
             // Advance is how wide in pixels the glyph is
             auto& advance = _glyphAdvances.at(i);
@@ -405,7 +423,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             auto& offset = _glyphOffsets.at(i);
 
             // Get how many columns we expected the glyph to have and mutiply into pixels.
-            const auto columns = _textClusterColumns.at(i);
+            const auto columns = _textClusterColumns.at(j);
+            const auto columnHasWidth = columns > 0;
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
@@ -442,6 +461,15 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
                 // Set the advance to the perfect width that we want.
                 advance = advanceExpected;
+            }
+
+            if (columnHasWidth)
+            {
+                ++i;
+            }
+            else
+            {
+                ++clusterCount;
             }
         }
 
