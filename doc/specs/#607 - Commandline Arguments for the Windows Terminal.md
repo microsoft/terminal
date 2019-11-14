@@ -467,6 +467,31 @@ itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
 we've been caught in before, so extensive testing will be necessary to make sure
 this works as expected.
 
+Painfully, powershell uses `;` as a seperator between commands as well. So, if
+someone wanted to call a `wt` commandline in powershell with multiple commands,
+the user would need to also escape those semicolons for powershell first. That
+means a command like ```wt new-tab ; new-pane``` would need to be ```wt new-tab
+`; new-pane``` in powershell, and ```wt new-tab ; new-pane commandline \; with
+\; semicolons``` would need to become ```wt new-tab `; new-pane commandline \`;
+with \`; semicolons```, using ```\`;``` to first escape the semicolon for
+powershell, then the backslash to escape it for `wt`.
+
+Alternatively, the user could chose to escape the semicolons with quotes (either
+single or double), like so: ```wt new-tab ';' new-pane "commandline \; with \;
+semicolons"```.
+
+This would get a little ridiculous when using powershell commands that also have
+semicolons possible escaped within them:
+
+```powershell
+wt.exe ";" new-pane "powershell Write-Output 'Hello World' > foo.txt; type foo.txt"
+```
+
+TODO FOR DISCUSSION: Is this behavior in powershell uncomfortable enough that we
+should pick another seperator for commands? Is there a reasonable alternative
+that makes enough logical sense? Or is this a reasonable expectation, that
+commandlines would be escaped like this?
+
 ## Future considerations
 
 * These are some additional argument ideas which are dependent on other features
