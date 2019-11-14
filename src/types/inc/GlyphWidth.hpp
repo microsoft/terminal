@@ -12,6 +12,9 @@ Abstract:
 #include <functional>
 #include <string_view>
 
+enum class CodepointWidth : BYTE;
+
+CodepointWidth GetGlyphWidth(const std::wstring_view glyph);
 bool IsGlyphFullWidth(const std::wstring_view glyph);
 bool IsGlyphFullWidth(const wchar_t wch) noexcept;
 void SetGlyphWidthFallback(std::function<bool(std::wstring_view)> pfnFallback);

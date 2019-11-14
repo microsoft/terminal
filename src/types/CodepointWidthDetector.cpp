@@ -19,7 +19,7 @@ namespace
         return range.upperBound < searchTerm;
     }
 
-    static constexpr std::array<UnicodeRange, 285> s_wideAndAmbiguousTable{
+    static constexpr std::array<UnicodeRange, 287> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
         // anything not present here is presumed to be Narrow.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
@@ -75,7 +75,7 @@ namespace
         UnicodeRange{ 0x2d8, 0x2db, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2dd, 0x2dd, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2df, 0x2df, CodepointWidth::Ambiguous },
-        UnicodeRange{ 0x300, 0x36f, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0x300, 0x36f, CodepointWidth::Combining },
         UnicodeRange{ 0x391, 0x3a1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x3a3, 0x3a9, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x3b1, 0x3c1, CodepointWidth::Ambiguous },
@@ -84,6 +84,7 @@ namespace
         UnicodeRange{ 0x410, 0x44f, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x451, 0x451, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x1100, 0x115f, CodepointWidth::Wide },
+        UnicodeRange{ 0x1160, 0x11ff, CodepointWidth::Combining },
         UnicodeRange{ 0x2010, 0x2010, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2013, 0x2016, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x2018, 0x2019, CodepointWidth::Ambiguous },
@@ -229,7 +230,8 @@ namespace
         UnicodeRange{ 0x2ff0, 0x2ffb, CodepointWidth::Wide },
         UnicodeRange{ 0x3000, 0x303e, CodepointWidth::Wide },
         UnicodeRange{ 0x3041, 0x3096, CodepointWidth::Wide },
-        UnicodeRange{ 0x3099, 0x30ff, CodepointWidth::Wide },
+        UnicodeRange{ 0x3099, 0x309A, CodepointWidth::Combining },
+        UnicodeRange{ 0x309B, 0x30ff, CodepointWidth::Wide },
         UnicodeRange{ 0x3105, 0x312e, CodepointWidth::Wide },
         UnicodeRange{ 0x3131, 0x318e, CodepointWidth::Wide },
         UnicodeRange{ 0x3190, 0x31ba, CodepointWidth::Wide },
@@ -245,7 +247,7 @@ namespace
         UnicodeRange{ 0xac00, 0xd7a3, CodepointWidth::Wide },
         UnicodeRange{ 0xe000, 0xf8ff, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xf900, 0xfaff, CodepointWidth::Wide },
-        UnicodeRange{ 0xfe00, 0xfe0f, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0xfe00, 0xfe0f, CodepointWidth::Combining },
         UnicodeRange{ 0xfe10, 0xfe19, CodepointWidth::Wide },
         UnicodeRange{ 0xfe30, 0xfe52, CodepointWidth::Wide },
         UnicodeRange{ 0xfe54, 0xfe66, CodepointWidth::Wide },
@@ -304,7 +306,7 @@ namespace
         UnicodeRange{ 0x1f9d0, 0x1f9e6, CodepointWidth::Wide },
         UnicodeRange{ 0x20000, 0x2fffd, CodepointWidth::Wide },
         UnicodeRange{ 0x30000, 0x3fffd, CodepointWidth::Wide },
-        UnicodeRange{ 0xe0100, 0xe01ef, CodepointWidth::Ambiguous },
+        UnicodeRange{ 0xe0100, 0xe01ef, CodepointWidth::Combining },
         UnicodeRange{ 0xf0000, 0xffffd, CodepointWidth::Ambiguous },
         UnicodeRange{ 0x100000, 0x10fffd, CodepointWidth::Ambiguous }
     };
@@ -319,6 +321,49 @@ CodepointWidthDetector::CodepointWidthDetector() noexcept :
 }
 
 // Routine Description:
+// - returns the width type of codepoint by searching the map generated from the unicode spec
+// Arguments:
+// - glyph - the utf16 encoded codepoint to search for
+// Return Value:
+// - the width type of the codepoint
+CodepointWidth CodepointWidthDetector::GetWidthFast(const std::wstring_view glyph) const
+{
+    THROW_HR_IF(E_INVALIDARG, glyph.empty());
+    if (glyph.size() == 1)
+    {
+        // We first attempt to look at our custom quick lookup table of char width preferences.
+        const auto width = GetQuickCharWidth(glyph.front());
+
+        // If it's invalid, the quick width had no opinion, so go to the lookup table.
+        if (width == CodepointWidth::Invalid)
+        {
+            return _lookupWidth(glyph);
+        }
+        // If it's ambiguous, the quick width wanted us to ask the font directly, try that if we can.
+        // If not, go to the lookup table.
+        else if (width == CodepointWidth::Ambiguous)
+        {
+            if (_pfnFallbackMethod)
+            {
+                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Narrow;
+            }
+            else
+            {
+                return _lookupWidth(glyph);
+            }
+        }
+        // Otherwise, return width as is.
+        else
+        {
+            return width;
+        }
+    }
+    else
+    {
+        return _lookupWidth(glyph);
+    }
+}
+    // Routine Description:
 // - returns the width type of codepoint by searching the map generated from the unicode spec
 // Arguments:
 // - glyph - the utf16 encoded codepoint to search for
@@ -370,39 +415,7 @@ bool CodepointWidthDetector::IsWide(const wchar_t wch) const noexcept
 bool CodepointWidthDetector::IsWide(const std::wstring_view glyph) const
 {
     THROW_HR_IF(E_INVALIDARG, glyph.empty());
-    if (glyph.size() == 1)
-    {
-        // We first attempt to look at our custom quick lookup table of char width preferences.
-        const auto width = GetQuickCharWidth(glyph.front());
-
-        // If it's invalid, the quick width had no opinion, so go to the lookup table.
-        if (width == CodepointWidth::Invalid)
-        {
-            return _lookupIsWide(glyph);
-        }
-        // If it's ambiguous, the quick width wanted us to ask the font directly, try that if we can.
-        // If not, go to the lookup table.
-        else if (width == CodepointWidth::Ambiguous)
-        {
-            if (_pfnFallbackMethod)
-            {
-                return _checkFallbackViaCache(glyph);
-            }
-            else
-            {
-                return _lookupIsWide(glyph);
-            }
-        }
-        // Otherwise, return Wide as True and Narrow as False.
-        else
-        {
-            return width == CodepointWidth::Wide;
-        }
-    }
-    else
-    {
-        return _lookupIsWide(glyph);
-    }
+    return GetWidthFast(glyph) == CodepointWidth::Wide;
 }
 
 // Routine Description:
@@ -411,7 +424,7 @@ bool CodepointWidthDetector::IsWide(const std::wstring_view glyph) const
 // - glyph - the utf16 encoded codepoint to check width of
 // Return Value:
 // - true if codepoint is wide or if it can't be confirmed to be narrow
-bool CodepointWidthDetector::_lookupIsWide(const std::wstring_view glyph) const noexcept
+CodepointWidth CodepointWidthDetector::_lookupWidth(const std::wstring_view glyph) const noexcept
 {
     try
     {
@@ -423,20 +436,20 @@ bool CodepointWidthDetector::_lookupIsWide(const std::wstring_view glyph) const 
         {
             if (_pfnFallbackMethod)
             {
-                return _checkFallbackViaCache(glyph);
+                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Narrow;
             }
         }
-        // If it's not ambiguous, it should say wide or narrow. Turn that into True = Wide or False = Narrow.
+        // If it's not ambiguous, it should say wide or narrow or zero.
         else
         {
-            return width == CodepointWidth::Wide;
+            return width;
         }
     }
     CATCH_LOG();
 
     // If we got this far, we couldn't figure it out.
     // It's better to be too wide than too narrow.
-    return true;
+    return CodepointWidth::Wide;
 }
 
 // Routine Description:

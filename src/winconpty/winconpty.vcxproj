@@ -6,7 +6,7 @@
     <RootNamespace>winconpty</RootNamespace>
     <ProjectName>winconpty</ProjectName>
     <TargetName>conpty</TargetName>
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>

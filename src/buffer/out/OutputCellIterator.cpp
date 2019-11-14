@@ -357,6 +357,17 @@ bool OutputCellIterator::_TryMoveTrailing() noexcept
                                       _currentView.TextAttrBehavior());
         return true;
     }
+    else if (_currentView.DbcsAttr().IsZeroLeading())
+    {
+        auto dbcsAttr = _currentView.DbcsAttr();
+        dbcsAttr.SetZeroTrailing();
+
+        _currentView = OutputCellView(_currentView.Chars(),
+                                      dbcsAttr,
+                                      _currentView.TextAttr(),
+                                      _currentView.TextAttrBehavior());
+        return true;
+    }
     else
     {
         return false;
@@ -410,9 +421,14 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
 {
     const auto glyph = Utf16Parser::ParseNext(view);
     DbcsAttribute dbcsAttr;
-    if (IsGlyphFullWidth(glyph))
+    CodepointWidth width = GetGlyphWidth(glyph);
+    if (width == CodepointWidth::Wide)
     {
         dbcsAttr.SetLeading();
+    }
+    else if (width == CodepointWidth::Combining)
+    {
+        dbcsAttr.SetZeroLeading();
     }
 
     return OutputCellView(glyph, dbcsAttr, attr, behavior);
@@ -432,9 +448,14 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch) noexcept
     const auto glyph = std::wstring_view(&wch, 1);
 
     DbcsAttribute dbcsAttr;
-    if (IsGlyphFullWidth(wch))
+    CodepointWidth width = GetGlyphWidth(glyph);
+    if (width == CodepointWidth::Wide)
     {
         dbcsAttr.SetLeading();
+    }
+    else if (width == CodepointWidth::Combining)
+    {
+        dbcsAttr.SetZeroLeading();
     }
 
     return OutputCellView(glyph, dbcsAttr, InvalidTextAttribute, TextAttributeBehavior::Current);
@@ -469,9 +490,14 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const Text
     const auto glyph = std::wstring_view(&wch, 1);
 
     DbcsAttribute dbcsAttr;
-    if (IsGlyphFullWidth(wch))
+    CodepointWidth width = GetGlyphWidth(glyph);
+    if (width == CodepointWidth::Wide)
     {
         dbcsAttr.SetLeading();
+    }
+    else if (width == CodepointWidth::Combining)
+    {
+        dbcsAttr.SetZeroLeading();
     }
 
     return OutputCellView(glyph, dbcsAttr, attr, TextAttributeBehavior::Stored);

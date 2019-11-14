@@ -645,7 +645,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
                 // Advance the cluster and column counts.
                 const auto columnCount = clusters.back().GetColumns();
-                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                it += columnCount > 0 ? columnCount : 2; // prevent infinite loop for no visible columns
                 cols += columnCount;
 
             } while (it);

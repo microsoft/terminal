@@ -24,6 +24,7 @@ enum class CodepointWidth : BYTE
 {
     Narrow,
     Wide,
+    Combining, // zero-width combiner
     Ambiguous, // could be narrow or wide depending on the current codepage and font
     Invalid // not a valid unicode codepoint
 };

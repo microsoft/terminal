@@ -409,7 +409,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
-            if (advanceExpected > advance)
+            if (advanceExpected > advance && advance > FLT_EPSILON)
             {
                 // Get the amount of space we have leftover.
                 const auto diff = advanceExpected - advance;
@@ -422,7 +422,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                 advance = advanceExpected;
             }
             // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
-            else if (advanceExpected < advance)
+            else if (advanceExpected < advance && advanceExpected > FLT_EPSILON)
             {
                 // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
                 // height proportional to the width that we desire.

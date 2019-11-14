@@ -30,6 +30,7 @@ public:
     CodepointWidthDetector& operator=(const CodepointWidthDetector&) = delete;
     CodepointWidthDetector& operator=(CodepointWidthDetector&&) = delete;
 
+    CodepointWidth GetWidthFast(const std::wstring_view glyph) const;
     CodepointWidth GetWidth(const std::wstring_view glyph) const;
     bool IsWide(const std::wstring_view glyph) const;
     bool IsWide(const wchar_t wch) const noexcept;
@@ -41,7 +42,7 @@ public:
 #endif
 
 private:
-    bool _lookupIsWide(const std::wstring_view glyph) const noexcept;
+    CodepointWidth _lookupWidth(const std::wstring_view glyph) const noexcept;
     bool _checkFallbackViaCache(const std::wstring_view glyph) const;
     static unsigned int _extractCodepoint(const std::wstring_view glyph) noexcept;
 

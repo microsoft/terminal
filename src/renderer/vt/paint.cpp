@@ -347,7 +347,7 @@ using namespace Microsoft::Console::Types;
         for (const auto& cluster : clusters)
         {
             wstr.append(cluster.GetText());
-            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns() > 0 ? cluster.GetColumns() : 2), &totalWidth));
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
@@ -384,7 +384,7 @@ using namespace Microsoft::Console::Types;
     for (const auto& cluster : clusters)
     {
         unclusteredString.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns() > 0 ? cluster.GetColumns() : 2), &totalWidth));
     }
     const size_t cchLine = unclusteredString.size();
 

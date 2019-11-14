@@ -9,6 +9,11 @@
 // TODO GH 2676 - remove warning suppression and decide what to do re: singleton instance of CodepointWidthDetector
 static CodepointWidthDetector widthDetector;
 
+CodepointWidth GetGlyphWidth(const std::wstring_view glyph)
+{
+    return widthDetector.GetWidthFast(glyph);
+}
+
 // Function Description:
 // - determines if the glyph represented by the string of characters should be
 //      wide or not. See CodepointWidthDetector::IsWide

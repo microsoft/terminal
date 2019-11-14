@@ -52,6 +52,14 @@ size_t OutputCellView::Columns() const noexcept
     {
         return 1;
     }
+    else if (DbcsAttr().IsZeroLeading())
+    {
+        return 0;
+    }
+    else if (DbcsAttr().IsZeroTrailing())
+    {
+        return 0;
+    }
 
     return 1;
 }

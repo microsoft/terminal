@@ -23,7 +23,9 @@ public:
     {
         Single = 0x00,
         Leading = 0x01,
-        Trailing = 0x02
+        Trailing = 0x02,
+        ZeroLeading = 0x03,
+        ZeroTrailing = 0x04,
     };
 
     DbcsAttribute() noexcept :
@@ -53,9 +55,19 @@ public:
         return _attribute == Attribute::Trailing;
     }
 
+    constexpr bool IsZeroLeading() const noexcept
+    {
+        return _attribute == Attribute::ZeroLeading;
+    }
+
+    constexpr bool IsZeroTrailing() const noexcept
+    {
+        return _attribute == Attribute::ZeroTrailing;
+    }
+
     constexpr bool IsDbcs() const noexcept
     {
-        return IsLeading() || IsTrailing();
+        return IsLeading() || IsTrailing() || IsZeroLeading() || IsZeroTrailing();
     }
 
     constexpr bool IsGlyphStored() const noexcept
@@ -81,6 +93,16 @@ public:
     void SetTrailing() noexcept
     {
         _attribute = Attribute::Trailing;
+    }
+
+    void SetZeroLeading() noexcept
+    {
+        _attribute = Attribute::ZeroLeading;
+    }
+
+    void SetZeroTrailing() noexcept
+    {
+        _attribute = Attribute::ZeroTrailing;
     }
 
     void Reset() noexcept
