@@ -94,6 +94,7 @@ namespace winrt::TerminalApp::implementation
     };
 
     // Possible Direction values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
     static constexpr std::string_view LeftString{ "left" };
     static constexpr std::string_view RightString{ "right" };
     static constexpr std::string_view UpString{ "up" };
