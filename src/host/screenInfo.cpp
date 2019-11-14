@@ -42,7 +42,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     Next{ nullptr },
     WriteConsoleDbcsLeadByte{ 0, 0 },
     FillOutDbcsLeadChar{ 0 },
-    // LineChar initialized below.
     ConvScreenInfo{ nullptr },
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
@@ -62,12 +61,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo }
 {
-    LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
-    LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
-    LineChar[2] = UNICODE_BOX_DRAW_LIGHT_HORIZONTAL;
-    LineChar[3] = UNICODE_BOX_DRAW_LIGHT_VERTICAL;
-    LineChar[4] = UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT;
-    LineChar[5] = UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT;
+    // Check if VT mode is enabled. Note that this can be true w/o calling
+    // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetVirtTermLevel() != 0)
     {
@@ -131,6 +126,16 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
+
+        if (pScreen->InVTMode())
+        {
+            // microsoft/terminal#411: If VT mode is enabled, lets construct the
+            // VT tab stops. Without this line, if a user has
+            // VirtualTerminalLevel set, then
+            // SetConsoleMode(ENABLE_VIRTUAL_TERMINAL_PROCESSING) won't set our
+            // tab stops, because we're never going from vt off -> on
+            pScreen->SetDefaultVtTabStops();
+        }
 
         if (NT_SUCCESS(status))
         {
@@ -1231,10 +1236,13 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
 
     // See MSFT:19917443
     // If we're in terminal scrolling mode, and we've changed the height of the
-    //      viewport, the new viewport's bottom to the _virtualBottom
+    //      viewport, the new viewport's bottom to the _virtualBottom.
+    // GH#1206 - Only do this if the viewport is _growing_ in height. This can
+    // cause unexpected behavior if we try to anchor the _virtualBottom to a
+    // position that will be greater than the height of the buffer.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto newViewport = Viewport::FromInclusive(srNewViewport);
-    if (gci.IsTerminalScrolling() && newViewport.Height() != _viewport.Height())
+    if (gci.IsTerminalScrolling() && newViewport.Height() >= _viewport.Height())
     {
         const short newTop = static_cast<short>(std::max(0, _virtualBottom - (newViewport.Height() - 1)));
 
@@ -1670,6 +1678,19 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
 
+    // If we're in conpty mode, suppress any immediate painting we might do
+    // during the resize.
+    if (gci.IsInVtIoMode())
+    {
+        gci.GetVtIo()->BeginResize();
+    }
+    auto endResize = wil::scope_exit([&] {
+        if (gci.IsInVtIoMode())
+        {
+            gci.GetVtIo()->EndResize();
+        }
+    });
+
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
 
@@ -2011,7 +2032,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          WindowSize,
                                                          GetAttributes(),
                                                          *GetPopupAttributes(),
-                                                         CURSOR_SMALL_SIZE,
+                                                         Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
@@ -2570,14 +2591,17 @@ OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it)
 // Arguments:
 // - it - Iterator representing output cell data to write.
 // - target - The position to start writing at
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
 // Return Value:
 // - the iterator at its final position
 // Note:
 // - will throw exception on error.
 OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it,
-                                             const COORD target)
+                                             const COORD target,
+                                             const std::optional<bool> wrap)
 {
-    return _textBuffer->Write(it, target);
+    // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
+    return _textBuffer->Write(it, target, wrap);
 }
 
 // Routine Description:
@@ -2897,6 +2921,24 @@ const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 bool SCREEN_INFORMATION::AreMarginsSet() const noexcept
 {
     return _scrollMargins.BottomInclusive() > _scrollMargins.Top();
+}
+
+// Routine Description:
+// - Determines whether a cursor position is within the vertical bounds of the
+//      scroll margins, or the margins aren't set.
+// Parameters:
+// - cursorPosition - The cursor position to test
+// Return value:
+// - true iff the position is in bounds.
+bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noexcept
+{
+    // If the margins aren't set, then any position is considered in bounds.
+    if (!AreMarginsSet())
+    {
+        return true;
+    }
+    const auto margins = GetAbsoluteScrollMargins().ToInclusive();
+    return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
 }
 
 // Method Description:

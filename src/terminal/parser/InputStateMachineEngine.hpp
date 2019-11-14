@@ -66,6 +66,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool FlushAtEndOfString() const override;
         bool DispatchControlCharsFromEscape() const override;
+        bool DispatchIntermediatesFromEscape() const override;
 
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;

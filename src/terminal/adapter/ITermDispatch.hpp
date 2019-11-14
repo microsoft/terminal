@@ -36,8 +36,8 @@ public:
     virtual bool CursorHorizontalPositionAbsolute(const unsigned int uiColumn) = 0; // CHA
     virtual bool VerticalLinePositionAbsolute(const unsigned int uiLine) = 0; // VPA
     virtual bool CursorPosition(const unsigned int uiLine, const unsigned int uiColumn) = 0; // CUP
-    virtual bool CursorSavePosition() = 0; // DECSC
-    virtual bool CursorRestorePosition() = 0; // DECRC
+    virtual bool CursorSaveState() = 0; // DECSC
+    virtual bool CursorRestoreState() = 0; // DECRC
     virtual bool CursorVisibility(const bool fIsVisible) = 0; // DECTCEM
     virtual bool InsertCharacter(const unsigned int uiCount) = 0; // ICH
     virtual bool DeleteCharacter(const unsigned int uiCount) = 0; // DCH
@@ -49,6 +49,7 @@ public:
     virtual bool SetCursorKeysMode(const bool fApplicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool fApplicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool fEnable) = 0; // ATT610
+    virtual bool SetOriginMode(const bool fRelativeMode) = 0; // DECOM
     virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
@@ -58,6 +59,7 @@ public:
     virtual bool ForwardTab(const SHORT sNumTabs) = 0; // CHT
     virtual bool BackwardsTab(const SHORT sNumTabs) = 0; // CBT
     virtual bool TabClear(const SHORT sClearType) = 0; // TBC
+    virtual bool EnableDECCOLMSupport(const bool fEnabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool fEnabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool fEnabled) = 0; // ?1005
     virtual bool EnableSGRExtendedMouseMode(const bool fEnabled) = 0; // ?1006

@@ -64,12 +64,12 @@ namespace Microsoft::Console::Render
                                                    const COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
-        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+        [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,
-                                                           const bool isBold,
+                                                           const ExtendedAttributes extendedAttrs,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                                          _Out_ FontInfo& pfiFontInfo) noexcept override;
@@ -94,6 +94,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
 
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
+        void BeginResizeRequest();
+        void EndResizeRequest();
 
     protected:
         wil::unique_hfile _hFile;
@@ -132,6 +134,7 @@ namespace Microsoft::Console::Render
         Microsoft::Console::ITerminalOwner* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
+        bool _inResizeRequest{ false };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
@@ -170,8 +173,19 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
         [[nodiscard]] HRESULT _BeginUnderline() noexcept;
-
         [[nodiscard]] HRESULT _EndUnderline() noexcept;
+
+        [[nodiscard]] HRESULT _BeginItalics() noexcept;
+        [[nodiscard]] HRESULT _EndItalics() noexcept;
+
+        [[nodiscard]] HRESULT _BeginBlink() noexcept;
+        [[nodiscard]] HRESULT _EndBlink() noexcept;
+
+        [[nodiscard]] HRESULT _BeginInvisible() noexcept;
+        [[nodiscard]] HRESULT _EndInvisible() noexcept;
+
+        [[nodiscard]] HRESULT _BeginCrossedOut() noexcept;
+        [[nodiscard]] HRESULT _EndCrossedOut() noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 

@@ -21,8 +21,6 @@ Author(s):
 #include "terminalOutput.hpp"
 #include <math.h>
 
-#define XTERM_COLOR_TABLE_SIZE (256)
-
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch
@@ -48,8 +46,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorHorizontalPositionAbsolute(_In_ unsigned int const uiColumn) override; // CHA
         bool VerticalLinePositionAbsolute(_In_ unsigned int const uiLine) override; // VPA
         bool CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned int const uiColumn) override; // CUP
-        bool CursorSavePosition() override; // DECSC
-        bool CursorRestorePosition() override; // DECRC
+        bool CursorSaveState() override; // DECSC
+        bool CursorRestoreState() override; // DECRC
         bool CursorVisibility(const bool fIsVisible) override; // DECTCEM
         bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
         bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL
@@ -72,6 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool fApplicationMode) override; // DECCKM
         bool SetKeypadMode(const bool fApplicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool bEnable) override; // ATT610
+        bool SetOriginMode(const bool fRelativeMode) override; // DECOM
         bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
                                           const SHORT sBottomMargin) override; // DECSTBM
         bool ReverseLineFeed() override; // RI
@@ -85,6 +84,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DesignateCharset(const wchar_t wchCharset) override; // DesignateCharset
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
+        bool EnableDECCOLMSupport(const bool fEnabled) override; // ?40
         bool EnableVT200MouseMode(const bool fEnabled) override; // ?1000
         bool EnableUTF8ExtendedMouseMode(const bool fEnabled) override; // ?1005
         bool EnableSGRExtendedMouseMode(const bool fEnabled) override; // ?1006
@@ -118,6 +118,14 @@ namespace Microsoft::Console::VirtualTerminal
             Up,
             Down
         };
+        struct CursorState
+        {
+            unsigned int Row = 1;
+            unsigned int Column = 1;
+            bool IsOriginModeRelative = false;
+            TextAttribute Attributes = {};
+            TerminalOutput TermOutput = {};
+        };
 
         bool _CursorMovement(const CursorDirection dir, _In_ unsigned int const uiDistance) const;
         bool _CursorMovePosition(_In_opt_ const unsigned int* const puiRow, _In_opt_ const unsigned int* const puiCol) const;
@@ -146,10 +154,21 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _TermOutput;
 
-        COORD _coordSavedCursor;
+        // We have two instances of the saved cursor state, because we need
+        // one for the main buffer (at index 0), and another for the alt buffer
+        // (at index 1). The _usingAltBuffer property keeps tracks of which
+        // buffer is active, so can be used as an index into this array to
+        // obtain the saved state that should be currently active.
+        CursorState _savedCursorState[2];
+        bool _usingAltBuffer;
+
         SMALL_RECT _srScrollMargins;
 
+        bool _fIsOriginModeRelative;
+
         bool _fIsSetColumnsEnabled;
+
+        bool _fIsDECCOLMAllowed;
 
         bool _fChangedForeground;
         bool _fChangedBackground;
@@ -163,10 +182,12 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _SetBoldColorHelper(const DispatchTypes::GraphicsOptions option);
         bool _SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option);
+        bool _SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions option);
 
         static bool s_IsXtermColorOption(const DispatchTypes::GraphicsOptions opt);
         static bool s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt);
         static bool s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
         static bool s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
+        static bool s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept;
     };
 }

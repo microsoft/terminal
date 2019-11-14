@@ -273,6 +273,57 @@ BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
     return TRUE;
 }
 
+// Method Description:
+// - Retrieves the currently active ExtendedAttributes. See also
+//   DoSrvPrivateGetExtendedTextAttributes
+// Arguments:
+// - pAttrs: Recieves the ExtendedAttributes value.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateGetExtendedTextAttributes). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs)
+{
+    *pAttrs = DoSrvPrivateGetExtendedTextAttributes(_io.GetActiveOutputBuffer());
+    return TRUE;
+}
+
+// Method Description:
+// - Sets the active ExtendedAttributes of the active screen buffer. Text
+//   written to this buffer will be written with these attributes.
+// Arguments:
+// - extendedAttrs: The new ExtendedAttributes to use
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetExtendedTextAttributes). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs)
+{
+    DoSrvPrivateSetExtendedTextAttributes(_io.GetActiveOutputBuffer(), attrs);
+    return TRUE;
+}
+
+// Method Description:
+// - Retrieves the current TextAttribute of the active screen buffer.
+// Arguments:
+// - pAttrs: Receives the TextAttribute value.
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute* const pAttrs) const
+{
+    *pAttrs = _io.GetActiveOutputBuffer().GetAttributes();
+    return TRUE;
+}
+
+// Method Description:
+// - Sets the current TextAttribute of the active screen buffer. Text
+//   written to this buffer will be written with these attributes.
+// Arguments:
+// - attrs: The new TextAttribute to use
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
+{
+    _io.GetActiveOutputBuffer().SetAttributes(attrs);
+    return TRUE;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:

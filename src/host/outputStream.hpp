@@ -88,6 +88,10 @@ public:
                                     const bool fIsForeground) override;
 
     BOOL PrivateBoldText(const bool bolded) override;
+    BOOL PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs) override;
+    BOOL PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs) override;
+    BOOL PrivateGetTextAttributes(TextAttribute* const pAttrs) const override;
+    BOOL PrivateSetTextAttributes(const TextAttribute& attrs) override;
 
     BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                    _Out_ size_t& eventsWritten) override;

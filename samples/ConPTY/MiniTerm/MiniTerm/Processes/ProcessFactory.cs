@@ -18,7 +18,7 @@ namespace MiniTerm
         internal static Process Start(string command, IntPtr attributes, IntPtr hPC)
         {
             var startupInfo = ConfigureProcessThread(hPC, attributes);
-            var processInfo = RunProcess(ref startupInfo, "cmd.exe");
+            var processInfo = RunProcess(ref startupInfo, command);
             return new Process(startupInfo, processInfo);
         }
 

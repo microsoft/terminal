@@ -19,10 +19,10 @@ namespace Microsoft::Console::Render
     public:
         // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
 
-        CustomTextLayout(IDWriteFactory2* const factory,
-                         IDWriteTextAnalyzer1* const analyzer,
-                         IDWriteTextFormat2* const format,
-                         IDWriteFontFace5* const font,
+        CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
+                         gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
+                         gsl::not_null<IDWriteTextFormat*> const format,
+                         gsl::not_null<IDWriteFontFace1*> const font,
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                          size_t const width);
 
@@ -32,43 +32,43 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE Draw(_In_opt_ void* clientDrawingContext,
                                                      _In_ IDWriteTextRenderer* renderer,
                                                      FLOAT originX,
-                                                     FLOAT originY);
+                                                     FLOAT originY) noexcept;
 
         // IDWriteTextAnalysisSource methods
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
-                                                                          _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                          _Out_ UINT32* textLength) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
-                                                                              _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                              _Out_ UINT32* textLength) override;
-        [[nodiscard]] virtual DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
+                                                                  _Outptr_result_buffer_(*textLength) WCHAR const** textString,
+                                                                  _Out_ UINT32* textLength) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
+                                                                      _Outptr_result_buffer_(*textLength) WCHAR const** textString,
+                                                                      _Out_ UINT32* textLength) noexcept override;
+        [[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() noexcept override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
+                                                              _Out_ UINT32* textLength,
+                                                              _Outptr_result_z_ WCHAR const** localeName) noexcept override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
                                                                       _Out_ UINT32* textLength,
-                                                                      _Outptr_result_z_ WCHAR const** localeName) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
-                                                                              _Out_ UINT32* textLength,
-                                                                              _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) override;
+                                                                      _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) noexcept override;
 
         // IDWriteTextAnalysisSink methods
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
-                                                                          UINT32 textLength,
-                                                                          _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
-                                                                           UINT32 textLength,
-                                                                           _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetBidiLevel(UINT32 textPosition,
-                                                                     UINT32 textLength,
-                                                                     UINT8 explicitLevel,
-                                                                     UINT8 resolvedLevel) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
-                                                                              UINT32 textLength,
-                                                                              _In_ IDWriteNumberSubstitution* numberSubstitution) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
+                                                                  UINT32 textLength,
+                                                                  _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
+                                                                   UINT32 textLength,
+                                                                   _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetBidiLevel(UINT32 textPosition,
+                                                             UINT32 textLength,
+                                                             UINT8 explicitLevel,
+                                                             UINT8 resolvedLevel) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
+                                                                      UINT32 textLength,
+                                                                      _In_ IDWriteNumberSubstitution* numberSubstitution) override;
 
     protected:
         // A single contiguous run of characters containing the same analysis results.
         struct Run
         {
-            Run() :
+            Run() noexcept :
                 textStart(),
                 textLength(),
                 glyphStart(),
@@ -90,15 +90,15 @@ namespace Microsoft::Console::Render
             UINT8 bidiLevel;
             bool isNumberSubstituted;
             bool isSideways;
-            ::Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
+            ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
             FLOAT fontScale;
 
-            inline bool ContainsTextPosition(UINT32 desiredTextPosition) const
+            inline bool ContainsTextPosition(UINT32 desiredTextPosition) const noexcept
             {
                 return desiredTextPosition >= textStart && desiredTextPosition < textStart + textLength;
             }
 
-            inline bool operator==(UINT32 desiredTextPosition) const
+            inline bool operator==(UINT32 desiredTextPosition) const noexcept
             {
                 // Search by text position using std::find
                 return ContainsTextPosition(desiredTextPosition);
@@ -108,7 +108,7 @@ namespace Microsoft::Console::Render
         // Single text analysis run, which points to the next run.
         struct LinkedRun : Run
         {
-            LinkedRun() :
+            LinkedRun() noexcept :
                 nextRunIndex(0)
             {
             }
@@ -132,19 +132,19 @@ namespace Microsoft::Console::Render
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
 
-        [[nodiscard]] static UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
+        [[nodiscard]] static constexpr UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
     private:
-        const ::Microsoft::WRL::ComPtr<IDWriteFactory2> _factory;
+        const ::Microsoft::WRL::ComPtr<IDWriteFactory1> _factory;
 
         // DirectWrite analyzer
         const ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _analyzer;
 
         // DirectWrite text format
-        const ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _format;
+        const ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _format;
 
         // DirectWrite font face
-        const ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _font;
+        const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
 
         // The text we're analyzing and processing into a layout
         std::wstring _text;

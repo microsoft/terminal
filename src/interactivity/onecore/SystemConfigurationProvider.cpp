@@ -5,6 +5,8 @@
 
 #include "SystemConfigurationProvider.hpp"
 
+static constexpr wchar_t DEFAULT_TT_FONT_FACENAME[]{ L"__DefaultTTFont__" };
+
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 UINT SystemConfigurationProvider::GetCaretBlinkTime()
@@ -60,7 +62,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // Hence, we make it seem like the console is in fact configred to use a
     // TrueType font by the user.
 
-    pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME, ARRAYSIZE(DEFAULT_TT_FONT_FACENAME));
+    pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME);
     pLinkSettings->SetFontFamily(TMPF_TRUETYPE);
 
     return;

@@ -9,18 +9,13 @@ using WEX::Logging::Log;
 class PolicyTests
 {
     BEGIN_TEST_CLASS(PolicyTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS()
 
 // UAP test type doesn't work quite right in VSO, skip. We'll get it in the RI-TP internally.
 #ifdef __INSIDE_WINDOWS
     BEGIN_TEST_METHOD(WrongWayVerbsUAP)
         TEST_METHOD_PROPERTY(L"RunAs", L"UAP")
+        TEST_METHOD_PROPERTY(L"UAP:AppxManifest", L"MUA")
     END_TEST_METHOD();
 #endif
 

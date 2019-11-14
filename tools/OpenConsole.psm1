@@ -41,7 +41,7 @@ function Import-LocalModule
         Write-Verbose "$Name already downloaded"
         $versions = Get-ChildItem "$modules_root\$Name" | Sort-Object
 
-        Get-ChildItem -Path $versions[0] "$Name.psd1" | Import-Module
+        Get-ChildItem -Path "$modules_root\$Name\$($versions[0])\$Name.psd1" | Import-Module
     }
 }
 
@@ -51,7 +51,9 @@ function Import-LocalModule
 function Set-MsbuildDevEnvironment
 {
     [CmdletBinding()]
-    param()
+    param(
+        [switch]$Prerelease
+    )
 
     $ErrorActionPreference = 'Stop'
 
@@ -59,7 +61,7 @@ function Set-MsbuildDevEnvironment
 
     Write-Verbose 'Searching for VC++ instances'
     $vsinfo = `
-        Get-VSSetupInstance  -All `
+        Get-VSSetupInstance  -All -Prerelease:$Prerelease `
         | Select-VSSetupInstance `
             -Latest -Product * `
             -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
@@ -157,7 +159,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'types')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -185,7 +187,7 @@ function Invoke-OpenConsoleTests()
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
-    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.30.180808002\build\binaries\$Platform\te.exe"
+    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.38.190610001-uapadmin\build\Binaries\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
     [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
 

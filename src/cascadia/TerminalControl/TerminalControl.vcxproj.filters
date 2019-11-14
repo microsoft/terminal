@@ -11,20 +11,24 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="KeyChord.cpp" />
     <ClCompile Include="TermControl.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="TermControlAutomationPeer.cpp" />
+    <ClCompile Include="XamlUiaTextRange.cpp" />
+    <ClCompile Include="TermControlUiaProvider.cpp" />
+    <ClCompile Include="UiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="KeyChord.h" />
     <ClInclude Include="TermControl.h" />
+    <ClInclude Include="TermControlAutomationPeer.h" />
+    <ClInclude Include="XamlUiaTextRange.h" />
+    <ClInclude Include="TermControlUiaProvider.hpp" />
+    <ClInclude Include="UiaTextRange.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
-    <Midl Include="KeyChord.idl" />
-    <Midl Include="IKeyBindings.idl" />
-    <Midl Include="IControlSettings.idl" />
+    <Midl Include="TermControlAutomationPeer.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalControl.def" />

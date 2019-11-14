@@ -18,6 +18,10 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         virtual ~IStateMachineEngine() = 0;
+        IStateMachineEngine(const IStateMachineEngine&) = default;
+        IStateMachineEngine(IStateMachineEngine&&) = default;
+        IStateMachineEngine& operator=(const IStateMachineEngine&) = default;
+        IStateMachineEngine& operator=(IStateMachineEngine&&) = default;
 
         virtual bool ActionExecute(const wchar_t wch) = 0;
         virtual bool ActionExecuteFromEscape(const wchar_t wch) = 0;
@@ -52,6 +56,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool FlushAtEndOfString() const = 0;
         virtual bool DispatchControlCharsFromEscape() const = 0;
+        virtual bool DispatchIntermediatesFromEscape() const = 0;
+
+    protected:
+        IStateMachineEngine() = default;
     };
 
     inline IStateMachineEngine::~IStateMachineEngine() {}

@@ -13,6 +13,11 @@ pr:
   branches:
     include:
       - master
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
@@ -34,3 +39,5 @@ jobs:
   - template: ./templates/build-console-ci.yml
     parameters:
       platform: ARM64
+
+  - template: ./templates/check-formatting.yml

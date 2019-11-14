@@ -5,6 +5,8 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
+#include "../types/inc/ThemeUtils.h"
+#include "../types/inc/utils.hpp"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -13,23 +15,13 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
-constexpr int RECT_WIDTH(const RECT* const pRect)
-{
-    return pRect->right - pRect->left;
-}
-constexpr int RECT_HEIGHT(const RECT* const pRect)
-{
-    return pRect->bottom - pRect->top;
-}
-
-NonClientIslandWindow::NonClientIslandWindow() noexcept :
+NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
-    _nonClientInteropWindowHandle{ nullptr },
-    _nonClientRootGrid{ nullptr },
-    _nonClientSource{ nullptr },
-    _maximizedMargins{ 0 },
+    _backgroundBrushColor{ RGB(0, 0, 0) },
+    _theme{ requestedTheme },
     _isMaximized{ false }
 {
 }
@@ -39,244 +31,378 @@ NonClientIslandWindow::~NonClientIslandWindow()
 }
 
 // Method Description:
-// - Used to initialize the XAML island for the non-client area. Also calls our
-//   base IslandWindow's Initialize, which will initialize the client XAML
-//   Island.
+// - Called when the app's size changes. When that happens, the size of the drag
+//   bar may have changed. If it has, we'll need to update the WindowRgn of the
+//   interop window.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/) const
+{
+    _UpdateIslandRegion();
+}
+
+void NonClientIslandWindow::OnAppInitialized()
+{
+    IslandWindow::OnAppInitialized();
+}
+
 void NonClientIslandWindow::Initialize()
 {
-    _nonClientSource = DesktopWindowXamlSource{};
-    auto interop = _nonClientSource.as<IDesktopWindowXamlSourceNative>();
-    winrt::check_hresult(interop->AttachToWindow(_window));
-
-    // stash the child interop handle so we can resize it when the main hwnd is resized
-    interop->get_WindowHandle(&_nonClientInteropWindowHandle);
-
-    _nonClientRootGrid = winrt::Windows::UI::Xaml::Controls::Grid{};
-
-    _nonClientSource.Content(_nonClientRootGrid);
-
-    // Call the IslandWindow Initialize to set up the client xaml island
     IslandWindow::Initialize();
+
+    _UpdateFrameMargins();
+
+    // Set up our grid of content. We'll use _rootGrid as our root element.
+    // There will be two children of this grid - the TitlebarControl, and the
+    // "client content"
+    _rootGrid.Children().Clear();
+    Controls::RowDefinition titlebarRow{};
+    Controls::RowDefinition contentRow{};
+    titlebarRow.Height(GridLengthHelper::Auto());
+
+    _rootGrid.RowDefinitions().Append(titlebarRow);
+    _rootGrid.RowDefinitions().Append(contentRow);
+
+    // Create our titlebar control
+    _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
+    _dragBar = _titlebar.DragBar();
+
+    _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+
+    _rootGrid.Children().Append(_titlebar);
+
+    Controls::Grid::SetRow(_titlebar, 0);
 }
 
 // Method Description:
-// - Sets the content of the non-client area of our window to the given XAML element.
+// - Set the content of the "client area" of our window to the given content.
 // Arguments:
-// - content: a XAML element to use as the content of the titlebar.
+// - content: the new UI element to use as the client content
 // Return Value:
 // - <none>
-void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content)
+void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
-    _nonClientRootGrid.Children().Clear();
-    _nonClientRootGrid.Children().Append(content);
-}
+    _clientContent = content;
 
-// Method Description:
-// - Set the height we expect to reserve for the non-client content.
-// Arguments:
-// - contentHeight: the size in pixels we should use for the non-client content.
-void NonClientIslandWindow::SetNonClientHeight(const int contentHeight) noexcept
-{
-    _titlebarUnscaledContentHeight = contentHeight;
-}
+    _rootGrid.Children().Append(content);
 
-// Method Description:
-// - Gets the size of the content area of the titlebar (the non-client area).
-//   This can be padded either by the margins from maximization (when the window
-//   is maximized) or the normal window borders.
-// Return Value:
-// - A Viewport representing the area of the window which should be the titlebar
-//   content, in window coordinates.
-Viewport NonClientIslandWindow::GetTitlebarContentArea() const noexcept
-{
-    const auto scale = GetCurrentDpiScale();
-
-    const auto titlebarContentHeight = _titlebarUnscaledContentHeight * scale;
-    const auto titlebarMarginRight = _titlebarMarginRight;
-
-    const auto physicalSize = GetPhysicalSize();
-    const auto clientWidth = physicalSize.cx;
-
-    auto titlebarWidth = clientWidth - (_windowMarginSides + titlebarMarginRight);
-    // Adjust for maximized margins
-    titlebarWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
-
-    const auto titlebarHeight = titlebarContentHeight - (_titlebarMarginTop + _titlebarMarginBottom);
-
-    COORD titlebarOrigin = { static_cast<short>(_windowMarginSides),
-                             static_cast<short>(_titlebarMarginTop) };
-
-    if (_isMaximized)
+    // SetRow only works on FrameworkElement's, so cast it to a FWE before
+    // calling. We know that our content is a Grid, so we don't need to worry
+    // about this.
+    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    if (fwe)
     {
-        titlebarOrigin.X = static_cast<short>(_maximizedMargins.cxLeftWidth);
-        titlebarOrigin.Y = static_cast<short>(_maximizedMargins.cyTopHeight);
+        Controls::Grid::SetRow(fwe, 1);
+    }
+}
+
+// Method Description:
+// - Set the content of the "titlebar area" of our window to the given content.
+// Arguments:
+// - content: the new UI element to use as the titlebar content
+// Return Value:
+// - <none>
+void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    _titlebar.Content(content);
+}
+
+// Method Description:
+// - This method computes the height of the little border above the title bar
+//   and returns it. If the border is disabled, then this method will return 0.
+// Return Value:
+// - the height of the border above the title bar or 0 if it's disabled
+int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
+{
+    if (_isMaximized || _fullscreen)
+    {
+        // no border when maximized
+        return 0;
     }
 
-    return Viewport::FromDimensions(titlebarOrigin,
-                                    { static_cast<short>(titlebarWidth), static_cast<short>(titlebarHeight) });
+    return topBorderVisibleHeight;
+}
+
+RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
+{
+    if (_dragBar)
+    {
+        const auto scale = GetCurrentDpiScale();
+        const auto transform = _dragBar.TransformToVisual(_rootGrid);
+        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
+            0.0f,
+            0.0f,
+            static_cast<float>(_dragBar.ActualWidth()),
+            static_cast<float>(_dragBar.ActualHeight())
+        };
+        const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
+        RECT dragBarRect = {
+            static_cast<LONG>(clientDragBarRect.X * scale),
+            static_cast<LONG>(clientDragBarRect.Y * scale),
+            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+        };
+        return dragBarRect;
+    }
+
+    return RECT{};
 }
 
 // Method Description:
-// - Gets the size of the client content area of the window.
-//   This can be padded either by the margins from maximization (when the window
-//   is maximized) or the normal window borders.
+// - Called when the size of the window changes for any reason. Updates the
+//   XAML island to match our new sizing and also updates the maximize icon
+//   if the window went from maximized to restored or the opposite.
+void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
+{
+    _UpdateMaximizedState();
+
+    if (_interopWindowHandle)
+    {
+        _UpdateIslandPosition(width, height);
+    }
+}
+
+// Method Description:
+// - Checks if the window has been maximized or restored since the last time.
+//   If it has been maximized or restored, then it updates the _isMaximized
+//   flags and notifies of the change by calling
+//   NonClientIslandWindow::_OnMaximizeChange.
+void NonClientIslandWindow::_UpdateMaximizedState()
+{
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto newIsMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+
+    if (_isMaximized != newIsMaximized)
+    {
+        _isMaximized = newIsMaximized;
+        _OnMaximizeChange();
+    }
+}
+
+// Method Description:
+// - Called when the the windows goes from restored to maximized or from
+//   maximized to restored. Updates the maximize button's icon and the frame
+//   margins.
+void NonClientIslandWindow::_OnMaximizeChange() noexcept
+{
+    if (_titlebar)
+    {
+        const auto windowStyle = GetWindowStyle(_window.get());
+        const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+        const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+
+        try
+        {
+            _titlebar.SetWindowVisualState(state);
+        }
+        CATCH_LOG();
+    }
+
+    // no frame margin when maximized
+    _UpdateFrameMargins();
+}
+
+// Method Description:
+// - Called when the size of the window changes for any reason. Updates the
+//   sizes of our child XAML Islands to match our new sizing.
+void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
+{
+    const auto topBorderHeight = Utils::ClampToShortMax(_GetTopBorderHeight(), 0);
+
+    const COORD newIslandPos = { 0, topBorderHeight };
+
+    // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
+    winrt::check_bool(SetWindowPos(_interopWindowHandle,
+                                   HWND_BOTTOM,
+                                   newIslandPos.X,
+                                   newIslandPos.Y,
+                                   windowWidth,
+                                   windowHeight - topBorderHeight,
+                                   SWP_SHOWWINDOW));
+
+    // This happens when we go from maximized to restored or the opposite
+    // because topBorderHeight changes.
+    if (!_oldIslandPos.has_value() || _oldIslandPos.value() != newIslandPos)
+    {
+        // The drag bar's position changed compared to the client area because
+        // the island moved but we will not be notified about this in the
+        // NonClientIslandWindow::OnDragBarSizeChanged method because this
+        // method is only called when the position of the drag bar changes
+        // **inside** the island which is not the case here.
+        _UpdateIslandRegion();
+
+        _oldIslandPos = { newIslandPos };
+    }
+}
+
+// Method Description:
+// - Update the region of our window that is the draggable area. This happens in
+//   response to a OnDragBarSizeChanged event. We'll calculate the areas of the
+//   window that we want to display XAML content in, and set the window region
+//   of our child xaml-island window to that region. That way, the parent window
+//   will still get NCHITTEST'ed _outside_ the XAML content area, for things
+//   like dragging and resizing.
+// - We won't cut this region out if we're fullscreen/borderless. Instead, we'll
+//   make sure to update our region to take the entirety of the window.
 // Arguments:
 // - <none>
 // Return Value:
-// - A Viewport representing the area of the window which should be the client
-//   content, in window coordinates.
-Viewport NonClientIslandWindow::GetClientContentArea() const noexcept
+// - <none>
+void NonClientIslandWindow::_UpdateIslandRegion() const
 {
-    MARGINS margins = GetFrameMargins();
-
-    COORD clientOrigin = { static_cast<short>(margins.cxLeftWidth),
-                           static_cast<short>(margins.cyTopHeight) };
-
-    const auto physicalSize = GetPhysicalSize();
-    auto clientWidth = physicalSize.cx;
-    auto clientHeight = physicalSize.cy;
-
-    // If we're maximized, we don't want to use the frame as our margins,
-    // instead we want to use the margins from the maximization. If we included
-    // the left&right sides of the frame in this calculation while maximized,
-    // you' have a few pixels of the window border on the sides while maximized,
-    // which most apps do not have.
-    if (_isMaximized)
+    if (!_interopWindowHandle || !_dragBar)
     {
-        clientWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
-        clientHeight -= (margins.cyTopHeight + _maximizedMargins.cyBottomHeight);
-        clientOrigin.X = static_cast<short>(_maximizedMargins.cxLeftWidth);
+        return;
+    }
+
+    // If we're showing the titlebar (when we're not fullscreen/borderless), cut
+    // a region of the window out for the drag bar. Otherwise we want the entire
+    // window to be given to the XAML island
+    if (_IsTitlebarVisible())
+    {
+        RECT rcIsland;
+        winrt::check_bool(::GetWindowRect(_interopWindowHandle, &rcIsland));
+        const auto islandWidth = rcIsland.right - rcIsland.left;
+        const auto islandHeight = rcIsland.bottom - rcIsland.top;
+        const auto totalRegion = wil::unique_hrgn(CreateRectRgn(0, 0, islandWidth, islandHeight));
+
+        const auto rcDragBar = _GetDragAreaRect();
+        const auto dragBarRegion = wil::unique_hrgn(CreateRectRgn(rcDragBar.left, rcDragBar.top, rcDragBar.right, rcDragBar.bottom));
+
+        // island region = total region - drag bar region
+        const auto islandRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+        winrt::check_bool(CombineRgn(islandRegion.get(), totalRegion.get(), dragBarRegion.get(), RGN_DIFF));
+
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, islandRegion.get(), true));
     }
     else
     {
-        // Remove the left and right width of the frame from the client area
-        clientWidth -= (margins.cxLeftWidth + margins.cxRightWidth);
-        clientHeight -= (margins.cyTopHeight + margins.cyBottomHeight);
+        const auto windowRect = GetWindowRect();
+        const auto width = windowRect.right - windowRect.left;
+        const auto height = windowRect.bottom - windowRect.top;
+
+        auto windowRegion = wil::unique_hrgn(CreateRectRgn(0, 0, width, height));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, windowRegion.get(), true));
     }
-
-    // The top maximization margin is already included in the GetFrameMargins
-    // calcualtion.
-
-    return Viewport::FromDimensions(clientOrigin,
-                                    { static_cast<short>(clientWidth), static_cast<short>(clientHeight) });
 }
 
 // Method Description:
-// - called when the size of the window changes for any reason. Updates the
-//   sizes of our child Xaml Islands to match our new sizing.
-void NonClientIslandWindow::OnSize()
+// - Returns the height of the little space at the top of the window used to
+//   resize the window.
+// Return Value:
+// - the height of the window's top resize handle
+int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 {
-    auto clientArea = GetClientContentArea();
-    auto titlebarArea = GetTitlebarContentArea();
-
-    // update the interop window size
-    SetWindowPos(_interopWindowHandle,
-                 0,
-                 clientArea.Left(),
-                 clientArea.Top(),
-                 clientArea.Width(),
-                 clientArea.Height(),
-                 SWP_SHOWWINDOW);
-
-    if (_rootGrid)
-    {
-        const SIZE physicalSize{ clientArea.Width(), clientArea.Height() };
-        const auto logicalSize = GetLogicalSize(physicalSize);
-        _rootGrid.Width(logicalSize.Width);
-        _rootGrid.Height(logicalSize.Height);
-    }
-
-    // update the interop window size
-    SetWindowPos(_nonClientInteropWindowHandle,
-                 0,
-                 titlebarArea.Left(),
-                 titlebarArea.Top(),
-                 titlebarArea.Width(),
-                 titlebarArea.Height(),
-                 SWP_SHOWWINDOW);
+    // there isn't a SM_CYPADDEDBORDER for the Y axis
+    return ::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, _currentDpi) +
+           ::GetSystemMetricsForDpi(SM_CYSIZEFRAME, _currentDpi);
 }
 
 // Method Description:
-// Hit test the frame for resizing and moving.
+// - Responds to the WM_NCCALCSIZE message by calculating and creating the new
+//   window frame.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
+{
+    if (wParam == false)
+    {
+        return 0;
+    }
+
+    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+
+    // Store the original top before the default window proc applies the
+    // default frame.
+    const auto originalTop = params->rgrc[0].top;
+
+    // apply the default frame
+    auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    auto newTop = originalTop;
+
+    if (_fullscreen)
+    {
+        // When we're fullscreen, we don't actually want to have any borders at
+        // all. This will remove them for us. Otherrwise, we'll have the
+        // transparent "grab handle" borders appear on the sides of the window
+        // when fullscreen, and we won't really be "fullscreen".
+        params->rgrc[0].left = params->lppos->x;
+        params->rgrc[0].top = params->lppos->y;
+        params->rgrc[0].right = params->lppos->cx;
+        params->rgrc[0].bottom = params->lppos->cy;
+    }
+    else
+    {
+        // WM_NCCALCSIZE is called before WM_SIZE
+        _UpdateMaximizedState();
+
+        if (_isMaximized)
+        {
+            // When a window is maximized, its size is actually a little bit more
+            // than the monitor's work area. The window is positioned and sized in
+            // such a way that the resize handles are outside of the monitor and
+            // then the window is clipped to the monitor so that the resize handle
+            // do not appear because you don't need them (because you can't resize
+            // a window when it's maximized unless you restore it).
+            newTop += _GetResizeHandleHeight();
+        }
+
+        // only modify the top of the frame to remove the title bar
+        params->rgrc[0].top = newTop;
+    }
+
+    return 0;
+}
+
 // Method Description:
 // - Hit test the frame for resizing and moving.
 // Arguments:
 // - ptMouse: the mouse point being tested, in absolute (NOT WINDOW) coordinates.
 // Return Value:
 // - one of the values from
-//  https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
+//   https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
 //   corresponding to the area of the window that was hit
-// NOTE:
-// Largely taken from code on:
-// https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
-[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcHitTest(POINT ptMouse) const noexcept
 {
-    // Get the window rectangle.
-    RECT rcWindow = BaseWindow::GetWindowRect();
-
-    MARGINS margins = GetFrameMargins();
-
-    // Get the frame rectangle, adjusted for the style without a caption.
-    RECT rcFrame = { 0 };
-    auto expectedStyle = WS_OVERLAPPEDWINDOW;
-    WI_ClearAllFlags(expectedStyle, WS_CAPTION);
-    AdjustWindowRectEx(&rcFrame, expectedStyle, false, 0);
-
-    // Determine if the hit test is for resizing. Default middle (1,1).
-    unsigned short uRow = 1;
-    unsigned short uCol = 1;
-    bool fOnResizeBorder = false;
-
-    // Determine if the point is at the top or bottom of the window.
-    if (ptMouse.y >= rcWindow.top && ptMouse.y < rcWindow.top + margins.cyTopHeight)
+    // This will handle the left, right and bottom parts of the frame because
+    // we didn't change them.
+    LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
+    const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
+    if (originalRet != HTCLIENT)
     {
-        fOnResizeBorder = (ptMouse.y < (rcWindow.top - rcFrame.top));
-        uRow = 0;
-    }
-    else if (ptMouse.y < rcWindow.bottom && ptMouse.y >= rcWindow.bottom - margins.cyBottomHeight)
-    {
-        uRow = 2;
+        return originalRet;
     }
 
-    // Determine if the point is at the left or right of the window.
-    if (ptMouse.x >= rcWindow.left && ptMouse.x < rcWindow.left + margins.cxLeftWidth)
+    // At this point, we know that the cursor is inside the client area so it
+    // has to be either the little border at the top of our custom title bar,
+    // the drag bar or something else in the XAML island. But the XAML Island
+    // handles WM_NCHITTEST on its own so actually it cannot be the XAML
+    // Island. Then it must be the drag bar or the little border at the top
+    // which the user can use to move or resize the window.
+
+    RECT rcWindow;
+    winrt::check_bool(::GetWindowRect(_window.get(), &rcWindow));
+
+    const auto resizeBorderHeight = _GetResizeHandleHeight();
+    const auto isOnResizeBorder = ptMouse.y < rcWindow.top + resizeBorderHeight;
+
+    // the top of the drag bar is used to resize the window
+    if (!_isMaximized && isOnResizeBorder)
     {
-        uCol = 0; // left side
-    }
-    else if (ptMouse.x < rcWindow.right && ptMouse.x >= rcWindow.right - margins.cxRightWidth)
-    {
-        uCol = 2; // right side
+        return HTTOP;
     }
 
-    // clang-format off
-    // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
-    LRESULT hitTests[3][3] = {
-        { HTTOPLEFT,    fOnResizeBorder ? HTTOP : HTCAPTION, HTTOPRIGHT },
-        { HTLEFT,       HTNOWHERE,                           HTRIGHT },
-        { HTBOTTOMLEFT, HTBOTTOM,                            HTBOTTOMRIGHT },
-    };
-    // clang-format on
-
-    return hitTests[uRow][uCol];
-}
-
-// Method Description:
-// - Get the size of the borders we want to use. The sides and bottom will just
-//   be big enough for resizing, but the top will be as big as we need for the
-//   non-client content.
-// Return Value:
-// - A MARGINS struct containing the border dimensions we want.
-MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
-{
-    const auto titlebarView = GetTitlebarContentArea();
-
-    MARGINS margins{ 0 };
-    margins.cxLeftWidth = _windowMarginSides;
-    margins.cxRightWidth = _windowMarginSides;
-    margins.cyBottomHeight = _windowMarginBottom;
-    margins.cyTopHeight = titlebarView.BottomExclusive();
-
-    return margins;
+    return HTCAPTION;
 }
 
 // Method Description:
@@ -285,98 +411,38 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - <none>
 // Return Value:
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
-[[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
+void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    // Get the size of the borders we want to use. The sides and bottom will
-    // just be big enough for resizing, but the top will be as big as we need
-    // for the non-client content.
-    MARGINS margins = GetFrameMargins();
-    // Extend the frame into the client area.
-    return DwmExtendFrameIntoClientArea(_window, &margins);
-}
+    MARGINS margins = {};
 
-// Routine Description:
-// - Gets the maximum possible window rectangle in pixels. Based on the monitor
-//   the window is on or the primary monitor if no window exists yet.
-// Arguments:
-// - prcSuggested - If we were given a suggested rectangle for where the window
-//                  is going, we can pass it in here to find out the max size
-//                  on that monitor.
-//                - If this value is zero and we had a valid window handle,
-//                  we'll use that instead. Otherwise the value of 0 will make
-//                  us use the primary monitor.
-// - pDpiSuggested - The dpi that matches the suggested rect. We will attempt to
-//                   compute this during the function, but if we fail for some
-//                   reason, the original value passed in will be left untouched.
-// Return Value:
-// - RECT containing the left, right, top, and bottom positions from the desktop
-//   origin in pixels. Measures the outer edges of the potential window.
-// NOTE:
-// Heavily taken from WindowMetrics::GetMaxWindowRectInPixels in conhost.
-RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSuggested,
-                                                     _Out_opt_ UINT* pDpiSuggested)
-{
-    // prepare rectangle
-    RECT rc = *prcSuggested;
-
-    // use zero rect to compare.
-    RECT rcZero;
-    SetRectEmpty(&rcZero);
-
-    // First get the monitor pointer from either the active window or the default location (0,0,0,0)
-    HMONITOR hMonitor = nullptr;
-
-    // NOTE: We must use the nearest monitor because sometimes the system moves the window around into strange spots while performing snap and Win+D operations.
-    // Those operations won't work correctly if we use MONITOR_DEFAULTTOPRIMARY.
-    if (!EqualRect(&rc, &rcZero))
+    if (_GetTopBorderHeight() != 0)
     {
-        // For invalid window handles or when we were passed a non-zero suggestion rectangle, get the monitor from the rect.
-        hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
-    }
-    else
-    {
-        // Otherwise, get the monitor from the window handle.
-        hMonitor = MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST);
+        RECT frame = {};
+        winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
+
+        // We removed the whole top part of the frame (see handling of
+        // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
+        // Note #1: You might wonder why we don't remove just the title bar instead
+        //  of removing the whole top part of the frame and then adding the little
+        //  top border back. I tried to do this but it didn't work: DWM drew the
+        //  whole title bar anyways on top of the window. It seems that DWM only
+        //  wants to draw either nothing or the whole top part of the frame.
+        // Note #2: For some reason if you try to set the top margin to just the
+        //  top border height (what we want to do), then there is a transparency
+        //  bug when the window is inactive, so I've decided to add the whole top
+        //  part of the frame instead and then we will hide everything that we
+        //  don't need (that is, the whole thing but the little 1 pixel wide border
+        //  at the top) in the WM_PAINT handler. This eliminates the transparency
+        //  bug and it's what a lot of Win32 apps that customize the title bar do
+        //  so it should work fine.
+        margins.cyTopHeight = -frame.top;
     }
 
-    // If for whatever reason there is no monitor, we're going to give back whatever we got since we can't figure anything out.
-    // We won't adjust the DPI either. That's OK. DPI doesn't make much sense with no display.
-    if (nullptr == hMonitor)
-    {
-        return rc;
-    }
-
-    // Now obtain the monitor pixel dimensions
-    MONITORINFO MonitorInfo = { 0 };
-    MonitorInfo.cbSize = sizeof(MONITORINFO);
-
-    GetMonitorInfoW(hMonitor, &MonitorInfo);
-
-    // We have to make a correction to the work area. If we actually consume the entire work area (by maximizing the window)
-    // The window manager will render the borders off-screen.
-    // We need to pad the work rectangle with the border dimensions to represent the actual max outer edges of the window rect.
-    WINDOWINFO wi = { 0 };
-    wi.cbSize = sizeof(WINDOWINFO);
-    GetWindowInfo(_window, &wi);
-
-    // In non-full screen, we want to only use the work area (avoiding the task bar space)
-    rc = MonitorInfo.rcWork;
-
-    if (pDpiSuggested != nullptr)
-    {
-        UINT monitorDpiX;
-        UINT monitorDpiY;
-        if (SUCCEEDED(GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &monitorDpiX, &monitorDpiY)))
-        {
-            *pDpiSuggested = monitorDpiX;
-        }
-        else
-        {
-            *pDpiSuggested = GetDpiForWindow(_window);
-        }
-    }
-
-    return rc;
+    // Extend the frame into the client area. microsoft/terminal#2735 - Just log
+    // the failure here, don't crash. If DWM crashes for any reason, calling
+    // THROW_IF_FAILED() will cause us to take a trip upstate. Just log, and
+    // we'll fix ourselves when DWM comes back.
+    LOG_IF_FAILED(DwmExtendFrameIntoClientArea(_window.get(), &margins));
 }
 
 // Method Description:
@@ -392,265 +458,173 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
                                                             WPARAM const wParam,
                                                             LPARAM const lParam) noexcept
 {
-    LRESULT lRet = 0;
-
-    // First call DwmDefWindowProc. This might handle things like the
-    // min/max/close buttons for us.
-    const bool dwmHandledMessage = DwmDefWindowProc(_window, message, wParam, lParam, &lRet);
-
     switch (message)
     {
-    case WM_ACTIVATE:
-    {
-        _HandleActivateWindow();
-        break;
-    }
     case WM_NCCALCSIZE:
-    {
-        if (wParam == false)
-        {
-            return 0;
-        }
-        // Handle the non-client size message.
-        if (wParam == TRUE && lParam)
-        {
-            // Calculate new NCCALCSIZE_PARAMS based on custom NCA inset.
-            NCCALCSIZE_PARAMS* pncsp = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-
-            pncsp->rgrc[0].left = pncsp->rgrc[0].left + 0;
-            pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0;
-            pncsp->rgrc[0].right = pncsp->rgrc[0].right - 0;
-            pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - 0;
-
-            return 0;
-        }
-        break;
-    }
+        return _OnNcCalcSize(wParam, lParam);
     case WM_NCHITTEST:
-    {
-        if (dwmHandledMessage)
-        {
-            return lRet;
-        }
-
-        // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
-        if (lRet == 0)
-        {
-            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
-
-            if (lRet != HTNOWHERE)
-            {
-                return lRet;
-            }
-        }
-        break;
-    }
-    case WM_WINDOWPOSCHANGING:
-    {
-        // Enforce maximum size here instead of WM_GETMINMAXINFO. If we return
-        // it in WM_GETMINMAXINFO, then it will be enforced when snapping across
-        // DPI boundaries (bad.)
-        LPWINDOWPOS lpwpos = reinterpret_cast<LPWINDOWPOS>(lParam);
-        if (lpwpos == nullptr)
-        {
-            break;
-        }
-        if (_HandleWindowPosChanging(lpwpos))
-        {
-            return 0;
-        }
-        else
-        {
-            break;
-        }
-    }
+        return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
+    case WM_PAINT:
+        return _OnPaint();
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
 }
 
 // Method Description:
-// - Handle a WM_ACTIVATE message. Called during the creation of the window, and
-//   used as an opprotunity to get the dimensions of the caption buttons (the
-//   min, max, close buttons). We'll use these dimensions to help size the
-//   non-client area of the window.
-void NonClientIslandWindow::_HandleActivateWindow()
+// - This method is called when the window receives the WM_PAINT message. It
+//   paints the background of the window to the color of the drag bar because
+//   the drag bar cannot be painted on the window by the XAML Island (see
+//   NonClientIslandWindow::_UpdateIslandRegion).
+// Return Value:
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnPaint() noexcept
 {
-    const auto dpi = GetDpiForWindow(_window);
+    if (!_titlebar)
+    {
+        return 0;
+    }
 
-    // Use DwmGetWindowAttribute to get the complete size of the caption buttons.
-    RECT captionSize{ 0 };
-    THROW_IF_FAILED(DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &captionSize, sizeof(RECT)));
+    PAINTSTRUCT ps{ 0 };
+    const auto hdc = wil::BeginPaint(_window.get(), &ps);
+    if (!hdc)
+    {
+        return 0;
+    }
 
-    // Divide by 3 to get the width of a single button
-    // Multiply by 4 to reserve the space of one button as the "grab handle"
-    _titlebarMarginRight = MulDiv(RECT_WIDTH(&captionSize), 4, 3);
+    const auto topBorderHeight = _GetTopBorderHeight();
 
-    // _titlebarUnscaledContentHeight is set with SetNonClientHeight by the app
-    // hosting us.
+    if (ps.rcPaint.top < topBorderHeight)
+    {
+        RECT rcTopBorder = ps.rcPaint;
+        rcTopBorder.bottom = topBorderHeight;
 
-    THROW_IF_FAILED(_UpdateFrameMargins());
+        // To show the original top border, we have to paint on top of it with
+        // the alpha component set to 0. This page recommends to paint the area
+        // in black using the stock BLACK_BRUSH to do this:
+        // https://docs.microsoft.com/en-us/windows/win32/dwm/customframe#extending-the-client-frame
+        ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
+    }
+
+    if (ps.rcPaint.bottom > topBorderHeight)
+    {
+        RECT rcRest = ps.rcPaint;
+        rcRest.top = topBorderHeight;
+
+        const auto backgroundBrush = _titlebar.Background();
+        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
+        const auto backgroundColor = backgroundSolidBrush.Color();
+        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+
+        if (!_backgroundBrush || color != _backgroundBrushColor)
+        {
+            // Create brush for titlebar color.
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+        }
+
+        // To hide the original title bar, we have to paint on top of it with
+        // the alpha component set to 255. This is a hack to do it with GDI.
+        // See NonClientIslandWindow::_UpdateFrameMargins for more information.
+        HDC opaqueDc;
+        BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
+        HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+        if (!buf || !opaqueDc)
+        {
+            winrt::throw_last_error();
+        }
+
+        ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
+        ::BufferedPaintSetAlpha(buf, NULL, 255);
+        ::EndBufferedPaint(buf, TRUE);
+    }
+
+    return 0;
 }
 
 // Method Description:
-// - Handle a WM_WINDOWPOSCHANGING message. When the window is changing, or the
-//   dpi is changing, this handler is triggered to give us a chance to adjust
-//   the window size and position manually. We use this handler during a maxiize
-//   to figure out by how much the window will overhang the edges of the
-//   monitor, and set up some padding to adjust for that.
-// Arguments:
-// - windowPos: A pointer to a proposed window location and size. Should we wish
-//   to manually position the window, we could change the values of this struct.
+// - This method is called when the window receives the WM_NCCREATE message.
 // Return Value:
-// - true if we handled this message, false otherwise. If we return false, the
-//   message should instead be handled by DefWindowProc
-// Note:
-// Largely taken from the conhost WM_WINDOWPOSCHANGING handler.
-bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
-    // We only need to apply restrictions if the size is changing.
-    if (WI_IsFlagSet(windowPos->flags, SWP_NOSIZE))
+    const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
+    if (ret == FALSE)
     {
-        return false;
+        return ret;
     }
 
-    // Figure out the suggested dimensions
-    RECT rcSuggested;
-    rcSuggested.left = windowPos->x;
-    rcSuggested.top = windowPos->y;
-    rcSuggested.right = rcSuggested.left + windowPos->cx;
-    rcSuggested.bottom = rcSuggested.top + windowPos->cy;
-    SIZE szSuggested;
-    szSuggested.cx = RECT_WIDTH(&rcSuggested);
-    szSuggested.cy = RECT_HEIGHT(&rcSuggested);
+    // Set the frame's theme before it is rendered (WM_NCPAINT) so that it is
+    // rendered with the correct theme.
+    _UpdateFrameTheme();
 
-    // Figure out the current dimensions for comparison.
-    RECT rcCurrent = GetWindowRect();
+    return TRUE;
+}
 
-    // Determine whether we're being resized by someone dragging the edge or
-    // completely moved around.
-    bool fIsEdgeResize = false;
+// Method Description:
+// - Updates the window frame's theme depending on the application theme (light
+//   or dark). This doesn't invalidate the old frame so it will not be
+//   rerendered until the user resizes or focuses/unfocuses the window.
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_UpdateFrameTheme() const
+{
+    bool isDarkMode;
+
+    switch (_theme)
     {
-        // We can only be edge resizing if our existing rectangle wasn't empty.
-        // If it was empty, we're doing the initial create.
-        if (!IsRectEmpty(&rcCurrent))
-        {
-            // If one or two sides are changing, we're being edge resized.
-            unsigned int cSidesChanging = 0;
-            if (rcCurrent.left != rcSuggested.left)
-            {
-                cSidesChanging++;
-            }
-            if (rcCurrent.right != rcSuggested.right)
-            {
-                cSidesChanging++;
-            }
-            if (rcCurrent.top != rcSuggested.top)
-            {
-                cSidesChanging++;
-            }
-            if (rcCurrent.bottom != rcSuggested.bottom)
-            {
-                cSidesChanging++;
-            }
-
-            if (cSidesChanging == 1 || cSidesChanging == 2)
-            {
-                fIsEdgeResize = true;
-            }
-        }
+    case ElementTheme::Light:
+        isDarkMode = false;
+        break;
+    case ElementTheme::Dark:
+        isDarkMode = true;
+        break;
+    default:
+        isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
+        break;
     }
 
-    const auto windowStyle = GetWindowStyle(_window);
-    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+    LOG_IF_FAILED(ThemeUtils::SetWindowFrameDarkMode(_window.get(), isDarkMode));
+}
 
-    // If we're about to maximize the window, determine how much we're about to
-    // overhang by, and adjust for that.
-    // We need to do this because maximized windows will typically overhang the
-    // actual monitor bounds by roughly the size of the old "thick: window
-    // borders. For normal windows, this is fine, but because we're using
-    // DwmExtendFrameIntoClientArea, that means some of our client content will
-    // now overhang, and get cut off.
-    if (isMaximized)
-    {
-        // Find the related monitor, the maximum pixel size,
-        // and the dpi for the suggested rect.
-        UINT dpiOfMaximum;
-        RECT rcMaximum;
+// Method Description:
+// - Called when the app wants to change its theme. We'll update the frame
+//   theme to match the new theme.
+// Arguments:
+// - requestedTheme: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& requestedTheme)
+{
+    IslandWindow::OnApplicationThemeChanged(requestedTheme);
 
-        if (fIsEdgeResize)
-        {
-            // If someone's dragging from the edge to resize in one direction,
-            // we want to make sure we never grow past the current monitor.
-            rcMaximum = GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
-        }
-        else
-        {
-            // In other circumstances, assume we're snapping around or some
-            // other jump (TS). Just do whatever we're told using the new
-            // suggestion as the restriction monitor.
-            rcMaximum = GetMaxWindowRectInPixels(&rcSuggested, &dpiOfMaximum);
-        }
+    _theme = requestedTheme;
+    _UpdateFrameTheme();
+}
 
-        const auto suggestedWidth = szSuggested.cx;
-        const auto suggestedHeight = szSuggested.cy;
+// Method Description:
+// - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
+//   need to manually hide the entire titlebar.
+// - See also IslandWindow::_SetIsFullscreen, which does additional work.
+// Arguments:
+// - fullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
+{
+    IslandWindow::_SetIsFullscreen(fullscreenEnabled);
+    _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+}
 
-        const auto maxWidth = RECT_WIDTH(&rcMaximum);
-        const auto maxHeight = RECT_HEIGHT(&rcMaximum);
-
-        // Only apply the maximum size restriction if the current DPI matches
-        // the DPI of the maximum rect. This keeps us from applying the wrong
-        // restriction if the monitor we're moving to has a different DPI but
-        // we've yet to get notified of that DPI change. If we do apply it, then
-        // we'll restrict the console window BEFORE its been resized for the DPI
-        // change, so we're likely to shrink the window too much or worse yet,
-        // keep it from moving entirely. We'll get a WM_DPICHANGED, resize the
-        // window, and then process the restriction in a few window messages.
-        if (((int)dpiOfMaximum == _currentDpi) &&
-            ((suggestedWidth > maxWidth) ||
-             (suggestedHeight > maxHeight)))
-        {
-            auto offset = 0;
-            // Determine which side of the window to use for the offset
-            //  calculation. If the taskbar is on the left or top of the screen,
-            //  then the x or y coordinate of the work rect might not be 0.
-            //  Check both, and use whichever is 0.
-            if (rcMaximum.left == 0)
-            {
-                offset = windowPos->x;
-            }
-            else if (rcMaximum.top == 0)
-            {
-                offset = windowPos->y;
-            }
-            const auto offsetX = offset;
-            const auto offsetY = offset;
-
-            _maximizedMargins.cxRightWidth = -offset;
-            _maximizedMargins.cxLeftWidth = -offset;
-
-            _maximizedMargins.cyTopHeight = -offset;
-            _maximizedMargins.cyBottomHeight = -offset;
-
-            _isMaximized = true;
-            THROW_IF_FAILED(_UpdateFrameMargins());
-        }
-    }
-    else
-    {
-        // Clear our maximization state
-        _maximizedMargins = { 0 };
-
-        // Immediately after resoring down, don't update our frame margins. If
-        // you do this here, then a small gap will appear between the titlebar
-        // and the content, until the window is moved. However, we do need to
-        // keep this here _in general_ for dragging across DPI boundaries.
-        if (!_isMaximized)
-        {
-            THROW_IF_FAILED(_UpdateFrameMargins());
-        }
-
-        _isMaximized = false;
-    }
-    return true;
+// Method Description:
+// - Returns true if the titlebar is visible. For things like fullscreen mode,
+//   borderless mode, this will return false.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the titlebar is visible
+bool NonClientIslandWindow::_IsTitlebarVisible() const
+{
+    // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
+    // updated to include that mode.
+    return !_fullscreen;
 }
