@@ -168,12 +168,13 @@ wt my-commandline.exe with some args and a \; literal semicolon ; new-tab anothe
 
 # Start cmd.exe, then split it vertically (with the first taking 70% of it's
 #  space, and the new pane taking 30%), and run wsl.exe in that pane (user story 13)
-wt cmd.exe ; split-pane --target-pane 0 -v -% 30 wsl.exe
+wt cmd.exe ; split-pane --target 0 -v -% 30 wsl.exe
 wt cmd.exe ; split-pane -% 30 wsl.exe
 
 # Create a new window with the default profile, create a vertical split with the
 #  default profile, then create a horizontal split in the second pane and run
 #  "media.exe" (user story 13)
+wt new-tab ; split-pane -v ; split-pane --target 1 -h media.exe
 wt new-tab ; split-pane -v ; split-pane -t 1 -h media.exe
 
 ```
@@ -191,6 +192,11 @@ commands and arguments for those commands.
 If no command is specified in a `command`, then the command is assumed to be a
 `new-tab` command by default. So, for example, `wt cmd.exe` is interpreted the
 same as `wt new-tab cmd.exe`.
+
+To take this a step further, empty commands surrounded by semicolons will also
+be interpreted as `new-tab` commands with the default parameters, so `wt ; ; ;`
+can be used to open the windows terminal with **4** new tabs. Effectively, that
+commandline expands to `wt new-tab ; new-tab ; new-tab ; new-tab`.
 
 <!--
 ### Aside: What should the default command be?
@@ -216,12 +222,6 @@ intended for the given window. So the first `new-tab` in the file will create
 the window, and all subsequent `new-tab` commands will create tabs in that same
 window.
  -->
-
-TODO: What should we do with an entirely empty command? My gut says _ignore it_.
-For example, `wt ; ; ; ` should not just open 4 tabs. But then what about `wt`
-by itself? We want that to open a new tab with the default profile. So maybe we
-should allow them? Or allow them on the first command only?
-
 
 ### Options
 
@@ -309,12 +309,16 @@ same window.
 
 `split-pane [--target,-t target-pane] [-h]|[-v] [--percent,-% split-percentage] [terminal_parameters]`
 
-Creates a new pane by splitting the given pane vertically or horizontally.
+Creates a new pane in the currently focused tab by splitting the given pane
+vertically or horizontally.
+
+TODO: Should this be named `new-pane`, to match `new-tab`?
 
 **Parameters**:
 * `--target,-t target-pane`: Creates a new split in the given `target-pane`.
-  Each pane has a unique index (per-tab) which can be used to identify them. If
-  omitted, defaults to `0` (the first pane).
+  Each pane has a unique index (per-tab) which can be used to identify them.
+  These indicies are assigned in the order the panes were created. If omitted,
+  defaults to the index of the currently focused pane.
 * `-h`, `-v`: Used to indicate which direction to split the pane. `-v` is
   "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
   omitted, defaults to vertical. If both `-h` and `-v` are provided, defaults to
@@ -324,7 +328,30 @@ Creates a new pane by splitting the given pane vertically or horizontally.
   will take 50% by default.
 * `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
+#### `focus-tab`
 
+`focus-tab [--target,-t tab-index]`
+
+Moves focus to a given tab.
+
+**Parameters**:
+
+* `--target,-t tab-index`: moves focus to the tab at index `tab-index`. If omitted,
+  defaults to `0` (the first tab).
+
+#### `focus-pane`
+
+`focus-pane [--target,-t target-pane]`
+
+Moves focus within the currently focused tab to a given pane.
+
+**Parameters**:
+
+* `--target,-t target-pane`: moves focus to the given `target-pane`. Each pane
+  has a unique index (per-tab) which can be used to identify them. These
+  indicies are assigned in the order the panes were created. If omitted,
+  defaults to the index of the currently focused pane (which is effectively a
+  no-op)
 
 #### `[terminal_parameters]`
 
@@ -350,6 +377,21 @@ following:
 * `commandline`: A commadline to replace the default commandline of the selected
   profile. If the user wants to use a `;` in this commandline, it should be
   escaped as `\;`.
+
+Fundamentally, there's no reason that _all_ the current profile settings
+couldn't be overriden by commandline arguments. Practicaly, it might be
+unreasonable to create short form arguments for each and every Profile
+property, but the long form would certainly be reasonable.
+
+The arguments listed above represent both special cases of the profile settings
+like `guid` and `name`, as well as high priority properties to add as arguments.
+* It deosn't really make sense to override `name` or `guid`, so those have been
+  repurposed as arguments for selecting a profile.
+* `commandline` is a bit of a unique case - we're not explicitly using an
+  argument to identify the start of the commandline here. This is to help avoid
+  the need to parse and escape arguments to the client commandline.
+* `startingDirectory` is a _highly_ requested commandline argument, so that's
+  been given priority in this spec.
 
 ### Graceful Upgrading
 
@@ -521,21 +563,27 @@ commandlines would be escaped like this?
       given window. So the first `new-tab` in the file will create the window,
       and all subsequent `new-tab` commands will create tabs in that same
       window.
-* In the past we've had requests for having the terminal start with multiple
-  tabs/panes by default. This might be a path to enabling that scenario. One
-  could imagine the `profiles.json` file including a `defaultConfiguration`
-  property, with a path to a .conf file filled with commands. We'd parse that
-  file on window creation just the same as if it was parsed on the commandline.
-  If the user provides a file on the commandline, we'll just ignore that value
-  from `profiles.json`.
+* In the past we've had requests (like [#756]) for having the terminal start
+  with multiple tabs/panes by default. This might be a path to enabling that
+  scenario. One could imagine the `profiles.json` file including a
+  `defaultConfiguration` property, with a path to a .conf file filled with
+  commands. We'd parse that file on window creation just the same as if it was
+  parsed on the commandline. If the user provides a file on the commandline,
+  we'll just ignore that value from `profiles.json`.
 * When working on "New Window", we'll want the user to be able to open a new
   window with not only the default profile, but also a specific profile. This
   will help us enable that scenario.
+* We might want to look into `Regsiter‑ArgumentCompleter` in powershell to
+  enable letting the user auto-complete our args in powershell.
+* If we're careful, we could maybe create short form aliases for all the
+  commands, so the user wouldn't need to type them all out every time. `new-tab`
+  could become `nt`, `split-pane` becomes `sp`, etc. A commandline could look
+  like `wt ; sp less some-log.txt ; fp -t 0` then.
+
 
 ## Resources
 
 Feature Request: wt.exe supports command line arguments (profile, command, directory, etc.) [#607]
-
 Add "open Windows terminal here" into right-click context menu [#1060]
 
 Feature Request: Task Bar jumplist should show items from profile [#576]
@@ -547,8 +595,11 @@ Spec for tab tear off and default app [#2080]
 
 New window key binding not working [#2068]
 
+Feature Request: Start with multiple tabs open [#756]
+
 <!-- Footnotes -->
 
+[#756]: https://github.com/microsoft/terminal/issues/756
 [#576]: https://github.com/microsoft/terminal/issues/576
 [#607]: https://github.com/microsoft/terminal/issues/607
 [#632]: https://github.com/microsoft/terminal/issues/632
