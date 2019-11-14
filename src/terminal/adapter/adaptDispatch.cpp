@@ -303,15 +303,14 @@ bool AdaptDispatch::CursorSaveState()
     if (success)
     {
         // The cursor is given to us by the API as relative to the whole buffer.
-        // But in VT speak, the cursor should be relative to the current viewport. Adjust.
-        COORD const coordCursor = csbiex.dwCursorPosition;
-
-        SMALL_RECT const srViewport = csbiex.srWindow;
+        // But in VT speak, the cursor row should be relative to the current viewport top.
+        COORD coordCursor = csbiex.dwCursorPosition;
+        coordCursor.Y -= csbiex.srWindow.Top;
 
         // VT is also 1 based, not 0 based, so correct by 1.
         auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
-        savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
-        savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
+        savedCursorState.Column = coordCursor.X + 1;
+        savedCursorState.Row = coordCursor.Y + 1;
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
@@ -696,8 +695,7 @@ bool AdaptDispatch::_CursorPositionReport() const
         // First pull the cursor position relative to the entire buffer out of the console.
         COORD coordCursorPos = csbiex.dwCursorPosition;
 
-        // Now adjust it for its position in respect to the current viewport.
-        coordCursorPos.X -= csbiex.srWindow.Left;
+        // Now adjust it for its position in respect to the current viewport top.
         coordCursorPos.Y -= csbiex.srWindow.Top;
 
         // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
