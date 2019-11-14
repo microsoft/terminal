@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-11-08
-last updated: 2019-11-08
+last updated: 2019-11-14
 issue id: #607
 ---
 
@@ -168,8 +168,8 @@ wt my-commandline.exe with some args and a \; literal semicolon ; new-tab anothe
 
 # Start cmd.exe, then split it vertically (with the first taking 70% of it's
 #  space, and the new pane taking 30%), and run wsl.exe in that pane (user story 13)
-wt cmd.exe ; split-pane -t 0 -v -P 30 wsl.exe
-wt cmd.exe ; split-pane -P 30 wsl.exe
+wt cmd.exe ; split-pane --target-pane 0 -v -% 30 wsl.exe
+wt cmd.exe ; split-pane -% 30 wsl.exe
 
 # Create a new window with the default profile, create a vertical split with the
 #  default profile, then create a horizontal split in the second pane and run
@@ -307,9 +307,7 @@ same window.
 
 #### `split-pane`
 
-`split-pane [--target,-t target-pane] [-h]|[-v] [--percent,-P split-percentage] [terminal_parameters]`
-
-<!-- `--percent,-P` is pretty close to `-p` from `--profile`. Is this okay? -->
+`split-pane [--target,-t target-pane] [-h]|[-v] [--percent,-% split-percentage] [terminal_parameters]`
 
 Creates a new pane by splitting the given pane vertically or horizontally.
 
@@ -321,7 +319,7 @@ Creates a new pane by splitting the given pane vertically or horizontally.
   "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
   omitted, defaults to vertical. If both `-h` and `-v` are provided, defaults to
   vertical.
-* `--percent,-P split-percentage`: Designtates the amount of space that the new
+* `--percent,-% split-percentage`: Designtates the amount of space that the new
   pane should take, as a percentage of the parent's space. If omitted, the pane
   will take 50% by default.
 * `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
