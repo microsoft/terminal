@@ -30,14 +30,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _GoBackwardClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _GoForwardClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CloseClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CaseSensitivityUnChecked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         void Root_SizeChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs const& e);
 
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CreateSearch, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(Search, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MovePositionClicked, _MovePositionClickedHandler, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
     };
 }
 

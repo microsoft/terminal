@@ -134,6 +134,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
     }
 
+    // Method Description:
+    // - Create the SearchBoxControl object, and attach it
+    //   to the Terminal Control root
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermControl::CreateSearchBoxControl()
     {
         if (!_searchBox)
@@ -141,17 +148,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             SearchBoxControl searchBox;
             searchBox.Visibility(Visibility::Visible);
             searchBox.HorizontalAlignment(HorizontalAlignment::Right);
+            searchBox.VerticalAlignment(VerticalAlignment::Top);
+            // We need to make sure the searchbox does not overlap
+            // with the scroll bar
+            Thickness searchBoxPadding = {0, 0, _scrollBar.ActualWidth(), 0};
+            searchBox.Margin(searchBoxPadding);
 
             _searchBox = searchBox;
             _root.Children().Append(_searchBox);
 
             // Event handlers
-            _searchBox.CreateSearch({ this, &TermControl::_CreateSearch });
+            _searchBox.Search({ this, &TermControl::_Search });
             _searchBox.CloseButtonClicked({ this, &TermControl::_CloseSearchBoxControl });
+            _searchBox.MovePositionClicked({ this, &TermControl::_MoveSearchBoxControl });
         }
     }
 
-    void TermControl::_CreateSearch(const SearchBoxControl&, winrt::hstring text)
+    // Method Description:
+    // - Search text in text buffer. This is triggered if the user click
+    //   search button or press enter. 
+    // Arguments:
+    // - SearchBoxControl: note used
+    // - text: the text to search
+    // Return Value:
+    // - <none>
+    void TermControl::_Search(const SearchBoxControl&, winrt::hstring text)
     {
         Search::Direction direction = _searchBox.GetGoForward() ?
                                           Search::Direction::Forward :
@@ -162,9 +183,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                               Search::Sensitivity::CaseInsensitive;
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-        _search(search);
+        _terminal->LockConsole();
+        if (search.FindNext())
+        {
+            _terminal->SetBoxSelection(false);
+            search.Select();
+            _renderer->TriggerSelection();
+        }
+        _terminal->UnlockConsole();
     }
 
+    // Method Description:
+    // - The handler for the close button in the search box.
+    //   Remove the searchBox from the terminal
+    // Arguments:
+    // - SearchBoxControl: note used
+    // - RoutedEventArgs: not used
+    // Return Value:
+    // - <none>
     void TermControl::_CloseSearchBoxControl(const SearchBoxControl& /*sender*/, RoutedEventArgs const& /*args*/)
     {
         unsigned int idx;
@@ -174,16 +210,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _searchBox = nullptr;
     }
 
-    void TermControl::_search(Search search)
+    // Method Description:
+    // - The handler for the move button on the search box.
+    //   Once called, it will check the current alignment of
+    //   the search box and move to the other position (top or bottom)
+    // Arguments:
+    // - SearchBoxControl: note used
+    // - RoutedEventArgs: not used
+    // Return Value:
+    // - <none>
+    void TermControl::_MoveSearchBoxControl(const SearchBoxControl& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _terminal->LockConsole();
-        if (search.FindNext())
+        auto alignment = _searchBox.VerticalAlignment();
+        if (alignment == VerticalAlignment::Top)
         {
-            _terminal->SetBoxSelection(false);
-            search.Select();
-            _renderer->TriggerSelection();
+            _searchBox.VerticalAlignment(VerticalAlignment::Bottom);
         }
-        _terminal->UnlockConsole();
+        else
+        {
+            _searchBox.VerticalAlignment(VerticalAlignment::Top);
+        }
     }
 
     // Method Description:

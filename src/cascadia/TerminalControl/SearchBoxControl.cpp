@@ -20,8 +20,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Button>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Button>();
-
-        Controls::AutoSuggestBox inputBox = this->FindName(L"AutosuggestBox").try_as<Controls::AutoSuggestBox>();
     }
 
     bool SearchBoxControl::GetGoForward()
@@ -65,6 +63,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goBackwardButton.BorderThickness(thickness);
     }
 
+    void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    {
+        _MovePositionClickedHandler(*this, e);
+    }
+
     void SearchBoxControl::_CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
     {
         _isCaseSensitive = true;
@@ -84,6 +87,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
     }
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CreateSearch, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
+    // Events proxies
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, Search, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, MovePositionClicked, _MovePositionClickedHandler, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 }

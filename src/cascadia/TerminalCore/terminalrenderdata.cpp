@@ -15,13 +15,22 @@ Viewport Terminal::GetViewport() noexcept
 
 COORD Terminal::GetTextBufferEndPosition() const noexcept
 {
-    // In terminal, we use the cursor position as the
-    // end of the text position, we need to add the
-    // top position of the current view
+    // In terminal, the end position of the buffer is the larger
+    // one of the current cursor position and the current selection
+    // anchor
     auto cursorPosition = GetCursorPosition();
     cursorPosition.Y += gsl::narrow<short>(ViewStartIndex());
 
-    return cursorPosition;
+    auto selectionAnchor = GetSelectionAnchor();
+    if (selectionAnchor.Y > cursorPosition.Y ||
+       (selectionAnchor.Y == cursorPosition.Y && selectionAnchor.X > cursorPosition.X))
+    {
+        return selectionAnchor;
+    }
+    else
+    {
+        return cursorPosition;
+    }
 }
 
 const TextBuffer& Terminal::GetTextBuffer() noexcept

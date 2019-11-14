@@ -10,8 +10,8 @@
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     SizeChanged="Root_SizeChanged"
-    d:DesignHeight="90"
-    d:DesignWidth="300">
+    d:DesignHeight="60"
+    d:DesignWidth="200">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -21,20 +21,20 @@
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0">
-            <Button x:Name="Close" Height="35" Width="35" HorizontalAlignment="Right" Padding="1" Click="_CloseClick" Background="Transparent">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" Foreground="White"/>
+            <Button x:Name="Close" Height="20" Width="20" HorizontalAlignment="Right" Padding="0" Click="_CloseClick" Background="Transparent">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" FontSize="15" Foreground="White"/>
             </Button>
         </Grid>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240"/>
+                <ColumnDefinition Width="160"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
             <AutoSuggestBox x:Name="AutosuggestBox" PlaceholderText="Search" QueryIcon="Find"
                 QuerySubmitted="AutoSuggestBox_QuerySubmitted"
-                Grid.Column="0" Height="30" Width="240" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                Grid.Column="0" Height="30" Width="160" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
             <Grid Grid.Column="1">
                 <Grid.ColumnDefinitions>
@@ -42,26 +42,26 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
 
-                <Button x:Name="SetGoBackwardButton" Height="35" Width="35" HorizontalAlignment="Right" Grid.Column="0" Click="_GoBackwardClick" Padding="1"
+                <Button x:Name="SetGoBackwardButton" Height="20" Width="20" HorizontalAlignment="Right" Grid.Column="0" Click="_GoBackwardClick" Padding="1"
                         BorderBrush="Blue" BorderThickness="0" Background="Transparent">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Foreground="DimGray"/>
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" FontSize="15" Foreground="DimGray"/>
                 </Button>
-                <Button x:Name="SetGoForwardButton" Height="35" Width="35" Grid.Column="1" Click="_GoForwardClick" Padding="1"
+                <Button x:Name="SetGoForwardButton" Height="20" Width="20" Grid.Column="1" Click="_GoForwardClick" Padding="1"
                         BorderBrush="Blue" BorderThickness="0" Background="Transparent">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Foreground="DimGray"/>
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" FontSize="15" Foreground="DimGray"/>
                 </Button>
             </Grid>
         </Grid>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
+                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="20"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="1" Width="120" HorizontalAlignment="Right">
+            <Grid Grid.Column="0" Width="180" HorizontalAlignment="Right" Margin="20,0,0,0">
                 <CheckBox x:Name="CaseSensitivityCheckBox"
-                          Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" HorizontalAlignment="Right"  Grid.Column="1">
+                        Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" HorizontalAlignment="Right"  Grid.Column="1">
                     <CheckBox.Resources>
                         <ResourceDictionary>
                             <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
@@ -71,6 +71,13 @@
                     </CheckBox.Resources>
                     <TextBlock Text="Case Sensitive" Foreground="White"/>
                 </CheckBox>
+            </Grid>
+
+            <Grid Grid.Column="1" Width="20">
+                <Button x:Name="MoveSearchBoxPosition" Height="20" Width="20" HorizontalAlignment="Center"  Click="_MovePositionClick" Padding="0"
+                        Background="Transparent">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" FontSize="15" Foreground="DimGray"/>
+                </Button>
             </Grid>
         </Grid>
     </Grid>
