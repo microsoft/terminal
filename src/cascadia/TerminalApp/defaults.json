@@ -4,6 +4,7 @@
     "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
     "initialCols": 120,
     "initialRows": 30,
+    "rowsToScroll" :  4, 
     "requestedTheme": "system",
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,

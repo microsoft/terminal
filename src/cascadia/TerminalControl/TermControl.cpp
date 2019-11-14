@@ -236,6 +236,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
+
+        _rowsToScroll = _settings.RowsToScroll();
     }
 
     // Method Description:
@@ -906,6 +908,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto point = args.GetCurrentPoint(_root);
         const auto delta = point.Properties().MouseWheelDelta();
 
+
+
         // Get the state of the Ctrl & Shift keys
         // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
         // directly with a VirtualKeyModifiers
@@ -1001,9 +1005,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      for number of lines scrolled?
         // With one of the precision mouses, one click is always a multiple of 120,
         // but the "smooth scrolling" mode results in non-int values
-
-        // Conhost seems to use four lines at a time, so we'll emulate that for now.
-        double newValue = (4 * rowDelta) + (currentOffset);
+        // This is now populated from settings.
+        double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
 
         // Clear our expected scroll offset. The viewport will now move in
         //      response to our user input.

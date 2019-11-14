@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
+        _rowsToScroll{ 4 },
         _snapOnInput{ true },
         _cursorColor{ DEFAULT_CURSOR_COLOR },
         _cursorShape{ CursorStyle::Vintage },
@@ -98,6 +99,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::InitialCols(int32_t value)
     {
         _initialCols = value;
+    }
+
+    int32_t TerminalSettings::RowsToScroll()
+    {
+        return _rowsToScroll;
+    }
+
+    void TerminalSettings::RowsToScroll(int32_t value)
+    {
+        _rowsToScroll = value;
     }
 
     bool TerminalSettings::SnapOnInput()

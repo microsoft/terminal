@@ -21,6 +21,7 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
+static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
@@ -41,6 +42,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
+    _rowsToScroll{ DEFAULT_ROWSTOSCROLL },
     _initialX{},
     _initialY{},
     _showTitleInTitlebar{ true },
@@ -175,6 +177,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);
     settings.InitialCols(_initialCols);
+    settings.RowsToScroll(_rowsToScroll);
 
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
@@ -193,6 +196,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+    jsonObject[JsonKey(RowsToScrollKey)] = _rowsToScroll;
     jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX, _initialY);
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
@@ -238,6 +242,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto initialCols{ json[JsonKey(InitialColsKey)] })
     {
         _initialCols = initialCols.asInt();
+    }
+    if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
+    {
+        _rowsToScroll = rowsToScroll.asInt();
     }
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
