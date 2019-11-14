@@ -592,7 +592,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab->GetFocusedTitle();
         tab->SetTabText(newTabTitle);
-        
+
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {
@@ -734,7 +734,12 @@ namespace winrt::TerminalApp::implementation
             // The title of the control changed, but not necessarily the title
             // of the tab. Get the title of the focused pane of the tab, and set
             // the tab's text to the focused panes' text.
-            _UpdateTitle(tab);
+            /*GUID profileGuid = tab->GetFocusedProfile().value();
+            const auto* const profile = _settings->FindProfile(profileGuid);
+            if (!profile->GetSuppressApplicationTitle())
+            {*/
+                _UpdateTitle(tab);
+            //}
         });
 
         term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
@@ -748,7 +753,12 @@ namespace winrt::TerminalApp::implementation
 
             // Possibly update the title of the tab, window to match the newly
             // focused pane.
-            _UpdateTitle(tab);
+            GUID profileGuid = tab->GetFocusedProfile().value();
+            const auto* const profile = _settings->FindProfile(profileGuid);
+            if (!profile->GetSuppressApplicationTitle())
+            {
+                _UpdateTitle(tab);
+            }
 
             // Possibly update the icon of the tab.
             _UpdateTabIcon(tab);
