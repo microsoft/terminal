@@ -76,4 +76,4 @@ There will be no impact to Performance, Power or Efficiency.
 
 * Eventually, we may want to implement a feature like "only close on graceful exit if the shell was running for more than X seconds". This puts us in a better position to do that, as we can detect graceful and clumsy exits more readily.
    * (potential suggestion: `{ "closeOnExit": "10s" }`
-* The enumerator values for transitioning connection sattes will be useful for connections that require internet access.
+* The enumerator values for transitioning connection states will be useful for connections that require internet access.
