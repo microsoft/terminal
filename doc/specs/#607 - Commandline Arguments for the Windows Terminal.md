@@ -20,7 +20,7 @@ Since the addition of the "execution alias" `wt.exe` which enables launching the
 Windows Terminal from the commandline, we've always wanted to support arguments
 to enable custom launch scenarios. This need was amplified by requests like:
 * [#576], which wanted to add jumplist entries for the Windows Terminal, but was
-  blocked becaues there was no way of communicating to the Terminal _which_
+  blocked because there was no way of communicating to the Terminal _which_
   profile it wanted to launch
 * [#1060] - being able to right-click in explorer to "open a Windows Terminal
   Here" is great, but would be more powerful if it could also provide options to
@@ -225,7 +225,7 @@ should allow them? Or allow them on the first command only?
 
 ### Options
 
-#### `--help,-h,-?`
+#### `--help,-h,-?,/?,`
 Runs the `help` command.
 
 #### `--version,-v`
@@ -386,6 +386,7 @@ wt help
 wt --help
 wt -h
 wt -?
+wt /?
 
 # Display version info for the Windows Terminal
 wt version
@@ -435,7 +436,7 @@ around.
 As a commandline feature, the accessibility of this feature will largely be tied
 to the ability of the commandline environment to expose accessibility
 notifications. Both `conhost.exe` and the Windows Terminal already support
-basica accessibility patterns, so users using this feature from either of those
+basic accessibility patterns, so users using this feature from either of those
 terminals will be reliant upon their accessibility implementations.
 
 ### Security
