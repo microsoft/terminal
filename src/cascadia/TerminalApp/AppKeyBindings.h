@@ -80,7 +80,6 @@ namespace winrt::TerminalApp::implementation
         // clang-format on
 
     private:
-        // std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
         std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
         bool _DoAction(ActionAndArgs actionAndArgs);
 

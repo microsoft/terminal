@@ -406,7 +406,6 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             //    "action" in that object as the action name. We'll then pass
             //    the "command" object to the arg parser, for furhter parsing.
 
-            // auto argsVal = value[JsonKey(ArgsKey)];
             auto argsVal = Json::Value::null;
 
             // Only try to parse the action if it's actually a string value.

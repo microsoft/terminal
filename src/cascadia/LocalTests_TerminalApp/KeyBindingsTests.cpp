@@ -45,6 +45,14 @@ namespace TerminalAppLocalTests
             return true;
         }
 
+        // Function Description:
+        // - This is a helper to retrieve the ActionAndArgs from the keybindings
+        //   for a given chord.
+        // Arguments:
+        // - bindings: The AppKeyBindings to lookup the ActionAndArgs from.
+        // - kc: The key chord to look up the bound ActionAndArgs for.
+        // Return Value:
+        // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
         static const ActionAndArgs KeyBindingsTests::GetActionAndArgs(const implementation::AppKeyBindings& bindings,
                                                                       const KeyChord& kc)
         {
