@@ -60,7 +60,7 @@ namespace TerminalApp
         MoveFocusUp, // Legacy
         MoveFocusDown, // Legacy
         ToggleFullscreen,
-        OpenSettings
+        OpenSettings,
         OpenSearchBox
     };
 

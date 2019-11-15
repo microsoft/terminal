@@ -9,7 +9,6 @@
     x:Name="Root"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
-    SizeChanged="Root_SizeChanged"
     d:DesignHeight="70"
     d:DesignWidth="200">
 

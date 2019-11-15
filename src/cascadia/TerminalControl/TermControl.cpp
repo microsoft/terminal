@@ -722,7 +722,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.Handled(handled);
     }
 
-    void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& sender,
+    void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
         // If the current focused element is a kind of input box, we do not send this event up to

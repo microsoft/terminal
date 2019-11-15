@@ -32,12 +32,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _isCaseSensitive;
     }
 
-    void SearchBoxControl::AutoSuggestBox_QuerySubmitted(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs const& e)
+    void SearchBoxControl::AutoSuggestBox_QuerySubmitted(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs const& e)
     {
         _searchEventHandler(*this, e.QueryText());
     }
 
-    void SearchBoxControl::_GoBackwardClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    void SearchBoxControl::_GoBackwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = false;
 
@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goForwardButton.BorderThickness(thickness);
     }
 
-    void SearchBoxControl::_GoForwardClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    void SearchBoxControl::_GoForwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = true;
 
@@ -63,28 +63,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goBackwardButton.BorderThickness(thickness);
     }
 
-    void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& e)
     {
         _MovePositionClickedHandler(*this, e);
     }
 
-    void SearchBoxControl::_CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    void SearchBoxControl::_CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _isCaseSensitive = true;
     }
 
-    void SearchBoxControl::_CaseSensitivityUnChecked(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    void SearchBoxControl::_CaseSensitivityUnChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _isCaseSensitive = false;
     }
 
-    void SearchBoxControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
+    void SearchBoxControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& e)
     {
         _CloseButtonClickedHanlder(*this, e);
-    }
-
-    void SearchBoxControl::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
-    {
     }
 
     // Events proxies
