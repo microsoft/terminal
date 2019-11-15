@@ -944,6 +944,95 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
     return _renderTarget;
 }
 
+// Method Description:
+// - Get the COORD for the beginning of the word you are on
+// Arguments:
+// - target - a COORD on the word you are currently on
+// Return Value:
+// - The COORD for the first character on the "word"  (inclusive)
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring wordDelimiters) const
+{
+    COORD result = target;
+
+    // can't expand left
+    if (target.X == GetSize().Left())
+    {
+        return result;
+    }
+
+    auto bufferIterator = GetTextDataAt(result);
+    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X > GetSize().Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == startedOnDelimiter))
+    {
+        GetSize().DecrementInBounds(result);
+        --bufferIterator;
+    }
+
+    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
+    {
+        // move off of delimiter
+        GetSize().IncrementInBounds(result);
+    }
+
+    return result;
+}
+
+// Method Description:
+// - Get the COORD for the end of the word you are on
+// Arguments:
+// - target - a COORD on the word you are currently on
+// Return Value:
+// - The COORD for the last character on the "word" (inclusive)
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDelimiters) const
+{
+    COORD result = target;
+
+    // can't expand right
+    if (target.X == GetSize().RightInclusive())
+    {
+        return result;
+    }
+
+    auto bufferIterator = GetTextDataAt(result);
+    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X < GetSize().RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == startedOnDelimiter))
+    {
+        GetSize().IncrementInBounds(result);
+        ++bufferIterator;
+    }
+
+    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
+    {
+        // move off of delimiter
+        GetSize().DecrementInBounds(result);
+    }
+
+    return result;
+}
+
+// Method Description:
+// - get delimiter class for buffer cell data
+// - used for double click selection
+// Arguments:
+// - cellChar: the char saved to the buffer cell under observation
+// Return Value:
+// - the delimiter class for the given char
+TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring wordDelimiters) const noexcept
+{
+    if (cellChar[0] <= UNICODE_SPACE)
+    {
+        return DelimiterClass::ControlChar;
+    }
+    else if (wordDelimiters.find(cellChar) != std::wstring_view::npos)
+    {
+        return DelimiterClass::DelimiterChar;
+    }
+    else
+    {
+        return DelimiterClass::RegularChar;
+    }
+}
+
 // Routine Description:
 // - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
 // Arguments:

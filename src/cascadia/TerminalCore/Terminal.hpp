@@ -174,12 +174,6 @@ private:
         Word,
         Line
     };
-    enum class DelimiterClass
-    {
-        ControlChar,
-        DelimiterChar,
-        RegularChar
-    };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
@@ -237,7 +231,6 @@ private:
     SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
     COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
-    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar) const noexcept;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
     std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;

@@ -130,6 +130,9 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
+    const COORD GetWordStart(const COORD target, const std::wstring wordDelimiters) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring wordDelimiters) const;
+
     class TextAndColor
     {
     public:
@@ -185,6 +188,14 @@ private:
 
     ROW& _GetFirstRow();
     ROW& _GetPrevRowNoWrap(const ROW& row);
+
+    enum class DelimiterClass
+    {
+        ControlChar,
+        DelimiterChar,
+        RegularChar
+    };
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring wordDelimiters) const noexcept;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
