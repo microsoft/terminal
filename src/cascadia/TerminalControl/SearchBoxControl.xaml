@@ -25,7 +25,6 @@
                 QuerySubmitted="AutoSuggestBox_QuerySubmitted"
                 Height="25" Width="160" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="SetGoBackwardButton" Height="20" Width="20" HorizontalAlignment="Right" Click="_GoBackwardClick" Padding="1"
                         BorderBrush="Blue" BorderThickness="0" Background="Transparent">
@@ -37,14 +36,14 @@
                 </Button>
             </StackPanel>
 
-            </StackPanel>
+        </StackPanel>
 
         <StackPanel Orientation="Horizontal" Height="25" Width="200">
             <Grid Width="60">
             </Grid>
+            
             <CheckBox x:Name="CaseSensitivityCheckBox"
                       Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" Height="25">
-                
                 <CheckBox.Resources>
                     <ResourceDictionary>
                         <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>

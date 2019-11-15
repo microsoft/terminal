@@ -49,6 +49,6 @@ namespace Microsoft.Terminal.TerminalControl
 
         void AdjustFontSize(Int32 fontSizeDelta);
 
-		void CreateSearchBoxControl();
+	    void CreateSearchBoxControl();
     }
 }

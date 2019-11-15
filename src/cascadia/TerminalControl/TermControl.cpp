@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             searchBox.VerticalAlignment(VerticalAlignment::Top);
             // We need to make sure the searchbox does not overlap
             // with the scroll bar
-            Thickness searchBoxPadding = {0, 0, _scrollBar.ActualWidth(), 0};
+            Thickness searchBoxPadding = { 0, 0, _scrollBar.ActualWidth(), 0 };
             searchBox.Margin(searchBoxPadding);
 
             _searchBox = searchBox;
@@ -166,9 +166,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
-    //   search button or press enter. 
+    //   search button or press enter.
     // Arguments:
-    // - SearchBoxControl: note used
+    // - SearchBoxControl: not used
     // - text: the text to search
     // Return Value:
     // - <none>
@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The handler for the close button in the search box.
     //   Remove the searchBox from the terminal
     // Arguments:
-    // - SearchBoxControl: note used
+    // - SearchBoxControl: not used
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
@@ -215,7 +215,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   Once called, it will check the current alignment of
     //   the search box and move to the other position (top or bottom)
     // Arguments:
-    // - SearchBoxControl: note used
+    // - SearchBoxControl: not used
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>

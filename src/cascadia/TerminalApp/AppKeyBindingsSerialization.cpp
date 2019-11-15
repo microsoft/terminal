@@ -129,7 +129,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { MoveFocusDownKey, ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
     { UnboundKey, ShortcutAction::Invalid },
-    { OpenSearchBoxKey , ShortcutAction::OpenSearchBox },
+    { OpenSearchBoxKey, ShortcutAction::OpenSearchBox },
 };
 
 // Function Description:

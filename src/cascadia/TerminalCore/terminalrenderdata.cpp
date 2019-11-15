@@ -23,7 +23,7 @@ COORD Terminal::GetTextBufferEndPosition() const noexcept
 
     auto selectionAnchor = GetSelectionAnchor();
     if (selectionAnchor.Y > cursorPosition.Y ||
-       (selectionAnchor.Y == cursorPosition.Y && selectionAnchor.X > cursorPosition.X))
+        (selectionAnchor.Y == cursorPosition.Y && selectionAnchor.X > cursorPosition.X))
     {
         return selectionAnchor;
     }
