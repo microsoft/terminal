@@ -12,10 +12,11 @@
 #include <condition_variable>
 
 #include "../cascadia/inc/cppwinrt_utils.h"
+#include "ConnectionStateHolder.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>
+    struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
     {
         static bool IsAzureConnectionAvailable();
         AzureConnection(const uint32_t rows, const uint32_t cols);
@@ -25,14 +26,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        ConnectionState State() const noexcept { return _connectionState; }
-
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
-        TYPED_EVENT(StateChanged, ITerminalConnection, IInspectable);
 
     private:
-        bool _transitionToState(const ConnectionState state) noexcept;
-
         uint32_t _initialRows{};
         uint32_t _initialCols{};
         int _storedNumber{ -1 };
@@ -54,7 +50,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         };
 
         AzureState _state{ AzureState::AccessStored };
-        std::atomic<ConnectionState> _connectionState{ ConnectionState::NotConnected };
 
         std::optional<bool> _store;
         std::optional<bool> _removeOrNew;

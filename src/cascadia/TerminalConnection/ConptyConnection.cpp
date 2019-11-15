@@ -199,7 +199,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::_ClientTerminated() noexcept
     {
-        if (_state >= ConnectionState::Closing)
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
             // This termination was expected.
             return;
@@ -225,25 +225,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _hPC.reset();
     }
 
-    bool ConptyConnection::_transitionToState(const ConnectionState state) noexcept
-    {
-        {
-            std::lock_guard<std::mutex> stateLock{ _stateMutex };
-            // only allow movement up the state gradient
-            if (state < _state)
-            {
-                return false;
-            }
-            _state = state;
-        }
-        // Dispatch the event outside of lock.
-        _StateChangedHandlers(*this, nullptr);
-        return true;
-    }
-
     void ConptyConnection::WriteInput(hstring const& data)
     {
-        if (_state != ConnectionState::Connected)
+        if (!_isConnected())
         {
             return;
         }
@@ -261,7 +245,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _initialRows = rows;
             _initialCols = columns;
         }
-        else if (_state == ConnectionState::Connected)
+        else if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
         }
@@ -308,7 +292,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             HRESULT result = pipeReader.Read(strView);
             if (FAILED(result) || result == S_FALSE)
             {
-                if (_state >= ConnectionState::Closing)
+                if (_isStateAtOrBeyond(ConnectionState::Closing))
                 {
                     // This termination was expected.
                     return 0;

@@ -52,22 +52,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _TerminalOutputHandlers(str + L"\r\n");
     }
 
-    bool AzureConnection::_transitionToState(const ConnectionState state) noexcept
-    {
-        {
-            std::lock_guard<std::mutex> stateLock{ _commonMutex };
-            // only allow movement up the state gradient
-            if (state < _connectionState)
-            {
-                return false;
-            }
-            _connectionState = state;
-        }
-        // Dispatch the event outside of lock.
-        _StateChangedHandlers(*this, nullptr);
-        return true;
-    }
-
     // Method description:
     // - ascribes to the ITerminalConnection interface
     // - creates the output thread (where we will do the authentication and actually connect to Azure)
@@ -95,7 +79,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AzureConnection::WriteInput(hstring const& data)
     {
         // We read input while connected AND connecting.
-        if (_connectionState != ConnectionState::Connected && _connectionState != ConnectionState::Connecting)
+        if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))
         {
             return;
         }
@@ -211,7 +195,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the new rows/cols values
     void AzureConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (_connectionState != ConnectionState::Connected)
+        if (!_isConnected())
         {
             _initialRows = rows;
             _initialCols = columns;
@@ -293,7 +277,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         while (true)
         {
-            if (_connectionState >= ConnectionState::Closing)
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
                 // If we enter a new state while closing, just bail.
                 return S_FALSE;
@@ -448,10 +432,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         std::unique_lock<std::mutex> storedLock{ _commonMutex };
         _canProceed.wait(storedLock, [=]() {
-            return (_storedNumber >= 0 && _storedNumber < _maxStored) || _removeOrNew.has_value() || _connectionState >= ConnectionState::Closing;
+            return (_storedNumber >= 0 && _storedNumber < _maxStored) || _removeOrNew.has_value() || _isStateAtOrBeyond(ConnectionState::Closing);
         });
         // User might have closed the tab while we waited for input
-        if (_connectionState >= ConnectionState::Closing)
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
             return E_FAIL;
         }
@@ -582,10 +566,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Use a lock to wait for the user to input a valid number
             std::unique_lock<std::mutex> tenantNumberLock{ _commonMutex };
             _canProceed.wait(tenantNumberLock, [=]() {
-                return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _connectionState >= ConnectionState::Closing;
+                return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _isStateAtOrBeyond(ConnectionState::Closing);
             });
             // User might have closed the tab while we waited for input
-            if (_connectionState >= ConnectionState::Closing)
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
                 return E_FAIL;
             }
@@ -616,10 +600,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Wait for user input
         std::unique_lock<std::mutex> storeLock{ _commonMutex };
         _canProceed.wait(storeLock, [=]() {
-            return _store.has_value() || _connectionState >= ConnectionState::Closing;
+            return _store.has_value() || _isStateAtOrBeyond(ConnectionState::Closing);
         });
         // User might have closed the tab while we waited for input
-        if (_connectionState >= ConnectionState::Closing)
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
             return E_FAIL;
         }
@@ -739,7 +723,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         for (int count = 0; count < expiresIn / pollInterval; count++)
         {
             // User might close the tab while we wait for them to authenticate, this case handles that
-            if (_connectionState >= ConnectionState::Closing)
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
                 throw "Tab closed.";
             }
