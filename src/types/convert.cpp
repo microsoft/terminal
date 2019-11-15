@@ -366,7 +366,7 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
         // From Unicode 9.0, Hangul Choseong is wide
         return CodepointWidth::Wide;
     }
-    else if (0x1160 <= wch && wch <= 0x200F)
+    else if (0x1200 <= wch && wch <= 0x200F)
     {
         // From Unicode 9.0, this range is narrow (assorted languages)
         return CodepointWidth::Narrow;

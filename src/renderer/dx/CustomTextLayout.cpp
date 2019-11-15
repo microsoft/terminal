@@ -42,10 +42,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
-    for (const auto& cluster : clusters)
+    for (auto& cluster : clusters)
     {
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
-        _textClusterColumns.push_back(cols);
+        _textClusters.push_back(cluster);
         _text += cluster.GetText();
     }
 }
@@ -166,6 +166,30 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         }
 
         _runs.swap(runs);
+
+        std::vector<std::vector<Cluster>> runClusters;
+        runClusters.reserve(totalRuns);
+
+        size_t clusterStart = 0;
+        for (size_t i = 0; i < _runs.size(); )
+        {
+            LinkedRun& currentRun = _runs.at(i);
+            std::vector<Cluster> currentRunClusters;
+            currentRunClusters.reserve(currentRun.glyphCount);
+
+            for (size_t j = clusterStart; j < currentRun.textLength; ++j)
+            {
+                Cluster cluster = _textClusters.at(j);
+                currentRunClusters.emplace_back(cluster);
+                ++clusterStart;
+            }
+
+            runClusters.emplace_back(currentRunClusters);
+
+            i = currentRun.nextRunIndex;
+        }
+
+        _runClusters.swap(runClusters);
     }
     CATCH_RETURN();
     return S_OK;
@@ -396,13 +420,13 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         run.fontFace->GetMetrics(&metrics);
 
         UINT32 glyphCount = run.glyphStart + run.glyphCount;
-        size_t clusterCount = _textClusterColumns.size();
+        size_t clusterCount = _textClusters.size();
         UINT32 runStartTemp = run.glyphStart;
         UINT32 columnStart = 0;
-        while (runStartTemp > 0 && columnStart < _textClusterColumns.size())
+        while (runStartTemp > 0 && columnStart < _textClusters.size())
         {
-            const auto columns = _textClusterColumns.at(columnStart);
-            if (columns > 0)
+            const auto cluster = _textClusters.at(columnStart);
+            if (cluster.GetColumns() > 0)
             {
                 ++columnStart;
                 --runStartTemp;
@@ -423,7 +447,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             auto& offset = _glyphOffsets.at(i);
 
             // Get how many columns we expected the glyph to have and mutiply into pixels.
-            const auto columns = _textClusterColumns.at(j);
+            const auto cluster = _textClusters.at(columnStart);
+            const auto columns = cluster.GetColumns();
             const auto columnHasWidth = columns > 0;
             const auto advanceExpected = static_cast<float>(columns * _width);
 

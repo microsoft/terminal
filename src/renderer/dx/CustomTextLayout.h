@@ -148,7 +148,7 @@ namespace Microsoft::Console::Render
 
         // The text we're analyzing and processing into a layout
         std::wstring _text;
-        std::vector<UINT16> _textClusterColumns;
+        std::vector<Cluster> _textClusters;
         size_t _width;
 
         // Properties of the text that might be relevant.
@@ -158,6 +158,7 @@ namespace Microsoft::Console::Render
 
         // Text analysis results
         std::vector<LinkedRun> _runs;
+        std::vector<std::vector<Cluster>> _runClusters;
         std::vector<DWRITE_LINE_BREAKPOINT> _breakpoints;
 
         // Text analysis interim status variable (to assist the Analyzer Sink in operations involving _runs)

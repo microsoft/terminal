@@ -21,6 +21,8 @@ namespace Microsoft::Console::Render
     class Cluster
     {
     public:
+        Cluster();
+
         Cluster(const std::wstring_view text, const size_t columns);
 
         const wchar_t GetTextAsSingle() const noexcept;

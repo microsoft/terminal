@@ -9,6 +9,12 @@
 
 using namespace Microsoft::Console::Render;
 
+Cluster::Cluster() :
+    _text(L""),
+    _columns(0)
+{
+}
+
 // Routine Description:
 // - Instantiates a new cluster structure
 // Arguments:
