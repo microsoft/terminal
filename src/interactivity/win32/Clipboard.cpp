@@ -270,43 +270,48 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
 
     // Set global data to clipboard
     THROW_LAST_ERROR_IF(!OpenClipboard(ServiceLocator::LocateConsoleWindow()->GetWindowHandle()));
-    THROW_LAST_ERROR_IF(!EmptyClipboard());
-    THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-    if (fAlsoCopyHtml)
-    {
-        const auto& fontData = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetCurrentFont();
-        int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
-        const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
-        std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Windows Console Host");
-        const size_t cbNeededHTML = HTMLToPlaceOnClip.size();
-        if (cbNeededHTML)
+    { // Clipboard Scope
+        auto clipboardCloser = wil::scope_exit([]() {
+            THROW_LAST_ERROR_IF(!CloseClipboard());
+        });
+
+        THROW_LAST_ERROR_IF(!EmptyClipboard());
+        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
+
+        if (fAlsoCopyHtml)
         {
-            wil::unique_hglobal globalHandleHTML(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeededHTML));
-            THROW_LAST_ERROR_IF_NULL(globalHandleHTML.get());
+            const auto& fontData = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetCurrentFont();
+            int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
+            const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Windows Console Host");
+            const size_t cbNeededHTML = HTMLToPlaceOnClip.size() + 1;
+            if (cbNeededHTML)
+            {
+                wil::unique_hglobal globalHandleHTML(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeededHTML));
+                THROW_LAST_ERROR_IF_NULL(globalHandleHTML.get());
 
-            PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleHTML.get());
-            THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
+                PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleHTML.get());
+                THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
-            // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
-            // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-            const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbNeededHTML, HTMLToPlaceOnClip.data());
-            GlobalUnlock(globalHandleHTML.get());
-            THROW_IF_FAILED(hr2);
+                // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
+                // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
+                const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbNeededHTML, HTMLToPlaceOnClip.data());
+                GlobalUnlock(globalHandleHTML.get());
+                THROW_IF_FAILED(hr2);
 
-            UINT const CF_HTML = RegisterClipboardFormatW(L"HTML Format");
-            THROW_LAST_ERROR_IF(0 == CF_HTML);
+                UINT const CF_HTML = RegisterClipboardFormatW(L"HTML Format");
+                THROW_LAST_ERROR_IF(0 == CF_HTML);
 
-            THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_HTML, globalHandleHTML.get()));
+                THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_HTML, globalHandleHTML.get()));
 
-            // only free if we failed.
-            // the memory has to remain allocated if we successfully placed it on the clipboard.
-            // Releasing the smart pointer will leave it allocated as we exit scope.
-            globalHandleHTML.release();
+                // only free if we failed.
+                // the memory has to remain allocated if we successfully placed it on the clipboard.
+                // Releasing the smart pointer will leave it allocated as we exit scope.
+                globalHandleHTML.release();
+            }
         }
     }
-
-    THROW_LAST_ERROR_IF(!CloseClipboard());
 
     // only free if we failed.
     // the memory has to remain allocated if we successfully placed it on the clipboard.

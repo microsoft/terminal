@@ -54,10 +54,9 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider)
 {
     UiaTextRange* range = nullptr;
-    ;
     try
     {
-        range = new UiaTextRange(pData, pProvider);
+        range = WRL::Make<UiaTextRange>(pData, pProvider).Detach();
     }
     catch (...)
     {
@@ -78,7 +77,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
     UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pData, pProvider, cursor);
+        range = WRL::Make<UiaTextRange>(pData, pProvider, cursor).Detach();
     }
     catch (...)
     {
@@ -101,11 +100,12 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
     UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pData,
-                                 pProvider,
-                                 start,
-                                 end,
-                                 degenerate);
+        range = WRL::Make<UiaTextRange>(pData,
+                                        pProvider,
+                                        start,
+                                        end,
+                                        degenerate)
+                    .Detach();
     }
     catch (...)
     {
@@ -126,7 +126,7 @@ UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
     UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pData, pProvider, point);
+        range = WRL::Make<UiaTextRange>(pData, pProvider, point).Detach();
     }
     catch (...)
     {
@@ -177,7 +177,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     try
     {
-        *ppRetVal = new UiaTextRange(*this);
+        *ppRetVal = WRL::Make<UiaTextRange>(*this).Detach();
     }
     catch (...)
     {

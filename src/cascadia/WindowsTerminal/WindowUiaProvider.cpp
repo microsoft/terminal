@@ -21,7 +21,7 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
     //Microsoft::Terminal::TermControlUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
-        pWindowProvider = new WindowUiaProvider(baseWindow);
+        pWindowProvider = Microsoft::WRL::Make<WindowUiaProvider>(baseWindow).Detach();
 
         // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
         // This may be needed for the signaling model

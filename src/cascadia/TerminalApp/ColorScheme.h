@@ -49,12 +49,16 @@ public:
     std::array<COLORREF, COLOR_TABLE_SIZE>& GetTable() noexcept;
     COLORREF GetForeground() const noexcept;
     COLORREF GetBackground() const noexcept;
+    COLORREF GetSelectionBackground() const noexcept;
+
+    static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
 private:
     std::wstring _schemeName;
     std::array<COLORREF, COLOR_TABLE_SIZE> _table;
     COLORREF _defaultForeground;
     COLORREF _defaultBackground;
+    COLORREF _selectionBackground;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;

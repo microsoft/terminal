@@ -9,6 +9,8 @@ namespace Microsoft.Terminal.Wpf
     using System.Runtime.InteropServices;
     using System.Windows;
     using System.Windows.Interop;
+    using System.Windows.Media;
+    using System.Windows.Threading;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
@@ -21,12 +23,9 @@ namespace Microsoft.Terminal.Wpf
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-
+        private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
-
-        // We keep track of the DPI scale since we could get a DPI changed event before we are able to initialize the terminal.
-        private DpiScale dpiScale = new DpiScale(NativeMethods.USER_DEFAULT_SCREEN_DPI, NativeMethods.USER_DEFAULT_SCREEN_DPI);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
@@ -36,6 +35,21 @@ namespace Microsoft.Terminal.Wpf
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
+
+            var blinkTime = NativeMethods.GetCaretBlinkTime();
+
+            if (blinkTime != uint.MaxValue)
+            {
+                this.blinkTimer = new DispatcherTimer();
+                this.blinkTimer.Interval = TimeSpan.FromMilliseconds(blinkTime);
+                this.blinkTimer.Tick += (_, __) =>
+                {
+                    if (this.terminal != IntPtr.Zero)
+                    {
+                        NativeMethods.TerminalBlinkCursor(this.terminal);
+                    }
+                };
+            }
         }
 
         /// <summary>
@@ -96,10 +110,13 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="theme">The color theme for the terminal to use.</param>
         /// <param name="fontFamily">The font family to use in the terminal.</param>
         /// <param name="fontSize">The font size to use in the terminal.</param>
-        /// <param name="newDpi">The dpi that the terminal should be rendered at.</param>
-        internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
+        internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize)
         {
-            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
+            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
+
+            this.TriggerResize(this.RenderSize);
         }
 
         /// <summary>
@@ -109,12 +126,15 @@ namespace Microsoft.Terminal.Wpf
         /// <returns>Tuple with rows and columns.</returns>
         internal (int rows, int columns) TriggerResize(Size renderSize)
         {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
             NativeMethods.COORD dimensions;
-            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width, renderSize.Height, out dimensions);
+            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width * dpiScale.DpiScaleX, renderSize.Height * dpiScale.DpiScaleY, out dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
 
+            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
             return (dimensions.Y, dimensions.X);
         }
 
@@ -132,17 +152,17 @@ namespace Microsoft.Terminal.Wpf
             };
 
             NativeMethods.TerminalResize(this.terminal, dimensions);
+
+            this.Rows = dimensions.Y;
+            this.Columns = dimensions.X;
+
+            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
         }
 
         /// <inheritdoc/>
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
-            // Save the DPI if the terminal hasn't been initialized.
-            if (this.terminal == IntPtr.Zero)
-            {
-                this.dpiScale = newDpi;
-            }
-            else
+            if (this.terminal != IntPtr.Zero)
             {
                 NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
             }
@@ -151,6 +171,8 @@ namespace Microsoft.Terminal.Wpf
         /// <inheritdoc/>
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
@@ -160,9 +182,18 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.TerminalRegisterWriteCallback(this.terminal, this.writeCallback);
 
             // If the saved DPI scale isn't the default scale, we push it to the terminal.
-            if (this.dpiScale.DpiScaleX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
+            if (dpiScale.PixelsPerInchX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
             {
-                NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * this.dpiScale.DpiScaleX));
+                NativeMethods.TerminalDpiChanged(this.terminal, (int)dpiScale.PixelsPerInchX);
+            }
+
+            if (NativeMethods.GetFocus() == this.hwnd)
+            {
+                this.blinkTimer?.Start();
+            }
+            else
+            {
+                NativeMethods.TerminalSetCursorVisible(this.terminal, false);
             }
 
             return new HandleRef(this, this.hwnd);
@@ -187,6 +218,13 @@ namespace Microsoft.Terminal.Wpf
             {
                 switch ((NativeMethods.WindowMessage)msg)
                 {
+                    case NativeMethods.WindowMessage.WM_SETFOCUS:
+                        this.blinkTimer?.Start();
+                        break;
+                    case NativeMethods.WindowMessage.WM_KILLFOCUS:
+                        this.blinkTimer?.Stop();
+                        NativeMethods.TerminalSetCursorVisible(this.terminal, false);
+                        break;
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
@@ -209,8 +247,10 @@ namespace Microsoft.Terminal.Wpf
                         this.MouseMoveHandler((int)wParam, (int)lParam);
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
+                        NativeMethods.TerminalSetCursorVisible(this.terminal, true);
                         NativeMethods.TerminalClearSelection(this.terminal);
                         NativeMethods.TerminalSendKeyEvent(this.terminal, wParam);
+                        this.blinkTimer?.Start();
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:
                         NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam);

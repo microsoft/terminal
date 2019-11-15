@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
-  <!-- ========================= CppWinRT Metadata ======================== -->
-  <PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalApp</RootNamespace>
+    <ProjectName>TerminalAppLib</ProjectName>
+    <TargetName>TerminalAppLib</TargetName>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+
     <!--
       This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
       We have to do this to overcome a layout issue in the WAP packaging project.
@@ -15,6 +25,8 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
   </PropertyGroup>
+
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <!-- ========================= XAML files ======================== -->
@@ -78,11 +90,17 @@
     <ClInclude Include="../ActionArgs.h"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../ActionAndArgs.h"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../AppKeyBindings.h" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../AppLogic.h" >
+      <DependentUpon>../AppLogic.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
 
@@ -114,7 +132,6 @@
     <ClCompile Include="../JsonUtils.cpp" />
     <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../DefaultProfileUtils.cpp" />
-    <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp" />
@@ -124,6 +141,9 @@
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ActionAndArgs.cpp"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../ActionArgs.cpp" >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClCompile>
@@ -132,6 +152,9 @@
     </ClCompile>
     <ClCompile Include="../AppActionHandlers.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../AppLogic.cpp" >
+      <DependentUpon>../AppLogic.idl</DependentUpon>
     </ClCompile>
 
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
@@ -150,6 +173,7 @@
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../AppLogic.idl" />
     <Midl Include="../ActionArgs.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
@@ -183,6 +207,11 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
 
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
@@ -245,25 +274,7 @@
   </ItemDefinitionGroup>
 
   <!-- ========================= Globals ======================== -->
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>TerminalApp</RootNamespace>
-    <ProjectName>TerminalAppLib</ProjectName>
-    <TargetName>TerminalAppLib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
-  </PropertyGroup>
 
-  <PropertyGroup>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-  </PropertyGroup>
-
-  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <!-- Manually include MUX here, instead of importing its targets file. We need
@@ -275,13 +286,19 @@
   <PropertyGroup>
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190917002\</_MUXRoot>
+    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\</_MUXRoot>
     <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\</_MUXAppRoot>
   </PropertyGroup>
   <ItemGroup>
     <!-- Microsoft.UI.XAML -->
     <Reference Include="$(_MUXRoot)lib\uap10.0\Microsoft.UI.Xaml.winmd">
+      <Implementation>Microsoft.UI.Xaml.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>true</Private>
     </Reference>
+    <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
+    <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
 
     <!-- Microsoft.UI.XAML.Application -->
     <Reference Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.winmd">
@@ -299,7 +316,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190917002\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190917002\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
 

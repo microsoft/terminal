@@ -260,8 +260,7 @@ void ConsoleCheckDebug()
 {
     auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
-    RETURN_IF_FAILED(g.consoleInputSetupEvent.create(wil::EventOptions::ManualReset));
-    RETURN_IF_FAILED(g.consoleInputInitializedEvent.create(wil::EventOptions::ManualReset));
+    RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
     RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
@@ -502,6 +501,18 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p)
+{
+    Globals& g = ServiceLocator::LocateGlobals();
+    // processes that are created ...
+    //  ... with CREATE_NO_WINDOW never get a window.
+    //  ... on Desktop, with a visible window always get one (even a fake one)
+    //  ... not on Desktop, with a visible window only get one if we are headful (not ConPTY).
+    //  This prevents pseudoconsole-hosted applications from taking over the screen,
+    //  even if they really beg us for a window.
+    return p->WindowVisible && (s_IsOnDesktop() || !g.IsHeadless());
+}
+
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
@@ -546,7 +557,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    if (NT_SUCCESS(Status) && p->WindowVisible)
+    if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {
         HANDLE Thread = nullptr;
 
@@ -564,20 +575,15 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         {
             ServiceLocator::LocateGlobals().dwInputThreadId = pNewThread->GetThreadId();
 
-            // The ConsoleInputThread needs to perform things under lock,
-            // but if we unlock it, we don't know who will get the lock.
-            // So we will signal that it is safe for the other thread to do its work as
-            // we hold the lock on its behalf and wait for it to tell us that it is done.
-            g.consoleInputSetupEvent.SetEvent();
-            g.consoleInputInitializedEvent.wait();
+            // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
+            UnlockConsole();
+            g.hConsoleInputInitEvent.wait();
+            LockConsole();
 
             // OK, we've been told that the input thread is done initializing under lock.
             // Cleanup the handles and events we used to maintain our virtual lock passing dance.
 
             CloseHandle(Thread); // This doesn't stop the thread from running.
-
-            g.consoleInputInitializedEvent.release();
-            g.consoleInputSetupEvent.release();
 
             if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
             {
@@ -671,8 +677,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
         HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
-            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) ||
-                hr == E_APPLICATION_EXITING)
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
             {
                 fShouldExit = true;
 

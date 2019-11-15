@@ -10,8 +10,6 @@
 #include "../types/inc/Utf16Parser.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 
-#include <iostream>
-
 using namespace Microsoft::Console::Types;
 
 // Routine Description:
@@ -32,7 +30,7 @@ Search::Search(IUiaData& uiaData,
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
     _uiaData(uiaData),
-    _coordAnchor(_GetInitialAnchor(uiaData, direction))
+    _coordAnchor(s_GetInitialAnchor(uiaData, direction))
 {
     _coordNext = _coordAnchor;
 }
@@ -108,7 +106,7 @@ void Search::Select() const
 
 // Routine Description:
 // - In console host, we take the found word and apply the given color to it in the screen buffer
-// - In Windows Terminal, we just select the found word, but we do not ,modify the buffer
+// - In Windows Terminal, we just select the found word, but we do not modify the buffer
 // Arguments:
 // - ulAttr - The legacy color attribute to apply to the word
 void Search::Color(const TextAttribute attr) const
@@ -141,7 +139,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
+COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
     if (uiaData.IsSelectionActive())
@@ -230,7 +228,7 @@ bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view 
 
     for (size_t i = 0; i < one.size(); i++)
     {
-        if (_ApplySensitivity(gsl::at(one, i)) != _ApplySensitivity(gsl::at(two, i)))
+        if (_ApplySensitivity(one.at(i)) != _ApplySensitivity(two.at(i)))
         {
             return false;
         }

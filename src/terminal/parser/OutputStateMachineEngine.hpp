@@ -112,6 +112,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECSCPP_SetColumnsPerPage = L'|',
             IL_InsertLine = L'L',
             DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceeded by a CSI, and DL is.
+            HPA_HorizontalPositionAbsolute = L'`',
             VPA_VerticalLinePositionAbsolute = L'd',
             DECSTBM_SetScrollingRegion = L'r',
             RI_ReverseLineFeed = L'M',

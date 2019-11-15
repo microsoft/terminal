@@ -18,7 +18,7 @@ if (%_LAST_BUILD_CONF%)==() (
     set _LAST_BUILD_CONF=%DEFAULT_CONFIGURATION%
 )
 
-set _MSBUILD_TARGET=Clean,Build
+set _MSBUILD_TARGET=Clean;Build
 set _EXCLUSIVE=
 set _APPX_ARGS=
 

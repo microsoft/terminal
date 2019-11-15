@@ -20,8 +20,31 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 
+// Limit the rate of scroll update operation
+// See also: Microsoft::Console::Render::RenderThread::s_FrameLimitMilliseconds
+constexpr long long ScrollRateLimitMilliseconds = 8;
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
+    // See microsoft/terminal#2066 for more info.
+    static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
+    {
+        return false; // glyph is not wide.
+    }
+
+    static bool _EnsureStaticInitialization()
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        static bool initialized = []() {
+            // *** THIS IS A SINGLETON ***
+            SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
+
+            return true;
+        }();
+        return initialized;
+    }
+
     TermControl::TermControl() :
         TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
     {
@@ -35,6 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings{ settings },
         _closing{ false },
         _lastScrollOffset{ std::nullopt },
+        _lastScrollTime{ std::nullopt },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
@@ -47,6 +71,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClickPos{},
         _searchBox{ nullptr }
     {
+        _EnsureStaticInitialization();
         _Create();
     }
 
@@ -247,6 +272,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Update our control settings
             _ApplyUISettings();
+
+            // Update DxEngine's SelectionBackground
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
@@ -524,11 +553,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
 
-        // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out its width another way.
-        auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
-        SetGlyphWidthFallback(pfn);
-
         // Initialize our font with the renderer
         // We don't have to care about DPI. We'll get a change message immediately if it's not 96
         // and react accordingly.
@@ -541,6 +565,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+
+        // Update DxEngine's SelectionBackground
+        dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
         const auto height = vp.Height();
@@ -723,8 +751,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = static_cast<WORD>(e.OriginalKey());
-        const auto scanCode = e.KeyStatus().ScanCode;
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
         // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
@@ -1113,7 +1141,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();
@@ -1299,6 +1327,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Pre-process text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection, converting
+    //   Windows-space \r\n line-endings to \r line-endings
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        // Some notes on this implementation:
+        //
+        // - std::regex can do this in a single line, but is somewhat
+        //   overkill for a simple search/replace operation (and its
+        //   performance guarantees aren't exactly stellar)
+        // - The STL doesn't have a simple string search/replace method.
+        //   This fact is lamentable.
+        // - This line-ending converstion is intentionally fairly
+        //   conservative, to avoid stripping out lone \n characters
+        //   where they could conceivably be intentional.
+
+        std::wstring stripped{ wstr };
+
+        std::wstring::size_type pos = 0;
+
+        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
+        {
+            stripped.replace(pos, 2, L"\r");
+        }
+
+        _connection.WriteInput(stripped);
+        _terminal->TrySnapOnInput();
+    }
+
+    // Method Description:
     // - Update the font with the renderer. This will be called either when the
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
@@ -1369,11 +1427,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        const short lastVisibleRow = std::max(_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max(_terminal->GetViewport().Width() - 1, 0);
+        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
+        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
-        terminalPosition.Y = std::clamp(terminalPosition.Y, short{ 0 }, lastVisibleRow);
-        terminalPosition.X = std::clamp(terminalPosition.X, short{ 0 }, lastVisibleCol);
+        terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
+        terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
         // save location (for rendering) + render
         _terminal->SetEndSelectionPosition(terminalPosition);
@@ -1468,8 +1526,37 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        // Since this callback fires from non-UI thread, we might be already
+        // closed/closing.
+        if (_closing.load())
+        {
+            return;
+        }
+
+        // Throttle the update operation.
+        const auto timeNow = std::chrono::high_resolution_clock::now();
+
+        if (_lastScrollTime.has_value())
+        {
+            const long long deltaTimeInMilliSec = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - _lastScrollTime.value()).count();
+            if (deltaTimeInMilliSec < ScrollRateLimitMilliseconds)
+            {
+                _lastScrollTime = std::nullopt;
+                return;
+            }
+        }
+
+        _lastScrollTime = timeNow;
+
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            // Even if we weren't closed/closing few lines above, we might be
+            // while waiting for this block of code to be dispatched.
+            if (_closing.load())
+            {
+                return;
+            }
+
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
@@ -1518,13 +1605,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                   _settings.DefaultBackground(),
                                                   "Windows Terminal");
 
+        // convert to RTF format
+        const auto rtfData = TextBuffer::GenRTF(bufferData,
+                                                _actualFont.GetUnscaledSize().Y,
+                                                _actualFont.GetFaceName(),
+                                                _settings.DefaultBackground());
+
         if (!_terminal->IsCopyOnSelectActive())
         {
             _terminal->ClearSelection();
         }
 
         // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())), winrt::to_hstring(htmlData));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())),
+                                                                   winrt::to_hstring(htmlData),
+                                                                   winrt::to_hstring(rtfData));
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }
@@ -1535,7 +1630,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
         // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp

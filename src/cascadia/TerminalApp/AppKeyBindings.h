@@ -41,7 +41,9 @@ namespace winrt::TerminalApp::implementation
         AppKeyBindings() = default;
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
-        void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+
+        void SetKeyBinding(TerminalApp::ActionAndArgs const& actionAndArgs,
+                           winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
@@ -54,10 +56,9 @@ namespace winrt::TerminalApp::implementation
         // clang-format off
         TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(OpenNewTabDropdown,TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(DuplicateTab,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewTabWithProfile, TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(NewWindow,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(CloseWindow,       TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(CloseTab,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
@@ -76,11 +77,12 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ResizePane,        TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(MoveFocus,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(OpenSearchBox,     TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ToggleFullscreen,  TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         // clang-format on
 
     private:
-        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
-        bool _DoAction(ShortcutAction action);
+        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
+        bool _DoAction(ActionAndArgs actionAndArgs);
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::KeyBindingsTests;
