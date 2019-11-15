@@ -74,6 +74,7 @@ public:
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
+    void SetSelectionBackground(COLORREF selectionBackground) noexcept;
     void SetCloseOnExit(bool defaultClose) noexcept;
     void SetConnectionType(GUID connectionType) noexcept;
 
@@ -118,6 +119,7 @@ private:
 
     std::optional<uint32_t> _defaultForeground;
     std::optional<uint32_t> _defaultBackground;
+    std::optional<uint32_t> _selectionBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     std::optional<std::wstring> _tabTitle;
     int32_t _historySize;

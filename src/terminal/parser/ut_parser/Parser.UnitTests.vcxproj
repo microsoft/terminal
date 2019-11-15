@@ -1,5 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{12144E07-FE63-4D33-9231-748B8D8C3792}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ParserUnitTests</RootNamespace>
+    <ProjectName>TerminalParser.UnitTests</ProjectName>
+    <TargetName>ConParser.Unit.Tests</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
 
 
@@ -36,16 +44,8 @@
     </ProjectReference>
   </ItemGroup>
 
-  <PropertyGroup>
-    <ProjectGuid>{12144E07-FE63-4D33-9231-748B8D8C3792}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ParserUnitTests</RootNamespace>
-    <ProjectName>TerminalParser.UnitTests</ProjectName>
-    <TargetName>ConParser.Unit.Tests</TargetName>
-  </PropertyGroup>
 
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.dll.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
 </Project>

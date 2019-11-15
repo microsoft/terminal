@@ -22,28 +22,22 @@ namespace Microsoft::Console
     class VtInputThread
     {
     public:
-        VtInputThread(wil::unique_hfile hPipe,
-                      wil::shared_event shutdownEvent,
-                      const bool inheritCursor);
-
-        ~VtInputThread();
+        VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor);
 
         [[nodiscard]] HRESULT Start();
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
-
-        [[nodiscard]] HRESULT DoReadInput();
+        void DoReadInput(const bool throwOnFail);
 
     private:
         [[nodiscard]] HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch);
         DWORD _InputThread();
-        [[nodiscard]] HRESULT _ReadInput();
-
-        wil::shared_event _shutdownEvent;
-        std::future<void> _shutdownWatchdog;
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
         DWORD _dwThreadId;
+
+        bool _exitRequested;
+        HRESULT _exitResult;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
         Utf8ToWideCharParser _utf8Parser;

@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import "..\App.idl";
 
 namespace TerminalApp
 {
+    delegate void LastTabClosedEventArgs();
+    delegate void ToggleFullscreenEventArgs();
+
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
     {
         TerminalPage();
@@ -12,5 +14,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.Controls.ContentDialog> ShowDialog;
+        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
     }
 }

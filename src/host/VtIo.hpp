@@ -4,6 +4,7 @@
 #pragma once
 
 #include "..\inc\VtIoModes.hpp"
+#include "..\inc\ITerminalOwner.hpp"
 #include "..\renderer\vt\vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
@@ -12,11 +13,11 @@ class ConsoleArguments;
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class VtIo
+    class VtIo : public Microsoft::Console::ITerminalOwner
     {
     public:
         VtIo();
-        ~VtIo();
+        virtual ~VtIo() override = default;
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 
@@ -32,13 +33,13 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
+        void CloseInput() override;
+        void CloseOutput() override;
+
         void BeginResize();
         void EndResize();
 
     private:
-        wil::shared_event _shutdownEvent;
-        std::future<void> _shutdownWatchdog;
-
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
@@ -50,6 +51,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _objectsCreated;
 
         bool _lookingForCursorPosition;
+        std::mutex _shutdownLock;
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
@@ -57,10 +59,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
-        void _OnLastProcessExit();
+        void _ShutdownIfNeeded();
 
 #ifdef UNIT_TESTING
-        bool _doNotTerminate;
         friend class VtIoTests;
 #endif
     };

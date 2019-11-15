@@ -5,29 +5,32 @@
 
 #include "search.h"
 
-#include "dbcs.h"
-#include "../buffer/out/CharRow.hpp"
+#include "CharRow.hpp"
+#include "textBuffer.hpp"
 #include "../types/inc/Utf16Parser.hpp"
 #include "../types/inc/GlyphWidth.hpp"
+
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Constructs a Search object.
 // - Make a Search object then call .FindNext() to locate items.
 // - Once you've found something, you can perfom actions like .Select() or .Color()
 // Arguments:
-// - screenInfo - The screen buffer to search through (the "haystack")
+// - textBuffer - The screen text buffer to search through (the "haystack")
+// - uiaData - The IUiaData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
-Search::Search(const SCREEN_INFORMATION& screenInfo,
+Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
     _sensitivity(sensitivity),
-    _screenInfo(screenInfo),
     _needle(s_CreateNeedleFromString(str)),
-    _coordAnchor(s_GetInitialAnchor(screenInfo, direction))
+    _uiaData(uiaData),
+    _coordAnchor(s_GetInitialAnchor(uiaData, direction))
 {
     _coordNext = _coordAnchor;
 }
@@ -37,21 +40,22 @@ Search::Search(const SCREEN_INFORMATION& screenInfo,
 // - Make a Search object then call .FindNext() to locate items.
 // - Once you've found something, you can perfom actions like .Select() or .Color()
 // Arguments:
-// - screenInfo - The screen buffer to search through (the "haystack")
+// - textBuffer - The screen text buffer to search through (the "haystack")
+// - uiaData - The IUiaData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
-Search::Search(const SCREEN_INFORMATION& screenInfo,
+Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity,
                const COORD anchor) :
     _direction(direction),
     _sensitivity(sensitivity),
-    _screenInfo(screenInfo),
     _needle(s_CreateNeedleFromString(str)),
-    _coordAnchor(anchor)
+    _coordAnchor(anchor),
+    _uiaData(uiaData)
 {
     _coordNext = _coordAnchor;
 }
@@ -96,12 +100,13 @@ void Search::Select() const
     // Only select if we've found something.
     if (_coordSelStart != _coordSelEnd)
     {
-        Selection::Instance().SelectNewRegion(_coordSelStart, _coordSelEnd);
+        _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
     }
 }
 
 // Routine Description:
-// - Takes the found word and applies the given color to it in the screen buffer
+// - In console host, we take the found word and apply the given color to it in the screen buffer
+// - In Windows Terminal, we just select the found word, but we do not modify the buffer
 // Arguments:
 // - ulAttr - The legacy color attribute to apply to the word
 void Search::Color(const TextAttribute attr) const
@@ -109,7 +114,7 @@ void Search::Color(const TextAttribute attr) const
     // Only select if we've found something.
     if (_coordSelStart != _coordSelEnd)
     {
-        Selection::Instance().ColorSelection(_coordSelStart, _coordSelEnd, attr);
+        _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
 }
 
@@ -130,22 +135,23 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - If the screen buffer given already has a selection in it, it will be used to determine the anchor.
 // - Otherwise, we will choose one of the ends of the screen buffer depending on direction.
 // Arguments:
-// - screenInfo - The screen buffer for determining the anchor
+// - uiaData - The reference to the IUiaData interface type object
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Direction direction)
+COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
-    if (Selection::Instance().IsInSelectingState())
+    const auto& textBuffer = uiaData.GetTextBuffer();
+    if (uiaData.IsSelectionActive())
     {
-        auto anchor = Selection::Instance().GetSelectionAnchor();
+        auto anchor = uiaData.GetSelectionAnchor();
         if (direction == Direction::Forward)
         {
-            screenInfo.GetBufferSize().IncrementInBoundsCircular(anchor);
+            textBuffer.GetSize().IncrementInBoundsCircular(anchor);
         }
         else
         {
-            screenInfo.GetBufferSize().DecrementInBoundsCircular(anchor);
+            textBuffer.GetSize().DecrementInBoundsCircular(anchor);
         }
         return anchor;
     }
@@ -157,7 +163,7 @@ COORD Search::s_GetInitialAnchor(const SCREEN_INFORMATION& screenInfo, const Dir
         }
         else
         {
-            const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
+            const auto bufferSize = textBuffer.GetSize().Dimensions();
             return { bufferSize.X - 1, bufferSize.Y - 1 };
         }
     }
@@ -183,7 +189,7 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
     for (const auto& needleCell : _needle)
     {
         // Haystack is the buffer. Needle is the string we were given.
-        const auto hayIter = _screenInfo.GetTextDataAt(bufferPos);
+        const auto hayIter = _uiaData.GetTextBuffer().GetTextDataAt(bufferPos);
         const auto hayChars = *hayIter;
         const auto needleChars = std::wstring_view(needleCell.data(), needleCell.size());
 
@@ -214,7 +220,7 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
 // - two - String view representing the second string of text
 // Return Value:
 // - True if they are the same. False otherwise.
-bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view two) const
+bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept
 {
     if (one.size() != two.size())
     {
@@ -223,7 +229,7 @@ bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view 
 
     for (size_t i = 0; i < one.size(); i++)
     {
-        if (_ApplySensitivity(one[i]) != _ApplySensitivity(two[i]))
+        if (_ApplySensitivity(one.at(i)) != _ApplySensitivity(two.at(i)))
         {
             return false;
         }
@@ -239,7 +245,7 @@ bool Search::_CompareChars(const std::wstring_view one, const std::wstring_view 
 // - wch - Character to adjust if necessary
 // Return Value:
 // - Adjusted value (or not).
-wchar_t Search::_ApplySensitivity(const wchar_t wch) const
+wchar_t Search::_ApplySensitivity(const wchar_t wch) const noexcept
 {
     if (_sensitivity == Sensitivity::CaseInsensitive)
     {
@@ -257,7 +263,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
 void Search::_IncrementCoord(COORD& coord) const
 {
-    _screenInfo.GetBufferSize().IncrementInBoundsCircular(coord);
+    _uiaData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -266,7 +272,7 @@ void Search::_IncrementCoord(COORD& coord) const
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
 void Search::_DecrementCoord(COORD& coord) const
 {
-    _screenInfo.GetBufferSize().DecrementInBoundsCircular(coord);
+    _uiaData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
 }
 
 // Routine Description:
