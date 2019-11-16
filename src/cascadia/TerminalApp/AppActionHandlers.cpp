@@ -26,12 +26,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
-                                     const TerminalApp::ActionEventArgs& args)
-    {
-        _OpenNewTab(std::nullopt);
-        args.Handled(true);
-    }
     void TerminalPage::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
                                                  const TerminalApp::ActionEventArgs& args)
     {
@@ -138,12 +132,24 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleNewTabWithProfile(const IInspectable& /*sender*/,
-                                                const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
+                                     const TerminalApp::ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabWithProfileArgs>())
+        if (args == nullptr)
         {
-            _OpenNewTab({ realArgs.ProfileIndex() });
+            _OpenNewTab(std::nullopt);
+            args.Handled(true);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabArgs>())
+        {
+            if (realArgs.ProfileIndex() == nullptr)
+            {
+                _OpenNewTab(std::nullopt);
+            }
+            else
+            {
+                _OpenNewTab(realArgs.ProfileIndex().Value());
+            }
             args.Handled(true);
         }
     }
@@ -163,8 +169,16 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
         {
-            _ResizePane(realArgs.Direction());
-            args.Handled(true);
+            if (realArgs.Direction() == TerminalApp::Direction::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                _ResizePane(realArgs.Direction());
+                args.Handled(true);
+            }
         }
     }
 
@@ -173,8 +187,16 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
         {
-            _MoveFocus(realArgs.Direction());
-            args.Handled(true);
+            if (realArgs.Direction() == TerminalApp::Direction::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                _MoveFocus(realArgs.Direction());
+                args.Handled(true);
+            }
         }
     }
 

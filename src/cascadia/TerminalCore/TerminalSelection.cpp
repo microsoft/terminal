@@ -108,6 +108,17 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 }
 
 // Method Description:
+// - Get the current anchor position
+// Arguments:
+// - None
+// Return Value:
+// - None
+const COORD Terminal::GetSelectionAnchor() const
+{
+    return _selectionAnchor;
+}
+
+// Method Description:
 // - Expand the selection row according to selection mode and wide glyphs
 // - this is particularly useful for box selections (ALT + selection)
 // Arguments:
@@ -454,4 +465,16 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
     THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;
+}
+
+// Method Description:
+// - This method won't be used. We just throw and do nothing. For now we
+//   need this method to implement UiaData interface
+// Arguments:
+// - coordSelectionStart - Not used
+// - coordSelectionEnd - Not used
+// - attr - Not used.
+void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
+{
+    THROW_HR(E_NOTIMPL);
 }

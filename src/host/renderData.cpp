@@ -369,4 +369,28 @@ void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
 }
+
+// Routine Description:
+// - Gets the current selection anchor position
+// Arguments:
+// - none
+// Return Value:
+// - current selection anchor
+const COORD RenderData::GetSelectionAnchor() const
+{
+    return Selection::Instance().GetSelectionAnchor();
+}
+
+// Routine Description:
+// - Given two points in the buffer space, color the selection between the two with the given attribute.
+// - This will create an internal selection rectangle covering the two points, assume a line selection,
+//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
+// Arguments:
+// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
+// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
+// - attr - Color to apply to region.
+void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
+{
+    Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
+}
 #pragma endregion

@@ -92,6 +92,8 @@ public:
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
+
+    void TrySnapOnInput() override;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -125,7 +127,9 @@ public:
     const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+    const COORD GetSelectionAnchor() const override;
     const std::wstring GetConsoleTitle() const noexcept override;
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;

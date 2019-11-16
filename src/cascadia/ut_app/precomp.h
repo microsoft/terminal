@@ -40,3 +40,9 @@ Author(s):
 // UnitTests run in CI, while the LocalTests do not. However, since the CI can't
 // run XAML islands or unpackaged WinRT, any tests using those features will
 // need to be added to the LocalTests.
+
+// These however are okay, for some _basic_ winrt things:
+#include <unknwn.h>
+#include <hstring.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>

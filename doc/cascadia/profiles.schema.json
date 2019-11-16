@@ -13,62 +13,177 @@
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
     },
+    "ShortcutActionName": {
+      "enum": [
+        "closePane",
+        "closeTab",
+        "closeWindow",
+        "copy",
+        "copyTextWithoutNewlines",
+        "decreaseFontSize",
+        "duplicateTab",
+        "increaseFontSize",
+        "moveFocus",
+        "moveFocusDown",
+        "moveFocusLeft",
+        "moveFocusRight",
+        "moveFocusUp",
+        "newTab",
+        "newTabProfile0",
+        "newTabProfile1",
+        "newTabProfile2",
+        "newTabProfile3",
+        "newTabProfile4",
+        "newTabProfile5",
+        "newTabProfile6",
+        "newTabProfile7",
+        "newTabProfile8",
+        "nextTab",
+        "openNewTabDropdown",
+        "openSettings",
+        "paste",
+        "prevTab",
+        "resizePane",
+        "resizePaneDown",
+        "resizePaneLeft",
+        "resizePaneRight",
+        "resizePaneUp",
+        "scrollDown",
+        "scrollDownPage",
+        "scrollUp",
+        "scrollUpPage",
+        "splitHorizontal",
+        "splitVertical",
+        "switchToTab",
+        "switchToTab0",
+        "switchToTab1",
+        "switchToTab2",
+        "switchToTab3",
+        "switchToTab4",
+        "switchToTab5",
+        "switchToTab6",
+        "switchToTab7",
+        "switchToTab8",
+        "toggleFullscreen"
+      ],
+      "type": "string"
+    },
+    "Direction": {
+      "enum": [
+        "left",
+        "right",
+        "up",
+        "down"
+      ],
+      "type": "string"
+    },
+    "ShortcutAction": {
+      "properties": {
+        "action": {
+          "description": "The action to execute",
+          "$ref": "#/definitions/ShortcutActionName"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "type": "object"
+    },
+    "CopyAction": {
+      "description": "Arguments corresponding to a Copy Text Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "copy" },
+            "trimWhitespace": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, will trim whitespace from the end of the line on copy."
+            }
+          }
+        }
+      ]
+    },
+    "NewTabAction": {
+      "description": "Arguments corresponding to a New Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "newTab" },
+            "index": {
+              "type": "integer",
+              "description": "The index in the new tab dropdown to open in a new tab"
+            }
+          }
+        }
+      ]
+    },
+    "SwitchToTabAction": {
+      "description": "Arguments corresponding to a Switch To Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "switchToTab" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to switch to, with the first being 0"
+            }
+          }
+        }
+      ],
+      "required": [ "index" ]
+    },
+    "MoveFocusAction": {
+      "description": "Arguments corresponding to a Move Focus Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "moveFocus" },
+            "direction": {
+              "$ref": "#/definitions/Direction",
+              "default": "left",
+              "description": "The direction to move focus in, between panes"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "ResizePaneAction": {
+      "description": "Arguments corresponding to a Resize Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "resizePane" },
+            "direction": {
+              "$ref": "#/definitions/Direction",
+              "default": "left",
+              "description": "The direction to move the pane separator in"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
         "command": {
-          "description": "The command executed when the associated key bindings are pressed.",
-          "enum": [
-            "closePane",
-            "closeTab",
-            "closeWindow",
-            "copy",
-            "copyTextWithoutNewlines",
-            "decreaseFontSize",
-            "duplicateTab",
-            "increaseFontSize",
-            "moveFocusDown",
-            "moveFocusLeft",
-            "moveFocusRight",
-            "moveFocusUp",
-            "newTab",
-            "newTabProfile0",
-            "newTabProfile1",
-            "newTabProfile2",
-            "newTabProfile3",
-            "newTabProfile4",
-            "newTabProfile5",
-            "newTabProfile6",
-            "newTabProfile7",
-            "newTabProfile8",
-            "nextTab",
-            "openNewTabDropdown",
-            "openSettings",
-            "paste",
-            "prevTab",
-            "resizePaneDown",
-            "resizePaneLeft",
-            "resizePaneRight",
-            "resizePaneUp",
-            "scrollDown",
-            "scrollDownPage",
-            "scrollUp",
-            "scrollUpPage",
-            "splitHorizontal",
-            "splitVertical",
-            "switchToTab",
-            "switchToTab0",
-            "switchToTab1",
-            "switchToTab2",
-            "switchToTab3",
-            "switchToTab4",
-            "switchToTab5",
-            "switchToTab6",
-            "switchToTab7",
-            "switchToTab8",
-            "toggleFullscreen"
-          ],
-          "type": "string"
+          "description": "The action executed when the associated key bindings are pressed.",
+            "oneOf": [
+              { "$ref": "#/definitions/CopyAction" },
+              { "$ref": "#/definitions/ShortcutActionName" },
+              { "$ref": "#/definitions/NewTabAction" },
+              { "$ref": "#/definitions/SwitchToTabAction" },
+              { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/ResizePaneAction" }
+            ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command.",
@@ -170,7 +285,8 @@
           },
           "background": {
             "$ref": "#/definitions/Color",
-            "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black)."
+            "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
+            "type": ["string", "null"]
           },
           "backgroundImage": {
             "description": "Sets the file location of the Image to draw over the window background.",
@@ -344,7 +460,8 @@
           },
           "foreground": {
             "$ref": "#/definitions/Color",
-            "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white)."
+            "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+            "type": ["string", "null"]
           },
           "guid": {
             "$ref": "#/definitions/ProfileGuid",
@@ -384,6 +501,10 @@
               "hidden"
             ],
             "type": "string"
+          },
+          "selectionBackground": {
+            "$ref": "#/definitions/Color",
+            "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
           },
           "snapOnInput": {
             "default": true,
@@ -489,6 +610,10 @@
           "red": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI red."
+          },
+          "selectionBackground": {
+            "$ref": "#/definitions/Color",
+            "description": "Sets the selection background color of the color scheme."
           },
           "white": {
             "$ref": "#/definitions/Color",
