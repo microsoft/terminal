@@ -374,9 +374,14 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 
     _title = title;
 
-    if (_pfnTitleChanged && !_suppressApplicationTitle)
+    if (_suppressApplicationTitle)
     {
-        _pfnTitleChanged(title);
+        _title = _startingTitle;
+    }
+
+    if (_pfnTitleChanged)
+    {
+        _pfnTitleChanged(_title);
     }
 
     return true;
