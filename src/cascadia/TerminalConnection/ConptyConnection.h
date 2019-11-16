@@ -4,11 +4,12 @@
 #pragma once
 
 #include "ConptyConnection.g.h"
+#include <conpty-static.h>
 
 namespace wil
 {
     // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
-    using unique_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ClosePseudoConsole), ::ClosePseudoConsole>;
+    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsole>;
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -51,7 +52,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_hfile _outPipe; // The pipe for reading output from
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
-        wil::unique_pseudoconsole_handle _hPC;
+        wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
 
         DWORD _OutputThread();
