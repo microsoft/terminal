@@ -1471,7 +1471,7 @@ float DxEngine::GetScaling() const noexcept
 
     if (!face)
     {
-        for (const auto& fallbackFace : FALLBACK_FONT_FACES)
+        for (const auto fallbackFace : FALLBACK_FONT_FACES)
         {
             familyName = fallbackFace;
             face = _FindFontFace(familyName, weight, stretch, style, localeName);
