@@ -25,8 +25,6 @@ Author(s):
 #undef GetCurrentTime
 #endif
 
-#include <wil/win32_helpers.h>
-
 #include <WexTestClass.h>
 #include <json.h>
 #include "consoletaeftemplates.hpp"
