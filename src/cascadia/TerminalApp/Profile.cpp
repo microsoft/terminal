@@ -24,6 +24,7 @@ static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
@@ -90,6 +91,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
 
     _defaultForeground{},
     _defaultBackground{},
+    _selectionBackground{},
     _colorTable{},
     _tabTitle{},
     _suppressApplicationTitle{},
@@ -208,6 +210,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     {
         terminalSettings.DefaultBackground(_defaultBackground.value());
     }
+    if (_selectionBackground)
+    {
+        terminalSettings.SelectionBackground(_selectionBackground.value());
+    }
 
     if (_scrollbarState)
     {
@@ -264,6 +270,10 @@ Json::Value Profile::ToJson() const
     if (_defaultBackground)
     {
         root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
+    }
+    if (_selectionBackground)
+    {
+        root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
     }
     if (_schemeName)
     {
@@ -591,6 +601,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
 
+    JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
+
     JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
     // TODO:GH#1069 deprecate old settings key
     JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
@@ -748,6 +760,11 @@ void Profile::SetDefaultForeground(COLORREF defaultForeground) noexcept
 void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 {
     _defaultBackground = defaultBackground;
+}
+
+void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
+{
+    _selectionBackground = selectionBackground;
 }
 
 void Profile::SetCloseOnExit(bool defaultClose) noexcept

@@ -20,6 +20,10 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 
+// Limit the rate of scroll update operation
+// See also: Microsoft::Console::Render::RenderThread::s_FrameLimitMilliseconds
+constexpr long long ScrollRateLimitMilliseconds = 8;
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -54,6 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings{ settings },
         _closing{ false },
         _lastScrollOffset{ std::nullopt },
+        _lastScrollTime{ std::nullopt },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
@@ -168,6 +173,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Update our control settings
             _ApplyUISettings();
+
+            // Update DxEngine's SelectionBackground
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
@@ -457,6 +466,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+
+        // Update DxEngine's SelectionBackground
+        dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
         const auto height = vp.Height();
@@ -1232,6 +1245,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _connection.WriteInput(stripped);
+        _terminal->TrySnapOnInput();
     }
 
     // Method Description:
@@ -1411,6 +1425,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        // Throttle the update operation.
+        const auto timeNow = std::chrono::high_resolution_clock::now();
+
+        if (_lastScrollTime.has_value())
+        {
+            const long long deltaTimeInMilliSec = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - _lastScrollTime.value()).count();
+            if (deltaTimeInMilliSec < ScrollRateLimitMilliseconds)
+            {
+                _lastScrollTime = std::nullopt;
+                return;
+            }
+        }
+
+        _lastScrollTime = timeNow;
+
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
             // Even if we weren't closed/closing few lines above, we might be
@@ -1468,13 +1497,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                   _settings.DefaultBackground(),
                                                   "Windows Terminal");
 
+        // convert to RTF format
+        const auto rtfData = TextBuffer::GenRTF(bufferData,
+                                                _actualFont.GetUnscaledSize().Y,
+                                                _actualFont.GetFaceName(),
+                                                _settings.DefaultBackground());
+
         if (!_terminal->IsCopyOnSelectActive())
         {
             _terminal->ClearSelection();
         }
 
         // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())), winrt::to_hstring(htmlData));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())),
+                                                                   winrt::to_hstring(htmlData),
+                                                                   winrt::to_hstring(rtfData));
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }

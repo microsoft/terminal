@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "ColorScheme.h"
+#include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "Utils.h"
 #include "JsonUtils.h"
@@ -16,6 +17,7 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view TableKey{ "colors" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::array<std::string_view, 16> TableColors = {
     "black",
     "red",
@@ -38,8 +40,9 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
     _table{},
-    _defaultForeground{ RGB(242, 242, 242) },
-    _defaultBackground{ RGB(12, 12, 12) }
+    _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+    _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+    _selectionBackground{ DEFAULT_FOREGROUND }
 {
 }
 
@@ -47,7 +50,8 @@ ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF default
     _schemeName{ name },
     _table{},
     _defaultForeground{ defaultFg },
-    _defaultBackground{ defaultBg }
+    _defaultBackground{ defaultBg },
+    _selectionBackground{ DEFAULT_FOREGROUND }
 {
 }
 
@@ -66,6 +70,7 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 {
     terminalSettings.DefaultForeground(_defaultForeground);
     terminalSettings.DefaultBackground(_defaultBackground);
+    terminalSettings.SelectionBackground(_selectionBackground);
 
     auto const tableCount = gsl::narrow_cast<int>(_table.size());
     for (int i = 0; i < tableCount; i++)
@@ -86,6 +91,7 @@ Json::Value ColorScheme::ToJson() const
     root[JsonKey(NameKey)] = winrt::to_string(_schemeName);
     root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground);
     root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground);
+    root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground);
 
     int i = 0;
     for (const auto& colorName : TableColors)
@@ -155,6 +161,11 @@ void ColorScheme::LayerJson(const Json::Value& json)
         const auto color = Utils::ColorFromHexString(bgString.asString());
         _defaultBackground = color;
     }
+    if (auto sbString{ json[JsonKey(SelectionBackgroundKey)] })
+    {
+        const auto color = Utils::ColorFromHexString(sbString.asString());
+        _selectionBackground = color;
+    }
 
     // Legacy Deserialization. Leave in place to allow forward compatibility
     if (auto table{ json[JsonKey(TableKey)] })
@@ -202,6 +213,11 @@ COLORREF ColorScheme::GetForeground() const noexcept
 COLORREF ColorScheme::GetBackground() const noexcept
 {
     return _defaultBackground;
+}
+
+COLORREF ColorScheme::GetSelectionBackground() const noexcept
+{
+    return _selectionBackground;
 }
 
 // Method Description:
