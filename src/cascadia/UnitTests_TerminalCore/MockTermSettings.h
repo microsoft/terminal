@@ -51,11 +51,8 @@ namespace TerminalCoreUnitTests
         void CursorHeight(uint32_t) {}
         void WordDelimiters(winrt::hstring) {}
         void CopyOnSelect(bool copyOnSelect) { _copyOnSelect = copyOnSelect; }
-<<<<<<< HEAD
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
-=======
         void SelectionBackground(uint32_t) {}
->>>>>>> master
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */)
