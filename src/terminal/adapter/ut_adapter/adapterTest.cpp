@@ -741,16 +741,16 @@ public:
         switch (xact)
         {
         case CursorX::LEFT:
-            Log::Comment(L"Cursor set to left edge of viewport.");
-            _cursorPos.X = _viewport.Left;
+            Log::Comment(L"Cursor set to left edge of buffer.");
+            _cursorPos.X = 0;
             break;
         case CursorX::RIGHT:
-            Log::Comment(L"Cursor set to right edge of viewport.");
-            _cursorPos.X = _viewport.Right - 1;
+            Log::Comment(L"Cursor set to right edge of buffer.");
+            _cursorPos.X = _bufferSize.X - 1;
             break;
         case CursorX::XCENTER:
-            Log::Comment(L"Cursor set to centered X of viewport.");
-            _cursorPos.X = _viewport.Left + ((_viewport.Right - _viewport.Left) / 2);
+            Log::Comment(L"Cursor set to centered X of buffer.");
+            _cursorPos.X = _bufferSize.X / 2;
             break;
         }
 
@@ -1044,7 +1044,7 @@ public:
 
         if (fDoTest1b)
         {
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+            _testGetSet->_expectedCursorPos.X = 0;
             VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(1));
         }
         else
@@ -1072,11 +1072,11 @@ public:
             break;
         case CursorDirection::NEXTLINE:
             _testGetSet->_expectedCursorPos.Y++;
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+            _testGetSet->_expectedCursorPos.X = 0;
             break;
         case CursorDirection::PREVLINE:
             _testGetSet->_expectedCursorPos.Y--;
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+            _testGetSet->_expectedCursorPos.X = 0;
             break;
         }
 
@@ -1097,17 +1097,17 @@ public:
             _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
             break;
         case CursorDirection::RIGHT:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Right - 1;
+            _testGetSet->_expectedCursorPos.X = _testGetSet->_bufferSize.X - 1;
             break;
         case CursorDirection::LEFT:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+            _testGetSet->_expectedCursorPos.X = 0;
             break;
         case CursorDirection::NEXTLINE:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+            _testGetSet->_expectedCursorPos.X = 0;
             _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
             break;
         case CursorDirection::PREVLINE:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+            _testGetSet->_expectedCursorPos.X = 0;
             _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
             break;
         }
@@ -1184,7 +1184,8 @@ public:
         short sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
         short sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
 
-        _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left + (sCol - 1);
+        // The X coordinate is unaffected by the viewport.
+        _testGetSet->_expectedCursorPos.X = sCol - 1;
         _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top + (sRow - 1);
 
         VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(sRow, sCol));
@@ -1192,7 +1193,8 @@ public:
         Log::Comment(L"Test 2: Move to 0, 0 (which is 1,1 in VT speak)");
         _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
 
-        _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Left;
+        // The X coordinate is unaffected by the viewport.
+        _testGetSet->_expectedCursorPos.X = 0;
         _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
 
         VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(1, 1));
@@ -1200,10 +1202,10 @@ public:
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) * 2;
+        sCol = (_testGetSet->_bufferSize.X) * 2;
         sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) * 2;
 
-        _testGetSet->_expectedCursorPos.X = _testGetSet->_viewport.Right - 1;
+        _testGetSet->_expectedCursorPos.X = _testGetSet->_bufferSize.X - 1;
         _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
 
         VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(sRow, sCol));
@@ -1252,8 +1254,8 @@ public:
         //// Used to switch between the various function options.
         typedef bool (AdaptDispatch::*CursorMoveFunc)(size_t);
         CursorMoveFunc moveFunc = nullptr;
-        SHORT* psViewportEnd = nullptr;
-        SHORT* psViewportStart = nullptr;
+        SHORT sRangeEnd = 0;
+        SHORT sRangeStart = 0;
         SHORT* psCursorExpected = nullptr;
 
         // Modify variables based on directionality of this test
@@ -1261,26 +1263,27 @@ public:
         size_t dir;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDirection", dir));
         direction = (AbsolutePosition)dir;
+        _testGetSet->PrepData();
 
         switch (direction)
         {
         case AbsolutePosition::CursorHorizontal:
             Log::Comment(L"Testing cursor horizontal movement.");
-            psViewportEnd = &_testGetSet->_viewport.Right;
-            psViewportStart = &_testGetSet->_viewport.Left;
+            sRangeEnd = _testGetSet->_bufferSize.X;
+            sRangeStart = 0;
             psCursorExpected = &_testGetSet->_expectedCursorPos.X;
             moveFunc = &AdaptDispatch::CursorHorizontalPositionAbsolute;
             break;
         case AbsolutePosition::VerticalLine:
             Log::Comment(L"Testing vertical line movement.");
-            psViewportEnd = &_testGetSet->_viewport.Bottom;
-            psViewportStart = &_testGetSet->_viewport.Top;
+            sRangeEnd = _testGetSet->_viewport.Bottom;
+            sRangeStart = _testGetSet->_viewport.Top;
             psCursorExpected = &_testGetSet->_expectedCursorPos.Y;
             moveFunc = &AdaptDispatch::VerticalLinePositionAbsolute;
             break;
         }
 
-        if (moveFunc == nullptr || psViewportEnd == nullptr || psViewportStart == nullptr || psCursorExpected == nullptr)
+        if (moveFunc == nullptr || psCursorExpected == nullptr)
         {
             VERIFY_FAIL();
             return;
@@ -1289,16 +1292,16 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        short sVal = (*psViewportEnd - *psViewportStart) / 2;
+        short sVal = (sRangeEnd - sRangeStart) / 2;
 
-        *psCursorExpected = *psViewportStart + (sVal - 1);
+        *psCursorExpected = sRangeStart + (sVal - 1);
 
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
 
         Log::Comment(L"Test 2: Move to 0 (which is 1 in VT speak)");
         _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
 
-        *psCursorExpected = *psViewportStart;
+        *psCursorExpected = sRangeStart;
         sVal = 1;
 
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
@@ -1306,9 +1309,9 @@ public:
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        sVal = (*psViewportEnd - *psViewportStart) * 2;
+        sVal = (sRangeEnd - sRangeStart) * 2;
 
-        *psCursorExpected = *psViewportEnd - 1;
+        *psCursorExpected = sRangeEnd - 1;
 
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
 
@@ -1876,8 +1879,7 @@ public:
         // start with the cursor position in the buffer.
         COORD coordCursorExpected = _testGetSet->_cursorPos;
 
-        // to get to VT, we have to adjust it to its position relative to the viewport.
-        coordCursorExpected.X -= _testGetSet->_viewport.Left;
+        // to get to VT, we have to adjust it to its position relative to the viewport top.
         coordCursorExpected.Y -= _testGetSet->_viewport.Top;
 
         // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
@@ -1975,6 +1977,7 @@ public:
         Log::Comment(L"Starting test...");
 
         SMALL_RECT srTestMargins = { 0 };
+        _testGetSet->_bufferSize = { 100, 600 };
         _testGetSet->_viewport.Right = 8;
         _testGetSet->_viewport.Bottom = 8;
         _testGetSet->_getConsoleScreenBufferInfoExResult = TRUE;
