@@ -1115,42 +1115,8 @@ public:
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(100));
 
         // error cases
-        // give too large an up distance, cursor move should fail, cursor should stay the same.
-        Log::Comment(L"Test 4: When given invalid (massive) move distance that doesn't fit in a short, call fails and cursor doesn't move.");
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-
-        VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(UINT_MAX));
-        VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
-
-        // cause short underflow. cursor move should fail. cursor should stay the same.
-        Log::Comment(L"Test 5: When an over/underflow occurs in cursor math, call fails and cursor doesn't move.");
-        _testGetSet->PrepData(direction);
-
-        switch (direction)
-        {
-        case CursorDirection::UP:
-        case CursorDirection::PREVLINE:
-            _testGetSet->_cursorPos.Y = -10;
-            break;
-        case CursorDirection::DOWN:
-        case CursorDirection::NEXTLINE:
-            _testGetSet->_cursorPos.Y = 10;
-            break;
-        case CursorDirection::RIGHT:
-            _testGetSet->_cursorPos.X = 10;
-            break;
-        case CursorDirection::LEFT:
-            _testGetSet->_cursorPos.X = -10;
-            break;
-        }
-
-        _testGetSet->_expectedCursorPos = _testGetSet->_cursorPos;
-
-        VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(SHRT_MAX + 1));
-        VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
-
         // SetConsoleCursorPosition throws failure. Parameters are otherwise normal.
-        Log::Comment(L"Test 6: When SetConsoleCursorPosition throws a failure, call fails and cursor doesn't move.");
+        Log::Comment(L"Test 4: When SetConsoleCursorPosition throws a failure, call fails and cursor doesn't move.");
         _testGetSet->PrepData(direction);
         _testGetSet->_setConsoleCursorPositionResult = FALSE;
 
@@ -1158,19 +1124,10 @@ public:
         VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
 
         // GetConsoleScreenBufferInfo throws failure. Parameters are otherwise normal.
-        Log::Comment(L"Test 7: When GetConsoleScreenBufferInfo throws a failure, call fails and cursor doesn't move.");
+        Log::Comment(L"Test 5: When GetConsoleScreenBufferInfo throws a failure, call fails and cursor doesn't move.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
         _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
-        Log::Comment(NoThrowString().Format(
-            L"Cursor Up and Down don't need GetConsoleScreenBufferInfoEx, so they will succeed"));
-        if (direction == CursorDirection::UP || direction == CursorDirection::DOWN)
-        {
-            VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(0));
-        }
-        else
-        {
-            VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(0));
-        }
+        VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(0));
         VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
     }
 
@@ -1210,37 +1167,19 @@ public:
 
         VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(sRow, sCol));
 
-        Log::Comment(L"Test 4: Values too large for short. Cursor shouldn't move. Return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        VERIFY_IS_FALSE(_pDispatch.get()->CursorPosition(UINT_MAX, UINT_MAX));
-
-        Log::Comment(L"Test 5: Overflow during addition. Cursor shouldn't move. Return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        _testGetSet->_viewport.Left = SHRT_MAX;
-        _testGetSet->_viewport.Top = SHRT_MAX;
-
-        VERIFY_IS_FALSE(_pDispatch.get()->CursorPosition(5, 5));
-
-        Log::Comment(L"Test 6: GetConsoleInfo API returns false. No move, return false.");
+        Log::Comment(L"Test 4: GetConsoleInfo API returns false. No move, return false.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->CursorPosition(1, 1));
 
-        Log::Comment(L"Test 7: SetCursor API returns false. No move, return false.");
+        Log::Comment(L"Test 5: SetCursor API returns false. No move, return false.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         _testGetSet->_setConsoleCursorPositionResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->CursorPosition(1, 1));
-
-        Log::Comment(L"Test 8: Move to 0,0. Cursor shouldn't move. Return false. 1,1 is the top left corner in VT100 speak. 0,0 isn't a position. The parser will give 1 for a 0 input.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        VERIFY_IS_FALSE(_pDispatch.get()->CursorPosition(0, 0));
     }
 
     TEST_METHOD(CursorSingleDimensionMoveTest)
@@ -1315,23 +1254,7 @@ public:
 
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
 
-        Log::Comment(L"Test 4: Values too large for short. Cursor shouldn't move. Return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        sVal = SHORT_MAX;
-
-        VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(sVal));
-
-        Log::Comment(L"Test 5: Overflow during addition. Cursor shouldn't move. Return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        _testGetSet->_viewport.Left = SHRT_MAX;
-
-        sVal = 5;
-
-        VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(sVal));
-
-        Log::Comment(L"Test 6: GetConsoleInfo API returns false. No move, return false.");
+        Log::Comment(L"Test 4: GetConsoleInfo API returns false. No move, return false.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
@@ -1340,19 +1263,12 @@ public:
 
         VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(sVal));
 
-        Log::Comment(L"Test 7: SetCursor API returns false. No move, return false.");
+        Log::Comment(L"Test 5: SetCursor API returns false. No move, return false.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         _testGetSet->_setConsoleCursorPositionResult = FALSE;
 
         sVal = 1;
-
-        VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(sVal));
-
-        Log::Comment(L"Test 8: Move to 0. Cursor shouldn't move. Return false. 1 is the left edge in VT100 speak. 0 isn't a position. The parser will give 1 for a 0 input.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        sVal = 0;
 
         VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(sVal));
     }
