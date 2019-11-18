@@ -95,7 +95,8 @@ namespace TerminalAppLocalTests
             "name": "profile0",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#000000",
-            "background": "#010101"
+            "background": "#010101",
+            "selectionBackground": "#010101"
         })" };
         const std::string profile1String{ R"({
             "name": "profile1",
@@ -106,7 +107,8 @@ namespace TerminalAppLocalTests
         const std::string profile2String{ R"({
             "name": "profile2",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-            "foreground": "#030303"
+            "foreground": "#030303",
+            "selectionBackground": "#020202"
         })" };
 
         const auto profile0Json = VerifyParseSucceeded(profile0String);
@@ -119,6 +121,9 @@ namespace TerminalAppLocalTests
 
         VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
+
+        VERIFY_IS_TRUE(profile0._selectionBackground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._selectionBackground.value());
 
         VERIFY_ARE_EQUAL(L"profile0", profile0._name);
 
@@ -134,6 +139,9 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
 
+        VERIFY_IS_TRUE(profile0._selectionBackground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._selectionBackground.value());
+
         VERIFY_ARE_EQUAL(L"profile1", profile0._name);
 
         VERIFY_IS_TRUE(profile0._startingDirectory.has_value());
@@ -148,6 +156,9 @@ namespace TerminalAppLocalTests
 
         VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
+
+        VERIFY_IS_TRUE(profile0._selectionBackground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), profile0._selectionBackground.value());
 
         VERIFY_ARE_EQUAL(L"profile2", profile0._name);
 

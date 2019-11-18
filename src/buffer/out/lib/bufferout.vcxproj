@@ -19,6 +19,7 @@
     <ClCompile Include="..\OutputCellView.cpp" />
     <ClCompile Include="..\Row.cpp" />
     <ClCompile Include="..\RowCellIterator.cpp" />
+    <ClCompile Include="..\search.cpp" />
     <ClCompile Include="..\TextColor.cpp" />
     <ClCompile Include="..\TextAttribute.cpp" />
     <ClCompile Include="..\TextAttributeRun.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="..\OutputCellView.hpp" />
     <ClInclude Include="..\Row.hpp" />
     <ClInclude Include="..\RowCellIterator.hpp" />
+    <ClInclude Include="..\search.h" />
     <ClInclude Include="..\TextColor.h" />
     <ClInclude Include="..\TextAttribute.h" />
     <ClInclude Include="..\TextAttributeRun.h" />
