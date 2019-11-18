@@ -57,6 +57,26 @@ namespace winrt::TerminalApp::implementation
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
+        _rearranging = false;
+
+        _tabView.TabDragStarting([this](auto&& /*o*/, auto&& /*a*/) {
+            _rearranging = true;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
+        });
+
+        _tabView.TabDragCompleted([this](auto&& /*o*/, auto&& /*a*/) {
+            if (_rearrangeFrom.has_value() && _rearrangeTo.has_value() && _rearrangeTo != _rearrangeFrom)
+            {
+                auto tab = _tabs.at(_rearrangeFrom.value());
+                _tabs.erase(_tabs.begin() + _rearrangeFrom.value());
+                _tabs.insert(_tabs.begin() + _rearrangeTo.value(), tab);
+            }
+
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
+        });
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
@@ -541,7 +561,6 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
 
-        bindings.NewTab({ this, &TerminalPage::_HandleNewTab });
         bindings.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
         bindings.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
         bindings.CloseTab({ this, &TerminalPage::_HandleCloseTab });
@@ -557,7 +576,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         bindings.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         bindings.PasteText({ this, &TerminalPage::_HandlePasteText });
-        bindings.NewTabWithProfile({ this, &TerminalPage::_HandleNewTabWithProfile });
+        bindings.NewTab({ this, &TerminalPage::_HandleNewTab });
         bindings.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
         bindings.ResizePane({ this, &TerminalPage::_HandleResizePane });
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
@@ -1085,6 +1104,13 @@ namespace winrt::TerminalApp::implementation
                 dataPack.SetHtmlFormat(htmlData);
             }
 
+            // copy rtf data to dataPack
+            const auto rtfData = copiedData.Rtf();
+            if (!rtfData.empty())
+            {
+                dataPack.SetRtf(rtfData);
+            }
+
             try
             {
                 Clipboard::SetContent(dataPack);
@@ -1175,12 +1201,27 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to changes in the TabView's item list by changing the tabview's
-    //      visibility.
+    //      visibility.  This method is also invoked when tabs are dragged / dropped as part of tab reordering
+    //      and this method hands that case as well in concert with TabDragStarting and TabDragCompleted handlers
+    //      that are set up in TerminalPage::Create()
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::IVectorChangedEventArgs& /*eventArgs*/)
+    void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
+        if (_rearranging)
+        {
+            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemRemoved)
+            {
+                _rearrangeFrom = eventArgs.Index();
+            }
+
+            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemInserted)
+            {
+                _rearrangeTo = eventArgs.Index();
+            }
+        }
+
         _UpdateTabView();
     }
 
@@ -1200,34 +1241,37 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Responds to the TabView control's Selection Changed event (to move a
-    //      new terminal control into focus.)
+    //      new terminal control into focus) when not in in the middle of a tab rearrangement.
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
     {
-        auto tabView = sender.as<MUX::Controls::TabView>();
-        auto selectedIndex = tabView.SelectedIndex();
-
-        // Unfocus all the tabs.
-        for (auto tab : _tabs)
+        if (!_rearranging)
         {
-            tab->SetFocused(false);
-        }
+            auto tabView = sender.as<MUX::Controls::TabView>();
+            auto selectedIndex = tabView.SelectedIndex();
 
-        if (selectedIndex >= 0)
-        {
-            try
+            // Unfocus all the tabs.
+            for (auto tab : _tabs)
             {
-                auto tab = _tabs.at(selectedIndex);
-
-                _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab->GetRootElement());
-
-                tab->SetFocused(true);
-                _titleChangeHandlers(*this, Title());
+                tab->SetFocused(false);
             }
-            CATCH_LOG();
+
+            if (selectedIndex >= 0)
+            {
+                try
+                {
+                    auto tab = _tabs.at(selectedIndex);
+
+                    _tabContent.Children().Clear();
+                    _tabContent.Children().Append(tab->GetRootElement());
+
+                    tab->SetFocused(true);
+                    _titleChangeHandlers(*this, Title());
+                }
+                CATCH_LOG();
+            }
         }
     }
 

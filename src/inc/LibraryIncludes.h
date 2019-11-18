@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <atomic>
 #include <deque>
-#include <future>
 #include <list>
 #include <memory>
 #include <map>
@@ -55,6 +54,7 @@
 #include <wil/stl.h>
 #include <wil/com.h>
 #include <wil/filesystem.h>
+#include <wil/win32_helpers.h>
 
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators

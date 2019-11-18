@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Types;
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
-    if (_shutdownEvent.is_signaled())
+    if (_pipeBroken)
     {
         return S_FALSE;
     }

@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, NULL, 0));
         RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, NULL, 0));
-        RETURN_IF_FAILED(CreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
+        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
         *phInput = inPipeOurSide.release();
         *phOutput = outPipeOurSide.release();
         return S_OK;
@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                              NULL,
                                                              NULL));
 
-        std::wstring cmdline{ _commandline.c_str() }; // mutable copy -- required for CreateProcessW
+        std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
 
@@ -106,6 +106,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             siEx.StartupInfo.lpTitle = mutableTitle.data();
         }
 
+        const wchar_t* const startingDirectory = _startingDirectory.size() > 0 ? _startingDirectory.c_str() : nullptr;
+
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             cmdline.data(),
@@ -114,7 +116,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             false, // bInheritHandles
             EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
             lpEnvironment, // lpEnvironment
-            _startingDirectory.c_str(),
+            startingDirectory,
             &siEx.StartupInfo, // lpStartupInfo
             &_piClient // lpProcessInformation
             ));
@@ -248,7 +250,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else if (!_closing.load())
         {
-            THROW_IF_FAILED(ResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
         }
     }
 

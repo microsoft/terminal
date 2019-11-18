@@ -24,6 +24,7 @@ static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
@@ -89,6 +90,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
 
     _defaultForeground{},
     _defaultBackground{},
+    _selectionBackground{},
     _colorTable{},
     _tabTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
@@ -201,6 +203,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     {
         terminalSettings.DefaultBackground(_defaultBackground.value());
     }
+    if (_selectionBackground)
+    {
+        terminalSettings.SelectionBackground(_selectionBackground.value());
+    }
 
     if (_scrollbarState)
     {
@@ -208,9 +214,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         terminalSettings.ScrollState(result);
     }
 
-    if (_backgroundImage)
+    if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(_backgroundImage.value());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
     }
 
     if (_backgroundImageOpacity)
@@ -257,6 +263,10 @@ Json::Value Profile::ToJson() const
     if (_defaultBackground)
     {
         root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
+    }
+    if (_selectionBackground)
+    {
+        root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
     }
     if (_schemeName)
     {
@@ -579,6 +589,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
 
+    JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
+
     JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
     // TODO:GH#1069 deprecate old settings key
     JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
@@ -733,6 +745,11 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
     _defaultBackground = defaultBackground;
 }
 
+void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
+{
+    _selectionBackground = selectionBackground;
+}
+
 void Profile::SetCloseOnExit(bool defaultClose) noexcept
 {
     _closeOnExit = defaultClose;
@@ -746,6 +763,11 @@ void Profile::SetConnectionType(GUID connectionType) noexcept
 bool Profile::HasIcon() const noexcept
 {
     return _icon.has_value() && !_icon.value().empty();
+}
+
+bool Profile::HasBackgroundImage() const noexcept
+{
+    return _backgroundImage.has_value() && !_backgroundImage.value().empty();
 }
 
 // Method Description
@@ -781,6 +803,23 @@ winrt::hstring Profile::GetExpandedIconPath() const
     }
     winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_icon.value().data()) };
     return envExpandedPath;
+}
+
+// Method Description:
+// - Returns this profile's background image path, if one is set, expanding
+//   any environment variables in the path, if there are any.
+// Return Value:
+// - This profile's expanded background image path / the empty string.
+winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+{
+    winrt::hstring result{};
+
+    if (HasBackgroundImage())
+    {
+        result = wil::ExpandEnvironmentStringsW<std::wstring>(_backgroundImage.value().data());
+    }
+
+    return result;
 }
 
 // Method Description:

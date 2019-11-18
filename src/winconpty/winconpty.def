@@ -1,4 +1,0 @@
-EXPORTS
-    CreatePseudoConsole
-    ResizePseudoConsole
-    ClosePseudoConsole

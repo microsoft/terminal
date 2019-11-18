@@ -10,6 +10,7 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
@@ -59,6 +60,10 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         bool _isFullscreen{ false };
+
+        bool _rearranging;
+        std::optional<int> _rearrangeFrom;
+        std::optional<int> _rearrangeTo;
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -127,7 +132,6 @@ namespace winrt::TerminalApp::implementation
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
-        void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleDuplicateTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
@@ -142,7 +146,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleScrollDownPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenSettings(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandlePasteText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleNewTabWithProfile(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleSwitchToTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

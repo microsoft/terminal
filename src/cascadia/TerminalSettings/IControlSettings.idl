@@ -40,5 +40,7 @@ namespace Microsoft.Terminal.Settings
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+
+        UInt32 SelectionBackground;
     };
 }

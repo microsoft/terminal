@@ -15,9 +15,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                  HorizontalContentAlignment="Stretch"
                  IsAddTabButtonVisible="false"
                  TabWidthMode="SizeToContent"
-                 CanReorderTabs="False"
-                 CanDragTabs="False"
-                 AllowDropTabs="False">
+                 CanReorderTabs="True"
+                 CanDragTabs="True"
+                 AllowDropTabs="True">
 
         <mux:TabView.TabStripFooter>
             <Grid>
