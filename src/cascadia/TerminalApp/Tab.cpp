@@ -306,20 +306,6 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
 }
 
 // Method Description:
-// - Register a callback function to be called when this Tab's active pane
-//   changes. The App will use this to lookup the appropriate icon for this Tab
-//   (based on the newly-active pane) and also to possibly propogate the new
-//   Pane's title to the window.
-// Arguments:
-// - pfnGotFocus: A function that should be called when this Tab's active pane changes
-// Return Value:
-// - <none>
-void Tab::SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChanged)
-{
-    _pfnActivePaneChanged = std::move(pfnActivePaneChanged);
-}
-
-// Method Description:
 // - Add an event handler to this pane's GotFocus event. When that pane gains
 //   focus, we'll mark it as the new active pane. We'll also query the title of
 //   that pane when it's focused to set our own text, and finally, we'll trigger
@@ -345,11 +331,9 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
         SetTabText(GetActiveTitle());
 
         // Raise our own ActivePaneChanged event.
-        if (_pfnActivePaneChanged)
-        {
-            _pfnActivePaneChanged();
-        }
+        _ActivePaneChangedHandlers();
     });
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
+DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

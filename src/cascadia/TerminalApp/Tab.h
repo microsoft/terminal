@@ -35,9 +35,8 @@ public:
 
     void ClosePane();
 
-    void SetActivePaneChangedCallback(std::function<void()> pfnActivePaneChanged);
-
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+    DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 
 private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -46,8 +45,6 @@ private:
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
-
-    std::function<void()> _pfnActivePaneChanged{ nullptr };
 
     void _MakeTabViewItem();
     void _Focus();

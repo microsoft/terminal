@@ -424,7 +424,7 @@ namespace winrt::TerminalApp::implementation
         std::weak_ptr<Tab> weakTabPtr = newTab;
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        newTab->SetActivePaneChangedCallback([this, weakTabPtr]() {
+        newTab->ActivePaneChanged([this, weakTabPtr]() {
             if (auto tab = weakTabPtr.lock())
             {
                 // Possibly update the icon of the tab.
