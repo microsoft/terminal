@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
+#include "ActionAndArgs.h"
 #include "Utils.h"
 
 #include <LibraryResources.h>
@@ -253,7 +254,21 @@ namespace winrt::TerminalApp::implementation
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
                 const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
-                auto profileKeyChord = keyBindings.GetKeyBinding(action);
+                // First, attepmt to search for the keybinding for the simple
+                // NewTabProfile0-9 ShortcutActions.
+                auto profileKeyChord = keyBindings.GetKeyBindingForAction(action);
+                if (!profileKeyChord)
+                {
+                    // If NewTabProfileN didn't have a binding, look for a
+                    // keychord that is bound to the equivalent
+                    // NewTab(ProfileIndex=N) action
+                    auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+                    actionAndArgs->Action(ShortcutAction::NewTab);
+                    auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+                    newTabArgs->ProfileIndex(profileIndex);
+                    actionAndArgs->Args(*newTabArgs);
+                    profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
+                }
 
                 // make sure we find one to display
                 if (profileKeyChord)
@@ -306,7 +321,7 @@ namespace winrt::TerminalApp::implementation
             settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
             newTabFlyout.Items().Append(settingsItem);
 
-            auto settingsKeyChord = keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
+            auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
             if (settingsKeyChord)
             {
                 _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);

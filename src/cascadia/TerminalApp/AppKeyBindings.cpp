@@ -9,6 +9,7 @@
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -29,11 +30,32 @@ namespace winrt::TerminalApp::implementation
         _keyShortcuts.erase(chord);
     }
 
-    Microsoft::Terminal::Settings::KeyChord AppKeyBindings::GetKeyBinding(TerminalApp::ShortcutAction const& action)
+    KeyChord AppKeyBindings::GetKeyBindingForAction(TerminalApp::ShortcutAction const& action)
     {
         for (auto& kv : _keyShortcuts)
         {
             if (kv.second.Action() == action)
+            {
+                return kv.first;
+            }
+        }
+        return { nullptr };
+    }
+    // Method Description:
+    // - Lookup the keychord bound to a particular combination of ShortcutAction
+    //   and IActionArgs. This enables searching no only for the binding of a
+    //   particular ShortcutAction, but also a particular set of values for
+    //   arguments to that action.
+    // Arguments:
+    // - actionAndArgs: The ActionAndArgs to lookup the keybinding for.
+    // Return Value:
+    // - The bound keychord, if this ActionAndArgs is bound to a key, otherwise nullptr.
+    KeyChord AppKeyBindings::GetKeyBindingForActionWithArgs(TerminalApp::ActionAndArgs const& actionAndArgs)
+    {
+        for (auto& kv : _keyShortcuts)
+        {
+            if (kv.second.Action() == actionAndArgs.Action() &&
+                kv.second.Args().Equals(actionAndArgs.Args()))
             {
                 return kv.first;
             }
