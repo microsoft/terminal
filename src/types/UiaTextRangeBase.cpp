@@ -609,14 +609,14 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     _outputRowConversions();
 #endif
 
-    auto moveFunc = &_moveByDocument;
+    std::function<std::pair<Endpoint, Endpoint>(gsl::not_null<IUiaData*>, const int, const MoveState, gsl::not_null<int*> const)> moveFunc = &_moveByDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveByCharacter;
     }
     else if (unit <= TextUnit::TextUnit_Word)
     {
-        moveFunc = &_moveByWord;
+        moveFunc = std::bind(&_moveByWord, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, _wordDelimiters, std::placeholders::_4);
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
@@ -1196,7 +1196,7 @@ const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pDa
 const Endpoint UiaTextRangeBase::_wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring wordDelimiters)
 {
     auto coord = _endpointToCoord(pData, target);
-    coord = pData->GetTextBuffer().GetWordEnd(coord, wordDelimiters);
+    coord = pData->GetTextBuffer().GetWordEnd(coord, wordDelimiters, true);
     return _coordToEndpoint(pData, coord);
 }
 
@@ -1509,33 +1509,36 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(gsl::no
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWord(gsl::not_null<IUiaData*> pData,
                                                             const int moveCount,
                                                             const MoveState moveState,
+                                                            const std::wstring wordDelimiters,
                                                             _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
     {
-        return _moveByWordForward(pData, moveCount, moveState, pAmountMoved);
+        return _moveByWordForward(pData, moveCount, moveState, wordDelimiters, pAmountMoved);
     }
     else
     {
-        return _moveByWordBackward(pData, moveCount, moveState, pAmountMoved);
+        return _moveByWordBackward(pData, moveCount, moveState, wordDelimiters, pAmountMoved);
     }
 }
 
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null<IUiaData*> pData,
                                                                    const int moveCount,
                                                                    const MoveState moveState,
+                                                                   const std::wstring wordDelimiters,
                                                                    _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     // TODO CARLOS
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
-    Column currentColumn = moveState.StartColumn;
+    Column currentColumn = moveState.EndColumn;
 
+    auto &buffer = pData->GetTextBuffer();
     for (int i = 0; i < abs(count); ++i)
     {
         // get the current row's right
-        const ROW& row = pData->GetTextBuffer().GetRowByOffset(currentScreenInfoRow);
+        const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
         const size_t right = row.GetCharRow().MeasureRight();
 
         // check if we're at the edge of the screen info buffer
@@ -1553,7 +1556,15 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
         else
         {
             // moving somewhere away from the edges of a row
-            currentColumn += static_cast<int>(moveState.Increment);
+            Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+
+            target = (moveState.Increment == MovementIncrement::Forward) ?
+                         buffer.GetWordEnd(target, wordDelimiters, true) :
+                         buffer.GetWordStart(target, wordDelimiters, true);
+
+            //buffer.GetSize().IncrementInBounds(target);
+            currentColumn = target.X;
         }
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
@@ -1564,21 +1575,26 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
     }
 
     Endpoint start = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
-    Endpoint end = start;
+
+    auto target = _endpointToCoord(pData, start);
+    target = buffer.GetWordEnd(target, wordDelimiters, true);
+    Endpoint end = _coordToEndpoint(pData, target);
+
     return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
 }
 
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_null<IUiaData*> pData,
                                                                     const int moveCount,
                                                                     const MoveState moveState,
+                                                                    const std::wstring wordDelimiters,
                                                                     _Out_ gsl::not_null<int*> const pAmountMoved)
 {
-    // TODO CARLOS
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
     Column currentColumn = moveState.StartColumn;
 
+    auto& buffer = pData->GetTextBuffer();
     for (int i = 0; i < abs(count); ++i)
     {
         // check if we're at the edge of the screen info buffer
@@ -1590,18 +1606,32 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_nul
         else if (currentColumn == moveState.LastColumnInRow)
         {
             // we're at the edge of a row and need to go to the
-            // next one. move to the cell with the last non-whitespace charactor
+            // previous one. move to the cell with the last non-whitespace charactor
 
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
-            // get the right cell for the next row
-            const ROW& row = pData->GetTextBuffer().GetRowByOffset(currentScreenInfoRow);
+
+            // get the right-most char for the previous row
+            const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
             const size_t right = row.GetCharRow().MeasureRight();
             currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
+
+            // get the right-most word for the previous row
+            auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+            currentColumn = buffer.GetWordStart(target, wordDelimiters).X;
         }
         else
         {
             // moving somewhere away from the edges of a row
-            currentColumn += static_cast<int>(moveState.Increment);
+            Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+            buffer.GetSize().DecrementInBounds(target);
+
+            target = (moveState.Increment == MovementIncrement::Forward) ?
+                         buffer.GetWordEnd(target, wordDelimiters, true) :
+                         buffer.GetWordStart(target, wordDelimiters, true);
+
+            currentColumn = target.X;
         }
         *pAmountMoved += static_cast<int>(moveState.Increment);
 
@@ -1612,7 +1642,11 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_nul
     }
 
     Endpoint start = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
-    Endpoint end = start;
+
+    auto target = _endpointToCoord(pData, start);
+    target = buffer.GetWordEnd(target, wordDelimiters, true);
+    Endpoint end = _coordToEndpoint(pData, target);
+
     return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
 }
 

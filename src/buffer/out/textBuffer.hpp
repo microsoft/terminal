@@ -130,8 +130,8 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
-    const COORD GetWordStart(const COORD target, const std::wstring wordDelimiters) const;
-    const COORD GetWordEnd(const COORD target, const std::wstring wordDelimiters) const;
+    const COORD GetWordStart(const COORD target, const std::wstring wordDelimiters, bool includeCharacterRun = false) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring wordDelimiters, bool includeDelimiterRun = false) const;
 
     class TextAndColor
     {

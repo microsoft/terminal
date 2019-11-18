@@ -348,16 +348,19 @@ namespace Microsoft::Console::Types
         static std::pair<Endpoint, Endpoint> _moveByWord(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
+                                                         const std::wstring wordDelimiters,
                                                          _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWordForward(gsl::not_null<IUiaData*> pData,
                                                                 const int moveCount,
                                                                 const MoveState moveState,
+                                                                const std::wstring wordDelimiters,
                                                                 _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWordBackward(gsl::not_null<IUiaData*> pData,
                                                                  const int moveCount,
                                                                  const MoveState moveState,
+                                                                 const std::wstring wordDelimiters,
                                                                  _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,

@@ -948,9 +948,11 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 // - Get the COORD for the beginning of the word you are on
 // Arguments:
 // - target - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - includeCharacterRun - include the character run located at the beginning of the word
 // Return Value:
 // - The COORD for the first character on the "word"  (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring wordDelimiters) const
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring wordDelimiters, bool includeCharacterRun) const
 {
     COORD result = target;
 
@@ -968,7 +970,15 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring word
         --bufferIterator;
     }
 
-    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
+    if (includeCharacterRun)
+    {
+        // include delimiter run after word
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+        {
+            result = GetWordStart(result, wordDelimiters);
+        }
+    }
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
     {
         // move off of delimiter
         GetSize().IncrementInBounds(result);
@@ -981,9 +991,11 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring word
 // - Get the COORD for the end of the word you are on
 // Arguments:
 // - target - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - includeDelimiterRun - include the delimiter runs located at the end of the word
 // Return Value:
 // - The COORD for the last character on the "word" (inclusive)
-const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDelimiters) const
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDelimiters, bool includeDelimiterRun) const
 {
     COORD result = target;
 
@@ -1001,7 +1013,15 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDe
         ++bufferIterator;
     }
 
-    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
+    if (includeDelimiterRun)
+    {
+        // include delimiter run after word
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+        {
+            result = GetWordEnd(result, wordDelimiters);
+        }
+    }
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
     {
         // move off of delimiter
         GetSize().DecrementInBounds(result);
