@@ -223,24 +223,10 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
 
     _AttachEventHandlersToControl(control);
 
+    // Add a event handlers to the new panes' GotFocus event. When the pane
+    // gains focus, we'll mark it as the new active pane.
     _AttachEventHandlersToPane(first);
     _AttachEventHandlersToPane(second);
-
-    // Add an event handler to this pane's GotFocus event. When that pane gains
-    // focus, we'll mark it as the new active pane. This pane will propogate
-    // this function down as it is split, so only leaves will trigger this.
-    second->GotFocus([this](std::shared_ptr<Pane> sender) {
-        _rootPane->ClearActive();
-        _activePane = sender;
-        _activePane->SetActive();
-
-        auto newTabTitle = this->GetActiveTitle();
-        this->SetTabText(newTabTitle);
-        if (_pfnActivePaneChanged)
-        {
-            _pfnActivePaneChanged();
-        }
-    });
 }
 
 // Method Description:
@@ -356,9 +342,7 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
         _activePane->SetActive();
 
         // Update our own title text to match the newly-active pane.
-        auto newTabTitle = GetActiveTitle();
-        std::wstring tabText{ newTabTitle };
-        SetTabText(newTabTitle);
+        SetTabText(GetActiveTitle());
 
         // Raise our own ActivePaneChanged event.
         if (_pfnActivePaneChanged)
