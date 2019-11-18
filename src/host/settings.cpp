@@ -9,8 +9,8 @@
 
 #pragma hdrstop
 
-#define DEFAULT_NUMBER_OF_COMMANDS 25
-#define DEFAULT_NUMBER_OF_BUFFERS 4
+constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
+constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 

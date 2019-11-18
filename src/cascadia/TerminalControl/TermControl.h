@@ -19,16 +19,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html) :
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf) :
             _text(text),
-            _html(html) {}
+            _html(html),
+            _rtf(rtf) {}
 
         hstring Text() { return _text; };
         hstring Html() { return _html; };
+        hstring Rtf() { return _rtf; };
 
     private:
         hstring _text;
         hstring _html;
+        hstring _rtf;
     };
 
     struct PasteFromClipboardEventArgs :
@@ -113,6 +116,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _isTerminalInitiatedScroll;
         std::atomic<bool> _willUpdateScrollBarToMatchViewport;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastScrollTime;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -165,6 +169,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
+        void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);

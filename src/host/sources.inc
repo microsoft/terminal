@@ -60,7 +60,6 @@ SOURCES = \
     ..\VtInputThread.cpp   \
     ..\PtySignalInputThread.cpp \
     ..\consoleInformation.cpp \
-    ..\search.cpp    \
     ..\directio.cpp  \
     ..\getset.cpp    \
     ..\globals.cpp   \

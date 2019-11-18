@@ -955,7 +955,7 @@ void CommandLine::_deleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexce
     if (cookedReadData.HasHistory())
     {
         cookedReadData.History().Empty();
-        cookedReadData.History().Flags |= CLE_ALLOCATED;
+        cookedReadData.History().Flags |= CommandHistory::CLE_ALLOCATED;
     }
 }
 
