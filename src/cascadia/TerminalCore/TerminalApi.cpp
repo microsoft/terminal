@@ -374,12 +374,13 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 
     _title = title;
 
+    // If this is removed, the tab object assumes the application title is the title
     if (_suppressApplicationTitle)
     {
         _title = _startingTitle;
     }
 
-    if (_pfnTitleChanged)
+    if (_pfnTitleChanged && !_suppressApplicationTitle)
     {
         _pfnTitleChanged(_title);
     }
