@@ -41,6 +41,7 @@ namespace winrt::TerminalApp::implementation
         }
         return { nullptr };
     }
+
     // Method Description:
     // - Lookup the keychord bound to a particular combination of ShortcutAction
     //   and IActionArgs. This enables searching no only for the binding of a

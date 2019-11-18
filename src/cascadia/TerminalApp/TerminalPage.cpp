@@ -254,7 +254,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
                 const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
-                // First, attepmt to search for the keybinding for the simple
+                // First, attempt to search for the keybinding for the simple
                 // NewTabProfile0-9 ShortcutActions.
                 auto profileKeyChord = keyBindings.GetKeyBindingForAction(action);
                 if (!profileKeyChord)
