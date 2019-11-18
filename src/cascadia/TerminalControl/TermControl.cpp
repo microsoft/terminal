@@ -153,13 +153,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [=](auto&& s, auto&& /*v*/) {
-            auto v = s.State();
-            auto ff = wil::str_printf<std::wstring>(L"CONNECTION TRANSITIONED TO STATE %d\n", v);
-            OutputDebugStringW(ff.c_str());
-            if (v == TerminalConnection::ConnectionState::Closed)
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [weakThis = get_weak()](auto&& /*s*/, auto&& /*v*/)
+        {
+            if (auto strongThis{ weakThis.get() })
             {
-                _connectionClosedHandlers();
+                strongThis->_ConnectionStateChangedHandlers(*strongThis, nullptr);
             }
         });
     }
@@ -408,6 +406,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const Windows::UI::Xaml::Thickness TermControl::GetPadding() const
     {
         return _swapChainPanel.Margin();
+    }
+
+    TerminalConnection::ConnectionState TermControl::ConnectionState() const
+    {
+        return _connection.State();
     }
 
     void TermControl::SwapChainChanged()
@@ -1835,17 +1838,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Returns true if this control should close when its connection is closed.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true iff the control should close when the connection is closed.
-    bool TermControl::ShouldCloseOnExit() const noexcept
-    {
-        return _settings.CloseOnExit();
-    }
-
-    // Method Description:
     // - Gets the corresponding viewport terminal position for the cursor
     //    by excluding the padding and normalizing with the font size.
     //    This is used for selection.
@@ -1917,7 +1909,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, ConnectionClosed, _connectionClosedHandlers, TerminalControl::ConnectionClosedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);

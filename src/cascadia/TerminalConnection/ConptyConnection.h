@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     private:
         HRESULT _LaunchAttachedClient() noexcept;
+        void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
 
         uint32_t _initialRows{};

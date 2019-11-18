@@ -15,6 +15,21 @@
 
 using namespace ::Microsoft::Console;
 
+// Notes:
+// There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
+// 1. The connection is Close()d
+// 2. The pseudoconsole or process cannot be spawned during Start()
+// 3. The client process exits with a code.
+//    (Successful (0) or any other code)
+// 4. The read handle is terminated.
+//    (This usually happens when the pseudoconsole host crashes.)
+// In each of these termination scenarios, we need to be mindful of tripping the others.
+// Closing the pseudoconsole in response to the client exiting (3) can trigger (4).
+// Close() (1) will cause the automatic triggering of (3) and (4).
+// In a lot of cases, we use the connection state to stop "flapping."
+//
+// To figure out where we handle these, search for comments containing "EXIT POINT"
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     // Function Description:
@@ -190,11 +205,26 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     catch (...)
     {
+        // EXIT POINT
         const auto hr = wil::ResultFromCaughtException();
 
         winrt::hstring failureText{ wil::str_printf<std::wstring>(RS_(L"ProcessFailedToLaunch").c_str(), static_cast<unsigned int>(hr), _commandline.c_str()) };
         _TerminalOutputHandlers(failureText);
         _transitionToState(ConnectionState::Failed);
+
+        // Tear down any state we may have accumulated.
+        _hPC.reset();
+    }
+
+    void ConptyConnection::_indicateExitWithStatus(unsigned int status) noexcept
+    {
+        try
+        {
+            winrt::hstring exitText{ wil::str_printf<std::wstring>(RS_(L"ProcessExited").c_str(), (unsigned int)status) };
+            _TerminalOutputHandlers(L"\r\n");
+            _TerminalOutputHandlers(exitText);
+        }
+        CATCH_LOG();
     }
 
     void ConptyConnection::_ClientTerminated() noexcept
@@ -205,24 +235,25 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
+        // EXIT POINT
         DWORD exitCode{ 0 };
         GetExitCodeProcess(_piClient.hProcess, &exitCode);
 
-        if (exitCode == 0)
+        // Signal the closing or failure of the process.
+        // Load bearing. Terminating the pseudoconsole will make the output thread exit unexpectedly,
+        // so we need to signal entry into the correct closing state before we do that.
+        _transitionToState(exitCode == 0 ? ConnectionState::Closed : ConnectionState::Failed);
+
+        // Close the pseudoconsole and wait for all output to drain.
+        _hPC.reset();
+        if (auto localOutputThreadHandle = std::move(_hOutputThread))
         {
-            _transitionToState(ConnectionState::Closed);
-        }
-        else
-        {
-            winrt::hstring failureText{ wil::str_printf<std::wstring>(RS_(L"ProcessExitedUnexpectedly").c_str(), (unsigned int)exitCode) };
-            _TerminalOutputHandlers(L"\r\n");
-            _TerminalOutputHandlers(failureText);
-            _transitionToState(ConnectionState::Failed);
+            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(localOutputThreadHandle.get(), INFINITE));
         }
 
-        // We don't need these any longer.
+        _indicateExitWithStatus(exitCode);
+
         _piClient.reset();
-        _hPC.reset();
     }
 
     void ConptyConnection::WriteInput(hstring const& data)
@@ -255,6 +286,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (_transitionToState(ConnectionState::Closing))
         {
+            // EXIT POINT
             _clientExitWait.reset(); // immediately stop waiting for the client to exit.
 
             _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
@@ -298,6 +330,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     return 0;
                 }
 
+                // EXIT POINT
+                _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
                 return (DWORD)-1;
             }

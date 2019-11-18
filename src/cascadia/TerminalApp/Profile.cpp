@@ -49,6 +49,11 @@ static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpa
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 
+// Possible values for closeOnExit
+static constexpr std::string_view CloseOnExitAlways{ "always" };
+static constexpr std::string_view CloseOnExitGraceful{ "graceful" };
+static constexpr std::string_view CloseOnExitNever{ "never" };
+
 // Possible values for Scrollbar state
 static constexpr std::wstring_view AlwaysVisible{ L"visible" };
 static constexpr std::wstring_view AlwaysHide{ L"hidden" };
@@ -107,7 +112,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
-    _closeOnExit{ true },
+    _closeOnExitMode{ CloseOnExitMode::Graceful },
     _padding{ DEFAULT_PADDING },
     _icon{},
     _backgroundImage{},
@@ -168,7 +173,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
-    terminalSettings.CloseOnExit(_closeOnExit);
     terminalSettings.TintOpacity(_acrylicTransparency);
 
     terminalSettings.FontFace(_fontFace);
@@ -298,7 +302,7 @@ Json::Value Profile::ToJson() const
     root[JsonKey(FontSizeKey)] = _fontSize;
     root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
     root[JsonKey(UseAcrylicKey)] = _useAcrylic;
-    root[JsonKey(CloseOnExitKey)] = _closeOnExit;
+    /* TODO(DH) root[JsonKey(CloseOnExitKey)] = _closeOnExit; */
     root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
     if (_connectionType)
@@ -672,7 +676,7 @@ void Profile::LayerJson(const Json::Value& json)
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
-        _closeOnExit = closeOnExit.asBool();
+        _closeOnExitMode = ParseCloseOnExitMode(closeOnExit);
     }
     if (json.isMember(JsonKey(PaddingKey)))
     {
@@ -750,9 +754,9 @@ void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
     _selectionBackground = selectionBackground;
 }
 
-void Profile::SetCloseOnExit(bool defaultClose) noexcept
+void Profile::SetCloseOnExitMode(CloseOnExitMode mode) noexcept
 {
-    _closeOnExit = defaultClose;
+    _closeOnExitMode = mode;
 }
 
 void Profile::SetConnectionType(GUID connectionType) noexcept
@@ -845,9 +849,9 @@ GUID Profile::GetConnectionType() const noexcept
                _GUID{};
 }
 
-bool Profile::GetCloseOnExit() const noexcept
+CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
 {
-    return _closeOnExit;
+    return _closeOnExitMode;
 }
 
 // Method Description:
@@ -892,6 +896,35 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 
         return std::wstring(defaultPath.get(), numCharsDefault);
     }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified closeOnExit value to its corresponding enum
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
+{
+    if (json.isBool())
+    {
+        return json.asBool() ? CloseOnExitMode::Graceful : CloseOnExitMode::Never;
+    }
+
+    if (json.isString())
+    {
+        auto closeOnExit = json.asString();
+        if (closeOnExit == CloseOnExitAlways)
+        {
+            return CloseOnExitMode::Always;
+        }
+        else if (closeOnExit == CloseOnExitGraceful)
+        {
+            return CloseOnExitMode::Graceful;
+        }
+    }
+
+    return CloseOnExitMode::Never;
 }
 
 // Method Description:
