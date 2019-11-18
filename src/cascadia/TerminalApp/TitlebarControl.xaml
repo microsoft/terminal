@@ -31,7 +31,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <local:MinMaxCloseControl
         Grid.Column="1"
-        x:Name="MinMaxCloseControl"
-        HorizontalAlignment="Right" />
+        x:Name="MinMaxCloseControl"/>
 </Grid>
 

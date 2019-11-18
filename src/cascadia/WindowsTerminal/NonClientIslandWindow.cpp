@@ -146,6 +146,7 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
             static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
 
+        // extend the drag bar to the top of the window
         dragBarRect.top = 0;
 
         return dragBarRect;
