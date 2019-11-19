@@ -55,6 +55,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestProfileIconWithEnvVar);
         TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
 
+        TEST_METHOD(TestCloseOnExitCompatibilityShim);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1413,5 +1415,28 @@ namespace TerminalAppLocalTests
         GlobalAppSettings globalSettings{};
         auto terminalSettings = settings._profiles[0].CreateTerminalSettings(globalSettings.GetColorSchemes());
         VERIFY_ARE_EQUAL(expectedPath, terminalSettings.BackgroundImage());
+    }
+    void SettingsTests::TestCloseOnExitCompatibilityShim()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "closeOnExit": true
+                },
+                {
+                    "name": "profile1",
+                    "closeOnExit": false
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings._profiles[0].GetCloseOnExitMode());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings._profiles[1].GetCloseOnExitMode());
     }
 }
