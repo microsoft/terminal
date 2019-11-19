@@ -473,6 +473,144 @@ class UiaTextRangeTests
         }
     }
 
+    
+    TEST_METHOD(CanMoveByWord_EmptyBuffer)
+    {
+        const Column firstColumnIndex = 0;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const ScreenInfoRow topRow = 0;
+        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+
+        // clang-format off
+        const std::vector<std::tuple<std::wstring,
+                                     UiaTextRange::MoveState,
+                                     int, // amount to move
+                                     int, // amount actually moved
+                                     Endpoint, // start
+                                     Endpoint // end
+                                     >> testData =
+        {
+            {
+                L"can't move backward from (0, 0)",
+                {
+                    0, 0,
+                    0, 2,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -1,
+                0,
+                0u,
+                lastColumnIndex
+            },
+
+            {
+                L"can move backward within a row",
+                {
+                    0, 1,
+                    0, 2,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -1,
+                -1,
+                0u,
+                lastColumnIndex
+            },
+
+            {
+                L"can move forward in a row",
+                {
+                    2, 1,
+                    4, 5,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                5,
+                5,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 4) + lastColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 4) + lastColumnIndex
+            },
+
+            {
+                L"can't move past the last column in the last row",
+                {
+                    bottomRow, lastColumnIndex,
+                    bottomRow, lastColumnIndex,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                5,
+                0,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex
+            },
+
+            {
+                L"can move to a new row when necessary when moving forward",
+                {
+                    topRow, lastColumnIndex,
+                    topRow, lastColumnIndex,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                5,
+                5,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3),
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3) + lastColumnIndex
+            },
+
+            {
+                L"can move to a new row when necessary when moving backward",
+                {
+                    topRow + 1, firstColumnIndex,
+                    topRow + 1, lastColumnIndex,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -5,
+                -1,
+                0u,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
+            }
+        };
+        // clang-format on
+        
+        for (auto data : testData)
+        {
+            Log::Comment(std::get<0>(data).c_str());
+            int amountMoved;
+            std::pair<Endpoint, Endpoint> newEndpoints = UiaTextRange::_moveByWord(_pUiaData,
+                                                                                   std::get<2>(data),
+                                                                                   std::get<1>(data),
+                                                                                   L"",
+                                                                                   &amountMoved);
+            
+            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
+            VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
+            VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
+        }
+    }
+
+
     TEST_METHOD(CanMoveByLine)
     {
         const Column firstColumnIndex = 0;
