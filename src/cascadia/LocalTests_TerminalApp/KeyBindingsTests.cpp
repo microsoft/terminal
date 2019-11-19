@@ -183,7 +183,7 @@ namespace TerminalAppLocalTests
 
     void KeyBindingsTests::TestArbitraryArgs()
     {
-        const std::string bindings0String{ R"("[
+        const std::string bindings0String{ R"([
             { "command": "copy", "keys": ["ctrl+c"] },
             { "command": "copyTextWithoutNewlines", "keys": ["alt+c"] },
             { "command": { "action": "copy", "trimWhitespace": false }, "keys": ["ctrl+shift+c"] },
