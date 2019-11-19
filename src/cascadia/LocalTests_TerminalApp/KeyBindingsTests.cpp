@@ -183,7 +183,7 @@ namespace TerminalAppLocalTests
 
     void KeyBindingsTests::TestArbitraryArgs()
     {
-        const std::string bindings0String{ R"([
+        const std::string bindings0String{ R"("[
             { "command": "copy", "keys": ["ctrl+c"] },
             { "command": "copyTextWithoutNewlines", "keys": ["alt+c"] },
             { "command": { "action": "copy", "trimWhitespace": false }, "keys": ["ctrl+shift+c"] },
@@ -196,7 +196,10 @@ namespace TerminalAppLocalTests
             { "command": "newTabProfile8", "keys": ["alt+shift+y"] },
 
             { "command": { "action": "copy", "madeUpBool": true }, "keys": ["ctrl+b"] },
-            { "command": { "action": "copy" }, "keys": ["ctrl+shift+b"] }
+            { "command": { "action": "copy" }, "keys": ["ctrl+shift+b"] },
+
+            { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
+            { "command": "increaseFontSize", "keys": ["ctrl+="] }
 
         ])" };
 
@@ -206,7 +209,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
         appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(11u, appKeyBindings->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(13u, appKeyBindings->_keyShortcuts.size());
 
         {
             Log::Comment(NoThrowString().Format(
@@ -335,6 +338,30 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `increaseFontSize` without args parses as AdjustFontSize(Delta=1)"));
+            KeyChord kc{ false, true, false, static_cast<int32_t>('=') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::IncreaseFontSize, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(1, realArgs.Delta());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Verify that `decreaseFontSize` without args parses as AdjustFontSize(Delta=-1)"));
+            KeyChord kc{ false, true, false, static_cast<int32_t>('-') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::DecreaseFontSize, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(-1, realArgs.Delta());
         }
     }
 
