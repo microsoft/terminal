@@ -240,8 +240,8 @@ IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 };
 
 // Function Description:
-// - Used to generate a AdjustFontSizeArgs for the legacy IncreaseFontSize/DecreaseFontSize
-//   actions.
+// - Used to generate a AdjustFontSizeArgs for IncreaseFontSize/DecreaseFontSize
+//   actions with a delta of 1/-1.
 // - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
 // Arguments:
 // - delta: the font size delta to create the parse function for.
