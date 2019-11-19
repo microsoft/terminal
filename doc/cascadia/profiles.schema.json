@@ -326,7 +326,7 @@
           },
           "closeOnExit": {
             "default": "graceful",
-            "description": "When set to graceful/true (default), the selected tab closes when the connected application exits successfully. When set to always, the tab will never be closed automatically. When set to never/false, the tab will remain open when the connected application exits.",
+            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
             "oneOf": [
               {
                 "enum": [
