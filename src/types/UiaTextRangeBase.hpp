@@ -399,6 +399,7 @@ namespace Microsoft::Console::Types
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
+                                const std::wstring wordDelimiters,
                                 _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
@@ -406,6 +407,7 @@ namespace Microsoft::Console::Types
                                        const int moveCount,
                                        const TextPatternRangeEndpoint endpoint,
                                        const MoveState moveState,
+                                       const std::wstring wordDelimiters,
                                        _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
@@ -413,6 +415,7 @@ namespace Microsoft::Console::Types
                                         const int moveCount,
                                         const TextPatternRangeEndpoint endpoint,
                                         const MoveState moveState,
+                                        const std::wstring wordDelimiters,
                                         _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
