@@ -164,7 +164,7 @@ _CompileShader(
     Microsoft::WRL::ComPtr<ID3DBlob> code{};
     Microsoft::WRL::ComPtr<ID3DBlob> error{};
 
-    HRESULT hr = D3DCompile(
+    const HRESULT hr = D3DCompile(
         source.c_str(),
         source.size(),
         nullptr,
@@ -203,7 +203,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     D3D11_TEXTURE2D_DESC framebufferCaptureDesc{};
     swapBuffer->GetDesc(&framebufferCaptureDesc);
     WI_SetFlag(framebufferCaptureDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
-    RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferCaptureDesc, NULL, &_framebufferCapture));
+    RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferCaptureDesc, nullptr, &_framebufferCapture));
 
     // Setup the viewport.
     D3D11_VIEWPORT vp;
@@ -237,7 +237,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
         &_pixelShader));
 
     RETURN_IF_FAILED(_d3dDevice->CreateInputLayout(
-        _shaderInputLayout,
+        static_cast<const D3D11_INPUT_ELEMENT_DESC *>(_shaderInputLayout),
         ARRAYSIZE(_shaderInputLayout),
         vertexBlob->GetBufferPointer(),
         vertexBlob->GetBufferSize(),
@@ -251,7 +251,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     bd.CPUAccessFlags = 0;
 
     D3D11_SUBRESOURCE_DATA InitData{};
-    InitData.pSysMem = _screenQuadVertices;
+    InitData.pSysMem = &_screenQuadVertices;
 
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&bd, &InitData, &_screenQuadVertexBuffer));
 
@@ -418,7 +418,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
             if (_retroTerminalEffects)
             {
-                HRESULT hr = _SetupTerminalEffects();
+                const HRESULT hr = _SetupTerminalEffects();
                 if (FAILED(hr))
                 {
                     LOG_HR_MSG(hr, "Failed to setup terminal effects. Non fatal so continuing.");
