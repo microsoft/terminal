@@ -84,6 +84,7 @@
     </ClCompile>
     <Link>
       <AllowIsolation>true</AllowIsolation>
+      <AdditionalDependencies>d3dcompiler.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

@@ -8,10 +8,8 @@
     <ProjectName>PublicTerminalCore</ProjectName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
-
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -22,7 +20,6 @@
     <ClInclude Include="HwndTerminal.hpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\terminal\input\lib\terminalinput.vcxproj">
       <Project>{1cf55140-ef6a-4736-a403-957e4f7430bb}</Project>
@@ -46,12 +43,13 @@
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3dcompiler.lib</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
-
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>
