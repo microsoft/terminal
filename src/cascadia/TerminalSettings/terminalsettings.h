@@ -99,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         bool RetroTerminalEffect();
         void RetroTerminalEffect(bool value);
+
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;

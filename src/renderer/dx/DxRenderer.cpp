@@ -30,17 +30,14 @@ struct ShaderInput
 {
     XMFLOAT3 pos;
     XMFLOAT2 tex;
-}
-const _screenQuadVertices[] =
-{
+} const _screenQuadVertices[] = {
     { XMFLOAT3(1.f, 1.f, 0.f), XMFLOAT2(1.f, 0.f) },
     { XMFLOAT3(1.f, -1.f, 0.f), XMFLOAT2(1.f, 1.f) },
     { XMFLOAT3(-1.f, 1.f, 0.f), XMFLOAT2(0.f, 0.f) },
     { XMFLOAT3(-1.f, -1.f, 0.f), XMFLOAT2(0.f, 1.f) },
 };
 
-D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] =
-{
+D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
     { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
@@ -158,8 +155,7 @@ DxEngine::~DxEngine()
 // - entry - Entry function of shader
 // Return Value:
 // - Compiled binary. Errors are thrown and logged.
-inline
-Microsoft::WRL::ComPtr<ID3DBlob>
+inline Microsoft::WRL::ComPtr<ID3DBlob>
 _CompileShader(
     std::string source,
     std::string target,
@@ -186,9 +182,7 @@ _CompileShader(
         LOG_HR_MSG(hr, "D3DCompile failed with %x.", static_cast<int>(hr));
         if (error)
         {
-            LOG_HR_MSG(hr, "D3DCompile error\n%*S",
-                static_cast<int>(error->GetBufferSize()),
-                static_cast<PWCHAR>(error->GetBufferPointer()));
+            LOG_HR_MSG(hr, "D3DCompile error\n%*S", static_cast<int>(error->GetBufferSize()), static_cast<PWCHAR>(error->GetBufferPointer()));
         }
 
         THROW_HR(hr);
@@ -1434,7 +1428,6 @@ enum class CursorPaintType
 
     ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
     RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebufferCapture.Get(), &srvDesc, &shaderResource));
-
 
     // Render the screen quad with shader effects.
     UINT stride = sizeof(ShaderInput);
