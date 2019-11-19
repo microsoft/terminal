@@ -296,13 +296,11 @@ Json::Value Profile::ToJson() const
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
 
-    ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
     root[JsonKey(FontFaceKey)] = winrt::to_string(_fontFace);
     root[JsonKey(FontSizeKey)] = _fontSize;
     root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
     root[JsonKey(UseAcrylicKey)] = _useAcrylic;
-    /* TODO(DH) root[JsonKey(CloseOnExitKey)] = _closeOnExit; */
     root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
     if (_connectionType)
@@ -350,6 +348,8 @@ Json::Value Profile::ToJson() const
     {
         root[JsonKey(BackgroundImageAlignmentKey)] = SerializeImageAlignment(_backgroundImageAlignment.value()).data();
     }
+
+    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode);
 
     return root;
 }
@@ -925,6 +925,27 @@ CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
     }
 
     return CloseOnExitMode::Never;
+}
+
+// Method Description:
+// - Helper function for converting a CloseOnExitMode to its corresponding string
+//   value.
+// Arguments:
+// - closeOnExitMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CloseOnExitMode
+std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode)
+{
+    switch (closeOnExitMode)
+    {
+    case CloseOnExitMode::Always:
+        return CloseOnExitAlways;
+    case CloseOnExitMode::Graceful:
+        return CloseOnExitGraceful;
+    default:
+    case CloseOnExitMode::Never:
+        return CloseOnExitNever;
+    }
 }
 
 // Method Description:
