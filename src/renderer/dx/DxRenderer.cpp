@@ -251,7 +251,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     bd.CPUAccessFlags = 0;
 
     D3D11_SUBRESOURCE_DATA InitData{};
-    InitData.pSysMem = &_screenQuadVertices;
+    InitData.pSysMem = static_cast<const void*>(_screenQuadVertices);
 
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&bd, &InitData, &_screenQuadVertexBuffer));
 
@@ -600,7 +600,7 @@ void DxEngine::SetCallback(std::function<void()> pfn)
     _pfn = pfn;
 }
 
-void DxEngine::SetRetroTerminalEffects(bool enable)
+void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
 {
     _retroTerminalEffects = enable;
 }
@@ -1013,7 +1013,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
     if (_retroTerminalEffects)
     {
-        HRESULT hr2 = _PaintTerminalEffects();
+        const HRESULT hr2 = _PaintTerminalEffects();
         if (FAILED(hr2))
         {
             LOG_HR_MSG(hr2, "Failed to paint terminal effects. Non fatal, continuing.");
@@ -1406,7 +1406,7 @@ enum class CursorPaintType
 // Arguments:
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::_PaintTerminalEffects() noexcept
+[[nodiscard]] HRESULT DxEngine::_PaintTerminalEffects()
 {
     // Should have been initialized.
     RETURN_HR_IF(E_NOT_VALID_STATE, !_framebufferCapture);
@@ -1430,8 +1430,8 @@ enum class CursorPaintType
     RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebufferCapture.Get(), &srvDesc, &shaderResource));
 
     // Render the screen quad with shader effects.
-    UINT stride = sizeof(ShaderInput);
-    UINT offset = 0;
+    const UINT stride = sizeof(ShaderInput);
+    const UINT offset = 0;
 
     _d3dDeviceContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), nullptr);
     _d3dDeviceContext->IASetVertexBuffers(0, 1, _screenQuadVertexBuffer.GetAddressOf(), &stride, &offset);

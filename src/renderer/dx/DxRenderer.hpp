@@ -49,7 +49,7 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
-        void SetRetroTerminalEffects(bool enable);
+        void SetRetroTerminalEffects(bool enable) noexcept;
 
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
@@ -103,7 +103,7 @@ namespace Microsoft::Console::Render
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
-        [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
+        [[nodiscard]] HRESULT _PaintTerminalEffects();
 
     private:
         enum class SwapChainMode
