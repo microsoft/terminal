@@ -13,6 +13,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         TYPED_EVENT(StateChanged, ITerminalConnection, winrt::Windows::Foundation::IInspectable);
 
     protected:
+        // Method Description:
+        // - Attempt to transition to and signal the specified connection state.
+        //   The transition will only be effected if the state is "beyond" the current state.
+        // Arguments:
+        // - state: the new state
+        // Return Value:
+        //   Whether we've successfully transitioned to the new state.
         bool _transitionToState(const ConnectionState state) noexcept
         {
             {
@@ -29,6 +36,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return true;
         }
 
+        // Method Description:
+        // - Returns whether the state is one of the N specified states.
+        // Arguments:
+        // - "...": the states
+        // Return Value:
+        //   Whether we're in one of the states.
         template<typename... Args>
         bool _isStateOneOf(Args&&... args) const noexcept
         {
@@ -39,12 +52,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return (... || (_connectionState == args));
         }
 
+        // Method Description:
+        // - Returns whether the state has reached or surpassed the specified state.
+        // Arguments:
+        // - state; the state to check against
+        // Return Value:
+        //   Whether we're at or beyond the specified state
         bool _isStateAtOrBeyond(const ConnectionState state) const noexcept
         {
             std::lock_guard<std::mutex> stateLock{ _stateMutex };
             return _connectionState >= state;
         }
 
+        // Method Description:
+        // - (Convenience:) Returns whether we're "connected".
+        // Return Value:
+        //   Whether we're "connected"
         bool _isConnected() const noexcept
         {
             return _isStateOneOf(ConnectionState::Connected);
