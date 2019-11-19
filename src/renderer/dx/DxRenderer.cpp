@@ -237,7 +237,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
         &_pixelShader));
 
     RETURN_IF_FAILED(_d3dDevice->CreateInputLayout(
-        static_cast<const D3D11_INPUT_ELEMENT_DESC *>(_shaderInputLayout),
+        static_cast<const D3D11_INPUT_ELEMENT_DESC*>(_shaderInputLayout),
         ARRAYSIZE(_shaderInputLayout),
         vertexBlob->GetBufferPointer(),
         vertexBlob->GetBufferSize(),
