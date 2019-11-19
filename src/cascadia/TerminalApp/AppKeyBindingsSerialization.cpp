@@ -301,7 +301,7 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
     { ShortcutAction::MoveFocusDown, LegacyParseMoveFocusArgs(Direction::Down) },
 
     { ShortcutAction::DecreaseFontSize, LegacyParseAdjustFontSizeArgs(-1) },
-    { ShortcutAction::IncreaseFontSize, LegacyParseAdjustFontSizeArgs(1) },    
+    { ShortcutAction::IncreaseFontSize, LegacyParseAdjustFontSizeArgs(1) },
 
     { ShortcutAction::Invalid, nullptr },
 };
