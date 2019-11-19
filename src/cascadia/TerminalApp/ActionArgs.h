@@ -171,7 +171,21 @@ namespace winrt::TerminalApp::implementation
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
     {
         AdjustFontSizeArgs() = default;
-        GETSET_PROPERTY(int32_t, Delta, 0);
+        GETSET_PROPERTY(int32_t, Delta, 1);
+
+        static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
+
+    public:
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<AdjustFontSizeArgs>();
+            if (auto jsonDelta{ json[JsonKey(AdjustFontSizeDelta)] })
+            {
+                args->_Delta = jsonDelta.asInt();
+            }
+            return *args;
+        }
     };
 }
 

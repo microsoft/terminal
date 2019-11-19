@@ -282,6 +282,9 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
     { ShortcutAction::MoveFocusUp, LegacyParseMoveFocusArgs(Direction::Up) },
     { ShortcutAction::MoveFocusDown, LegacyParseMoveFocusArgs(Direction::Down) },
 
+    { ShortcutAction::IncreaseFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
+    { ShortcutAction::DecreaseFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
+
     { ShortcutAction::Invalid, nullptr },
 };
 
