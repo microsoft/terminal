@@ -522,6 +522,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (tenantListAsArray.size() == 0)
         {
             _WriteStringWithNewline(RS_(L"AzureNoTenants"));
+            _transitionToState(ConnectionState::Failed);
             return E_FAIL;
         }
         else if (_tenantList.size() == 1)
@@ -631,6 +632,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (settingsResponse.has_field(L"error"))
         {
             _WriteStringWithNewline(RS_(L"AzureNoCloudAccount"));
+            _transitionToState(ConnectionState::Failed);
             return E_FAIL;
         }
 
