@@ -422,10 +422,13 @@ HRESULT DxEngine::_SetupTerminalEffects()
                 THROW_HR(E_NOTIMPL);
             }
 
-            HRESULT hr = _SetupTerminalEffects();
-            if (FAILED(hr))
+            if (_retroTerminalEffects)
             {
-                LOG_HR_MSG(hr, "Failed to setup terminal effects. Non fatal so continuing.");
+                HRESULT hr = _SetupTerminalEffects();
+                if (FAILED(hr))
+                {
+                    LOG_HR_MSG(hr, "Failed to setup terminal effects. Non fatal so continuing.");
+                }
             }
         }
         CATCH_RETURN();
@@ -601,6 +604,11 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 void DxEngine::SetCallback(std::function<void()> pfn)
 {
     _pfn = pfn;
+}
+
+void DxEngine::SetRetroTerminalEffects(bool enable)
+{
+    _retroTerminalEffects = enable;
 }
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
@@ -1009,10 +1017,13 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
     _invalidScroll = { 0 };
 
-    HRESULT hr2 = _PaintTerminalEffects();
-    if (FAILED(hr2))
+    if (_retroTerminalEffects)
     {
-        LOG_HR_MSG(hr2, "Failed to paint terminal effects. Non fatal, continuing.");
+        HRESULT hr2 = _PaintTerminalEffects();
+        if (FAILED(hr2))
+        {
+            LOG_HR_MSG(hr2, "Failed to paint terminal effects. Non fatal, continuing.");
+        }
     }
 
     return hr;

@@ -49,6 +49,8 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
+        void SetRetroTerminalEffects(bool enable);
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
@@ -173,6 +175,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
 
         // Terminal effects resources.
+        bool _retroTerminalEffects;
         ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
         ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
         ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
