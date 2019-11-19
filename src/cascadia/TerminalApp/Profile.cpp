@@ -349,7 +349,7 @@ Json::Value Profile::ToJson() const
         root[JsonKey(BackgroundImageAlignmentKey)] = SerializeImageAlignment(_backgroundImageAlignment.value()).data();
     }
 
-    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode);
+    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
 
     return root;
 }
