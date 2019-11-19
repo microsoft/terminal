@@ -171,7 +171,7 @@ namespace winrt::TerminalApp::implementation
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
     {
         AdjustFontSizeArgs() = default;
-        GETSET_PROPERTY(int32_t, Delta, 1);
+        GETSET_PROPERTY(int32_t, Delta, 0);
 
         static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
 
