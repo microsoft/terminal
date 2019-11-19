@@ -103,7 +103,7 @@ namespace Microsoft::Console::Render
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
-        [[nodiscard]] HRESULT _PaintTerminalEffects();
+        [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
 
     private:
         enum class SwapChainMode
