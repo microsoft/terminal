@@ -73,7 +73,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 	inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
     {
         winrt::Windows::UI::Color color;
-        //color.A = static_cast<BYTE>(colorref >> 24);
         color.R = GetRValue(colorref);
         color.G = GetGValue(colorref);
         color.B = GetBValue(colorref);
@@ -1844,7 +1843,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
-        COORD cursorPos = _terminal->GetCursorPosition();
+        const COORD cursorPos = _terminal->GetCursorPosition();
         Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
         eventArgs.CurrentPosition(p);
     }
