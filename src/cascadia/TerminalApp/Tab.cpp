@@ -23,6 +23,12 @@ Tab::Tab(const GUID& profile, const TermControl& control)
         _closedHandlers();
     });
 
+    _activePane = _rootPane;
+
+    _AttachEventHandlersToPane(_rootPane);
+
+    _AttachEventHandlersToControl(control);
+
     _MakeTabViewItem();
 }
 
@@ -47,9 +53,9 @@ UIElement Tab::GetRootElement()
 // Return Value:
 // - nullptr if no children were marked `_lastFocused`, else the TermControl
 //   that was last focused.
-TermControl Tab::GetFocusedTerminalControl()
+TermControl Tab::GetActiveTerminalControl() const
 {
-    return _rootPane->GetFocusedTerminalControl();
+    return _activePane->GetTerminalControl();
 }
 
 winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
@@ -99,7 +105,7 @@ void Tab::SetFocused(const bool focused)
 //   focused, else the GUID of the profile of the last control to be focused
 std::optional<GUID> Tab::GetFocusedProfile() const noexcept
 {
-    return _rootPane->GetFocusedProfile();
+    return _activePane->GetFocusedProfile();
 }
 
 // Method Description:
@@ -124,25 +130,11 @@ void Tab::_Focus()
 {
     _focused = true;
 
-    auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    auto lastFocusedControl = GetActiveTerminalControl();
     if (lastFocusedControl)
     {
         lastFocusedControl.Focus(FocusState::Programmatic);
     }
-}
-
-// Method Description:
-// - Update the focus state of this tab's tree of panes. If one of the controls
-//   under this tab is focused, then it will be marked as the last focused. If
-//   there are no focused panes, then there will not be a last focused control
-//   when this returns.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Tab::UpdateFocus()
-{
-    _rootPane->UpdateFocus();
 }
 
 void Tab::UpdateIcon(const winrt::hstring iconPath)
@@ -167,9 +159,9 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 // - <none>
 // Return Value:
 // - the title string of the last focused terminal control in our tree.
-winrt::hstring Tab::GetFocusedTitle() const
+winrt::hstring Tab::GetActiveTitle() const
 {
-    const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    const auto lastFocusedControl = GetActiveTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }
 
@@ -198,7 +190,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - <none>
 void Tab::Scroll(const int delta)
 {
-    auto control = GetFocusedTerminalControl();
+    auto control = GetActiveTerminalControl();
     control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
         const auto currentOffset = control.GetScrollOffset();
         control.KeyboardScrollViewport(currentOffset + delta);
@@ -213,7 +205,7 @@ void Tab::Scroll(const int delta)
 // - True if the focused pane can be split. False otherwise.
 bool Tab::CanSplitPane(Pane::SplitState splitType)
 {
-    return _rootPane->CanSplit(splitType);
+    return _activePane->CanSplit(splitType);
 }
 
 // Method Description:
@@ -227,7 +219,14 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - <none>
 void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    _rootPane->Split(splitType, profile, control);
+    auto [first, second] = _activePane->Split(splitType, profile, control);
+
+    _AttachEventHandlersToControl(control);
+
+    // Add a event handlers to the new panes' GotFocus event. When the pane
+    // gains focus, we'll mark it as the new active pane.
+    _AttachEventHandlersToPane(first);
+    _AttachEventHandlersToPane(second);
 }
 
 // Method Description:
@@ -239,6 +238,8 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
 // - <none>
 void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 {
+    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // throughout the entire tree.
     _rootPane->ResizeContent(newSize);
 }
 
@@ -251,6 +252,8 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 // - <none>
 void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 {
+    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // throughout the entire tree.
     _rootPane->ResizePane(direction);
 }
 
@@ -263,6 +266,8 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 {
+    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // throughout the entire tree.
     _rootPane->NavigateFocus(direction);
 }
 
@@ -276,8 +281,59 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::ClosePane()
 {
-    auto focused = _rootPane->GetFocusedPane();
-    focused->Close();
+    _activePane->Close();
+}
+
+// Method Description:
+// - Register any event handlers that we may need with the given TermControl.
+//   This should be called on each and every TermControl that we add to the tree
+//   of Panes in this tab. We'll add events too:
+//   * notify us when the control's title changed, so we can update our own
+//     title (if necessary)
+// Arguments:
+// - control: the TermControl to add events to.
+// Return Value:
+// - <none>
+void Tab::_AttachEventHandlersToControl(const TermControl& control)
+{
+    control.TitleChanged([this](auto newTitle) {
+        // The title of the control changed, but not necessarily the title
+        // of the tab. Get the title of the active pane of the tab, and set
+        // the tab's text to the active panes' text.
+        auto newTabTitle = GetActiveTitle();
+        SetTabText(newTabTitle);
+    });
+}
+
+// Method Description:
+// - Add an event handler to this pane's GotFocus event. When that pane gains
+//   focus, we'll mark it as the new active pane. We'll also query the title of
+//   that pane when it's focused to set our own text, and finally, we'll trigger
+//   our own ActivePaneChanged event.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
+{
+    pane->GotFocus([this](std::shared_ptr<Pane> sender) {
+        // Do nothing if it's the same pane as before.
+        if (sender == _activePane)
+        {
+            return;
+        }
+        // Clear the active state of the entire tree, and mark only the sender as active.
+        _rootPane->ClearActive();
+        _activePane = sender;
+        _activePane->SetActive();
+
+        // Update our own title text to match the newly-active pane.
+        SetTabText(GetActiveTitle());
+
+        // Raise our own ActivePaneChanged event.
+        _ActivePaneChangedHandlers();
+    });
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
+DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

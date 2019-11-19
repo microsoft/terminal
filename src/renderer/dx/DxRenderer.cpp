@@ -41,6 +41,7 @@ DxEngine::DxEngine() :
     _displaySizePixels{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
+    _selectionBackground{ DEFAULT_FOREGROUND },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -1085,12 +1086,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto selectionColor = D2D1::ColorF(_defaultForegroundColor.r,
-                                             _defaultForegroundColor.g,
-                                             _defaultForegroundColor.b,
-                                             0.5f);
 
-    _d2dBrushForeground->SetColor(selectionColor);
+    _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
     RECT pixels;
@@ -1807,4 +1804,18 @@ float DxEngine::GetScaling() const noexcept
     default:
         FAIL_FAST_HR(E_NOTIMPL);
     }
+}
+
+// Routine Description:
+// - Updates the selection background color of the DxEngine
+// Arguments:
+// - color - GDI Color
+// Return Value:
+// - N/A
+void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+{
+    _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
+                                        GetGValue(color) / 255.0f,
+                                        GetBValue(color) / 255.0f,
+                                        0.5f);
 }

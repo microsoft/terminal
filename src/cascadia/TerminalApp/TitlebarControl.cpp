@@ -34,8 +34,8 @@ namespace winrt::TerminalApp::implementation
         ContentRoot().Content(content);
     }
 
-    void TitlebarControl::Root_SizeChanged(const IInspectable& sender,
-                                           const Windows::UI::Xaml::SizeChangedEventArgs& e)
+    void TitlebarControl::Root_SizeChanged(const IInspectable& /*sender*/,
+                                           const Windows::UI::Xaml::SizeChangedEventArgs& /*e*/)
     {
         const auto windowWidth = ActualWidth();
         const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
@@ -66,17 +66,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         _OnMaximizeOrRestore(HTMAXBUTTON);
     }
 
-    void TitlebarControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
+    void TitlebarControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& /*e*/)
     {
         _OnMaximizeOrRestore(HTCAPTION);
     }
 
-    void TitlebarControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void TitlebarControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         if (_window)
         {
@@ -84,7 +84,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void TitlebarControl::Close_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         ::PostMessage(_window, WM_SYSCOMMAND, SC_CLOSE, 0);
     }

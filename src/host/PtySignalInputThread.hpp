@@ -20,8 +20,7 @@ namespace Microsoft::Console
     class PtySignalInputThread final
     {
     public:
-        PtySignalInputThread(wil::unique_hfile hPipe,
-                             wil::shared_event shutdownEvent);
+        PtySignalInputThread(_In_ wil::unique_hfile hPipe);
         ~PtySignalInputThread();
 
         [[nodiscard]] HRESULT Start() noexcept;
@@ -35,9 +34,8 @@ namespace Microsoft::Console
 
     private:
         [[nodiscard]] HRESULT _InputThread();
-        [[nodiscard]] HRESULT _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
-
-        wil::shared_event _shutdownEvent;
+        bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
+        void _Shutdown();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;

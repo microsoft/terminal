@@ -43,6 +43,7 @@ SOURCES = \
     CommandNumberPopupTests.cpp \
     CopyFromCharPopupTests.cpp \
     CopyToCharPopupTests.cpp \
+    ObjectTests.cpp \
     DefaultResource.rc \
 
 

@@ -34,6 +34,7 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
             {
                 UiaTextRangeBase* temp = ranges[0];
                 ranges.pop_front();
+                temp->Release();
             }
             THROW_HR(E_INVALIDARG);
         }
@@ -173,10 +174,10 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                      _In_ BOOL searchBackward,
-                                      _In_ BOOL ignoreCase,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
+                                      _In_ BOOL /*searchBackward*/,
+                                      _In_ BOOL /*ignoreCase*/,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
     // TODO GitHub #605: Search functionality
     return E_NOTIMPL;
