@@ -12,7 +12,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
             // We dump the pointer into nowhere here because it needs to not be deconstructed
             // upon leaving the bottom of this lambda and the XAML Framework will catch the
             // appropriate reference into App.Current for the remainder of execution.
-            ::winrt::detach_abi(a); 
+            ::winrt::detach_abi(a);
         });
     return 0;
 }
