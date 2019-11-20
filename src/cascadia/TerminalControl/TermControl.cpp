@@ -69,13 +69,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _cursorTimer{},
         _lastMouseClick{},
         _lastMouseClickPos{},
-		_tsfInputControl{ nullptr }
+        _tsfInputControl{ nullptr }
     {
         _EnsureStaticInitialization();
         _Create();
     }
-	
-	inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
+
+    inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
     {
         winrt::Windows::UI::Color color;
         color.R = GetRValue(colorref);
@@ -1902,7 +1902,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         return terminalPosition;
     }
-	
+
     // Method Description:
     // - Composition Completion handler for the TSFInputControl that
     //   handles writing text out to TerminalConnection

@@ -156,7 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _currentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) }; //_terminal->GetCursorPosition();
+        const COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) };
 
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
@@ -175,7 +175,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(ShortAdd(clientCursorPos.X, gsl::narrow_cast<SHORT>(windowBounds.X), &screenCursorPos.X));
         THROW_IF_FAILED(ShortAdd(clientCursorPos.Y, gsl::narrow_cast<SHORT>(windowBounds.Y), &screenCursorPos.Y));
 
-        // get any offset (margin + tabs, etc..) of the control within the window 
+        // get any offset (margin + tabs, etc..) of the control within the window
         const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
 
         // add the margin offsets if any
