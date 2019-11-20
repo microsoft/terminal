@@ -57,9 +57,7 @@ namespace TerminalCoreUnitTests
         void SelectionBackground(uint32_t) {}
 
         // other unimplemented methods
-        void SetColorTableEntry(int32_t /* index */, uint32_t /* value */)
-        {
-        }
+        void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}
 
     private:
         int32_t _historySize;
