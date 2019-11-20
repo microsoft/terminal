@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_editContext != nullptr)
         {
-            //_editContext.NotifyFocusLeave();
+            // _editContext.NotifyFocusLeave(); TODO GitHub #3645: Enabling causes IME to no longer show up, need to determine if required
         }
     }
 
