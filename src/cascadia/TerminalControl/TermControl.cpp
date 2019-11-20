@@ -271,6 +271,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Media::SolidColorBrush foregroundBrush{};
         foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
         _tsfInputControl.Foreground(foregroundBrush);
+        _tsfInputControl.Margin(newMargin);
     }
 
     // Method Description:

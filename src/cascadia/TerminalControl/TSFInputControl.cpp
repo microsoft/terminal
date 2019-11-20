@@ -10,7 +10,7 @@ using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
 
 // hack to account for offset caused by tabs
-#define TABS_OFFSET 38
+#define TABS_OFFSET 36
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto request = args.Request();
 
         // Get window in screen coordinates, this is the entire window including tabs
-        const auto windowBounds = Window::Current().CoreWindow().Bounds();
+        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
 
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
@@ -178,8 +178,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(ShortAdd(clientCursorPos.X, gsl::narrow_cast<SHORT>(windowBounds.X), &screenCursorPos.X));
         THROW_IF_FAILED(ShortAdd(clientCursorPos.Y, gsl::narrow_cast<SHORT>(windowBounds.Y), &screenCursorPos.Y));
 
-        // TODO: add tabs offset, currently a hack, since we can't determine the actual screen position of the control
-        THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, TABS_OFFSET, &screenCursorPos.Y));
+        // get any offset (margin + tabs, etc..) of the control within the window 
+        const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
+
+        // add the margin offsets if any
+        const auto currentMargin = this->Margin();
+        THROW_IF_FAILED(ShortAdd(screenCursorPos.X, gsl::narrow_cast<SHORT>(offsetPoint.X), &screenCursorPos.X));
+        THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, gsl::narrow_cast<SHORT>(offsetPoint.Y), &screenCursorPos.Y));
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
