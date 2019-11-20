@@ -9,9 +9,6 @@ using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
 
-// hack to account for offset caused by tabs
-#define TABS_OFFSET 36
-
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TSFInputControl::TSFInputControl() :
@@ -51,7 +48,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // sets the Input Pane display policy to Manual for now so that it can manually show the
         // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // TODO investigate if we can set this to Automatic
+        // TODO GitHub #3639: Should Input Pane display policy be Automatic
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -189,24 +186,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
-        // TODO set real layout bounds
+        // Set the selection layout bounds
         Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
-        // This is the bounds of the whole control
+        // Set the control bounds of the whole control
         Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
 
         // position textblock to cursor position
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
-        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y) + 2); // TODO figure out how to align
+        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y) + 2); // TODO GitHub #3642: Need a better way to align text in center
 
         // width is cursor to end of canvas
-        _textBlock.Width(200); // TODO figure out proper width
+        _textBlock.Width(200); // TODO GitHub #3640: Determine proper Width
         _textBlock.Height(fontHeight);
 
-        //SHORT foo = _actualFont.GetUnscaledSize().Y;
-        // TODO: font claims to be 12, but on screen 14 look more correct
+        // TODO GitHub #3641: TSFInputControl FontSize needs to be larger than settings to match on screen font
         _textBlock.FontSize(14);
 
         _textBlock.FontFamily(Media::FontFamily(fontArgs->FontFace()));
@@ -266,7 +262,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Handler for FocusRemoved event by CoreEditContext responsible
     //   for removing focus for the TSFInputControl control accordingly
-    //   when focus was forecibly removed from text input control. (TODO)
+    //   when focus was forecibly removed from text input control. (TODO GitHub #3644)
     //   NOTE: Documentation says application should handle this event
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
