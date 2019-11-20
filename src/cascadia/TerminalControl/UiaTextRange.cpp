@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "UiaTextRange.hpp"
 #include "TermControlUiaProvider.hpp"
-#include <wrl.h>
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;

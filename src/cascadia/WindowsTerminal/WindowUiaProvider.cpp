@@ -8,7 +8,7 @@
 
 HRESULT WindowUiaProvider::RuntimeClassInitialize(Microsoft::Console::Types::IUiaWindow* baseWindow)
 {
-    return __super::RuntimeClassInitialize(baseWindow);
+    return WindowUiaProviderBase::RuntimeClassInitialize(baseWindow);
 }
 
 WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* /*baseWindow*/)

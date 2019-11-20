@@ -314,10 +314,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
             {
                 SafeArrayDestroy(*ppRetVal);
                 *ppRetVal = nullptr;
-                while (!ranges.empty())
-                {
-                    ranges.pop_front();
-                }
                 return hr;
             }
         }
@@ -398,7 +394,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
 
     WRL::ComPtr<UiaTextRangeBase> utr;
     RETURN_IF_FAILED(CreateTextRange(this, &utr));
-    RETURN_IF_FAILED(utr->QueryInterface(IID_PPV_ARGS(ppRetVal)));
+    RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;
 }
 
@@ -415,7 +411,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     RETURN_IF_FAILED(CreateTextRange(this,
                                      point,
                                      &utr));
-    RETURN_IF_FAILED(utr->QueryInterface(IID_PPV_ARGS(ppRetVal)));
+    RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;
 }
 
@@ -430,7 +426,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     WRL::ComPtr<UiaTextRangeBase> utr;
     RETURN_IF_FAILED(CreateTextRange(this, &utr));
     RETURN_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document));
-    RETURN_IF_FAILED(utr->QueryInterface(IID_PPV_ARGS(ppRetVal)));
+    RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;
 }
 
