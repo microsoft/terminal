@@ -8,7 +8,7 @@
     </Content>
     <!-- Fonts -->
     <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
-      <DeploymentConent>true</DeploymentConent>
+      <DeploymentContent>true</DeploymentContent>
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
     <!-- Profile Icons -->
@@ -18,7 +18,7 @@
     </Content>
     <!-- Default Settings -->
     <Content Include="$(OpenConsoleDir)src\cascadia\TerminalApp\defaults.json">
-      <DeploymentConent>true</DeploymentConent>
+      <DeploymentContent>true</DeploymentContent>
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
   </ItemGroup>
