@@ -275,7 +275,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Handler for TextRequested event by CoreEditContext responsible
-    //   for returning the range of text requeted.
+    //   for returning the range of text requested.
     //   NOTE: Documentation says application should handle this event
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
