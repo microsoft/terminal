@@ -71,8 +71,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static void OnCompositionChanged(Windows::UI::Xaml::DependencyObject const&, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const&);
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CurrentCursorPosition, _currentCursorPositionHandlers, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CurrentFontInfo, _currentFontInfoHandlers, TerminalControl::TSFInputControl, TerminalControl::FontInfoEventArgs);
+        TYPED_EVENT(CurrentCursorPosition, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
+        TYPED_EVENT(CurrentFontInfo, TerminalControl::TSFInputControl, TerminalControl::FontInfoEventArgs);
         DECLARE_EVENT(CompositionCompleted, _compositionCompletedHandlers, TerminalControl::CompositionCompletedEventArgs);
 
     private:

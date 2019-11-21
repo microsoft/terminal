@@ -5,7 +5,7 @@
 #include "TSFInputControl.h"
 #include "TSFInputControl.g.cpp"
 
-#include <TypeConversions.h>
+#include <Utils.h>
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
@@ -109,23 +109,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Scales a Rect based on a scale factor
-    // Arguments:
-    // - rect: Rect to scale by scale
-    // - scale: amount to scale rect by
-    // Return Value:
-    // - Rect scaled by scale
-    inline Rect ScaleRect(Rect rect, double scale)
-    {
-        const float scaleLocal = gsl::narrow<float>(scale);
-        rect.X *= scaleLocal;
-        rect.Y *= scaleLocal;
-        rect.Width *= scaleLocal;
-        rect.Height *= scaleLocal;
-        return rect;
-    }
-
-    // Method Description:
     // - Handler for LayoutRequested event by CoreEditContext responsible
     //   for returning the current position the IME should be placed
     //   in screen coordinates on the screen.  TSFInputControls internal
@@ -145,12 +128,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
-        _currentCursorPositionHandlers(*this, *cursorArgs);
+        _CurrentCursorPositionHandlers(*this, *cursorArgs);
         const COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) };
 
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
-        _currentFontInfoHandlers(*this, *fontArgs);
+        _CurrentFontInfoHandlers(*this, *fontArgs);
 
         const float fontWidth = fontArgs->FontSize().Width;
         const float fontHeight = fontArgs->FontSize().Height;
@@ -283,10 +266,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             args.Request().Text(winrt::to_hstring(textRequested.c_str()));
         }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -346,7 +326,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             LOG_CAUGHT_EXCEPTION();
 
-            // indicate
+            // indicate updating failed.
             args.Result(CoreTextTextUpdatingResult::Failed);
         }
     }
@@ -364,7 +344,5 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
     }
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TSFInputControl, CurrentCursorPosition, _currentCursorPositionHandlers, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TSFInputControl, CurrentFontInfo, _currentFontInfoHandlers, TerminalControl::TSFInputControl, TerminalControl::FontInfoEventArgs);
     DEFINE_EVENT(TSFInputControl, CompositionCompleted, _compositionCompletedHandlers, TerminalControl::CompositionCompletedEventArgs);
 }

@@ -20,7 +20,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="inc\TypeConversions.h" />
+    <ClInclude Include="inc\Utils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="inc\ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />

@@ -7,7 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <TypeConversions.h>
+#include <Utils.h>
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
