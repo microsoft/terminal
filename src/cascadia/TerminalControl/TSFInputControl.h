@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 #include "TSFInputControl.g.h"
 #include "CursorPositionEventArgs.g.h"
