@@ -20,6 +20,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Button>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Button>();
+
+        // TO DO: Is there a general way to put all the focusable elements in the
+        // collection ? Maybe try DFS
+        auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
+        auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
+        auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
+        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
+
+        _focusableElements.insert(closeButton);
+        _focusableElements.insert(suggestBox);
+        _focusableElements.insert(checkBox);
+        _focusableElements.insert(moveButton);
+        _focusableElements.insert(_goForwardButton);
+        _focusableElements.insert(_goBackwardButton);
     }
 
     bool SearchBoxControl::GetGoForward()
@@ -32,9 +46,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _isCaseSensitive;
     }
 
-    void SearchBoxControl::AutoSuggestBox_QuerySubmitted(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs const& e)
+    void SearchBoxControl::QuerySubmitted(winrt::Windows::Foundation::IInspectable const& sender, Input::KeyRoutedEventArgs const& e)
     {
-        _searchEventHandler(*this, e.QueryText());
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            _searchEventHandler(*this, sender.try_as<Controls::TextBox>().Text());
+        }
     }
 
     void SearchBoxControl::_GoBackwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
@@ -63,9 +80,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goBackwardButton.BorderThickness(thickness);
     }
 
-    void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& e)
+    void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
     {
-        _MovePositionClickedHandler(*this, e);
+        _MovePositionClickedHandler(sender, e);
     }
 
     void SearchBoxControl::_CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
@@ -83,8 +100,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _CloseButtonClickedHanlder(*this, e);
     }
 
+    void SearchBoxControl::SetFocusOnTextbox()
+    {
+        auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
+        if (suggestBox)
+        {
+            Input::FocusManager::TryFocusAsync(suggestBox, FocusState::Keyboard);
+        }
+    }
+
+    bool SearchBoxControl::CheckSearchBoxElement(IInspectable const& focusedElement)
+    {
+        if (_focusableElements.count(focusedElement) > 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    void SearchBoxControl::TurnAroundFocus(IInspectable const& focusedElement)
+    {
+        // If the current focused element is the move button, we set
+        // focus to the close button to enable "turn around"
+        // Due to some unknown reason, this will set focus on the TextBox instead of
+        // the close button, but this realizes navagation. Close button could be accessed
+        // via Esc
+        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
+        if (focusedElement == moveButton)
+        {
+            auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
+            Input::FocusManager::TryFocusAsync(closeButton, FocusState::Keyboard);
+        }
+    }
+
     // Events proxies
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, Search, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, MovePositionClicked, _MovePositionClickedHandler, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, MovePositionClicked, _MovePositionClickedHandler, winrt::Windows::Foundation::IInspectable, Windows::UI::Xaml::RoutedEventArgs);
 }

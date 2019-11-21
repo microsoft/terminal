@@ -5,9 +5,12 @@ namespace Microsoft.Terminal.TerminalControl
         SearchBoxControl();
         Boolean GetGoForward();
         Boolean GetIsCaseSensitive();
+        void SetFocusOnTextbox();
+        Boolean CheckSearchBoxElement(Object focusedElement);
+        void TurnAroundFocus(Object focusedElement);
 
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> Search;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> CloseButtonClicked;
-        event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> MovePositionClicked;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> MovePositionClicked;
     }
 }

@@ -171,7 +171,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_searchBox)
         {
             SearchBoxControl searchBox;
-            searchBox.Visibility(Visibility::Visible);
             searchBox.HorizontalAlignment(HorizontalAlignment::Right);
             searchBox.VerticalAlignment(VerticalAlignment::Top);
             // We need to make sure the searchbox does not overlap
@@ -186,6 +185,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _searchBox.Search({ this, &TermControl::_Search });
             _searchBox.CloseButtonClicked({ this, &TermControl::_CloseSearchBoxControl });
             _searchBox.MovePositionClicked({ this, &TermControl::_MoveSearchBoxControl });
+
+            _searchBox.SetFocusOnTextbox();
         }
     }
 
@@ -233,6 +234,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Children().RemoveAt(idx);
 
         _searchBox = nullptr;
+
+        // Set focus back to terminal control
+        this->Focus(FocusState::Programmatic);
     }
 
     // Method Description:
@@ -244,7 +248,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_MoveSearchBoxControl(const SearchBoxControl& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_MoveSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
     {
         auto alignment = _searchBox.VerticalAlignment();
         if (alignment == VerticalAlignment::Top)
@@ -725,12 +729,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
-        // If the current focused element is a kind of input box, we do not send this event up to
+        // If Esc is pressed and the search box is opened, we close the search box
+        if (_searchBox && e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        {
+            _CloseSearchBoxControl(nullptr, nullptr);
+            return;
+        }
+
+        // If the current focused element is a kind of input box, or it is an
+        // child element of searchbox, we do not send this event up to
         // terminal
         auto focusedElement = Input::FocusManager::GetFocusedElement(_root.XamlRoot());
-        if (focusedElement.try_as<Controls::AutoSuggestBox>() ||
-            focusedElement.try_as<Controls::TextBox>())
+        bool isWinthinSearchBox = false;
+        if (_searchBox)
         {
+            isWinthinSearchBox = _searchBox.CheckSearchBoxElement(focusedElement);
+        }
+        if (focusedElement.try_as<Controls::AutoSuggestBox>() ||
+            focusedElement.try_as<Controls::TextBox>() ||
+            isWinthinSearchBox)
+        {
+            if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Tab)
+            {
+                _searchBox.TurnAroundFocus(focusedElement);
+            }
             return;
         }
 

@@ -223,9 +223,8 @@ namespace winrt::TerminalApp::implementation
         }
         case ShortcutAction::OpenSearchBox:
         {
-            auto eventArgs = winrt::make_self<ActionEventArgs>();
             _OpenSearchBoxHandlers(*this, *eventArgs);
-            return eventArgs->Handled();
+            break;
         }
         default:
             return false;

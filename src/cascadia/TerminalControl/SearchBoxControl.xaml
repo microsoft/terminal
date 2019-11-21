@@ -9,53 +9,109 @@
     x:Name="Root"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
-    d:DesignHeight="70"
+    d:DesignHeight="75"
     d:DesignWidth="200">
 
-    <StackPanel Height="70" Orientation="Vertical">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <Style x:Key="FontIconStyle" TargetType="FontIcon">
+                        <Setter Property="FontSize" Value="15" />
+                        <Setter Property="Foreground" Value="White" />
+                    </Style>
+                    <Style x:Key="ButtonStyle" TargetType="Button">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <Style x:Key="FontIconStyle" TargetType="FontIcon">
+                        <Setter Property="FontSize" Value="15" />
+                        <Setter Property="Foreground" Value="White" />
+                    </Style>
+                    <Style x:Key="ButtonStyle" TargetType="Button">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <Style x:Key="FontIconStyle" TargetType="FontIcon">
+                        <Setter Property="FontSize" Value="15" />
+                        <Setter Property="Foreground" Value="White" />
+                    </Style>
+                    <Style x:Key="ButtonStyle" TargetType="Button">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
-        <Button x:Name="Close" Height="20" Width="20" HorizontalAlignment="Right" Padding="0" Click="_CloseClick" Background="Transparent">
-            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" FontSize="15" Foreground="White"/>
-        </Button>
+    <StackPanel Orientation="Vertical" Background="Black">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="CloseButton" Style="{ThemeResource ButtonStyle}" Padding="0" Click="_CloseClick" TabIndex="1">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" FontSize="15" Foreground="White"/>
+            </Button>
+        </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Height="25">
+        <StackPanel x:Name="SuggestBoxStackPanel" Height="35" Orientation="Horizontal">
 
-            <AutoSuggestBox x:Name="AutosuggestBox" PlaceholderText="Search" QueryIcon="Find"
-                QuerySubmitted="AutoSuggestBox_QuerySubmitted"
-                Height="25" Width="160" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+            <TextBox  x:Name="TextBox" PlaceholderText="Search"
+                KeyDown = "QuerySubmitted"
+                Width="160" HorizontalAlignment="Left" VerticalAlignment="Center" TabIndex="2">
+            </TextBox>
 
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="SetGoBackwardButton" Height="20" Width="20" HorizontalAlignment="Right" Click="_GoBackwardClick" Padding="1"
-                        BorderBrush="Blue" BorderThickness="0" Background="Transparent">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" FontSize="15" Foreground="DimGray"/>
+                <Button x:Name="SetGoBackwardButton" Style="{ThemeResource ButtonStyle}" HorizontalAlignment="Right" Click="_GoBackwardClick" Padding="1"
+                        BorderBrush="Blue" BorderThickness="0" TabIndex="3">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Style="{ThemeResource FontIconStyle}"/>
                 </Button>
-                <Button x:Name="SetGoForwardButton" Height="20" Width="20" Click="_GoForwardClick" Padding="1"
-                        BorderBrush="Blue" BorderThickness="0" Background="Transparent">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" FontSize="15" Foreground="DimGray"/>
+                <Button x:Name="SetGoForwardButton" Style="{ThemeResource ButtonStyle}" Click="_GoForwardClick" Padding="1" BorderBrush="Blue" BorderThickness="0"
+                        TabIndex="4">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Style="{ThemeResource FontIconStyle}"/>
                 </Button>
             </StackPanel>
 
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Height="25" Width="200">
+        <StackPanel Orientation="Horizontal">
             <Grid Width="60">
             </Grid>
             
             <CheckBox x:Name="CaseSensitivityCheckBox"
-                      Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" Height="25">
+                      Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" TabIndex="5">
                 <CheckBox.Resources>
                     <ResourceDictionary>
-                        <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
-                        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
-                        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
+                        <ResourceDictionary.ThemeDictionaries>
+                            <ResourceDictionary x:Key="Light">
+                                <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="Default">
+                                <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="HighContrast">
+                                <SolidColorBrush x:Key="CheckBoxColor" Color="White"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="CheckBoxColor" />
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="CheckBoxColor" />
+                            </ResourceDictionary>
+                        </ResourceDictionary.ThemeDictionaries>
                     </ResourceDictionary>
                 </CheckBox.Resources>
-                <TextBlock Text="Case Sensitive" Foreground="White"/>
+                <TextBlock Text="Case Sensitive" Foreground="{ThemeResource CheckBoxColor}" FontSize="15"/>
             </CheckBox>
 
-            <Button x:Name="MoveSearchBoxPosition" Height="20" Width="20" HorizontalAlignment="Right" Click="_MovePositionClick" Padding="0"
-                            Background="Transparent">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" FontSize="15" Foreground="DimGray"/>
+            <Button x:Name="MoveSearchBoxPositionButton" Style="{ThemeResource ButtonStyle}" HorizontalAlignment="Right" Click="_MovePositionClick" Padding="0"
+                    TabIndex="6">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" Style="{ThemeResource FontIconStyle}"/>
             </Button>
         </StackPanel>
     </StackPanel>
