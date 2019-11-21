@@ -16,40 +16,34 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="inc\TypeConversions.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="inc\ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />
   </ItemGroup>
-
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-
     <ClCompile Include="ScopedResourceLoader.cpp" />
     <ClCompile Include="LibraryResources.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
   </ItemGroup>
-
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
   </ItemGroup>
-
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
@@ -57,8 +51,6 @@
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
-
   <!-- ========================= Globals ======================== -->
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>

@@ -7,6 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
+#include <TypeConversions.h>
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
@@ -73,15 +74,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _EnsureStaticInitialization();
         _Create();
-    }
-
-    inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
-    {
-        winrt::Windows::UI::Color color;
-        color.R = GetRValue(colorref);
-        color.G = GetGValue(colorref);
-        color.B = GetBValue(colorref);
-        return color;
     }
 
     void TermControl::_Create()

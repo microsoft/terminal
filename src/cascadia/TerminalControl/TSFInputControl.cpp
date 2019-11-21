@@ -2,6 +2,8 @@
 #include "TSFInputControl.h"
 #include "TSFInputControl.g.cpp"
 
+#include <TypeConversions.h>
+
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Core;
@@ -118,21 +120,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         rect.Width *= scaleLocal;
         rect.Height *= scaleLocal;
         return rect;
-    }
-
-    // Method Description:
-    // - Converts a COLORREF to Color
-    // Arguments:
-    // - colorref: COLORREF to convert to Color
-    // Return Value:
-    // - Color containing the RGB values from colorref
-    inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
-    {
-        winrt::Windows::UI::Color color;
-        color.R = GetRValue(colorref);
-        color.G = GetGValue(colorref);
-        color.B = GetBValue(colorref);
-        return color;
     }
 
     // Method Description:
