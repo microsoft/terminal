@@ -222,7 +222,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleOpenSearchBox(const IInspectable& /*sender*/,
-                                               const TerminalApp::ActionEventArgs& args)
+                                            const TerminalApp::ActionEventArgs& args)
     {
         _OpenSearchBoxInTermControl();
         args.Handled(true);

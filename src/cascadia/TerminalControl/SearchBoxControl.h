@@ -29,13 +29,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _goForward; // The direction of the search, controlled by the buttons with arrows
         bool _isCaseSensitive; // If the search should be case sensitive, controlled by the checkbox
 
-        winrt::Windows::UI::Xaml::Controls::Button _goForwardButton;
-        winrt::Windows::UI::Xaml::Controls::Button _goBackwardButton;
+        winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _goForwardButton;
+        winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _goBackwardButton;
 
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
 
-        void _GoBackwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
-        void _GoForwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
+        void _GoBackwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
+        void _GoForwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void _MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);

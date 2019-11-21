@@ -18,8 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         InitializeComponent();
 
-        _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Button>();
-        _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Button>();
+        _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Primitives::ToggleButton>();
+        _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
 
         // TO DO: Is there a general way to put all the focusable elements in the
         // collection ? Maybe try DFS
@@ -54,30 +54,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void SearchBoxControl::_GoBackwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::_GoBackwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = false;
-
-        // If button is clicked, we show the blue border around the clicked button, and eliminate
-        // the border on the other direction control button
-        Thickness thickness = ThicknessHelper::FromUniformLength(1);
-        _goBackwardButton.BorderThickness(thickness);
-
-        thickness = ThicknessHelper::FromUniformLength(0);
-        _goForwardButton.BorderThickness(thickness);
+        if (_goForwardButton.IsChecked())
+        {
+            _goForwardButton.IsChecked(false);
+        }
     }
 
-    void SearchBoxControl::_GoForwardClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::_GoForwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = true;
-
-        // If button is clicked, we show the blue border around the clicked button, and eliminate
-        // the border on the other direction control button
-        Thickness thickness = ThicknessHelper::FromUniformLength(1);
-        _goForwardButton.BorderThickness(thickness);
-
-        thickness = ThicknessHelper::FromUniformLength(0);
-        _goBackwardButton.BorderThickness(thickness);
+        if (_goBackwardButton.IsChecked())
+        {
+            _goBackwardButton.IsChecked(false);
+        }
     }
 
     void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)

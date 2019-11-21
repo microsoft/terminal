@@ -60,29 +60,21 @@
         </StackPanel>
 
         <StackPanel x:Name="SuggestBoxStackPanel" Height="35" Orientation="Horizontal">
-
             <TextBox  x:Name="TextBox" PlaceholderText="Search"
                 KeyDown = "QuerySubmitted"
                 Width="160" HorizontalAlignment="Left" VerticalAlignment="Center" TabIndex="2">
             </TextBox>
 
-            <StackPanel Orientation="Horizontal">
-                <Button x:Name="SetGoBackwardButton" Style="{ThemeResource ButtonStyle}" HorizontalAlignment="Right" Click="_GoBackwardClick" Padding="1"
-                        BorderBrush="Blue" BorderThickness="0" TabIndex="3">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Style="{ThemeResource FontIconStyle}"/>
-                </Button>
-                <Button x:Name="SetGoForwardButton" Style="{ThemeResource ButtonStyle}" Click="_GoForwardClick" Padding="1" BorderBrush="Blue" BorderThickness="0"
-                        TabIndex="4">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Style="{ThemeResource FontIconStyle}"/>
-                </Button>
-            </StackPanel>
-
+            <ToggleButton x:Name="SetGoBackwardButton" HorizontalAlignment="Right" Padding="1" TabIndex="3"
+                          Checked="_GoBackwardChecked" IsChecked="True">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Style="{ThemeResource FontIconStyle}"/>
+            </ToggleButton>
+            <ToggleButton x:Name="SetGoForwardButton" Padding="1" TabIndex="4" Checked="_GoForwardChecked">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Style="{ThemeResource FontIconStyle}"/>
+            </ToggleButton>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal">
-            <Grid Width="60">
-            </Grid>
-            
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <CheckBox x:Name="CaseSensitivityCheckBox"
                       Checked="_CaseSensitivityChecked" Unchecked="_CaseSensitivityUnChecked" TabIndex="5">
                 <CheckBox.Resources>

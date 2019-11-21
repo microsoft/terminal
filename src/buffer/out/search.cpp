@@ -298,7 +298,7 @@ void Search::_UpdateNextPosition()
     // We put the next position to:
     // Forward: (0, 0)
     // Backward: the position of the end of the text buffer
-    COORD bufferEndPosition = _uiaData.GetTextBufferEndPosition();
+    const COORD bufferEndPosition = _uiaData.GetTextBufferEndPosition();
 
     if (_coordNext.Y > bufferEndPosition.Y ||
         (_coordNext.Y == bufferEndPosition.Y && _coordNext.X > bufferEndPosition.X))
