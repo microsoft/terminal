@@ -13,51 +13,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CursorPositionEventArgsT<CursorPositionEventArgs>
     {
     public:
-        CursorPositionEventArgs(){};
+        CursorPositionEventArgs() = default;
 
-        Windows::Foundation::Point CurrentPosition()
-        {
-            return _curPos;
-        }
-
-        void CurrentPosition(Windows::Foundation::Point newPosition)
-        {
-            _curPos = newPosition;
-        }
-
-    private:
-        Windows::Foundation::Point _curPos;
+        GETSET_PROPERTY(Windows::Foundation::Point, CurrentPosition);
     };
 
     struct FontInfoEventArgs :
         public FontInfoEventArgsT<FontInfoEventArgs>
     {
     public:
-        FontInfoEventArgs(){};
+        FontInfoEventArgs() = default;
 
-        Windows::Foundation::Size FontSize()
-        {
-            return _curSize;
-        }
+        GETSET_PROPERTY(Windows::Foundation::Size, FontSize);
 
-        void FontSize(Windows::Foundation::Size newSize)
-        {
-            _curSize = newSize;
-        }
-
-        winrt::hstring FontFace()
-        {
-            return _fontFace;
-        }
-
-        void FontFace(winrt::hstring newFontFace)
-        {
-            _fontFace = newFontFace;
-        }
-
-    private:
-        winrt::hstring _fontFace;
-        Windows::Foundation::Size _curSize;
+        GETSET_PROPERTY(winrt::hstring, FontFace);
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>
