@@ -95,6 +95,9 @@ namespace winrt::TerminalApp::implementation
             _setTitleBarContentHandlers(*this, _tabRow);
         }
 
+        // Hookup our event handlers to the ShortcutActionDispatch
+        _RegisterActionCallbacks();
+
         //Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
             this->_OpenNewTab(std::nullopt);
@@ -569,32 +572,41 @@ namespace winrt::TerminalApp::implementation
     // - bindings: A AppKeyBindings object to wire up with our event handlers
     void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
+        bindings.SetDispatch(_actionDispatch);
+    }
+
+    // Method Description:
+    // - TODO
+    // Arguments:
+    // - bindings: A AppKeyBindings object to wire up with our event handlers
+    void TerminalPage::_RegisterActionCallbacks()
+    {
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
 
-        bindings.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
-        bindings.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
-        bindings.CloseTab({ this, &TerminalPage::_HandleCloseTab });
-        bindings.ClosePane({ this, &TerminalPage::_HandleClosePane });
-        bindings.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
-        bindings.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
-        bindings.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
-        bindings.NextTab({ this, &TerminalPage::_HandleNextTab });
-        bindings.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        bindings.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
-        bindings.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
-        bindings.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
-        bindings.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        bindings.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
-        bindings.PasteText({ this, &TerminalPage::_HandlePasteText });
-        bindings.NewTab({ this, &TerminalPage::_HandleNewTab });
-        bindings.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
-        bindings.ResizePane({ this, &TerminalPage::_HandleResizePane });
-        bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
-        bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
-        bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
+        _actionDispatch.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
+        _actionDispatch.CloseTab({ this, &TerminalPage::_HandleCloseTab });
+        _actionDispatch.ClosePane({ this, &TerminalPage::_HandleClosePane });
+        _actionDispatch.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
+        _actionDispatch.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
+        _actionDispatch.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
+        _actionDispatch.NextTab({ this, &TerminalPage::_HandleNextTab });
+        _actionDispatch.PrevTab({ this, &TerminalPage::_HandlePrevTab });
+        _actionDispatch.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
+        _actionDispatch.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
+        _actionDispatch.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
+        _actionDispatch.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
+        _actionDispatch.PasteText({ this, &TerminalPage::_HandlePasteText });
+        _actionDispatch.NewTab({ this, &TerminalPage::_HandleNewTab });
+        _actionDispatch.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
+        _actionDispatch.ResizePane({ this, &TerminalPage::_HandleResizePane });
+        _actionDispatch.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
+        _actionDispatch.CopyText({ this, &TerminalPage::_HandleCopyText });
+        _actionDispatch.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
     // Method Description:
