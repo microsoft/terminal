@@ -1533,9 +1533,13 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
                                                                    const std::wstring wordDelimiters,
                                                                    _Out_ gsl::not_null<int*> const pAmountMoved)
 {
+    // STRATEGY:
+    //    - move the "end" Endpoint to the proper place (if need to move multiple times, do it here)
+    //    - find the "start" Endpoint based on that
+
     *pAmountMoved = 0;
     const int count = moveCount;
-    ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
+    ScreenInfoRow currentScreenInfoRow = moveState.EndScreenInfoRow;
     Column currentColumn = moveState.EndColumn;
 
     auto& buffer = pData->GetTextBuffer();
@@ -1556,12 +1560,20 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
             // we're at the edge of a row and need to go to the next one
             currentColumn = moveState.FirstColumnInRow;
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
+
+            auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+
+            target = buffer.GetWordEnd(target, wordDelimiters, true);
+
+            currentColumn = target.X;
         }
         else
         {
             // moving somewhere away from the edges of a row
             Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
+            buffer.GetSize().IncrementInBounds(target);
 
             target = (moveState.Increment == MovementIncrement::Forward) ?
                          buffer.GetWordEnd(target, wordDelimiters, true) :
@@ -1577,11 +1589,11 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
         FAIL_FAST_IF(!(currentScreenInfoRow <= _getLastScreenInfoRowIndex(pData)));
     }
 
-    Endpoint start = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+    Endpoint end = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
 
-    auto target = _endpointToCoord(pData, start);
-    target = buffer.GetWordEnd(target, wordDelimiters, true);
-    Endpoint end = _coordToEndpoint(pData, target);
+    auto target = _endpointToCoord(pData, end);
+    target = buffer.GetWordStart(target, wordDelimiters, true);
+    Endpoint start = _coordToEndpoint(pData, target);
 
     return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
 }
@@ -1592,6 +1604,10 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_nul
                                                                     const std::wstring wordDelimiters,
                                                                     _Out_ gsl::not_null<int*> const pAmountMoved)
 {
+    // STRATEGY:
+    //    - move the "start" Endpoint to the proper place (if need to move multiple times, do it here)
+    //    - find the "end" Endpoint based on that
+
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
@@ -1621,7 +1637,11 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_nul
             // get the right-most word for the previous row
             auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
-            currentColumn = buffer.GetWordStart(target, wordDelimiters, true).X;
+
+            target = buffer.GetWordStart(target, wordDelimiters, true);
+            buffer.GetSize().IncrementInBounds(target);
+
+            currentColumn = target.X;
         }
         else
         {
@@ -2003,6 +2023,17 @@ UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
             // we're at the edge of a row and need to go to the next one
             currentColumn = moveState.FirstColumnInRow;
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
+
+            // when moving end, we need to encompass the word
+            if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
+            {
+                auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+                auto target = _endpointToCoord(pData, point);
+
+                target = buffer.GetWordEnd(target, wordDelimiters, true);
+
+                currentColumn = target.X;
+            }
         }
         else
         {
