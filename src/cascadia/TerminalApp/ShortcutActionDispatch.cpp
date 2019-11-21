@@ -11,6 +11,14 @@ using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
+    // Method Description:
+    // - Dispatch the appropriate event for the given ActionAndArgs. Constructs
+    //   an ActionEventArgs to hold the IActionArgs payload for the event, and
+    //   calls the matching handlers for that event.
+    // Arguments:
+    // - actionAndArgs: the ShortcutAction and associated args to raise an event for.
+    // Return Value:
+    // - true if we handled the event was handled, else false.
     bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
     {
         const auto& action = actionAndArgs.Action();

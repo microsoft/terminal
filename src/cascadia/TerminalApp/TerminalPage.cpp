@@ -564,10 +564,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Register our event handlers with the given keybindings object. This
-    //   should be done regardless of what the events are actually bound to -
-    //   this simply ensures the AppKeyBindings object will call us correctly
-    //   for each event.
+    // - Configure the AppKeyBindings to use our ShortcutActionDispatch as the
+    //   object to handle dispatching ShortcutAction events.
     // Arguments:
     // - bindings: A AppKeyBindings object to wire up with our event handlers
     void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
@@ -576,12 +574,15 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - TODO
+    // - Register our event handlers with our ShortcutActionDispatch. The
+    //   ShortcutActionDispatch is responsible for raising the appropriate
+    //   events for an ActionAndArgs. WE'll handle each possible event in our
+    //   own way.
     // Arguments:
-    // - bindings: A AppKeyBindings object to wire up with our event handlers
+    // - <none>
     void TerminalPage::_RegisterActionCallbacks()
     {
-        // Hook up the KeyBinding object's events to our handlers.
+        // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
 
