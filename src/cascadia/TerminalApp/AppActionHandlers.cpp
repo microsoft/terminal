@@ -215,7 +215,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::AdjustFontSizeArgs>())
         {
-            const auto termControl = _GetFocusedControl();
+            const auto termControl = _GetActiveControl();
             termControl.AdjustFontSize(realArgs.Delta());
             args.Handled(true);
         }
