@@ -354,7 +354,7 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
 
-        if (const auto chord{ GetKeyBinding(searchedForAction) })
+        if (const auto chord{ GetKeyBindingForAction(searchedForAction) })
         {
             if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
             {

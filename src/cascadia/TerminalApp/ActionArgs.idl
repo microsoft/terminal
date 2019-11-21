@@ -3,9 +3,10 @@
 
 namespace TerminalApp
 {
-    // An empty interface must specify an explicit [uuid] to ensure uniqueness.
-    // We also manually have to specify a "version" attribute to make the compiler happy.
-    [uuid("191C2BDE-1A60-4BAB-9765-D850F0EF2CAC")][version(1)] interface IActionArgs{};
+    interface IActionArgs
+    {
+        Boolean Equals(IActionArgs other);
+    };
 
     interface IActionEventArgs
     {
