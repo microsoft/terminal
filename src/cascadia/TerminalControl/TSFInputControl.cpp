@@ -169,14 +169,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // position textblock to cursor position
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
-        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y) + 2); // TODO GitHub #3642: Need a better way to align text in center
+        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y));
 
         // width is cursor to end of canvas
         _textBlock.Width(200); // TODO GitHub #3640: Determine proper Width
         _textBlock.Height(fontHeight);
 
-        // TODO GitHub #3641: TSFInputControl FontSize needs to be larger than settings to match on screen font
-        _textBlock.FontSize(14);
+        // calculate FontSize in pixels from DIPs
+        const float logicalDpi = DisplayInformation::GetForCurrentView().LogicalDpi();
+        const double fontSizePx = (fontHeight * 72) / logicalDpi;
+        _textBlock.FontSize(fontSizePx);
 
         _textBlock.FontFamily(Media::FontFamily(fontArgs->FontFace()));
     }
