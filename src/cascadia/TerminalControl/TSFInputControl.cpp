@@ -176,8 +176,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _textBlock.Height(fontHeight);
 
         // calculate FontSize in pixels from DIPs
-        const float logicalDpi = DisplayInformation::GetForCurrentView().LogicalDpi();
-        const double fontSizePx = (fontHeight * 72) / logicalDpi;
+        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
         _textBlock.FontSize(fontSizePx);
 
         _textBlock.FontFamily(Media::FontFamily(fontArgs->FontFace()));
