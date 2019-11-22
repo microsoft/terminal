@@ -97,10 +97,10 @@ By default, the following keybindings will be set:
 { "command": { "action": "moveSelectionAnchor", "direction": "down",    "expansionMode": "buffer" }, "keys": ["ctrl+shift+end"] },
 
 // Select All
-{ "command": "selectEntireBuffer", "keys": ["ctrl+a"] },
+{ "command": "selectEntireBuffer", "keys": ["ctrl+shift+a"] },
 
 // Mark Mode
-{ "command": "toggleMarkMode", "keys": ["ctrl+m"] },
+{ "command": "toggleMarkMode", "keys": ["ctrl+shift+m"] },
 ```
 
 ## Capabilities
@@ -127,7 +127,7 @@ N/A
 
 ## Potential Issues
 
-The settings model makes all of these features easy to disable, if the user wishes to do so. So, no.
+The settings model makes all of these features easy to disable, if the user wishes to do so.
 
 ## Future considerations
 
