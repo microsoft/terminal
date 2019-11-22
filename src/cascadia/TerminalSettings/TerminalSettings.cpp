@@ -321,6 +321,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _startingTitle = value;
     }
 
+    bool TerminalSettings::SuppressApplicationTitle()
+    {
+        return _suppressApplicationTitle;
+    }
+
+    void TerminalSettings::SuppressApplicationTitle(bool value)
+    {
+        _suppressApplicationTitle = value;
+    }
+
     hstring TerminalSettings::EnvironmentVariables()
     {
         return _envVars;
