@@ -65,26 +65,43 @@ Upon mark mode being enabled by a user keybinding (`ToggleMarkMode`), the curren
 
 ### Keybindings
 
-By default, the following keybindings will be set:
-| Action | Keychord | `KeyboardSelection(Direction, SelectionExpansionMode)` Parameters |
+Thanks to Keybinding Args, there will only be 3 new commands that need to be added:
+| Action | Keybinding Args | Description |
 |--|--|--|
-| `MoveSelectionAnchorUp`              | `Shift` + `↑`              | `Up`      , `Cell`
-| `MoveSelectionAnchorDown`            | `Shift` + `↓`              | `Down`    , `Cell`
-| `MoveSelectionAnchorLeft`            | `Shift` + `←`              | `Left`    , `Cell`
-| `MoveSelectionAnchorRight`           | `Shift` + `→`              | `Right`   , `Cell`
-| `MoveSelectionAnchorUpOneScreen`     | `Shift` + `Page Up`        | `Up`      , `Viewport`
-| `MoveSelectionAnchorDownOneScreen`   | `Shift` + `Page Down`      | `Down`    , `Viewport`
-| `MoveSelectionAnchorToLeftMargin`    | `Shift` + `Home`           | `Left`    , `Viewport`
-| `MoveSelectionAnchorToRightMargin`   | `Shift` + `End`            | `Right`   , `Viewport`
-| `MoveSelectionAnchorUpByWord`        | `Ctrl` + `Shift` + `↑`     | `Up`      , `Word`
-| `MoveSelectionAnchorDownByWord`      | `Ctrl` + `Shift` + `↓`     | `Down`    , `Word`
-| `MoveSelectionAnchorLeftByWord`      | `Ctrl` + `Shift` + `←`     | `Left`    , `Word`
-| `MoveSelectionAnchorRightByWord`     | `Ctrl` + `Shift` + `→`     | `Right`   , `Word`
-| `MoveSelectionAnchorToBufferStart`   | `Ctrl` + `Shift` + `Home`  | N/A
-| `MoveSelectionAnchorToBufferEnd`     | `Ctrl` + `Shift` + `End`   | N/A
-| `SelectEntireBuffer`                 | `Ctrl` + `A`               | N/A
-| `ToggleMarkMode`                     | `Ctrl` + `M`               | N/A
+| `moveSelectionAnchor` |                                                               | If a selection exists, moves the last selection anchor.
+|                       | `Enum direction { up, down, left, right}`                     | The direction the selection will be moved in. |
+|                       | `Enum expansionMode { cell, word, line, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
+| `selectEntireBuffer`  | | Select the entire text buffer.
+| `toggleMarkMode`      | | Enter or exit mark mode. This allows you to create an entire selection using only the keyboard. |
 
+By default, the following keybindings will be set:
+```JS
+// Cell Selection
+{ "command": { "action": "moveSelectionAnchor", "direction": "down" },  "keys": ["shift+down"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "up" },    "keys": ["shift+up"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "left" },  "keys": ["shift+left"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "right" }, "keys": ["shift+right"] },
+
+// Word Selection
+{ "command": { "action": "moveSelectionAnchor", "direction": "left",    "expansionMode": "word" }, "keys": ["ctrl+shift+left"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "right",   "expansionMode": "word" }, "keys": ["ctrl+shift+right"] },
+
+// Viewport Selection
+{ "command": { "action": "moveSelectionAnchor", "direction": "left",    "expansionMode": "viewport" }, "keys": ["shift+home"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "right",   "expansionMode": "viewport" }, "keys": ["shift+end"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "up",      "expansionMode": "viewport" }, "keys": ["ctrl+shift+up"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "down",    "expansionMode": "viewport" }, "keys": ["ctrl+shift+down"] },
+
+// Buffer Corner Selection
+{ "command": { "action": "moveSelectionAnchor", "direction": "up",      "expansionMode": "buffer" }, "keys": ["ctrl+shift+home"] },
+{ "command": { "action": "moveSelectionAnchor", "direction": "down",    "expansionMode": "buffer" }, "keys": ["ctrl+shift+end"] },
+
+// Select All
+{ "command": "selectEntireBuffer", "keys": ["ctrl+a"] },
+
+// Mark Mode
+{ "command": "toggleMarkMode", "keys": ["ctrl+m"] },
+```
 
 ## Capabilities
 
@@ -114,22 +131,6 @@ The settings model makes all of these features easy to disable, if the user wish
 
 ## Future considerations
 
-### Impact from Keybinding Args
-A lot of the introduced keybindings will have a significant impact from the Keybinding Args feature. This will make most of the keybindings collapse to the following format:
-
-```JS
-{
-    "command": "MoveSelectionAnchor",
-    "keybinding": "Shift + Up",
-    "args": {
-        "direction": "Up",
-        "expansionMode": "Cell"
-    }
-}
-```
-
-The introduced `enum direction` and `enum expansionMode` args should be able to handle all of the `MoveSelectionAnchor...` commands.
-
 ### Expanding Mark Mode functionality
 This spec currently limits mark mode functionality to the following:
 - only move by cell (no other expansion modes)
@@ -140,4 +141,3 @@ In addition to the `enum direction` and `enum expansionMode` args introduced abo
 ## Resources
 
 - https://blogs.windows.com/windowsdeveloper/2014/10/07/console-improvements-in-the-windows-10-technical-preview/
--
