@@ -578,7 +578,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        bindings.OpenSearchBox({ this, &TerminalPage::_HandleOpenSearchBox });
+        bindings.ToggleFind({ this, &TerminalPage::_HandleToggleFind });
         bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
@@ -1372,14 +1372,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the user tries to open a search using keybindings.
+    // - Called when the user tries to do a search using keybindings.
     //   This will tell the current focused terminal control to create
-    //   a search box.
+    //   a search box and enable find process.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_OpenSearchBoxInTermControl()
+    void TerminalPage::_ToggleFind()
     {
         const auto termControl = _GetFocusedControl();
         termControl.CreateSearchBoxControl();

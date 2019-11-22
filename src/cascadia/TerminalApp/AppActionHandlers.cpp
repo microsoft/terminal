@@ -221,10 +221,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleOpenSearchBox(const IInspectable& /*sender*/,
-                                            const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleToggleFind(const IInspectable& /*sender*/,
+                                         const TerminalApp::ActionEventArgs& args)
     {
-        _OpenSearchBoxInTermControl();
+        _ToggleFind();
         args.Handled(true);
     }
 

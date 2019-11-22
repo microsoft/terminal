@@ -15,22 +15,11 @@ Viewport Terminal::GetViewport() noexcept
 
 COORD Terminal::GetTextBufferEndPosition() const noexcept
 {
-    // In terminal, the end position of the buffer is the larger
-    // one of the current cursor position and the current selection
-    // anchor
-    auto cursorPosition = GetCursorPosition();
-    cursorPosition.Y += gsl::narrow<short>(ViewStartIndex());
-
-    auto selectionAnchor = GetSelectionAnchor();
-    if (selectionAnchor.Y > cursorPosition.Y ||
-        (selectionAnchor.Y == cursorPosition.Y && selectionAnchor.X > cursorPosition.X))
-    {
-        return selectionAnchor;
-    }
-    else
-    {
-        return cursorPosition;
-    }
+    // We use the end line of mutableViewport as the end
+    // of the text buffer, it always moves with the written
+    // text
+    COORD endPosition{ _GetMutableViewport().Width() - 1, gsl::narrow<short>(_ViewEndIndex()) };
+    return endPosition;
 }
 
 const TextBuffer& Terminal::GetTextBuffer() noexcept

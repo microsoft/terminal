@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void _CaseSensitivityUnChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
+        void _CheckboxKeyDown(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(Search, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);

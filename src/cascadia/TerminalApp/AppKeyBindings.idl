@@ -61,7 +61,7 @@ namespace TerminalApp
         MoveFocusDown, // Legacy
         ToggleFullscreen,
         OpenSettings,
-        OpenSearchBox
+        ToggleFind
     };
 
     [default_interface] runtimeclass ActionAndArgs {
@@ -101,7 +101,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenSettings;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ResizePane;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> MoveFocus;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenSearchBox;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ToggleFind;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ToggleFullscreen;
     }
 }

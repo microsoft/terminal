@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
         auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
         auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
-        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
+        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Primitives::ToggleButton>();
 
         _focusableElements.insert(closeButton);
         _focusableElements.insert(suggestBox);
@@ -51,6 +51,40 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
             _searchEventHandler(*this, sender.try_as<Controls::TextBox>().Text());
+        }
+    }
+
+    void SearchBoxControl::SetFocusOnTextbox()
+    {
+        auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
+        if (suggestBox)
+        {
+            Input::FocusManager::TryFocusAsync(suggestBox, FocusState::Keyboard);
+        }
+    }
+
+    bool SearchBoxControl::CheckSearchBoxElement(IInspectable const& focusedElement)
+    {
+        if (_focusableElements.count(focusedElement) > 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    void SearchBoxControl::TurnAroundFocus(IInspectable const& focusedElement)
+    {
+        // If the current focused element is the move button, we set
+        // focus to the close button to enable "turn around"
+        // Due to some unknown reason, this will set focus on the TextBox instead of
+        // the close button, but this realizes navagation. Close button could be accessed
+        // via Esc
+        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Primitives::ToggleButton>();
+        if (focusedElement == moveButton)
+        {
+            auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
+            Input::FocusManager::TryFocusAsync(closeButton, FocusState::Keyboard);
         }
     }
 
@@ -92,37 +126,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _CloseButtonClickedHanlder(*this, e);
     }
 
-    void SearchBoxControl::SetFocusOnTextbox()
+    void SearchBoxControl::_CheckboxKeyDown(winrt::Windows::Foundation::IInspectable const& sender, Input::KeyRoutedEventArgs const& e)
     {
-        auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
-        if (suggestBox)
+        // Checkbox does not got checked when focused and pressing Enter, we
+        // manually listen to Enter and check here
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
-            Input::FocusManager::TryFocusAsync(suggestBox, FocusState::Keyboard);
-        }
-    }
-
-    bool SearchBoxControl::CheckSearchBoxElement(IInspectable const& focusedElement)
-    {
-        if (_focusableElements.count(focusedElement) > 0)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    void SearchBoxControl::TurnAroundFocus(IInspectable const& focusedElement)
-    {
-        // If the current focused element is the move button, we set
-        // focus to the close button to enable "turn around"
-        // Due to some unknown reason, this will set focus on the TextBox instead of
-        // the close button, but this realizes navagation. Close button could be accessed
-        // via Esc
-        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
-        if (focusedElement == moveButton)
-        {
-            auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
-            Input::FocusManager::TryFocusAsync(closeButton, FocusState::Keyboard);
+            auto checkbox = sender.try_as<Controls::CheckBox>();
+            if (checkbox.IsChecked().GetBoolean() == true)
+            {
+                checkbox.IsChecked(false);
+            }
+            else
+            {
+                checkbox.IsChecked(true);
+            }
+            e.Handled(true);
         }
     }
 

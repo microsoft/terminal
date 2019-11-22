@@ -221,9 +221,9 @@ namespace winrt::TerminalApp::implementation
             _ToggleFullscreenHandlers(*this, *eventArgs);
             break;
         }
-        case ShortcutAction::OpenSearchBox:
+        case ShortcutAction::ToggleFind:
         {
-            _OpenSearchBoxHandlers(*this, *eventArgs);
+            _ToggleFindHandlers(*this, *eventArgs);
             break;
         }
         default:
