@@ -237,7 +237,7 @@ tabs in already running Windows Terminal windows. This feature is dependent upon
 other planned work landing, so is only provided as an example, of what it might
 look like. See [Future Considerations](#Future-Considerations) for more details.
 
-#### `--file,-f congifuration-file`
+#### `--file,-f configuration-file`
 Run these commands in the given Windows Terminal session. Enables opening new
 tabs in already running Windows Terminal windows. See [Future
 Considerations](#Future-Considerations) for more details.
@@ -312,7 +312,9 @@ same window.
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
 
-TODO: Should this be named `new-pane`, to match `new-tab`?
+TODO: Should this be named `new-pane`, to match `new-tab`? If it's `new-pane`,
+then the `ShortcutAction` should probably be `NewPane` (`newPane`), not
+`SplitPane` (`splitPane`).
 
 **Parameters**:
 * `--target,-t target-pane`: Creates a new split in the given `target-pane`.
@@ -352,6 +354,18 @@ Moves focus within the currently focused tab to a given pane.
   indicies are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane (which is effectively a
   no-op)
+
+#### `move-focus`
+
+`move-focus [--direction,-d direction]`
+
+Moves focus within the currently focused tab in the given direction.
+
+**Parameters**:
+
+* `--direction,-d direction`: moves focus in the given `direction`. `direction`
+  should be one of [`left`, `right`, `up`, `down`]. If omitted, does not move
+  the focus at all (resulting in a no-op).
 
 #### `[terminal_parameters]`
 
@@ -417,7 +431,8 @@ For 1.0, we'll restrict ourselves in the following ways:
 * We'll need to make sure that we process commandlines with escaped semicolons
   in them the same as we will in 2.0. Users will need to escape `;` as `\;` in
   1.0, even if we don't support multiple commands in 1.0.
-* If users don't provide a command, we'll assume the command was `new-tab`. This will be in-line with
+* If users don't provide a command, we'll assume the command was `new-tab`. This
+  will be in-line with what the behavior will be in 2.0.
 
 
 #### Sample 1.0 Commandlines
@@ -465,11 +480,109 @@ wt -p "Windows Powershell" -d "c:/Users/Foo/dev/MyProject"
 
 ## Implementation Details
 
-TODO: I'm leaving this empty for the time being. I want to get some feedback on
-the proposal in this state, before starting work on implementation details. This
-style of arguments might be controversial, so I want to make sure we settle on a
-syntax before I get too far into the details of parsing and passing these args
-around.
+Following an investigation performed the week of Nov 18th, 2019, I've determined
+that we should be able to use the [CLI11](CLI11) open-source library to parse
+our arguments. We'll need to add some additional logic on top of CLI11 in order
+to properly seperate commands with `;`, but that's not impossible to achieve.
+
+CLI11 will allow us to parse commandlines as a series of options, with a
+possible sub-command that takes it's own set of parameters. This functionality
+will be used to enable our options & commands style of parameters.
+
+When commands are parsed, each command will build an `ActionAndArgs` that can be
+used to tell the terminal what steps to perform on startup. The Terminal already
+uses these `ActionAndArgs` to perform actions like opening new tabs, panes,
+moving focus, etc.
+
+In my initial investigation, it seemed as though the Terminal did not initialize
+the size of child controls initially. This meant that it wasn't possible to
+immediately create all the splits and tabs for the Terminal as passed on the
+commandline, because they'd open at a size of 0x0. To mitigate this, we'll
+handle dispatching these startup actions one at a time, waiting until the
+Terminal for an action is initialized or the command is otherwise completed
+before dispatching the next one.
+
+This is a perhaps fragile way of handling the initialization. Ideally, there
+should be a way to dispatch all the commands _immediately_, before the Terminal
+fully initializes, so that the UI pops up in the state as specified in the
+commandline. This will be an area of active investigation as implementation is
+developed, to make the initialization of many commands as seamless as possible.
+
+### Implementation plan
+
+As this is a very complex feature, there will need to be a number of steps taken
+in the codebase to enable this functionality in a way that users are expecting.
+The following is a suggestion of the individual changelists that could be made
+to iteratively work towards fulling implementing this funcionality.
+
+* [ ] Refactor `ShortcutAction` dispatching into its own class
+  - Right now, the `AppKeyBindings` is responsible for triggering all
+    `ActionAndArgs` events, but only based upon keystrokes while the Terminal is
+    running. As we'll be re-using `ActionAndArgs` for handling startup events,
+    we'll need a more generic way of dispatching those events.
+* [ ] Add a `SplitPane` `ShortcutAction`, with a single parameter `style`,
+  which accepts either `vertical` or `horizontal`
+  - Make sure to convert the legacy `SplitVertical` and `SplitHorizontal` to use
+    `NewPane` with that arg set appropriately.
+* [ ] Add a `TerminalParameters` winrt object to `NewTabArgs` and `SplitPane`
+  args. `TerminalParameters` will include the following properties:
+
+```c#
+runtimeclass TerminalParameters {
+    String ProfileName;
+    String ProfileGuid;
+    String StartingDirectory;
+    String Commandline;
+}
+```
+  - These represent the arguments in `[terminal_parameters]`. When set, they'll
+    both `newTab` and `newPane` will accept [`profile`, `guid`, `commandline`,
+    `startingDirectory`] as optional parameters, and when they're set, they'll
+    override the default values used when creating a new terminal instance.
+    - `profile` and `guid` will be used to look up the profile to create by
+      `name`, `guid`, respectively, as opposed to the default profile.
+    - The others will override their respective properties from the
+      `TerminalSettings` created for that profile.
+* [ ] Add an optional `"percent"` argument to `SplitPane`, that enables a pane
+  to be split with a specified percent of the parent pane.
+* [ ] Add support to `TerminalApp` for parsing commandline arguments, and
+  constructing a list of `ActionAndArgs` based on those commands
+  - This will include adding tests that validate a particular commandline
+    generates the given sequence of `ActionAndArgs`.
+  - This will _not_ include _performing_ those actions, or passing the
+    commadline from the `WindowsTerminal` executable to the `TerminalApp`
+    library for parsing. This change does not add any user-facing functional
+    behavior, but is self-contained enough that it can be its own changelist,
+    without depending upon other functionality.
+* [ ] When parsing a `new-tab` command, configure the `TerminalApp::AppLogic` to
+  set some initial state about itself, to handle the `new-tab` arguments
+  [`--initialPosition`, `--maximized`, `--initialRows`, `--initialCols`]. Only
+  set this state for the first `new-tab` parsed. These settings will overwrite
+  the corresponding global properties on launch.
+  - at this time, this state is still not settable externally by the user.
+* [ ] When parsing a `help` command or a `list-profiles` command, trigger a
+  event on `AppLogic`. This event should be able to be handled by
+  WindowsTerminal (`AppHost`), and used to display a `MessageBox` with the given
+  text. (see [Potential Issues](##subsystemwindows-or-subsystemconsole) for a
+  discussion on this).
+* [ ] Add support for performing actions passed on the commandline. This
+  includes:
+  - Passing the commandline into the `TerminalApp` for parsing.
+  - Performing `ActionAndArgs` that are parsed by the Terminal
+  - At this point, the user should be able to pass the following commands to the
+    Terminal:
+    - `new-tab`
+    - `split-pane`
+    - `move-focus`
+    - `focus-tab`
+    - `open-settings`
+    - `help`
+    - `list-profiles`
+* [ ] Add a `ShortcutAction` for `FocusPane`, which accepts a single parameter
+  `index`.
+  - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
+    quicky switch to the i'th `Pane`.
+  - This is in order to support the `-t,--target` parameter of `split-pane`
 
 ## Capabilities
 
@@ -502,7 +615,7 @@ This change should not particularily impact startup time or any of these other c
 
 ## Potential Issues
 
-#### Commandline escaping
+### Commandline escaping
 
 Escaping commandlines is notoriously tricky to do correctly. Since we're using
 `;` to delimit commands, which might want to also use `;` in the commandline
@@ -534,6 +647,59 @@ TODO FOR DISCUSSION: Is this behavior in powershell uncomfortable enough that we
 should pick another seperator for commands? Is there a reasonable alternative
 that makes enough logical sense? Or is this a reasonable expectation, that
 commandlines would be escaped like this?
+
+### `/SUBSYSTEM:Windows` or `/SUBSYSTEM:Console`?
+
+When you create an application on Windows, you must link it as either a Windows
+or a Console application. When the application is launched from a commandline
+shell as a Windows application, the shell will immediately return to the
+foreground of the console, which means that any console output emitted by the
+process will be intermixed with the shell. However, if an application is linked
+as a Console application, and it's launched from the Start Menu, Run dialog, or
+any other context that's _not_ a console, then the OS will _automatically_
+create a console to host the commandline application. That means that briefly, a
+console window will appear on the screen, even if we decide that we just want to
+launch our application's window.
+
+This basically leaves us with two bad scenarios. Either we're a Console
+application, and a console window always flashes on screen for every
+non-commandline invocation of the Terminal, or we're a Windows application, and
+console output we log (including help messages) can get mixed with shell output.
+Neither of these are particularly good.
+
+`python` et. al. often ship with _two_ executables, a `python.exe` which is a
+Console application, and a `pythonw.exe`, which is a Windows application. This
+however has led to [loads of confusion](https://stackoverflow.com/a/30313091),
+and even with plentiful documentation, would likely result in users being
+confused about what does what. For situations like launching the Terminal in the
+CWD of `explorer.exe`, users would need to use `wtw.exe -d .` to prevent the
+console window from appearing. However, when calling Windows Terminal from a
+commandline environment, users who call `wtw.exe /?` would likely get unexpected
+behavior, because they should have instead called `wt.exe /?`.
+
+To avoid this confusion, I propose we follow the example of `msiexec /?`. This
+is a Windows application that uses a `MessageBox` to display its help text.
+While this is less convenient for users coming exclusively from a commandline
+environment, it's also
+
+### What happens if `new-tab` isn't the first command?
+
+TODO: What should we do if we encounter the following?
+
+```sh
+wt.exe new-pane -v ; new-tab
+```
+
+In the future, maybe we could presume in this case that the commands are
+intended for the current Windows Terminal window, though that's not
+functionality that will arrive in 1.0. Furthermore, even when sessions are
+supported like that, I'm not sure it'll be possible to know what session we're
+currently running in. Additionally, what would happen if theis was run in a
+`conhost` window, that wasn't attached to a Terminal session? I don't believe
+that implying the _current session_ is the correct behavior here.
+
+Should we just immediately display an error that the commandline is invalid, and
+that a commandline should start with a `new-tab ; `?
 
 ## Future considerations
 
@@ -607,3 +773,4 @@ Feature Request: Start with multiple tabs open [#756]
 [#1357]: https://github.com/microsoft/terminal/pull/1357
 [#2068]: https://github.com/microsoft/terminal/issues/2068
 [#2080]: https://github.com/microsoft/terminal/pull/2080
+[CLI11]: https://github.com/CLIUtils/CLI11
