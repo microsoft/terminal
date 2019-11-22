@@ -7,6 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
+#include <Utils.h>
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
@@ -68,7 +69,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _lastMouseClick{},
-        _lastMouseClickPos{}
+        _lastMouseClickPos{},
+        _tsfInputControl{ nullptr }
     {
         _EnsureStaticInitialization();
         _Create();
@@ -100,6 +102,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
         _scrollBar.Visibility(Visibility::Visible);
+
+        _tsfInputControl = TSFInputControl();
+        _tsfInputControl.CompositionCompleted({ this, &TermControl::_CompositionCompleted });
+        _tsfInputControl.CurrentCursorPosition({ this, &TermControl::_CurrentCursorPositionHandler });
+        _tsfInputControl.CurrentFontInfo({ this, &TermControl::_FontInfoHandler });
+        container.Children().Append(_tsfInputControl);
 
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
@@ -193,6 +201,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 auto lock = _terminal->LockForWriting();
                 _DoResize(width, height);
             }
+
+            // set TSF Foreground
+            Media::SolidColorBrush foregroundBrush{};
+            foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+            _tsfInputControl.Foreground(foregroundBrush);
         });
     }
 
@@ -245,6 +258,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
+
+        // set TSF Foreground
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+        _tsfInputControl.Foreground(foregroundBrush);
+        _tsfInputControl.Margin(newMargin);
     }
 
     // Method Description:
@@ -1191,6 +1210,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         _focused = true;
 
+        if (_tsfInputControl != nullptr)
+        {
+            _tsfInputControl.NotifyFocusEnter();
+        }
+
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Start();
@@ -1208,6 +1232,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
         _focused = false;
+
+        if (_tsfInputControl != nullptr)
+        {
+            _tsfInputControl.NotifyFocusLeave();
+        }
 
         if (_cursorTimer.has_value())
         {
@@ -1867,6 +1896,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         terminalPosition.Y /= fontSize.Y;
 
         return terminalPosition;
+    }
+
+    // Method Description:
+    // - Composition Completion handler for the TSFInputControl that
+    //   handles writing text out to TerminalConnection
+    // Arguments:
+    // - text: the text to write to TerminalConnection
+    // Return Value:
+    // - <none>
+    void TermControl::_CompositionCompleted(winrt::hstring text)
+    {
+        _connection.WriteInput(text);
+    }
+
+    // Method Description:
+    // - CurrentCursorPosition handler for the TSFInputControl that
+    //   handles returning current cursor position.
+    // Arguments:
+    // - eventArgs: event for storing the current cursor position
+    // Return Value:
+    // - <none>
+    void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
+    {
+        const COORD cursorPos = _terminal->GetCursorPosition();
+        Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
+        eventArgs.CurrentPosition(p);
+    }
+
+    // Method Description:
+    // - FontInfo handler for the TSFInputControl that
+    //   handles returning current font information
+    // Arguments:
+    // - eventArgs: event for storing the current font information
+    // Return Value:
+    // - <none>
+    void TermControl::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
+    {
+        eventArgs.FontSize(CharacterDimensions());
+        eventArgs.FontFace(_actualFont.GetFaceName());
     }
 
     // Method Description:
