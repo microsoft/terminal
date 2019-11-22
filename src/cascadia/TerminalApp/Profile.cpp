@@ -27,6 +27,7 @@ static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
+static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -98,6 +99,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _selectionBackground{},
     _colorTable{},
     _tabTitle{},
+    _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -190,6 +192,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
     // use the profile name
     terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
+
+    if (_suppressApplicationTitle)
+    {
+        terminalSettings.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
 
     if (_schemeName)
     {
@@ -322,6 +329,11 @@ Json::Value Profile::ToJson() const
     if (_tabTitle)
     {
         root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
+    }
+
+    if (_suppressApplicationTitle)
+    {
+        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
     }
 
     if (_startingDirectory)
@@ -673,6 +685,11 @@ void Profile::LayerJson(const Json::Value& json)
         auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
         _useAcrylic = useAcrylic.asBool();
     }
+    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
+    {
+        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
+        _suppressApplicationTitle = suppressApplicationTitle.asBool();
+    }
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
@@ -783,6 +800,15 @@ void Profile::SetTabTitle(std::wstring tabTitle) noexcept
     _tabTitle = std::move(tabTitle);
 }
 
+// Method Description
+// - Sets if the application title will be suppressed in this profile.
+// Arguments:
+// - suppressApplicationTitle: boolean
+void Profile::SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept
+{
+    _suppressApplicationTitle = suppressApplicationTitle;
+}
+
 // Method Description:
 // - Sets this profile's icon path.
 // Arguments:
@@ -835,6 +861,11 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::GetSuppressApplicationTitle() const noexcept
+{
+    return _suppressApplicationTitle;
 }
 
 bool Profile::HasConnectionType() const noexcept

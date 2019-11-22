@@ -24,56 +24,40 @@ namespace Microsoft::Console::Interactivity::Win32
     class UiaTextRange final : public Microsoft::Console::Types::UiaTextRangeBase
     {
     public:
-        static std::deque<UiaTextRange*> GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                                            _In_ IRawElementProviderSimple* pProvider);
+        static HRESULT GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                          _In_ IRawElementProviderSimple* pProvider,
+                                          _Out_ std::deque<WRL::ComPtr<UiaTextRange>>& ranges);
+
+        UiaTextRange() = default;
 
         // degenerate range
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider);
+        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const Cursor& cursor);
+        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Cursor& cursor);
 
         // specific endpoint range
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const Endpoint start,
-                                    const Endpoint end,
-                                    const bool degenerate);
+        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Endpoint start,
+                                       const Endpoint end,
+                                       const bool degenerate);
 
         // range from a UiaPoint
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const UiaPoint point);
+        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const UiaPoint point);
+
+        HRESULT RuntimeClassInitialize(const UiaTextRange& a);
 
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
         IFACEMETHODIMP FindText(_In_ BSTR text,
                                 _In_ BOOL searchBackward,
                                 _In_ BOOL ignoreCase,
                                 _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
-
-        // degenerate range
-        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider);
-
-        // degenerate range at cursor position
-        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider,
-                     const Cursor& cursor);
-
-        // specific endpoint range
-        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider,
-                     const Endpoint start,
-                     const Endpoint end,
-                     const bool degenerate);
-
-        // range from a UiaPoint
-        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider,
-                     const UiaPoint point);
 
     protected:
         void _ChangeViewport(const SMALL_RECT NewWindow) override;

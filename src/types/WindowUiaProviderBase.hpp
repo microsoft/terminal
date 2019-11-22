@@ -36,6 +36,8 @@ namespace Microsoft::Console::Types
 
     protected:
         WindowUiaProviderBase() = default;
+        HRESULT RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept;
+
         WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
         WindowUiaProviderBase(WindowUiaProviderBase&&) = default;
         WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = default;
@@ -68,8 +70,6 @@ namespace Microsoft::Console::Types
                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
 
-        WindowUiaProviderBase(IUiaWindow* baseWindow);
-
         RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
         void ChangeViewport(const SMALL_RECT NewWindow);
@@ -94,9 +94,6 @@ namespace Microsoft::Console::Types
         const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Console Host Window";
 
     private:
-        // Ref counter for COM object
-        ULONG _cRefs;
-
         IUiaWindow* _baseWindow;
     };
 

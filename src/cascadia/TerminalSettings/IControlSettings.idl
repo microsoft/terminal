@@ -31,7 +31,6 @@ namespace Microsoft.Terminal.Settings
 
         String Commandline;
         String StartingDirectory;
-        String StartingTitle;
         String EnvironmentVariables;
 
         String BackgroundImage;
