@@ -118,7 +118,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo _actualFont;
 
         std::optional<int> _lastScrollOffset;
-        std::optional<std::chrono::high_resolution_clock::time_point> _lastScrollTime;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
