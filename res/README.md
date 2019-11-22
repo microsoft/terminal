@@ -18,4 +18,4 @@ Please consult the [license](https://raw.githubusercontent.com/microsoft/cascadi
 ### Fonts Included
 
 * Cascadia Code
-   * from microsoft/cascadia-code@60da2b51f841c7a706c20ce312e2408b1ebb95be
+   * from microsoft/cascadia-code@d733599504811e8f3969de20368817d20e162dba
