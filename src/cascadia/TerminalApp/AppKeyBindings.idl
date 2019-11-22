@@ -4,24 +4,27 @@ import "../ActionArgs.idl";
 
 namespace TerminalApp
 {
+    // TODO: GH#1069 - Many of these shortcut actions are "legacy" now that we
+    // have support for arbitrary args (#1142). We should remove them, and our
+    // legacy deserializers.
     enum ShortcutAction
     {
         Invalid = 0,
         CopyText,
         CopyTextWithoutNewlines,
         PasteText,
-        NewTab,
         OpenNewTabDropdown,
         DuplicateTab,
-        NewTabProfile0,
-        NewTabProfile1,
-        NewTabProfile2,
-        NewTabProfile3,
-        NewTabProfile4,
-        NewTabProfile5,
-        NewTabProfile6,
-        NewTabProfile7,
-        NewTabProfile8,
+        NewTab,
+        NewTabProfile0, // Legacy
+        NewTabProfile1, // Legacy
+        NewTabProfile2, // Legacy
+        NewTabProfile3, // Legacy
+        NewTabProfile4, // Legacy
+        NewTabProfile5, // Legacy
+        NewTabProfile6, // Legacy
+        NewTabProfile7, // Legacy
+        NewTabProfile8, // Legacy
         NewWindow,
         CloseWindow,
         CloseTab,
@@ -30,47 +33,57 @@ namespace TerminalApp
         PrevTab,
         SplitVertical,
         SplitHorizontal,
-        SwitchToTab0,
-        SwitchToTab1,
-        SwitchToTab2,
-        SwitchToTab3,
-        SwitchToTab4,
-        SwitchToTab5,
-        SwitchToTab6,
-        SwitchToTab7,
-        SwitchToTab8,
+        SwitchToTab,
+        SwitchToTab0, // Legacy
+        SwitchToTab1, // Legacy
+        SwitchToTab2, // Legacy
+        SwitchToTab3, // Legacy
+        SwitchToTab4, // Legacy
+        SwitchToTab5, // Legacy
+        SwitchToTab6, // Legacy
+        SwitchToTab7, // Legacy
+        SwitchToTab8, // Legacy
         IncreaseFontSize,
         DecreaseFontSize,
         ScrollUp,
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
-        ResizePaneLeft,
-        ResizePaneRight,
-        ResizePaneUp,
-        ResizePaneDown,
-        MoveFocusLeft,
-        MoveFocusRight,
-        MoveFocusUp,
-        MoveFocusDown,
+        ResizePane,
+        ResizePaneLeft, // Legacy
+        ResizePaneRight, // Legacy
+        ResizePaneUp, // Legacy
+        ResizePaneDown, // Legacy
+        MoveFocus,
+        MoveFocusLeft, // Legacy
+        MoveFocusRight, // Legacy
+        MoveFocusUp, // Legacy
+        MoveFocusDown, // Legacy
         ToggleFullscreen,
         OpenSettings
+    };
+
+    [default_interface] runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        IActionArgs Args;
+        ShortcutAction Action;
     };
 
     [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
+        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.Settings.KeyChord chord);
         void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
-        Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
+
+        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
 
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CopyText;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> PasteText;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTab;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenNewTabDropdown;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> DuplicateTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTabWithProfile;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewWindow;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CloseWindow;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CloseTab;

@@ -63,13 +63,13 @@ private:                                                                        
 // signatures and define them both for you, because they don't really vary from
 // event to event.
 // Use this in a classes header if you have a Windows.Foundation.TypedEventHandler
-#define TYPED_EVENT(name, sender, args)                                                                                                     \
-public:                                                                                                                                     \
-    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
-    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); }                                                \
-                                                                                                                                            \
-private:                                                                                                                                    \
-    winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
+#define TYPED_EVENT(name, sender, args)                                                                                                            \
+public:                                                                                                                                            \
+    winrt::event_token name(winrt::Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
+    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); }                                                       \
+                                                                                                                                                   \
+private:                                                                                                                                           \
+    winrt::event<winrt::Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature and body of an event
 // which is exposed by one class, but actually handled entirely by one of the

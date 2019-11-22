@@ -52,6 +52,9 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestLayerGlobalsOnRoot);
 
+        TEST_METHOD(TestProfileIconWithEnvVar);
+        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1365,5 +1368,50 @@ namespace TerminalAppLocalTests
             settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(guid3, settings._globals._defaultProfile);
         }
+    }
+    void SettingsTests::TestProfileIconWithEnvVar()
+    {
+        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
+
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "icon": "%WINDIR%\\System32\\x_80.png"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+        VERIFY_IS_FALSE(settings._profiles.empty(), 0);
+        VERIFY_ARE_EQUAL(expectedPath, settings._profiles[0].GetExpandedIconPath());
+    }
+    void SettingsTests::TestProfileBackgroundImageWithEnvVar()
+    {
+        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
+
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+        VERIFY_IS_FALSE(settings._profiles.empty(), 0);
+
+        GlobalAppSettings globalSettings{};
+        auto terminalSettings = settings._profiles[0].CreateTerminalSettings(globalSettings.GetColorSchemes());
+        VERIFY_ARE_EQUAL(expectedPath, terminalSettings.BackgroundImage());
     }
 }

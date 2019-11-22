@@ -27,6 +27,7 @@ static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
+static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -93,6 +94,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _selectionBackground{},
     _colorTable{},
     _tabTitle{},
+    _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -187,6 +189,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // use the profile name
     terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
 
+    if (_suppressApplicationTitle)
+    {
+        terminalSettings.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
+
     if (_schemeName)
     {
         const auto found = schemes.find(_schemeName.value());
@@ -214,9 +221,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         terminalSettings.ScrollState(result);
     }
 
-    if (_backgroundImage)
+    if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(_backgroundImage.value());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
     }
 
     if (_backgroundImageOpacity)
@@ -320,6 +327,11 @@ Json::Value Profile::ToJson() const
     if (_tabTitle)
     {
         root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
+    }
+
+    if (_suppressApplicationTitle)
+    {
+        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
     }
 
     if (_startingDirectory)
@@ -669,6 +681,11 @@ void Profile::LayerJson(const Json::Value& json)
         auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
         _useAcrylic = useAcrylic.asBool();
     }
+    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
+    {
+        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
+        _suppressApplicationTitle = suppressApplicationTitle.asBool();
+    }
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
@@ -765,6 +782,11 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value() && !_icon.value().empty();
 }
 
+bool Profile::HasBackgroundImage() const noexcept
+{
+    return _backgroundImage.has_value() && !_backgroundImage.value().empty();
+}
+
 // Method Description
 // - Sets this profile's tab title.
 // Arguments:
@@ -772,6 +794,15 @@ bool Profile::HasIcon() const noexcept
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
     _tabTitle = std::move(tabTitle);
+}
+
+// Method Description
+// - Sets if the application title will be suppressed in this profile.
+// Arguments:
+// - suppressApplicationTitle: boolean
+void Profile::SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept
+{
+    _suppressApplicationTitle = suppressApplicationTitle;
 }
 
 // Method Description:
@@ -801,6 +832,23 @@ winrt::hstring Profile::GetExpandedIconPath() const
 }
 
 // Method Description:
+// - Returns this profile's background image path, if one is set, expanding
+//   any environment variables in the path, if there are any.
+// Return Value:
+// - This profile's expanded background image path / the empty string.
+winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+{
+    winrt::hstring result{};
+
+    if (HasBackgroundImage())
+    {
+        result = wil::ExpandEnvironmentStringsW<std::wstring>(_backgroundImage.value().data());
+    }
+
+    return result;
+}
+
+// Method Description:
 // - Returns the name of this profile.
 // Arguments:
 // - <none>
@@ -809,6 +857,11 @@ winrt::hstring Profile::GetExpandedIconPath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::GetSuppressApplicationTitle() const noexcept
+{
+    return _suppressApplicationTitle;
 }
 
 bool Profile::HasConnectionType() const noexcept
