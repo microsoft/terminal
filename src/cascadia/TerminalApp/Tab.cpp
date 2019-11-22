@@ -250,7 +250,7 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - <none>
-void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+void Tab::ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& direction)
 {
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
@@ -264,7 +264,7 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - <none>
-void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+void Tab::NavigateFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction)
 {
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.

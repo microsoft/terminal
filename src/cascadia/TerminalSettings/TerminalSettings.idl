@@ -6,6 +6,23 @@ import "IControlSettings.idl";
 
 namespace Microsoft.Terminal.Settings
 {
+    enum Direction
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum SelectionExpansionMode
+    {
+        Cell = 0,
+        Word,
+        Viewport,
+        Buffer
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety

@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         int GetViewHeight() const;
 
         void AdjustFontSize(int fontSizeDelta);
+        bool MoveSelectionAnchor(Settings::Direction dir, Settings::SelectionExpansionMode expansionMode);
 
         void SwapChainChanged();
         ~TermControl();
@@ -81,7 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const FontInfo GetActualFont() const;
         const Windows::UI::Xaml::Thickness GetPadding() const;
 
-        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
+        static Windows::Foundation::Point GetProposedDimensions(Settings::IControlSettings const& settings, const uint32_t dpi);
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------

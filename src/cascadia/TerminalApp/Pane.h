@@ -61,8 +61,8 @@ public:
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-    bool ResizePane(const winrt::TerminalApp::Direction& direction);
-    bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
+    bool ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& direction);
+    bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction);
 
     bool CanSplit(SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(SplitState splitType,
@@ -113,8 +113,8 @@ private:
     void _ApplySplitDefinitions();
     void _UpdateBorders();
 
-    bool _Resize(const winrt::TerminalApp::Direction& direction);
-    bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
+    bool _Resize(const winrt::Microsoft::Terminal::Settings::Direction& direction);
+    bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
 
@@ -141,7 +141,7 @@ private:
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
     //   SplitState::None.
-    static constexpr bool DirectionMatchesSplit(const winrt::TerminalApp::Direction& direction,
+    static constexpr bool DirectionMatchesSplit(const winrt::Microsoft::Terminal::Settings::Direction& direction,
                                                 const SplitState& splitType)
     {
         if (splitType == SplitState::None)
@@ -150,13 +150,13 @@ private:
         }
         else if (splitType == SplitState::Horizontal)
         {
-            return direction == winrt::TerminalApp::Direction::Up ||
-                   direction == winrt::TerminalApp::Direction::Down;
+            return direction == winrt::Microsoft::Terminal::Settings::Direction::Up ||
+                   direction == winrt::Microsoft::Terminal::Settings::Direction::Down;
         }
         else if (splitType == SplitState::Vertical)
         {
-            return direction == winrt::TerminalApp::Direction::Left ||
-                   direction == winrt::TerminalApp::Direction::Right;
+            return direction == winrt::Microsoft::Terminal::Settings::Direction::Left ||
+                   direction == winrt::Microsoft::Terminal::Settings::Direction::Right;
         }
         return false;
     }

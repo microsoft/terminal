@@ -1016,6 +1016,68 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Moves the selection anchor in use. Used for Keyboard Selection.
+    // Arguments:
+    // - dir: The direction to move the selection anchor in
+    // - expansionMode: The movement mode in use for movement
+    // Return Value:
+    // - true, if the action was handled. false, otherwise.
+    bool TermControl::MoveSelectionAnchor(Settings::Direction dir, Settings::SelectionExpansionMode mode)
+    {
+        // no selection --> not valid
+        if (_terminal == nullptr || !_terminal->IsSelectionActive())
+        {
+            return false;
+        }
+
+        // translate Settings::Direction to Terminal::Direction
+        ::Microsoft::Terminal::Core::Terminal::Direction selectionDir;
+        switch (dir)
+        {
+        case Settings::Direction::Left:
+            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Left;
+            break;
+        case Settings::Direction::Right:
+            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Right;
+            break;
+        case Settings::Direction::Up:
+            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Up;
+            break;
+        case Settings::Direction::Down:
+            selectionDir = ::Microsoft::Terminal::Core::Terminal::Direction::Down;
+            break;
+        case Settings::Direction::None:
+        default:
+            // TODO CARLOS
+            // Probably throw a warning here or something
+            return false;
+        }
+
+        // translate Settings::SelectionExpansionMode to Terminal::SelectionExpansionMode
+        ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode selectionMode;
+        switch (mode)
+        {
+        case Settings::SelectionExpansionMode::Buffer:
+            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Buffer;
+            break;
+        case Settings::SelectionExpansionMode::Viewport:
+            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Viewport;
+            break;
+        case Settings::SelectionExpansionMode::Word:
+            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Word;
+            break;
+        case Settings::SelectionExpansionMode::Cell:
+        default:
+            selectionMode = ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Cell;
+            break;
+        }
+
+        _terminal->MoveSelectionAnchor(selectionDir, selectionMode);
+        _renderer->TriggerSelection();
+        return true;
+    }
+
+    // Method Description:
     // - Scroll the visible viewport in response to a mouse wheel event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
@@ -1485,6 +1547,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
+    // Return Value:
+    // - true, if the action was handled. false, otherwise.
     bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
         // no selection --> nothing to copy

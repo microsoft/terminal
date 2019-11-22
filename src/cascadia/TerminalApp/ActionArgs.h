@@ -12,7 +12,9 @@
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
+#include "MoveSelectionAnchorArgs.g.h"
 
+#include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
 
@@ -133,32 +135,32 @@ namespace winrt::TerminalApp::implementation
     // - directionString: the string to attempt to parse
     // Return Value:
     // - The encoded Direction value, or Direction::None if it was an invalid string
-    static TerminalApp::Direction ParseDirection(const std::string& directionString)
+    static winrt::Microsoft::Terminal::Settings::Direction ParseDirection(const std::string& directionString)
     {
         if (directionString == LeftString)
         {
-            return TerminalApp::Direction::Left;
+            return winrt::Microsoft::Terminal::Settings::Direction::Left;
         }
         else if (directionString == RightString)
         {
-            return TerminalApp::Direction::Right;
+            return winrt::Microsoft::Terminal::Settings::Direction::Right;
         }
         else if (directionString == UpString)
         {
-            return TerminalApp::Direction::Up;
+            return winrt::Microsoft::Terminal::Settings::Direction::Up;
         }
         else if (directionString == DownString)
         {
-            return TerminalApp::Direction::Down;
+            return winrt::Microsoft::Terminal::Settings::Direction::Down;
         }
         // default behavior for invalid data
-        return TerminalApp::Direction::None;
+        return winrt::Microsoft::Terminal::Settings::Direction::None;
     };
 
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -187,7 +189,7 @@ namespace winrt::TerminalApp::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -237,6 +239,77 @@ namespace winrt::TerminalApp::implementation
             if (auto jsonDelta{ json[JsonKey(AdjustFontSizeDelta)] })
             {
                 args->_Delta = jsonDelta.asInt();
+            }
+            return *args;
+        }
+    };
+
+    // Possible SelectionExpansionMode values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
+    static constexpr std::string_view CellString{ "cell" };
+    static constexpr std::string_view WordString{ "word" };
+    static constexpr std::string_view ViewportString{ "viewport" };
+    static constexpr std::string_view BufferString{ "buffer" };
+
+    // Function Description:
+    // - Helper function for parsing a SelectionExpansionMode from a string
+    // Arguments:
+    // - directionString: the string to attempt to parse
+    // Return Value:
+    // - The encoded Direction value, or Direction::None if it was an invalid string
+    static winrt::Microsoft::Terminal::Settings::SelectionExpansionMode ParseExpansionMode(const std::string& expansionModeString)
+    {
+        if (expansionModeString == CellString)
+        {
+            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
+        }
+        else if (expansionModeString == WordString)
+        {
+            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Word;
+        }
+        else if (expansionModeString == ViewportString)
+        {
+            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Viewport;
+        }
+        else if (expansionModeString == BufferString)
+        {
+            return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Buffer;
+        }
+        // default behavior for invalid data
+        return winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell;
+    };
+
+    struct MoveSelectionAnchorArgs : public MoveSelectionAnchorArgsT<MoveSelectionAnchorArgs>
+    {
+        MoveSelectionAnchorArgs() = default;
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Direction, Direction, winrt::Microsoft::Terminal::Settings::Direction::None);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SelectionExpansionMode, ExpansionMode, winrt::Microsoft::Terminal::Settings::SelectionExpansionMode::Cell);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+        static constexpr std::string_view ExpansionModeKey{ "expansionMode" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<MoveSelectionAnchorArgs>();
+            if (otherAsUs)
+            {
+                return (otherAsUs->_Direction == _Direction) && (otherAsUs->_ExpansionMode == _ExpansionMode);
+            }
+            return false;
+        };
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MoveSelectionAnchorArgs>();
+            if (auto directionString{ json[JsonKey(DirectionKey)] })
+            {
+                args->_Direction = ParseDirection(directionString.asString());
+
+                if (auto expansionModeString{ json[JsonKey(ExpansionModeKey)] })
+                {
+                    args->_ExpansionMode = ParseExpansionMode(expansionModeString.asString());
+                }
             }
             return *args;
         }

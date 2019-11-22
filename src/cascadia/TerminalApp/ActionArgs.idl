@@ -14,15 +14,6 @@ namespace TerminalApp
         IActionArgs ActionArgs { get; };
     };
 
-    enum Direction
-    {
-        None = 0,
-        Left,
-        Right,
-        Up,
-        Down
-    };
-
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
     {
         ActionEventArgs(IActionArgs args);
@@ -47,17 +38,23 @@ namespace TerminalApp
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
     {
-        Direction Direction { get; };
+        Microsoft.Terminal.Settings.Direction Direction { get; };
     };
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
-        Direction Direction { get; };
+        Microsoft.Terminal.Settings.Direction Direction { get; };
     };
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
         Int32 Delta { get; };
+    };
+
+    [default_interface] runtimeclass MoveSelectionAnchorArgs : IActionArgs
+    {
+        Microsoft.Terminal.Settings.Direction Direction { get; };
+        Microsoft.Terminal.Settings.SelectionExpansionMode ExpansionMode { get; };
     };
 
 }

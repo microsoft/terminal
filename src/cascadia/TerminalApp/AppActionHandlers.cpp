@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
         {
-            if (realArgs.Direction() == TerminalApp::Direction::None)
+            if (realArgs.Direction() == Settings::Direction::None)
             {
                 // Do nothing
                 args.Handled(false);
@@ -187,7 +187,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
         {
-            if (realArgs.Direction() == TerminalApp::Direction::None)
+            if (realArgs.Direction() == Settings::Direction::None)
             {
                 // Do nothing
                 args.Handled(false);
@@ -228,4 +228,14 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleMoveSelectionAnchor(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveSelectionAnchorArgs>())
+        {
+            const auto termControl = _GetActiveControl();
+            const auto handled = termControl.MoveSelectionAnchor(realArgs.Direction(), realArgs.ExpansionMode());
+            args.Handled(handled);
+        }
+    }
 }

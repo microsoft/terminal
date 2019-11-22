@@ -37,6 +37,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         Boolean CopySelectionToClipboard(Boolean trimTrailingWhitespace);
         void PasteTextFromClipboard();
+        Boolean MoveSelectionAnchor(Microsoft.Terminal.Settings.Direction direction, Microsoft.Terminal.Settings.SelectionExpansionMode expansionMode);
         void Close();
         Boolean ShouldCloseOnExit { get; };
         Windows.Foundation.Size CharacterDimensions { get; };

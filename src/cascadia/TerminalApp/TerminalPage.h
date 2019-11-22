@@ -92,7 +92,7 @@ namespace winrt::TerminalApp::implementation
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const int tabIndex);
-        void _MoveFocus(const Direction& direction);
+        void _MoveFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         int _GetFocusedTabIndex() const;
@@ -107,7 +107,7 @@ namespace winrt::TerminalApp::implementation
         void _SplitVertical(const std::optional<GUID>& profileGuid);
         void _SplitHorizontal(const std::optional<GUID>& profileGuid);
         void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
-        void _ResizePane(const Direction& direction);
+        void _ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
@@ -154,6 +154,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleMoveSelectionAnchor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

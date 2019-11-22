@@ -12,3 +12,4 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
+#include "MoveSelectionAnchorArgs.g.cpp"

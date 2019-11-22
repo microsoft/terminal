@@ -26,8 +26,8 @@ public:
     void UpdateIcon(const winrt::hstring iconPath);
 
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-    void ResizePane(const winrt::TerminalApp::Direction& direction);
-    void NavigateFocus(const winrt::TerminalApp::Direction& direction);
+    void ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& direction);
+    void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction);
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
     winrt::hstring GetActiveTitle() const;

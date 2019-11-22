@@ -244,6 +244,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleFullscreenHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::MoveSelectionAnchor:
+        {
+            _MoveSelectionAnchorHandlers(*this, *eventArgs);
+            break;
+        }
         default:
             return false;
         }

@@ -610,6 +610,7 @@ namespace winrt::TerminalApp::implementation
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
         bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        bindings.MoveSelectionAnchor({ this, &TerminalPage::_HandleMoveSelectionAnchor });
     }
 
     // Method Description:
