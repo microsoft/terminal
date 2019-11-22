@@ -379,13 +379,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
         Windows::UI::Xaml::Automation::Peers::AutomationPeer autoPeer{ nullptr };
-        try
+        if (GetUiaData())
         {
-            // create a custom automation peer with this code pattern:
-            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            autoPeer = winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
+            try
+            {
+                // create a custom automation peer with this code pattern:
+                // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+                autoPeer = winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
+            }
+            CATCH_LOG();
         }
-        CATCH_LOG();
         return autoPeer;
     }
 
