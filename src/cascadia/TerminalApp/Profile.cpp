@@ -922,9 +922,13 @@ CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
         {
             return CloseOnExitMode::Graceful;
         }
+        else if (closeOnExit == CloseOnExitNever)
+        {
+            return CloseOnExitMode::Never;
+        }
     }
 
-    return CloseOnExitMode::Never;
+    return CloseOnExitMode::Graceful;
 }
 
 // Method Description:
@@ -940,11 +944,11 @@ std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeO
     {
     case CloseOnExitMode::Always:
         return CloseOnExitAlways;
-    case CloseOnExitMode::Graceful:
-        return CloseOnExitGraceful;
-    default:
     case CloseOnExitMode::Never:
         return CloseOnExitNever;
+    case CloseOnExitMode::Graceful:
+    default:
+        return CloseOnExitGraceful;
     }
 }
 
