@@ -12,6 +12,7 @@
 inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
 {
     winrt::Windows::UI::Color color;
+    color.A = 255;
     color.R = GetRValue(colorref);
     color.G = GetGValue(colorref);
     color.B = GetBValue(colorref);
