@@ -12,8 +12,7 @@
     <OutputPath>$(RepoBinPath)$(Platform)\$(Configuration)\$(MSBuildProjectName)</OutputPath>
     <BeforePack>CollectNativePackContents</BeforePack>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version Condition="'$(NuGetPackVersion)' == ''">0.5</Version>
-    <Version Condition="'$(NuGetPackVersion)' != ''">$(NuGetPackVersion)</Version>
+    <Version>0.1</Version>
   </PropertyGroup>
   
   <ItemGroup>
