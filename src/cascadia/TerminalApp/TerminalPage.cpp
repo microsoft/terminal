@@ -8,6 +8,9 @@
 
 #include <LibraryResources.h>
 
+#include <Windows.h>
+#include <wil\Resource.h>
+
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -134,6 +137,38 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Implements the MSDN suggested method of obtaining the full OS version number
+    //   https://docs.microsoft.com/en-us/windows/win32/sysinfo/getting-the-system-version
+    // - On failure the output wstring will be L"0.0.0.0"
+    std::wstring TerminalPage::_GetWindowsVersion()
+    {
+        const auto dll{ L"kernel32.dll" };
+        DWORD fill{};
+        const auto infoSize{ GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, dll, &fill) };
+        auto buffer{ wil::make_unique_nothrow<BYTE[]>(infoSize) };
+        // clear varaibles for use in case of failure
+        WORD osMaj{}, osMin{}, osBld{}, osRev{};
+
+        if (GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, dll, fill, infoSize, buffer.get()))
+        {
+            VS_FIXEDFILEINFO* versionInfo{ nullptr };
+            UINT size{};
+
+            if (VerQueryValueW(buffer.get(), L"\\", (LPVOID*)&versionInfo, &size))
+            {
+                osMaj = HIWORD(versionInfo->dwProductVersionMS);
+                osMin = LOWORD(versionInfo->dwProductVersionMS);
+                osBld = HIWORD(versionInfo->dwProductVersionLS);
+                osRev = LOWORD(versionInfo->dwProductVersionLS);
+            }
+        }
+
+        std::wstringstream osVersionStream{};
+        osVersionStream << osMaj << L"." << osMin << L"." << osBld << L"." << osRev;
+        return osVersionStream.str();
+    }
+
+    // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
     //   Name, version, getting started link, documentation link, and release
     //   Notes link.
@@ -141,6 +176,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto title = RS_(L"AboutTitleText");
         const auto versionLabel = RS_(L"VersionLabelText");
+        const auto osVersionLabel = RS_(L"OsVersionLabelText");
         const auto gettingStartedLabel = RS_(L"GettingStartedLabelText");
         const auto documentationLabel = RS_(L"DocumentationLabelText");
         const auto releaseNotesLabel = RS_(L"ReleaseNotesLabelText");
@@ -150,6 +186,8 @@ namespace winrt::TerminalApp::implementation
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
+        const auto osVersion = _GetWindowsVersion();
+
         winrt::Windows::UI::Xaml::Documents::Run about;
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
@@ -177,7 +215,8 @@ namespace winrt::TerminalApp::implementation
 
         // Format our about text. It will look like the following:
         // <Display Name>
-        // Version: <Major>.<Minor>.<Build>.<Revision>
+        // WT Version: <WtMajor>.<WtMinor>.<WtBuild>.<WtRevision>
+        // OS Version: <OsMajor>.<OsMinor>.<OsBuild>.<OsRevision>
         // Getting Started
         // Documentation
         // Release Notes
@@ -186,6 +225,8 @@ namespace winrt::TerminalApp::implementation
 
         aboutTextStream << versionLabel.c_str() << L" ";
         aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision << L"\n";
+
+        aboutTextStream << osVersionLabel.c_str() << L" " << osVersion.c_str() << L"\n";
 
         winrt::hstring aboutText{ aboutTextStream.str() };
         about.Text(aboutText);

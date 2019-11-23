@@ -166,7 +166,7 @@ Temporarily using the Windows Terminal default settings.
     <value>About</value>
   </data>
   <data name="VersionLabelText" xml:space="preserve">
-    <value>Version:</value>
+    <value>WT Version:</value>
   </data>
   <data name="DocumentationLabelText" xml:space="preserve">
     <value>Documentation
@@ -209,5 +209,8 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
+  </data>
+  <data name="OsVersionLabelText" xml:space="preserve">
+    <value>OS Version:</value>
   </data>
 </root>

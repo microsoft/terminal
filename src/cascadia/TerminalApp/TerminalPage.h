@@ -65,6 +65,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
+        std::wstring _GetWindowsVersion();
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
 
