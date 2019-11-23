@@ -28,12 +28,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
         auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Primitives::ToggleButton>();
 
-        if (closeButton) _focusableElements.insert(closeButton);
-        if (textBox) _focusableElements.insert(textBox);
-        if (checkBox) _focusableElements.insert(checkBox);
-        if (moveButton) _focusableElements.insert(moveButton);
-        if (_goForwardButton) _focusableElements.insert(_goForwardButton);
-        if (_goBackwardButton) _focusableElements.insert(_goBackwardButton);
+        if (closeButton)
+            _focusableElements.insert(closeButton);
+        if (textBox)
+            _focusableElements.insert(textBox);
+        if (checkBox)
+            _focusableElements.insert(checkBox);
+        if (moveButton)
+            _focusableElements.insert(moveButton);
+        if (_goForwardButton)
+            _focusableElements.insert(_goForwardButton);
+        if (_goBackwardButton)
+            _focusableElements.insert(_goBackwardButton);
     }
 
     bool SearchBoxControl::GetGoForward()
