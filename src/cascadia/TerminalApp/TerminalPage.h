@@ -126,7 +126,7 @@ namespace winrt::TerminalApp::implementation
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
 
-        void _ToggleFind();
+        void _ShowFind();
 
         void _RefreshUIForSettingsReload();
 
@@ -155,7 +155,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleFind(const IInspectable& /*sender*/, const TerminalApp::ActionEventArgs& args);
+        void _HandleShowFind(const IInspectable& /*sender*/, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };

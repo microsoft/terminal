@@ -23,8 +23,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool GetIsCaseSensitive();
 
         void SetFocusOnTextbox();
-        bool CheckSearchBoxElement(winrt::Windows::Foundation::IInspectable const& focusedElement);
-        void TurnAroundFocus(winrt::Windows::Foundation::IInspectable const& focusedElement);
+        bool ContainsFocus();
 
         bool _goForward; // The direction of the search, controlled by the buttons with arrows
         bool _isCaseSensitive; // If the search should be case sensitive, controlled by the checkbox

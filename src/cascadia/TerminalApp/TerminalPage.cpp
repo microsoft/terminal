@@ -578,7 +578,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        bindings.ToggleFind({ this, &TerminalPage::_HandleToggleFind });
+        bindings.ShowFind({ this, &TerminalPage::_HandleShowFind });
         bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
@@ -1379,7 +1379,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ToggleFind()
+    void TerminalPage::_ShowFind()
     {
         const auto termControl = _GetFocusedControl();
         termControl.CreateSearchBoxControl();

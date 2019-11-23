@@ -18,7 +18,7 @@ COORD Terminal::GetTextBufferEndPosition() const noexcept
     // We use the end line of mutableViewport as the end
     // of the text buffer, it always moves with the written
     // text
-    COORD endPosition{ _GetMutableViewport().Width() - 1, gsl::narrow<short>(_ViewEndIndex()) };
+    COORD endPosition{ _GetMutableViewport().Width() - 1, gsl::narrow<short>(ViewEndIndex()) };
     return endPosition;
 }
 

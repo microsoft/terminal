@@ -24,16 +24,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TO DO: Is there a general way to put all the focusable elements in the
         // collection ? Maybe try DFS
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
-        auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
+        auto textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
         auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
         auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Primitives::ToggleButton>();
 
-        _focusableElements.insert(closeButton);
-        _focusableElements.insert(suggestBox);
-        _focusableElements.insert(checkBox);
-        _focusableElements.insert(moveButton);
-        _focusableElements.insert(_goForwardButton);
-        _focusableElements.insert(_goBackwardButton);
+        if (closeButton) _focusableElements.insert(closeButton);
+        if (textBox) _focusableElements.insert(textBox);
+        if (checkBox) _focusableElements.insert(checkBox);
+        if (moveButton) _focusableElements.insert(moveButton);
+        if (_goForwardButton) _focusableElements.insert(_goForwardButton);
+        if (_goBackwardButton) _focusableElements.insert(_goBackwardButton);
     }
 
     bool SearchBoxControl::GetGoForward()
@@ -63,29 +63,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    bool SearchBoxControl::CheckSearchBoxElement(IInspectable const& focusedElement)
+    bool SearchBoxControl::ContainsFocus()
     {
+        auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
         if (_focusableElements.count(focusedElement) > 0)
         {
             return true;
         }
 
         return false;
-    }
-
-    void SearchBoxControl::TurnAroundFocus(IInspectable const& focusedElement)
-    {
-        // If the current focused element is the move button, we set
-        // focus to the close button to enable "turn around"
-        // Due to some unknown reason, this will set focus on the TextBox instead of
-        // the close button, but this realizes navagation. Close button could be accessed
-        // via Esc
-        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Primitives::ToggleButton>();
-        if (focusedElement == moveButton)
-        {
-            auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
-            Input::FocusManager::TryFocusAsync(closeButton, FocusState::Keyboard);
-        }
     }
 
     void SearchBoxControl::_GoBackwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)

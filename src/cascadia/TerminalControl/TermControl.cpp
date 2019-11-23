@@ -185,9 +185,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _searchBox.Search({ this, &TermControl::_Search });
             _searchBox.CloseButtonClicked({ this, &TermControl::_CloseSearchBoxControl });
             _searchBox.MovePositionClicked({ this, &TermControl::_MoveSearchBoxControl });
-
-            _searchBox.SetFocusOnTextbox();
         }
+
+        _searchBox.SetFocusOnTextbox();
     }
 
     // Method Description:
@@ -200,11 +200,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_Search(const SearchBoxControl&, winrt::hstring text)
     {
-        Search::Direction direction = _searchBox.GetGoForward() ?
+        const Search::Direction direction = _searchBox.GetGoForward() ?
                                           Search::Direction::Forward :
                                           Search::Direction::Backward;
 
-        Search::Sensitivity sensitivity = _searchBox.GetIsCaseSensitive() ?
+        const Search::Sensitivity sensitivity = _searchBox.GetIsCaseSensitive() ?
                                               Search::Sensitivity::CaseSensitive :
                                               Search::Sensitivity::CaseInsensitive;
 
@@ -250,7 +250,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_MoveSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        auto alignment = _searchBox.VerticalAlignment();
+        const auto alignment = _searchBox.VerticalAlignment();
         if (alignment == VerticalAlignment::Top)
         {
             _searchBox.VerticalAlignment(VerticalAlignment::Bottom);
@@ -736,23 +736,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // If the current focused element is a kind of input box, or it is an
-        // child element of searchbox, we do not send this event up to
-        // terminal
-        auto focusedElement = Input::FocusManager::GetFocusedElement(_root.XamlRoot());
-        bool isWinthinSearchBox = false;
-        if (_searchBox)
+        // If the current focused element is a child element of searchbox,
+        // we do not send this event up to terminal
+        if (_searchBox && _searchBox.ContainsFocus())
         {
-            isWinthinSearchBox = _searchBox.CheckSearchBoxElement(focusedElement);
-        }
-        if (focusedElement.try_as<Controls::AutoSuggestBox>() ||
-            focusedElement.try_as<Controls::TextBox>() ||
-            isWinthinSearchBox)
-        {
-            if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Tab)
-            {
-                _searchBox.TurnAroundFocus(focusedElement);
-            }
             return;
         }
 

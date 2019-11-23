@@ -355,13 +355,13 @@ short Terminal::GetBufferHeight() const noexcept
     return _mutableViewport.BottomExclusive();
 }
 
-// _ViewStartIndex is also the length of the scrollback
+// ViewStartIndex is also the length of the scrollback
 int Terminal::ViewStartIndex() const noexcept
 {
     return _mutableViewport.Top();
 }
 
-int Terminal::_ViewEndIndex() const noexcept
+int Terminal::ViewEndIndex() const noexcept
 {
     return _mutableViewport.BottomInclusive();
 }
@@ -374,7 +374,7 @@ int Terminal::_VisibleStartIndex() const noexcept
 
 int Terminal::_VisibleEndIndex() const noexcept
 {
-    return std::max(0, _ViewEndIndex() - _scrollOffset);
+    return std::max(0, ViewEndIndex() - _scrollOffset);
 }
 
 Viewport Terminal::_GetVisibleViewport() const noexcept

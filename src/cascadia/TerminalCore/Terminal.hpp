@@ -60,6 +60,7 @@ public:
     short GetBufferHeight() const noexcept;
 
     int ViewStartIndex() const noexcept;
+    int ViewEndIndex() const noexcept;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -223,7 +224,6 @@ private:
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    int _ViewEndIndex() const noexcept;
     int _VisibleStartIndex() const noexcept;
     int _VisibleEndIndex() const noexcept;
 

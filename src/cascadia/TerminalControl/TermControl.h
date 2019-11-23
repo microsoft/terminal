@@ -12,7 +12,7 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../cascadia/inc/cppwinrt_utils.h"
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {

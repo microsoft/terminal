@@ -6,8 +6,7 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean GetGoForward();
         Boolean GetIsCaseSensitive();
         void SetFocusOnTextbox();
-        Boolean CheckSearchBoxElement(Object focusedElement);
-        void TurnAroundFocus(Object focusedElement);
+        Boolean ContainsFocus();
 
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> Search;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> CloseButtonClicked;
