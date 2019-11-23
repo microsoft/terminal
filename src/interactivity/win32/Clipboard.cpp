@@ -300,9 +300,14 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
     globalHandle.release();
 }
 
-void Clipboard::CopyToSystemClipboard(std::string s, LPCWSTR lpszFormat)
+// Routine Description:
+// - Copies the given string onto the global system clipboard in the sepcified format
+// Arguments:
+// - stringToCopy - The string to copy
+// - lpszFormat - the name of the format
+void Clipboard::CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
 {
-    const size_t rtfSize = s.size() + 1; // +1 for '\0'
+    const size_t rtfSize = stringToCopy.size() + 1; // +1 for '\0'
     if (rtfSize)
     {
         wil::unique_hglobal globalHandleHTML(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, rtfSize));
@@ -313,7 +318,7 @@ void Clipboard::CopyToSystemClipboard(std::string s, LPCWSTR lpszFormat)
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
         // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, rtfSize, s.data());
+        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, rtfSize, stringToCopy.data());
         GlobalUnlock(globalHandleHTML.get());
         THROW_IF_FAILED(hr2);
 
