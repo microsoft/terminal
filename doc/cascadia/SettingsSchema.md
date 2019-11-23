@@ -85,9 +85,9 @@ Properties listed below are specific to each custom key binding.
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
 
-### Implemented Keybindings
+### Implemented Commands
 
-Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
+Commands listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
 
 - copy
 - copyTextWithoutNewlines
@@ -137,6 +137,11 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusUp
 - moveFocusDown
 - toggleFullscreen
+
+## Example Keys
+- ctrl+1
+- ctrl+pgdn
+- ctrl+pgup
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
