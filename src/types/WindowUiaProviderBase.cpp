@@ -8,11 +8,11 @@
 
 using namespace Microsoft::Console::Types;
 
-WindowUiaProviderBase::WindowUiaProviderBase(IUiaWindow* baseWindow) :
-    _signalEventFiring{},
-    _baseWindow{ baseWindow },
-    _cRefs(1)
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
+HRESULT WindowUiaProviderBase::RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept
 {
+    _baseWindow = baseWindow;
+    return S_OK;
 }
 
 #pragma region IRawElementProviderSimple
@@ -163,8 +163,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_mayben
     RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = this;
-    AddRef();
+    RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(ppProvider)));
     return S_OK;
 }
 

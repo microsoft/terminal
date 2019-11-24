@@ -11,7 +11,7 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+#include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -100,6 +100,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
+        TSFInputControl _tsfInputControl;
+
         event_token _connectionOutputEventToken;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
@@ -116,7 +118,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _isTerminalInitiatedScroll;
         std::atomic<bool> _willUpdateScrollBarToMatchViewport;
-        std::optional<std::chrono::high_resolution_clock::time_point> _lastScrollTime;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -196,6 +197,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        // TSFInputControl Handlers
+        void _CompositionCompleted(winrt::hstring text);
+        void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
+        void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
     };
 }
 

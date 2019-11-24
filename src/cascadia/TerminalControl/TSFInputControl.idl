@@ -1,0 +1,31 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.TerminalControl
+{
+    delegate void CompositionCompletedEventArgs(String text);
+
+    runtimeclass CursorPositionEventArgs
+    {
+        Windows.Foundation.Point CurrentPosition { get; set; };
+    }
+
+    runtimeclass FontInfoEventArgs
+    {
+        String FontFace { get; set; };
+        Windows.Foundation.Size FontSize { get; set; };
+    }
+
+    [default_interface]
+    runtimeclass TSFInputControl : Windows.UI.Xaml.Controls.UserControl
+    {
+        TSFInputControl();
+
+        event CompositionCompletedEventArgs CompositionCompleted;
+        event Windows.Foundation.TypedEventHandler<TSFInputControl, CursorPositionEventArgs> CurrentCursorPosition;
+        event Windows.Foundation.TypedEventHandler<TSFInputControl, FontInfoEventArgs> CurrentFontInfo;
+
+        void NotifyFocusEnter();
+        void NotifyFocusLeave();
+    }
+}

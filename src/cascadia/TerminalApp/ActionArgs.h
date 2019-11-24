@@ -41,6 +41,15 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
 
     public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<CopyTextArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_TrimWhitespace == _TrimWhitespace;
+            }
+            return false;
+        };
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -61,6 +70,15 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view ProfileIndexKey{ "index" };
 
     public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<NewTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_ProfileIndex == _ProfileIndex;
+            }
+            return false;
+        };
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -81,6 +99,15 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view TabIndexKey{ "index" };
 
     public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SwitchToTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_TabIndex == _TabIndex;
+            }
+            return false;
+        };
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -136,6 +163,15 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ResizePaneArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -156,6 +192,15 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view DirectionKey{ "direction" };
 
     public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<MoveFocusArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
         static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -172,6 +217,29 @@ namespace winrt::TerminalApp::implementation
     {
         AdjustFontSizeArgs() = default;
         GETSET_PROPERTY(int32_t, Delta, 0);
+
+        static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<AdjustFontSizeArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Delta == _Delta;
+            }
+            return false;
+        };
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<AdjustFontSizeArgs>();
+            if (auto jsonDelta{ json[JsonKey(AdjustFontSizeDelta)] })
+            {
+                args->_Delta = jsonDelta.asInt();
+            }
+            return *args;
+        }
     };
 }
 

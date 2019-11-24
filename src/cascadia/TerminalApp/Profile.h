@@ -67,6 +67,7 @@ public:
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
     std::optional<std::wstring>& GetSchemeName() noexcept;
     void SetTabTitle(std::wstring tabTitle) noexcept;
+    void SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;
     void SetStartingDirectory(std::wstring startingDirectory) noexcept;
@@ -86,6 +87,7 @@ public:
     winrt::hstring GetExpandedBackgroundImagePath() const;
 
     bool GetCloseOnExit() const noexcept;
+    bool GetSuppressApplicationTitle() const noexcept;
     bool IsHidden() const noexcept;
 
     void GenerateGuidIfNecessary() noexcept;
@@ -122,6 +124,7 @@ private:
     std::optional<uint32_t> _selectionBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     std::optional<std::wstring> _tabTitle;
+    bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
     uint32_t _cursorColor;
