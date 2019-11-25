@@ -29,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void DefaultForeground(uint32_t value);
         uint32_t DefaultBackground();
         void DefaultBackground(uint32_t value);
+        uint32_t SelectionBackground();
+        void SelectionBackground(uint32_t value);
         uint32_t GetColorTableEntry(int32_t index) const;
         void SetColorTableEntry(int32_t index, uint32_t value);
         int32_t HistorySize();
@@ -88,6 +90,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring StartingTitle();
         void StartingTitle(hstring const& value);
 
+        bool SuppressApplicationTitle();
+        void SuppressApplicationTitle(bool value);
+
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
@@ -97,6 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
+        uint32_t _selectionBackground;
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
         int32_t _historySize;
         int32_t _initialRows;
@@ -122,6 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _commandline;
         hstring _startingDir;
         hstring _startingTitle;
+        bool _suppressApplicationTitle;
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;

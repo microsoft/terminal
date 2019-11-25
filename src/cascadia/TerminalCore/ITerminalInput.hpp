@@ -24,6 +24,8 @@ namespace Microsoft::Terminal::Core
         virtual void UserScrollViewport(const int viewTop) = 0;
         virtual int GetScrollOffset() = 0;
 
+        virtual void TrySnapOnInput() = 0;
+
     protected:
         ITerminalInput() = default;
     };

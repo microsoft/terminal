@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     TerminalSettings::TerminalSettings() :
         _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
         _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+        _selectionBackground{ DEFAULT_FOREGROUND },
         _colorTable{},
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
@@ -56,6 +57,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::DefaultBackground(uint32_t value)
     {
         _defaultBackground = value;
+    }
+
+    uint32_t TerminalSettings::SelectionBackground()
+    {
+        return _selectionBackground;
+    }
+
+    void TerminalSettings::SelectionBackground(uint32_t value)
+    {
+        _selectionBackground = value;
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const
@@ -308,6 +319,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::StartingTitle(hstring const& value)
     {
         _startingTitle = value;
+    }
+
+    bool TerminalSettings::SuppressApplicationTitle()
+    {
+        return _suppressApplicationTitle;
+    }
+
+    void TerminalSettings::SuppressApplicationTitle(bool value)
+    {
+        _suppressApplicationTitle = value;
     }
 
     hstring TerminalSettings::EnvironmentVariables()

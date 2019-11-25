@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
             Windows::UI::Xaml::PropertyMetadata{ winrt::box_value(winrt::Windows::UI::Colors::Transparent()),
             Windows::UI::Xaml::PropertyChangedCallback{ &ColorPickupFlyout::OnSelectedColorChanged } });
 
-    void ColorPickupFlyout::OnSelectedColorChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& /* e */)
+    void ColorPickupFlyout::OnSelectedColorChanged(Windows::UI::Xaml::DependencyObject const&, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& /* e */)
     {
     }
 }

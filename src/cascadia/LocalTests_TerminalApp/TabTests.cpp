@@ -103,8 +103,7 @@ namespace TerminalAppLocalTests
         winrt::Microsoft::Terminal::TerminalControl::TermControl term{};
         VERIFY_IS_NOT_NULL(term);
 
-        auto resourceLoader = std::make_shared<ScopedResourceLoader>(L"TerminalApp/Resources");
-        auto newTab = std::make_shared<Tab>(profileGuid, term, resourceLoader);
+        auto newTab = std::make_shared<Tab>(profileGuid, term);
 
         VERIFY_IS_NOT_NULL(newTab);
     }

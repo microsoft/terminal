@@ -11,7 +11,7 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+#include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -19,16 +19,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html) :
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf) :
             _text(text),
-            _html(html) {}
+            _html(html),
+            _rtf(rtf) {}
 
         hstring Text() { return _text; };
         hstring Html() { return _html; };
+        hstring Rtf() { return _rtf; };
 
     private:
         hstring _text;
         hstring _html;
+        hstring _rtf;
     };
 
     struct PasteFromClipboardEventArgs :
@@ -69,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         int GetViewHeight() const;
 
         void AdjustFontSize(int fontSizeDelta);
+        void ResetFontSize();
 
         void SwapChainChanged();
         ~TermControl();
@@ -98,6 +102,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
+        TSFInputControl _tsfInputControl;
+
         event_token _connectionOutputEventToken;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
@@ -152,6 +158,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
         void _UpdateFont();
+        void _SetFontSize(int fontSize);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -165,6 +172,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
+        void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);
@@ -191,6 +199,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        // TSFInputControl Handlers
+        void _CompositionCompleted(winrt::hstring text);
+        void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
+        void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
     };
 }
 

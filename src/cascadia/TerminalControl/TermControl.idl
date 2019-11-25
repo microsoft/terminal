@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.TerminalControl
     {
         String Text { get; };
         String Html { get; };
+        String Rtf { get; };
     }
 
     runtimeclass PasteFromClipboardEventArgs
@@ -48,5 +49,6 @@ namespace Microsoft.Terminal.TerminalControl
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void AdjustFontSize(Int32 fontSizeDelta);
+        void ResetFontSize();
     }
 }

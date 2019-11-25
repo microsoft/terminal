@@ -341,6 +341,11 @@ void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
 
 void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
 {
+    if (ch == '\t')
+    {
+        return;
+    }
+
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->SendCharEvent(ch);
 }
@@ -390,4 +395,21 @@ HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
     return publicTerminal->_terminal->UserResize(dimensions);
+}
+
+void _stdcall TerminalBlinkCursor(void* terminal)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    if (!publicTerminal->_terminal->IsCursorBlinkingAllowed() && publicTerminal->_terminal->IsCursorVisible())
+    {
+        return;
+    }
+
+    publicTerminal->_terminal->SetCursorVisible(!publicTerminal->_terminal->IsCursorVisible());
+}
+
+void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    publicTerminal->_terminal->SetCursorVisible(visible);
 }

@@ -36,15 +36,32 @@ steps:
     restoreDirectory: '$(Build.SourcesDirectory)/packages'
 
 - task: VSBuild@1
-  displayName: 'Build solution **\OpenConsole.sln'
+  displayName: 'Build solution **\OpenConsole.sln (no packages)'
   inputs:
     solution: '**\OpenConsole.sln'
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    msbuildArgs: ${{ parameters.additionalBuildArguments }}
+    # Until there is a servicing release of Visual Studio 2019 Update 3, we must force the values of:
+    # BuildingInsideVisualStudio
+    # _WapBuildingInsideVisualStudio
+    # GenerateAppxPackageOnBuild
+    # because otherwise, they will cause a build instability where MSBuild considers all projects
+    # to always be out-of-date.
+    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:BuildingInsideVisualStudio=false;_WapBuildingInsideVisualStudio=false;GenerateAppxPackageOnBuild=false"
     clean: true
-    maximumCpuCount: false
+    maximumCpuCount: true
+
+- task: VSBuild@1
+  displayName: 'Build solution **\OpenConsole.sln (CascadiaPackage only)'
+  inputs:
+    solution: '**\OpenConsole.sln'
+    vsVersion: 16.0
+    platform: '$(BuildPlatform)'
+    configuration: '$(BuildConfiguration)'
+    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:BuildingInsideVisualStudio=false;_WapBuildingInsideVisualStudio=false;GenerateAppxPackageOnBuild=true /t:Terminal\\CascadiaPackage"
+    clean: false # we're relying on build output fropm the previous run
+    maximumCpuCount: true
 
 - task: PowerShell@2
   displayName: 'Check MSIX for common regressions'

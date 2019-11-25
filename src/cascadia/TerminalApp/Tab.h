@@ -5,16 +5,15 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
-#include "ScopedResourceLoader.h"
 
 class Tab
 {
 public:
-    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, std::shared_ptr<ScopedResourceLoader> resourceLoader);
+    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
     std::optional<GUID> GetFocusedProfile() const noexcept;
 
     bool IsFocused() const noexcept;
@@ -25,7 +24,6 @@ public:
     bool CanSplitPane(Pane::SplitState splitType);
     void SplitPane(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void UpdateFocus();
     void UpdateIcon(const winrt::hstring iconPath);
 
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
@@ -33,25 +31,29 @@ public:
     void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
-    winrt::hstring GetFocusedTitle() const;
+    winrt::hstring GetActiveTitle() const;
     void SetTabText(const winrt::hstring& text);
 
     void ClosePane();
-    
+
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+    DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 
 private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
+    std::shared_ptr<Pane> _activePane{ nullptr };
     winrt::hstring _lastIconPath{};
-    winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
+	winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
-    std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
     void _MakeTabViewItem();
     void _CreateContextMenu();
     void _Focus();
     void _SetTabColor(const winrt::Windows::UI::Color& color);
     void _ResetTabColor();
+	
+	void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 };
