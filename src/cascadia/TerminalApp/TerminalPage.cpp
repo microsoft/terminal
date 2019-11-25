@@ -8,9 +8,6 @@
 
 #include <LibraryResources.h>
 
-#include <Windows.h>
-#include <wil\Resource.h>
-
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
