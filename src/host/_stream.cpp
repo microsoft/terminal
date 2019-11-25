@@ -75,6 +75,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
     // The VT standard requires the lines revealed when scrolling are filled
     // with the current background color, but with no meta attributes set.
     auto fillAttributes = screenInfo.GetAttributes();
+    fillAttributes.SetExtendedAttributes(ExtendedAttributes::Normal);
     fillAttributes.SetMetaAttributes(0);
 
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();

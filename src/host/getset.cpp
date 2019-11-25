@@ -2275,6 +2275,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         if (standardFillAttrs)
         {
             fillAttrs = screenInfo.GetAttributes();
+            fillAttrs.SetExtendedAttributes(ExtendedAttributes::Normal);
             fillAttrs.SetMetaAttributes(0);
         }
 
@@ -2322,6 +2323,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         if (standardFillAttrs)
         {
             fillAttrs = screenInfo.GetAttributes();
+            fillAttrs.SetExtendedAttributes(ExtendedAttributes::Normal);
             fillAttrs.SetMetaAttributes(0);
         }
 

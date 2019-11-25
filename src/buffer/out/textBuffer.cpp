@@ -554,6 +554,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     {
         // The VT standard requires that the new row is initialized with
         // the current background color, but with no meta attributes set.
+        fillAttributes.SetExtendedAttributes(ExtendedAttributes::Normal);
         fillAttributes.SetMetaAttributes(0);
     }
     const bool fSuccess = _storage.at(_firstRow).Reset(fillAttributes);

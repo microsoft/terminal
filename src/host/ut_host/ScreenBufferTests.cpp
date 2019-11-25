@@ -1340,10 +1340,12 @@ void ScreenBufferTests::VtNewlinePastViewport()
 
     // Set the attributes that will be used to initialize new rows.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
     fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
     expectedFillAttr.SetMetaAttributes(0);
 
     seq = L"\n";
@@ -1418,10 +1420,12 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
 
     // Set the attributes that will be used to initialize new rows.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
     fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
     expectedFillAttr.SetMetaAttributes(0);
 
     seq = L"\n";
@@ -3358,10 +3362,12 @@ void ScreenBufferTests::ScrollOperations()
 
     // Set the attributes that will be used to fill the revealed area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
     fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
     expectedFillAttr.SetMetaAttributes(0);
 
     // Place the cursor in the center.
@@ -3477,10 +3483,12 @@ void ScreenBufferTests::InsertChars()
 
     // Set the attributes that will be used to fill the revealed area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
     fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
     expectedFillAttr.SetMetaAttributes(0);
 
     // Insert 5 spaces at the cursor position.
@@ -3635,10 +3643,12 @@ void ScreenBufferTests::DeleteChars()
 
     // Set the attributes that will be used to fill the revealed area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
     fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
     expectedFillAttr.SetMetaAttributes(0);
 
     // Delete 5 characters at the cursor position.
@@ -3865,10 +3875,12 @@ void ScreenBufferTests::EraseTests()
 
     // Set the attributes that will be used to fill the erased area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetExtendedAttributes(ExtendedAttributes::CrossedOut);
     fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
     expectedFillAttr.SetMetaAttributes(0);
 
     // Place the cursor in the center.

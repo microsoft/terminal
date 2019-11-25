@@ -2038,6 +2038,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     // The buffer needs to be initialized with the standard erase attributes,
     // i.e. the current background color, but with no meta attributes set.
     auto initAttributes = GetAttributes();
+    initAttributes.SetExtendedAttributes(ExtendedAttributes::Normal);
     initAttributes.SetMetaAttributes(0);
 
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
@@ -2509,6 +2510,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     // Update all the rows in the current viewport with the standard erase attributes,
     // i.e. the current background color, but with no meta attributes set.
     auto fillAttributes = GetAttributes();
+    fillAttributes.SetExtendedAttributes(ExtendedAttributes::Normal);
     fillAttributes.SetMetaAttributes(0);
     auto fillPosition = COORD{ 0, _viewport.Top() };
     auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
@@ -2831,6 +2833,7 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
         // The VT standard requires that the new row is initialized with
         // the current background color, but with no meta attributes set.
         auto fillAttributes = GetAttributes();
+        fillAttributes.SetExtendedAttributes(ExtendedAttributes::Normal);
         fillAttributes.SetMetaAttributes(0);
         row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
     }
