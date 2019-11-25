@@ -19,10 +19,10 @@ One of the superior features of iTerm2 is it's content search. The search comes 
 
 Our ultimate goal is to provide both search within one tab and search from all tabs experiences. But we can start with one-tab search. The search experience should have following features:
 
-1. The search is triggered by KeyBindings. A new setting property named "Search" will be enabled in the Json file. The user can set their own key bindings for search. The default is "ctrl + F". 
-2. The user search in a XAML AutoSuggestBox, which is contained in a custom SearchBoxControl. The default position of the search box is the top right corner, the user can also move it to bottom right corner to avoid blocking text. 
+1. The search is triggered by KeyBindings. A new setting property named "openFind" will be enabled in the Json file. The user can set their own key bindings for search. The default is "ctrl + F". 
+2. The user search in a XAML TextBox, which is contained in a custom SearchBoxControl. The default position of the search box is the top right corner, the user can also move it to bottom right corner to avoid blocking text. 
 3. We can have multiple search methods. The simplest one is exact text match. Other match methods include case-sensitive exact match and regex match. In the first phrase, we will focus on case sensitive/insensitive text exact match. 
-4. If currently there is no active selection, the search starts from the line that the cursor is on. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
+4. If currently there is no active selection, the search starts from the last line of the viewport. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
 5. The search dialog should not block terminal's view. In phrase one, this is achieved by make search box movable. The user can move the search box to the bottom right corner.
 6. The user should be able to fully interact with the terminal when the search box is on screen. 
 7. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings.
@@ -63,6 +63,7 @@ The search box defaults to be on the top right corner of the Terminal window. If
 5. The search will start from the active selected text (inclusive) if there is one, or where the cursor is. 
 5. The search will automatically go around when it reaches the starting point.
 7. The search box can be positioned at either the top left or the bottom left of the terminal. 
+8. The user can use Tab to navigate all the elements in the search box. 
 
 ### Accessibility
 
