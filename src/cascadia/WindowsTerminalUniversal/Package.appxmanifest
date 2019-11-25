@@ -6,7 +6,7 @@
          IgnorableNamespaces="uap mp">
          
   <Identity
-    Name="Microsoft.WindowsTerminal.Universal"
+    Name="Microsoft.WindowsTerminalUniversal"
     Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
     Version="1.0.0.0" />
   <mp:PhoneIdentity PhoneProductId="c0be251a-4cdd-4a6c-ab49-938ed9b6c262" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>

@@ -9,7 +9,7 @@
     Name="WindowsTerminalUniversalDev"
     Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
     Version="0.0.1.0" />
-  <mp:PhoneIdentity PhoneProductId="c0be251a-4cdd-4a6c-ab49-938ed9b6c262" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="7fb1e1dc-944a-46c9-b7ec-3626d73c6580" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
     
   <Properties>
     <DisplayName>ms-resource:AppNameDev</DisplayName>
