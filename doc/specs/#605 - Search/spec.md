@@ -22,7 +22,7 @@ Our ultimate goal is to provide both search within one tab and search from all t
 1. The search is triggered by KeyBindings. A new setting property named "openFind" will be enabled in the Json file. The user can set their own key bindings for search. The default is "ctrl + F". 
 2. The user search in a XAML TextBox, which is contained in a custom SearchBoxControl. The default position of the search box is the top right corner, the user can also move it to bottom right corner to avoid blocking text. 
 3. We can have multiple search methods. The simplest one is exact text match. Other match methods include case-sensitive exact match and regex match. In the first phrase, we will focus on case sensitive/insensitive text exact match. 
-4. If currently there is no active selection, the search starts from the last line of the viewport. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
+4. If currently there is no active selection, the search starts from the last line of the mutableViewport. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
 5. The search dialog should not block terminal's view. In phrase one, this is achieved by make search box movable. The user can move the search box to the bottom right corner.
 6. The user should be able to fully interact with the terminal when the search box is on screen. 
 7. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings. Close is usually binding to Esc. 
@@ -32,17 +32,17 @@ Conhost already has a module for search. It realizes case sensitive or insensiti
 
 We will create a SearchBoxControl Xaml UserControl element. When a search process begins, a SearchBoxControl object will be created and attach to TermControl root grid. In other words, one SearchBox is added for each TermControl. The reasons for this design is:
 
-1. Each TermControl corresponds to an iterative Terminal Window and has a individual text buffer. In phrase 1 we are going to search witin the current terminal text buffer. 
+1. Each TermControl object is a Terminal Window and has a individual text buffer. In phrase 1 we are going to search witin the current terminal text buffer. 
 2. If we put the search box under TerminalApp, then the search can only happen on the current focused Terminal. 
 3. If the community does not like the current design, we can lift SearchBox to a higher level. 
 
 ### Search process
 1. The user press Ctrl+F (or user's custom key binding) to open the search box. Focus will move to the TextBox. 
-2. Search is performed on a XAML TextBox. Once the user presses Enter, we start to search from the last line of the current viewport or the current selection, and try to find the exact text in the text buffer. The nearest searched one will be selected. Then the search start point will be set to the selected text. The next time "Find" button is clicked, the search will start before or after the previous searched text.
-3. The user can choose to search up or down by choosing up arrow or down arrow buttons. The chosen button will be styled to indicate it is clicked. If the user does not click the arrows buttons, the default direction is up. 
-4. The user can choose to do case sensitive or insensitive match by checking a check box. 
+2. Search is performed on a XAML TextBox. Once the user presses Enter or click up/down arrow button, we start to search from the last line of the current viewport or the current selection, and try to find the exact text in the text buffer. The nearest searched one will be selected. Then the search start point will be set to the selected text. The next search will start before or after the previous searched text.
+3. The user can choose to search up or down by choosing up arrow or down arrow buttons. The chosen button will be styled to indicate it is selected. If the user does not click the arrows buttons, the default direction is up. 
+4. The user can choose to do case sensitive or insensitive match by checking a check box. The default is case insensitive. 
 5. If the search box is focused, the user can navigte all the elements on the search box using tab. When selected, press Enter equals to click. 
-6. If the user click the "X" button or press Esc, the search stopped and the search box disappears and focus will move back to Terminal. In phrase one we do not store any state. 
+6. If the user click the "X" button or press <kbd>Esc</kbd>, the search stopped and the search box disappears and focus will move back to Terminal. In phrase one we do not store any state. 
 7. Once the search box is closed (exiting search mode), the selection will still be there. This coincides with the current VS Code and cmd experience. To get rid of the selection, the user can just click other area of the window.
 
 ## UI/UX Design
@@ -101,7 +101,7 @@ In version 1, we want realize a case sensitive/insensitive exact text match. But
 2. Search from all tabs. For Version 1 we just want to realize search within one tab. However, the community also requests search from all tabs. We put in our goals for Version 2. 
 3. Regular experssion match. 
 4. Search history.
-5. High-light while you type. 
+5. High-light while you type. Emphasizing all the other matches in the buffer with an outline or selection with another color. 
  
 
 ## Resources
