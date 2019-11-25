@@ -216,6 +216,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _hPC.reset();
     }
 
+    // Method Description:
+    // - prints out the "process exited" message formatted with the exit code
+    // Arguments:
+    // - status: the exit code.
     void ConptyConnection::_indicateExitWithStatus(unsigned int status) noexcept
     {
         try
@@ -227,6 +231,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         CATCH_LOG();
     }
 
+    // Method Description:
+    // - called when the client application (not necessarily its pty) exits for any reason
     void ConptyConnection::_ClientTerminated() noexcept
     {
         if (_isStateAtOrBeyond(ConnectionState::Closing))

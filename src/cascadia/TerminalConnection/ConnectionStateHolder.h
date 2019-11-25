@@ -45,10 +45,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         template<typename... Args>
         bool _isStateOneOf(Args&&... args) const noexcept
         {
+            // Dark magic! This function uses C++17 fold expressions. These fold expressions roughly expand as follows:
+            // (... OP (expression_using_args))
+            // into ->
+            // expression_using_args[0] OP expression_using_args[1] OP expression_using_args[2] OP (etc.)
+            // We use that to first check that All Args types are ConnectionState (type[0] == ConnectionState && type[1] == ConnectionState && etc.)
+            // and then later to check that the current state is one of the passed-in ones:
+            // (_state == args[0] || _state == args[1] || etc.)
             static_assert((... && std::is_same<Args, ConnectionState>::value), "all queried connection states must be from the ConnectionState enum");
             std::lock_guard<std::mutex> stateLock{ _stateMutex };
-            // dark magic: this is a C++17 fold expression that expands into
-            // state == 1 || state == 2 || state == 3 ...
             return (... || (_connectionState == args));
         }
 
