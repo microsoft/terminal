@@ -1056,7 +1056,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto newValue = static_cast<int>(args.NewValue());
 
-        // This is a scroll event that wasn't initiated by the termnial
+        // This is a scroll event that wasn't initiated by the terminal
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(newValue);
 
