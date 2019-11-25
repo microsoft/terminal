@@ -157,7 +157,7 @@ Temporarily using the Windows Terminal default settings.
     <value>Encountered errors while loading user settings</value>
   </data>
   <data name="Ok" xml:space="preserve">
-    <value>Ok</value>
+    <value>OK</value>
   </data>
   <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to reload settings</value>
