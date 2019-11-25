@@ -227,7 +227,13 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
     case WM_SIZING:
     {
-        LPRECT winRect = (LPRECT)lparam;
+        // Here we intercept a window border (or corner) drag action and apply 'snapping'
+        // i.e. align the terminal's size to its cell grid. We're given the requested
+        // window rectangle (this is the one that originates form current drag action) in
+        // lparam, which we then adjust based on the terminal properties (like font size).
+        // Note that lparam also acts as the return value (it's a ref parameter).
+
+        LPRECT winRect = reinterpret_cast<LPRECT>(lparam);
 
         // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(winRect, MONITOR_DEFAULTTONEAREST);
@@ -242,15 +248,27 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         const auto nonClientSize = GetNonClientSize(dpix);
         auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
         auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+
         if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
         {
+            // If user has dragged anything but the top or bottom border (so e.g. left border, 
+            // top-right corner etc.) then this means that the width has changed. We thus calculate
+            // a new, snapped width.
             clientWidth = static_cast<int>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));
         }
         if (wparam != WMSZ_LEFT && wparam != WMSZ_RIGHT)
         {
+            // Analogous to above, but for height. If user drags a corner, then both width
+            // and height will be adjusted.
             clientHeight = static_cast<int>(_pfnSnapDimensionCallback(false, static_cast<float>(clientHeight)));
         }
 
+        // Now make the window rectangle match the calculated client width and height,
+        // regarding which border the user is dragging. E.g. if user drags left border, then
+        // make sure to adjust the 'left' component of rectangle and not the 'right'. Note
+        // that top-left and bottom-left corners also 'include' left border.
+
+        // Set width
         switch (wparam)
         {
         case WMSZ_LEFT:
@@ -265,6 +283,7 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             break;
         }
 
+        // Set height
         switch (wparam)
         {
         case WMSZ_BOTTOM:

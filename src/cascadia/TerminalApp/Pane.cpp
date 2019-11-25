@@ -1111,7 +1111,7 @@ Pane::SnapSizeResult Pane::_SnapDimension(const bool widthOrHeight, const float 
 {
     if (_IsLeaf())
     {
-        // If we're a leaf pane, alight to the grid of controlling terminal
+        // If we're a leaf pane, align to the grid of controlling terminal
 
         const auto minSize = _GetMinSize();
         const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;
@@ -1124,6 +1124,8 @@ Pane::SnapSizeResult Pane::_SnapDimension(const bool widthOrHeight, const float 
         const float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
         if (lower == dimension)
         {
+            // If we happen to be already snapped, then just return this size
+            // as both lower and higher values.
             return { lower, lower };
         }
         else
@@ -1175,11 +1177,15 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
 {
     if (_IsLeaf())
     {
+        // We're a leaf pane, so just add one more row or column (unless isMinimumSize
+        // is true, see below).
+
         if (sizeNode.isMinimumSize)
         {
-            // If the node is of its minimum size, this size might not be snapped,
-            // so snap it upward. It might however be snapped, so add 1 to make
-            // sure it really increases (not really required but to avoid surprises).
+            // If the node is of its minimum size, this size might not be snapped (it might
+            // be say half a character, or fixed 10 pixels), so snap it upward. It might
+            // however be already snapped, so add 1 to make sure it really increases 
+            // (not strictly necessary but to avoid surprises).
             sizeNode.size = _SnapDimension(widthOrHeight, sizeNode.size + 1).higher;
         }
         else
@@ -1190,9 +1196,13 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
     }
     else
     {
-        // The given node often has next possible (advanced) values already
-        // cached by the previous advance operation. If we're the first one,
-        // we need to calculate them now.
+        // We're a parent pane, so we have to advance dimension of our children panes. In 
+        // fact, we advance only one child (chosen later) to keep the growth fine-grained.
+
+        // To choose which child pane to advance, we actually need to know their advanced sizes
+        // in advance (oh), to see which one would 'fit' better. Often, this is already cached
+        // by the previous invocation of this function  in nextFirstChild and nextSecondChild
+        // fields. If not, we need to calculate them now.
         if (sizeNode.nextFirstChild == nullptr)
         {
             sizeNode.nextFirstChild.reset(new LayoutSizeNode(*sizeNode.firstChild));
@@ -1207,31 +1217,46 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         const auto nextFirstSize = sizeNode.nextFirstChild->size;
         const auto nextSecondSize = sizeNode.nextSecondChild->size;
 
-        bool advanceFirst; // Whether to advance first or second child
+        // Choose which child pane to advance.
+        bool advanceFirstOrSecond;
         if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
         {
             // If we're growing along separator axis, choose the child that
-            // wants to be smaller than the other.
-            advanceFirst = nextFirstSize < nextSecondSize;
+            // wants to be smaller than the other, so that the resulting size
+            // will be the smallest.
+            advanceFirstOrSecond = nextFirstSize < nextSecondSize;
         }
         else
         {
             // If we're growing perpendicularly to separator axis, choose
-            // the child so that their size ratio is closer to the currently
-            // maintained (so that the relative separator position is closer
+            // a child so that their size ratio is closer to that we're trying
+            // to maintain (this is, the relative separator position is closer
             // to the _desiredSplitPosition field).
 
             const auto firstSize = sizeNode.firstChild->size;
             const auto secondSize = sizeNode.secondChild->size;
 
             // Because we rely on equality check, these calculations have to be
-            // immune to floating point errors.
+            // immune to floating point errors. In common situation where both panes
+            // have the same character sizes and _desiredSplitPosition is 0.5 (or
+            // some simple fraction) both ratios will often be the same, and if so
+            // we always take the left child. It could be right as well, but it's 
+            // important that it's consistent: that it would always go
+            // 1 -> 2 -> 1 -> 2 -> 1 -> 2 and not like 1 -> 1 -> 2 -> 2 -> 2 -> 1
+            // which would look silly to the user but which occur if there was
+            // a non-floating-point-safe math. 
             const auto deviation1 = nextFirstSize - (nextFirstSize + secondSize) * _desiredSplitPosition;
             const auto deviation2 = -1 * (firstSize - (firstSize + nextSecondSize) * _desiredSplitPosition);
-            advanceFirst = deviation1 <= deviation2;
+            advanceFirstOrSecond = deviation1 <= deviation2;
         }
 
-        if (advanceFirst)
+        // Here we advance one of our children. Because we already know the appropriate 
+        // (advanced) size that given child would need to have, we simply assign that size 
+        // to it. We then advance its 'next*' size (nextFirstChild or nextSecondChild) so
+        // the invariant holds (as it will likely be used by the next invocation of this
+        // function). The other child's next* size remains unchanged because its size 
+        // haven't changed either. 
+        if (advanceFirstOrSecond)
         {
             *sizeNode.firstChild = *sizeNode.nextFirstChild;
             _firstChild->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
@@ -1242,6 +1267,7 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
             _secondChild->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
         }
 
+        // Since the size of one of our children has changed we need to update our size as well.
         if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
         {
             sizeNode.size = std::max(sizeNode.firstChild->size, sizeNode.secondChild->size);
@@ -1252,6 +1278,8 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         }
     }
 
+    // Because we have grown, we're certainly no longer of our
+    // minimal size (if we've ever been).
     sizeNode.isMinimumSize = false;
 }
 

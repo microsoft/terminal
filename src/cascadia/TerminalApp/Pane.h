@@ -178,6 +178,9 @@ private:
         bool isMinimumSize;
         std::unique_ptr<LayoutSizeNode> firstChild;
         std::unique_ptr<LayoutSizeNode> secondChild;
+
+        // These two fields hold next possible snapped values of firstChild and 
+        // secondChild. They are used as a cache to 
         std::unique_ptr<LayoutSizeNode> nextFirstChild;
         std::unique_ptr<LayoutSizeNode> nextSecondChild;
 
