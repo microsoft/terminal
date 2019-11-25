@@ -877,8 +877,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto currentOffset = this->GetScrollOffset();
                 const double newValue = (numRows) + (currentOffset);
 
-                // Clear our expected scroll offset. The viewport will now move
-                //      in response to our user input.
                 _scrollBar.Value(static_cast<int>(newValue));
 
                 // Use this point as our new scroll anchor.
