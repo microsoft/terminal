@@ -778,6 +778,7 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
+    //    * the TitleChanged event, for changing the text of the tab
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
@@ -789,6 +790,21 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
+
+        // Don't capture a strong ref to the tab. If the tab is removed as this
+        // is called, we don't really care anymore about handling the event.
+        std::weak_ptr<Tab> weakTabPtr = hostingTab;
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
+            // The title of the control changed, but not necessarily the title
+            // of the tab. Get the title of the focused pane of the tab, and set
+            // the tab's text to the focused panes' text.
+            _UpdateTitle(tab);
+        });
     }
 
     // Method Description:
