@@ -142,7 +142,7 @@ namespace winrt::TerminalApp::implementation
     // - On failure the output wstring will be L"0.0.0.0"
     std::wstring TerminalPage::_GetWindowsVersion()
     {
-        const auto dll{ L"kernel32.dll" };
+        const auto dll{ L"KernelBase.dll" };
         DWORD fill{};
         const auto infoSize{ GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, dll, &fill) };
         auto buffer{ wil::make_unique_nothrow<BYTE[]>(infoSize) };
