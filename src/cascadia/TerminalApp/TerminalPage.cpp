@@ -163,8 +163,27 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        SYSTEM_INFO sysInfo{};
+        std::wstring arch{ L"Unknown" };
+        GetSystemInfo(&sysInfo);
+
+        switch (sysInfo.wProcessorArchitecture)
+        {
+        case PROCESSOR_ARCHITECTURE_AMD64:
+            arch = L"x64";
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM64:
+            arch = L"ARM64";
+            break;
+        case PROCESSOR_ARCHITECTURE_INTEL:
+            arch = L"x86";
+            break;
+        default:
+            break;
+        }
+
         std::wstringstream osVersionStream{};
-        osVersionStream << osMaj << L"." << osMin << L"." << osBld << L"." << osRev;
+        osVersionStream << osMaj << L"." << osMin << L"." << osBld << L"." << osRev << L" " << arch;
         return osVersionStream.str();
     }
 
@@ -216,7 +235,7 @@ namespace winrt::TerminalApp::implementation
         // Format our about text. It will look like the following:
         // <Display Name>
         // WT Version: <WtMajor>.<WtMinor>.<WtBuild>.<WtRevision>
-        // OS Version: <OsMajor>.<OsMinor>.<OsBuild>.<OsRevision>
+        // OS Version: <OsMajor>.<OsMinor>.<OsBuild>.<OsRevision> <CpuArch>
         // Getting Started
         // Documentation
         // Release Notes
