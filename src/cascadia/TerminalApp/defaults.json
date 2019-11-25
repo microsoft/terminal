@@ -225,6 +225,7 @@
         { "command": "openSettings", "keys": [ "ctrl+," ] },
         { "command": "paste", "keys": [ "ctrl+shift+v" ] },
         { "command": "prevTab", "keys": [ "ctrl+shift+tab" ] },
+        { "command": "resetFontSize", "keys": ["ctrl+0"]},
         { "command": { "action": "resizePane", "direction": "down" }, "keys": [ "alt+shift+down" ] },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": [ "alt+shift+left" ] },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": [ "alt+shift+right" ] },
