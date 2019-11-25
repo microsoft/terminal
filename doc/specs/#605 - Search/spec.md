@@ -25,7 +25,8 @@ Our ultimate goal is to provide both search within one tab and search from all t
 4. If currently there is no active selection, the search starts from the line that the cursor is on. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
 5. The search dialog should not block terminal's view. In phrase one, this is achieved by make search box movable. The user can move the search box to the bottom right corner.
 6. The user should be able to fully interact with the terminal when the search box is on screen. 
-7. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. 
+7. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings.
+8. To avoid searchBox from blocking the terminal window, the search box could be moved to the bottom right by clicking a button. 
 
 Conhost already has a module for search. It realizes case sensitive or insensitive exact text match search, and it provides methods to select the found word. However, we want to make search as a shared component between Terminal and Console host. Now search module is part of Conhost, and its dependencies include BufferOut and some other types in ConHost such as SCREEN_INFORMATION. In order to make Search a shared component, we need to remove its dependency on ConHost types. BufferOut is already a shared component, but we need to make sure there is no other Conhost dependency.
 
@@ -36,18 +37,18 @@ We will create a SearchBoxControl Xaml UserControl element. When a search proces
 3. If the community does not like the current design, we can lift SearchBox to a higher level. 
 
 ### Search process
-1. Search is performed on a XAML AutoSuggestBox. Once the user click the "Find" icon or press Enter, we start from the cursor (the current input line on the Terminal) or the current selection, and try to find the exact text in the text buffer. The nearest searched one will be selected. Then the search start point will be set to the selected text. The next time "Find" button is clicked, the search will start before or after the previous searched text.
+1. Search is performed on a XAML TextBox. Once the user presses Enter, we start to search from the last line of the current viewport or the current selection, and try to find the exact text in the text buffer. The nearest searched one will be selected. Then the search start point will be set to the selected text. The next time "Find" button is clicked, the search will start before or after the previous searched text.
 2. The user can choose to search up or down by choosing up arrow or down arrow buttons. The chosen button will be styled to indicate it is clicked. If the user does not click the arrows buttons, the default direction is up. 
 3. The user can choose to do case sensitive or insensitive match by checking a check box. 
 4. If the search box is focused, the user can navigte all the elements on the search box using tab. When selected, press Enter equals to click. 
 5. If the user click the "X" button or press Esc, the search stopped and the search box disappears. In phrase one we do not store any state. 
-6. Once the search box is closed (exiting search mode), the selection will still be there. This coincides with the current VS Code and cmd experience. To get rid of the selection, the user can just click other area of the window. 
+6. Once the search box is closed (exiting search mode), the selection will still be there. This coincides with the current VS Code and cmd experience. To get rid of the selection, the user can just click other area of the window.
 
 ## UI/UX Design
 
 ![SearchBox mockup](images/SearchBoxControl.png)
 
-Above is the SearchBoxControl. The two buttons with up/down arrows controls the search direction, a blue border will appear on the current selected direction. The checkbox, if checked, means that we are searching case-sensitivily. The Dockbottom button on the right of the checkbox is for moving the search box to top/bottom. 
+Above is the SearchBoxControl. The two buttons with up/down arrows controls the search direction, it will be styled once clicked. The checkbox, if checked, means that we are searching case-sensitivily. The Dockbottom button on the right of the checkbox is for moving the search box to top/bottom. 
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
 
