@@ -112,6 +112,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - prevTab
 - increaseFontSize
 - decreaseFontSize
+- resetFontSize
 - scrollUp
 - scrollDown
 - scrollUpPage

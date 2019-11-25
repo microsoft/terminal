@@ -609,6 +609,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
         bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        bindings.ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
