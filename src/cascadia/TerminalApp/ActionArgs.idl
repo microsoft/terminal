@@ -23,6 +23,13 @@ namespace TerminalApp
         Down
     };
 
+    [default_interface] runtimeclass NewTerminalArgs {
+        NewTerminalArgs();
+        String Commandline;
+        String StartingDirectory;
+        String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+    };
+
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
     {
         ActionEventArgs(IActionArgs args);
@@ -38,6 +45,7 @@ namespace TerminalApp
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+        NewTerminalArgs TerminalArgs { get; };
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs

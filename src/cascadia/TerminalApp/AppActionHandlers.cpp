@@ -137,18 +137,18 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(std::nullopt);
+            _OpenNewTab(std::nullopt, nullptr);
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabArgs>())
         {
             if (realArgs.ProfileIndex() == nullptr)
             {
-                _OpenNewTab(std::nullopt);
+                _OpenNewTab(std::nullopt, realArgs.TerminalArgs());
             }
             else
             {
-                _OpenNewTab(realArgs.ProfileIndex().Value());
+                _OpenNewTab(realArgs.ProfileIndex().Value(), realArgs.TerminalArgs());
             }
             args.Handled(true);
         }

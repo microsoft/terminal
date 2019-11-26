@@ -6,6 +6,7 @@
 // HEY YOU: When adding ActionArgs types, make sure to add the corresponding
 //          *.g.cpp to ActionArgs.cpp!
 #include "ActionEventArgs.g.h"
+#include "NewTerminalArgs.g.h"
 #include "CopyTextArgs.g.h"
 #include "NewTabArgs.g.h"
 #include "SwitchToTabArgs.g.h"
@@ -31,6 +32,49 @@ namespace winrt::TerminalApp::implementation
             _ActionArgs{ args } {};
         GETSET_PROPERTY(IActionArgs, ActionArgs, nullptr);
         GETSET_PROPERTY(bool, Handled, false);
+    };
+
+    struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
+    {
+        NewTerminalArgs() = default;
+        GETSET_PROPERTY(winrt::hstring, Commandline, L"");
+        GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
+        GETSET_PROPERTY(winrt::hstring, Profile, L"");
+
+        static constexpr std::string_view CommandlineKey{ "commandline" };
+        static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
+        static constexpr std::string_view ProfileKey{ "profile" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<NewTerminalArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Commandline == _Commandline &&
+                       otherAsUs->_StartingDirectory == _StartingDirectory &&
+                       otherAsUs->_Profile == _Profile;
+            }
+            return false;
+        };
+        static winrt::TerminalApp::NewTerminalArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<NewTerminalArgs>();
+            if (auto commandline{ json[JsonKey(CommandlineKey)] })
+            {
+                args->_Commandline = winrt::to_hstring(commandline.asString());
+            }
+            if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
+            {
+                args->_StartingDirectory = winrt::to_hstring(startingDirectory.asString());
+            }
+            if (auto profile{ json[JsonKey(ProfileKey)] })
+            {
+                args->_Profile = winrt::to_hstring(profile.asString());
+            }
+            return *args;
+        }
     };
 
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
@@ -66,6 +110,7 @@ namespace winrt::TerminalApp::implementation
     {
         NewTabArgs() = default;
         GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
+        GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
 
         static constexpr std::string_view ProfileIndexKey{ "index" };
 
@@ -75,7 +120,8 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<NewTabArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_ProfileIndex == _ProfileIndex;
+                return otherAsUs->_ProfileIndex == _ProfileIndex &&
+                       otherAsUs->_TerminalArgs == _TerminalArgs;
             }
             return false;
         };
@@ -83,6 +129,7 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
+            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
             if (auto profileIndex{ json[JsonKey(ProfileIndexKey)] })
             {
                 args->_ProfileIndex = profileIndex.asInt();
@@ -246,4 +293,5 @@ namespace winrt::TerminalApp::implementation
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
+    BASIC_FACTORY(NewTerminalArgs);
 }
