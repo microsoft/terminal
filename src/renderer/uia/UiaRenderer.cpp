@@ -105,7 +105,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         const auto newRect = rectangles[i];
 
         // if any value is different, selection has changed
-        if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left)
+        if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
         {
             _selectionChanged = true;
             return S_OK;
@@ -181,20 +181,13 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 {
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
+    // add more events here
+    bool somethingToDo = _selectionChanged;
+
     // If there's nothing to do, quick return
-    bool somethingToDo = false;
+    RETURN_HR_IF(S_FALSE, !somethingToDo);
 
-    if (_isEnabled)
-    {
-        // add more events here
-        somethingToDo = _selectionChanged;
-
-        if (somethingToDo)
-        {
-            _isPainting = true;
-        }
-    }
-
+    _isPainting = true;
     return S_OK;
 }
 
@@ -206,18 +199,17 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::EndPaint() noexcept
 {
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
-    if (_isEnabled)
+    // Fire UIA Events here
+    if (_selectionChanged)
     {
-        _isPainting = false;
-
-        // Fire UIA events here
-        if (_selectionChanged)
-        {
-            _dispatcher->SignalUia(ConsoleUiaEvent::SelectionChanged);
-        }
+        _dispatcher->SignalUia(ConsoleUiaEvent::SelectionChanged);
     }
+
+    _selectionChanged = false;
+    _isPainting = false;
 
     return S_OK;
 }
@@ -255,22 +247,23 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::PaintBackground() noexcept
 {
-    return S_OK;
+    return S_FALSE;
 }
 
 // Routine Description:
 // - Places one line of text onto the screen at the given position
+//  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - clusters - Iterable collection of cluster information (text and columns it should consume)
 // - coord - Character coordinate position in the cell grid
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
-// - S_OK or relevant DirectX error
+// - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/) noexcept
 {
-    return S_OK;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -288,7 +281,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
                                                       size_t const /*cchLine*/,
                                                       COORD const /*coordTarget*/) noexcept
 {
-    return S_OK;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -302,23 +295,24 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
-    return S_OK;
+    return S_FALSE;
 }
 
 // Routine Description:
 // - Draws the cursor on the screen
+//  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - options - Packed options relevant to how to draw the cursor
 // Return Value:
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintCursor(const IRenderEngine::CursorOptions& /*options*/) noexcept
 {
-    return S_OK;
+    return S_FALSE;
 }
 
 // Routine Description:
 // - Updates the default brush colors used for drawing
-// - Not currently used by UiaEngine.
+//  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - colorForeground - <unused>
 // - colorBackground - <unused>
@@ -345,7 +339,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*fiFontInfo*/) noexcept
 {
-    // TODO CARLOS: changing the size may be useful
     return S_FALSE;
 }
 
@@ -358,7 +351,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
 {
-    // TODO CARLOS: changing the size may be useful
     return S_FALSE;
 }
 
@@ -370,7 +362,6 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - HRESULT S_OK
 [[nodiscard]] HRESULT UiaEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
-    // TODO CARLOS: not sure how to handle resizing just yet
     return S_FALSE;
 }
 
