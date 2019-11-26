@@ -87,7 +87,7 @@ Properties listed below are specific to each custom key binding.
 
 ### Implemented Commands
 
-Commands listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
+Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp)
 
 - copy
 - copyTextWithoutNewlines
