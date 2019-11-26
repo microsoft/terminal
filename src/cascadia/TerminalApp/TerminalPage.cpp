@@ -1393,7 +1393,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_ShowFind()
     {
-        const auto termControl = _GetFocusedControl();
+        const auto termControl = _GetActiveControl();
         termControl.CreateSearchBoxControl();
     }
 

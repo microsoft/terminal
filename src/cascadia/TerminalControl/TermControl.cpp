@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _cursorTimer{},
         _lastMouseClick{},
         _lastMouseClickPos{},
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
         _tsfInputControl{ nullptr }
     {
         _EnsureStaticInitialization();

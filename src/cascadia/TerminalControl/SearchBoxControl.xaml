@@ -47,7 +47,7 @@
                 <ResourceDictionary x:Key="HighContrast">
                     <Style x:Key="FontIconStyle" TargetType="FontIcon">
                         <Setter Property="FontSize" Value="15" />
-                        <Setter Property="Foreground" Value="{ThemeResource SystemColorButtonTextColor}" />
+                        <Setter Property="Foreground" Value="{ThemeResource SystemColorWindowColor}" />
                     </Style>
                     <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
                         <Setter Property="Width" Value="20" />
@@ -70,16 +70,16 @@
         </StackPanel>
 
         <StackPanel x:Name="TextBoxStackPanel" Margin="0, 3, 0, 3" Orientation="Horizontal">
-            <TextBox  x:Name="TextBox" AutomationProperties.Name="Text" PlaceholderText="Search"
+            <TextBox  x:Name="TextBox" AutomationProperties.Name="Search Text" PlaceholderText="Search"
                 KeyDown = "QuerySubmitted"
                 Width="160" Margin="0,0,1,0" HorizontalAlignment="Left" VerticalAlignment="Center">
             </TextBox>
 
-            <ToggleButton x:Name="SetGoBackwardButton" AutomationProperties.Name="SetGoBackward" HorizontalAlignment="Right"
+            <ToggleButton x:Name="SetGoBackwardButton" AutomationProperties.Name="Set Search Backward" HorizontalAlignment="Right"
                           Padding="1" Style="{ThemeResource ToggleButtonStyle}" Checked="_GoBackwardChecked" IsChecked="True">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Style="{ThemeResource FontIconStyle}"/>
             </ToggleButton>
-            <ToggleButton x:Name="SetGoForwardButton" AutomationProperties.Name="SetGoForward" Padding="1"
+            <ToggleButton x:Name="SetGoForwardButton" AutomationProperties.Name="Set Search Forward" Padding="1"
                           Style="{ThemeResource ToggleButtonStyle}" Checked="_GoForwardChecked">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Style="{ThemeResource FontIconStyle}"/>
             </ToggleButton>
@@ -113,7 +113,7 @@
                 <TextBlock Text="Case Sensitive" Foreground="{ThemeResource CheckBoxColor}" FontSize="15"/>
             </CheckBox>
 
-            <ToggleButton x:Name="MoveSearchBoxPositionButton" AutomationProperties.Name="MoveSearchBoxPosition" Style="{ThemeResource ToggleButtonStyle}"
+            <ToggleButton x:Name="MoveSearchBoxPositionButton" AutomationProperties.Name="Move Search Box Position" Style="{ThemeResource ToggleButtonStyle}"
                           HorizontalAlignment="Right" Padding="0" Click="_MovePositionClick">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" Style="{ThemeResource FontIconStyle}"/>
             </ToggleButton>
