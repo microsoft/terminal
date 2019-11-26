@@ -347,7 +347,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         else if (unit <= TextUnit::TextUnit_Word)
         {
             // expand to word
-            auto target = _start;
+            const auto target = _start;
             _start = _wordBeginEndpoint(_pData, target, _wordDelimiters);
             _end = _wordEndEndpoint(_pData, target, _wordDelimiters);
             FAIL_FAST_IF(!(_start <= _end));
@@ -1564,7 +1564,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
             currentColumn = moveState.FirstColumnInRow;
             currentScreenInfoRow += static_cast<int>(moveState.Increment);
 
-            auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
 
             target = buffer.GetWordEnd(target, wordDelimiters, true);
@@ -1574,7 +1574,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
         else
         {
             // moving somewhere away from the edges of a row
-            Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
             buffer.GetSize().IncrementInBounds(target);
 
@@ -1638,7 +1638,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_nul
             currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
 
             // get the right-most word for the previous row
-            auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
 
             target = buffer.GetWordStart(target, wordDelimiters, true);
@@ -1649,7 +1649,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_nul
         else
         {
             // moving somewhere away from the edges of a row
-            Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
             buffer.GetSize().DecrementInBounds(target);
 
@@ -2030,7 +2030,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
             // when moving end, we need to encompass the word
             if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
             {
-                auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+                const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
                 auto target = _endpointToCoord(pData, point);
 
                 target = buffer.GetWordEnd(target, wordDelimiters, true);
@@ -2041,7 +2041,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
         else
         {
             // moving somewhere away from the edges of a row
-            Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
             buffer.GetSize().IncrementInBounds(target);
 
@@ -2149,7 +2149,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData
             currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
 
             // get the right-most word for the previous row
-            auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
 
             target = buffer.GetWordStart(target, wordDelimiters, true);
@@ -2164,7 +2164,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData
         else
         {
             // moving somewhere away from the edges of a row
-            Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
             auto target = _endpointToCoord(pData, point);
             buffer.GetSize().DecrementInBounds(target);
 
