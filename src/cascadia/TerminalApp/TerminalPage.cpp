@@ -143,7 +143,7 @@ namespace winrt::TerminalApp::implementation
         DWORD fill{};
         const auto infoSize{ GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, dll, &fill) };
         auto buffer{ wil::make_unique_nothrow<BYTE[]>(infoSize) };
-        // clear varaibles for use in case of failure
+        // clear variables for use in case of failure
         WORD osMaj{}, osMin{}, osBld{}, osRev{};
 
         if (GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, dll, fill, infoSize, buffer.get()))
