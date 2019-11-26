@@ -1148,8 +1148,7 @@ class UiaTextRangeTests
                 false
             },
 
-            // TODO CARLOS: This test fails because moving end endpoint backwards doesn't wrap properly
-            /*{
+            {
                 L"_start follows _end when passed during movement",
                 {
                     topRow + 1, firstColumnIndex + 2,
@@ -1163,10 +1162,10 @@ class UiaTextRangeTests
                 -4,
                 -4,
                 TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 7,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 7,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 6,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 6,
                 true
-            },*/
+            },
 
             {
                 L"can't move _end past the beginning of the document when _end is positioned at the end",
@@ -1228,19 +1227,19 @@ class UiaTextRangeTests
             {
                 L"_end follows _start when passed during movement",
                 {
-                    topRow, firstColumnIndex + 5,
-                    topRow, firstColumnIndex + 10,
+                    topRow, firstColumnIndex,
+                    topRow, firstColumnIndex + 3,
                     topRow,
                     lastColumnIndex,
                     firstColumnIndex,
                     UiaTextRange::MovementIncrement::Forward,
                     UiaTextRange::MovementDirection::Forward
                 },
-                4,
-                4,
+                2,
+                2,
                 TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow+1) + 7,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow+1) + 7,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow)+15,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow)+15,
                 true
             },
         };

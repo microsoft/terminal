@@ -2053,7 +2053,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
             {
                 buffer.GetSize().IncrementInBounds(target);
 
-                if (target.X == 0)
+                if (static_cast<Column>(target.X) == moveState.FirstColumnInRow && currentScreenInfoRow != moveState.LimitingRow)
                 {
                     currentScreenInfoRow += static_cast<int>(moveState.Increment);
                 }
@@ -2176,7 +2176,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData
             {
                 buffer.GetSize().DecrementInBounds(target);
 
-                if (static_cast<Column>(target.X) == moveState.LastColumnInRow && currentScreenInfoRow != moveState.LimitingRow)
+                if (static_cast<Column>(target.X) == moveState.FirstColumnInRow && currentScreenInfoRow != moveState.LimitingRow)
                 {
                     currentScreenInfoRow += static_cast<int>(moveState.Increment);
                 }
