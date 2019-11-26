@@ -1,4 +1,4 @@
 EXPORTS
-    CreatePseudoConsole
-    ResizePseudoConsole
-    ClosePseudoConsole
+    CreatePseudoConsole = ConptyCreatePseudoConsole
+    ResizePseudoConsole = ConptyResizePseudoConsole
+    ClosePseudoConsole = ConptyClosePseudoConsole

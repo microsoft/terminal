@@ -24,7 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
         _copyOnSelect{ false },
         _useAcrylic{ false },
-        _closeOnExit{ true },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
@@ -181,16 +180,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _useAcrylic = value;
     }
 
-    bool TerminalSettings::CloseOnExit()
-    {
-        return _closeOnExit;
-    }
-
-    void TerminalSettings::CloseOnExit(bool value)
-    {
-        _closeOnExit = value;
-    }
-
     double TerminalSettings::TintOpacity()
     {
         return _tintOpacity;
@@ -319,6 +308,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::StartingTitle(hstring const& value)
     {
         _startingTitle = value;
+    }
+
+    bool TerminalSettings::SuppressApplicationTitle()
+    {
+        return _suppressApplicationTitle;
+    }
+
+    void TerminalSettings::SuppressApplicationTitle(bool value)
+    {
+        _suppressApplicationTitle = value;
     }
 
     hstring TerminalSettings::EnvironmentVariables()

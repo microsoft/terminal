@@ -166,12 +166,14 @@ private:
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
     std::wstring _title;
+    std::wstring _startingTitle;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 
     bool _snapOnInput;
+    bool _suppressApplicationTitle;
 
 #pragma region Text Selection
     enum class SelectionExpansionMode

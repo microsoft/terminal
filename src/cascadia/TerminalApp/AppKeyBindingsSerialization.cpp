@@ -48,6 +48,7 @@ static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
 static constexpr std::string_view IncreaseFontSizeKey{ "increaseFontSize" };
 static constexpr std::string_view DecreaseFontSizeKey{ "decreaseFontSize" };
+static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
 static constexpr std::string_view ScrollupKey{ "scrollUp" };
 static constexpr std::string_view ScrolldownKey{ "scrollDown" };
 static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
@@ -110,6 +111,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { PrevTabKey, ShortcutAction::PrevTab },
     { IncreaseFontSizeKey, ShortcutAction::IncreaseFontSize },
     { DecreaseFontSizeKey, ShortcutAction::DecreaseFontSize },
+    { ResetFontSizeKey, ShortcutAction::ResetFontSize },
     { ScrollupKey, ShortcutAction::ScrollUp },
     { ScrolldownKey, ShortcutAction::ScrollDown },
     { ScrolluppageKey, ShortcutAction::ScrollUpPage },
@@ -241,6 +243,24 @@ IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
     return *args;
 };
 
+// Function Description:
+// - Used to generate a AdjustFontSizeArgs for IncreaseFontSize/DecreaseFontSize
+//   actions with a delta of 1/-1.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
+// Arguments:
+// - delta: the font size delta to create the parse function for.
+// Return Value:
+// - A function that can be used to "parse" json into an AdjustFontSizeArgs.
+std::function<IActionArgs(const Json::Value&)> LegacyParseAdjustFontSizeArgs(int delta)
+{
+    auto pfn = [delta](const Json::Value & /*value*/) -> IActionArgs {
+        auto args = winrt::make_self<winrt::TerminalApp::implementation::AdjustFontSizeArgs>();
+        args->Delta(delta);
+        return *args;
+    };
+    return pfn;
+}
+
 // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
 // a set of deserializer functions that can be used to deserialize a IActionArgs
 // from json. Each type of IActionArgs that can accept arbitrary args should be
@@ -283,6 +303,9 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
     { ShortcutAction::MoveFocusRight, LegacyParseMoveFocusArgs(Direction::Right) },
     { ShortcutAction::MoveFocusUp, LegacyParseMoveFocusArgs(Direction::Up) },
     { ShortcutAction::MoveFocusDown, LegacyParseMoveFocusArgs(Direction::Down) },
+
+    { ShortcutAction::DecreaseFontSize, LegacyParseAdjustFontSizeArgs(-1) },
+    { ShortcutAction::IncreaseFontSize, LegacyParseAdjustFontSizeArgs(1) },
 
     { ShortcutAction::Invalid, nullptr },
 };
@@ -335,7 +358,7 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
 
-        if (const auto chord{ GetKeyBinding(searchedForAction) })
+        if (const auto chord{ GetKeyBindingForAction(searchedForAction) })
         {
             if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
             {

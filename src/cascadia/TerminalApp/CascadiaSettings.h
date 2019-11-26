@@ -49,6 +49,8 @@ public:
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
 
+    static const CascadiaSettings& GetCurrentAppSettings();
+
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();

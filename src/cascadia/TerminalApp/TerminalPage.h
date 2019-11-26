@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         bool _SelectTab(const int tabIndex);
         void _MoveFocus(const Direction& direction);
 
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         int _GetFocusedTabIndex() const;
         void _SetFocusedTabIndex(int tabIndex);
         void _CloseFocusedTab();
@@ -156,6 +156,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleShowFind(const IInspectable& /*sender*/, const TerminalApp::ActionEventArgs& args);
+        void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };

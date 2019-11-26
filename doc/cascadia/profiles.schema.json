@@ -6,7 +6,8 @@
     "Color": {
       "default": "#",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-      "type": "string"
+      "type": "string",
+      "format": "color"
     },
     "ProfileGuid": {
       "default": "{}",
@@ -43,6 +44,7 @@
         "openSettings",
         "paste",
         "prevTab",
+        "resetFontSize",
         "resizePane",
         "resizePaneDown",
         "resizePaneLeft",
@@ -325,9 +327,21 @@
             "type": "string"
           },
           "closeOnExit": {
-            "default": true,
-            "description": "When set to true (default), the selected tab closes when the connected application exits. When set to false, the tab will remain open when the connected application exits.",
-            "type": "boolean"
+            "default": "graceful",
+            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+            "oneOf": [
+              {
+                "enum": [
+                  "never",
+                  "graceful",
+                  "always"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
           },
           "colorScheme": {
             "default": "Campbell",
@@ -518,6 +532,10 @@
           "startingDirectory": {
             "description": "The directory the shell starts in when it is loaded.",
             "type": "string"
+          },
+          "suppressApplicationTitle": {
+            "description": "When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal.",
+            "type": "boolean"
           },
           "tabTitle": {
             "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",

@@ -215,7 +215,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::AdjustFontSizeArgs>())
         {
-            const auto termControl = _GetFocusedControl();
+            const auto termControl = _GetActiveControl();
             termControl.AdjustFontSize(realArgs.Delta());
             args.Handled(true);
         }
@@ -225,6 +225,14 @@ namespace winrt::TerminalApp::implementation
                                        const TerminalApp::ActionEventArgs& args)
     {
         _ShowFind();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
+                                            const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.ResetFontSize();
         args.Handled(true);
     }
 

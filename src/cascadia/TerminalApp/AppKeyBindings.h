@@ -45,7 +45,8 @@ namespace winrt::TerminalApp::implementation
         void SetKeyBinding(TerminalApp::ActionAndArgs const& actionAndArgs,
                            winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
-        Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
+        Microsoft::Terminal::Settings::KeyChord GetKeyBindingForAction(TerminalApp::ShortcutAction const& action);
+        Microsoft::Terminal::Settings::KeyChord GetKeyBindingForActionWithArgs(TerminalApp::ActionAndArgs const& actionAndArgs);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
@@ -69,6 +70,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SplitVertical,     TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(SplitHorizontal,   TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(AdjustFontSize,    TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ResetFontSize,     TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollUp,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollDown,        TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollUpPage,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);

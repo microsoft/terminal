@@ -593,6 +593,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Returns a pointer to the global shared settings.
+    [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> AppLogic::GetSettings() const noexcept
+    {
+        return _settings;
+    }
+
+    // Method Description:
     // - Update the current theme of the application. This will trigger our
     //   RequestedThemeChanged event, to have our host change the theme of the
     //   root of the application.
