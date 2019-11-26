@@ -103,17 +103,11 @@ The user then iterates down past the end of the visible list four times. The bel
 The user will press a keybinding named `OpenTabSwitcher` to bring up the UI.
 The user will be able to change it to whatever they like. There will also be an optional `anchor` arg that may be provided to this keybinding.
 
-- `OpenTabSwitcher`
-    - _default_ = <kbd>ctrl+tab</kbd>
-    - _available args_: `anchor`
-
-If this arg is given, the UI will dismiss on the release of the _first_ key of this keybinding. This is because the user could have the key <kbd>q</kbd> or could have <kbd>ctrl+tab</kbd> set to open the switcher. If the user has a single key as the keybinding, then it makes sense that on the release of that one key, the UI would dismiss. If there's two keys, we don't want the user to have to hold both keys down to keep the UI open. Just the first key, namely <kbd>ctrl</kbd>, would act as the `anchor`.
-
 #### Keeping it open
 
 We use the term `anchor` to illustrate the idea that the UI stays visible as long as something is "anchoring" it down.
 
-So, when the `OpenTabSwitcher` keybinding is given the `anchor` arg, the _first_ key of the keybinding will act as the `anchor` key.
+So, when the `OpenTabSwitcher` keybinding is given the `anchor` arg, the first key of the keybinding will act as the `anchor` key.
 Holding that`anchor` key down will keep the switcher visible, and once the `anchor` key is released, the switcher will dismiss.
 
 If `OpenTabSwitcher` is not given the `anchor` arg, the switcher will stay visible even after the release of the key/keychord.
@@ -122,10 +116,10 @@ If `OpenTabSwitcher` is not given the `anchor` arg, the switcher will stay visib
 
 The user will be able to navigate through the switcher with the following keybindings:
 
-- `tabSwitchDown`: <kbd>tab</kbd> or <kbd>downArrow</kbd>
-- `tabSwitchUp`: <kbd>shift+tab</kbd> or <kbd>upArrow</kbd>
+- Switching Down: <kbd>tab</kbd> or <kbd>downArrow</kbd>
+- Switching Up: <kbd>shift+tab</kbd> or <kbd>upArrow</kbd>
 
-As the user is cycling through the tab list, the selected tab will be highlighted but the terminal won't actually switch to the selected tab.
+As the user is cycling through the tab list, the selected tab will be highlighted but the terminal won't actually switch focus to the selected tab.
 
 #### Closing the Switcher and Bringing a Tab into Focus
 
@@ -141,7 +135,7 @@ The following are ways a user can dismiss the UI, whether or not the `Anchor` ar
 3. The user can click outside of the UI to dismiss the switcher without bringing the selected tab into focus.
 4. The user can press any of the dismissal keybinds.
 
-If the `Anchor` arg is provided, then in addition to the above methods, the UI will dismiss upon the release of the `Anchor` key.
+Lastly, if the `Anchor` arg is provided, then in addition to the above methods, the UI will dismiss upon the release of the `Anchor` key.
 
 Pressing the `OpenTabSwitcher` keychord again will _not_ close the Switcher.
 
@@ -166,18 +160,18 @@ This shouldn't introduce any security issues.
 
 ### Reliability
 
-- MRU ordering should be accurate, and should always be updated on every tab focus.
-- Reordering tabs on the tab bar shouldn't change the MRU order.
+MRU ordering should be accurate, and should always be updated on every tab focus.
+Reordering tabs on the tab bar shouldn't change the MRU order.
 
 ### Compatibility
 
-- The existing way of navigating horizontally through the tabs on the tab bar should not break. These should also be separate keybindings from the keybindings associated with using the tab switcher.
+The existing way of navigating horizontally through the tabs on the tab bar should not break. These should also be separate keybindings from the keybindings associated with using the tab switcher.
 (TODO: Would this just be too many different keybindings?)
-- The implementation should also take into account the addition of other features on top of this UI, such as Pane Navigation described below.
+The implementation should also take into account the addition of other features on top of this UI, such as Pane Navigation described below.
 
 ### Performance, Power, and Efficiency
 
-- Since each tab focus change, tab addition, and tab close will need to update the MRU, we just need to be sure that updating the MRU isn't too slow.
+Since each tab focus change, tab addition, and tab close will need to update the MRU, we just need to be sure that updating the MRU isn't too slow.
 
 ## Potential Issues
 
@@ -200,7 +194,7 @@ One thing I'm not too sure about is when the Terminal window is so small that no
 
 ### Pane Navigation
 
-@zadiji-msft in [#1502] brought up the idea of pane navigation in additon to tab navigation, inspired by tmux.
+@zadiji-msft in [#1502] brought up the idea of pane navigation inspired by tmux.
 
 ![Tmux Tab and Pane Switching](img/tmuxPaneSwitching.png)
 
