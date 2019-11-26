@@ -19,6 +19,9 @@ This was mainly inspired by the tab switcher that's found in Visual Studio Code 
 
 VS Code's tab switcher appears directly underneath the tab bar, while Visual Studio's tab switcher presents itself as a box in the middle of the editor.
 
+![Visual Studio Code Tab Switcher](img/VSCodeTabSwitcher.png)
+![Visual Studio Tab Switcher](img/VSTabSwitcher.png)
+
 Both switchers behave very similarly, from the keychord that's pressed to show the switcher, to the way the switcher is dismissed and navigated.
 
 ## Solution Design
@@ -159,9 +162,18 @@ This shouldn't introduce any security issues.
 
 We'll need to be wary about how the UI is presented depending on different sizes of the terminal. Since we want the switcher to be in the center of the terminal with a fixed width and height, how would it look when the terminal is really thin length/width-wise?
 
+Visual Studio's tab switcher is a fixed size, and is always in the middle. Even when the VS window is smaller than the tab switcher size, the tab switcher will show up larger than the VS window itself.
+
+![Small Visual Studio Without Tab Switcher](img/VSMinimumSize.png)
+![Small Visual Studio With Tab Switcher](img/VSMinimumSizeWithTabSwitcher.png)
+
+Visual Studio Code's tab switcher has a minimum width. However, since VS Code's window has a minimum width and height, the tab switcher is always smaller than the window size.
+
+![Small Visual Studio Code with Tab Switcher](img/VSCodeMinimumTabSwitcherSize.png)
+
 Also, the MRU ordering should be accurate, and should always be updated on every tab focus.
 
-Reordering tabs on the tab bar shouldn't change MRU.
+Reordering tabs on the tab bar shouldn't change the MRU order.
 
 ### Compatibility
 
