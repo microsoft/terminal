@@ -39,7 +39,6 @@ std::vector<TerminalApp::Profile> AzureCloudShellGenerator::GenerateProfiles()
         azureCloudShellProfile.SetColorScheme({ L"Vintage" });
         azureCloudShellProfile.SetAcrylicOpacity(0.6);
         azureCloudShellProfile.SetUseAcrylic(true);
-        azureCloudShellProfile.SetCloseOnExit(false);
         azureCloudShellProfile.SetConnectionType(AzureConnectionType);
         profiles.emplace_back(azureCloudShellProfile);
     }

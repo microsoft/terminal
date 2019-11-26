@@ -45,6 +45,7 @@ namespace TerminalApp
         SwitchToTab8, // Legacy
         IncreaseFontSize,
         DecreaseFontSize,
+        ResetFontSize,
         ScrollUp,
         ScrollDown,
         ScrollUpPage,
@@ -89,6 +90,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitVertical;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitHorizontal;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> AdjustFontSize;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResetFontSize;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollUp;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollDown;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollUpPage;

@@ -19,8 +19,8 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 {
     _rootPane = std::make_shared<Pane>(profile, control, true);
 
-    _rootPane->Closed([=]() {
-        _closedHandlers();
+    _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+        _ClosedHandlers(nullptr, nullptr);
     });
 
     _activePane = _rootPane;
@@ -335,5 +335,4 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
     });
 }
 
-DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
 DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

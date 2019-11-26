@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SplitVertical,     TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(SplitHorizontal,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(AdjustFontSize,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ResetFontSize,     TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollUp,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollDown,        TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollUpPage,      TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);

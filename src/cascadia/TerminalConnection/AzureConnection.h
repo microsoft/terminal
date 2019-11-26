@@ -11,26 +11,24 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "../cascadia/inc/cppwinrt_utils.h"
+#include "ConnectionStateHolder.h"
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>
+    struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
     {
         static bool IsAzureConnectionAvailable();
         AzureConnection(const uint32_t rows, const uint32_t cols);
 
-        winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
-        void TerminalOutput(winrt::event_token const& token) noexcept;
-        winrt::event_token TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler);
-        void TerminalDisconnected(winrt::event_token const& token) noexcept;
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-    private:
-        winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
-        winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
+        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
+    private:
         uint32_t _initialRows{};
         uint32_t _initialCols{};
         int _storedNumber{ -1 };
@@ -40,7 +38,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::condition_variable _canProceed;
         std::mutex _commonMutex;
 
-        enum class State
+        enum class AzureState
         {
             AccessStored,
             DeviceFlow,
@@ -51,13 +49,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             NoConnect
         };
 
-        State _state{ State::AccessStored };
+        AzureState _state{ AzureState::AccessStored };
 
         std::optional<bool> _store;
         std::optional<bool> _removeOrNew;
-
-        bool _connected{};
-        std::atomic<bool> _closing{ false };
 
         wil::unique_handle _hOutputThread;
 

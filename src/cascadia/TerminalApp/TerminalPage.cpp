@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
+#include "ActionAndArgs.h"
 #include "Utils.h"
 
 #include <LibraryResources.h>
@@ -256,7 +257,21 @@ namespace winrt::TerminalApp::implementation
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
                 const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
-                auto profileKeyChord = keyBindings.GetKeyBinding(action);
+                // First, attempt to search for the keybinding for the simple
+                // NewTabProfile0-9 ShortcutActions.
+                auto profileKeyChord = keyBindings.GetKeyBindingForAction(action);
+                if (!profileKeyChord)
+                {
+                    // If NewTabProfileN didn't have a binding, look for a
+                    // keychord that is bound to the equivalent
+                    // NewTab(ProfileIndex=N) action
+                    auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+                    actionAndArgs->Action(ShortcutAction::NewTab);
+                    auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+                    newTabArgs->ProfileIndex(profileIndex);
+                    actionAndArgs->Args(*newTabArgs);
+                    profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
+                }
 
                 // make sure we find one to display
                 if (profileKeyChord)
@@ -309,7 +324,7 @@ namespace winrt::TerminalApp::implementation
             settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
             newTabFlyout.Items().Append(settingsItem);
 
-            auto settingsKeyChord = keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
+            auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
             if (settingsKeyChord)
             {
                 _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
@@ -452,7 +467,7 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, this]() {
+        newTab->Closed([tabViewItem, this](auto&& /*s*/, auto&& /*e*/) {
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
                 _RemoveTabViewItem(tabViewItem);
             });
@@ -607,6 +622,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         _actionDispatch.CopyText({ this, &TerminalPage::_HandleCopyText });
         _actionDispatch.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch.ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
@@ -734,6 +750,7 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
+    //    * the TitleChanged event, for changing the text of the tab
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
@@ -745,6 +762,21 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
+
+        // Don't capture a strong ref to the tab. If the tab is removed as this
+        // is called, we don't really care anymore about handling the event.
+        std::weak_ptr<Tab> weakTabPtr = hostingTab;
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
+            // The title of the control changed, but not necessarily the title
+            // of the tab. Get the title of the focused pane of the tab, and set
+            // the tab's text to the focused panes' text.
+            _UpdateTitle(tab);
+        });
     }
 
     // Method Description:

@@ -12,7 +12,8 @@ namespace TerminalApp
         void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.Settings.KeyChord chord);
         void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
 
-        Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
+        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
 
         void SetDispatch(ShortcutActionDispatch dispatch);
     }
