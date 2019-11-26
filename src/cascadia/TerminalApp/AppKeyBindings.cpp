@@ -239,6 +239,12 @@ namespace winrt::TerminalApp::implementation
             _AdjustFontSizeHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ResetFontSize:
+        {
+            auto eventArgs = winrt::make_self<ActionEventArgs>();
+            _ResetFontSizeHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
         case ShortcutAction::ToggleFullscreen:
         {
             _ToggleFullscreenHandlers(*this, *eventArgs);

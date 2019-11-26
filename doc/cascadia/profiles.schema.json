@@ -44,6 +44,7 @@
         "openSettings",
         "paste",
         "prevTab",
+        "resetFontSize",
         "resizePane",
         "resizePaneDown",
         "resizePaneLeft",
@@ -326,9 +327,21 @@
             "type": "string"
           },
           "closeOnExit": {
-            "default": true,
-            "description": "When set to true (default), the selected tab closes when the connected application exits. When set to false, the tab will remain open when the connected application exits.",
-            "type": "boolean"
+            "default": "graceful",
+            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+            "oneOf": [
+              {
+                "enum": [
+                  "never",
+                  "graceful",
+                  "always"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
           },
           "colorScheme": {
             "default": "Campbell",
