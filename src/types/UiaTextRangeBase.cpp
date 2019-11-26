@@ -103,7 +103,7 @@ void UiaTextRangeBase::_outputObjectState()
 
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring wordDelimiters) noexcept
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring wordDelimiters)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -131,7 +131,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  const Cursor& cursor,
-                                                 _In_ std::wstring wordDelimiters) noexcept
+                                                 _In_ std::wstring wordDelimiters)
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
@@ -159,7 +159,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  const Endpoint start,
                                                  const Endpoint end,
                                                  const bool degenerate,
-                                                 _In_ std::wstring wordDelimiters) noexcept
+                                                 _In_ std::wstring wordDelimiters)
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
     RETURN_HR_IF(E_INVALIDARG, !degenerate && start > end);
