@@ -25,12 +25,10 @@ const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(wil::unique_hfile pipe,
-                   wil::shared_event shutdownEvent,
+VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
                    const IDefaultColorProvider& colorProvider,
                    const Viewport initialViewport) :
     RenderEngineBase(),
-    _shutdownEvent(shutdownEvent),
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
@@ -51,6 +49,9 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
+    _pipeBroken(false),
+    _exitResult{ S_OK },
+    _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
     _inResizeRequest{ false },
@@ -59,42 +60,10 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_HR_IF(E_HANDLE, !_shutdownEvent);
 #else
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
 #endif
-
-    // Set up a background thread to wait until the shared shutdown event is called and then execute cleanup tasks.
-    _shutdownWatchdog = std::async(std::launch::async, [=] {
-        _shutdownEvent.wait();
-
-        // When someone calls the _Flush method, they will go into a potentially blocking WriteFile operation.
-        // Before they do that, they'll store their thread ID here so we can get them unstuck should we be shutting down.
-        if (const auto threadId = _blockedThreadId.load())
-        {
-            // If we indeed had a valid thread ID meaning someone is blocked on a WriteFile operation,
-            // then let's open a handle to their thread. We need the standard read/write privileges to see
-            // what their thread is up to (it will not work without these) and also the Terminate privilege to
-            // unstick them.
-            wil::unique_handle threadHandle(OpenThread(STANDARD_RIGHTS_ALL | THREAD_TERMINATE, FALSE, threadId));
-            LOG_LAST_ERROR_IF_NULL(threadHandle.get());
-            if (threadHandle)
-            {
-                // Presuming we got all the way to acquiring the blocked thread's handle, call the OS function that
-                // will unstick any thread that is otherwise permanently blocked on a synchronous operation.
-                LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(threadHandle.get()));
-            }
-        }
-    });
-}
-
-VtEngine::~VtEngine()
-{
-    if (_shutdownEvent)
-    {
-        _shutdownEvent.SetEvent();
-    }
 }
 
 // Method Description:
@@ -135,20 +104,19 @@ VtEngine::~VtEngine()
     }
 #endif
 
-    if (!_shutdownEvent.is_signaled())
+    if (!_pipeBroken)
     {
-        // Stash the current thread ID before we go into the potentially blocking synchronous write file operation.
-        // This will let the shutdown watchdog thread break us out of the stuck state should a shutdown event
-        // occur while we're still waiting for the WriteFile to complete.
-        _blockedThreadId.store(GetCurrentThreadId());
         bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
-        _blockedThreadId.store(0); // When done, clear the thread ID.
-
         _buffer.clear();
         if (!fSuccess)
         {
-            _shutdownEvent.SetEvent();
-            RETURN_LAST_ERROR();
+            _exitResult = HRESULT_FROM_WIN32(GetLastError());
+            _pipeBroken = true;
+            if (_terminalOwner)
+            {
+                _terminalOwner->CloseOutput();
+            }
+            return _exitResult;
         }
     }
 
@@ -429,6 +397,11 @@ bool VtEngine::_AllIsInvalid() const
     // Prevent us from clearing the entire viewport on the first paint
     _firstPaint = false;
     return S_OK;
+}
+
+void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)
+{
+    _terminalOwner = terminalOwner;
 }
 
 // Method Description:

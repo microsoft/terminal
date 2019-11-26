@@ -34,6 +34,7 @@ namespace TerminalCoreUnitTests
         uint32_t CursorHeight() { return 42UL; }
         winrt::hstring WordDelimiters() { return winrt::to_hstring(DEFAULT_WORD_DELIMITERS.c_str()); }
         bool CopyOnSelect() { return _copyOnSelect; }
+        uint32_t SelectionBackground() { return COLOR_WHITE; }
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -51,6 +52,7 @@ namespace TerminalCoreUnitTests
         void CursorHeight(uint32_t) {}
         void WordDelimiters(winrt::hstring) {}
         void CopyOnSelect(bool copyOnSelect) { _copyOnSelect = copyOnSelect; }
+        void SelectionBackground(uint32_t) {}
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}

@@ -412,7 +412,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
 {
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands() &&
-        cookedReadData.ScreenInfo().GetBufferSize().Width() >= MINIMUM_COMMAND_PROMPT_SIZE + 2)
+        cookedReadData.ScreenInfo().GetBufferSize().Width() >= Popup::MINIMUM_COMMAND_PROMPT_SIZE + 2)
     {
         try
         {
@@ -955,7 +955,7 @@ void CommandLine::_deleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexce
     if (cookedReadData.HasHistory())
     {
         cookedReadData.History().Empty();
-        cookedReadData.History().Flags |= CLE_ALLOCATED;
+        cookedReadData.History().Flags |= CommandHistory::CLE_ALLOCATED;
     }
 }
 
