@@ -103,7 +103,7 @@ void UiaTextRangeBase::_outputObjectState()
 
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) noexcept
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring wordDelimiters) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -113,6 +113,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
     _end = 0;
     _degenerate = true;
     _pData = pData;
+    _wordDelimiters = wordDelimiters;
 
     _id = id;
     ++id;
@@ -129,9 +130,10 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
-                                                 const Cursor& cursor) noexcept
+                                                 const Cursor& cursor,
+                                                 _In_ std::wstring wordDelimiters) noexcept
 {
-    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
+    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
     try
     {
@@ -156,9 +158,10 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  const Endpoint start,
                                                  const Endpoint end,
-                                                 const bool degenerate) noexcept
+                                                 const bool degenerate,
+                                                 _In_ std::wstring wordDelimiters) noexcept
 {
-    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
+    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
     RETURN_HR_IF(E_INVALIDARG, !degenerate && start > end);
 
     _degenerate = degenerate;
@@ -2173,7 +2176,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData
             {
                 buffer.GetSize().DecrementInBounds(target);
 
-                if (static_cast<Column>(target.X) == moveState.LastColumnInRow)
+                if (static_cast<Column>(target.X) == moveState.LastColumnInRow && currentScreenInfoRow != moveState.LimitingRow)
                 {
                     currentScreenInfoRow += static_cast<int>(moveState.Increment);
                 }

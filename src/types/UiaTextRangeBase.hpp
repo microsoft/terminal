@@ -140,19 +140,22 @@ namespace Microsoft::Console::Types
     public:
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
-                                       _In_ IRawElementProviderSimple* const pProvider) noexcept;
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       _In_ std::wstring wordDelimiters = L" ") noexcept;
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Cursor& cursor) noexcept;
+                                       const Cursor& cursor,
+                                       _In_ std::wstring wordDelimiters = L" ") noexcept;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Endpoint start,
                                        const Endpoint end,
-                                       const bool degenerate) noexcept;
+                                       const bool degenerate,
+                                       _In_ std::wstring wordDelimiters = L" ") noexcept;
 
         HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
@@ -218,8 +221,7 @@ namespace Microsoft::Console::Types
 
         IRawElementProviderSimple* _pProvider;
 
-        // TODO CARLOS: import this value on UTR construction
-        std::wstring _wordDelimiters = L" ";
+        std::wstring _wordDelimiters;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;

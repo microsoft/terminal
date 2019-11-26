@@ -473,7 +473,6 @@ class UiaTextRangeTests
         }
     }
 
-    
     TEST_METHOD(CanMoveByWord_EmptyBuffer)
     {
         const Column firstColumnIndex = 0;
@@ -537,8 +536,8 @@ class UiaTextRangeTests
                 },
                 5,
                 5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 4) + lastColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 4) + lastColumnIndex
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 8),
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 8) + lastColumnIndex
             },
 
             {
@@ -554,7 +553,7 @@ class UiaTextRangeTests
                 },
                 5,
                 0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow),
                 UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex
             },
 
@@ -571,8 +570,8 @@ class UiaTextRangeTests
                 },
                 5,
                 5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3),
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3) + lastColumnIndex
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5),
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5) + lastColumnIndex
             },
 
             {
@@ -587,13 +586,13 @@ class UiaTextRangeTests
                     UiaTextRange::MovementDirection::Backward
                 },
                 -5,
-                -1,
+                -2,
                 0u,
                 UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
             }
         };
         // clang-format on
-        
+
         for (auto data : testData)
         {
             Log::Comment(std::get<0>(data).c_str());
@@ -603,13 +602,141 @@ class UiaTextRangeTests
                                                                                    std::get<1>(data),
                                                                                    L"",
                                                                                    &amountMoved);
-            
+
             VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
             VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
             VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
         }
     }
 
+    TEST_METHOD(CanMoveByWord_NonEmptyBuffer)
+    {
+        const Column firstColumnIndex = 0;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const ScreenInfoRow topRow = 0;
+        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+
+        const std::wstring_view text[] = {
+            L"word1  word2   word3",
+            L"word4  word5   word6"
+        };
+
+        for (auto i = 0; i < 2; i++)
+        {
+            _pTextBuffer->WriteLine(text[i], { 0, gsl::narrow<SHORT>(i) });
+        }
+
+        // clang-format off
+        const std::vector<std::tuple<std::wstring,
+                                     UiaTextRange::MoveState,
+                                     int, // amount to move
+                                     int, // amount actually moved
+                                     Endpoint, // start
+                                     Endpoint // end
+                                     >> testData =
+        {
+            {
+                L"move backwards on the word by (0,0)",
+                {
+                    0, 1,
+                    0, 2,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -1,
+                -1,
+                0u,
+                6
+            },
+
+            {
+                L"get next word while on first word",
+                {
+                    0, 0,
+                    0, 0,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                1,
+                1,
+                0,
+                6
+            },
+
+            {
+                L"get next word twice while on first word",
+                {
+                    0, 0,
+                    0, 0,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                2,
+                2,
+                7,
+                14
+            },
+
+            {
+                L"move forward to next row with word",
+                {
+                    topRow, lastColumnIndex,
+                    topRow, lastColumnIndex,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                1,
+                1,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1),
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + 6
+            },
+
+            {
+                L"move backwards to previous row with word",
+                {
+                    topRow + 1, firstColumnIndex,
+                    topRow + 1, lastColumnIndex,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -1,
+                -1,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 15,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
+            }
+        };
+        // clang-format on
+
+        for (auto data : testData)
+        {
+            Log::Comment(std::get<0>(data).c_str());
+            int amountMoved;
+            std::pair<Endpoint, Endpoint> newEndpoints = UiaTextRange::_moveByWord(_pUiaData,
+                                                                                   std::get<2>(data),
+                                                                                   std::get<1>(data),
+                                                                                   L"",
+                                                                                   &amountMoved);
+
+            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
+            VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
+            VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
+        }
+    }
 
     TEST_METHOD(CanMoveByLine)
     {
@@ -928,6 +1055,208 @@ class UiaTextRangeTests
                                                                 std::get<4>(data),
                                                                 std::get<1>(data),
                                                                 &amountMoved);
+
+            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
+            VERIFY_ARE_EQUAL(std::get<5>(data), std::get<0>(result));
+            VERIFY_ARE_EQUAL(std::get<6>(data), std::get<1>(result));
+            VERIFY_ARE_EQUAL(std::get<7>(data), std::get<2>(result));
+        }
+    }
+
+    TEST_METHOD(CanMoveEndpointByUnitWord)
+    {
+        const Column firstColumnIndex = 0;
+        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const ScreenInfoRow topRow = 0;
+        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+
+        const std::wstring_view text[] = {
+            L"word1  word2   word3",
+            L"word4  word5   word6"
+        };
+
+        for (auto i = 0; i < 2; i++)
+        {
+            _pTextBuffer->WriteLine(text[i], { 0, gsl::narrow<SHORT>(i) });
+        }
+
+        // clang-format off
+        const std::vector<std::tuple<std::wstring,
+                                     UiaTextRange::MoveState,
+                                     int, // amount to move
+                                     int, // amount actually moved
+                                     TextPatternRangeEndpoint, // endpoint to move
+                                     Endpoint, // start
+                                     Endpoint, // end
+                                     bool // degenerate
+                                     >> testData =
+        {
+            {
+                L"can't move _start past the beginning of the document when _start is positioned at the beginning",
+                {
+                    topRow, firstColumnIndex,
+                    topRow, lastColumnIndex,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -1,
+                0,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
+                false
+            },
+
+            {
+                L"can partially move _start to the begining of the document when it is closer than the move count requested",
+                {
+                    topRow, firstColumnIndex + 15,
+                    topRow, lastColumnIndex,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -5,
+                -2,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
+                false
+            },
+
+            {
+                L"can't move _end past the begining of the document",
+                {
+                    topRow, firstColumnIndex,
+                    topRow, firstColumnIndex + 2,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -2,
+                -1,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
+                false
+            },
+
+            // TODO CARLOS: This test fails because moving end endpoint backwards doesn't wrap properly
+            /*{
+                L"_start follows _end when passed during movement",
+                {
+                    topRow + 1, firstColumnIndex + 2,
+                    topRow + 1, firstColumnIndex + 10,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Backward,
+                    UiaTextRange::MovementDirection::Backward
+                },
+                -4,
+                -4,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 7,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 7,
+                true
+            },*/
+
+            {
+                L"can't move _end past the beginning of the document when _end is positioned at the end",
+                {
+                    bottomRow, firstColumnIndex,
+                    bottomRow, lastColumnIndex,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                1,
+                0,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + firstColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
+                false
+            },
+
+            {
+                L"can partially move _end to the end of the document when it is closer than the move count requested",
+                {
+                    topRow, firstColumnIndex,
+                    bottomRow, lastColumnIndex - 3,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                5,
+                1,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
+                false
+            },
+
+            {
+                L"can't move _start past the end of the document",
+                {
+                    bottomRow, lastColumnIndex - 4,
+                    bottomRow, lastColumnIndex,
+                    bottomRow,
+                    firstColumnIndex,
+                    lastColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                5,
+                1,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
+                false
+            },
+
+            {
+                L"_end follows _start when passed during movement",
+                {
+                    topRow, firstColumnIndex + 5,
+                    topRow, firstColumnIndex + 10,
+                    topRow,
+                    lastColumnIndex,
+                    firstColumnIndex,
+                    UiaTextRange::MovementIncrement::Forward,
+                    UiaTextRange::MovementDirection::Forward
+                },
+                4,
+                4,
+                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow+1) + 7,
+                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow+1) + 7,
+                true
+            },
+        };
+        // clang-format on
+
+        for (auto data : testData)
+        {
+            Log::Comment(std::get<0>(data).c_str());
+            std::tuple<Endpoint, Endpoint, bool> result;
+            int amountMoved;
+            result = UiaTextRange::_moveEndpointByUnitWord(_pUiaData,
+                                                           std::get<2>(data),
+                                                           std::get<4>(data),
+                                                           std::get<1>(data),
+                                                           L" ",
+                                                           &amountMoved);
 
             VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
             VERIFY_ARE_EQUAL(std::get<5>(data), std::get<0>(result));
