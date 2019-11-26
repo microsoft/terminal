@@ -1,26 +1,26 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
 
 #include "ConptyConnection.g.h"
+#include "ConnectionStateHolder.h"
+#include "../inc/cppwinrt_utils.h"
+
+#include <conpty-static.h>
 
 namespace wil
 {
     // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
-    using unique_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ClosePseudoConsole), ::ClosePseudoConsole>;
+    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsole>;
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct ConptyConnection : ConptyConnectionT<ConptyConnection>
+    struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
     {
         ConptyConnection(const hstring& cmdline, const hstring& startingDirectory, const hstring& startingTitle, const uint32_t rows, const uint32_t cols, const guid& guid);
 
-        winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
-        void TerminalOutput(winrt::event_token const& token) noexcept;
-        winrt::event_token TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler);
-        void TerminalDisconnected(winrt::event_token const& token) noexcept;
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
@@ -28,12 +28,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         winrt::guid Guid() const noexcept;
 
+        WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
+
     private:
         HRESULT _LaunchAttachedClient() noexcept;
+        void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
-
-        winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
-        winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
@@ -42,8 +42,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingTitle;
         guid _guid{}; // A unique session identifier for connected client
 
-        bool _connected{};
-        std::atomic<bool> _closing{ false };
         bool _recievedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 
@@ -51,7 +49,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_hfile _outPipe; // The pipe for reading output from
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
-        wil::unique_pseudoconsole_handle _hPC;
+        wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
 
         DWORD _OutputThread();
