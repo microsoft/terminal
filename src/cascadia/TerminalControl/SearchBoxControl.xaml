@@ -47,7 +47,7 @@
                 <ResourceDictionary x:Key="HighContrast">
                     <Style x:Key="FontIconStyle" TargetType="FontIcon">
                         <Setter Property="FontSize" Value="15" />
-                        <Setter Property="Foreground" Value="{ThemeResource SystemColorWindowColor}" />
+                        <Setter Property="Foreground" Value="{ThemeResource SystemColorWindowTextColor}" />
                     </Style>
                     <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
                         <Setter Property="Width" Value="20" />
