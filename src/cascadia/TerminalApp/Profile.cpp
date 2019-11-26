@@ -24,8 +24,10 @@ static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
+static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -47,6 +49,11 @@ static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
+
+// Possible values for closeOnExit
+static constexpr std::string_view CloseOnExitAlways{ "always" };
+static constexpr std::string_view CloseOnExitGraceful{ "graceful" };
+static constexpr std::string_view CloseOnExitNever{ "never" };
 
 // Possible values for Scrollbar state
 static constexpr std::wstring_view AlwaysVisible{ L"visible" };
@@ -89,8 +96,10 @@ Profile::Profile(const std::optional<GUID>& guid) :
 
     _defaultForeground{},
     _defaultBackground{},
+    _selectionBackground{},
     _colorTable{},
     _tabTitle{},
+    _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -105,7 +114,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
-    _closeOnExit{ true },
+    _closeOnExitMode{ CloseOnExitMode::Graceful },
     _padding{ DEFAULT_PADDING },
     _icon{},
     _backgroundImage{},
@@ -166,7 +175,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
-    terminalSettings.CloseOnExit(_closeOnExit);
     terminalSettings.TintOpacity(_acrylicTransparency);
 
     terminalSettings.FontFace(_fontFace);
@@ -185,6 +193,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     // use the profile name
     terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
 
+    if (_suppressApplicationTitle)
+    {
+        terminalSettings.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
+
     if (_schemeName)
     {
         const auto found = schemes.find(_schemeName.value());
@@ -201,6 +214,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     {
         terminalSettings.DefaultBackground(_defaultBackground.value());
     }
+    if (_selectionBackground)
+    {
+        terminalSettings.SelectionBackground(_selectionBackground.value());
+    }
 
     if (_scrollbarState)
     {
@@ -208,9 +225,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         terminalSettings.ScrollState(result);
     }
 
-    if (_backgroundImage)
+    if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(_backgroundImage.value());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
     }
 
     if (_backgroundImageOpacity)
@@ -258,6 +275,10 @@ Json::Value Profile::ToJson() const
     {
         root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
     }
+    if (_selectionBackground)
+    {
+        root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
+    }
     if (_schemeName)
     {
         const auto scheme = winrt::to_string(_schemeName.value());
@@ -282,13 +303,11 @@ Json::Value Profile::ToJson() const
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
 
-    ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
     root[JsonKey(FontFaceKey)] = winrt::to_string(_fontFace);
     root[JsonKey(FontSizeKey)] = _fontSize;
     root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
     root[JsonKey(UseAcrylicKey)] = _useAcrylic;
-    root[JsonKey(CloseOnExitKey)] = _closeOnExit;
     root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
     if (_connectionType)
@@ -310,6 +329,11 @@ Json::Value Profile::ToJson() const
     if (_tabTitle)
     {
         root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
+    }
+
+    if (_suppressApplicationTitle)
+    {
+        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
     }
 
     if (_startingDirectory)
@@ -336,6 +360,8 @@ Json::Value Profile::ToJson() const
     {
         root[JsonKey(BackgroundImageAlignmentKey)] = SerializeImageAlignment(_backgroundImageAlignment.value()).data();
     }
+
+    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
 
     return root;
 }
@@ -579,6 +605,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
 
+    JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
+
     JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
     // TODO:GH#1069 deprecate old settings key
     JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
@@ -657,10 +685,15 @@ void Profile::LayerJson(const Json::Value& json)
         auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
         _useAcrylic = useAcrylic.asBool();
     }
+    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
+    {
+        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
+        _suppressApplicationTitle = suppressApplicationTitle.asBool();
+    }
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
-        _closeOnExit = closeOnExit.asBool();
+        _closeOnExitMode = ParseCloseOnExitMode(closeOnExit);
     }
     if (json.isMember(JsonKey(PaddingKey)))
     {
@@ -733,9 +766,14 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
     _defaultBackground = defaultBackground;
 }
 
-void Profile::SetCloseOnExit(bool defaultClose) noexcept
+void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
 {
-    _closeOnExit = defaultClose;
+    _selectionBackground = selectionBackground;
+}
+
+void Profile::SetCloseOnExitMode(CloseOnExitMode mode) noexcept
+{
+    _closeOnExitMode = mode;
 }
 
 void Profile::SetConnectionType(GUID connectionType) noexcept
@@ -748,6 +786,11 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value() && !_icon.value().empty();
 }
 
+bool Profile::HasBackgroundImage() const noexcept
+{
+    return _backgroundImage.has_value() && !_backgroundImage.value().empty();
+}
+
 // Method Description
 // - Sets this profile's tab title.
 // Arguments:
@@ -755,6 +798,15 @@ bool Profile::HasIcon() const noexcept
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
     _tabTitle = std::move(tabTitle);
+}
+
+// Method Description
+// - Sets if the application title will be suppressed in this profile.
+// Arguments:
+// - suppressApplicationTitle: boolean
+void Profile::SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept
+{
+    _suppressApplicationTitle = suppressApplicationTitle;
 }
 
 // Method Description:
@@ -784,6 +836,23 @@ winrt::hstring Profile::GetExpandedIconPath() const
 }
 
 // Method Description:
+// - Returns this profile's background image path, if one is set, expanding
+//   any environment variables in the path, if there are any.
+// Return Value:
+// - This profile's expanded background image path / the empty string.
+winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+{
+    winrt::hstring result{};
+
+    if (HasBackgroundImage())
+    {
+        result = wil::ExpandEnvironmentStringsW<std::wstring>(_backgroundImage.value().data());
+    }
+
+    return result;
+}
+
+// Method Description:
 // - Returns the name of this profile.
 // Arguments:
 // - <none>
@@ -792,6 +861,11 @@ winrt::hstring Profile::GetExpandedIconPath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::GetSuppressApplicationTitle() const noexcept
+{
+    return _suppressApplicationTitle;
 }
 
 bool Profile::HasConnectionType() const noexcept
@@ -806,9 +880,9 @@ GUID Profile::GetConnectionType() const noexcept
                _GUID{};
 }
 
-bool Profile::GetCloseOnExit() const noexcept
+CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
 {
-    return _closeOnExit;
+    return _closeOnExitMode;
 }
 
 // Method Description:
@@ -852,6 +926,60 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
         THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
 
         return std::wstring(defaultPath.get(), numCharsDefault);
+    }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified closeOnExit value to its corresponding enum
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
+{
+    if (json.isBool())
+    {
+        return json.asBool() ? CloseOnExitMode::Graceful : CloseOnExitMode::Never;
+    }
+
+    if (json.isString())
+    {
+        auto closeOnExit = json.asString();
+        if (closeOnExit == CloseOnExitAlways)
+        {
+            return CloseOnExitMode::Always;
+        }
+        else if (closeOnExit == CloseOnExitGraceful)
+        {
+            return CloseOnExitMode::Graceful;
+        }
+        else if (closeOnExit == CloseOnExitNever)
+        {
+            return CloseOnExitMode::Never;
+        }
+    }
+
+    return CloseOnExitMode::Graceful;
+}
+
+// Method Description:
+// - Helper function for converting a CloseOnExitMode to its corresponding string
+//   value.
+// Arguments:
+// - closeOnExitMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CloseOnExitMode
+std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode)
+{
+    switch (closeOnExitMode)
+    {
+    case CloseOnExitMode::Always:
+        return CloseOnExitAlways;
+    case CloseOnExitMode::Never:
+        return CloseOnExitNever;
+    case CloseOnExitMode::Graceful:
+    default:
+        return CloseOnExitGraceful;
     }
 }
 

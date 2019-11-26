@@ -27,7 +27,7 @@ Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, a
 | 2019-08-02 | [v0.3](https://github.com/microsoft/terminal/releases/tag/v0.3.2142.0) | Major UI improvements, improved tab bar layout & color, basic a11y support, Azure Cloud Shell connection |
 | 2019-08-27 | [v0.4](https://github.com/microsoft/terminal/releases/tag/v0.4.2382.0) | HTML Copy, Tab Titles, Double/Triple Click Selection, Local Settings, JSON settings validation, A11y improvements |
 | 2019-09-24 | [1909]( http://devblogs.microsoft.com/commandline/windows-terminal-preview-1909) | Stability & Quality improvements, installs [Cascadia Code](https://github.com/microsoft/cascadia-code) font, adds JSON schema to `profiles.json` settings file enabling Intellisense in VSCode, etc. |
-| 2019-10-22 | 1910 | Cascading Settings, Dynamic Profiles |
+| 2019-10-22 | [1910](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1910-release/) | Cascading Settings, Dynamic Profiles |
 | 2019-11-19 | 1911 | Final v1.0 feature work |
 | 2019-12-17 | 1912 | "Feature Complete" - All v1.0 Features in-place |
 | Winter Vacation | N/A | None planned |

@@ -28,7 +28,7 @@ Properties listed below are specific to each unique profile.
 | `backgroundImageAlignment` | Optional | String | `center` | Sets how the background image aligns to the boundaries of the window. Possible values: `"center"`, `"left"`, `"top"`, `"right"`, `"bottom"`, `"topLeft"`, `"topRight"`, `"bottomLeft"`, `"bottomRight"` |
 | `backgroundImageOpacity` | Optional | Number | `1.0` | Sets the transparency of the background image. Accepts floating point values from 0-1. |
 | `backgroundImageStretchMode` | Optional | String | `uniformToFill` | Sets how the background image is resized to fill the window. Possible values: `"none"`, `"fill"`, `"uniform"`, `"uniformToFill"` |
-| `closeOnExit` | Optional | Boolean | `true` | When set to `true`, the selected tab closes when `exit` is typed. When set to `false`, the tab will remain open when `exit` is typed. |
+| `closeOnExit` | Optional | String | `graceful` | Sets how the profile reacts to termination or failure to launch. Possible values: `"graceful"` (close when `exit` is typed or the process exits normally), `"always"` (always close) and `"never"` (never close). `true` and `false` are accepted as synonyms for `"graceful"` and `"never"` respectively. |
 | `colorScheme` | Optional | String | `Campbell` | Name of the terminal color scheme to use. Color schemes are defined under `schemes`. |
 | `colorTable` | Optional | Array[String] | | Array of colors used in the profile if `colorscheme` is not set. Array follows the format defined in `schemes`. |
 | `commandline` | Optional | String | | Executable used in the profile. |
@@ -43,9 +43,11 @@ Properties listed below are specific to each unique profile.
 | `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `padding` | Optional | String | `8, 8, 8, 8` | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
 | `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
+| `selectionBackground` | Optional | String | Sets the selection background color of the profile. Overrides `selectionBackground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `snapOnInput` | Optional | Boolean | `true` | When set to `true`, the window will scroll to the command input line when typing. When set to `false`, the window will not scroll when you start typing. |
 | `source` | Optional | String | | Stores the name of the profile generator that originated this profile. _There are no discoverable values for this field._ |
 | `startingDirectory` | Optional | String | `%USERPROFILE%` | The directory the shell starts in when it is loaded. |
+| `suppressApplicationTitle` | Optional | Boolean | | When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal. |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 | `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
 
@@ -57,6 +59,7 @@ Properties listed below are specific to each color scheme. [ColorTool](https://g
 | `name` | _Required_ | String | Name of the color scheme. |
 | `foreground` | _Required_ | String | Sets the foreground color of the color scheme. |
 | `background` | _Required_ | String | Sets the background color of the color scheme. |
+| `selectionBackground` | Optional | String | Sets the selection background color of the color scheme. |
 | `black` | _Required_ | String | Sets the color used as ANSI black. |
 | `blue` | _Required_ | String | Sets the color used as ANSI blue. |
 | `brightBlack` | _Required_ | String | Sets the color used as ANSI bright black. |
@@ -109,6 +112,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - prevTab
 - increaseFontSize
 - decreaseFontSize
+- resetFontSize
 - scrollUp
 - scrollDown
 - scrollUpPage
@@ -133,6 +137,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusRight
 - moveFocusUp
 - moveFocusDown
+- toggleFullscreen
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).

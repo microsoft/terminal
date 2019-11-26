@@ -13,11 +13,11 @@ Related repositories include:
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
-## Installing & running Windows Terminal
+## Installing and running Windows Terminal
 
 > 👉 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
 
-### Manually install builds from this repository
+### Manually installing builds from this repository
 
 For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
@@ -105,6 +105,7 @@ For more information about Windows Terminal, you may find some of these resource
 * Windows Terminal Launch: [Build 2019 Session](https://www.youtube.com/watch?v=KMudkRcwjCw)
 * Run As Radio: [Show 645 - Windows Terminal with Richard Turner](http://www.runasradio.com/Shows/Show/645)
 * Azure Devops Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps on the Windows Terminal](http://azuredevopspodcast.clear-measure.com/kayla-cinnamon-and-rich-turner-on-devops-on-the-windows-terminal-team-episode-54)
+* Microsoft Ignite 2019 Session: [The Modern Windows Command Line: Windows Terminal - BRK3321](https://myignite.techcommunity.microsoft.com/sessions/81329?source=sessions)
 
 ---
 
@@ -130,7 +131,7 @@ All project documentation is located in the `./doc` folder. If you would like to
 
 We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
 
-***BEFORE you start work on a feature/fix***, please read & follow our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/doc/contributing.md) to help avoid any wasted or duplicate effort.
+***BEFORE you start work on a feature/fix***, please read & follow our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/contributing.md) to help avoid any wasted or duplicate effort.
 
 ## Communicating with the Team
 

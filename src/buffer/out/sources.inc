@@ -48,6 +48,7 @@ SOURCES= \
     ..\CharRowCell.cpp \
     ..\CharRowCellReference.cpp \
     ..\UnicodeStorage.cpp \
+	..\search.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

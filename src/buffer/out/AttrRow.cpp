@@ -336,6 +336,13 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 
                 // Advance one run in the _list.
                 lowerBound = upperBound;
+
+                // The lowerBound is larger than iStart, which means we fail to find an early exit at the run
+                // where the insertion happens. We can just break out.
+                if (lowerBound > iStart)
+                {
+                    break;
+                }
             }
         }
     }

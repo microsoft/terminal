@@ -7,6 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
+#include <Utils.h>
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
@@ -64,7 +65,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _lastMouseClick{},
-        _lastMouseClickPos{}
+        _lastMouseClickPos{},
+        _tsfInputControl{ nullptr }
     {
         _EnsureStaticInitialization();
         _Create();
@@ -96,6 +98,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
         _scrollBar.Visibility(Visibility::Visible);
+
+        _tsfInputControl = TSFInputControl();
+        _tsfInputControl.CompositionCompleted({ this, &TermControl::_CompositionCompleted });
+        _tsfInputControl.CurrentCursorPosition({ this, &TermControl::_CurrentCursorPositionHandler });
+        _tsfInputControl.CurrentFontInfo({ this, &TermControl::_FontInfoHandler });
+        container.Children().Append(_tsfInputControl);
 
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
@@ -149,8 +157,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connection.TerminalDisconnected([=]() {
-            _connectionClosedHandlers();
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [weakThis = get_weak()](auto&& /*s*/, auto&& /*v*/) {
+            if (auto strongThis{ weakThis.get() })
+            {
+                strongThis->_ConnectionStateChangedHandlers(*strongThis, nullptr);
+            }
         });
     }
 
@@ -169,6 +180,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Update our control settings
             _ApplyUISettings();
+
+            // Update DxEngine's SelectionBackground
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
@@ -185,6 +200,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 auto lock = _terminal->LockForWriting();
                 _DoResize(width, height);
             }
+
+            // set TSF Foreground
+            Media::SolidColorBrush foregroundBrush{};
+            foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+            _tsfInputControl.Foreground(foregroundBrush);
         });
     }
 
@@ -237,6 +257,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
+
+        // set TSF Foreground
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+        _tsfInputControl.Foreground(foregroundBrush);
+        _tsfInputControl.Margin(newMargin);
     }
 
     // Method Description:
@@ -376,19 +402,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The automation peer for our control
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        Windows::UI::Xaml::Automation::Peers::AutomationPeer autoPeer{ nullptr };
         try
         {
-            // create a custom automation peer with this code pattern:
-            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            auto tcapInternal = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
-            autoPeer = *tcapInternal;
+            if (GetUiaData())
+            {
+                // create a custom automation peer with this code pattern:
+                // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+                auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
 
-            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(tcapInternal.get());
-            _renderer->AddRenderEngine(_uiaEngine.get());
+                _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+                _renderer->AddRenderEngine(_uiaEngine.get());
+                return *autoPeer;
+            }
         }
         CATCH_LOG();
-        return autoPeer;
+        return nullptr;
     }
 
     ::Microsoft::Console::Types::IUiaData* TermControl::GetUiaData() const
@@ -404,6 +432,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const Windows::UI::Xaml::Thickness TermControl::GetPadding() const
     {
         return _swapChainPanel.Margin();
+    }
+
+    TerminalConnection::ConnectionState TermControl::ConnectionState() const
+    {
+        return _connection.State();
     }
 
     void TermControl::SwapChainChanged()
@@ -468,6 +501,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+
+        // Update DxEngine's SelectionBackground
+        dxEngine->SetSelectionBackground(_settings.SelectionBackground());
+
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
         const auto height = vp.Height();
@@ -641,8 +678,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = static_cast<WORD>(e.OriginalKey());
-        const auto scanCode = e.KeyStatus().ScanCode;
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
         // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
@@ -969,29 +1006,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Reset the font size of the terminal to its default size.
+    // Arguments:
+    // - none
+    void TermControl::ResetFontSize()
+    {
+        _SetFontSize(_settings.FontSize());
+    }
+
+    // Method Description:
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void TermControl::AdjustFontSize(int fontSizeDelta)
     {
-        try
-        {
-            // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontSizeDelta), static_cast<short>(1));
-            const auto* fontFace = _settings.FontFace().c_str();
-            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
-            _desiredFont = { _actualFont };
-
-            // Refresh our font with the renderer
-            _UpdateFont();
-            // Resize the terminal's BUFFER to match the new font size. This does
-            // NOT change the size of the window, because that can lead to more
-            // problems (like what happens when you change the font size while the
-            // window is maximized?)
-            auto lock = _terminal->LockForWriting();
-            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
-        }
-        CATCH_LOG();
+        const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
+        _SetFontSize(newSize);
     }
 
     // Method Description:
@@ -1029,7 +1059,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();
@@ -1190,6 +1220,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             THROW_IF_FAILED(_uiaEngine->Enable());
         }
 
+        if (_tsfInputControl != nullptr)
+        {
+            _tsfInputControl.NotifyFocusEnter();
+        }
+
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Start();
@@ -1214,6 +1249,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             THROW_IF_FAILED(_uiaEngine->Disable());
         }
 
+        if (_tsfInputControl != nullptr)
+        {
+            _tsfInputControl.NotifyFocusLeave();
+        }
+
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
@@ -1224,6 +1264,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
+    }
+
+    // Method Description:
+    // - Pre-process text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection, converting
+    //   Windows-space \r\n line-endings to \r line-endings
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        // Some notes on this implementation:
+        //
+        // - std::regex can do this in a single line, but is somewhat
+        //   overkill for a simple search/replace operation (and its
+        //   performance guarantees aren't exactly stellar)
+        // - The STL doesn't have a simple string search/replace method.
+        //   This fact is lamentable.
+        // - This line-ending converstion is intentionally fairly
+        //   conservative, to avoid stripping out lone \n characters
+        //   where they could conceivably be intentional.
+
+        std::wstring stripped{ wstr };
+
+        std::wstring::size_type pos = 0;
+
+        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
+        {
+            stripped.replace(pos, 2, L"\r");
+        }
+
+        _connection.WriteInput(stripped);
+        _terminal->TrySnapOnInput();
     }
 
     // Method Description:
@@ -1241,6 +1311,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+    }
+
+    // Method Description:
+    // - Set the font size of the terminal control.
+    // Arguments:
+    // - fontSize: The size of the font.
+    void TermControl::_SetFontSize(int fontSize)
+    {
+        try
+        {
+            // Make sure we have a non-zero font size
+            const auto newSize = std::max(gsl::narrow<short>(fontSize), static_cast<short>(1));
+            const auto* fontFace = _settings.FontFace().c_str();
+            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            _desiredFont = { _actualFont };
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+            // Resize the terminal's BUFFER to match the new font size. This does
+            // NOT change the size of the window, because that can lead to more
+            // problems (like what happens when you change the font size while the
+            // window is maximized?)
+            auto lock = _terminal->LockForWriting();
+            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1297,11 +1393,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        const short lastVisibleRow = std::max(_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max(_terminal->GetViewport().Width() - 1, 0);
+        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
+        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
-        terminalPosition.Y = std::clamp(terminalPosition.Y, short{ 0 }, lastVisibleRow);
-        terminalPosition.X = std::clamp(terminalPosition.X, short{ 0 }, lastVisibleCol);
+        terminalPosition.Y = std::clamp<short>(terminalPosition.Y, 0, lastVisibleRow);
+        terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
         // save location (for rendering) + render
         _terminal->SetEndSelectionPosition(terminalPosition);
@@ -1396,8 +1492,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        // Since this callback fires from non-UI thread, we might be already
+        // closed/closing.
+        if (_closing.load())
+        {
+            return;
+        }
+
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            // Even if we weren't closed/closing few lines above, we might be
+            // while waiting for this block of code to be dispatched.
+            if (_closing.load())
+            {
+                return;
+            }
+
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
@@ -1446,13 +1556,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                   _settings.DefaultBackground(),
                                                   "Windows Terminal");
 
+        // convert to RTF format
+        const auto rtfData = TextBuffer::GenRTF(bufferData,
+                                                _actualFont.GetUnscaledSize().Y,
+                                                _actualFont.GetFaceName(),
+                                                _settings.DefaultBackground());
+
         if (!_terminal->IsCopyOnSelectActive())
         {
             _terminal->ClearSelection();
         }
 
         // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())), winrt::to_hstring(htmlData));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())),
+                                                                   winrt::to_hstring(htmlData),
+                                                                   winrt::to_hstring(rtfData));
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }
@@ -1463,7 +1581,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
         // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
@@ -1474,8 +1592,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
-            // Stop accepting new output before we disconnect everything.
+            // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionStateChangedRevoker.revoke();
 
             // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
             if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })
@@ -1769,17 +1888,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Returns true if this control should close when its connection is closed.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true iff the control should close when the connection is closed.
-    bool TermControl::ShouldCloseOnExit() const noexcept
-    {
-        return _settings.CloseOnExit();
-    }
-
-    // Method Description:
     // - Gets the corresponding viewport terminal position for the cursor
     //    by excluding the padding and normalizing with the font size.
     //    This is used for selection.
@@ -1805,6 +1913,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         terminalPosition.Y /= fontSize.Y;
 
         return terminalPosition;
+    }
+
+    // Method Description:
+    // - Composition Completion handler for the TSFInputControl that
+    //   handles writing text out to TerminalConnection
+    // Arguments:
+    // - text: the text to write to TerminalConnection
+    // Return Value:
+    // - <none>
+    void TermControl::_CompositionCompleted(winrt::hstring text)
+    {
+        _connection.WriteInput(text);
+    }
+
+    // Method Description:
+    // - CurrentCursorPosition handler for the TSFInputControl that
+    //   handles returning current cursor position.
+    // Arguments:
+    // - eventArgs: event for storing the current cursor position
+    // Return Value:
+    // - <none>
+    void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
+    {
+        const COORD cursorPos = _terminal->GetCursorPosition();
+        Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
+        eventArgs.CurrentPosition(p);
+    }
+
+    // Method Description:
+    // - FontInfo handler for the TSFInputControl that
+    //   handles returning current font information
+    // Arguments:
+    // - eventArgs: event for storing the current font information
+    // Return Value:
+    // - <none>
+    void TermControl::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
+    {
+        eventArgs.FontSize(CharacterDimensions());
+        eventArgs.FontFace(_actualFont.GetFaceName());
     }
 
     // Method Description:
@@ -1851,7 +1998,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, ConnectionClosed, _connectionClosedHandlers, TerminalControl::ConnectionClosedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);

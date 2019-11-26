@@ -57,7 +57,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                 }
 
                 globals.ntstatusConsoleInputInitStatus = Status;
-                globals.consoleInputInitializedEvent.SetEvent();
+                globals.hConsoleInputInitEvent.SetEvent();
 
                 if (NT_SUCCESS(Status))
                 {

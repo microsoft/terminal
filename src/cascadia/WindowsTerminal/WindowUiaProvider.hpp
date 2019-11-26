@@ -27,6 +27,8 @@ class WindowUiaProvider final :
     public Microsoft::Console::Types::WindowUiaProviderBase
 {
 public:
+    WindowUiaProvider() = default;
+    HRESULT RuntimeClassInitialize(Microsoft::Console::Types::IUiaWindow* baseWindow);
     static WindowUiaProvider* Create(Microsoft::Console::Types::IUiaWindow* baseWindow);
 
     [[nodiscard]] HRESULT Signal(_In_ EVENTID id) override;
@@ -42,9 +44,6 @@ public:
                                             _In_ double y,
                                             _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
     IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
-
-    WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow);
-    ~WindowUiaProvider();
 
 protected:
     const OLECHAR* AutomationIdPropertyName = L"Terminal Window";
