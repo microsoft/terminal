@@ -101,8 +101,14 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 
     for (int i = 0; i < rectangles.size(); i++)
     {
-        const auto prevRect = _prevSelection.at(i);
-        const auto newRect = rectangles.at(i);
+        try
+        {
+            const auto prevRect = _prevSelection.at(i);
+            const auto newRect = rectangles.at(i);
+        }
+        catch (...)
+        {
+        }
 
         // if any value is different, selection has changed
         if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
