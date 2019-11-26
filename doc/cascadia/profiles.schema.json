@@ -6,69 +6,186 @@
     "Color": {
       "default": "#",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-      "type": "string"
+      "type": "string",
+      "format": "color"
     },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
     },
+    "ShortcutActionName": {
+      "enum": [
+        "closePane",
+        "closeTab",
+        "closeWindow",
+        "copy",
+        "copyTextWithoutNewlines",
+        "decreaseFontSize",
+        "duplicateTab",
+        "increaseFontSize",
+        "moveFocus",
+        "moveFocusDown",
+        "moveFocusLeft",
+        "moveFocusRight",
+        "moveFocusUp",
+        "newTab",
+        "newTabProfile0",
+        "newTabProfile1",
+        "newTabProfile2",
+        "newTabProfile3",
+        "newTabProfile4",
+        "newTabProfile5",
+        "newTabProfile6",
+        "newTabProfile7",
+        "newTabProfile8",
+        "nextTab",
+        "openNewTabDropdown",
+        "openSettings",
+        "paste",
+        "prevTab",
+        "resetFontSize",
+        "resizePane",
+        "resizePaneDown",
+        "resizePaneLeft",
+        "resizePaneRight",
+        "resizePaneUp",
+        "scrollDown",
+        "scrollDownPage",
+        "scrollUp",
+        "scrollUpPage",
+        "splitHorizontal",
+        "splitVertical",
+        "switchToTab",
+        "switchToTab0",
+        "switchToTab1",
+        "switchToTab2",
+        "switchToTab3",
+        "switchToTab4",
+        "switchToTab5",
+        "switchToTab6",
+        "switchToTab7",
+        "switchToTab8",
+        "toggleFullscreen"
+      ],
+      "type": "string"
+    },
+    "Direction": {
+      "enum": [
+        "left",
+        "right",
+        "up",
+        "down"
+      ],
+      "type": "string"
+    },
+    "ShortcutAction": {
+      "properties": {
+        "action": {
+          "description": "The action to execute",
+          "$ref": "#/definitions/ShortcutActionName"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "type": "object"
+    },
+    "CopyAction": {
+      "description": "Arguments corresponding to a Copy Text Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "copy" },
+            "trimWhitespace": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, will trim whitespace from the end of the line on copy."
+            }
+          }
+        }
+      ]
+    },
+    "NewTabAction": {
+      "description": "Arguments corresponding to a New Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type":"string", "pattern": "newTab" },
+            "index": {
+              "type": "integer",
+              "description": "The index in the new tab dropdown to open in a new tab"
+            }
+          }
+        }
+      ]
+    },
+    "SwitchToTabAction": {
+      "description": "Arguments corresponding to a Switch To Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "switchToTab" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to switch to, with the first being 0"
+            }
+          }
+        }
+      ],
+      "required": [ "index" ]
+    },
+    "MoveFocusAction": {
+      "description": "Arguments corresponding to a Move Focus Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "moveFocus" },
+            "direction": {
+              "$ref": "#/definitions/Direction",
+              "default": "left",
+              "description": "The direction to move focus in, between panes"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "ResizePaneAction": {
+      "description": "Arguments corresponding to a Resize Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "resizePane" },
+            "direction": {
+              "$ref": "#/definitions/Direction",
+              "default": "left",
+              "description": "The direction to move the pane separator in"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
         "command": {
-          "description": "The command executed when the associated key bindings are pressed.",
-          "enum": [
-            "closePane",
-            "closeTab",
-            "closeWindow",
-            "copy",
-            "copyTextWithoutNewlines",
-            "decreaseFontSize",
-            "duplicateTab",
-            "increaseFontSize",
-            "moveFocusDown",
-            "moveFocusLeft",
-            "moveFocusRight",
-            "moveFocusUp",
-            "newTab",
-            "newTabProfile0",
-            "newTabProfile1",
-            "newTabProfile2",
-            "newTabProfile3",
-            "newTabProfile4",
-            "newTabProfile5",
-            "newTabProfile6",
-            "newTabProfile7",
-            "newTabProfile8",
-            "nextTab",
-            "openNewTabDropdown",
-            "openSettings",
-            "paste",
-            "prevTab",
-            "resizePaneDown",
-            "resizePaneLeft",
-            "resizePaneRight",
-            "resizePaneUp",
-            "scrollDown",
-            "scrollDownPage",
-            "scrollUp",
-            "scrollUpPage",
-            "splitHorizontal",
-            "splitVertical",
-            "switchToTab",
-            "switchToTab0",
-            "switchToTab1",
-            "switchToTab2",
-            "switchToTab3",
-            "switchToTab4",
-            "switchToTab5",
-            "switchToTab6",
-            "switchToTab7",
-            "switchToTab8",
-            "toggleFullscreen"
-          ],
-          "type": "string"
+          "description": "The action executed when the associated key bindings are pressed.",
+            "oneOf": [
+              { "$ref": "#/definitions/CopyAction" },
+              { "$ref": "#/definitions/ShortcutActionName" },
+              { "$ref": "#/definitions/NewTabAction" },
+              { "$ref": "#/definitions/SwitchToTabAction" },
+              { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/ResizePaneAction" }
+            ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command.",
@@ -210,9 +327,21 @@
             "type": "string"
           },
           "closeOnExit": {
-            "default": true,
-            "description": "When set to true (default), the selected tab closes when the connected application exits. When set to false, the tab will remain open when the connected application exits.",
-            "type": "boolean"
+            "default": "graceful",
+            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+            "oneOf": [
+              {
+                "enum": [
+                  "never",
+                  "graceful",
+                  "always"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
           },
           "colorScheme": {
             "default": "Campbell",
@@ -403,6 +532,10 @@
           "startingDirectory": {
             "description": "The directory the shell starts in when it is loaded.",
             "type": "string"
+          },
+          "suppressApplicationTitle": {
+            "description": "When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal.",
+            "type": "boolean"
           },
           "tabTitle": {
             "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",

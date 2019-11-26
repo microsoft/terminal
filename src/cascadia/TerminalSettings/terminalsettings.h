@@ -55,8 +55,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         bool UseAcrylic();
         void UseAcrylic(bool value);
-        bool CloseOnExit();
-        void CloseOnExit(bool value);
         double TintOpacity();
         void TintOpacity(double value);
         hstring Padding();
@@ -90,6 +88,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring StartingTitle();
         void StartingTitle(hstring const& value);
 
+        bool SuppressApplicationTitle();
+        void SuppressApplicationTitle(bool value);
+
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
@@ -111,7 +112,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _wordDelimiters;
 
         bool _useAcrylic;
-        bool _closeOnExit;
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;
@@ -125,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _commandline;
         hstring _startingDir;
         hstring _startingTitle;
+        bool _suppressApplicationTitle;
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;

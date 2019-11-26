@@ -22,6 +22,8 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
+        void RunAsUwp();
+
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
