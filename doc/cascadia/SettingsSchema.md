@@ -140,6 +140,10 @@ Commands listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 
 ## Example Keys
 - ctrl+1
+- ctrl+plus
+- alt+-
+- shift+numpad_1
+- ctrL+shift+numpad_plus
 - ctrl+pgdn
 - ctrl+alt+shift+pgup
 
