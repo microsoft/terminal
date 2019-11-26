@@ -184,13 +184,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         case ShortcutAction::SplitVertical:
-        {
-            _SplitVerticalHandlers(*this, *eventArgs);
-            break;
-        }
         case ShortcutAction::SplitHorizontal:
+        case ShortcutAction::SplitPane:
         {
-            _SplitHorizontalHandlers(*this, *eventArgs);
+            _SplitPaneHandlers(*this, *eventArgs);
             break;
         }
 

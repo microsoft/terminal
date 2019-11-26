@@ -597,8 +597,9 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
         bindings.NextTab({ this, &TerminalPage::_HandleNextTab });
         bindings.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        bindings.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
-        bindings.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
+        // bindings.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
+        // bindings.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
+        bindings.SplitPane({ this, &TerminalPage::_HandleSplitPane });
         bindings.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         bindings.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         bindings.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
@@ -901,40 +902,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Vertically split the focused pane, and place the given TermControl into
-    //   the newly created pane.
-    // Arguments:
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitVertical(const std::optional<GUID>& profileGuid)
-    {
-        _SplitPane(Pane::SplitState::Vertical, profileGuid);
-    }
-
-    // Method Description:
-    // - Horizontally split the focused pane and place the given TermControl
-    //   into the newly created pane.
-    // Arguments:
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitHorizontal(const std::optional<GUID>& profileGuid)
-    {
-        _SplitPane(Pane::SplitState::Horizontal, profileGuid);
-    }
-
-    // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
     // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
-    // - splitType: one value from the Pane::SplitState enum, indicating how the
+    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid)
+    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid)
     {
         // Do nothing if we're requesting no split.
-        if (splitType == Pane::SplitState::None)
+        if (splitType == TerminalApp::SplitState::None)
         {
             return;
         }

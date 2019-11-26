@@ -23,6 +23,13 @@ namespace TerminalApp
         Down
     };
 
+    enum SplitState
+    {
+        None = 0,
+        Vertical = 1,
+        Horizontal = 2
+    };
+
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
     {
         ActionEventArgs(IActionArgs args);
@@ -60,4 +67,8 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    {
+        SplitState SplitStyle { get; };
+    };
 }

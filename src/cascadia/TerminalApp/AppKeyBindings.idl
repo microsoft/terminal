@@ -31,8 +31,9 @@ namespace TerminalApp
         ClosePane,
         NextTab,
         PrevTab,
-        SplitVertical,
-        SplitHorizontal,
+        SplitVertical, // Legacy
+        SplitHorizontal, // Legacy
+        SplitPane,
         SwitchToTab,
         SwitchToTab0, // Legacy
         SwitchToTab1, // Legacy
@@ -92,8 +93,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SwitchToTab;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NextTab;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> PrevTab;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitVertical;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitHorizontal;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitPane;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> AdjustFontSize;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ResetFontSize;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollUp;
