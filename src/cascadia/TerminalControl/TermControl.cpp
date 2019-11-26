@@ -921,8 +921,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto point = args.GetCurrentPoint(_root);
         const auto delta = point.Properties().MouseWheelDelta();
 
-
-
         // Get the state of the Ctrl & Shift keys
         // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
         // directly with a VirtualKeyModifiers
