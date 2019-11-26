@@ -101,8 +101,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 
     for (int i = 0; i < rectangles.size(); i++)
     {
-        const auto prevRect = _prevSelection[i];
-        const auto newRect = rectangles[i];
+        const auto prevRect = _prevSelection.at(i);
+        const auto newRect = rectangles.at(i);
 
         // if any value is different, selection has changed
         if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
@@ -182,10 +182,10 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    bool somethingToDo = _selectionChanged;
+    // bool somethingToDo = _selectionChanged;
 
     // If there's nothing to do, quick return
-    RETURN_HR_IF(S_FALSE, !somethingToDo);
+    RETURN_HR_IF(S_FALSE, !_selectionChanged);
 
     _isPainting = true;
     return S_OK;
@@ -202,14 +202,22 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
+    auto resetState = wil::scope_exit([this] {
+        _selectionChanged = false;
+        _isPainting = false;
+    });
+
     // Fire UIA Events here
     if (_selectionChanged)
     {
-        _dispatcher->SignalUia(ConsoleUiaEvent::SelectionChanged);
+        try
+        {
+            _dispatcher->SignalUia(ConsoleUiaEvent::SelectionChanged);
+        }
+        catch (...)
+        {
+        }
     }
-
-    _selectionChanged = false;
-    _isPainting = false;
 
     return S_OK;
 }
