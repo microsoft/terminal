@@ -127,8 +127,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - switchToTab7
 - switchToTab8
 - openSettings
-- splitHorizontal
-- splitVertical
+- splitPane
 - resizePaneLeft
 - resizePaneRight
 - resizePaneUp

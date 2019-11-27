@@ -23,6 +23,13 @@ namespace TerminalApp
         Down
     };
 
+    enum SplitState
+    {
+        None = 0,
+        Vertical = 1,
+        Horizontal = 2
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;
@@ -68,4 +75,8 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    {
+        SplitState SplitStyle { get; };
+    };
 }
