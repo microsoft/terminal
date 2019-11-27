@@ -1,7 +1,7 @@
 ---
 author: Leon Liang @leonMSFT, Mike Griese @zadjii-msft
-created on: 2019-11-26
-last updated: 2019-11-26
+created on: 2019-11-27
+last updated: 2019-11-27
 issue id: 1502
 ---
 
@@ -9,9 +9,11 @@ issue id: 1502
 
 ## Abstract
 
-Currently, the user is able to cycle through tabs on the tab bar. However, this horizontal cycling can be pretty inconvenient when the tab titles are long, or when there are too many tabs on the tab bar. In addition, a common use case is to switch between two tabs, e.g. when one tab is used as reference and the other is the actively worked-on tab. If the tabs are not right next to each other on the tab bar, it could be difficult to quickly swap between the two. To try to alleviate some of those pain points, we want to create an advanced tab switcher.
+Currently, the user is able to cycle through tabs on the tab bar. However, this horizontal cycling can be pretty inconvenient when the tab titles are long, or when there are too many tabs on the tab bar. It could also get hard to see all your available tabs if the tab titles are long and your screen is small. There's also a common use case to quickly switch between two tabs, e.g. when one tab is used as reference and the other is the actively worked-on tab. If the tabs are not right next to each other on the tab bar, it could be difficult to quickly swap between the two. Having the tabs displayed in Most Recently Used (MRU) order would help with this problem. It could also make the user experience better when there are a handful of tabs that are frequently used, but are nowhere near each other on the tab bar.
 
-This spec will cover the design of the switcher, and how a user would interact with the switcher. It would be primarily keyboard driven, and would give a pop-up display of a vertical list of tabs. The tab switcher would also be able to display the tabs in Most Recently Used (MRU) order.
+Having a tab switcher UI, like the ones in Visual Studio and Visual Studio Code, could help with the tab experience. Presenting the tabs vertically in their own little UI allows the user to see more of the tabs at once, compared to scanning the tab row horizontally and scrolling left/right to find the tab you want. The tab order in the tab switchers are in MRU order by default.
+
+To try to alleviate some of these user scenarios, we want to create a tab switcher, similar to ones found in VSCode and VS. This spec will cover the design of the switcher, and how a user would interact with the switcher. It would be primarily keyboard driven, and would give a pop-up display of a vertical list of tabs. The tab switcher would also be able to display the tabs in Most Recently Used (MRU) order.
 
 ## Inspiration
 
@@ -27,7 +29,7 @@ Visual Studio's tab switcher presents itself as a box in the middle of the edito
 
 I'm partial towards Visual Studio's implementation, where a box pops up in the center of the window. It allows for expansion in all four directions, which could be useful when adding future features such as Pane Navigation.
 
-In terms of navigating the switcher, both VSCode and Visual Studio behave very similarly. Both open with the press of <kbd>ctrl+tab</kbd> and dismiss on release of <kbd>ctrl</kbd>. They both also allow the user to select the tab with the mouse and with <kbd>enter</kbd>. <kbd>esc</kbd> and a mouse click outside of the switcher dismiss the window as well.
+In terms of navigating the switcher, both VSCode and Visual Studio behave very similarly. Both open with the press of <kbd>ctrl+tab</kbd> and dismiss on release of <kbd>ctrl</kbd>. They both also allow the user to select the tab with the mouse and with <kbd>enter</kbd>. <kbd>esc</kbd> and a mouse click outside of the switcher both dismiss the window as well.
 
 ## Solution Design
 
@@ -58,12 +60,12 @@ There will only be 9 numbered tabs for quick switching, and the rest of the tabs
 
 The list would look (roughly) like this:
 ```
-1 cmd (highlighted)
-2 cmd
-3 Windows PowerShell
-4 MSYS:/c/Users/booboo
-5 Git Bash
-6 cmd
+1 foo (highlighted)
+2 boo
+3 Windows boofoo
+4 /c/Users/booboo
+5 Git Moo
+6 shoo
 7 /c/
 8 /d/
 9 /e/
@@ -82,8 +84,8 @@ To give an example of what happens after scrolling past the end, imagine a user 
 The user then iterates down past the end of the visible list four times. The below mock shows the result.
 
 ```
-1 Git Bash
-2 cmd
+1 Git Moo
+2 shoo
 3 /c/
 4 /d
 5 /e/
@@ -96,7 +98,7 @@ The user then iterates down past the end of the visible list four times. The bel
   /l/ (highlighted)
 ```
 
-`Git Bash` is now associated with number 1, and the `cmd`, `cmd`, `Windows Powershell`, and `MSYS:/c/Users/booboo` tabs are no longer visible.
+`Git Moo` is now associated with number 1, and the `foo`, `boo`, `Windows boofoo`, and `/c/Users/booboo` tabs are no longer visible.
 
 ### Using the Switcher
 
@@ -130,14 +132,14 @@ There are two _dismissal_ keybinds:
 1. <kbd>enter</kbd> : brings the currently selected tab into focus and dismisses the UI.
 2. <kbd>esc</kbd> : dismisses the UI without changing tab focus.
 
-The following are ways a user can dismiss the UI, whether or not the `Anchor` arg is provided to `OpenTabSwitcher`.
+The following are ways a user can dismiss the UI, _whether or not_ the `Anchor` arg is provided to `OpenTabSwitcher`.
 
 1. The user can press a number associated with a tab to instantly switch to the tab and dismiss the switcher.
 2. The user can click on a tab to instantly switch to the tab and dismiss the switcher.
 3. The user can click outside of the UI to dismiss the switcher without bringing the selected tab into focus.
 4. The user can press any of the dismissal keybinds.
 
-Lastly, if the `Anchor` arg is provided, then in addition to the above methods, the UI will dismiss upon the release of the `Anchor` key.
+If the `Anchor` arg is provided, then in addition to the above methods, the UI will dismiss upon the release of the `Anchor` key.
 
 Pressing the `OpenTabSwitcher` keychord again will _not_ close the Switcher.
 
@@ -154,13 +156,12 @@ Similar to how the user can currently switch to a particular tab with a combinat
 
 ### Accessibility
 
-The tab switcher will be using WinUI, which very nicely has accessibility built-in, so all the tab titles will be able to be read by narrator.
-The UI is also fully keyboard-driven, with the option of using a mouse to interact with the UI.
-Having the option to keep the UI open without needing to keep a button pressed down (`anchor` mode) would help as well.
-One thing to make sure is that the UI has good enough contrast with the Terminal so that it doesn't blend into the background.
-TODO: We could make it so that it's similar to how the About Page is presented. Specifically, a box would pop up, and the rest of the terminal would
-turn white with some transparency so that the focus is clearly on the tab switcher. The tab switcher could have a border with an accent color as well
-to really clarify what the boundary of the UI is.
+- The tab switcher will be using WinUI, and so it'll be automatically linked to the UIA tree. This allows screen readers
+to find it, and so narrator will be able to navigate the switcher easily.
+- The UI is also fully keyboard-driven, with the option of using a mouse to interact with the UI.
+- When the tab switcher pops up, the focus immediately swaps to it.
+- For the sake of contrast with the background, we could make it so that it's similar to how the About Page is presented.
+Specifically, a box would pop up, and the rest of the terminal would turn white with some transparency so that the focus is very clearly on the tab switcher.
 
 ### Security
 
@@ -168,13 +169,14 @@ This shouldn't introduce any security issues.
 
 ### Reliability
 
-Updating the MRU is the main concern. It can't be slow, otherwise every tab focus, tab creation, and tab deletion, will be affected.
+How we're updating the MRU is something to watch out for since it triggers on a lot of tab interactions. However, I don't foresee
+the update taking long at all, and I can't imagine that users can create and delete tabs fast enough to matter.
 
 ### Compatibility
 
-The existing way of navigating horizontally through the tabs on the tab bar should not break. These should also be separate keybindings from the keybindings associated with using the tab switcher.
-The implementation should also take into account the addition of other future features on top of this UI, such as Pane Navigation described below.
-In addition, reordering tabs on the tab bar shouldn't change the MRU order. The MRU is essentially supposed to be a different _view_ of the already existing tab list.
+- The existing way of navigating horizontally through the tabs on the tab bar should not break.
+- These should also be separate keybindings from the keybindings associated with using the tab switcher.
+- Reordering tabs on the tab bar shouldn't change the MRU order. The MRU is essentially supposed to be a different _view_ of the already existing tab list.
 
 ### Performance, Power, and Efficiency
 
@@ -194,49 +196,53 @@ Visual Studio Code only allows the user to shrink the window until it hits a min
 Terminal can't really replicate Visual Studio's version of the tab switcher in this situation. The TabSwitcher needs to be contained within the Terminal.
 So, if the TabSwitcher is always centered and has a percentage padding from the borders of the Terminal, it'll shrink as Terminal shrinks.
 One thing I'm not too sure about is when the Terminal window is so small that not even a single tab title will be visible. Should it just not display the UI?
+Should it try to display the UI and whatever is visible, is visible?
 
 ## Future considerations
 
 ### Pane Navigation
 
-@zadiji-msft in [#1502] brought up the idea of pane navigation, inspired by tmux.
+@zadiji-msft in [#1502] brought up the amazing idea of pane navigation, inspired by tmux.
 
 ![Tmux Tab and Pane Switching](img/tmuxPaneSwitching.png)
 
-Tmux allows the user to navigate directly to a pane and even give a preview of the pane. Currently while Terminal does support
-panes, it's difficult to see throughout your whole Terminal, what panes are available, what profiles those panes have, and which tabs
-those panes are under.
+Tmux allows the user to navigate directly to a pane and even give a preview of the pane. This would be extremely useful since it would
+allow the user to see a tree of their open tabs and panes. Currently there's no way to see what panes are open in each tab,
+so if you're looking for a particular pane, you'd need to cycle through your tabs to find it. If something like pane profile names (not sure what information to present in the switcher for panes)
+were presented in the TabSwitcher, the user could see all the panes in one box.
 
-The tab switcher can simply have another column to the right of the tab list to show a list of panes inside the selected tab.
+To support pane navigation, the tab switcher can simply have another column to the right of the tab list to show a list of panes inside the selected tab.
 As the user iterates through the tab list, they can simply hit right to dig deeper into the tab's panes, and hit left to come
 back to the tab list.
 
-It's not included in the scope of this spec because it might cause the scope to be too large. Pane navigation is a great iterative
-step that can be built on top of this tab switcher, as long as the implementation allows for it.
+Question: Does MRU make sense for panes?
+
+Pane navigation is a clear next step to build on top of the tab switcher, but this spec will specifically deal with just
+tab navigation in order to keep the scope tight. The tab swticher implementation just has to allow for pane navigation to be added in later.
 
 ### Tab Search by Name/Title
 
 This is something that would be particularly nice to have, especially when there's a large list of tabs.
-You could be cycling through your 1000 tabs, trying to find the tab that's actually 456th in the list.
+You could be cycling through your thousands of tabs, trying to find the tab that's actually 456th in the list.
 
-Instead, we can provide a search box, similar to the search implementation, that would filter instead on a tab's title.
-The tab switcher would still be navigated the same way, but a search box is attached and the list of tabs that are presented
-would be filtered based on what the string is in the searchbox.
+A search box would be attached to the UI and the list of tabs that are presented would be filtered based on what the string is in the searchbox.
+We already have search being worked on [#605], so we could probably leverage some of that work for tab search.
 
 ### Tab Preview on Hover
 
 With this feature, having a tab highlighted in the switcher would make the Terminal display that tab as if it switched to it.
 I believe currently there is no way to set focus to a tab in a "preview" mode. This is important because MRU updates whenever a tab
-is focused. We don't, however, want the MRU to update on a preview. I think this is something nice to have, but because the implementation details
-seem a little weird to me, it doesn't need to be a part of this spec's scope.
+is focused, but we don't want the MRU to update on a preview.
 
 ## Resources
 
 Feature Request: An advanced tab switcher [#1502]  
 Ctrl+Tab toggle between last two windows like Alt+Tab [#973]  
 The Command Palette Thread [#2046]
+Feature Request: Search [#605]
 
 <!-- Footnotes -->
+[#605]: https://github.com/microsoft/terminal/issues/605
 [#973]: https://github.com/microsoft/terminal/issues/973
 [#1502]: https://github.com/microsoft/terminal/issues/1502
 [#2046]: https://github.com/microsoft/terminal/issues/2046
