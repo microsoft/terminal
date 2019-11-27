@@ -266,7 +266,7 @@ namespace winrt::TerminalApp::implementation
         SplitPaneArgs() = default;
         GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::None);
 
-        static constexpr std::string_view StyleKey{ "style" };
+        static constexpr std::string_view StyleKey{ "split" };
 
     public:
         bool Equals(const IActionArgs& other)

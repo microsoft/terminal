@@ -188,7 +188,7 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "splitPane" },
-            "style": {
+            "split": {
               "$ref": "#/definitions/SplitState",
               "default": "vertical",
               "description": "The orientation to split the pane in, either vertical (think [|]) or horizontal (think [-])"

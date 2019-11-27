@@ -375,10 +375,10 @@ namespace TerminalAppLocalTests
         const std::string bindings0String{ R"([
             { "command": "splitVertical", "keys": ["ctrl+a"] },
             { "command": "splitHorizontal", "keys": ["ctrl+b"] },
-            { "command": { "action": "splitPane", "style": null }, "keys": ["ctrl+c"] },
-            { "command": { "action": "splitPane", "style": "vertical" }, "keys": ["ctrl+d"] },
-            { "command": { "action": "splitPane", "style": "horizontal" }, "keys": ["ctrl+e"] },
-            { "command": { "action": "splitPane", "style": "none" }, "keys": ["ctrl+f"] },
+            { "command": { "action": "splitPane", "split": null }, "keys": ["ctrl+c"] },
+            { "command": { "action": "splitPane", "split": "vertical" }, "keys": ["ctrl+d"] },
+            { "command": { "action": "splitPane", "split": "horizontal" }, "keys": ["ctrl+e"] },
+            { "command": { "action": "splitPane", "split": "none" }, "keys": ["ctrl+f"] },
             { "command": { "action": "splitPane" }, "keys": ["ctrl+g"] }
 
         ])" };
