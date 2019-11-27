@@ -92,13 +92,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const TerminalApp::ActionEventArgs& args)
     {
-        if (args == nullptr)
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
         {
-            args.Handled(false);
-        }
-        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
-        {
-            _SplitPane(realArgs.SplitStyle(), std::nullopt);
+            _SplitPane(realArgs.SplitStyle(), realArgs.TerminalArgs());
             args.Handled(true);
         }
     }

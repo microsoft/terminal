@@ -312,6 +312,7 @@ namespace winrt::TerminalApp::implementation
     {
         SplitPaneArgs() = default;
         GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::None);
+        GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
 
         static constexpr std::string_view SplitKey{ "split" };
 
@@ -321,7 +322,8 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<SplitPaneArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_SplitStyle == _SplitStyle;
+                return otherAsUs->_SplitStyle == _SplitStyle &&
+                       otherAsUs->_TerminalArgs == _TerminalArgs;
             }
             return false;
         };
@@ -329,6 +331,7 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SplitPaneArgs>();
+            args->_TerminalArgs = NewTerminalArgs::FromJson(json);
             if (auto jsonStyle{ json[JsonKey(SplitKey)] })
             {
                 args->_SplitStyle = ParseSplitState(jsonStyle.asString());

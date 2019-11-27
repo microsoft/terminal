@@ -78,5 +78,6 @@ namespace TerminalApp
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
         SplitState SplitStyle { get; };
+        NewTerminalArgs TerminalArgs { get; };
     };
 }

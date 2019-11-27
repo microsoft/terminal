@@ -420,3 +420,99 @@ void CascadiaSettings::_ValidateAllSchemesExist()
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
     }
 }
+
+std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(std::optional<int> profileIndex,
+                                                                   const NewTerminalArgs& newTerminalArgs) const
+{
+    const GUID profileGuid = _GetProfileForIndexAndArgs(profileIndex, newTerminalArgs);
+    auto settings = MakeSettings(profileGuid);
+
+    if (newTerminalArgs)
+    {
+        // Override commandline, starting directory if they exist in newTerminalArgs
+        if (!newTerminalArgs.Commandline().empty())
+        {
+            settings.Commandline(newTerminalArgs.Commandline());
+        }
+        if (!newTerminalArgs.StartingDirectory().empty())
+        {
+            settings.StartingDirectory(newTerminalArgs.StartingDirectory());
+        }
+    }
+
+    return { profileGuid, settings };
+}
+
+GUID CascadiaSettings::_GetProfileForIndexAndArgs(std::optional<int> index,
+                                                  const NewTerminalArgs& newTerminalArgs) const
+{
+    GUID profileGuid = _GetProfileForIndex(index);
+
+    if (newTerminalArgs)
+    {
+        // First, try and parse the "profile" argument as a GUID. If it's a
+        // GUID, and the GUID of one of our profiles, then use that as the
+        // profile GUID instead. If it's not, then try looking it up as a
+        // name of a profile. If it's still not that, then just ignore it.
+        if (!newTerminalArgs.Profile().empty())
+        {
+            bool wasGuid = false;
+
+            try
+            {
+                const auto newGUID = Utils::GuidFromString(newTerminalArgs.Profile().c_str());
+
+                for (const auto& p : _profiles)
+                {
+                    if (p.GetGuid() == newGUID)
+                    {
+                        profileGuid = newGUID;
+                        wasGuid = true;
+                        break;
+                    }
+                }
+            }
+            CATCH_LOG();
+
+            if (!wasGuid)
+            {
+                for (const auto& p : _profiles)
+                {
+                    if (p.GetName() == newTerminalArgs.Profile())
+                    {
+                        profileGuid = p.GetGuid();
+                    }
+                }
+            }
+        }
+    }
+
+    return profileGuid;
+}
+
+GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
+{
+    GUID profileGuid;
+
+    if (index)
+    {
+        const auto realIndex = index.value();
+
+        // If we don't have that many profiles, then do nothing.
+        if (realIndex >= gsl::narrow<decltype(realIndex)>(_profiles.size()))
+        {
+            return _globals.GetDefaultProfile();
+            ;
+        }
+
+        const auto& selectedProfile = _profiles[realIndex];
+        profileGuid = selectedProfile.GetGuid();
+    }
+    else
+    {
+        // Getting Guid for default profile
+        profileGuid = _globals.GetDefaultProfile();
+    }
+
+    return profileGuid;
+}

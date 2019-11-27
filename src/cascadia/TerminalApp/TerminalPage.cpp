@@ -382,82 +382,86 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(std::optional<int> profileIndex,
                                    const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        GUID profileGuid;
+        // GUID profileGuid;
 
-        const auto profiles = _settings->GetProfiles();
-        if (profileIndex)
-        {
-            const auto realIndex = profileIndex.value();
+        // const auto profiles = _settings->GetProfiles();
+        // if (profileIndex)
+        // {
+        //     const auto realIndex = profileIndex.value();
 
-            // If we don't have that many profiles, then do nothing.
-            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
-            {
-                return;
-            }
+        //     // If we don't have that many profiles, then do nothing.
+        //     if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
+        //     {
+        //         return;
+        //     }
 
-            const auto& selectedProfile = profiles[realIndex];
-            profileGuid = selectedProfile.GetGuid();
-        }
-        else
-        {
-            // Getting Guid for default profile
-            const auto globalSettings = _settings->GlobalSettings();
-            profileGuid = globalSettings.GetDefaultProfile();
-        }
+        //     const auto& selectedProfile = profiles[realIndex];
+        //     profileGuid = selectedProfile.GetGuid();
+        // }
+        // else
+        // {
+        //     // Getting Guid for default profile
+        //     const auto globalSettings = _settings->GlobalSettings();
+        //     profileGuid = globalSettings.GetDefaultProfile();
+        // }
 
-        if (newTerminalArgs)
-        {
-            // First, try and parse the "profile" argument as a GUID. If it's a
-            // GUID, and the GUID of one of our profiles, then use that as the
-            // profile GUID instead. If it's not, then try looking it up as a
-            // name of a profile. If it's still not that, then just ignore it.
-            if (/*newTerminalArgs.Profile() &&*/ !newTerminalArgs.Profile().empty())
-            {
-                bool wasGuid = false;
+        // if (newTerminalArgs)
+        // {
+        //     // First, try and parse the "profile" argument as a GUID. If it's a
+        //     // GUID, and the GUID of one of our profiles, then use that as the
+        //     // profile GUID instead. If it's not, then try looking it up as a
+        //     // name of a profile. If it's still not that, then just ignore it.
+        //     if (/*newTerminalArgs.Profile() &&*/ !newTerminalArgs.Profile().empty())
+        //     {
+        //         bool wasGuid = false;
 
-                try
-                {
-                    const auto newGUID = Utils::GuidFromString(newTerminalArgs.Profile().c_str());
+        //         try
+        //         {
+        //             const auto newGUID = Utils::GuidFromString(newTerminalArgs.Profile().c_str());
 
-                    for (const auto& p : profiles)
-                    {
-                        if (p.GetGuid() == newGUID)
-                        {
-                            profileGuid = newGUID;
-                            wasGuid = true;
-                            break;
-                        }
-                    }
-                }
-                CATCH_LOG();
+        //             for (const auto& p : profiles)
+        //             {
+        //                 if (p.GetGuid() == newGUID)
+        //                 {
+        //                     profileGuid = newGUID;
+        //                     wasGuid = true;
+        //                     break;
+        //                 }
+        //             }
+        //         }
+        //         CATCH_LOG();
 
-                if (!wasGuid)
-                {
-                    for (const auto& p : profiles)
-                    {
-                        if (p.GetName() == newTerminalArgs.Profile())
-                        {
-                            profileGuid = p.GetGuid();
-                        }
-                    }
-                }
-            }
-        }
+        //         if (!wasGuid)
+        //         {
+        //             for (const auto& p : profiles)
+        //             {
+        //                 if (p.GetName() == newTerminalArgs.Profile())
+        //                 {
+        //                     profileGuid = p.GetGuid();
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        TerminalSettings settings = _settings->MakeSettings(profileGuid);
+        // const auto guidAndSettings = _settings->BuildSettings(std::nullopt, newTerminalArgs);
+        // const auto realGuid = guidAndSettings[0];
+        // const auto controlSettings = guidAndSettings[1];
+        // const auto { profileGuid, controlSettings } = _settings->BuildSettings(profileIndex, newTerminalArgs);
+        const auto [profileGuid, settings] = _settings->BuildSettings(std::nullopt, newTerminalArgs);
 
-        if (newTerminalArgs)
-        {
-            // Override commandline, starting directory if they exist in newTerminalArgs
-            if (/*newTerminalArgs.Commandline() &&*/ !newTerminalArgs.Commandline().empty())
-            {
-                settings.Commandline(newTerminalArgs.Commandline());
-            }
-            if (/*newTerminalArgs.StartingDirectory() &&*/ !newTerminalArgs.StartingDirectory().empty())
-            {
-                settings.StartingDirectory(newTerminalArgs.StartingDirectory());
-            }
-        }
+        // if (newTerminalArgs)
+        // {
+        //     // Override commandline, starting directory if they exist in newTerminalArgs
+        //     if (/*newTerminalArgs.Commandline() &&*/ !newTerminalArgs.Commandline().empty())
+        //     {
+        //         settings.Commandline(newTerminalArgs.Commandline());
+        //     }
+        //     if (/*newTerminalArgs.StartingDirectory() &&*/ !newTerminalArgs.StartingDirectory().empty())
+        //     {
+        //         settings.StartingDirectory(newTerminalArgs.StartingDirectory());
+        //     }
+        // }
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -977,7 +981,7 @@ namespace winrt::TerminalApp::implementation
     //   new pane should be split from its parent.
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid)
+    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
         if (splitType == TerminalApp::SplitState::None)
@@ -985,9 +989,14 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto realGuid = profileGuid ? profileGuid.value() :
-                                            _settings->GlobalSettings().GetDefaultProfile();
-        const auto controlSettings = _settings->MakeSettings(realGuid);
+        // const auto realGuid = profileGuid ? profileGuid.value() :
+        //                                     _settings->GlobalSettings().GetDefaultProfile();
+        // const auto controlSettings = _settings->MakeSettings(realGuid);
+        // const auto guidAndSettings = _settings->BuildSettings(std::nullopt, newTerminalArgs);
+        // const auto realGuid = guidAndSettings[0];
+        // const auto controlSettings = guidAndSettings[1];
+        // const auto { realGuid, controlSettings } = _settings->BuildSettings(std::nullopt, newTerminalArgs);
+        const auto [realGuid, controlSettings] = _settings->BuildSettings(std::nullopt, newTerminalArgs);
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
