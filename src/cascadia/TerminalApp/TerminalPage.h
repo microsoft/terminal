@@ -65,6 +65,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
+        ShortcutActionDispatch _actionDispatch{};
+
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
 
@@ -80,6 +82,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
+        void _RegisterActionCallbacks();
 
         void _UpdateTitle(std::shared_ptr<Tab> tab);
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
