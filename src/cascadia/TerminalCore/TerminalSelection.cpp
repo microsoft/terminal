@@ -453,7 +453,7 @@ Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_view ce
 // Method Description:
 // - convert viewport position to the corresponding location on the buffer
 // Arguments:
-// - viewportPos: a coordinate on the viewport
+// - viewportPos: a coordinate relative to the visible viewport
 // Return Value:
 // - the corresponding location on the buffer
 COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
@@ -487,26 +487,43 @@ void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
 // - mode: the selection expansion mode that the selection anchor will adhere to
 // Return Value:
 // - <none>
-void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode)
+void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, SelectionTarget target)
 {
+    // convert to buffer coordinates
+    COORD positionWithOffsets = ((target == SelectionTarget::Start) ? _selectionAnchor : _endSelectionPosition);
+    positionWithOffsets.Y += _selectionVerticalOffset;
+
     switch (mode)
     {
     case SelectionExpansionMode::Cell:
-        _UpdateAnchorByCell(dir);
+        _UpdateAnchorByCell(dir, positionWithOffsets);
         break;
     case SelectionExpansionMode::Word:
-        _UpdateAnchorByWord(dir);
+        _UpdateAnchorByWord(dir, positionWithOffsets, target);
         break;
     case SelectionExpansionMode::Viewport:
-        _UpdateAnchorByViewport(dir);
+        _UpdateAnchorByViewport(dir, positionWithOffsets);
         break;
     case SelectionExpansionMode::Buffer:
-        _UpdateAnchorByBuffer(dir);
+        _UpdateAnchorByBuffer(dir, positionWithOffsets);
         break;
     default:
         // the provided selection expansion mode is not supported
+        THROW_HR(E_NOTIMPL);
         return;
     }
+
+    // update internal state of selection anchor and vertical offset
+    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    if (target == SelectionTarget::Start)
+    {
+        _selectionAnchor = positionWithOffsets;
+    }
+    else
+    {
+        _endSelectionPosition = positionWithOffsets;
+    }
+    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 }
 
 // Method Description:
@@ -515,32 +532,28 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode)
 // - dir: the direction that the selection anchor will attempt to move to
 // Return Value:
 // - <none>
-void Terminal::_UpdateAnchorByCell(Direction dir)
+void Terminal::_UpdateAnchorByCell(Direction dir, COORD& anchor)
 {
-    auto anchor = &_endSelectionPosition;
-
     auto bufferViewport = _buffer->GetSize();
     switch (dir)
     {
     case Direction::Left:
-        bufferViewport.DecrementInBounds(*anchor);
+        bufferViewport.DecrementInBounds(anchor);
         break;
     case Direction::Right:
-        bufferViewport.IncrementInBounds(*anchor);
+        bufferViewport.IncrementInBounds(anchor);
         break;
     case Direction::Up:
-        THROW_IF_FAILED(ShortSub(anchor->Y, 1, &anchor->Y));
+        THROW_IF_FAILED(ShortSub(anchor.Y, 1, &anchor.Y));
         break;
     case Direction::Down:
-        THROW_IF_FAILED(ShortAdd(anchor->Y, 1, &anchor->Y));
+        THROW_IF_FAILED(ShortAdd(anchor.Y, 1, &anchor.Y));
         break;
     default:
-        // direction is not supported. Do nothing.
+        // direction is not supported.
+        THROW_HR(E_NOTIMPL);
         return;
     }
-
-    // Ensure anchor is still valid
-    bufferViewport.Clamp(*anchor);
 }
 
 // Method Description:
@@ -549,27 +562,52 @@ void Terminal::_UpdateAnchorByCell(Direction dir)
 // - dir: the direction that the selection anchor will attempt to move to
 // Return Value:
 // - <none>
-void Terminal::_UpdateAnchorByWord(Direction dir)
+void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionTarget target)
 {
-    auto anchor = &_endSelectionPosition;
+    // we need this to be able to compare it later
+    // NOTE: if target = START --> return END; else return START
+    COORD otherSelectionAnchor = ((target == SelectionTarget::Start) ? _endSelectionPosition : _selectionAnchor);
+    otherSelectionAnchor.Y += _selectionVerticalOffset;
 
     auto bufferViewport = _buffer->GetSize();
+    auto comparison = bufferViewport.CompareInBounds(anchor, otherSelectionAnchor);
     switch (dir)
     {
     case Direction::Up:
-        THROW_IF_FAILED(ShortSub(anchor->Y, 1, &anchor->Y));
-        bufferViewport.Clamp(*anchor);
+        THROW_IF_FAILED(ShortSub(anchor.Y, 1, &anchor.Y));
+        bufferViewport.Clamp(anchor);
     case Direction::Left:
-        *anchor = _ExpandDoubleClickSelectionLeft(*anchor);
+        if (comparison < 0)
+        {
+            // get on new run, before expanding left
+            bufferViewport.DecrementInBounds(anchor);
+        }
+        anchor = _ExpandDoubleClickSelectionLeft(anchor);
+        if (comparison > 0)
+        {
+            // get off of run, after expanding left
+            bufferViewport.DecrementInBounds(anchor);
+        }
         break;
     case Direction::Down:
-        THROW_IF_FAILED(ShortAdd(anchor->Y, 1, &anchor->Y));
-        bufferViewport.Clamp(*anchor);
+        THROW_IF_FAILED(ShortAdd(anchor.Y, 1, &anchor.Y));
+        bufferViewport.Clamp(anchor);
     case Direction::Right:
-        *anchor = _ExpandDoubleClickSelectionRight(*anchor);
+        if (comparison > 0)
+        {
+            // get on new run, before expanding left
+            bufferViewport.IncrementInBounds(anchor);
+        }
+        anchor = _ExpandDoubleClickSelectionRight(anchor);
+        if (comparison < 0)
+        {
+            // get off of run, after expanding left
+            bufferViewport.IncrementInBounds(anchor);
+        }
         break;
     default:
-        // direction is not supported. Do nothing.
+        // direction is not supported.
+        THROW_HR(E_NOTIMPL);
         return;
     }
 }
@@ -580,31 +618,34 @@ void Terminal::_UpdateAnchorByWord(Direction dir)
 // - dir: the direction that the selection anchor will attempt to move to
 // Return Value:
 // - <none>
-void Terminal::_UpdateAnchorByViewport(Direction dir)
+void Terminal::_UpdateAnchorByViewport(Direction dir, COORD& anchor)
 {
-    auto anchor = &_endSelectionPosition;
-
     auto bufferViewport = _buffer->GetSize();
     switch (dir)
     {
     case Direction::Up:
-        THROW_IF_FAILED(ShortSub(anchor->Y, _mutableViewport.Height(), &anchor->Y));
-        if (!bufferViewport.IsInBounds(*anchor))
+        THROW_IF_FAILED(ShortSub(anchor.Y, _mutableViewport.Height(), &anchor.Y));
+        if (!bufferViewport.IsInBounds(anchor))
         {
-            *anchor = bufferViewport.Origin();
+            anchor = bufferViewport.Origin();
         }
         break;
     case Direction::Down:
-        THROW_IF_FAILED(ShortAdd(anchor->Y, _mutableViewport.Height(), &anchor->Y));
-        if (!bufferViewport.IsInBounds(*anchor))
+        THROW_IF_FAILED(ShortAdd(anchor.Y, _mutableViewport.Height(), &anchor.Y));
+        if (!bufferViewport.IsInBounds(anchor))
         {
-            *anchor = { bufferViewport.RightInclusive(), bufferViewport.BottomInclusive() };
+            anchor = { _mutableViewport.RightInclusive(), _mutableViewport.BottomInclusive() };
         }
         break;
     case Direction::Left:
+        anchor.X = _mutableViewport.Left();
+        break;
     case Direction::Right:
+        anchor.X = _mutableViewport.RightInclusive();
+        break;
     default:
-        // direction is not supported. Do nothing.
+        // direction is not supported.
+        THROW_HR(E_NOTIMPL);
         return;
     }
 }
@@ -615,31 +656,22 @@ void Terminal::_UpdateAnchorByViewport(Direction dir)
 // - dir: the direction that the selection anchor will attempt to move to
 // Return Value:
 // - <none>
-void Terminal::_UpdateAnchorByBuffer(Direction dir)
+void Terminal::_UpdateAnchorByBuffer(Direction dir, COORD& anchor)
 {
-    auto anchor = &_endSelectionPosition;
-
     auto bufferViewport = _buffer->GetSize();
     switch (dir)
     {
     case Direction::Up:
-        THROW_IF_FAILED(ShortSub(anchor->Y, _mutableViewport.Height(), &anchor->Y));
-        if (!bufferViewport.IsInBounds(*anchor))
-        {
-            *anchor = bufferViewport.Origin();
-        }
+        anchor = bufferViewport.Origin();
         break;
     case Direction::Down:
-        THROW_IF_FAILED(ShortAdd(anchor->Y, _mutableViewport.Height(), &anchor->Y));
-        if (!bufferViewport.IsInBounds(*anchor))
-        {
-            *anchor = { bufferViewport.RightInclusive(), bufferViewport.BottomInclusive() };
-        }
+        anchor = { bufferViewport.RightInclusive(), bufferViewport.BottomInclusive() };
         break;
     case Direction::Left:
     case Direction::Right:
     default:
-        // direction is not supported. Do nothing.
+        // direction is not supported.
+        THROW_HR(E_NOTIMPL);
         return;
     }
 }

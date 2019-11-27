@@ -218,8 +218,8 @@
         { "command": { "action": "moveSelectionAnchor", "direction": "right",   "expansionMode": "word" }, "keys": ["ctrl+shift+right"] },
         { "command": { "action": "moveSelectionAnchor", "direction": "left",    "expansionMode": "viewport" }, "keys": ["shift+home"] },
         { "command": { "action": "moveSelectionAnchor", "direction": "right",   "expansionMode": "viewport" }, "keys": ["shift+end"] },
-        { "command": { "action": "moveSelectionAnchor", "direction": "up",      "expansionMode": "viewport" }, "keys": ["ctrl+shift+up"] },
-        { "command": { "action": "moveSelectionAnchor", "direction": "down",    "expansionMode": "viewport" }, "keys": ["ctrl+shift+down"] },
+        { "command": { "action": "moveSelectionAnchor", "direction": "up",      "expansionMode": "viewport" }, "keys": ["shift+pgup"] },
+        { "command": { "action": "moveSelectionAnchor", "direction": "down",    "expansionMode": "viewport" }, "keys": ["shift+pgdn"] },
         { "command": { "action": "moveSelectionAnchor", "direction": "up",      "expansionMode": "buffer" }, "keys": ["ctrl+shift+home"] },
         { "command": { "action": "moveSelectionAnchor", "direction": "down",    "expansionMode": "buffer" }, "keys": ["ctrl+shift+end"] },
         { "command": "newTab", "keys": [ "ctrl+shift+t" ] },
@@ -258,7 +258,6 @@
         { "command": { "action": "switchToTab", "index": 7 }, "keys": ["ctrl+alt+8"] },
         { "command": { "action": "switchToTab", "index": 8 }, "keys": ["ctrl+alt+9"] },
         { "command": "toggleFullscreen", "keys": [ "alt+enter" ] },
-        { "command": "toggleFullscreen", "keys": [ "f11" ] },
-        { "command": "toggleMarkMode", "keys": ["ctrl+shift+m"] }
+        { "command": "toggleFullscreen", "keys": [ "f11" ] }
     ]
 }
