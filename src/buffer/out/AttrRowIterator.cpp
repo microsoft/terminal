@@ -16,20 +16,22 @@ AttrRowIterator AttrRowIterator::CreateEndIterator(const ATTR_ROW* const attrRow
 AttrRowIterator::AttrRowIterator(const ATTR_ROW* const attrRow) noexcept :
     _pAttrRow{ attrRow },
     _run{ attrRow->_list.cbegin() },
-    _currentAttributeIndex{ 0 }
+    _currentAttributeIndex{ 0 },
+    _exceeded{ false }
 {
 }
 
 AttrRowIterator::operator bool() const
 {
-    return _run < _pAttrRow->_list.cend();
+    return !_exceeded && _run < _pAttrRow->_list.cend();
 }
 
 bool AttrRowIterator::operator==(const AttrRowIterator& it) const
 {
     return (_pAttrRow == it._pAttrRow &&
             _run == it._run &&
-            _currentAttributeIndex == it._currentAttributeIndex);
+            _currentAttributeIndex == it._currentAttributeIndex &&
+            _exceeded == it._exceeded);
 }
 
 bool AttrRowIterator::operator!=(const AttrRowIterator& it) const
@@ -52,13 +54,16 @@ AttrRowIterator AttrRowIterator::operator++(int)
 
 AttrRowIterator& AttrRowIterator::operator+=(const ptrdiff_t& movement)
 {
-    if (movement >= 0)
+    if (!_exceeded)
     {
-        _increment(gsl::narrow<size_t>(movement));
-    }
-    else
-    {
-        _decrement(gsl::narrow<size_t>(-movement));
+        if (movement >= 0)
+        {
+            _increment(gsl::narrow<size_t>(movement));
+        }
+        else
+        {
+            _decrement(gsl::narrow<size_t>(-movement));
+        }
     }
 
     return *this;
@@ -84,11 +89,13 @@ AttrRowIterator AttrRowIterator::operator--(int)
 
 const TextAttribute* AttrRowIterator::operator->() const
 {
+    THROW_HR_IF(E_BOUNDS, _exceeded);
     return &_run->GetAttributes();
 }
 
 const TextAttribute& AttrRowIterator::operator*() const
 {
+    THROW_HR_IF(E_BOUNDS, _exceeded);
     return _run->GetAttributes();
 }
 
@@ -134,7 +141,12 @@ void AttrRowIterator::_decrement(size_t count)
         // We'll walk through above on the if branch to move left further (if necessary)
         else
         {
-            --count;
+            if (_run == _pAttrRow->_list.cbegin())
+            {
+                _exceeded = true;
+                return;
+            }
+            count -= _currentAttributeIndex + 1;
             --_run;
             _currentAttributeIndex = _run->GetLength() - 1;
         }
