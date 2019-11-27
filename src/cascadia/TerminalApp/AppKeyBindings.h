@@ -5,6 +5,7 @@
 
 #include "AppKeyBindings.g.h"
 #include "ActionArgs.h"
+#include "ShortcutActionDispatch.h"
 #include "..\inc\cppwinrt_utils.h"
 
 // fwdecl unittest classes
@@ -54,36 +55,12 @@ namespace winrt::TerminalApp::implementation
         void LayerJson(const Json::Value& json);
         Json::Value ToJson();
 
-        // clang-format off
-        TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(OpenNewTabDropdown,TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(DuplicateTab,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewWindow,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(CloseWindow,       TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(CloseTab,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ClosePane,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(SwitchToTab,       TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NextTab,           TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(PrevTab,           TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(SplitVertical,     TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(SplitHorizontal,   TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(AdjustFontSize,    TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ResetFontSize,     TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollUp,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollDown,        TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollUpPage,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollDownPage,    TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(OpenSettings,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ResizePane,        TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(MoveFocus,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ToggleFullscreen,  TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
-        // clang-format on
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
     private:
         std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
-        bool _DoAction(ActionAndArgs actionAndArgs);
+
+        winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::KeyBindingsTests;
@@ -92,7 +69,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings, implementation::AppKeyBindings>
-    {
-    };
+    BASIC_FACTORY(AppKeyBindings);
 }
