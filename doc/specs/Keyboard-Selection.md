@@ -13,9 +13,7 @@ This spec describes a new set of keybindings that allows the user to create and 
 
 ## Inspiration
 
-ConHost allows the user to edit an existing selection using the keyboard. Holding `Shift` allows the user to move the second selection anchor in accordance with the arrow keys. The selection anchor updates by one cell per key event, allowing the user to refine the selected region. However, mouse selection seems to be superior in that it provides access to the following special selection modes:
-- Double Click: word selection
-- Triple Click: line selection
+ConHost allows the user to edit an existing selection using the keyboard. Holding `Shift` allows the user to move the second selection anchor in accordance with the arrow keys. The selection anchor updates by one cell per key event, allowing the user to refine the selected region.
 
 Mark mode allows the users to update the selection anchors sequentially, and create a block selection.
 
@@ -32,6 +30,11 @@ The fundamental solution design for keyboard selection is that the responsibilit
 - Send Key Event (also clears selection)
 
 Conditionally effective keybindings can be introduced to update the selection accordingly. A well known conditionally effective keybinding is the `Copy` action where text is copied if a selection is active, otherwise the key event is marked as `handled = false`. See "UI/UX Design" --> "Keybindings" for more information regarding keybindings.
+
+#### Idea: Make keyboard selection a simulation of mouse selection
+It may seem that some effort can be saved by making the keyboard selection act as a simulation of mouse selection. There is a union of mouse and keyboard activity that can be represented in a single set of selection motion interfaces that are commanded by the TermControl's Mouse/Keyboard handler and adapted into appropriate motions in the Terminal Core.
+
+However, the mouse handler operates by translating a pixel coordinate on the screen to a text buffer coordinate. This would have to be rewritten and the approach was deemed unworthy.
 
 ### Fundamental Terminal Core Changes
 
@@ -58,14 +61,40 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 **NOTE**: If `copyOnSelect` is enabled, we need to make sure we update the clipboard on every change in selection.
 
 ### Mark Mode
-Upon mark mode being enabled by a user keybinding (`ToggleMarkMode`), the current cursor position becomes the selection anchor. The arrow keys move the selection anchor by cell. Using the arrow keys while holding `Shift` moves the second selection anchor by cell. Additionally, using the arrow keys while holding `Ctrl` and `Shift` moves the second selection anchor by word. This allows the user to make a selection of their choice. The user can exit mark mode by using the `ToggleMarkMode` keybinding.
+Mark Mode is a mode where the user can create more complete and complex selections using only the keyboard. It can be cycled int an enabled/disabled state through a user keybinding (`toggleMarkMode`).
+
+Upon being enabled, the current cursor position becomes the selection anchor. The user can move the selection anchor using the same keybindings defined for keyboard selection (`moveSelectionAnchor` action).
+
+#### `toggleMarkMode`
+`toggleMarkMode` has two keybinding arguments:
+| Parameter | Accepted Values | Default Value | Description |
+|--|--|--|--|
+| `anchorKeybinding` | regular keybindings and plain modifier keys | `Shift` | The keybinding used to anchor the selection anchor to it's current text buffer position. While holding down that keybinding, any `moveSelectionAnchor` actions will move the other selection anchor (`endSelectionPosition`). |
+| `anchorMode` | `Hold`, `Toggle` | `Hold` | If `Hold`, the user needs to hold the `anchorKeybinding` keybinding to move the second selection anchor. If `Toggle`, the user switches between selection anchors when they press it. |
+
+#### Rendering during Mark Mode
+Since we are just moving the selection anchors, rendering the selection rects should operate normally. We need to ensure that we still scroll when we move a selection anchor past the top of bottom of the viewport.
+
+In ConHost, output would be paused when a selection was present. This is a completely separate issue that is being tracked in (#2529)[https://github.com/microsoft/terminal/pull/2529].
+
+#### Exiting Mark Mode
+There are multiple ways to exit mark mode. The user can press...
+- the `toggleMarkMode` keybinding
+- the `ESC` key
+- the `copy` keybinding (which also copies the contents of the selection to the user's clipboard)
+
+
+
+<!--Holding down the `holdSelectionAnchor` keybinding action (set to `Shift` by default) anchors the selection anchor to it's current text buffer position. While holding down that keybinding, any `moveSelectionAnchor` actions will move the other selection anchor (`endSelectionPosition`).
+
+**NOTE**: `holdSelectionAnchor` will have an `Enum anchorSwitching` parameter. Where `Hold` (default) is the functionality mentioned above, and `Toggle` switches between the selection anchors when pressed.-->
 
 
 ## UI/UX Design
 
 ### Keybindings
 
-Thanks to Keybinding Args, there will only be 3 new commands that need to be added:
+Thanks to Keybinding Args, there will only be 4 new commands that need to be added:
 | Action | Keybinding Args | Description |
 |--|--|--|
 | `moveSelectionAnchor` |                                                               | If a selection exists, moves the last selection anchor.
@@ -73,6 +102,7 @@ Thanks to Keybinding Args, there will only be 3 new commands that need to be add
 |                       | `Enum expansionMode { cell, word, line, viewport, buffer }`   | The context for which to move the selection anchor to. (defaults to `cell`)
 | `selectEntireBuffer`  | | Select the entire text buffer.
 | `toggleMarkMode`      | | Enter or exit mark mode. This allows you to create an entire selection using only the keyboard. |
+| `holdSelectionAnchor` | | Enter or exit mark mode. This allows you to create an entire selection using only the keyboard. |
 
 By default, the following keybindings will be set:
 ```JS
