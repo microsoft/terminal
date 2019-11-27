@@ -54,6 +54,7 @@ public:
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();
+    const GlobalAppSettings& GlobalSettings() const;
 
     std::basic_string_view<Profile> GetProfiles() const noexcept;
 
@@ -105,6 +106,7 @@ private:
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
+    void _ValidatePaneAccentColorValues();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

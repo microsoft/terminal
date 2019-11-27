@@ -207,6 +207,17 @@
       "additionalProperties": true,
       "description": "Properties that affect the entire window, regardless of the profile settings.",
       "properties": {
+
+        "activePaneBorderColor": {
+          "default": "accent",
+          "oneOf": [
+            {"$ref": "#/definitions/Color"},
+            {"type": "string", "pattern": "accent" }
+          ],
+          "description": "The color to use for the active pane border. Should be null, \"accent\", or a color in format \"#RRGGBB\"",
+          "type": ["string", "null"]
+        },
+
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and showTabsInTitlebar is set to false, tabs only appear after opening a new tab.",

@@ -5,6 +5,7 @@
 #include "Pane.h"
 #include "Profile.h"
 #include "CascadiaSettings.h"
+#include "../../WinRTUtils/inc/Utils.h"
 
 #include "winrt/Microsoft.Terminal.TerminalConnection.h"
 
@@ -545,6 +546,13 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
         {
             _control.UpdateSettings(settings);
         }
+
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
+            // Call _SetupResources to potentially reload the active pane brush,
+            // and UpdateVisuals to apply the brush
+            _SetupResources();
+            UpdateVisuals();
+        });
     }
 }
 
@@ -1111,26 +1119,10 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
 void Pane::_SetupResources()
 {
     const auto res = Application::Current().Resources();
-    const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
-    if (res.HasKey(accentColorKey))
-    {
-        const auto colorFromResources = res.Lookup(accentColorKey);
-        // If SystemAccentColor is _not_ a Color for some reason, use
-        // Transparent as the color, so we don't do this process again on
-        // the next pane (by leaving s_focusedBorderBrush nullptr)
-        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-        s_focusedBorderBrush = SolidColorBrush(actualColor);
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
-    }
 
+    // First setup the pane border TabViewBackground color
     const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(accentColorKey))
+    if (res.HasKey(tabViewBackgroundKey))
     {
         winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
@@ -1141,6 +1133,47 @@ void Pane::_SetupResources()
         // be able to hittest for clicks, and then clicking on the border
         // will eat focus.
         s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
+
+    // Now try and set the pane border color.
+    // - If it's null, we'll use the TabViewBackground color.
+    // - if it's "accent", we'll use the accent color
+    // - if it's "#rrbbgg", we'll use the given color
+    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+    const auto& globals = settings.GlobalSettings();
+    if (!globals.HasPaneFocusBorderColor())
+    {
+        s_focusedBorderBrush = s_unfocusedBorderBrush;
+    }
+    else
+    {
+        if (globals.IsPaneFocusColorAccentColor())
+        {
+            // Use the accent color for the pane border
+
+            const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+            if (res.HasKey(accentColorKey))
+            {
+                const auto colorFromResources = res.Lookup(accentColorKey);
+                // If SystemAccentColor is _not_ a Color for some reason, use
+                // Transparent as the color, so we don't do this process again on
+                // the next pane (by leaving s_focusedBorderBrush nullptr)
+                auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+                s_focusedBorderBrush = SolidColorBrush(actualColor);
+            }
+            else
+            {
+                // DON'T use Transparent here - see earlier comment for why
+                s_focusedBorderBrush = s_unfocusedBorderBrush;
+            }
+        }
+        else
+        {
+            // Create a brush for the color the user specified
+            const COLORREF focusColor = globals.GetPaneFocusColor();
+            s_focusedBorderBrush = Media::SolidColorBrush{};
+            s_focusedBorderBrush.Color(ColorRefToColor(focusColor));
+        }
     }
 }
 

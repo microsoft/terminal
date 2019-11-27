@@ -33,6 +33,8 @@ static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
+static constexpr std::string_view ActivePaneBorderColorKey{ "activePaneBorderColor" };
+static constexpr std::wstring_view UseAccentColorValue{ L"accent" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
@@ -277,6 +279,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     {
         _keybindings->LayerJson(keybindings);
     }
+
+    JsonUtils::GetOptionalString(json, ActivePaneBorderColorKey, _activePaneBorderColor);
 }
 
 // Method Description:
@@ -441,4 +445,55 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
     _colorSchemes[name] = std::move(scheme);
+}
+
+// Method Description:
+// - Returns true if the user has set the pane border to an actual value. If
+//   they've set the active pane border color to `null`, then this will return
+//   false.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff there's a active pane border color set.
+bool GlobalAppSettings::HasPaneFocusBorderColor() const noexcept
+{
+    return _activePaneBorderColor.has_value();
+}
+
+// Method Description:
+// - Returns true if the user has set the pane border to the system accent
+//   color, using the value "accent".
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the active pane border color is set to "accent"
+bool GlobalAppSettings::IsPaneFocusColorAccentColor() const noexcept
+{
+    return HasPaneFocusBorderColor() && _activePaneBorderColor.value() == UseAccentColorValue;
+}
+
+// Method Description:
+// - Retrieve the color the user has set the pane border to. If the user has set
+//   the color to "accent", or set the color to "null", or any other invalid
+//   string, this method will throw an exception.
+// Arguments:
+// - <none>
+// Return Value:
+// - the parsed color the user has set the active pane border to.
+COLORREF GlobalAppSettings::GetPaneFocusColor() const
+{
+    return ::Microsoft::Console::Utils::ColorFromHexString(_activePaneBorderColor.value());
+}
+
+// Method Description:
+// - Sets the active pane border value. Used by
+//   CascadiaSettings::_ValidatePaneAccentColorValues to reset the active pane
+//   border color, in case the color was set to something invalid.
+// Arguments:
+// - newValue: the new string to use for this setting, or nullopt to clear the value.
+// Return Value:
+// - <none>
+void GlobalAppSettings::SetPaneFocusColor(std::optional<std::wstring> newValue)
+{
+    _activePaneBorderColor = newValue;
 }

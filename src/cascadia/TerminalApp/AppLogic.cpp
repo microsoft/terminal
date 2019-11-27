@@ -27,10 +27,11 @@ namespace winrt
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 3> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, 4> settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
-    USES_RESOURCE(L"UnknownColorSchemeText")
+    USES_RESOURCE(L"UnknownColorSchemeText"),
+    USES_RESOURCE(L"BadActivePaneBorderColorValueText")
 };
 static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
