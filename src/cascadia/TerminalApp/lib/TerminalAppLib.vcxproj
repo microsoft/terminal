@@ -87,6 +87,9 @@
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="../ShortcutActionDispatch.h"  >
+      <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../ActionArgs.h"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClInclude>
@@ -141,6 +144,9 @@
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ShortcutActionDispatch.cpp"  >
+      <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../ActionAndArgs.cpp"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClCompile>
@@ -172,6 +178,7 @@
     <Midl Include="../App.idl" >
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="../ShortcutActionDispatch.idl" />
     <Midl Include="../AppKeyBindings.idl" />
     <Midl Include="../AppLogic.idl" />
     <Midl Include="../ActionArgs.idl" />
