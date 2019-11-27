@@ -1,5 +1,5 @@
 ---
-author: Leon Liang @leonMSFT, Mike Griese @zadjii-msft
+author: Leon Liang @leonMSFT
 created on: 2019-11-27
 last updated: 2019-11-27
 issue id: 1502
