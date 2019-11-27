@@ -64,6 +64,7 @@ static constexpr std::string_view SwitchToTab6Key{ "switchToTab6" }; // Legacy
 static constexpr std::string_view SwitchToTab7Key{ "switchToTab7" }; // Legacy
 static constexpr std::string_view SwitchToTab8Key{ "switchToTab8" }; // Legacy
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // Legacy
+static constexpr std::string_view SplitPaneKey{ "splitPane" };
 static constexpr std::string_view SplitHorizontalKey{ "splitHorizontal" }; // Legacy
 static constexpr std::string_view SplitVerticalKey{ "splitVertical" }; // Legacy
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
@@ -77,7 +78,6 @@ static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" }; // Lega
 static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" }; // Legacy
 static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" }; // Legacy
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
-static constexpr std::string_view SplitPaneKey{ "splitPane" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.

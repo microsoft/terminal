@@ -597,8 +597,6 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
         bindings.NextTab({ this, &TerminalPage::_HandleNextTab });
         bindings.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        // bindings.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
-        // bindings.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
         bindings.SplitPane({ this, &TerminalPage::_HandleSplitPane });
         bindings.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         bindings.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });

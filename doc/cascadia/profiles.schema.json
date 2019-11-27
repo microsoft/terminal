@@ -196,7 +196,7 @@
           }
         }
       ],
-      "required": [ "style" ]
+      "required": [ "split" ]
     },
     "Keybinding": {
       "additionalProperties": false,
