@@ -99,7 +99,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         return S_OK;
     }
 
-    for (int i = 0; i < rectangles.size(); i++)
+    for (size_t i = 0; i < rectangles.size(); i++)
     {
         try
         {
