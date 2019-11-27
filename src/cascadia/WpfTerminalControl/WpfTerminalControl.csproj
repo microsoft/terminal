@@ -1,19 +1,18 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project>
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
-  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
   <PropertyGroup>
     
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
     <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
     <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
+    <UseWpf>true</UseWpf>
 
     <RepoBinPath>$(MSBuildThisFileDirectory)..\..\..\bin\</RepoBinPath>
     <IntermediateOutputPath>$(RepoBinPath)..\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
     <OutputPath>$(RepoBinPath)$(Platform)\$(Configuration)\$(MSBuildProjectName)</OutputPath>
     <BeforePack>CollectNativePackContents</BeforePack>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>0.5</Version>
+    <Version>0.1</Version>
   </PropertyGroup>
   
   <ItemGroup>
@@ -29,17 +28,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-  
-  <ItemGroup>
-    <Page Include="**\*.xaml" Exclude="App.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Compile Update="**\*.xaml.cs">
-      <DependentUpon>%(Filename)</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
 
   <Target Name="CollectNativePackContents">
     <ItemGroup>
@@ -54,12 +42,4 @@
     </ItemGroup>
   </Target>
 
-  <ItemGroup>
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="WindowsBase" />
-  </ItemGroup>
-      
-  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 </Project>

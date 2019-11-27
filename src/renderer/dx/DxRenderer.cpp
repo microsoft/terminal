@@ -15,7 +15,7 @@
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
-static constexpr std::wstring_view FALLBACK_FONT_FACE = L"Consolas";
+static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 
 using namespace Microsoft::Console::Render;
@@ -41,6 +41,7 @@ DxEngine::DxEngine() :
     _displaySizePixels{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
+    _selectionBackground{ DEFAULT_FOREGROUND },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -1085,12 +1086,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto selectionColor = D2D1::ColorF(_defaultForegroundColor.r,
-                                             _defaultForegroundColor.g,
-                                             _defaultForegroundColor.b,
-                                             0.5f);
 
-    _d2dBrushForeground->SetColor(selectionColor);
+    _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
     RECT pixels;
@@ -1445,7 +1442,11 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
-    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+    if (_hwndTarget != INVALID_HANDLE_VALUE)
+    {
+        return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+    }
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -1470,17 +1471,27 @@ float DxEngine::GetScaling() const noexcept
 
     if (!face)
     {
-        familyName = FALLBACK_FONT_FACE;
-        face = _FindFontFace(familyName, weight, stretch, style, localeName);
-    }
+        for (const auto fallbackFace : FALLBACK_FONT_FACES)
+        {
+            familyName = fallbackFace;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
 
-    if (!face)
-    {
-        familyName = FALLBACK_FONT_FACE;
-        weight = DWRITE_FONT_WEIGHT_NORMAL;
-        stretch = DWRITE_FONT_STRETCH_NORMAL;
-        style = DWRITE_FONT_STYLE_NORMAL;
-        face = _FindFontFace(familyName, weight, stretch, style, localeName);
+            if (face)
+            {
+                break;
+            }
+
+            familyName = fallbackFace;
+            weight = DWRITE_FONT_WEIGHT_NORMAL;
+            stretch = DWRITE_FONT_STRETCH_NORMAL;
+            style = DWRITE_FONT_STYLE_NORMAL;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+            if (face)
+            {
+                break;
+            }
+        }
     }
 
     THROW_IF_NULL_ALLOC(face);
@@ -1807,4 +1818,18 @@ float DxEngine::GetScaling() const noexcept
     default:
         FAIL_FAST_HR(E_NOTIMPL);
     }
+}
+
+// Routine Description:
+// - Updates the selection background color of the DxEngine
+// Arguments:
+// - color - GDI Color
+// Return Value:
+// - N/A
+void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+{
+    _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
+                                        GetGValue(color) / 255.0f,
+                                        GetBValue(color) / 255.0f,
+                                        0.5f);
 }

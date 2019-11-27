@@ -326,7 +326,8 @@ IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
     {
         try
         {
-            _pUiaProvider = WindowUiaProvider::Create(this);
+            // TODO GitHub #3195: Remove WindowUiaProvider in WindowsTerminal
+            //Microsoft::WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this);
         }
         catch (...)
         {

@@ -77,7 +77,7 @@ private:
     bool _ShouldUpdateStylesOnFullscreen() const override { return false; };
     bool _IsTitlebarVisible() const;
 
-    [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
+    void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateIslandRegion() const;

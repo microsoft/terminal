@@ -138,6 +138,24 @@ namespace Microsoft::Console::Types
         };
 
     public:
+        // degenerate range
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider) noexcept;
+
+        // degenerate range at cursor position
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Cursor& cursor) noexcept;
+
+        // specific endpoint range
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Endpoint start,
+                                       const Endpoint end,
+                                       const bool degenerate) noexcept;
+
+        HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
+
         UiaTextRangeBase(UiaTextRangeBase&&) = default;
         UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
@@ -191,44 +209,24 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
 
     protected:
+        UiaTextRangeBase() = default;
 #if _DEBUG
         void _outputRowConversions(IUiaData* pData);
         void _outputObjectState();
 #endif
-        IUiaData* const _pData;
+        IUiaData* _pData;
 
-        wil::com_ptr<IRawElementProviderSimple> const _pProvider;
+        IRawElementProviderSimple* _pProvider;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
-        // degenerate range
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider);
-
-        // degenerate range at cursor position
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider,
-                         const Cursor& cursor);
-
-        // specific endpoint range
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider,
-                         const Endpoint start,
-                         const Endpoint end,
-                         const bool degenerate);
-
         void Initialize(_In_ const UiaPoint point);
-
-        UiaTextRangeBase(const UiaTextRangeBase& a) noexcept;
 
         // used to debug objects passed back and forth
         // between the provider and the client
         IdType _id;
-
-        // Ref counter for COM object
-        ULONG _cRefs;
 
         // measure units in the form [_start, _end]. _start
         // may be a bigger number than _end if the range
@@ -396,9 +394,6 @@ namespace Microsoft::Console::Types
         enum class ApiCall
         {
             Constructor,
-            AddRef,
-            Release,
-            QueryInterface,
             Clone,
             Compare,
             CompareEndpoints,

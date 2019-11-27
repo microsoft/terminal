@@ -58,13 +58,8 @@ public:
 
     bool IsEmpty() const;
 
-    void RegisterForNotifyOnLastFree(std::function<void()> func);
-
 private:
     std::list<ConsoleProcessHandle*> _processes;
-    std::vector<std::function<void()>> _notifyOnLastFree;
-
-    void _NotifyOnLastFree() const;
 
     void _ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const;
 };
