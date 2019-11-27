@@ -10,6 +10,9 @@
 #include "Utils.h"
 #include "DefaultProfileUtils.h"
 
+#include <appmodel.h>
+#include <shlobj.h>
+
 namespace
 {
     struct PowerShellInstance
@@ -17,32 +20,37 @@ namespace
         int majorVersion;
         bool preview;
         bool nativeArchitecture;
-        std::filesystem::path rootPath;
+        bool store;
+        std::filesystem::path executablePath;
 
         // Total sort order:
         // 6-preview (wow) < 6-preview (native) < 7-preview (native) < 6 (wow) < 6 (native) < 7 (native)
         bool operator<(const PowerShellInstance& second) const
         {
-            if (preview != second.preview)
-            {
-                return preview; // preview is less than GA
-            }
             if (majorVersion != second.majorVersion)
             {
                 return majorVersion < second.majorVersion;
+            }
+            if (preview != second.preview)
+            {
+                return preview; // preview is less than GA
             }
             if (nativeArchitecture != second.nativeArchitecture)
             {
                 return !nativeArchitecture; // non-native architecture is less than native architecture.
             }
-            return rootPath < second.rootPath; // fall back to path sorting
+            if (store != second.store)
+            {
+                return !store; // non-store is less than store.
+            }
+            return executablePath < second.executablePath; // fall back to path sorting
         }
     };
 }
 
 using namespace ::TerminalApp;
 
-static void _collectPowerShellInstancesInDirectory(std::wstring_view directory, std::vector<PowerShellInstance>& out)
+static void _collectTraditionalLayoutPowerShellInstancesInDirectory(std::wstring_view directory, std::vector<PowerShellInstance>& out)
 {
     std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
     if (std::filesystem::exists(root))
@@ -54,8 +62,35 @@ static void _collectPowerShellInstancesInDirectory(std::wstring_view directory, 
             if (std::filesystem::exists(executable))
             {
                 auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
-                out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()), preview, true, versionedPath });
+                out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()), preview, true, false, executable });
             }
+        }
+    }
+}
+
+static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& out)
+{
+    wil::unique_cotaskmem_string localAppDataFolder;
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, 0, &localAppDataFolder)))
+    {
+        return;
+    }
+
+    std::filesystem::path appExecAliasPath{ localAppDataFolder.get() };
+    appExecAliasPath /= L"Microsoft";
+    appExecAliasPath /= L"WindowsApps";
+
+    if (std::filesystem::exists(appExecAliasPath))
+    {
+        auto previewPath = appExecAliasPath / L"Microsoft.PowerShellPreview_8wekyb3d8bbwe";
+        auto gaPath = appExecAliasPath / L"Microsoft.PowerShell_8wekyb3d8bbwe";
+        if (std::filesystem::exists(previewPath))
+        {
+                out.emplace_back(PowerShellInstance{ 10, true, true, true, previewPath / L"pwsh.exe" });
+        }
+        if (std::filesystem::exists(gaPath))
+        {
+                out.emplace_back(PowerShellInstance{ 10, false, true, true, gaPath / L"pwsh.exe" });
         }
     }
 }
@@ -63,13 +98,14 @@ static void _collectPowerShellInstancesInDirectory(std::wstring_view directory, 
 static std::vector<PowerShellInstance> _enumeratePowerShellInstances()
 {
     std::vector<PowerShellInstance> versions;
-    _collectPowerShellInstancesInDirectory(L"%ProgramFiles(x86)%\\PowerShell", versions);
+    _collectTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles(x86)%\\PowerShell", versions);
     for (auto& v : versions)
     {
         // If they came from ProgramFiles(x86), they're not the native architecture.
         v.nativeArchitecture = false;
     }
-    _collectPowerShellInstancesInDirectory(L"%ProgramFiles%\\PowerShell", versions);
+    _collectTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles%\\PowerShell", versions);
+    _collectStorePowerShellInstances(versions);
     std::sort(versions.rbegin(), versions.rend()); // sort in reverse (best first)
     return versions;
 }
@@ -106,16 +142,21 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
         {
             name += L"-preview";
         }
+        if (psI.store)
+        {
+            name += L" (Store)";
+        }
         if (!psI.nativeArchitecture)
         {
             name += L" (x86)";
         }
 
         auto profile{ CreateDefaultProfile(name) };
-        profile.SetCommandline((psI.rootPath / L"pwsh.exe").wstring());
+        profile.SetCommandline(psI.executablePath.wstring());
         profile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         profile.SetColorScheme({ L"Campbell" });
-        profile.SetIconPath((psI.rootPath / L"assets" / (psI.preview ? L"Powershell_av_colors.ico" : L"Powershell_black.ico")).wstring());
+
+        //profile.SetIconPath((psI.executablePath / L"assets" / (psI.preview ? L"Powershell_av_colors.ico" : L"Powershell_black.ico")).wstring());
         profiles.emplace_back(std::move(profile));
     }
 
