@@ -105,16 +105,16 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         {
             const auto prevRect = _prevSelection.at(i);
             const auto newRect = rectangles.at(i);
+
+            // if any value is different, selection has changed
+            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            {
+                _selectionChanged = true;
+                return S_OK;
+            }
         }
         catch (...)
         {
-        }
-
-        // if any value is different, selection has changed
-        if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
-        {
-            _selectionChanged = true;
-            return S_OK;
         }
     }
 
