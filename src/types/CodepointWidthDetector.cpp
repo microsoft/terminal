@@ -343,14 +343,14 @@ CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) c
         {
             if (_pfnFallbackMethod)
             {
-                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Narrow;
+                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Ambiguous;
             }
             else
             {
                 return _lookupGlyphWidthWithCache(glyph);
             }
         }
-        // Otherwise, return Wide as True and Narrow as False.
+        // Otherwise, return Width as it is.
         else
         {
             return width;
@@ -434,7 +434,11 @@ CodepointWidth CodepointWidthDetector::_lookupGlyphWidthWithCache(const std::wst
         {
             if (_pfnFallbackMethod)
             {
-                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Narrow;
+                return _checkFallbackViaCache(glyph) ? CodepointWidth::Wide : CodepointWidth::Ambiguous;
+            }
+            else
+            {
+                return CodepointWidth::Ambiguous;
             }
         }
         // If it's not ambiguous, it should say wide or narrow.
