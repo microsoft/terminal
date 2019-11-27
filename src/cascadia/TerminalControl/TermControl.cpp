@@ -1292,14 +1292,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   concerned with initialization process. Value forwarded to event handler.
     void TermControl::_UpdateFont(const bool initialUpdate)
     {
-        {
-            auto lock = _terminal->LockForWriting();
+        auto lock = _terminal->LockForWriting();
 
-            const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * _swapChainPanel.CompositionScaleX());
+        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * _swapChainPanel.CompositionScaleX());
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+
+        const auto actualNewSize = _actualFont.GetSize();
+        _fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
     }
 
     // Method Description:
@@ -1316,12 +1318,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
-
             // Refresh our font with the renderer
             _UpdateFont();
-			
-			const actualNewSize = _actualFont.GetSize();
-			_fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
 			
             // Resize the terminal's BUFFER to match the new font size. This does
             // NOT change the size of the window, because that can lead to more
