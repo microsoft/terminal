@@ -9,11 +9,11 @@ issue id: 1502
 
 ## Abstract
 
-Currently, the user is able to cycle through tabs on the tab bar. However, this horizontal cycling can be pretty inconvenient when the tab titles are long, or when there are too many tabs on the tab bar. It could also get hard to see all your available tabs if the tab titles are long and your screen is small. There's also a common use case to quickly switch between two tabs, e.g. when one tab is used as reference and the other is the actively worked-on tab. If the tabs are not right next to each other on the tab bar, it could be difficult to quickly swap between the two. Having the tabs displayed in Most Recently Used (MRU) order would help with this problem. It could also make the user experience better when there are a handful of tabs that are frequently used, but are nowhere near each other on the tab bar.
+Currently the user is able to cycle through tabs on the tab bar. However, this horizontal cycling can be pretty inconvenient when the tab titles are long or when there are too many tabs on the tab bar. It could also get hard to see all your available tabs if the tab titles are long and your screen is small. In addition, there's a common use case to quickly switch between two tabs, e.g. when one tab is used as reference and the other is the actively worked-on tab. If the tabs are not right next to each other on the tab bar, it could be difficult to quickly swap between the two. Having the tabs displayed in Most Recently Used (MRU) order would help with this problem. It could also make the user experience better when there are a handful of tabs that are frequently used, but are nowhere near each other on the tab bar.
 
-Having a tab switcher UI, like the ones in Visual Studio and Visual Studio Code, could help with the tab experience. Presenting the tabs vertically in their own little UI allows the user to see more of the tabs at once, compared to scanning the tab row horizontally and scrolling left/right to find the tab you want. The tab order in the tab switchers are in MRU order by default.
+Having a tab switcher UI, like the ones in Visual Studio and Visual Studio Code, could help with the tab experience. Presenting the tabs vertically in their own little UI allows the user to see more of the tabs at once, compared to scanning the tab row horizontally and scrolling left/right to find the tab you want. The tab order in those tab switchers are also in MRU order by default.
 
-To try to alleviate some of these user scenarios, we want to create a tab switcher, similar to ones found in VSCode and VS. This spec will cover the design of the switcher, and how a user would interact with the switcher. It would be primarily keyboard driven, and would give a pop-up display of a vertical list of tabs. The tab switcher would also be able to display the tabs in Most Recently Used (MRU) order.
+To try to alleviate some of these user scenarios, we want to create a tab switcher similar to the ones found in VSCode and VS. This spec will cover the design of the switcher, and how a user would interact with the switcher. It would be primarily keyboard driven, and would give a pop-up display of a vertical list of tabs. The tab switcher would also be able to display the tabs in Most Recently Used (MRU) order.
 
 ## Inspiration
 
@@ -27,7 +27,7 @@ Visual Studio's tab switcher presents itself as a box in the middle of the edito
 
 ![Visual Studio Tab Switcher](img/VSTabSwitcher.png)
 
-I'm partial towards Visual Studio's implementation, where a box pops up in the center of the window. It allows for expansion in all four directions, which could be useful when adding future features such as Pane Navigation.
+I'm partial towards Visual Studio's implementation, specifically where a box pops up in the center of the window. It allows for expansion in all four directions, which could be useful when adding future features such as Pane Navigation.
 
 In terms of navigating the switcher, both VSCode and Visual Studio behave very similarly. Both open with the press of <kbd>ctrl+tab</kbd> and dismiss on release of <kbd>ctrl</kbd>. They both also allow the user to select the tab with the mouse and with <kbd>enter</kbd>. <kbd>esc</kbd> and a mouse click outside of the switcher both dismiss the window as well.
 
@@ -35,14 +35,14 @@ In terms of navigating the switcher, both VSCode and Visual Studio behave very s
 
 In addition to the current in-order tab list, namely `vector<shared_ptr<Tab>> _tabs`, we'll add `vector<weak_ptr<Tab>> _mruTabs` to represent the tabs in Most Recently Used order.
 `_mruTabs` will use `weak_ptr` because the tab switcher doesn't actually own the tabs, the `_tabs` vector does.
-Updating `_mruTabs` is as simple as finding the tab pointer in the vector, and just picking up and placing it in front of the vector.
 
 We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with a `vector<>&`.
 This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed.
 Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the correct vector.
 
-This vector of tabs will be used to create a ListView, so that the UI would diplay a vertical list of tabs.
-Each element in the ListView would be associated with a Tab.
+This vector of tabs will be used to create a ListView, so that the UI would diplay a vertical list of tabs, represented by their tab titles.
+Each element in the ListView would be associated with a Tab, and the action associated with selecting a tab would be to Focus on that tab.
+There would also be another column to the left/right of the tab title column that holds the numbers 1-9. This is to represent what number is bound to each tab to allow for quick switching.
 This ListView would be hidden until the user presses a keybinding to show the ListView.
 
 The `TabSwitcherControl` will be able to call any tab's `SetFocused` function to bring the tab into focus.
@@ -182,7 +182,7 @@ the update taking long at all, and I can't imagine that users can create and del
 
 ## Potential Issues
 
-We'll need to be wary about how the UI is presented depending on different sizes of the terminal. We also should test how the UI looks as it's open and resizing is happening.
+We'll need to be careful about how the UI is presented depending on different sizes of the terminal. We also should test how the UI looks as it's open and resizing is happening.
 
 Visual Studio's tab switcher is a fixed size, and is always in the middle. Even when the VS window is smaller than the tab switcher size, the tab switcher will show up larger than the VS window itself.
 
@@ -202,7 +202,7 @@ Should it try to display the UI and whatever is visible, is visible?
 
 ### Pane Navigation
 
-@zadiji-msft in [#1502] brought up the amazing idea of pane navigation, inspired by tmux.
+@zadiji-msft in [#1502] brought up the idea of pane navigation, inspired by tmux.
 
 ![Tmux Tab and Pane Switching](img/tmuxPaneSwitching.png)
 
@@ -218,7 +218,7 @@ back to the tab list.
 Question: Does MRU make sense for panes?
 
 Pane navigation is a clear next step to build on top of the tab switcher, but this spec will specifically deal with just
-tab navigation in order to keep the scope tight. The tab swticher implementation just has to allow for pane navigation to be added in later.
+tab navigation in order to keep the scope tight. The tab swticher implementation just needs to allow for pane navigation to be added in later.
 
 ### Tab Search by Name/Title
 
@@ -232,7 +232,8 @@ We already have search being worked on [#605], so we could probably leverage som
 
 With this feature, having a tab highlighted in the switcher would make the Terminal display that tab as if it switched to it.
 I believe currently there is no way to set focus to a tab in a "preview" mode. This is important because MRU updates whenever a tab
-is focused, but we don't want the MRU to update on a preview.
+is focused, but we don't want the MRU to update on a preview. Given that this feature is a "nice thing to have", I'll leave it for
+after the tab switcher has landed.
 
 ## Resources
 
