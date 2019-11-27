@@ -38,6 +38,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(UnbindKeybindings);
 
         TEST_METHOD(TestArbitraryArgs);
+        TEST_METHOD(TestSplitPaneArgs);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -362,6 +363,96 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(-1, realArgs.Delta());
+        }
+    }
+
+    void KeyBindingsTests::TestSplitPaneArgs()
+    {
+        // TODO:GH#3536 - These tests _should_ work, but since the LocalTests
+        // fail to run at all right now, I can't be sure that they do. When
+        // #3536 is fixed, make sure that these tests were authored correctly.
+
+        const std::string bindings0String{ R"([
+            { "command": "splitVertical", "keys": ["ctrl+a"] },
+            { "command": "splitHorizontal", "keys": ["ctrl+b"] },
+            { "command": { "action": "splitPane", "style": null }, "keys": ["ctrl+c"] },
+            { "command": { "action": "splitPane", "style": "vertical" }, "keys": ["ctrl+d"] },
+            { "command": { "action": "splitPane", "style": "horizontal" }, "keys": ["ctrl+e"] },
+            { "command": { "action": "splitPane", "style": "none" }, "keys": ["ctrl+f"] },
+            { "command": { "action": "splitPane" }, "keys": ["ctrl+g"] }
+
+        ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
+        VERIFY_IS_NOT_NULL(appKeyBindings);
+        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        appKeyBindings->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(7u, appKeyBindings->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('A') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('C') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('D') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('E') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('F') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>('G') };
+            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
         }
     }
 
