@@ -20,18 +20,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Primitives::ToggleButton>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
+        _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
 
         // TO DO: Is there a general way to put all the focusable elements in the
         // collection ? Maybe try DFS
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
-        auto textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
         auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
-        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Primitives::ToggleButton>();
+        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
 
         if (closeButton)
             _focusableElements.insert(closeButton);
-        if (textBox)
-            _focusableElements.insert(textBox);
+        if (_textBox)
+            _focusableElements.insert(_textBox);
         if (checkBox)
             _focusableElements.insert(checkBox);
         if (moveButton)
@@ -52,11 +52,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _isCaseSensitive;
     }
 
-    void SearchBoxControl::QuerySubmitted(winrt::Windows::Foundation::IInspectable const& sender, Input::KeyRoutedEventArgs const& e)
+    void SearchBoxControl::QuerySubmitted(winrt::Windows::Foundation::IInspectable const& /*sender*/, Input::KeyRoutedEventArgs const& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
-            _searchEventHandler(*this, sender.try_as<Controls::TextBox>().Text());
+            _searchEventHandler(*this, _textBox.Text());
         }
     }
 
@@ -80,26 +80,49 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return false;
     }
 
-    void SearchBoxControl::_GoBackwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::_GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = false;
+        _goBackwardButton.IsChecked(true);
         if (_goForwardButton.IsChecked())
         {
             _goForwardButton.IsChecked(false);
         }
+
+        // kick off search
+        _searchEventHandler(*this, _textBox.Text());
     }
 
-    void SearchBoxControl::_GoForwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::_GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = true;
+        _goForwardButton.IsChecked(true);
         if (_goBackwardButton.IsChecked())
         {
             _goBackwardButton.IsChecked(false);
         }
+
+        // kick off search
+        _searchEventHandler(*this, _textBox.Text());
     }
 
     void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
     {
+        auto moveButton = sender.try_as<Controls::Button>();
+        // We rotate the font icon upside down to represent "top" or "bottom"
+        if (moveButton)
+        {
+            auto moveIcon = moveButton.FindName(L"MoveSearchBoxPositionIcon").try_as<Controls::FontIcon>();
+            auto rotateTransform = moveIcon.RenderTransform().try_as<Media::RotateTransform>();
+            if (rotateTransform.Angle() == 0.0)
+            {
+                rotateTransform.Angle(180.0);
+            }
+            else
+            {
+                rotateTransform.Angle(0.0);
+            }
+        }
         _MovePositionClickedHandler(sender, e);
     }
 

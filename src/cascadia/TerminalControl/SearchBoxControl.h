@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         SearchBoxControl();
 
-        void QuerySubmitted(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void QuerySubmitted(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         bool GetGoForward();
         bool GetIsCaseSensitive();
@@ -30,11 +30,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _goForwardButton;
         winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _goBackwardButton;
+        winrt::Windows::UI::Xaml::Controls::TextBox _textBox;
 
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
 
-        void _GoBackwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
-        void _GoForwardChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
+        void _GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
+        void _GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void _MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);

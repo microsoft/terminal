@@ -26,6 +26,11 @@
                         <Setter Property="Height" Value="20" />
                         <Setter Property="Background" Value="Transparent" />
                     </Style>
+                    <Style x:Key="ButtonStyle" TargetType="Button">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
                     <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
                         <Setter Property="Background" Value="Black" />
                     </Style>
@@ -40,6 +45,11 @@
                         <Setter Property="Height" Value="20" />
                         <Setter Property="Background" Value="Transparent" />
                     </Style>
+                    <Style x:Key="ButtonStyle" TargetType="Button">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
                     <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
                         <Setter Property="Background" Value="Black" />
                     </Style>
@@ -50,6 +60,11 @@
                         <Setter Property="Foreground" Value="{ThemeResource SystemColorWindowTextColor}" />
                     </Style>
                     <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                    <Style x:Key="ButtonStyle" TargetType="Button">
                         <Setter Property="Width" Value="20" />
                         <Setter Property="Height" Value="20" />
                         <Setter Property="Background" Value="Transparent" />
@@ -76,11 +91,11 @@
             </TextBox>
 
             <ToggleButton x:Name="SetGoBackwardButton" AutomationProperties.Name="Set Search Backward" HorizontalAlignment="Right"
-                          Padding="1" Style="{ThemeResource ToggleButtonStyle}" Checked="_GoBackwardChecked" IsChecked="True">
+                          Padding="1" Style="{ThemeResource ToggleButtonStyle}" Click="_GoBackwardClicked" IsChecked="True">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74A;" Style="{ThemeResource FontIconStyle}"/>
             </ToggleButton>
             <ToggleButton x:Name="SetGoForwardButton" AutomationProperties.Name="Set Search Forward" Padding="1"
-                          Style="{ThemeResource ToggleButtonStyle}" Checked="_GoForwardChecked">
+                          Style="{ThemeResource ToggleButtonStyle}" Click="_GoForwardClicked">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74B;" Style="{ThemeResource FontIconStyle}"/>
             </ToggleButton>
         </StackPanel>
@@ -113,10 +128,15 @@
                 <TextBlock Text="Case Sensitive" Foreground="{ThemeResource CheckBoxColor}" FontSize="15"/>
             </CheckBox>
 
-            <ToggleButton x:Name="MoveSearchBoxPositionButton" AutomationProperties.Name="Move Search Box Position" Style="{ThemeResource ToggleButtonStyle}"
+            <Button x:Name="MoveSearchBoxPositionButton" AutomationProperties.Name="Move Search Box Position" Style="{ThemeResource ButtonStyle}"
                           HorizontalAlignment="Right" Padding="0" Click="_MovePositionClick">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" Style="{ThemeResource FontIconStyle}"/>
-            </ToggleButton>
+                <FontIcon x:Name="MoveSearchBoxPositionIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE90E;" Style="{ThemeResource FontIconStyle}"
+                          RenderTransformOrigin="0.5,0.5">
+                    <FontIcon.RenderTransform>
+                        <RotateTransform Angle="0"/>
+                    </FontIcon.RenderTransform>
+                </FontIcon>
+            </Button>
         </StackPanel>
     </StackPanel>
 </UserControl>
