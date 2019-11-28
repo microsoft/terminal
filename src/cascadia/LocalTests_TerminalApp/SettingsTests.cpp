@@ -1292,12 +1292,12 @@ namespace TerminalAppLocalTests
         auto name0{ L"profile0" };
         auto name1{ L"profile1" };
         auto name2{ L"Ubuntu" };
-        auto bad_name{ L"DoesNotExist" };
+        auto badName{ L"DoesNotExist" };
 
         auto guid0{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}") };
         auto guid1{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-6666-49a3-80bd-e8fdd045185c}") };
         auto guid2{ Microsoft::Console::Utils::GuidFromString(L"{2C4DE342-38B7-51CF-B940-2309A097F518}") };
-        GUID bad_guid{};
+        GUID badGuid{};
 
         VerifyParseSucceeded(settings0String);
 
@@ -1308,22 +1308,22 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(guid0, settings.FindGuid(name0));
         VERIFY_ARE_EQUAL(guid1, settings.FindGuid(name1));
         VERIFY_ARE_EQUAL(guid2, settings.FindGuid(name2));
-        VERIFY_ARE_EQUAL(bad_guid, settings.FindGuid(bad_name));
+        VERIFY_ARE_EQUAL(badGuid, settings.FindGuid(badName));
         // Following test will fail because GetGuid throws (despite being noexcept)
-        // VERIFY_ARE_EQUAL(bad_guid, settings.FindGuid(L"ThisProfileShouldNotCrash"));
+        // VERIFY_ARE_EQUAL(badGuid, settings.FindGuid(L"ThisProfileShouldNotCrash"));
 
         // Following lines only work because the GUID-less profile is last
         auto prof0{ settings.FindProfile(guid0) };
         auto prof1{ settings.FindProfile(guid1) };
         auto prof2{ settings.FindProfile(guid2) };
         // Following line will fail because GetGuid throws (despite being noexcept)
-        // auto bad_prof{ settings.FindProfile(bad_guid) };
+        // auto badProf{ settings.FindProfile(badGuid) };
         
         VERIFY_ARE_EQUAL(name0, prof0->GetName());
         VERIFY_ARE_EQUAL(name1, prof1->GetName());
         VERIFY_ARE_EQUAL(name2, prof2->GetName());
         // Following test will fail because GetGuid throws (despite being noexcept)
-        // VERIFY_ARE_EQUAL(bad_name, bad_prof->GetName());
+        // VERIFY_ARE_EQUAL(badName, badProf->GetName());
     }
 
     void SettingsTests::TestLayerGlobalsOnRoot()
