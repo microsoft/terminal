@@ -64,8 +64,8 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 }
 
 // Method Description:
-// - Finds a GUID associated with the given profile name. If there is no GUID in this
-//      settings object that matches, returns a null GUID.
+// - Finds a GUID associated with the given profile name. If no profile matches
+//      the profile name, returns a null GUID.
 // Arguments:
 // - profileName: the name of the profile's GUID to return.
 // Return Value:
@@ -74,7 +74,7 @@ GUID CascadiaSettings::FindGuid(const std::wstring& profileName) const noexcept
 {
     GUID profileGuid{};
 
-    for (auto const& profile : _profiles)
+    for (const auto& profile : _profiles)
     {
         if (profileName == profile.GetName())
         {
