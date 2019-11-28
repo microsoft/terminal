@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleMoveSelectionAnchor(const IInspectable& /*sender*/,
-                                                const TerminalApp::ActionEventArgs& args)
+                                                  const TerminalApp::ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveSelectionAnchorArgs>())
         {
