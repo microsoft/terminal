@@ -1297,7 +1297,7 @@ namespace TerminalAppLocalTests
         auto guid0{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}") };
         auto guid1{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-6666-49a3-80bd-e8fdd045185c}") };
         auto guid2{ Microsoft::Console::Utils::GuidFromString(L"{2C4DE342-38B7-51CF-B940-2309A097F518}") };
-        GUID badGuid{};
+        std::optional<GUID> badGuid{};
 
         VerifyParseSucceeded(settings0String);
 
@@ -1318,7 +1318,7 @@ namespace TerminalAppLocalTests
         auto prof2{ settings.FindProfile(guid2) };
         // Following line will fail because GetGuid throws (despite being noexcept)
         // auto badProf{ settings.FindProfile(badGuid) };
-        
+
         VERIFY_ARE_EQUAL(name0, prof0->GetName());
         VERIFY_ARE_EQUAL(name1, prof1->GetName());
         VERIFY_ARE_EQUAL(name2, prof2->GetName());

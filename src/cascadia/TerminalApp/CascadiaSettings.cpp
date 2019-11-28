@@ -70,9 +70,9 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 // - profileName: the name of the profile's GUID to return.
 // Return Value:
 // - the GUID associated with the profile name.
-GUID CascadiaSettings::FindGuid(const std::wstring& profileName) const noexcept
+std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring& profileName) const noexcept
 {
-    GUID profileGuid{};
+    std::optional<GUID> profileGuid{};
 
     for (const auto& profile : _profiles)
     {
