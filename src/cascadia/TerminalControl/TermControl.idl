@@ -4,7 +4,6 @@
 namespace Microsoft.Terminal.TerminalControl
 {
     delegate void TitleChangedEventArgs(String newTitle);
-    delegate void ConnectionClosedEventArgs();
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
     runtimeclass CopyToClipboardEventArgs
@@ -29,9 +28,13 @@ namespace Microsoft.Terminal.TerminalControl
         void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
 
         event TitleChangedEventArgs TitleChanged;
-        event ConnectionClosedEventArgs ConnectionClosed;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
+
+        // This is an event handler forwarder for the underlying connection.
+        // We expose this and ConnectionState here so that it might eventually be data bound.
+        event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> ConnectionStateChanged;
+        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
         String Title { get; };
 
@@ -39,7 +42,6 @@ namespace Microsoft.Terminal.TerminalControl
         void PasteTextFromClipboard();
         Boolean MoveSelectionAnchor(Microsoft.Terminal.Settings.Direction direction, Microsoft.Terminal.Settings.SelectionExpansionMode expansionMode);
         void Close();
-        Boolean ShouldCloseOnExit { get; };
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
 
@@ -50,5 +52,6 @@ namespace Microsoft.Terminal.TerminalControl
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void AdjustFontSize(Int32 fontSizeDelta);
+        void ResetFontSize();
     }
 }

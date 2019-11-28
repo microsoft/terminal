@@ -71,7 +71,7 @@ public:
 
     void Close();
 
-    DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+    WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
@@ -89,7 +89,7 @@ private:
 
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };
-    winrt::event_token _connectionClosedToken{ 0 };
+    winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
@@ -119,7 +119,7 @@ private:
     void _CloseChild(const bool closeFirst);
 
     void _FocusFirstChild();
-    void _ControlClosedHandler();
+    void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
 

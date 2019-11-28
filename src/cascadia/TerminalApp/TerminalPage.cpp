@@ -96,6 +96,9 @@ namespace winrt::TerminalApp::implementation
             _setTitleBarContentHandlers(*this, _tabRow);
         }
 
+        // Hookup our event handlers to the ShortcutActionDispatch
+        _RegisterActionCallbacks();
+
         //Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
             this->_OpenNewTab(std::nullopt);
@@ -464,7 +467,7 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, this]() {
+        newTab->Closed([tabViewItem, this](auto&& /*s*/, auto&& /*e*/) {
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
                 _RemoveTabViewItem(tabViewItem);
             });
@@ -576,41 +579,52 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Register our event handlers with the given keybindings object. This
-    //   should be done regardless of what the events are actually bound to -
-    //   this simply ensures the AppKeyBindings object will call us correctly
-    //   for each event.
+    // - Configure the AppKeyBindings to use our ShortcutActionDispatch as the
+    //   object to handle dispatching ShortcutAction events.
     // Arguments:
     // - bindings: A AppKeyBindings object to wire up with our event handlers
     void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
-        // Hook up the KeyBinding object's events to our handlers.
+        bindings.SetDispatch(_actionDispatch);
+    }
+
+    // Method Description:
+    // - Register our event handlers with our ShortcutActionDispatch. The
+    //   ShortcutActionDispatch is responsible for raising the appropriate
+    //   events for an ActionAndArgs. WE'll handle each possible event in our
+    //   own way.
+    // Arguments:
+    // - <none>
+    void TerminalPage::_RegisterActionCallbacks()
+    {
+        // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
 
-        bindings.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
-        bindings.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
-        bindings.CloseTab({ this, &TerminalPage::_HandleCloseTab });
-        bindings.ClosePane({ this, &TerminalPage::_HandleClosePane });
-        bindings.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
-        bindings.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
-        bindings.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
-        bindings.NextTab({ this, &TerminalPage::_HandleNextTab });
-        bindings.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        bindings.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
-        bindings.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
-        bindings.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
-        bindings.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        bindings.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
-        bindings.PasteText({ this, &TerminalPage::_HandlePasteText });
-        bindings.NewTab({ this, &TerminalPage::_HandleNewTab });
-        bindings.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
-        bindings.ResizePane({ this, &TerminalPage::_HandleResizePane });
-        bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
-        bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
-        bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        bindings.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
-        bindings.MoveSelectionAnchor({ this, &TerminalPage::_HandleMoveSelectionAnchor });
+        _actionDispatch.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
+        _actionDispatch.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
+        _actionDispatch.CloseTab({ this, &TerminalPage::_HandleCloseTab });
+        _actionDispatch.ClosePane({ this, &TerminalPage::_HandleClosePane });
+        _actionDispatch.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
+        _actionDispatch.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
+        _actionDispatch.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
+        _actionDispatch.NextTab({ this, &TerminalPage::_HandleNextTab });
+        _actionDispatch.PrevTab({ this, &TerminalPage::_HandlePrevTab });
+        _actionDispatch.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
+        _actionDispatch.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
+        _actionDispatch.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
+        _actionDispatch.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
+        _actionDispatch.PasteText({ this, &TerminalPage::_HandlePasteText });
+        _actionDispatch.NewTab({ this, &TerminalPage::_HandleNewTab });
+        _actionDispatch.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
+        _actionDispatch.ResizePane({ this, &TerminalPage::_HandleResizePane });
+        _actionDispatch.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
+        _actionDispatch.MoveSelectionAnchor({ this, &TerminalPage::_HandleMoveSelectionAnchor });
+        _actionDispatch.CopyText({ this, &TerminalPage::_HandleCopyText });
+        _actionDispatch.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch.ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
+        _actionDispatch.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
     // Method Description:
@@ -737,6 +751,7 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
+    //    * the TitleChanged event, for changing the text of the tab
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
@@ -748,6 +763,21 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
+
+        // Don't capture a strong ref to the tab. If the tab is removed as this
+        // is called, we don't really care anymore about handling the event.
+        std::weak_ptr<Tab> weakTabPtr = hostingTab;
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
+            // The title of the control changed, but not necessarily the title
+            // of the tab. Get the title of the focused pane of the tab, and set
+            // the tab's text to the focused panes' text.
+            _UpdateTitle(tab);
+        });
     }
 
     // Method Description:

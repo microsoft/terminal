@@ -35,6 +35,13 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 namespace TerminalApp
 {
     class Profile;
+
+    enum class CloseOnExitMode
+    {
+        Never = 0,
+        Graceful,
+        Always
+    };
 };
 
 class TerminalApp::Profile final
@@ -76,7 +83,7 @@ public:
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
     void SetSelectionBackground(COLORREF selectionBackground) noexcept;
-    void SetCloseOnExit(bool defaultClose) noexcept;
+    void SetCloseOnExitMode(CloseOnExitMode mode) noexcept;
     void SetConnectionType(GUID connectionType) noexcept;
 
     bool HasIcon() const noexcept;
@@ -86,7 +93,7 @@ public:
     bool HasBackgroundImage() const noexcept;
     winrt::hstring GetExpandedBackgroundImagePath() const;
 
-    bool GetCloseOnExit() const noexcept;
+    CloseOnExitMode GetCloseOnExitMode() const noexcept;
     bool GetSuppressApplicationTitle() const noexcept;
     bool IsHidden() const noexcept;
 
@@ -103,6 +110,9 @@ private:
     static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
+
+    static CloseOnExitMode ParseCloseOnExitMode(const Json::Value& json);
+    static std::string_view _SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode);
 
     static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
@@ -144,7 +154,7 @@ private:
     std::optional<std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>> _backgroundImageAlignment;
 
     std::optional<std::wstring> _scrollbarState;
-    bool _closeOnExit;
+    CloseOnExitMode _closeOnExitMode;
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;

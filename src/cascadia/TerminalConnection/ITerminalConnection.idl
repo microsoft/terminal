@@ -3,18 +3,28 @@
 
 namespace Microsoft.Terminal.TerminalConnection
 {
-    delegate void TerminalOutputEventArgs(String output);
-    delegate void TerminalDisconnectedEventArgs();
+    enum ConnectionState
+    {
+        NotConnected = 0,
+        Connecting,
+        Connected,
+        Closing,
+        Closed,
+        Failed
+    };
+
+    delegate void TerminalOutputHandler(String output);
 
     interface ITerminalConnection
     {
-        event TerminalOutputEventArgs TerminalOutput;
-        event TerminalDisconnectedEventArgs TerminalDisconnected;
-
         void Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();
-    };
 
+        event TerminalOutputHandler TerminalOutput;
+
+        event Windows.Foundation.TypedEventHandler<ITerminalConnection, Object> StateChanged;
+        ConnectionState State { get; };
+    };
 }

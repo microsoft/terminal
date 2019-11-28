@@ -9,6 +9,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "AppLogic.h"
 #include "Utils.h"
 
 #include "PowershellCoreProfileGenerator.h"
@@ -25,6 +26,21 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///Prof
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
+
+// Method Description:
+// - Returns the settings currently in use by the entire Terminal application.
+// Throws:
+// - HR E_INVALIDARG if the app isn't up and running.
+const CascadiaSettings& CascadiaSettings::GetCurrentAppSettings()
+{
+    auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().as<winrt::TerminalApp::App>() };
+    THROW_HR_IF_NULL(E_INVALIDARG, currentXamlApp);
+
+    auto appLogic = winrt::get_self<winrt::TerminalApp::implementation::AppLogic>(currentXamlApp.Logic());
+    THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
+
+    return *(appLogic->GetSettings());
+}
 
 CascadiaSettings::CascadiaSettings() :
     CascadiaSettings(true)

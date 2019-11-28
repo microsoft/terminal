@@ -130,6 +130,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
+    //   for being a UWP
+    void AppLogic::RunAsUwp()
+    {
+        _isUwp = true;
+    }
+
+    // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
     //   should be loaded before this is called, either with LoadSettings or
@@ -145,6 +153,13 @@ namespace winrt::TerminalApp::implementation
         WINRT_ASSERT(_loadedInitialSettings);
 
         _root->ShowDialog({ this, &AppLogic::_ShowDialog });
+
+        // In UWP mode, we cannot handle taking over the title bar for tabs,
+        // so this setting is overriden to false no matter what the preference is.
+        if (_isUwp)
+        {
+            _settings->GlobalSettings().SetShowTabsInTitlebar(false);
+        }
 
         _root->SetSettings(_settings, false);
         _root->Loaded({ this, &AppLogic::_OnLoaded });
@@ -590,6 +605,13 @@ namespace winrt::TerminalApp::implementation
             // Refresh the UI theme
             _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
         });
+    }
+
+    // Method Description:
+    // - Returns a pointer to the global shared settings.
+    [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> AppLogic::GetSettings() const noexcept
+    {
+        return _settings;
     }
 
     // Method Description:
