@@ -251,7 +251,7 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 
         if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
         {
-            // If user has dragged anything but the top or bottom border (so e.g. left border, 
+            // If user has dragged anything but the top or bottom border (so e.g. left border,
             // top-right corner etc.) then this means that the width has changed. We thus calculate
             // a new, snapped width.
             clientWidth = static_cast<int>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));

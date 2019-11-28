@@ -360,9 +360,9 @@ void Pane::_FontSizeChangedHandler(const int /* fontWidth */, const int /* fontH
 // Return Value:
 // - <none>
 void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
-	RoutedEventArgs const& /* args */)
+                                   RoutedEventArgs const& /* args */)
 {
-	_GotFocusHandlers(shared_from_this());
+    _GotFocusHandlers(shared_from_this());
 }
 
 // Method Description:
@@ -1061,8 +1061,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
 //   should fill. Since these children own their own separators (borders), this
-//   size is their portion of our _entire_ size. If specified size is lower than 
-//   required then children will be of minimum size. Snaps first child to grid 
+//   size is their portion of our _entire_ size. If specified size is lower than
+//   required then children will be of minimum size. Snaps first child to grid
 //   but not the second.
 // Arguments:
 // - fullSize: the amount of space in pixels that should be filled by our
@@ -1230,7 +1230,7 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         {
             // If the node is of its minimum size, this size might not be snapped (it might
             // be say half a character, or fixed 10 pixels), so snap it upward. It might
-            // however be already snapped, so add 1 to make sure it really increases 
+            // however be already snapped, so add 1 to make sure it really increases
             // (not strictly necessary but to avoid surprises).
             sizeNode.size = _SnapDimension(widthOrHeight, sizeNode.size + 1).higher;
         }
@@ -1242,7 +1242,7 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
     }
     else
     {
-        // We're a parent pane, so we have to advance dimension of our children panes. In 
+        // We're a parent pane, so we have to advance dimension of our children panes. In
         // fact, we advance only one child (chosen later) to keep the growth fine-grained.
 
         // To choose which child pane to advance, we actually need to know their advanced sizes
@@ -1286,22 +1286,22 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
             // immune to floating point errors. In common situation where both panes
             // have the same character sizes and _desiredSplitPosition is 0.5 (or
             // some simple fraction) both ratios will often be the same, and if so
-            // we always take the left child. It could be right as well, but it's 
+            // we always take the left child. It could be right as well, but it's
             // important that it's consistent: that it would always go
             // 1 -> 2 -> 1 -> 2 -> 1 -> 2 and not like 1 -> 1 -> 2 -> 2 -> 2 -> 1
             // which would look silly to the user but which occur if there was
-            // a non-floating-point-safe math. 
+            // a non-floating-point-safe math.
             const auto deviation1 = nextFirstSize - (nextFirstSize + secondSize) * _desiredSplitPosition;
             const auto deviation2 = -1 * (firstSize - (firstSize + nextSecondSize) * _desiredSplitPosition);
             advanceFirstOrSecond = deviation1 <= deviation2;
         }
 
-        // Here we advance one of our children. Because we already know the appropriate 
-        // (advanced) size that given child would need to have, we simply assign that size 
+        // Here we advance one of our children. Because we already know the appropriate
+        // (advanced) size that given child would need to have, we simply assign that size
         // to it. We then advance its 'next*' size (nextFirstChild or nextSecondChild) so
         // the invariant holds (as it will likely be used by the next invocation of this
-        // function). The other child's next* size remains unchanged because its size 
-        // haven't changed either. 
+        // function). The other child's next* size remains unchanged because its size
+        // haven't changed either.
         if (advanceFirstOrSecond)
         {
             *sizeNode.firstChild = *sizeNode.nextFirstChild;
@@ -1353,20 +1353,20 @@ Size Pane::_GetMinSize() const
 
         return { newWidth, newHeight };
     }
-	else
-	{
-		const auto firstSize = _firstChild->_GetMinSize();
-		const auto secondSize = _secondChild->_GetMinSize();
+    else
+    {
+        const auto firstSize = _firstChild->_GetMinSize();
+        const auto secondSize = _secondChild->_GetMinSize();
 
-		const auto minWidth = _splitState == SplitState::Vertical ?
-			firstSize.Width + secondSize.Width :
-			std::max(firstSize.Width, secondSize.Width);
-		const auto minHeight = _splitState == SplitState::Horizontal ?
-			firstSize.Height + secondSize.Height :
-			std::max(firstSize.Height, secondSize.Height);
+        const auto minWidth = _splitState == SplitState::Vertical ?
+                                  firstSize.Width + secondSize.Width :
+                                  std::max(firstSize.Width, secondSize.Width);
+        const auto minHeight = _splitState == SplitState::Horizontal ?
+                                   firstSize.Height + secondSize.Height :
+                                   std::max(firstSize.Height, secondSize.Height);
 
-		return { minWidth, minHeight };
-	}
+        return { minWidth, minHeight };
+    }
 }
 
 // Method Description:

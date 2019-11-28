@@ -122,7 +122,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
-        Windows::UI::Xaml::Thickness _padding;
 
         std::optional<int> _lastScrollOffset;
 

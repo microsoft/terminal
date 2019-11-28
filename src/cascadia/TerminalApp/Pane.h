@@ -43,10 +43,10 @@ public:
         Horizontal = 2
     };
 
-    Pane(const GUID& profile, 
-		 const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, 
-		 const bool isRoot, 
-		 const bool lastFocused = false);
+    Pane(const GUID& profile,
+         const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
+         const bool isRoot,
+         const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
@@ -88,7 +88,6 @@ private:
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
-    Pane* _rootPane;
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
@@ -129,8 +128,8 @@ private:
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange);
-	void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
-		winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+    void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                 winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
     std::pair<float, float> _GetPaneSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize) const;
@@ -175,7 +174,7 @@ private:
         return false;
     }
 
-	static void _SetupResources();
+    static void _SetupResources();
 
     struct SnapSizeResult
     {
@@ -198,9 +197,9 @@ private:
         std::unique_ptr<LayoutSizeNode> firstChild;
         std::unique_ptr<LayoutSizeNode> secondChild;
 
-        // These two fields hold next possible snapped values of firstChild and 
-        // secondChild. Although that could be calculated from these fields themself, 
-        // it would be wasteful as we have to know these values more often than for 
+        // These two fields hold next possible snapped values of firstChild and
+        // secondChild. Although that could be calculated from these fields themself,
+        // it would be wasteful as we have to know these values more often than for
         // simple increment. Hence we cache that here. They might be null.
         std::unique_ptr<LayoutSizeNode> nextFirstChild;
         std::unique_ptr<LayoutSizeNode> nextSecondChild;
