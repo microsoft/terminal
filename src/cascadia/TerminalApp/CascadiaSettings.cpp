@@ -502,7 +502,6 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
         if (realIndex >= gsl::narrow<decltype(realIndex)>(_profiles.size()))
         {
             return _globals.GetDefaultProfile();
-            ;
         }
 
         const auto& selectedProfile = _profiles[realIndex];
