@@ -252,21 +252,21 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
         {
             // If user has dragged anything but the top or bottom border (so e.g. left border,
-            // top-right corner etc.) then this means that the width has changed. We thus calculate
-            // a new, snapped width.
+            // top-right corner etc.), then this means that the width has changed. We thus ask to
+            // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
             clientWidth = static_cast<int>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));
         }
         if (wparam != WMSZ_LEFT && wparam != WMSZ_RIGHT)
         {
-            // Analogous to above, but for height. If user drags a corner, then both width
-            // and height will be adjusted.
+            // Analogous to above, but for height.
             clientHeight = static_cast<int>(_pfnSnapDimensionCallback(false, static_cast<float>(clientHeight)));
         }
 
         // Now make the window rectangle match the calculated client width and height,
         // regarding which border the user is dragging. E.g. if user drags left border, then
-        // make sure to adjust the 'left' component of rectangle and not the 'right'. Note
-        // that top-left and bottom-left corners also 'include' left border.
+        // we make sure to adjust the 'left' component of rectangle and not the 'right'. Note
+        // that top-left and bottom-left corners also 'include' left border, hence we match
+        // this in multi-case switch.
 
         // Set width
         switch (wparam)

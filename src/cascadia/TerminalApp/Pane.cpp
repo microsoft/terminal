@@ -1084,27 +1084,44 @@ std::pair<float, float> Pane::_GetPaneSizes(const float fullSize) const
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they should
-//   fill. Each is snapped to char grid. If called multiple times with fullSize
-//   argument growing, then both returned sizes are guaranteed to be non-decreasing.
-//   This is important so that user doesn't get any pane shrinked when they actually
-//   increase the window/parent pane size. That's also required by the layout algorithm.
+//   fill. Each child is snapped to char grid as close as possible. If called multiple
+//   times with fullSize argument growing, then both returned sizes are guaranteed to be 
+//   non-decreasing (it's a monotonically increasing function). This is important so that
+//   user doesn't get any pane shrank when they actually expand the window or parent pane.
+//   That is also required by the layout algorithm.
 // Arguments:
 // - widthOrHeight: if true, operates on width, otherwise on height.
 // - fullSize: the amount of space in pixels that should be filled by our children and
 //   their separator. Can be arbitrarily low.
-// - next: if not null, it will be assigned the next possible snapped sizes (see
-//   'Return value' below), unless the children fit fullSize without any remaining space,
-//   in which case it is equal to returned value.
 // Return Value:
-// - a pair with the size of our first child and the size of our second child,
-//   respectively. Since they are snapped to grid, their sum might be (and usually is)
-//   lower than the specified full size.
+// - a structure holding the result of this calculation. The 'lower' field represents the 
+//   children sizes that would fit in the fullSize, but might (and usually do) not fill it
+//   complicity. The 'higher' field represents the size of the children if they slightly exceed 
+//   the fullSize, but are snapped. If the children can be snapped and also exactly match
+//   the fullSize, then both this fields have the same value that represent this situation.
 Pane::SnapChildrenSizeResult Pane::_CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize) const
 {
     if (_IsLeaf())
     {
         THROW_HR(E_FAIL);
     }
+
+    //   First we build a tree of nodes corresponding to the tree of our descendant panes.
+    // Each node represents a size of given pane. At the beginning, each node has the minimum
+    // size that the corresponding pane can have; so has the our (root) node. We then gradually
+    // expand our node (which in turn expands some of the child nodes) until we hit the desired
+    // size. Since each expand step (done in _AdvanceSnappedDimension()) guarantees that all the
+    // sizes will be snapped, our return values is also snapped.
+    //   Why do we do it this, iterative way? Why can't we just split the given size by 
+    // _desiredSplitPosition and snap it latter? Because it's hardly doable, if possible, to also
+    // fulfill the monotonicity requirement that way. As the fullSize increases, the proportional
+    // point that separates children panes also moves and cells sneek in the available area in
+    // unpredictable way, regardless which child has the snap priority or whether we snap them
+    // upward, downward or to nearest.
+    //   With present way we run the same sequence of actions regardless to the fullSize value and 
+    // only just stop at various moments when the built sizes reaches it.  Eventually, this could
+    // be optimized for simple cases like when both children are both leaves with the same character
+    // size, but it doesn't seem to be beneficial.
 
     auto sizeTree = _GetMinSizeTree(widthOrHeight);
     LayoutSizeNode lastSizeTree{ sizeTree };
@@ -1116,11 +1133,16 @@ Pane::SnapChildrenSizeResult Pane::_CalcSnappedPaneDimensions(const bool widthOr
 
         if (sizeTree.size == fullSize)
         {
+            // If we just hit exactly the requested value, then just return the
+            // current state of children.
             return { { sizeTree.firstChild->size, sizeTree.secondChild->size },
                      { sizeTree.firstChild->size, sizeTree.secondChild->size } };
         }
     }
 
+    // We exceeded the requested size in the loop above, so lastSizeTree will have
+    // the last good sizes (so that children fit in) and sizeTree has the next possible
+    // snapped sizes. Return them as lower and higher snap possibilities.
     return { { lastSizeTree.firstChild->size, lastSizeTree.secondChild->size },
              { sizeTree.firstChild->size, sizeTree.secondChild->size } };
 }
