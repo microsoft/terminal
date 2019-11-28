@@ -245,7 +245,6 @@
         { "command": "scrollDownPage", "keys": [ "ctrl+shift+pgdn" ] },
         { "command": "scrollUp", "keys": [ "ctrl+shift+up" ] },
         { "command": "scrollUpPage", "keys": [ "ctrl+shift+pgup" ] },
-        { "command": "selectEntireBuffer", "keys": ["ctrl+shift+a"] },
         { "command": "splitHorizontal", "keys": [ "alt+shift+-" ] },
         { "command": "splitVertical", "keys": [ "alt+shift+plus" ] },
         { "command": { "action": "switchToTab", "index": 0 }, "keys": ["ctrl+alt+1"] },

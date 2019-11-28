@@ -513,6 +513,26 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
         return;
     }
 
+    // scroll if necessary
+    bool notifyScroll = false;
+    auto visibleEndIndex = std::max(0, _mutableViewport.BottomInclusive() - _scrollOffset);
+    if (positionWithOffsets.Y < _VisibleStartIndex())
+    {
+        _scrollOffset = _ViewStartIndex() - positionWithOffsets.Y;
+        notifyScroll = true;
+    }
+    else if (positionWithOffsets.Y > visibleEndIndex)
+    {
+        _scrollOffset = std::max(0, _ViewStartIndex() - positionWithOffsets.Y);
+        notifyScroll = true;
+    }
+
+    if (notifyScroll)
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _NotifyScrollEvent();
+    }
+
     // update internal state of selection anchor and vertical offset
     THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
     if (target == SelectionTarget::Start)
