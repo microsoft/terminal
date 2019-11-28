@@ -65,7 +65,7 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 
 // Method Description:
 // - Finds a GUID associated with the given profile name. If no profile matches
-//      the profile name, returns a null GUID.
+//      the profile name, returns a std::nullopt.
 // Arguments:
 // - profileName: the name of the profile's GUID to return.
 // Return Value:
