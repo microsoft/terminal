@@ -20,8 +20,8 @@ public:
 
     void Scroll(const int delta);
 
-    bool CanSplitPane(Pane::SplitState splitType);
-    void SplitPane(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
+    void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void UpdateIcon(const winrt::hstring iconPath);
 
