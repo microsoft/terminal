@@ -50,7 +50,7 @@ namespace Microsoft.Terminal.TerminalControl
         Int32 GetViewHeight();
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
-		void CreateSearchBoxControl();
+        void CreateSearchBoxControl();
 
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();

@@ -294,7 +294,7 @@ void Search::_UpdateNextPosition()
     }
 
     // To reduce wrap-around time, if the next position is larger than
-    // the end position of the text buffer
+    // the end position of the written text
     // We put the next position to:
     // Forward: (0, 0)
     // Backward: the position of the end of the text buffer

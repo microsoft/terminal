@@ -1,7 +1,17 @@
-﻿//
-// SearchBoxControl.h
-// Declaration of the SearchBoxControl class
-//
+﻿/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- SearchBoxControl.cpp
+
+Abstract:
+- the search dialog component used in Terminal Search
+
+Author(s):
+- Kaiyu Wang (kawa) 11-27-2019
+
+--*/
 
 #pragma once
 #include "winrt/Windows.UI.Xaml.h"

@@ -168,7 +168,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
         void _UpdateFont();
-        void _KeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _SetFontSize(int fontSize);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -210,14 +210,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        void _Search(const SearchBoxControl& /*sender*/, winrt::hstring text);
-        void _CloseSearchBoxControl(const SearchBoxControl& /*sender*/, Windows::UI::Xaml::RoutedEventArgs const& /*args*/);
-        void _MoveSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& /*args*/);
+        void _Search(const SearchBoxControl& sender, winrt::hstring text);
+        void _CloseSearchBoxControl(const SearchBoxControl& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void _MoveSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
-        void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
-        void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
+        void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
+        void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
     };
 }
 

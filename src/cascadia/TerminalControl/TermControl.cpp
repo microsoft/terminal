@@ -216,13 +216,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         _terminal->LockConsole();
+        auto unlock = wil::scope_exit([&] { _terminal->UnlockConsole(); });
         if (search.FindNext())
         {
             _terminal->SetBoxSelection(false);
             search.Select();
             _renderer->TriggerSelection();
         }
-        _terminal->UnlockConsole();
     }
 
     // Method Description:
