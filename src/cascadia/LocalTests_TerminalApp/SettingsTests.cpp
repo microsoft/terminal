@@ -1310,20 +1310,20 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(guid2, settings.FindGuid(name2));
         VERIFY_ARE_EQUAL(bad_guid, settings.FindGuid(bad_name));
         // Following test will fail because GetGuid throws (despite being noexcept)
-        //VERIFY_ARE_EQUAL(bad_guid, settings.FindGuid(L"ThisProfileShouldNotCrash"));
+        // VERIFY_ARE_EQUAL(bad_guid, settings.FindGuid(L"ThisProfileShouldNotCrash"));
 
         // Following lines only work because the GUID-less profile is last
         auto prof0{ settings.FindProfile(guid0) };
         auto prof1{ settings.FindProfile(guid1) };
         auto prof2{ settings.FindProfile(guid2) };
         // Following line will fail because GetGuid throws (despite being noexcept)
-        //auto bad_prof{ settings.FindProfile(bad_guid) };
+        // auto bad_prof{ settings.FindProfile(bad_guid) };
         
         VERIFY_ARE_EQUAL(name0, prof0->GetName());
         VERIFY_ARE_EQUAL(name1, prof1->GetName());
         VERIFY_ARE_EQUAL(name2, prof2->GetName());
         // Following test will fail because GetGuid throws (despite being noexcept)
-        //VERIFY_ARE_EQUAL(bad_name, bad_prof->GetName());
+        // VERIFY_ARE_EQUAL(bad_name, bad_prof->GetName());
     }
 
     void SettingsTests::TestLayerGlobalsOnRoot()
