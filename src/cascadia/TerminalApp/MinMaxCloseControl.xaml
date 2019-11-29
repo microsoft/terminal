@@ -26,7 +26,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
-                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
@@ -39,7 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
-                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
