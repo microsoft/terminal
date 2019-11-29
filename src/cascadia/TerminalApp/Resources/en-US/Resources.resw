@@ -217,6 +217,9 @@ Temporarily using the Windows Terminal default settings.
     <value>Choose a tab color</value>
   </data>
   <data name="TabColorClear" xml:space="preserve">
-    <value>Clear the tab color</value>
+    <value>Clear the current color</value>
+  </data>
+  <data name="TabCustomColorChoose" xml:space="preserve">
+    <value>Select a custom color</value>
   </data>
 </root>

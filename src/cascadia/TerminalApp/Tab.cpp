@@ -96,22 +96,6 @@ void Tab::SetFocused(const bool focused)
     {
         _Focus();
     }
-
-    /*_tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, focused]() {
-        auto transform = winrt::Windows::UI::Xaml::Media::TranslateTransform{};
-        if (_focused)
-        {
-            transform.X(0);
-            transform.Y(-5);
-        }
-        else
-        {
-            transform.X(0);
-            transform.Y(0);
-        }
-
-        _tabViewItem.RenderTransform(transform);
-    });*/
 }
 
 // Method Description:
@@ -358,7 +342,7 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 // Method Description:
 // - Creates a context menu attached to the tab.
 // Currently contains elements allowing to select or
-// reset the tab color, or to close the current tab
+// to close the current tab
 // Arguments:
 // - <none>
 // Return Value:
@@ -366,7 +350,6 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 void Tab::_CreateContextMenu()
 {
     auto newTabFlyout = Controls::MenuFlyout{};
-    /*auto tabColorMenuItem = Controls::MenuFlyoutSubItem{};*/
     auto menuSeparator = Controls::MenuFlyoutSeparator{};
     auto chooseColorMenuItem = Controls::MenuFlyoutItem{};
     auto resetColorMenuItem = Controls::MenuFlyoutItem{};
@@ -384,8 +367,6 @@ void Tab::_CreateContextMenu()
     clearAllSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
     clearAllSymbol.Glyph(L"\xED62");
 
-    /*tabColorMenuItem.Text(L"Color");
-    tabColorMenuItem.Icon(colorPickSymbol);*/
     auto tabClose = RS_(L"TabClose");
     closeTabMenuItem.Text(tabClose);
     closeTabMenuItem.Icon(closeSymbol);
@@ -394,9 +375,12 @@ void Tab::_CreateContextMenu()
         ClosePane();
     });
 
-    _tabColorPickup.Closed([this](auto&&, auto&&) {
-        winrt::Windows::UI::Color color = _tabColorPickup.SelectedColor();
-        _SetTabColor(color);
+    _tabColorPickup.ColorSelected([this](auto newTabColor) {
+        _SetTabColor(newTabColor);
+    });
+
+    _tabColorPickup.ColorCleared([this]() {
+        _ResetTabColor();
     });
 
     chooseColorMenuItem.Click([this](auto&&, auto&&) {
@@ -407,19 +391,7 @@ void Tab::_CreateContextMenu()
     auto tabChooseColorString = RS_(L"TabColorChoose");
     chooseColorMenuItem.Text(tabChooseColorString);
 
-    auto tabClearColorString = RS_(L"TabColorClear");
-    resetColorMenuItem.Text(tabClearColorString);
-    resetColorMenuItem.Icon(clearAllSymbol);
-    resetColorMenuItem.Click([this](auto&&, auto&&) {
-        _ResetTabColor();
-    });
-
-    /*tabColorMenuItem.Items().Append(chooseColorMenuItem);
-    tabColorMenuItem.Items().Append(resetColorMenuItem);*/
-
-    //newTabFlyout.Items().Append(tabColorMenuItem);
     newTabFlyout.Items().Append(chooseColorMenuItem);
-    newTabFlyout.Items().Append(resetColorMenuItem);
     newTabFlyout.Items().Append(menuSeparator);
     newTabFlyout.Items().Append(closeTabMenuItem);
     _tabViewItem.ContextFlyout(newTabFlyout);
@@ -436,11 +408,11 @@ void Tab::_CreateContextMenu()
 void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
 {
     _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, color]() {
-        //Media::LinearGradientBrush selectedTabBrush{};
         Media::SolidColorBrush selectedTabBrush{};
-        Media::SolidColorBrush tabBrush{};
+        Media::SolidColorBrush deselectedTabBrush{};
         Media::SolidColorBrush fontBrush{};
 
+        // see https://en.wikipedia.org/wiki/Luma_(video)#Rec._601_luma_versus_Rec._709_luma_coefficients
         float c[] = { color.R / 255.f, color.G / 255.f, color.B / 255.f };
         for (int i = 0; i < 3; i++)
         {
@@ -454,6 +426,8 @@ void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
             }
         }
 
+        // calculate the luminance of the current color and select a font
+        // color based on that
         auto luminance = 0.2126f * c[0] + 0.7152f * c[1] + 0.0722f * c[2];
         if (luminance > 0.179)
         {
@@ -464,31 +438,20 @@ void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
             fontBrush.Color(winrt::Windows::UI::Colors::White());
         }
 
-        /*winrt::Windows::UI::Xaml::Media::GradientStopCollection gradientStops{};
-        winrt::Windows::UI::Xaml::Media::GradientStop first{};
-        winrt::Windows::UI::Xaml::Media::GradientStop second{};
-        first.Color(winrt::Windows::UI::Colors::White());
-        first.Offset(0.00);
-
-        second.Color(color);
-        second.Offset(0.20);
-        gradientStops.Append(first);
-        gradientStops.Append(second);
-
-        selectedTabBrush.StartPoint(winrt::Windows::Foundation::Numerics::float2(0.5, 0.0));
-        selectedTabBrush.EndPoint(winrt::Windows::Foundation::Numerics::float2(0.5, 1.0));
-        selectedTabBrush.GradientStops(gradientStops);*/
         selectedTabBrush.Color(color);
-        auto color2 = color;
-        color2.A = 64;
-        tabBrush.Color(color2);
+
+        // currently if a tab has a custom color, a deselected state is
+        // signified by using the same color with a bit ot transparency
+        auto deselectedTabColor = color;
+        deselectedTabColor.A = 64;
+        deselectedTabBrush.Color(deselectedTabColor);
         _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), tabBrush);
+        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
         _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), selectedTabBrush);
         _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
         _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        //switch the visual state so that the colors are updated
+        //switch the visual state so that the colors are updated immediately
         if (_focused)
         {
             winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
@@ -521,6 +484,7 @@ void Tab::_ResetTabColor()
             L"TabViewItemHeaderForegroundPointerOver",
         };
 
+        // simply clear any of the colors in the tab's dict
         for (auto keyString : keys)
         {
             auto key = winrt::box_value(keyString);

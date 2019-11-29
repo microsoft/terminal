@@ -1,35 +1,26 @@
 #pragma once
 #include "ColorPickupFlyout.g.h"
+#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
     struct ColorPickupFlyout : ColorPickupFlyoutT<ColorPickupFlyout>
     {
-		ColorPickupFlyout();
-		void ColorButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-		void CustomColorButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        ColorPickupFlyout();
 
-        winrt::Windows::UI::Color SelectedColor()
-        {
-            return winrt::unbox_value<winrt::Windows::UI::Color>(GetValue(m_SelectedColorProperty));
-        }
+        void ColorButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void ShowColorPickerButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void CustomColorButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void ClearColorButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
-        void SelectedColor(winrt::Windows::UI::Color const& color)
-        {
-            SetValue(m_SelectedColorProperty, winrt::box_value(color));
-        }
-
-		static Windows::UI::Xaml::DependencyProperty SelectedColorProperty() { return m_SelectedColorProperty; }
-        static void OnSelectedColorChanged(Windows::UI::Xaml::DependencyObject const&, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const&);
-
-	private:
-		static Windows::UI::Xaml::DependencyProperty m_SelectedColorProperty;
+        DECLARE_EVENT(ColorSelected, _colorSelected, TerminalApp::ColorSelectedArgs);
+        DECLARE_EVENT(ColorCleared,  _colorCleared,  TerminalApp::ColorClearedArgs);
     };
 }
+
 namespace winrt::TerminalApp::factory_implementation
 {
     struct ColorPickupFlyout : ColorPickupFlyoutT<ColorPickupFlyout, implementation::ColorPickupFlyout>
     {
-		
     };
 }

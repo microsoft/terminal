@@ -43,7 +43,7 @@ private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
     std::shared_ptr<Pane> _activePane{ nullptr };
     winrt::hstring _lastIconPath{};
-	winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
+    winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
@@ -53,7 +53,7 @@ private:
     void _Focus();
     void _SetTabColor(const winrt::Windows::UI::Color& color);
     void _ResetTabColor();
-	
-	void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 };
