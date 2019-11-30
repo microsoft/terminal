@@ -14,11 +14,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                          const Viewport initialViewport,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                          const WORD cColorTable,
-                         const bool fUseAsciiOnly) :
-    VtEngine(std::move(hPipe), colorProvider, initialViewport),
+                         const VtOption vtOptions) :
+    VtEngine(std::move(hPipe), colorProvider, initialViewport, vtOptions),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
-    _fUseAsciiOnly(fUseAsciiOnly),
+    _fUseAsciiOnly(WI_IsFlagSet(vtOptions, VtOption::ForceAsciiOnly)),
     _previousLineWrapped(false),
     _usingUnderLine(false),
     _needToDisableCursor(false)

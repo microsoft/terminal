@@ -38,6 +38,13 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 [[nodiscard]] HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
+
+    // If we've been told to report ambiguous-width characters as narrow, the <false> we stored in
+    // pResult is valid.
+    if (WI_IsFlagSet(_vtOptions, VtOption::AmbiguousCharactersNarrow))
+    {
+        return S_OK;
+    }
     return S_FALSE;
 }
 

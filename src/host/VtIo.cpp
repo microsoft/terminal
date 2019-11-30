@@ -72,12 +72,13 @@ VtIo::VtIo() :
 
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
-    _lookingForCursorPosition = pArgs->GetInheritCursor();
+    auto vtOptions = pArgs->GetVtOptions();
+    _lookingForCursorPosition = WI_IsFlagSet(vtOptions, VtOption::InheritCursor);
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
     {
-        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
+        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), vtOptions, pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
     else
@@ -107,6 +108,7 @@ VtIo::VtIo() :
 [[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
                                         const HANDLE OutHandle,
                                         const std::wstring& VtMode,
+                                        const VtOption Options,
                                         _In_opt_ const HANDLE SignalHandle)
 {
     FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
@@ -116,6 +118,9 @@ VtIo::VtIo() :
     _hInput.reset(InHandle);
     _hOutput.reset(OutHandle);
     _hSignal.reset(SignalHandle);
+    _options = Options;
+
+    WI_SetFlagIf(_options, VtOption::ForceAsciiOnly, _IoMode == VtIoMode::XTERM_ASCII);
 
     // The only way we're initialized is if the args said we're in conpty mode.
     // If the args say so, then at least one of in, out, or signal was specified
@@ -161,30 +166,25 @@ VtIo::VtIo() :
                                                                     gci,
                                                                     initialViewport,
                                                                     gci.GetColorTable(),
-                                                                    static_cast<WORD>(gci.GetColorTableSize()));
+                                                                    static_cast<WORD>(gci.GetColorTableSize()),
+                                                                    _options);
                 break;
             case VtIoMode::XTERM:
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 gci,
-                                                                 initialViewport,
-                                                                 gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
-                                                                 false);
-                break;
             case VtIoMode::XTERM_ASCII:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
                                                                  static_cast<WORD>(gci.GetColorTableSize()),
-                                                                 true);
+                                                                 _options);
                 break;
             case VtIoMode::WIN_TELNET:
                 _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
                                                                      gci,
                                                                      initialViewport,
                                                                      gci.GetColorTable(),
-                                                                     static_cast<WORD>(gci.GetColorTableSize()));
+                                                                     static_cast<WORD>(gci.GetColorTableSize()),
+                                                                     _options);
                 break;
             default:
                 return E_FAIL;

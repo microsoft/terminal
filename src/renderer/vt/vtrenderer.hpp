@@ -35,7 +35,8 @@ namespace Microsoft::Console::Render
 
         VtEngine(_In_ wil::unique_hfile hPipe,
                  const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                 const Microsoft::Console::Types::Viewport initialViewport);
+                 const Microsoft::Console::Types::Viewport initialViewport,
+                 const VtOption vtOptions);
 
         virtual ~VtEngine() override = default;
 
@@ -128,6 +129,8 @@ namespace Microsoft::Console::Render
         bool _skipCursor;
         bool _newBottomLine;
         COORD _deferredCursorPos;
+
+        VtOption _vtOptions;
 
         bool _pipeBroken;
         HRESULT _exitResult;

@@ -13,8 +13,9 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
                                  const IDefaultColorProvider& colorProvider,
                                  const Viewport initialViewport,
                                  _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                 const WORD cColorTable) :
-    VtEngine(std::move(hPipe), colorProvider, initialViewport),
+                                 const WORD cColorTable,
+                                 const VtOption vtOptions) :
+    VtEngine(std::move(hPipe), colorProvider, initialViewport, vtOptions),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
 {

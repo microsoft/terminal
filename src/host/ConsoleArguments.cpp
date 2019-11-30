@@ -20,6 +20,7 @@ const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::NARROW_CHARS_ARG = L"--narrow";
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
@@ -106,6 +107,7 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
 {
     _clientCommandline = L"";
     _vtMode = L"";
+    _vtNarrowChars = false;
     _headless = false;
     _createServerHandle = true;
     _serverHandle = 0;
@@ -130,6 +132,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _vtInHandle = other._vtInHandle;
         _vtOutHandle = other._vtOutHandle;
         _vtMode = other._vtMode;
+        _vtNarrowChars = other._vtNarrowChars;
         _headless = other._headless;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
@@ -475,7 +478,13 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         }
         else if (arg == INHERIT_CURSOR_ARG)
         {
-            _inheritCursor = true;
+            WI_SetFlag(_vtOptions, VtOption::InheritCursor);
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == NARROW_CHARS_ARG)
+        {
+            WI_SetFlag(_vtOptions, VtOption::AmbiguousCharactersNarrow);
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
@@ -590,6 +599,11 @@ std::wstring ConsoleArguments::GetClientCommandline() const
 std::wstring ConsoleArguments::GetVtMode() const
 {
     return _vtMode;
+}
+
+bool ConsoleArguments::GetVtNarrowChars() const
+{
+    return _vtNarrowChars;
 }
 
 bool ConsoleArguments::GetForceV1() const

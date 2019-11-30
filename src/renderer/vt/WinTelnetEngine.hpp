@@ -27,7 +27,8 @@ namespace Microsoft::Console::Render
                         const Microsoft::Console::IDefaultColorProvider& colorProvider,
                         const Microsoft::Console::Types::Viewport initialViewport,
                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                        const WORD cColorTable);
+                        const WORD cColorTable
+                        const VtOption vtOptions);
         virtual ~WinTelnetEngine() override = default;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,

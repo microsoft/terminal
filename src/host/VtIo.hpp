@@ -13,6 +13,15 @@ class ConsoleArguments;
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    enum class VtOption
+    {
+        None = 0x0,
+        InheritCursor = 0x1,
+        ForceAsciiOnly = 0x2,
+        AmbiguousCharactersNarrow = 0x4,
+    };
+    DEFINE_ENUM_FLAG_OPERATORS(VtOption);
+
     class VtIo : public Microsoft::Console::ITerminalOwner
     {
     public:
@@ -46,6 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         // After CreateAndStartSignalThread is called, this will be invalid.
         wil::unique_hfile _hSignal;
         VtIoMode _IoMode;
+        VtOption _options;
 
         bool _initialized;
         bool _objectsCreated;
@@ -57,7 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
-        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, const VtOption Options, _In_opt_ const HANDLE SignalHandle);
 
         void _ShutdownIfNeeded();
 

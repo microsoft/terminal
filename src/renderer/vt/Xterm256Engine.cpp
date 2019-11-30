@@ -12,8 +12,9 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                const IDefaultColorProvider& colorProvider,
                                const Viewport initialViewport,
                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                               const WORD cColorTable) :
-    XtermEngine(std::move(hPipe), colorProvider, initialViewport, ColorTable, cColorTable, false)
+                               const WORD cColorTable,
+                               const VtOption vtOptions) :
+    XtermEngine(std::move(hPipe), colorProvider, initialViewport, ColorTable, cColorTable, vtOptions)
 {
 }
 

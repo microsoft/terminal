@@ -45,11 +45,11 @@ public:
 
     std::wstring GetClientCommandline() const;
     std::wstring GetVtMode() const;
+    bool GetVtNarrowChars() const;
     bool GetForceV1() const;
 
     short GetWidth() const;
     short GetHeight() const;
-    bool GetInheritCursor() const;
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
@@ -66,6 +66,7 @@ public:
     static const std::wstring_view INHERIT_CURSOR_ARG;
     static const std::wstring_view FEATURE_ARG;
     static const std::wstring_view FEATURE_PTY_ARG;
+    static const std::wstring_view NARROW_CHARS_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -82,12 +83,13 @@ private:
                      const bool createServerHandle,
                      const DWORD serverHandle,
                      const DWORD signalHandle,
-                     const bool inheritCursor) :
+                     const VtOption vtOptions) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
         _vtOutHandle(vtOutHandle),
         _vtMode(vtMode),
+        _vtOptions(vtOptions),
         _width(width),
         _height(height),
         _forceV1(forceV1),
@@ -95,7 +97,6 @@ private:
         _createServerHandle(createServerHandle),
         _serverHandle(serverHandle),
         _signalHandle(signalHandle),
-        _inheritCursor(inheritCursor),
         _recievedEarlySizeChange{ false },
         _originalWidth{ -1 },
         _originalHeight{ -1 }
@@ -111,7 +112,9 @@ private:
 
     HANDLE _vtOutHandle;
 
+    // Settings that dictate how ConPTY behaves
     std::wstring _vtMode;
+    VtOption _vtOptions;
 
     bool _forceV1;
     bool _headless;
@@ -122,7 +125,6 @@ private:
     bool _createServerHandle;
     DWORD _serverHandle;
     DWORD _signalHandle;
-    bool _inheritCursor;
 
     bool _recievedEarlySizeChange;
     short _originalWidth;
@@ -174,7 +176,7 @@ namespace WEX
                                                            L"Server Handle: '0x%x'\r\n"
                                                            L"Use Signal Handle: '%ws'\r\n"
                                                            L"Signal Handle: '0x%x'\r\n",
-                                                           L"Inherit Cursor: '%ws'\r\n",
+                                                           L"VT Options: '0x%x'\r\n",
                                                            ci.GetClientCommandline().c_str(),
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
@@ -188,7 +190,7 @@ namespace WEX
                                                            ci.GetServerHandle(),
                                                            s_ToBoolString(ci.HasSignalHandle()),
                                                            ci.GetSignalHandle(),
-                                                           s_ToBoolString(ci.GetInheritCursor()));
+                                                           ci.GetVtOptions());
             }
 
         private:
@@ -217,7 +219,7 @@ namespace WEX
                        expected.GetServerHandle() == actual.GetServerHandle() &&
                        expected.HasSignalHandle() == actual.HasSignalHandle() &&
                        expected.GetSignalHandle() == actual.GetSignalHandle() &&
-                       expected.GetInheritCursor() == actual.GetInheritCursor();
+                       expected.GetVtOptions() == actual.GetVtOptions();
             }
 
             static bool AreSame(const ConsoleArguments& expected, const ConsoleArguments& actual)
@@ -242,7 +244,7 @@ namespace WEX
                        !object.ShouldCreateServerHandle() &&
                        object.GetServerHandle() == 0 &&
                        (object.GetSignalHandle() == 0 || object.GetSignalHandle() == INVALID_HANDLE_VALUE) &&
-                       !object.GetInheritCursor();
+                       object.GetVtOptions() == VtOption::None;
             }
         };
     }
