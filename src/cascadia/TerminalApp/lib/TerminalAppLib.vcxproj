@@ -91,6 +91,9 @@
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
         <ClInclude Include="pch.h" />
+    <ClInclude Include="../ShortcutActionDispatch.h"  >
+      <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../ActionArgs.h">
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClInclude>
@@ -147,6 +150,9 @@
     <ClCompile Include="../AppKeyBindings.cpp">
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ShortcutActionDispatch.cpp"  >
+      <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../ActionAndArgs.cpp"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
     </ClCompile>
@@ -176,6 +182,7 @@
     <Midl Include="../App.idl">
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="../ShortcutActionDispatch.idl" />
     <Midl Include="../AppKeyBindings.idl" />
     <Midl Include="../AppLogic.idl" />
     <Midl Include="../ActionArgs.idl" />
@@ -281,7 +288,7 @@
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
     <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\</_MUXRoot>
-    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\</_MUXAppRoot>
+    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\</_MUXAppRoot>
   </PropertyGroup>
   <ItemGroup>
     <!-- Microsoft.UI.XAML -->
@@ -309,7 +316,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
   <!--
     By default, the PRI file will contain resource paths beginning with the

@@ -65,6 +65,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
+        ShortcutActionDispatch _actionDispatch{};
+
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
 
@@ -80,6 +82,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
+        void _RegisterActionCallbacks();
 
         void _UpdateTitle(std::shared_ptr<Tab> tab);
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
@@ -104,9 +107,7 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitVertical(const std::optional<GUID>& profileGuid);
-        void _SplitHorizontal(const std::optional<GUID>& profileGuid);
-        void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
+        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid);
         void _ResizePane(const Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
@@ -140,8 +141,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleScrollDown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleNextTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandlePrevTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSplitVertical(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSplitHorizontal(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSplitPane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollUpPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollDownPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenSettings(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

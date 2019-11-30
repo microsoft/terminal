@@ -56,6 +56,7 @@
         "scrollUpPage",
         "splitHorizontal",
         "splitVertical",
+        "splitPane",
         "switchToTab",
         "switchToTab0",
         "switchToTab1",
@@ -76,6 +77,13 @@
         "right",
         "up",
         "down"
+      ],
+      "type": "string"
+    },
+    "SplitState": {
+      "enum": [
+        "vertical",
+        "horizontal"
       ],
       "type": "string"
     },
@@ -173,6 +181,23 @@
       ],
       "required": [ "direction" ]
     },
+    "SplitPaneAction": {
+      "description": "Arguments corresponding to a Split Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "splitPane" },
+            "split": {
+              "$ref": "#/definitions/SplitState",
+              "default": "vertical",
+              "description": "The orientation to split the pane in, either vertical (think [|]) or horizontal (think [-])"
+            }
+          }
+        }
+      ],
+      "required": [ "split" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -184,7 +209,8 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
-              { "$ref": "#/definitions/ResizePaneAction" }
+              { "$ref": "#/definitions/ResizePaneAction" },
+              { "$ref": "#/definitions/SplitPaneAction" }
             ]
         },
         "keys": {
@@ -327,9 +353,21 @@
             "type": "string"
           },
           "closeOnExit": {
-            "default": true,
-            "description": "When set to true (default), the selected tab closes when the connected application exits. When set to false, the tab will remain open when the connected application exits.",
-            "type": "boolean"
+            "default": "graceful",
+            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+            "oneOf": [
+              {
+                "enum": [
+                  "never",
+                  "graceful",
+                  "always"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
           },
           "colorScheme": {
             "default": "Campbell",

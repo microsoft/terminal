@@ -22,8 +22,8 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 {
     _rootPane = std::make_shared<Pane>(profile, control, true);
 
-    _rootPane->Closed([=]() {
-        _closedHandlers();
+    _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+        _ClosedHandlers(nullptr, nullptr);
     });
 
     _activePane = _rootPane;
@@ -207,7 +207,7 @@ void Tab::Scroll(const int delta)
 // - splitType: The type of split we want to create.
 // Return Value:
 // - True if the focused pane can be split. False otherwise.
-bool Tab::CanSplitPane(Pane::SplitState splitType)
+bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
 {
     return _activePane->CanSplit(splitType);
 }
@@ -221,7 +221,7 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
+void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
 {
     auto [first, second] = _activePane->Split(splitType, profile, control);
 
@@ -509,5 +509,4 @@ void Tab::_ResetTabColor()
 }
 
 UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources")
-DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
 DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
