@@ -676,6 +676,7 @@ public:
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
+        _isScreenModeReversed{ false },
         _isOriginModeRelative{ false },
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
@@ -835,6 +836,9 @@ public:
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
+        case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+            fSuccess = SetScreenMode(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
@@ -898,6 +902,12 @@ public:
         return true;
     }
 
+    bool SetScreenMode(const bool reverseMode) override
+    {
+        _isScreenModeReversed = reverseMode;
+        return true;
+    }
+
     bool SetOriginMode(const bool fRelativeMode) noexcept override
     {
         _isOriginModeRelative = fRelativeMode;
@@ -949,6 +959,7 @@ public:
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
+    bool _isScreenModeReversed;
     bool _isOriginModeRelative;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
@@ -1222,6 +1233,25 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[?3l");
         VERIFY_ARE_EQUAL(pDispatch->_windowWidth, static_cast<size_t>(DispatchTypes::s_sDECCOLMResetColumns));
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestScreenMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?5h");
+        VERIFY_IS_TRUE(pDispatch->_isScreenModeReversed);
+
+        pDispatch->ClearState();
+        pDispatch->_isScreenModeReversed = true;
+
+        mach.ProcessString(L"\x1b[?5l");
+        VERIFY_IS_FALSE(pDispatch->_isScreenModeReversed);
 
         pDispatch->ClearState();
     }
