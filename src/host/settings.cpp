@@ -53,6 +53,7 @@ Settings::Settings() :
     _fUseWindowSizePixels(false),
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
+    _fScreenReversed(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
     _DefaultForeground(INVALID_COLOR),
@@ -392,6 +393,15 @@ void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed
             ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
         }
     }
+}
+
+bool Settings::IsScreenReversed() const
+{
+    return _fScreenReversed;
+}
+void Settings::SetScreenReversed(const bool fScreenReversed)
+{
+    _fScreenReversed = fScreenReversed;
 }
 
 bool Settings::GetFilterOnPaste() const
@@ -942,7 +952,10 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    if (_fScreenReversed)
+        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    else
+        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
 }
 
 // Method Description:
@@ -955,7 +968,10 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    if (_fScreenReversed)
+        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    else
+        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
 }
 
 bool Settings::GetCopyColor() const noexcept
