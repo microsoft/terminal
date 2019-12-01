@@ -66,6 +66,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool enable) override; // ATT610
+        bool SetScreenMode(const bool reverseMode) override; //DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetTopBottomScrollingMargins(const size_t topMargin,
                                           const size_t bottomMargin) override; // DECSTBM

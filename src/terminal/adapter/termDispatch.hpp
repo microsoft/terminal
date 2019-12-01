@@ -46,6 +46,7 @@ public:
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
+    bool SetScreenMode(const bool /*reverseMode*/) override { return false; } //DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
     bool SetTopBottomScrollingMargins(const size_t /*topMargin*/, const size_t /*bottomMargin*/) noexcept override { return false; } // DECSTBM
     bool ReverseLineFeed() noexcept override { return false; } // RI

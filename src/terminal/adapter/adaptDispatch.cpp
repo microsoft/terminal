@@ -1066,6 +1066,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
+    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        success = SetScreenMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
@@ -1210,6 +1213,18 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
     return _pConApi->DeleteLines(distance);
+}
+
+// Routine Description:
+// - DECSCNM - Sets the screen mode to either normal or reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetScreenMode(const bool reverseMode)
+{
+    return _pConApi->PrivateSetScreenMode(reverseMode);
 }
 
 // Routine Description:
