@@ -34,8 +34,8 @@ Now, your new setting should be stored, just like all the other properties.
 
 **7. Update the feature test properties to get add the setting as well**
 `ft_uia/Common/NativeMethods.cs@WinConP`:
-- `Wtypes.PROPERTYKEY PKEY_Console_`
-- `NT_CONSOLE_PROPS`
+      - `Wtypes.PROPERTYKEY PKEY_Console_`
+      - `NT_CONSOLE_PROPS`
 
 **8. Add the default value for the setting to `win32k-settings.man`**
 If the setting doesn't default to 0 or `nullptr`, then you'll need to set the default value of the setting in `win32k-settings.man`
