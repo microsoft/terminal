@@ -11,18 +11,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="init.cpp" />
-    <ClCompile Include="TermControlUiaProvider.cpp" />
+    <ClCompile Include="TermControl.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="UiaTextRange.cpp" />
+    <ClCompile Include="TermControlAutomationPeer.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
+    <ClCompile Include="TermControlUiaProvider.cpp" />
+    <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="SearchBoxControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="TermControl.h" />
+    <ClInclude Include="TermControlAutomationPeer.h" />
+    <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="UiaTextRange.hpp" />
-    <ClInclude Include="XamlUiaTextRange.h" />
     <ClCompile Include="SearchBoxControl.h" />
   </ItemGroup>
   <ItemGroup>
@@ -31,8 +34,8 @@
     <Midl Include="SearchBoxControl.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="TerminalControl.def" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="SearchBoxControl.xaml" />

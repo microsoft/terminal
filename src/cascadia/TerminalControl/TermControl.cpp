@@ -206,13 +206,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_Search(const SearchBoxControl&, winrt::hstring text)
     {
+        if (text.size() == 0)
+        {
+            return;
+        }
+
         const Search::Direction direction = _searchBox.GetGoForward() ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
+                                            Search::Direction::Forward :
+                                            Search::Direction::Backward;
 
         const Search::Sensitivity sensitivity = _searchBox.GetIsCaseSensitive() ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
+                                                Search::Sensitivity::CaseSensitive :
+                                                Search::Sensitivity::CaseInsensitive;
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         _terminal->LockConsole();

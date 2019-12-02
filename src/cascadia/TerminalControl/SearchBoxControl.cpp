@@ -227,7 +227,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Handler for pressing Enter when focusing on the checkbox. 
+    // - Handler for pressing Enter when focusing on the checkbox.
     //   This is implented because XAML checkbox does not support
     //   Enter
     // Arguments:
