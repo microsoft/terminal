@@ -257,12 +257,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
-        _rowsToScroll = _settings.RowsToScroll();
         // set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
         foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
         _tsfInputControl.Foreground(foregroundBrush);
         _tsfInputControl.Margin(newMargin);
+
+        // set number of rows to scroll at a time
+         _rowsToScroll = _settings.RowsToScroll();
     }
 
     // Method Description:
@@ -1029,11 +1031,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // However, for us, the signs are flipped.
         const auto rowDelta = mouseDelta < 0 ? 1.0 : -1.0;
 
-        // TODO: Should we be getting some setting from the system
-        //      for number of lines scrolled?
         // With one of the precision mouses, one click is always a multiple of 120,
         // but the "smooth scrolling" mode results in non-int values
-        // This is now populated from settings.
+
+        // Number of rows to scroll is now populated from settings.
         double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
 
         // Clear our expected scroll offset. The viewport will now move in
