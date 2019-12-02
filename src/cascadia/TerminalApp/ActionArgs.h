@@ -37,9 +37,9 @@ namespace winrt::TerminalApp::implementation
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
         CopyTextArgs() = default;
-        GETSET_PROPERTY(bool, TrimWhitespace, false);
+        GETSET_PROPERTY(bool, CopyNewlines, true);
 
-        static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
+        static constexpr std::string_view CopyNewlinesKey{ "copyNewlines" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -47,7 +47,7 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<CopyTextArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_TrimWhitespace == _TrimWhitespace;
+                return otherAsUs->_CopyNewlines == _CopyNewlines;
             }
             return false;
         };
@@ -55,9 +55,9 @@ namespace winrt::TerminalApp::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
-            if (auto trimWhitespace{ json[JsonKey(TrimWhitespaceKey)] })
+            if (auto copyNewlines{ json[JsonKey(CopyNewlinesKey)] })
             {
-                args->_TrimWhitespace = trimWhitespace.asBool();
+                args->_CopyNewlines = copyNewlines.asBool();
             }
             return *args;
         }

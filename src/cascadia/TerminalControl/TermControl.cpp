@@ -1510,9 +1510,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - trimTrailingWhitespace: enable removing any whitespace from copied selection
-    //    and get text to appear on separate lines.
-    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    // - copyNewlines: if true, copies the text data as separate lines
+    bool TermControl::CopySelectionToClipboard(bool copyNewlines)
     {
         // no selection --> nothing to copy
         if (_terminal == nullptr || !_terminal->IsSelectionActive())
@@ -1520,7 +1519,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(copyNewlines);
 
         // convert text: vector<string> --> string
         std::wstring textData;
