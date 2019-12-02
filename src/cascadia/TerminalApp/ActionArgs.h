@@ -13,6 +13,7 @@
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "MoveSelectionAnchorArgs.g.h"
+#include "SplitPaneArgs.g.h"
 
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -310,6 +311,53 @@ namespace winrt::TerminalApp::implementation
                 {
                     args->_ExpansionMode = ParseExpansionMode(expansionModeString.asString());
                 }
+            }
+            return *args;
+        }
+    };
+
+    // Possible SplitState values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
+    static constexpr std::string_view VerticalKey{ "vertical" };
+    static constexpr std::string_view HorizontalKey{ "horizontal" };
+    static winrt::Microsoft::Terminal::Settings::SplitState ParseSplitState(const std::string& stateString)
+    {
+        if (stateString == VerticalKey)
+        {
+            return winrt::Microsoft::Terminal::Settings::SplitState::Vertical;
+        }
+        else if (stateString == HorizontalKey)
+        {
+            return winrt::Microsoft::Terminal::Settings::SplitState::Horizontal;
+        }
+        // default behavior for invalid data
+        return winrt::Microsoft::Terminal::Settings::SplitState::None;
+    };
+
+    struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
+    {
+        SplitPaneArgs() = default;
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::SplitState, SplitStyle, winrt::Microsoft::Terminal::Settings::SplitState::None);
+
+        static constexpr std::string_view SplitKey{ "split" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SplitPaneArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SplitStyle == _SplitStyle;
+            }
+            return false;
+        };
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SplitPaneArgs>();
+            if (auto jsonStyle{ json[JsonKey(SplitKey)] })
+            {
+                args->_SplitStyle = ParseSplitState(jsonStyle.asString());
             }
             return *args;
         }

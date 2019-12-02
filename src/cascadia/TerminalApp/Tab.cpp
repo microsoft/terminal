@@ -203,7 +203,7 @@ void Tab::Scroll(const int delta)
 // - splitType: The type of split we want to create.
 // Return Value:
 // - True if the focused pane can be split. False otherwise.
-bool Tab::CanSplitPane(Pane::SplitState splitType)
+bool Tab::CanSplitPane(SplitState splitType)
 {
     return _activePane->CanSplit(splitType);
 }
@@ -217,7 +217,7 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
+void Tab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
 {
     auto [first, second] = _activePane->Split(splitType, profile, control);
 
@@ -250,7 +250,7 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - <none>
-void Tab::ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& direction)
+void Tab::ResizePane(const Direction& direction)
 {
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
@@ -264,7 +264,7 @@ void Tab::ResizePane(const winrt::Microsoft::Terminal::Settings::Direction& dire
 // - direction: The direction to move the focus in.
 // Return Value:
 // - <none>
-void Tab::NavigateFocus(const winrt::Microsoft::Terminal::Settings::Direction& direction)
+void Tab::NavigateFocus(const Direction& direction)
 {
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
