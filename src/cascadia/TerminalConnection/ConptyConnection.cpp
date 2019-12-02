@@ -2,6 +2,9 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#define GSL_MULTI_SPAN_H
+#include <gsl/gsl>
+
 #include "ConptyConnection.h"
 
 #include <windows.h>

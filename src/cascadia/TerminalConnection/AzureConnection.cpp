@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#define GSL_MULTI_SPAN_H
+#include <gsl/gsl>
 #include "AzureConnection.h"
 #include "AzureClientID.h"
 #include <sstream>

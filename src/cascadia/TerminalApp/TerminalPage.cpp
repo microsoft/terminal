@@ -504,11 +504,13 @@ namespace winrt::TerminalApp::implementation
         }
 
         if (profile->HasConnectionType() &&
-            profile->GetConnectionType() == AzureConnectionType &&
-            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+            profile->GetConnectionType() == AzureConnectionType /*&&
+            TerminalConnection::AzureConnection::IsAzureConnectionAvailable()*/)
         {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
-                                                             settings.InitialCols());
+            /*connection = TerminalConnection::AzureConnection(settings.InitialRows(),
+                                                             settings.InitialCols());*/
+
+            connection = TerminalConnection::TelnetConnection();
         }
 
         else

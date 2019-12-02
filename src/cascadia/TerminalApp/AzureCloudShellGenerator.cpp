@@ -31,7 +31,7 @@ std::vector<TerminalApp::Profile> AzureCloudShellGenerator::GenerateProfiles()
 {
     std::vector<TerminalApp::Profile> profiles;
 
-    if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+    //if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
     {
         auto azureCloudShellProfile{ CreateDefaultProfile(L"Azure Cloud Shell") };
         azureCloudShellProfile.SetCommandline(L"Azure");
