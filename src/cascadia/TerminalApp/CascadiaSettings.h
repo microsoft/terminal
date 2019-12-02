@@ -65,6 +65,7 @@ public:
     static std::wstring GetSettingsPath(const bool useRoamingPath = false);
     static std::wstring GetDefaultSettingsPath();
 
+    std::optional<GUID> FindGuid(const std::wstring& profileName) const noexcept;
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
