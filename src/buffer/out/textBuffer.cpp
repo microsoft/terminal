@@ -952,21 +952,22 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 // - includeCharacterRun - include the character run located at the beginning of the word
 // Return Value:
 // - The COORD for the first character on the "word"  (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring wordDelimiters, bool includeCharacterRun) const
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring& wordDelimiters, bool includeCharacterRun) const
 {
+    const auto bufferSize = GetSize();
     COORD result = target;
 
     // can't expand left
-    if (target.X == GetSize().Left())
+    if (target.X == bufferSize.Left())
     {
         return result;
     }
 
     auto bufferIterator = GetTextDataAt(result);
-    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
-    while (result.X > GetSize().Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == startedOnDelimiter))
+    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
     {
-        GetSize().DecrementInBounds(result);
+        bufferSize.DecrementInBounds(result);
         --bufferIterator;
     }
 
@@ -978,10 +979,10 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring word
             result = GetWordStart(result, wordDelimiters);
         }
     }
-    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
     {
         // move off of delimiter
-        GetSize().IncrementInBounds(result);
+        bufferSize.IncrementInBounds(result);
     }
 
     return result;
@@ -995,21 +996,22 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring word
 // - includeDelimiterRun - include the delimiter runs located at the end of the word
 // Return Value:
 // - The COORD for the last character on the "word" (inclusive)
-const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDelimiters, bool includeDelimiterRun) const
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring& wordDelimiters, bool includeDelimiterRun) const
 {
+    const auto bufferSize = GetSize();
     COORD result = target;
 
     // can't expand right
-    if (target.X == GetSize().RightInclusive())
+    if (target.X == bufferSize.RightInclusive())
     {
         return result;
     }
 
     auto bufferIterator = GetTextDataAt(result);
-    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
-    while (result.X < GetSize().RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == startedOnDelimiter))
+    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
     {
-        GetSize().IncrementInBounds(result);
+        bufferSize.IncrementInBounds(result);
         ++bufferIterator;
     }
 
@@ -1021,10 +1023,10 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDe
             result = GetWordEnd(result, wordDelimiters);
         }
     }
-    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != startedOnDelimiter)
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
     {
         // move off of delimiter
-        GetSize().DecrementInBounds(result);
+        bufferSize.DecrementInBounds(result);
     }
 
     return result;
@@ -1037,7 +1039,7 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring wordDe
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
 // - the delimiter class for the given char
-TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring wordDelimiters) const
+TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring& wordDelimiters) const
 {
     if (cellChar.at(0) <= UNICODE_SPACE)
     {

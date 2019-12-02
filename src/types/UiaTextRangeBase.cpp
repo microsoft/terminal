@@ -1185,7 +1185,7 @@ const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(gsl::not_null<IUiaData
 // - wordDelimiters - characters to determine the separation between words
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the word where _start is located.
-const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring wordDelimiters)
+const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring& wordDelimiters)
 {
     auto coord = _endpointToCoord(pData, target);
     coord = pData->GetTextBuffer().GetWordStart(coord, wordDelimiters);
@@ -1201,7 +1201,7 @@ const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pDa
 // - wordDelimiters - characters to determine the separation between words
 // Return Value:
 // - the equivalent Endpoint, starting at the end of the word where _start is located.
-const Endpoint UiaTextRangeBase::_wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring wordDelimiters)
+const Endpoint UiaTextRangeBase::_wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring& wordDelimiters)
 {
     auto coord = _endpointToCoord(pData, target);
     coord = pData->GetTextBuffer().GetWordEnd(coord, wordDelimiters, true);
@@ -1517,7 +1517,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(gsl::no
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWord(gsl::not_null<IUiaData*> pData,
                                                             const int moveCount,
                                                             const MoveState moveState,
-                                                            const std::wstring wordDelimiters,
+                                                            const std::wstring& wordDelimiters,
                                                             _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
@@ -1533,7 +1533,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWord(gsl::not_null<IUiaDa
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null<IUiaData*> pData,
                                                                    const int moveCount,
                                                                    const MoveState moveState,
-                                                                   const std::wstring wordDelimiters,
+                                                                   const std::wstring& wordDelimiters,
                                                                    _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     // STRATEGY:
@@ -1604,7 +1604,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_null<IUiaData*> pData,
                                                                     const int moveCount,
                                                                     const MoveState moveState,
-                                                                    const std::wstring wordDelimiters,
+                                                                    const std::wstring& wordDelimiters,
                                                                     _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     // STRATEGY:
@@ -1970,7 +1970,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitWord(g
                                                                                const int moveCount,
                                                                                const TextPatternRangeEndpoint endpoint,
                                                                                const MoveState moveState,
-                                                                               const std::wstring wordDelimiters,
+                                                                               const std::wstring& wordDelimiters,
                                                                                _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
@@ -1988,7 +1988,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
                                                  const int moveCount,
                                                  const TextPatternRangeEndpoint endpoint,
                                                  const MoveState moveState,
-                                                 const std::wstring wordDelimiters,
+                                                 const std::wstring& wordDelimiters,
                                                  _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -2108,7 +2108,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData
                                                   const int moveCount,
                                                   const TextPatternRangeEndpoint endpoint,
                                                   const MoveState moveState,
-                                                  const std::wstring wordDelimiters,
+                                                  const std::wstring& wordDelimiters,
                                                   _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
