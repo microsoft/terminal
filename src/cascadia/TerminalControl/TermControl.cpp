@@ -264,7 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _tsfInputControl.Margin(newMargin);
 
         // set number of rows to scroll at a time
-         _rowsToScroll = _settings.RowsToScroll();
+        _rowsToScroll = _settings.RowsToScroll();
     }
 
     // Method Description:
