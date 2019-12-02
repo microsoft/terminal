@@ -89,54 +89,56 @@ Properties listed below are specific to each custom key binding.
 
 Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
 
-- copy
-- copyTextWithoutNewlines
-- paste
-- newTab
-- openNewTabDropdown
-- duplicateTab
-- newTabProfile0
-- newTabProfile1
-- newTabProfile2
-- newTabProfile3
-- newTabProfile4
-- newTabProfile5
-- newTabProfile6
-- newTabProfile7
-- newTabProfile8
-- closeWindow
-- closeTab
-- closePane
-- switchToTab
-- nextTab
-- prevTab
-- increaseFontSize
-- decreaseFontSize
-- resetFontSize
-- scrollUp
-- scrollDown
-- scrollUpPage
-- scrollDownPage
-- switchToTab0
-- switchToTab1
-- switchToTab2
-- switchToTab3
-- switchToTab4
-- switchToTab5
-- switchToTab6
-- switchToTab7
-- switchToTab8
-- openSettings
-- splitPane
-- resizePaneLeft
-- resizePaneRight
-- resizePaneUp
-- resizePaneDown
-- moveFocusLeft
-- moveFocusRight
-- moveFocusUp
-- moveFocusDown
-- toggleFullscreen
+| Action | Description |
+| -------- | ----------- |
+| `copy` | Make a duplicate of the selected content. |
+| `copyTextWithoutNewlines` | Make a duplicate of the selected content and discard the newline characters. |
+| `paste` | Insert the content into the selected space. |
+| `newTab` | Open a new page of the terminal. 
+| `openNewTabDropdown` | Open the dropdown menu of the newTab button. |
+| `duplicateTab` | Make a copy of an existing tab. |
+| `newTabProfile0` | Open a new tab with the same profile as tab0. |
+| `newTabProfile1` | Open a new tab with the same profile as tab1. |
+| `newTabProfile2` | Open a new tab with the same profile as tab2. |
+| `newTabProfile3` | Open a new tab with the same profile as tab3. |
+| `newTabProfile4` | Open a new tab with the same profile as tab4. |
+| `newTabProfile5` | Open a new tab with the same profile as tab5. |
+| `newTabProfile6` | Open a new tab with the same profile as tab6. |
+| `newTabProfile7` | Open a new tab with the same profile as tab7. |
+| `newTabProfile8` | Open a new tab with the same profile as tab8. |
+| `closeWindow` | Close the current window and all tabs within it. |
+| `closeTab` | Close the current tab. |
+| `closePane` | Close the Panel/Navigation into a slimmer manner. |
+| `switchToTab` | Change the screen to another tab. |
+| `nextTab` | Select the next tab of the current one. |
+| `prevTab` | Select the previous tab of the current one. |
+| `increaseFontSize` | Make the text bigger by size one. |
+| `decreaseFontSize` | Make the text smaller by size one. |
+| `resetFontSize` | Reset the text size to the default value. |
+| `scrollUp` | Move the screen up to the previous content of the tab. |
+| `scrollDown` | Move the screen down to the later content of the tab. |
+| `scrollUpPage` | Move the screen up a whole page to the previous content of the tab. |
+| `scrollDownPage` | Move the screen down a whole page to the later content of the tab. |
+| `switchToTab0` | Change the content of the current window to tab 0. |
+| `switchToTab1` | Change the content of the current window to tab 1. |
+| `switchToTab2` | Change the content of the current window to tab 2. |
+| `switchToTab3` | Change the content of the current window to tab 3. |
+| `switchToTab4` | Change the content of the current window to tab 4. |
+| `switchToTab5` | Change the content of the current window to tab 5. |
+| `switchToTab6` | Change the content of the current window to tab 6. |
+| `switchToTab7` | Change the content of the current window to tab 7. |
+| `switchToTab8` | Change the content of the current window to tab 8. |
+| `openSettings` | Open the settings page. |
+| `splitPane` | Separate the pane into two. |
+| `resizePaneLeft` | Change the size of the left pane. |
+| `resizePaneRight` | Change the size of the right pane. |
+| `resizePaneUp` | Change the size of the top pane. |
+| `resizePaneDown` | Change the size of the bottom pane. |
+| `moveFocusLeft` | Changes the focus direction to left. |
+| `moveFocusRight` | Changes the focus direction to right. |
+| `moveFocusUp` | Changes the focus direction to up. |
+| `moveFocusDown` | Changes the focus direction to down. |
+| `toggleFullscreen` | Make the window into or out of fullscreen mode. |
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
