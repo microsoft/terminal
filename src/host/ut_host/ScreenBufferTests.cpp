@@ -180,6 +180,7 @@ class ScreenBufferTests
 
     TEST_METHOD(ScrollLines256Colors);
 
+    TEST_METHOD(SetScreenMode);
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
@@ -4407,6 +4408,34 @@ void ScreenBufferTests::ScrollLines256Colors()
         VERIFY_ARE_EQUAL(expectedAttr, iter01->TextAttr());
         VERIFY_ARE_EQUAL(expectedAttr, iter02->TextAttr());
     }
+}
+
+void ScreenBufferTests::SetScreenMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    const auto rgbForeground = RGB(12, 34, 56);
+    const auto rgbBackground = RGB(78, 90, 12);
+    const auto testAttr = TextAttribute{ rgbForeground, rgbBackground };
+
+    Log::Comment(L"By default the screen mode is normal.");
+    VERIFY_IS_FALSE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
+
+    Log::Comment(L"When DECSCNM is set, background and foreground colors are switched.");
+    stateMachine.ProcessString(L"\x1B[?5h");
+    VERIFY_IS_TRUE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupBackgroundColor(testAttr));
+
+    Log::Comment(L"When DECSCNM is reset, the colors are normal again.");
+    stateMachine.ProcessString(L"\x1B[?5l");
+    VERIFY_IS_FALSE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
 }
 
 void ScreenBufferTests::SetOriginMode()
