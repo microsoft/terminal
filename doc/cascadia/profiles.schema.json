@@ -209,7 +209,7 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
-              { "$ref": "#/definitions/ResizePaneAction" }
+              { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SplitPaneAction" }
             ]
         },
