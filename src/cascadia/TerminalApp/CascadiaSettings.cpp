@@ -461,6 +461,10 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(std::optional
         {
             settings.StartingDirectory(newTerminalArgs.StartingDirectory());
         }
+        if (!newTerminalArgs.TabTitle().empty())
+        {
+            settings.StartingTitle(newTerminalArgs.TabTitle());
+        }
     }
 
     return { profileGuid, settings };

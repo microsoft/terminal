@@ -40,10 +40,12 @@ namespace winrt::TerminalApp::implementation
         NewTerminalArgs() = default;
         GETSET_PROPERTY(winrt::hstring, Commandline, L"");
         GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
+        GETSET_PROPERTY(winrt::hstring, TabTitle, L"");
         GETSET_PROPERTY(winrt::hstring, Profile, L"");
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
+        static constexpr std::string_view TabTitleKey{ "tabTitle" };
         static constexpr std::string_view ProfileKey{ "profile" };
 
     public:
@@ -54,6 +56,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return otherAsUs->_Commandline == _Commandline &&
                        otherAsUs->_StartingDirectory == _StartingDirectory &&
+                       otherAsUs->_TabTitle == _TabTitle &&
                        otherAsUs->_Profile == _Profile;
             }
             return false;
@@ -69,6 +72,10 @@ namespace winrt::TerminalApp::implementation
             if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
             {
                 args->_StartingDirectory = winrt::to_hstring(startingDirectory.asString());
+            }
+            if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
+            {
+                args->_TabTitle = winrt::to_hstring(tabTitle.asString());
             }
             if (auto profile{ json[JsonKey(ProfileKey)] })
             {

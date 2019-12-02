@@ -34,6 +34,7 @@ namespace TerminalApp
         NewTerminalArgs();
         String Commandline;
         String StartingDirectory;
+        String TabTitle;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
     };
 
