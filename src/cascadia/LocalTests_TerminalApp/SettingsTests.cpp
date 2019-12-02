@@ -29,7 +29,9 @@ namespace TerminalAppLocalTests
         // If you want to do anything XAML-y, you'll need to run your test in a
         // packaged context. See TabTests.cpp for more details on that.
         BEGIN_TEST_CLASS(SettingsTests)
-            TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
+            // TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
+            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
@@ -58,6 +60,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
+
+        TEST_METHOD(TestTerminalArgsForBinding);
 
         TEST_CLASS_SETUP(ClassSetup)
         {

@@ -22,21 +22,25 @@
           Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
           Version="1.0.0.0"
           ResourceId="en-us" />
+
   <Properties>
     <DisplayName>TerminalApp.LocalTests.Package Host Process</DisplayName>
     <PublisherDisplayName>Microsoft Corp.</PublisherDisplayName>
     <Logo>taef.png</Logo>
     <Description>TAEF Packaged Cwa FullTrust Application Host Process</Description>
   </Properties>
+
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
     <PackageDependency Name="Microsoft.VCLibs.140.00.Debug" MinVersion="14.0.27023.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
     <PackageDependency Name="Microsoft.VCLibs.140.00.Debug.UWPDesktop" MinVersion="14.0.27027.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
   </Dependencies>
+
   <Resources>
     <Resource Language="en-us" />
   </Resources>
-  <Applications>
+
+  <!-- <Applications>
     <Application Id="TE.ProcessHost" Executable="TE.ProcessHost.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements DisplayName="TAEF Packaged Cwa FullTrust Application Host Process" Square150x150Logo="taef.png" Square44x44Logo="taef.png" Description="TAEF Packaged Cwa Application Host Process" BackgroundColor="#222222">
         <uap:SplashScreen Image="taef.png" />
@@ -45,7 +49,16 @@
   </Applications>
   <Capabilities>
     <rescap:Capability Name="runFullTrust"/>
-  </Capabilities>
+  </Capabilities> -->
+
+  <Applications>
+    <Application Id="TE.ProcessHost" Executable="TE.ProcessHost.UAP.exe" EntryPoint="ProcessHostApplication">
+      <uap:VisualElements DisplayName="TAEF UWA Host Process" Square150x150Logo="taef.png" Square44x44Logo="taef.png" Description="TAEF UWA Host Process" BackgroundColor="#222222">
+        <uap:SplashScreen Image="taef.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
 
 
 
