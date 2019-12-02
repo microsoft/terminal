@@ -187,8 +187,8 @@ namespace TerminalAppLocalTests
         const std::string bindings0String{ R"([
             { "command": "copy", "keys": ["ctrl+c"] },
             { "command": "copyTextWithoutNewlines", "keys": ["alt+c"] },
-            { "command": { "action": "copy", "copyNewlines": false }, "keys": ["ctrl+shift+c"] },
-            { "command": { "action": "copy", "copyNewlines": true }, "keys": ["alt+shift+c"] },
+            { "command": { "action": "copy", "stripNewlines": false }, "keys": ["ctrl+shift+c"] },
+            { "command": { "action": "copy", "stripNewlines": true }, "keys": ["alt+shift+c"] },
 
             { "command": "newTab", "keys": ["ctrl+t"] },
             { "command": { "action": "newTab", "index": 0 }, "keys": ["ctrl+shift+t"] },
@@ -214,24 +214,24 @@ namespace TerminalAppLocalTests
 
         {
             Log::Comment(NoThrowString().Format(
-                L"Verify that `copy` without args parses as Copy(CopyNewlines=true)"));
+                L"Verify that `copy` without args parses as Copy(StripNewlines=true)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_TRUE(realArgs.CopyNewlines());
+            VERIFY_IS_FALSE(realArgs.StripNewlines());
         }
 
         {
             Log::Comment(NoThrowString().Format(
-                L"Verify that `copyTextWithoutNewlines` parses as Copy(CopyNewlines=false)"));
+                L"Verify that `copyTextWithoutNewlines` parses as Copy(StripNewlines=false)"));
             KeyChord kc{ false, true, false, static_cast<int32_t>('C') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.CopyNewlines());
+            VERIFY_IS_TRUE(realArgs.StripNewlines());
         }
 
         {
@@ -242,7 +242,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.CopyNewlines());
+            VERIFY_IS_FALSE(realArgs.StripNewlines());
         }
 
         {
@@ -253,7 +253,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_TRUE(realArgs.CopyNewlines());
+            VERIFY_IS_TRUE(realArgs.StripNewlines());
         }
 
         {
@@ -326,7 +326,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_TRUE(realArgs.CopyNewlines());
+            VERIFY_IS_FALSE(realArgs.StripNewlines());
         }
 
         {
@@ -338,7 +338,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_TRUE(realArgs.CopyNewlines());
+            VERIFY_IS_FALSE(realArgs.StripNewlines());
         }
 
         {

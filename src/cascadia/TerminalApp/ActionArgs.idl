@@ -37,7 +37,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
-        Boolean CopyNewlines { get; };
+        Boolean StripNewlines { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs

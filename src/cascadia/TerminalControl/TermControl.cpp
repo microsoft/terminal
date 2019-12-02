@@ -806,7 +806,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -919,7 +919,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_terminal->IsCopyOnSelectActive())
             {
-                CopySelectionToClipboard(!shiftEnabled);
+                CopySelectionToClipboard(shiftEnabled);
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -1510,8 +1510,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - copyNewlines: if true, copies the text data as separate lines
-    bool TermControl::CopySelectionToClipboard(bool copyNewlines)
+    // - stripNewlines: if true, copies the text data as one line
+    bool TermControl::CopySelectionToClipboard(bool stripNewlines)
     {
         // no selection --> nothing to copy
         if (_terminal == nullptr || !_terminal->IsSelectionActive())
@@ -1519,7 +1519,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(copyNewlines);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(!stripNewlines);
 
         // convert text: vector<string> --> string
         std::wstring textData;

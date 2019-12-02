@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
 
-        bool CopySelectionToClipboard(bool copyNewlines);
+        bool CopySelectionToClipboard(bool stripNewlines);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;

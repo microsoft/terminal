@@ -106,10 +106,10 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "copy" },
-            "copyNewlines": {
+            "stripNewlines": {
               "type": "boolean",
-              "default": true,
-              "description": "If false, concatenates the copied text to one line."
+              "default": false,
+              "description": "If true, concatenates the copied text to one line."
             }
           }
         }

@@ -1157,13 +1157,13 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
-    // - copyNewlines: if true, copies the text data as separate lines
+    // - stripNewlines: if true, copies the text data as one line
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool copyNewlines)
+    bool TerminalPage::_CopyText(const bool stripNewlines)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(copyNewlines);
+        return control.CopySelectionToClipboard(stripNewlines);
     }
 
     // Method Description:
