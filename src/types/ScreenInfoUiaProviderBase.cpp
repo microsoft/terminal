@@ -32,10 +32,11 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 }
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData) noexcept
+HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring wordDelimiters) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     _pData = pData;
+    _wordDelimiters = wordDelimiters;
     return S_OK;
 }
 
@@ -272,7 +273,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         }
 
         WRL::ComPtr<UiaTextRangeBase> range;
-        hr = CreateTextRange(this, cursor, &range);
+        hr = CreateTextRange(this, cursor, _wordDelimiters, &range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -293,7 +294,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     {
         // get the selection ranges
         std::deque<WRL::ComPtr<UiaTextRangeBase>> ranges;
-        RETURN_IF_FAILED(GetSelectionRanges(this, ranges));
+        RETURN_IF_FAILED(GetSelectionRanges(this, _wordDelimiters, ranges));
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //apiMsg.AreaSelected = true;
@@ -363,6 +364,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
                              start,
                              end,
                              false,
+                             _wordDelimiters,
                              &range);
         if (FAILED(hr))
         {
@@ -393,7 +395,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    RETURN_IF_FAILED(CreateTextRange(this, &utr));
+    RETURN_IF_FAILED(CreateTextRange(this, _wordDelimiters, &utr));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;
 }
@@ -410,6 +412,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     WRL::ComPtr<UiaTextRangeBase> utr;
     RETURN_IF_FAILED(CreateTextRange(this,
                                      point,
+                                     _wordDelimiters,
                                      &utr));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;
@@ -424,7 +427,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    RETURN_IF_FAILED(CreateTextRange(this, &utr));
+    RETURN_IF_FAILED(CreateTextRange(this, _wordDelimiters, &utr));
     RETURN_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;

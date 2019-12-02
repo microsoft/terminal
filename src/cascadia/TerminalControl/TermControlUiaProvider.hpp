@@ -47,14 +47,15 @@ namespace Microsoft::Terminal
         const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:
-        HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, _Out_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>>& selectionRanges) override;
+        HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring& wordDelimiters, _Out_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>>& selectionRanges) override;
 
         // degenerate range
-        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring& wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // degenerate range at cursor position
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                 const Cursor& cursor,
+                                const std::wstring& wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // specific endpoint range
@@ -62,11 +63,13 @@ namespace Microsoft::Terminal
                                 const Endpoint start,
                                 const Endpoint end,
                                 const bool degenerate,
+                                const std::wstring& wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // range from a UiaPoint
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                 const UiaPoint point,
+                                const std::wstring& wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
     private:
