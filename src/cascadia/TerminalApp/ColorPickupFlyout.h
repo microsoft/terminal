@@ -14,7 +14,7 @@ namespace winrt::TerminalApp::implementation
         void ClearColorButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         DECLARE_EVENT(ColorSelected, _colorSelected, TerminalApp::ColorSelectedArgs);
-        DECLARE_EVENT(ColorCleared,  _colorCleared,  TerminalApp::ColorClearedArgs);
+        DECLARE_EVENT(ColorCleared, _colorCleared, TerminalApp::ColorClearedArgs);
     };
 }
 

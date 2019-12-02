@@ -8,7 +8,6 @@
 #include "ColorFlyoutSubItem.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
-
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -38,9 +37,7 @@ namespace winrt::ColorFlyoutSubItem::implementation
         _resourceLoader = resourceLoader;
     }
 
-
     void ColorFlyoutSubItem::Create()
     {
-        
     }
 }
