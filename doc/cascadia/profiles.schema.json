@@ -106,7 +106,7 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "copy" },
-            "trimWhitespace": {
+            "copyNewlines": {
               "type": "boolean",
               "default": true,
               "description": "If false, concatenates the copied text to one line."
