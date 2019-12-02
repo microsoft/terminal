@@ -82,10 +82,7 @@ std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring& profileName) 
             {
                 profileGuid = profile.GetGuid();
             }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-            }
+            CATCH_LOG();
 
             break;
         }
@@ -113,10 +110,7 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
                 return &profile;
             }
         }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-        }
+        CATCH_LOG();
     }
     return nullptr;
 }
