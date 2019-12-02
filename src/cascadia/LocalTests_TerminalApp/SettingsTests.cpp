@@ -6,6 +6,7 @@
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
 #include "JsonTestClass.h"
+#include "TestUtils.h"
 #include <defaults.h>
 
 using namespace Microsoft::Console;
@@ -13,6 +14,8 @@ using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace TerminalAppLocalTests
 {
@@ -1541,5 +1544,47 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings._profiles[0].GetCloseOnExitMode());
         VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings._profiles[1].GetCloseOnExitMode());
+    }
+
+    void SettingsTests::TestTerminalArgsForBinding()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "closeOnExit": true
+                },
+                {
+                    "name": "profile1",
+                    "closeOnExit": false
+                }
+            ],
+            "keybindings": [
+                { "keys": ["ctrl+a"], "command": "splitVertical" },
+                { "keys": ["ctrl+b"], "command": "splitHorizontal" },
+                { "keys": ["ctrl+c"], "command": { "action": "splitPane", "split": null } },
+                { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
+                { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
+                { "keys": ["ctrl+f"], "command": { "action": "splitPane", "split": "none" } },
+                { "keys": ["ctrl+g"], "command": { "action": "splitPane" } }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+        auto appKeyBindings = settings._globals._keybindings;
+        VERIFY_ARE_EQUAL(7u, appKeyBindings->_keyShortcuts.size());
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+        }
     }
 }
