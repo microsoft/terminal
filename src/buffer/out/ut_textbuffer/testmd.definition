@@ -1,5 +1,5 @@
 {
-  "$schema": "http://universaltest/schema/testmddefinition-2.json",
+  "$schema": "http://universaltest/schema/testmddefinition-5.json",
   "Package": {
     "ComponentName": "Console",
     "SubComponentName": "TextBuffer-UnitTests"
@@ -9,10 +9,10 @@
     "Parameter": ""
   },
   "Dependencies": {
-    "Files": [ ],
-    "RemoteFiles": [ ],
-    "Packages": [ ]
+    "Files": [],
+    "RemoteFiles": [],
+    "Packages": []
   },
-  "Logs": [ ],
-  "Plugins": [ ]
+  "Logs": [],
+  "Plugins": []
 }

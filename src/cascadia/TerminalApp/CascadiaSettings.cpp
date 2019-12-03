@@ -78,7 +78,12 @@ std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring& profileName) 
     {
         if (profileName == profile.GetName())
         {
-            profileGuid = profile.GetGuid();
+            try
+            {
+                profileGuid = profile.GetGuid();
+            }
+            CATCH_LOG();
+
             break;
         }
     }
@@ -98,10 +103,14 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 {
     for (auto& profile : _profiles)
     {
-        if (profile.GetGuid() == profileGuid)
+        try
         {
-            return &profile;
+            if (profile.GetGuid() == profileGuid)
+            {
+                return &profile;
+            }
         }
+        CATCH_LOG();
     }
     return nullptr;
 }
