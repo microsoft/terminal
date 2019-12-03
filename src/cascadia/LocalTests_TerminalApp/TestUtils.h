@@ -26,6 +26,22 @@ public:
     static const winrt::TerminalApp::ActionAndArgs GetActionAndArgs(const winrt::TerminalApp::implementation::AppKeyBindings& bindings,
                                                                     const winrt::Microsoft::Terminal::Settings::KeyChord& kc)
     {
+        std::wstring buffer{ L"" };
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Settings::KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Settings::KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Settings::KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+        buffer += static_cast<wchar_t>(MapVirtualKeyW(kc.Vkey(), MAPVK_VK_TO_CHAR));
+        WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(L"Looking for key:%s", buffer.c_str()));
+
         const auto keyIter = bindings._keyShortcuts.find(kc);
         VERIFY_IS_TRUE(keyIter != bindings._keyShortcuts.end(), L"Expected to find an action bound to the given KeyChord");
         if (keyIter != bindings._keyShortcuts.end())
