@@ -38,7 +38,6 @@ namespace TerminalAppLocalTests
         // failed.
         TEST_METHOD(EnsureTestsActivate);
         TEST_METHOD(TryCreateLocalWinRTType);
-        TEST_METHOD(EnsureDispatcher);
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
     };
