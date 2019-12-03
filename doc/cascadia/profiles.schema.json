@@ -109,7 +109,7 @@
             "trimWhitespace": {
               "type": "boolean",
               "default": true,
-              "description": "If false, concatenates the copied text to one line."
+              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
             }
           }
         }
