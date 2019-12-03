@@ -1577,6 +1577,12 @@ bool AdaptDispatch::HardReset()
         success = _EraseScrollback();
     }
 
+    // Set the DECSCNM screen mode back to normal.
+    if (success)
+    {
+        success = SetScreenMode(false);
+    }
+
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     if (success)
     {
