@@ -9,6 +9,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <!-- We'll manage our own OutDir/IntDir -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
@@ -25,11 +26,11 @@
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-  <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="precomp.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="JsonTestClass.h" />
   </ItemGroup>
 
@@ -40,7 +41,7 @@
     <ClCompile Include="ColorSchemeTests.cpp" />
     <ClCompile Include="KeyBindingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
-    <ClCompile Include="precomp.cpp">
+    <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
@@ -69,13 +70,16 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
+      <!-- <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories> -->
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
 
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions> -->
+      <!-- <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions> -->
     </Link>
   </ItemDefinitionGroup>
 

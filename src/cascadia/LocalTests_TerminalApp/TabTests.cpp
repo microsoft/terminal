@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+// #include "precomp.h"
+#include "pch.h"
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Tab.h"
@@ -10,6 +11,80 @@ using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+
+extern "C" __declspec(dllimport) HRESULT __stdcall Thread_Wait_For(HANDLE handle, unsigned long milliseconds);
+
+namespace details
+{
+    class Event
+    {
+    public:
+        Event() :
+            m_handle(::CreateEvent(nullptr, FALSE, FALSE, nullptr))
+        {
+        }
+
+        ~Event()
+        {
+            if (IsValid())
+            {
+                ::CloseHandle(m_handle);
+            }
+        }
+
+        void Set()
+        {
+            ::SetEvent(m_handle);
+        }
+
+        HRESULT Wait()
+        {
+            return Thread_Wait_For(m_handle, INFINITE);
+        }
+
+        bool IsValid()
+        {
+            return m_handle != nullptr;
+        }
+
+        HANDLE m_handle;
+    };
+};
+
+template<typename TFunction>
+HRESULT RunOnUIThread(const TFunction& function)
+{
+    auto m = winrt::Windows::ApplicationModel::Core::CoreApplication::MainView();
+    auto cw = m.CoreWindow();
+    auto d = cw.Dispatcher();
+
+    // Create an event so we can wait for the callback to complete
+    details::Event completedEvent;
+    if (!completedEvent.IsValid())
+    {
+        return HRESULT_FROM_WIN32(::GetLastError());
+    }
+
+    HRESULT invokeResult = E_FAIL;
+
+    auto asyncAction = d.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
+                                  [&invokeResult, &function]() {
+                                      invokeResult = WEX::SafeInvoke([&]() -> bool { function(); return true; });
+                                  });
+
+    asyncAction.Completed([&completedEvent](auto&&, auto&&) {
+        completedEvent.Set();
+        return S_OK;
+    });
+
+    // Wait for the callback to complete
+    HRESULT hr = completedEvent.Wait();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    return invokeResult;
+}
 
 namespace TerminalAppLocalTests
 {
@@ -41,6 +116,21 @@ namespace TerminalAppLocalTests
         TEST_METHOD(EnsureDispatcher);
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
+
+        TEST_METHOD(DispatchToUIThread)
+        {
+            auto result = RunOnUIThread([]() {
+                VERIFY_IS_TRUE(true, L"Congrats! We're running on the UI thread!");
+
+                auto v = winrt::Windows::ApplicationModel::Core::CoreApplication::GetCurrentView();
+                VERIFY_IS_NOT_NULL(v, L"Ensure we have a current view");
+
+                winrt::Windows::UI::Xaml::Controls::Grid root;
+                VERIFY_IS_NOT_NULL(root, L"Try making a Grid");
+            });
+
+            VERIFY_SUCCEEDED(result);
+        }
     };
 
     void TabTests::EnsureTestsActivate()
@@ -61,6 +151,20 @@ namespace TerminalAppLocalTests
         settings.FontSize(oldFontSize + 5);
         auto newFontSize = settings.FontSize();
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
+    }
+
+    void TabTests::EnsureDispatcher()
+    {
+        // This test was originally used to ensure that XAML Islands was
+        // initialized correctly. Now, it's used to ensure that the tests
+        // actually deployed and activated. This test _should_ always pass.
+        const auto dispatcherQueue = ::winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        // VERIFY_IS_NOT_NULL(dispatcherQueue);
+
+        auto app = ::winrt::Windows::UI::Xaml::Application::Current();
+        VERIFY_IS_NOT_NULL(app);
+        auto myApp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>();
+        VERIFY_IS_NOT_NULL(app);
     }
 
     void TabTests::TryCreateXamlObjects()

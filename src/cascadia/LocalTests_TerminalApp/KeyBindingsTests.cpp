@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+// #include "precomp.h"
+#include "pch.h"
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
@@ -53,8 +54,8 @@ namespace TerminalAppLocalTests
         // - kc: The key chord to look up the bound ActionAndArgs for.
         // Return Value:
         // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
-        static const ActionAndArgs KeyBindingsTests::GetActionAndArgs(const implementation::AppKeyBindings& bindings,
-                                                                      const KeyChord& kc)
+        static const ActionAndArgs GetActionAndArgs(const implementation::AppKeyBindings& bindings,
+                                                    const KeyChord& kc)
         {
             std::wstring buffer{ L"" };
             if (WI_IsFlagSet(kc.Modifiers(), KeyModifiers::Ctrl))

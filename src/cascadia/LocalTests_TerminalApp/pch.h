@@ -25,6 +25,10 @@ Author(s):
 #undef GetCurrentTime
 #endif
 
+#include <wil/cppwinrt.h>
+#include <unknwn.h>
+#include <hstring.h>
+
 #include <WexTestClass.h>
 #include <json.h>
 #include "consoletaeftemplates.hpp"
@@ -32,8 +36,8 @@ Author(s):
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.UI.Xaml.Hosting.h>
-#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
+// #include <winrt/Windows.UI.Xaml.Hosting.h>
+// #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Common includes for most tests:
 #include "../../inc/argb.h"
@@ -51,3 +55,5 @@ Author(s):
 #include <winrt/Windows.ui.xaml.input.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
+
+#include <winrt/windows.applicationmodel.core.h>
