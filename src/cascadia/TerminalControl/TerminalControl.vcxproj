@@ -10,7 +10,15 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-    <!-- C++/WinRT sets the depth to 1 if there is a XAML file. We need it to be 3. -->
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project -->
+    <!--
+         Unfortunately for us, we need it to be 3. When the namespace merging
+         depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+         and our WinMD file becomes "Microsoft". Because WinRT is very
+         namespace-driven, this winmd is considered to contain the entire
+         Microsoft namespace. This is, obviously, not great. None of our other
+         projects compile properly when they depend on this "Microsoft.winmd."
+    -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
 
     <!--

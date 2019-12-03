@@ -15,21 +15,21 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
+            <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
+                <Setter Property="Width" Value="20" />
+                <Setter Property="Height" Value="20" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
+            <Style x:Key="ButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="20" />
+                <Setter Property="Height" Value="20" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
                     <Style x:Key="FontIconStyle" TargetType="FontIcon">
                         <Setter Property="FontSize" Value="15" />
                         <Setter Property="Foreground" Value="White" />
-                    </Style>
-                    <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
-                        <Setter Property="Width" Value="20" />
-                        <Setter Property="Height" Value="20" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
-                    <Style x:Key="ButtonStyle" TargetType="Button">
-                        <Setter Property="Width" Value="20" />
-                        <Setter Property="Height" Value="20" />
-                        <Setter Property="Background" Value="Transparent" />
                     </Style>
                     <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
                         <Setter Property="Background" Value="Black" />
@@ -40,16 +40,6 @@
                         <Setter Property="FontSize" Value="15" />
                         <Setter Property="Foreground" Value="White" />
                     </Style>
-                    <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
-                        <Setter Property="Width" Value="20" />
-                        <Setter Property="Height" Value="20" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
-                    <Style x:Key="ButtonStyle" TargetType="Button">
-                        <Setter Property="Width" Value="20" />
-                        <Setter Property="Height" Value="20" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
                     <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
                         <Setter Property="Background" Value="Black" />
                     </Style>
@@ -58,16 +48,6 @@
                     <Style x:Key="FontIconStyle" TargetType="FontIcon">
                         <Setter Property="FontSize" Value="15" />
                         <Setter Property="Foreground" Value="{ThemeResource SystemColorWindowTextColor}" />
-                    </Style>
-                    <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
-                        <Setter Property="Width" Value="20" />
-                        <Setter Property="Height" Value="20" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
-                    <Style x:Key="ButtonStyle" TargetType="Button">
-                        <Setter Property="Width" Value="20" />
-                        <Setter Property="Height" Value="20" />
-                        <Setter Property="Background" Value="Transparent" />
                     </Style>
                     <Style x:Key="SearchBoxBackground" TargetType="StackPanel">
                         <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />

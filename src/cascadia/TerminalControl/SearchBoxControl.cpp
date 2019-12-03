@@ -21,8 +21,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
         _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
 
-        // TO DO: Is there a general way to put all the focusable elements in the
-        // collection ? Maybe try DFS
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
         auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
         auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
