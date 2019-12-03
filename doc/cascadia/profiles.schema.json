@@ -108,8 +108,8 @@
             "action": { "type": "string", "pattern": "copy" },
             "trimWhitespace": {
               "type": "boolean",
-              "default": false,
-              "description": "If true, will trim whitespace from the end of the line on copy."
+              "default": true,
+              "description": "If false, concatenates the copied text to one line."
             }
           }
         }
