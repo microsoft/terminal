@@ -18,51 +18,36 @@ namespace TerminalAppLocalTests
 
     class TabTests
     {
-        // For this set of tests, we need to activate some XAML content. To do
-        // that, we need to be able to activate Xaml Islands(XI), using the Xaml
-        // Hosting APIs. Because XI looks at the manifest of the exe running, we
-        // can't just use the TerminalApp.Unit.Tests.manifest as our
-        // ActivationContext. XI is going to inspect `te.exe`s manifest to try
-        // and find the maxversiontested property, but te.exe hasn't set that.
-        // Instead, this test will run as a UAP application, as a packaged
-        // centenial (win32) app. We'll specify our own AppxManifest, so that
-        // we'll be able to also load all the dll's for the types we've defined
-        // (and want to use here). This does come with a minor caveat, as
-        // deploying the appx takes a bit, so use sparingly (though it will
-        // deploy once per class when used like this.)
+        // For this set of tests, we need to activate some XAML content. For
+        // release builds, the application runs as a centennial application,
+        // which lets us run full trust, and means that we need to use XAML
+        // Islands to host our UI. However, in these tests, we don't really need
+        // to run full trust - we just need to get some UI elements created. So
+        // we can just rely on the normal UWP activation to create us.
+        // UNFORTUNATELY, this doesn't seem to work yet, and the tests fail when
+        // instantiating XAML elements
+
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
+            TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they
         // can help you identify if something much lower in the stack has
         // failed.
-        TEST_METHOD(TryInitXamlIslands);
+        TEST_METHOD(EnsureTestsActivate);
         TEST_METHOD(TryCreateLocalWinRTType);
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
-
-        TEST_CLASS_SETUP(ClassSetup)
-        {
-            winrt::init_apartment(winrt::apartment_type::single_threaded);
-            // Initialize the Xaml Hosting Manager
-            _manager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-            _source = winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource{};
-
-            return true;
-        }
-
-    private:
-        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _manager{ nullptr };
-        winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source{ nullptr };
     };
 
-    void TabTests::TryInitXamlIslands()
+    void TabTests::EnsureTestsActivate()
     {
-        // Ensures that XAML Islands was initialized correctly
-        VERIFY_IS_NOT_NULL(_manager);
-        VERIFY_IS_NOT_NULL(_source);
+        // This test was originally used to ensure that XAML Islands was
+        // initialized correctly. Now, it's used to ensure that the tests
+        // actually deployed and activated. This test _should_ always pass.
+        VERIFY_IS_TRUE(true);
     }
 
     void TabTests::TryCreateLocalWinRTType()
