@@ -1,7 +1,7 @@
 ---
 author: Leon Liang @leonMSFT
 created on: 2019-11-27
-last updated: 2019-11-27
+last updated: 2019-12-03
 issue id: 1502
 ---
 
@@ -92,17 +92,22 @@ To give an example of what happens after scrolling past the end, imagine a user 
 
 #### Opening the Tab Switcher
 
-The user will press a keybinding named `OpenTabSwitcher` to bring up the UI.
+The user will press a keybinding named `openTabSwitcher` to bring up the UI.
 The user will be able to change it to whatever they like.
-There will also be an optional `anchor` arg that may be provided to this keybinding.
+There will also be an optional `anchor` arg that may be provided to this keybinding. 
 
 #### Keeping it open
 
 We use the term `anchor` to illustrate the idea that the UI stays visible as long as something is "anchoring" it down.
 
-So, when the `OpenTabSwitcher` keybinding is given the `anchor` arg, the first key of the keybinding will act as the `anchor` key. Holding that`anchor` key down will keep the switcher visible, and once the `anchor` key is released, the switcher will dismiss.
+Here's an example of how to set the `anchor` key in the settings:
+```
+  {"keys": ["ctrl+tab"], "command": {"action": "openTabSwitcher", "anchor": "ctrl" }}
+```
 
-If `OpenTabSwitcher` is not given the `anchor` arg, the switcher will stay visible even after the release of the key/keychord.
+This user provided the `anchor` key arg, and set it to <kbd>ctrl</kbd>. So, the user would open the UI with <kbd>ctrl+tab</kbd>, and as long as the user is holding <kbd>ctrl</kbd> down, the UI won't dismiss. The moment the user releases <kbd>ctrl</kbd>, the UI dismisses. The `anchor` key needs to be one of the keys in the `openTabSwitcher` keybinding. If it isn't, then the UI will act as if it wasn't given an `anchor` key in the first place.
+
+If `openTabSwitcher` is not given an `anchor` key, the switcher will stay visible even after the release of the keybinding.
 
 #### Switching through Tabs
 
@@ -120,16 +125,16 @@ There are two _dismissal_ keybinds:
 1. <kbd>enter</kbd> : brings the currently selected tab into focus and dismisses the UI.
 2. <kbd>esc</kbd> : dismisses the UI without changing tab focus.
 
-The following are ways a user can dismiss the UI, _whether or not_ the `Anchor` arg is provided to `OpenTabSwitcher`.
+The following are ways a user can dismiss the UI, _whether or not_ the `Anchor` key is provided to `openTabSwitcher`.
 
 1. The user can press a number associated with a tab to instantly switch to the tab and dismiss the switcher.
 2. The user can click on a tab to instantly switch to the tab and dismiss the switcher.
 3. The user can click outside of the UI to dismiss the switcher without bringing the selected tab into focus.
 4. The user can press any of the dismissal keybinds.
 
-If the `Anchor` arg is provided, then in addition to the above methods, the UI will dismiss upon the release of the `Anchor` key.
+If the `anchor` key is provided, then in addition to the above methods, the UI will dismiss upon the release of the `anchor` key.
 
-Pressing the `OpenTabSwitcher` keychord again will _not_ close the Switcher.
+Pressing the `openTabSwitcher` keychord again will _not_ close the Switcher.
 
 ### Most Recently Used Order
 
@@ -146,8 +151,7 @@ Similar to how the user can currently switch to a particular tab with a combinat
 - The tab switcher will be using WinUI, and so it'll be automatically linked to the UIA tree. This allows screen readers to find it, and so narrator will be able to navigate the switcher easily.
 - The UI is also fully keyboard-driven, with the option of using a mouse to interact with the UI.
 - When the tab switcher pops up, the focus immediately swaps to it.
-- For the sake of contrast with the background, we could make it so that it's similar to how the About Page is presented.
-Specifically, a box would pop up, and the rest of the terminal would turn white with some transparency so that the focus is very clearly on the tab switcher.
+- For the sake of more contrast with the background, we could use a ThemeShadow to bring the UI closer to the user, making the focus clearer.
 
 ### Security
 
@@ -161,7 +165,9 @@ How we're updating the MRU is something to watch out for since it triggers on a 
 
 - The existing way of navigating horizontally through the tabs on the tab bar should not break.
 - These should also be separate keybindings from the keybindings associated with using the tab switcher.
-- Reordering tabs on the tab bar shouldn't change the MRU order. The MRU is essentially supposed to be a different _view_ of the already existing tab list.
+- When a user reorders their tabs on the tab bar, the MRU order remains unchanged. For example:
+  - Tab Bar:`[cmd(focused), ps, wsl]` and MRU:`[cmd, ps, wsl]`
+  - Reordered Tab Bar:`[wsl, cmd(focused), ps]` and MRU:`[cmd, ps, wsl]`
 
 ### Performance, Power, and Efficiency
 
@@ -176,7 +182,7 @@ Visual Studio Code only allows the user to shrink the window until it hits a min
 
 ![Small Visual Studio Code with Tab Switcher](img/VSCodeMinimumTabSwitcherSize.png)
 
-Terminal can't really replicate Visual Studio's version of the tab switcher in this situation. The TabSwitcher needs to be contained within the Terminal. So, if the TabSwitcher is always centered and has a percentage padding from the borders of the Terminal, it'll shrink as Terminal shrinks. One thing I'm not too sure about is when the Terminal window is so small that not even a single tab title will be visible. Should it just not display the UI? Should it try to display the UI and whatever is visible, is visible?
+Terminal can't really replicate Visual Studio's version of the tab switcher in this situation. The TabSwitcher needs to be contained within the Terminal. So, if the TabSwitcher is always centered and has a percentage padding from the borders of the Terminal, it'll shrink as Terminal shrinks. Whatever is visible of the TabSwitcher will be visible. In the case where the Terminal is so small that the switcher isn't visible, the Terminal isn't of much use anyway.
 
 ## Future considerations
 
