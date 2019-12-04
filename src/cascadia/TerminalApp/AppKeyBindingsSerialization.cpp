@@ -260,7 +260,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int in
 IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 {
     auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
-    args->TrimWhitespace(true);
+    args->TrimWhitespace(false);
     return *args;
 };
 
