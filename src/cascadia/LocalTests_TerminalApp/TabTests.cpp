@@ -1,90 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// #include "precomp.h"
 #include "pch.h"
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Tab.h"
+#include "../CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-
-extern "C" __declspec(dllimport) HRESULT __stdcall Thread_Wait_For(HANDLE handle, unsigned long milliseconds);
-
-namespace details
-{
-    class Event
-    {
-    public:
-        Event() :
-            m_handle(::CreateEvent(nullptr, FALSE, FALSE, nullptr))
-        {
-        }
-
-        ~Event()
-        {
-            if (IsValid())
-            {
-                ::CloseHandle(m_handle);
-            }
-        }
-
-        void Set()
-        {
-            ::SetEvent(m_handle);
-        }
-
-        HRESULT Wait()
-        {
-            return Thread_Wait_For(m_handle, INFINITE);
-        }
-
-        bool IsValid()
-        {
-            return m_handle != nullptr;
-        }
-
-        HANDLE m_handle;
-    };
-};
-
-template<typename TFunction>
-HRESULT RunOnUIThread(const TFunction& function)
-{
-    auto m = winrt::Windows::ApplicationModel::Core::CoreApplication::MainView();
-    auto cw = m.CoreWindow();
-    auto d = cw.Dispatcher();
-
-    // Create an event so we can wait for the callback to complete
-    details::Event completedEvent;
-    if (!completedEvent.IsValid())
-    {
-        return HRESULT_FROM_WIN32(::GetLastError());
-    }
-
-    HRESULT invokeResult = E_FAIL;
-
-    auto asyncAction = d.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
-                                  [&invokeResult, &function]() {
-                                      invokeResult = WEX::SafeInvoke([&]() -> bool { function(); return true; });
-                                  });
-
-    asyncAction.Completed([&completedEvent](auto&&, auto&&) {
-        completedEvent.Set();
-        return S_OK;
-    });
-
-    // Wait for the callback to complete
-    HRESULT hr = completedEvent.Wait();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    return invokeResult;
-}
 
 namespace TerminalAppLocalTests
 {
@@ -99,8 +25,10 @@ namespace TerminalAppLocalTests
         // Islands to host our UI. However, in these tests, we don't really need
         // to run full trust - we just need to get some UI elements created. So
         // we can just rely on the normal UWP activation to create us.
-        // UNFORTUNATELY, this doesn't seem to work yet, and the tests fail when
-        // instantiating XAML elements
+        //
+        // IMPORTANTLY! When tests need to make XAML objects, or do XAML things,
+        // make sure to use RunOnUIThread. This helper will dispatch a lambda to
+        // be run on the UI thread.
 
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
@@ -162,6 +90,9 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryCreateTab()
     {
+        // If you leave the Tab shared_ptr owned by the RunOnUIThread lambda, it
+        // will crash when the test tears down. Not totally clear why, but make
+        // sure it's owned outside the lambda
         std::shared_ptr<Tab> newTab{ nullptr };
 
         auto result = RunOnUIThread([&newTab]() {

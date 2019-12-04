@@ -32,6 +32,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="JsonTestClass.h" />
+    <ClInclude Include="CppWinrtTailored.h" />
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->

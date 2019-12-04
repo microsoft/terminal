@@ -38,6 +38,9 @@
 #include "winrt/Windows.UI.Xaml.Documents.h"
 
 #include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
@@ -56,4 +59,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <shellapi.h>
 #include <filesystem>
 
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>

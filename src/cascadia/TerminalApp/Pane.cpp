@@ -6,8 +6,6 @@
 #include "Profile.h"
 #include "CascadiaSettings.h"
 
-#include "winrt/Microsoft.Terminal.TerminalConnection.h"
-
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
