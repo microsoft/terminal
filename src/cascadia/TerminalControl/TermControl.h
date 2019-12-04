@@ -121,7 +121,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        int _rowsToScroll;
+        int _settingsRowsToScroll;
+        uint32_t _systemRowsToScroll;
 
         std::optional<int> _lastScrollOffset;
 

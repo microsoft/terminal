@@ -264,7 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _tsfInputControl.Margin(newMargin);
 
         // set number of rows to scroll at a time
-        _rowsToScroll = _settings.RowsToScroll();
+        _settingsRowsToScroll = _settings.RowsToScroll();
     }
 
     // Method Description:
@@ -1055,14 +1055,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     int32_t TermControl::DetermineRowsToScroll()
     {
         //if the user hasn't overriden rowsToScroll in the settings, or specified 0 (NULL), we'll grab the value from the system setting.
-        if (_rowsToScroll != NULL)
-            return _rowsToScroll;
-
-        uint32_t scrollLines;
-        if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &scrollLines, 0))
-            return scrollLines;
-
-        return 4;
+        return (_settingsRowsToScroll != NULL) ? _settingsRowsToScroll : _systemRowsToScroll;
     }
 
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
@@ -1210,7 +1203,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Event handler for the GotFocus event. This is used to start
-    //   blinking the cursor when the window is focused.
+    //   blinking the cursor when the window is focused, and update the number of lines to scroll set in the system
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
@@ -1229,6 +1222,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _cursorTimer.value().Start();
         }
+
+        if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &_systemRowsToScroll, 0))
+            _systemRowsToScroll = 4;
     }
 
     // Method Description:
