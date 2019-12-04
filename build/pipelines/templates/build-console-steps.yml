@@ -93,21 +93,6 @@ steps:
     configuration: '$(BuildConfiguration)'
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
-# TODO: Remove this if it works, and combine with Unittests
-- task: VSTest@2
-  displayName: 'Run Local Tests'
-  inputs:
-    testAssemblyVer2: |
-      $(BUILD.SOURCESDIRECTORY)\**\*localtest*.dll
-      !**\obj\**
-    runSettingsFile: '$(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings'
-    codeCoverageEnabled: true
-    runInParallel: False
-    testRunTitle: 'Console Local Tests'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-  condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
-
 - task: VSTest@2
   displayName: 'Run Feature Tests (x64 only)'
   inputs:

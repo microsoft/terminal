@@ -14,8 +14,10 @@ using namespace WEX::TestExecution;
 
 namespace TerminalAppLocalTests
 {
-    // Unfortunately, these tests _WILL NOT_ work in our CI, until we have a lab
-    // machine available that can run Windows version 18362.
+    // TODO:microsoft/terminal#3838:
+    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
+    // an updated TAEF that will let us install framework packages when the test
+    // package is deployed. Until then, these tests won't deploy in CI.
 
     class TabTests
     {
@@ -32,9 +34,9 @@ namespace TerminalAppLocalTests
 
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
             TEST_CLASS_PROPERTY(L"UAP:Host", L"Xaml")
+            TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they
@@ -96,10 +98,11 @@ namespace TerminalAppLocalTests
         std::shared_ptr<Tab> newTab{ nullptr };
 
         auto result = RunOnUIThread([&newTab]() {
-            // Just try creating all of:
+            // Try creating all of:
             // 1. one of our pure c++ types (Profile)
-            // 2. one of our c++winrt types (TermControl)
-            // 3. one of our types that uses MUX/Xaml (Tab).
+            // 2. one of our c++winrt types (TerminalSettings, EchoConnection)
+            // 3. one of our types that uses MUX/Xaml (TermControl).
+            // 4. one of our types that uses MUX/Xaml in this dll (Tab).
             // Just creating all of them is enough to know that everything is working.
             const auto profileGuid{ Utils::CreateGuid() };
             winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
