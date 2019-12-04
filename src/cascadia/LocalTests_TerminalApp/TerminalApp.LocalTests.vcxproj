@@ -90,6 +90,27 @@
     <EmbedManifest>true</EmbedManifest>
   </PropertyGroup>
 
+
+  <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Manually add references to each of our dependent winmds. Mark them as
+    private=false and CopyLocalSatelliteAssemblies=false, so that we don't
+    propogate them upwards (which can make referencing this project result in
+    duplicate type definitions)-->
+
+    <Reference Include="TerminalApp">
+      <HintPath>$(_BinRoot)TerminalAppLib\TerminalApp.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+
+  </ItemGroup>
+
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
@@ -114,11 +135,26 @@
   <PropertyGroup>
     <BeforeLinkTargets Condition="'$(WindowsTargetPlatformVersion)' &gt;= '10.0.18362.0'">
       $(BeforeLinkTargets);
+      _LocalTestsDoTheThing;
       _LocalTestsGenerateCombinedManifests;
       _LocalTestsBuildAppxManifest;
       _LocalTestsCopyDependencies;
     </BeforeLinkTargets>
   </PropertyGroup>
+
+
+  <Target Name="_LocalTestsDoTheThing"
+          DependsOnTargets="_ConsoleGenerateAdditionalWinmdManifests">
+
+    <!-- This target is batched and a new Exec is spawned for each entry in _ConsoleWinmdManifest. -->
+    <Exec Command="mt.exe -winmd:$(_BinRoot)TerminalAppLib\TerminalApp.winmd -dll:$(_BinRoot)TerminalApp\TerminalApp.dll -out:TerminalApp.manifest" />
+
+    <ItemGroup>
+      <!-- Emit the generated manifest into the Link inputs. -->
+      <Manifest Include="@(_ConsoleWinmdManifest)" />
+    </ItemGroup>
+
+  </Target>
 
   <!-- Step 1: Combine all our SxS manifests into a single SxS manifest. TAEF
   needs us to specify a single activation context at runtime, so we need a
