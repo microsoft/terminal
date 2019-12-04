@@ -98,7 +98,7 @@ steps:
   displayName: 'Run Local Tests'
   inputs:
     testAssemblyVer2: |
-      $(BUILD.SOURCESDIRECTORY)\**\*local.test*.dll
+      $(BUILD.SOURCESDIRECTORY)\**\*localtest*.dll
       !**\obj\**
     runSettingsFile: '$(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings'
     codeCoverageEnabled: true
