@@ -106,7 +106,6 @@ namespace TerminalAppLocalTests
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
             TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
-            TEST_CLASS_PROPERTY(L"UAP:Host", L"Xaml")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they
