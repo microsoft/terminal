@@ -95,7 +95,7 @@ const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() c
     return _termControl->GetPadding();
 }
 
-HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring& wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
+HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
 {
     try
     {
@@ -117,7 +117,7 @@ HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimpl
     CATCH_RETURN();
 }
 
-HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring& wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
@@ -129,7 +129,7 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                 const Cursor& cursor,
-                                                const std::wstring& wordDelimiters,
+                                                const std::wstring_view wordDelimiters,
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
@@ -144,7 +144,7 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
                                                 const Endpoint start,
                                                 const Endpoint end,
                                                 const bool degenerate,
-                                                const std::wstring& wordDelimiters,
+                                                const std::wstring_view wordDelimiters,
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
@@ -157,7 +157,7 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                 const UiaPoint point,
-                                                const std::wstring& wordDelimiters,
+                                                const std::wstring_view wordDelimiters,
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);

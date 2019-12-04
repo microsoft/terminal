@@ -952,7 +952,7 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 // - includeCharacterRun - include the character run located at the beginning of the word
 // Return Value:
 // - The COORD for the first character on the "word"  (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring& wordDelimiters, bool includeCharacterRun) const
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun) const
 {
     const auto bufferSize = GetSize();
     COORD result = target;
@@ -996,7 +996,7 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring& wor
 // - includeDelimiterRun - include the delimiter runs located at the end of the word
 // Return Value:
 // - The COORD for the last character on the "word" (inclusive)
-const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring& wordDelimiters, bool includeDelimiterRun) const
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun) const
 {
     const auto bufferSize = GetSize();
     COORD result = target;
@@ -1039,7 +1039,7 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring& wordD
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
 // - the delimiter class for the given char
-TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring& wordDelimiters) const
+TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const
 {
     if (cellChar.at(0) <= UNICODE_SPACE)
     {

@@ -37,7 +37,7 @@ namespace Microsoft::Console::Types
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring wordDelimiters = L" ") noexcept;
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
@@ -77,15 +77,15 @@ namespace Microsoft::Console::Types
     protected:
         ScreenInfoUiaProviderBase() = default;
 
-        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring& wordDelimiters, _Out_ std::deque<WRL::ComPtr<UiaTextRangeBase>>& selectionRanges) = 0;
+        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<WRL::ComPtr<UiaTextRangeBase>>& selectionRanges) = 0;
 
         // degenerate range
-        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring& wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
+        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // degenerate range at cursor position
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                         const Cursor& cursor,
-                                        const std::wstring& wordDelimiters,
+                                        const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // specific endpoint range
@@ -93,13 +93,13 @@ namespace Microsoft::Console::Types
                                         const Endpoint start,
                                         const Endpoint end,
                                         const bool degenerate,
-                                        const std::wstring& wordDelimiters,
+                                        const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // range from a UiaPoint
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                         const UiaPoint point,
-                                        const std::wstring& wordDelimiters,
+                                        const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // weak reference to IUiaData

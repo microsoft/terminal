@@ -25,7 +25,7 @@ namespace Microsoft::Terminal
     public:
         static HRESULT GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
                                           _In_ IRawElementProviderSimple* pProvider,
-                                          _In_ const std::wstring& wordDelimiters,
+                                          _In_ const std::wstring_view wordDelimiters,
                                           _Out_ std::deque<WRL::ComPtr<UiaTextRange>>& ranges);
 
         UiaTextRange() = default;
@@ -33,13 +33,13 @@ namespace Microsoft::Terminal
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ const std::wstring& wordDelimiters = L" ");
+                                       _In_ const std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
-                                       const std::wstring& wordDelimiters = L" ");
+                                       const std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
@@ -47,13 +47,13 @@ namespace Microsoft::Terminal
                                        const Endpoint start,
                                        const Endpoint end,
                                        const bool degenerate,
-                                       const std::wstring& wordDelimiters = L" ");
+                                       const std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         // range from a UiaPoint
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const UiaPoint point,
-                                       const std::wstring& wordDelimiters = L" ");
+                                       const std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         HRESULT RuntimeClassInitialize(const UiaTextRange& a);
 

@@ -103,7 +103,7 @@ void UiaTextRangeBase::_outputObjectState()
 
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring wordDelimiters)
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -131,7 +131,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  const Cursor& cursor,
-                                                 _In_ std::wstring wordDelimiters)
+                                                 _In_ std::wstring_view wordDelimiters)
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
@@ -159,7 +159,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  const Endpoint start,
                                                  const Endpoint end,
                                                  const bool degenerate,
-                                                 _In_ std::wstring wordDelimiters)
+                                                 _In_ std::wstring_view wordDelimiters)
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
     RETURN_HR_IF(E_INVALIDARG, !degenerate && start > end);
@@ -1185,7 +1185,7 @@ const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(gsl::not_null<IUiaData
 // - wordDelimiters - characters to determine the separation between words
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the word where _start is located.
-const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring& wordDelimiters)
+const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters)
 {
     auto coord = _endpointToCoord(pData, target);
     coord = pData->GetTextBuffer().GetWordStart(coord, wordDelimiters);
@@ -1201,7 +1201,7 @@ const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pDa
 // - wordDelimiters - characters to determine the separation between words
 // Return Value:
 // - the equivalent Endpoint, starting at the end of the word where _start is located.
-const Endpoint UiaTextRangeBase::_wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring& wordDelimiters)
+const Endpoint UiaTextRangeBase::_wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters)
 {
     auto coord = _endpointToCoord(pData, target);
     coord = pData->GetTextBuffer().GetWordEnd(coord, wordDelimiters, true);
@@ -1517,7 +1517,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(gsl::no
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWord(gsl::not_null<IUiaData*> pData,
                                                             const int moveCount,
                                                             const MoveState moveState,
-                                                            const std::wstring& wordDelimiters,
+                                                            const std::wstring_view wordDelimiters,
                                                             _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
@@ -1533,7 +1533,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWord(gsl::not_null<IUiaDa
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null<IUiaData*> pData,
                                                                    const int moveCount,
                                                                    const MoveState moveState,
-                                                                   const std::wstring& wordDelimiters,
+                                                                   const std::wstring_view wordDelimiters,
                                                                    _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     // STRATEGY:
@@ -1604,7 +1604,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null
 std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_null<IUiaData*> pData,
                                                                     const int moveCount,
                                                                     const MoveState moveState,
-                                                                    const std::wstring& wordDelimiters,
+                                                                    const std::wstring_view wordDelimiters,
                                                                     _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     // STRATEGY:
@@ -1970,7 +1970,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitWord(g
                                                                                const int moveCount,
                                                                                const TextPatternRangeEndpoint endpoint,
                                                                                const MoveState moveState,
-                                                                               const std::wstring& wordDelimiters,
+                                                                               const std::wstring_view wordDelimiters,
                                                                                _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
@@ -1988,7 +1988,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
                                                  const int moveCount,
                                                  const TextPatternRangeEndpoint endpoint,
                                                  const MoveState moveState,
-                                                 const std::wstring& wordDelimiters,
+                                                 const std::wstring_view wordDelimiters,
                                                  _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
@@ -2108,7 +2108,7 @@ UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData
                                                   const int moveCount,
                                                   const TextPatternRangeEndpoint endpoint,
                                                   const MoveState moveState,
-                                                  const std::wstring& wordDelimiters,
+                                                  const std::wstring_view wordDelimiters,
                                                   _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;

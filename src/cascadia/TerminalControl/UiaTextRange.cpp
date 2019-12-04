@@ -11,7 +11,7 @@ using namespace Microsoft::WRL;
 
 HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                                          _In_ IRawElementProviderSimple* pProvider,
-                                         _In_ const std::wstring& wordDelimiters,
+                                         _In_ const std::wstring_view wordDelimiters,
                                          _Out_ std::deque<ComPtr<UiaTextRange>>& ranges)
 {
     try
@@ -39,7 +39,7 @@ HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
 }
 
 // degenerate range constructor.
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring& wordDelimiters)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters)
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
@@ -47,7 +47,7 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElem
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const Cursor& cursor,
-                                             const std::wstring& wordDelimiters)
+                                             const std::wstring_view wordDelimiters)
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor, wordDelimiters);
 }
@@ -57,7 +57,7 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              const Endpoint start,
                                              const Endpoint end,
                                              const bool degenerate,
-                                             const std::wstring& wordDelimiters)
+                                             const std::wstring_view wordDelimiters)
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, degenerate, wordDelimiters);
 }
@@ -66,7 +66,7 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const UiaPoint point,
-                                             const std::wstring& wordDelimiters)
+                                             const std::wstring_view wordDelimiters)
 {
     RETURN_IF_FAILED(UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters));
     Initialize(point);

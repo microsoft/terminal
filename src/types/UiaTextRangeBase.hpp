@@ -72,6 +72,8 @@ typedef unsigned int Endpoint;
 
 constexpr IdType InvalidId = 0;
 
+constexpr auto defaultWordDelimiter = L" ";
+
 namespace Microsoft::Console::Types
 {
     class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
@@ -141,13 +143,13 @@ namespace Microsoft::Console::Types
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ std::wstring wordDelimiters = L" ");
+                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
-                                       _In_ std::wstring wordDelimiters = L" ");
+                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
@@ -155,7 +157,7 @@ namespace Microsoft::Console::Types
                                        const Endpoint start,
                                        const Endpoint end,
                                        const bool degenerate,
-                                       _In_ std::wstring wordDelimiters = L" ");
+                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter);
 
         HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
@@ -221,7 +223,7 @@ namespace Microsoft::Console::Types
 
         IRawElementProviderSimple* _pProvider;
 
-        std::wstring _wordDelimiters;
+        std::wstring_view _wordDelimiters;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
@@ -281,8 +283,8 @@ namespace Microsoft::Console::Types
                                                                  const ScreenInfoRow row) noexcept;
         static const Endpoint _textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row);
 
-        static const Endpoint _wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring& wordDelimiters);
-        static const Endpoint _wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring& wordDelimiters);
+        static const Endpoint _wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters);
+        static const Endpoint _wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters);
 
         static const ScreenInfoRow _endpointToScreenInfoRow(gsl::not_null<IUiaData*> pData,
                                                             const Endpoint endpoint);
@@ -350,19 +352,19 @@ namespace Microsoft::Console::Types
         static std::pair<Endpoint, Endpoint> _moveByWord(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
-                                                         const std::wstring& wordDelimiters,
+                                                         const std::wstring_view wordDelimiters,
                                                          _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWordForward(gsl::not_null<IUiaData*> pData,
                                                                 const int moveCount,
                                                                 const MoveState moveState,
-                                                                const std::wstring& wordDelimiters,
+                                                                const std::wstring_view wordDelimiters,
                                                                 _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWordBackward(gsl::not_null<IUiaData*> pData,
                                                                  const int moveCount,
                                                                  const MoveState moveState,
-                                                                 const std::wstring& wordDelimiters,
+                                                                 const std::wstring_view wordDelimiters,
                                                                  _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,
@@ -401,7 +403,7 @@ namespace Microsoft::Console::Types
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
-                                const std::wstring& wordDelimiters,
+                                const std::wstring_view wordDelimiters,
                                 _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
@@ -409,7 +411,7 @@ namespace Microsoft::Console::Types
                                        const int moveCount,
                                        const TextPatternRangeEndpoint endpoint,
                                        const MoveState moveState,
-                                       const std::wstring& wordDelimiters,
+                                       const std::wstring_view wordDelimiters,
                                        _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
@@ -417,7 +419,7 @@ namespace Microsoft::Console::Types
                                         const int moveCount,
                                         const TextPatternRangeEndpoint endpoint,
                                         const MoveState moveState,
-                                        const std::wstring& wordDelimiters,
+                                        const std::wstring_view wordDelimiters,
                                         _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
