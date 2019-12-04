@@ -213,24 +213,24 @@ namespace TerminalAppLocalTests
 
         {
             Log::Comment(NoThrowString().Format(
-                L"Verify that `copy` without args parses as Copy(TrimWhitespace=false)"));
+                L"Verify that `copy` without args parses as Copy(TrimWhitespace=true)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
         }
 
         {
             Log::Comment(NoThrowString().Format(
-                L"Verify that `copyTextWithoutNewlines` parses as Copy(TrimWhitespace=true)"));
+                L"Verify that `copyTextWithoutNewlines` parses as Copy(TrimWhitespace=false)"));
             KeyChord kc{ false, true, false, static_cast<int32_t>('C') };
             auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
+            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
         }
 
         {
@@ -325,7 +325,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
         }
 
         {
@@ -337,7 +337,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
         }
 
         {
