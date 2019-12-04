@@ -6,6 +6,7 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Tab.h"
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -106,6 +107,7 @@ namespace TerminalAppLocalTests
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
             TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:Host", L"Xaml")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they
@@ -113,7 +115,7 @@ namespace TerminalAppLocalTests
         // failed.
         TEST_METHOD(EnsureTestsActivate);
         TEST_METHOD(TryCreateLocalWinRTType);
-        TEST_METHOD(EnsureDispatcher);
+        // TEST_METHOD(EnsureDispatcher);
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
 
@@ -153,48 +155,58 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
-    void TabTests::EnsureDispatcher()
-    {
-        // This test was originally used to ensure that XAML Islands was
-        // initialized correctly. Now, it's used to ensure that the tests
-        // actually deployed and activated. This test _should_ always pass.
-        const auto dispatcherQueue = ::winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
-        // VERIFY_IS_NOT_NULL(dispatcherQueue);
+    // void TabTests::EnsureDispatcher()
+    // {
+    //     // This test was originally used to ensure that XAML Islands was
+    //     // initialized correctly. Now, it's used to ensure that the tests
+    //     // actually deployed and activated. This test _should_ always pass.
+    //     const auto dispatcherQueue = ::winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+    //     // VERIFY_IS_NOT_NULL(dispatcherQueue);
 
-        auto app = ::winrt::Windows::UI::Xaml::Application::Current();
-        VERIFY_IS_NOT_NULL(app);
-        auto myApp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>();
-        VERIFY_IS_NOT_NULL(app);
-    }
+    //     auto app = ::winrt::Windows::UI::Xaml::Application::Current();
+    //     VERIFY_IS_NOT_NULL(app);
+    //     auto myApp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>();
+    //     VERIFY_IS_NOT_NULL(app);
+    // }
 
     void TabTests::TryCreateXamlObjects()
     {
-        // Verify we can create a some XAML objects
-        // Just creating all of them is enough to know that everything is working.
-        winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
-        VERIFY_IS_NOT_NULL(controlRoot);
-        winrt::Windows::UI::Xaml::Controls::Grid root;
-        VERIFY_IS_NOT_NULL(root);
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
-        VERIFY_IS_NOT_NULL(swapChainPanel);
-        winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
-        VERIFY_IS_NOT_NULL(scrollBar);
+        auto result = RunOnUIThread([]() {
+            // Verify we can create a some XAML objects
+            // Just creating all of them is enough to know that everything is working.
+            winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
+            VERIFY_IS_NOT_NULL(controlRoot);
+            winrt::Windows::UI::Xaml::Controls::Grid root;
+            VERIFY_IS_NOT_NULL(root);
+            winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
+            VERIFY_IS_NOT_NULL(swapChainPanel);
+            winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
+            VERIFY_IS_NOT_NULL(scrollBar);
+        });
+
+        VERIFY_SUCCEEDED(result);
     }
 
     void TabTests::TryCreateTab()
     {
-        // Just try creating all of:
-        // 1. one of our pure c++ types (Profile)
-        // 2. one of our c++winrt types (TermControl)
-        // 3. one of our types that uses MUX/Xaml (Tab).
-        // Just creating all of them is enough to know that everything is working.
-        const auto profileGuid{ Utils::CreateGuid() };
-        winrt::Microsoft::Terminal::TerminalControl::TermControl term{};
-        VERIFY_IS_NOT_NULL(term);
+        auto result = RunOnUIThread([]() {
+            // Just try creating all of:
+            // 1. one of our pure c++ types (Profile)
+            // 2. one of our c++winrt types (TermControl)
+            // 3. one of our types that uses MUX/Xaml (Tab).
+            // Just creating all of them is enough to know that everything is working.
+            const auto profileGuid{ Utils::CreateGuid() };
+            winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
+            winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+            winrt::Microsoft::Terminal::TerminalControl::TermControl term{ settings, conn };
+            VERIFY_IS_NOT_NULL(term);
 
-        auto newTab = std::make_shared<Tab>(profileGuid, term);
+            auto newTab = std::make_shared<Tab>(profileGuid, term);
 
-        VERIFY_IS_NOT_NULL(newTab);
+            VERIFY_IS_NOT_NULL(newTab);
+        });
+
+        VERIFY_SUCCEEDED(result);
     }
 
 }

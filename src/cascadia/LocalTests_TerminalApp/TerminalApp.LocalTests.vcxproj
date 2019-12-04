@@ -170,7 +170,8 @@
     </MSBuild>
 
     <ItemGroup>
-      <MyPackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" Condition="'%(Extension)'=='.dll' Or '%(Extension)'=='.pri' Or '%(Extension)'=='.xbf'" />
+      <!-- IMPORTANT: Grab all the xbf files _except_ App.xbf. If that's there, then the tests will hyperexplode. -->
+      <MyPackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" Condition="'%(Extension)'=='.dll' Or '%(Extension)'=='.pri' Or ('%(Extension)'=='.xbf' And '%(Filename)' != 'App')" />
     </ItemGroup>
   </Target>
 
