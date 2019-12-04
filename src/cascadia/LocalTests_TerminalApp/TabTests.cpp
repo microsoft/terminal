@@ -6,7 +6,6 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Tab.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -115,24 +114,8 @@ namespace TerminalAppLocalTests
         // failed.
         TEST_METHOD(EnsureTestsActivate);
         TEST_METHOD(TryCreateLocalWinRTType);
-        // TEST_METHOD(EnsureDispatcher);
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
-
-        TEST_METHOD(DispatchToUIThread)
-        {
-            auto result = RunOnUIThread([]() {
-                VERIFY_IS_TRUE(true, L"Congrats! We're running on the UI thread!");
-
-                auto v = winrt::Windows::ApplicationModel::Core::CoreApplication::GetCurrentView();
-                VERIFY_IS_NOT_NULL(v, L"Ensure we have a current view");
-
-                winrt::Windows::UI::Xaml::Controls::Grid root;
-                VERIFY_IS_NOT_NULL(root, L"Try making a Grid");
-            });
-
-            VERIFY_SUCCEEDED(result);
-        }
     };
 
     void TabTests::EnsureTestsActivate()
@@ -155,33 +138,23 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
-    // void TabTests::EnsureDispatcher()
-    // {
-    //     // This test was originally used to ensure that XAML Islands was
-    //     // initialized correctly. Now, it's used to ensure that the tests
-    //     // actually deployed and activated. This test _should_ always pass.
-    //     const auto dispatcherQueue = ::winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
-    //     // VERIFY_IS_NOT_NULL(dispatcherQueue);
-
-    //     auto app = ::winrt::Windows::UI::Xaml::Application::Current();
-    //     VERIFY_IS_NOT_NULL(app);
-    //     auto myApp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>();
-    //     VERIFY_IS_NOT_NULL(app);
-    // }
-
     void TabTests::TryCreateXamlObjects()
     {
         auto result = RunOnUIThread([]() {
+            VERIFY_IS_TRUE(true, L"Congrats! We're running on the UI thread!");
+
+            auto v = winrt::Windows::ApplicationModel::Core::CoreApplication::GetCurrentView();
+            VERIFY_IS_NOT_NULL(v, L"Ensure we have a current view");
             // Verify we can create a some XAML objects
             // Just creating all of them is enough to know that everything is working.
             winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
-            VERIFY_IS_NOT_NULL(controlRoot);
+            VERIFY_IS_NOT_NULL(controlRoot, L"Try making a UserControl");
             winrt::Windows::UI::Xaml::Controls::Grid root;
-            VERIFY_IS_NOT_NULL(root);
+            VERIFY_IS_NOT_NULL(root, L"Try making a Grid");
             winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
-            VERIFY_IS_NOT_NULL(swapChainPanel);
+            VERIFY_IS_NOT_NULL(swapChainPanel, L"Try making a SwapChainPanel");
             winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
-            VERIFY_IS_NOT_NULL(scrollBar);
+            VERIFY_IS_NOT_NULL(scrollBar, L"Try making a ScrollBar");
         });
 
         VERIFY_SUCCEEDED(result);
@@ -189,7 +162,9 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryCreateTab()
     {
-        auto result = RunOnUIThread([]() {
+        std::shared_ptr<Tab> newTab{ nullptr };
+
+        auto result = RunOnUIThread([&newTab]() {
             // Just try creating all of:
             // 1. one of our pure c++ types (Profile)
             // 2. one of our c++winrt types (TermControl)
@@ -197,12 +172,13 @@ namespace TerminalAppLocalTests
             // Just creating all of them is enough to know that everything is working.
             const auto profileGuid{ Utils::CreateGuid() };
             winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
+            VERIFY_IS_NOT_NULL(settings);
             winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+            VERIFY_IS_NOT_NULL(conn);
             winrt::Microsoft::Terminal::TerminalControl::TermControl term{ settings, conn };
             VERIFY_IS_NOT_NULL(term);
 
-            auto newTab = std::make_shared<Tab>(profileGuid, term);
-
+            newTab = std::make_shared<Tab>(profileGuid, term);
             VERIFY_IS_NOT_NULL(newTab);
         });
 

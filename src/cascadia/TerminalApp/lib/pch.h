@@ -55,3 +55,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 #include <shellapi.h>
 #include <filesystem>
+
+#include <winrt/Microsoft.UI.Xaml.Controls.h>

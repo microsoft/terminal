@@ -57,3 +57,7 @@ Author(s):
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <winrt/windows.applicationmodel.core.h>
+
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+
+#include <winrt/Microsoft.UI.Xaml.Controls.h>

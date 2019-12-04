@@ -1130,7 +1130,7 @@ void Pane::_SetupResources()
     }
 
     const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(accentColorKey))
+    if (res.HasKey(tabViewBackgroundKey))
     {
         winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
