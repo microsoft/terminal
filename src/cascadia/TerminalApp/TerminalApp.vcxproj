@@ -22,6 +22,9 @@
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
+    <ApplicationDefinition Include="..\App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -42,10 +45,16 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="App.cpp" >
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
+    <Midl Include="App.idl" >
+      <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
