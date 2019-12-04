@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
-        _rowsToScroll{ 4 },
+        _rowsToScroll{ NULL },
         _snapOnInput{ true },
         _cursorColor{ DEFAULT_CURSOR_COLOR },
         _cursorShape{ CursorStyle::Vintage },

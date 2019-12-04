@@ -1034,8 +1034,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // With one of the precision mouses, one click is always a multiple of 120,
         // but the "smooth scrolling" mode results in non-int values
 
-        // Number of rows to scroll is now populated from settings.
-        double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
+        // Number of rows to scroll is now populated from system default, but can be overridden in the settings file.
+        double newValue = (DetermineRowsToScroll() * rowDelta) + (currentOffset);
 
         // Clear our expected scroll offset. The viewport will now move in
         //      response to our user input.
@@ -1050,6 +1050,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      Make sure selection reflects that immediately.
             _SetEndSelectionPointAtCursor(pointerPoint.Position());
         }
+    }
+
+    int32_t TermControl::DetermineRowsToScroll()
+    {
+        //if the user hasn't overriden rowsToScroll in the settings, or specified 0 (NULL), we'll grab the value from the system setting.
+        if (_rowsToScroll != NULL)
+            return _rowsToScroll;
+
+        uint32_t scrollLines;
+        if (SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &scrollLines, 0))
+            return scrollLines;
+
+        return 4;
     }
 
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
