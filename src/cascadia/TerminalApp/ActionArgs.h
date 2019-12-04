@@ -41,11 +41,13 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::hstring, Commandline, L"");
         GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
         GETSET_PROPERTY(winrt::hstring, TabTitle, L"");
+        GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         GETSET_PROPERTY(winrt::hstring, Profile, L"");
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
         static constexpr std::string_view TabTitleKey{ "tabTitle" };
+        static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
 
     public:
@@ -57,6 +59,7 @@ namespace winrt::TerminalApp::implementation
                 return otherAsUs->_Commandline == _Commandline &&
                        otherAsUs->_StartingDirectory == _StartingDirectory &&
                        otherAsUs->_TabTitle == _TabTitle &&
+                       otherAsUs->_ProfileIndex == _ProfileIndex &&
                        otherAsUs->_Profile == _Profile;
             }
             return false;
@@ -76,6 +79,10 @@ namespace winrt::TerminalApp::implementation
             if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
             {
                 args->_TabTitle = winrt::to_hstring(tabTitle.asString());
+            }
+            if (auto index{ json[JsonKey(TabTitleKey)] })
+            {
+                args->_ProfileIndex = index.asInt();
             }
             if (auto profile{ json[JsonKey(ProfileKey)] })
             {
@@ -117,10 +124,7 @@ namespace winrt::TerminalApp::implementation
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
         NewTabArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
-
-        static constexpr std::string_view ProfileIndexKey{ "index" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -128,8 +132,7 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<NewTabArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_ProfileIndex == _ProfileIndex &&
-                       otherAsUs->_TerminalArgs == _TerminalArgs;
+                return otherAsUs->_TerminalArgs == _TerminalArgs;
             }
             return false;
         };
@@ -138,10 +141,6 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-            if (auto profileIndex{ json[JsonKey(ProfileIndexKey)] })
-            {
-                args->_ProfileIndex = profileIndex.asInt();
-            }
             return *args;
         }
     };

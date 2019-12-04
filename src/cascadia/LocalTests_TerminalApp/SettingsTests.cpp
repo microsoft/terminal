@@ -1617,7 +1617,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
@@ -1637,7 +1637,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", realArgs.TerminalArgs().Profile());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
@@ -1657,7 +1657,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
@@ -1677,7 +1677,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(profile2Guid, guid);
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
@@ -1697,7 +1697,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
@@ -1718,7 +1718,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
             VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
@@ -1736,7 +1736,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
@@ -1755,7 +1755,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
@@ -1776,7 +1776,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(profile2Guid, guid);
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
@@ -1796,7 +1796,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid0, guid);
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
@@ -1817,7 +1817,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(profile2Guid, guid);
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
@@ -1840,7 +1840,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
 
-            const auto [guid, termSettings] = settings.BuildSettings(std::nullopt, realArgs.TerminalArgs());
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(guid1, guid);
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());

@@ -103,14 +103,14 @@ namespace winrt::TerminalApp::implementation
 
         //Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
-            this->_OpenNewTab(std::nullopt);
+            this->_OpenNewTab(nullptr);
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
-        _OpenNewTab(std::nullopt);
+        _OpenNewTab(nullptr);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
     }
@@ -270,7 +270,9 @@ namespace winrt::TerminalApp::implementation
                     auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
                     actionAndArgs->Action(ShortcutAction::NewTab);
                     auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                    newTabArgs->ProfileIndex(profileIndex);
+                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                    newTerminalArgs->ProfileIndex(profileIndex);
+                    newTabArgs->TerminalArgs(*newTerminalArgs);
                     actionAndArgs->Args(*newTabArgs);
                     profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
                 }
@@ -304,7 +306,9 @@ namespace winrt::TerminalApp::implementation
             }
 
             profileMenuItem.Click([this, profileIndex](auto&&, auto&&) {
-                this->_OpenNewTab({ profileIndex });
+                auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                newTerminalArgs->ProfileIndex(profileIndex);
+                this->_OpenNewTab(*newTerminalArgs);
             });
             newTabFlyout.Items().Append(profileMenuItem);
         }
@@ -372,27 +376,27 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Open a new tab. This will create the TerminalControl hosting the
-    //      terminal, and add a new Tab to our list of tabs. The method can
-    //      optionally be provided a profile index, which will be used to create
-    //      a tab using the profile in that index.
-    //      If no index is provided, the default profile will be used.
+    //   terminal, and add a new Tab to our list of tabs. The method can
+    //   optionally be provided a NewTerminalArgs, which will be used to create
+    //   a tab using the values in that object.
     // Arguments:
-    // - profileIndex: an optional index into the list of profiles to use to
-    //      initialize this tab up with.
-    void TerminalPage::_OpenNewTab(std::optional<int> profileIndex,
-                                   const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        const auto [profileGuid, settings] = _settings->BuildSettings(std::nullopt, newTerminalArgs);
+        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
+        const bool usedManualProfile = (newTerminalArgs != nullptr) && (newTerminalArgs.ProfileIndex().Value() || newTerminalArgs.Profile().empty());
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
-            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -902,7 +906,8 @@ namespace winrt::TerminalApp::implementation
     //   new pane should be split from its parent.
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
+    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
+                                  const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
         if (splitType == TerminalApp::SplitState::None)
@@ -910,8 +915,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto [realGuid, controlSettings] = _settings->BuildSettings(std::nullopt,
-                                                                          newTerminalArgs);
+        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 

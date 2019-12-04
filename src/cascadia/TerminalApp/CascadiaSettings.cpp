@@ -471,10 +471,9 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 //     the profile.
 // Return Value:
 // - the GUID of the created profile, and a fully initialized TerminalSettings object
-std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(std::optional<int> profileIndex,
-                                                                   const NewTerminalArgs& newTerminalArgs) const
+std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
 {
-    const GUID profileGuid = _GetProfileForIndexAndArgs(profileIndex, newTerminalArgs);
+    const GUID profileGuid = _GetProfileForArgs(newTerminalArgs);
     auto settings = MakeSettings(profileGuid);
 
     if (newTerminalArgs)
@@ -513,10 +512,15 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(std::optional
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-GUID CascadiaSettings::_GetProfileForIndexAndArgs(std::optional<int> index,
-                                                  const NewTerminalArgs& newTerminalArgs) const
+GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
 {
-    GUID profileGuid = _GetProfileForIndex(index);
+    std::optional<int> profileIndex{ std::nullopt };
+    if (newTerminalArgs &&
+        newTerminalArgs.ProfileIndex() != nullptr)
+    {
+        profileIndex = newTerminalArgs.ProfileIndex().Value();
+    }
+    GUID profileGuid = _GetProfileForIndex(profileIndex);
 
     if (newTerminalArgs)
     {
