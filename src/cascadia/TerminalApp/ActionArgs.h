@@ -37,7 +37,7 @@ namespace winrt::TerminalApp::implementation
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
         CopyTextArgs() = default;
-        GETSET_PROPERTY(bool, TrimWhitespace, false);
+        GETSET_PROPERTY(bool, TrimWhitespace, true);
 
         static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
 
