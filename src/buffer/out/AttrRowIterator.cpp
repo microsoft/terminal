@@ -136,11 +136,11 @@ void AttrRowIterator::_decrement(size_t count)
             _currentAttributeIndex -= count;
             return;
         }
-        // If there's not space, move the whole color attribute left by one
-        // and just take one away from the remaining movement.
+        // If there's not space, move to the previous attribute run
         // We'll walk through above on the if branch to move left further (if necessary)
         else
         {
+            // make sure we don't go out of bounds
             if (_run == _pAttrRow->_list.cbegin())
             {
                 _exceeded = true;

@@ -565,7 +565,7 @@ class AttrRowTests
 
         Log::Comment(L"Reverse iterate past one boundary");
         {
-            // Create attr row representing a buffer that's 12 wide.
+            // Create attr row representing a buffer that's 3 wide.
             auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
 
             // The repro case had 3 chain segments.
@@ -593,7 +593,7 @@ class AttrRowTests
 
         Log::Comment(L"Reverse iterate past one boundary");
         {
-            // Create attr row representing a buffer that's 12 wide.
+            // Create attr row representing a buffer that's 3 wide.
             auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
 
             // The repro case had 3 chain segments.
