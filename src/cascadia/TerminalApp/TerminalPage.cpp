@@ -81,7 +81,7 @@ namespace winrt::TerminalApp::implementation
                 if (from.has_value() && to.has_value() && to != from)
                 {
                     auto& tabs{ page->_tabs };
-                    auto tab = tabs.at(to.value());
+                    auto tab = tabs.at(from.value());
                     tabs.erase(tabs.begin() + from.value());
                     tabs.insert(tabs.begin() + to.value(), tab);
                 }

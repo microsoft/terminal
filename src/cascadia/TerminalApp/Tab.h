@@ -5,7 +5,6 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Pane.h"
 
-// TODO: make Tab a WinRT type
 class Tab : public std::enable_shared_from_this<Tab>
 {
 public:
