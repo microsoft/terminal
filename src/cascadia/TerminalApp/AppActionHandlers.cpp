@@ -221,10 +221,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleShowFind(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
                                        const TerminalApp::ActionEventArgs& args)
     {
-        _ShowFind();
+        _Find();
         args.Handled(true);
     }
 

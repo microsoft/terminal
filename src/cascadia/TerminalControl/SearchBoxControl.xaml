@@ -11,6 +11,7 @@
     VerticalAlignment="Top"
     d:DesignHeight="55"
     d:DesignWidth="285"
+    CornerRadius="2"
     TabNavigation="Cycle">
 
     <UserControl.Resources>

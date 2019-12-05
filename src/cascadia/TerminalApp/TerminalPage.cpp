@@ -621,7 +621,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         _actionDispatch.CopyText({ this, &TerminalPage::_HandleCopyText });
         _actionDispatch.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        _actionDispatch.ShowFind({ this, &TerminalPage::_HandleShowFind });
+        _actionDispatch.Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch.ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
@@ -1403,7 +1403,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ShowFind()
+    void TerminalPage::_Find()
     {
         const auto termControl = _GetActiveControl();
         termControl.CreateSearchBoxControl();
