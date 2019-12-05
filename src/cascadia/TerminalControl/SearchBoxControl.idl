@@ -13,6 +13,5 @@ namespace Microsoft.Terminal.TerminalControl
 
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> Search;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> CloseButtonClicked;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> MovePositionClicked;
     }
 }

@@ -7,6 +7,7 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Core;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -22,17 +23,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
 
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
-        auto checkBox = this->FindName(L"CaseSensitivityCheckBox").try_as<Controls::CheckBox>();
-        auto moveButton = this->FindName(L"MoveSearchBoxPositionButton").try_as<Controls::Button>();
+        auto caseButton = this->FindName(L"CaseSensitivityButton").try_as<Controls::Primitives::ToggleButton>();
 
         if (closeButton)
             _focusableElements.insert(closeButton);
         if (_textBox)
             _focusableElements.insert(_textBox);
-        if (checkBox)
-            _focusableElements.insert(checkBox);
-        if (moveButton)
-            _focusableElements.insert(moveButton);
+        if (caseButton)
+            _focusableElements.insert(caseButton);
         if (_goForwardButton)
             _focusableElements.insert(_goForwardButton);
         if (_goBackwardButton)
@@ -73,7 +71,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
-            _searchEventHandler(*this, _textBox.Text());
+            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
+            if (state == CoreVirtualKeyStates::Down || state == (CoreVirtualKeyStates::Locked | CoreVirtualKeyStates::Down))
+            {
+                // We do not want the direction flag to change permanately
+                _goForward = !_goForward;
+                _searchEventHandler(*this, _textBox.Text());
+                _goForward = !_goForward;
+            }
+            else
+            {
+                _searchEventHandler(*this, _textBox.Text());
+            }
         }
     }
 
@@ -81,8 +90,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Handler for pressing Enter on TextBox, trigger
     //   text search
     // Arguments:
-    // - sender: not used
-    // - e: event data
+    // - <none>
     // Return Value:
     // - <none>
     void SearchBoxControl::SetFocusOnTextbox()
@@ -157,58 +165,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Handler for clicking move searchbox position button. This
-    //   rotate the Font icon (DockBottom) upside down, and move the
-    //   search box to top/bottom
-    // Arguments:
-    // - sender: the XAML element responding to the pointer input
-    // - e: event data
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::_MovePositionClick(winrt::Windows::Foundation::IInspectable const& sender, RoutedEventArgs const& e)
-    {
-        auto moveButton = sender.try_as<Controls::Button>();
-        // We rotate the font icon upside down to represent "top" or "bottom"
-        if (moveButton)
-        {
-            auto moveIcon = moveButton.FindName(L"MoveSearchBoxPositionIcon").try_as<Controls::FontIcon>();
-            auto rotateTransform = moveIcon.RenderTransform().try_as<Media::RotateTransform>();
-            if (rotateTransform.Angle() == 0.0)
-            {
-                rotateTransform.Angle(180.0);
-            }
-            else
-            {
-                rotateTransform.Angle(0.0);
-            }
-        }
-        _MovePositionClickedHandler(sender, e);
-    }
-
-    // Method Description:
-    // - Handler for checking the Case Sensitivity checkbox. This changes
-    //   _isCaseSensitive to true
+    // - Handler for clicking the Case Sensitivity button. This changes
+    //   _isCaseSensitive value
     // Arguments:
     // - sender: not used
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::_CaseSensitivityChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::_CaseSensitivityClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        _isCaseSensitive = true;
-    }
-
-    // Method Description:
-    // - Handler for unchecking the Case Sensitivity checkbox. This changes
-    //   _isCaseSensitive to false
-    // Arguments:
-    // - sender: not used
-    // - e: not used
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::_CaseSensitivityUnChecked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
-    {
-        _isCaseSensitive = false;
+        _isCaseSensitive = !_isCaseSensitive;
     }
 
     // Method Description:
@@ -255,5 +221,4 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Events proxies
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, Search, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, MovePositionClicked, _MovePositionClickedHandler, winrt::Windows::Foundation::IInspectable, Windows::UI::Xaml::RoutedEventArgs);
 }

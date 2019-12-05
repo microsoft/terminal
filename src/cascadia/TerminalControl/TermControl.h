@@ -212,7 +212,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _Search(const SearchBoxControl& sender, winrt::hstring text);
         void _CloseSearchBoxControl(const SearchBoxControl& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void _MoveSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);

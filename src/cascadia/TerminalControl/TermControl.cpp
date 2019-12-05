@@ -190,7 +190,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Event handlers
             _searchBox.Search({ this, &TermControl::_Search });
             _searchBox.CloseButtonClicked({ this, &TermControl::_CloseSearchBoxControl });
-            _searchBox.MovePositionClicked({ this, &TermControl::_MoveSearchBoxControl });
         }
 
         _searchBox.SetFocusOnTextbox();
@@ -248,28 +247,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
-    }
-
-    // Method Description:
-    // - The handler for the move button on the search box.
-    //   Once called, it will check the current alignment of
-    //   the search box and move to the other position (top or bottom)
-    // Arguments:
-    // - SearchBoxControl: not used
-    // - RoutedEventArgs: not used
-    // Return Value:
-    // - <none>
-    void TermControl::_MoveSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
-    {
-        const auto alignment = _searchBox.VerticalAlignment();
-        if (alignment == VerticalAlignment::Top)
-        {
-            _searchBox.VerticalAlignment(VerticalAlignment::Bottom);
-        }
-        else
-        {
-            _searchBox.VerticalAlignment(VerticalAlignment::Top);
-        }
     }
 
     // Method Description:
