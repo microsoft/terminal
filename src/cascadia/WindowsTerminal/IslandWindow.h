@@ -29,7 +29,7 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
-    virtual SIZE GetNonClientSize(const UINT dpi) const noexcept;
+    virtual SIZE GetClient2WindowSizeDelta(const UINT dpi) const noexcept;
 
     virtual void Initialize();
 

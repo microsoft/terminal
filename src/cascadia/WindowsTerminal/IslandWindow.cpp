@@ -245,7 +245,7 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         // If this fails, we'll use the default of 96.
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-        const auto nonClientSize = GetNonClientSize(dpix);
+        const auto nonClientSize = GetClient2WindowSizeDelta(dpix);
         auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
         auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
 
@@ -378,7 +378,7 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 // - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE IslandWindow::GetNonClientSize(const UINT dpi) const noexcept
+SIZE IslandWindow::GetClient2WindowSizeDelta(const UINT dpi) const noexcept
 {
     RECT islandFrame{};
     bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi);

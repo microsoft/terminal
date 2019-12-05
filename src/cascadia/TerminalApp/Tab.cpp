@@ -17,7 +17,7 @@ namespace winrt
 
 Tab::Tab(const GUID& profile, const TermControl& control)
 {
-    _rootPane = std::make_shared<Pane>(profile, control, true, true);
+    _rootPane = std::make_shared<Pane>(profile, control, true);
 
     _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
         _ClosedHandlers(nullptr, nullptr);
@@ -230,10 +230,10 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
 }
 
 // Method Description:
-// - See Pane::SnapDimension
-float Tab::SnapDimension(const bool widthOrHeight, const float dimension) const
+// - See Pane::CalcSnappedDimension
+float Tab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
-    return _rootPane->SnapDimension(widthOrHeight, dimension);
+    return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
 }
 
 // Method Description:
@@ -309,6 +309,20 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
         // the tab's text to the active panes' text.
         auto newTabTitle = GetActiveTitle();
         SetTabText(newTabTitle);
+    });
+
+    // This is called when the terminal changes its font size or sets it for the first
+    // time (because when we just create terminal via its ctor it has invalid font size).
+    // On the latter event, we tell the root pane to resize itself so that its descendants
+    // (including ourself) can properly snap to character grids. In future, we may also
+    // want to do that on regular font changes.
+    control.FontSizeChanged([this](const int /* fontWidth */,
+                                   const int /* fontHeight */,
+                                   const bool isInitialChange) {
+        if (isInitialChange)
+        {
+            _rootPane->Relayout();
+        }
     });
 }
 

@@ -429,10 +429,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - See Pane::SnapDimension
-    float AppLogic::SnapDimension(const bool widthOrHeight, const float dimension) const
+    // - See Pane::CalcSnappedDimension
+    float AppLogic::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        return _root->SnapDimension(widthOrHeight, dimension);
+        return _root->CalcSnappedDimension(widthOrHeight, dimension);
     }
 
     // Method Description:

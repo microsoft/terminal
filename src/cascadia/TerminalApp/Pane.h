@@ -45,7 +45,6 @@ public:
 
     Pane(const GUID& profile,
          const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
-         const bool isRoot,
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
@@ -62,6 +61,7 @@ public:
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
+    void Relayout();
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
@@ -69,13 +69,12 @@ public:
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(SplitState splitType,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    float SnapDimension(const bool widthOrHeight, const float dimension) const;
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
     void Close();
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-    DECLARE_EVENT(ShouldRelayout, _shouldRelayoutHandlers, winrt::delegate<>);
 
 private:
     struct SnapSizeResult;
@@ -98,7 +97,6 @@ private:
     winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-    winrt::event_token _fontSizeChangedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
@@ -127,17 +125,16 @@ private:
 
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-    void _FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-    std::pair<float, float> _GetPaneSizes(const float fullSize) const;
-    SnapChildrenSizeResult _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize) const;
-    SnapSizeResult _SnapDimension(const bool widthOrHeight, const float dimension) const;
+    std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
+    SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
+    SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
-    LayoutSizeNode _GetMinSizeTree(const bool widthOrHeight) const;
+    LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     // Function Description:

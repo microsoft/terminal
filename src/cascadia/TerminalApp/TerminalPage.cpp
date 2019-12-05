@@ -1091,11 +1091,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - See Pane::SnapDimension
-    float TerminalPage::SnapDimension(const bool widthOrHeight, const float dimension) const
+    // - See Pane::CalcSnappedDimension
+    float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();
-        return _tabs[focusedTabIndex]->SnapDimension(widthOrHeight, dimension);
+        return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
     }
 
     // Method Description:

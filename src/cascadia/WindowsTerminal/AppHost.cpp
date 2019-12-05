@@ -40,7 +40,7 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::SnapDimension,
+    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::CalcSnappedDimension,
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
@@ -204,7 +204,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         // Get the size of a window we'd need to host that client rect. This will
         // add the titlebar space.
-        const auto nonClientSize = _window->GetNonClientSize(dpix);
+        const auto nonClientSize = _window->GetClient2WindowSizeDelta(dpix);
         adjustedWidth = islandWidth + nonClientSize.cx;
         adjustedHeight = islandHeight + nonClientSize.cy;
     }
