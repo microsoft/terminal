@@ -678,9 +678,11 @@ namespace winrt::TerminalApp::implementation
         const auto& _tab = _tabs.at(focusedTabIndex);
 
         const auto& profileGuid = _tab->GetFocusedProfile();
-        const auto& settings = _settings->MakeSettings(profileGuid);
-
-        _CreateNewTabFromSettings(profileGuid.value(), settings);
+        if (profileGuid.has_value())
+        {
+            const auto settings = _settings->BuildSettings(profileGuid.value());
+            _CreateNewTabFromSettings(profileGuid.value(), settings);
+        }
     }
 
     // Method Description:
@@ -1319,7 +1321,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
-            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+            const auto settings = _settings->BuildSettings(profileGuid);
 
             for (auto& tab : _tabs)
             {

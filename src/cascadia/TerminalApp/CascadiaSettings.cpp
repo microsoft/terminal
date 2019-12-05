@@ -116,35 +116,6 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 }
 
 // Method Description:
-// - Create a TerminalSettings object from the given profile.
-//      If the profileGuidArg is not provided, this method will use the default
-//      profile.
-//   The TerminalSettings object that is created can be used to initialize both
-//      the Control's settings, and the Core settings of the terminal.
-// Arguments:
-// - profileGuidArg: an optional GUID to use to lookup the profile to create the
-//      settings from. If this arg is not provided, or the GUID does not match a
-//       profile, then this method will use the default profile.
-// Return Value:
-// - <none>
-TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg) const
-{
-    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
-    const Profile* const profile = FindProfile(profileGuid);
-    if (profile == nullptr)
-    {
-        throw E_INVALIDARG;
-    }
-
-    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
-
-    // Place our appropriate global settings into the Terminal Settings
-    _globals.ApplyToSettings(result);
-
-    return result;
-}
-
-// Method Description:
 // - Returns an iterable collection of all of our Profiles.
 // Arguments:
 // - <none>
@@ -454,15 +425,12 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 }
 
 // Method Description:
-// - Create a TerminalSettings object for the provided combination of
-//   profileIndex and newTerminalArgs. We'll use the index and newTerminalArgs
-//   to look up the profile that should be used to create these
-//   TerminalSettings. Then, we'll apply settings contained in the
+// - Create a TerminalSettings object for the provided newTerminalArgs. We'll
+//   use the newTerminalArgs to look up the profile that should be used to
+//   create these TerminalSettings. Then, we'll apply settings contained in the
 //   newTerminalArgs to the profile's settings, to enable customization on top
 //   of the profile's default values.
 // Arguments:
-// - index: if provided, the index in the list of profiles to get the GUID for.
-//   If omitted, instead use the default profile's GUID
 // - newTerminalArgs: An object that may contain a profile name or GUID to
 //   actually use. If the Profile value is not a guid, we'll treat it as a name,
 //   and attempt to look the profile up by name instead.
@@ -474,7 +442,7 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
 {
     const GUID profileGuid = _GetProfileForArgs(newTerminalArgs);
-    auto settings = MakeSettings(profileGuid);
+    auto settings = BuildSettings(profileGuid);
 
     if (newTerminalArgs)
     {
@@ -494,6 +462,30 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerm
     }
 
     return { profileGuid, settings };
+}
+
+// Method Description:
+// - Create a TerminalSettings object for the profile with a GUID matching the
+//   provided GUID. If no profile matches this GUID, then this method will
+//   throw.
+// Arguments:
+// - profileGuid: The GUID of a profile to use to create a settings object for.
+// Return Value:
+// - the GUID of the created profile, and a fully initialized TerminalSettings object
+TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
+{
+    const Profile* const profile = FindProfile(profileGuid);
+    if (profile == nullptr)
+    {
+        throw E_INVALIDARG;
+    }
+
+    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
+
+    // Place our appropriate global settings into the Terminal Settings
+    _globals.ApplyToSettings(result);
+
+    return result;
 }
 
 // Method Description:
@@ -588,7 +580,7 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
     {
         const auto realIndex = index.value();
         // If we don't have that many profiles, then do nothing.
-        if (realIndex >= gsl::narrow<decltype(realIndex)>(_profiles.size()))
+        if (realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
             return _globals.GetDefaultProfile();
         }
