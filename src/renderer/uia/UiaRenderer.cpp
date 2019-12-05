@@ -92,6 +92,10 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
+    auto updateSelection = wil::scope_exit([&]() {
+        _prevSelection = rectangles;
+    });
+
     // early exit: different number of rows
     if (_prevSelection.size() != rectangles.size())
     {
@@ -208,22 +212,19 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
-    auto resetState = wil::scope_exit([this] {
-        _selectionChanged = false;
-        _isPainting = false;
-    });
-
     // Fire UIA Events here
     if (_selectionChanged)
     {
         try
         {
-            _dispatcher->SignalUia(ConsoleUiaEvent::SelectionChanged);
+            _dispatcher->SignalSelectionChanged();
         }
-        catch (...)
-        {
-        }
+        CATCH_LOG();
     }
+
+    _selectionChanged = false;
+    _prevSelection.clear();
+    _isPainting = false;
 
     return S_OK;
 }

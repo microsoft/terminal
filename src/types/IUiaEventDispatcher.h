@@ -17,16 +17,11 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    enum class ConsoleUiaEvent
-    {
-        SelectionChanged,
-        TextChanged,
-        CursorChanged
-    };
-
     class IUiaEventDispatcher
     {
     public:
-        virtual void SignalUia(ConsoleUiaEvent eventId) = 0;
+        virtual void SignalSelectionChanged() = 0;
+        virtual void SignalTextChanged() = 0;
+        virtual void SignalCursorChanged() = 0;
     };
 }

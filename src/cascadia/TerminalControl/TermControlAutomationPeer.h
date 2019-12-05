@@ -45,7 +45,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::Foundation::IInspectable GetPatternCore(winrt::Windows::UI::Xaml::Automation::Peers::PatternInterface patternInterface) const;
 
 #pragma region IUiaEventDispatcher
-        void SignalUia(::Microsoft::Console::Types::ConsoleUiaEvent eventId) override;
+        void SignalSelectionChanged() override;
+        void SignalTextChanged() override;
+        void SignalCursorChanged() override;
 #pragma endregion
 
 #pragma region ITextProvider Pattern

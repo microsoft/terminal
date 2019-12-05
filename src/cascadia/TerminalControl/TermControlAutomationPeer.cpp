@@ -34,31 +34,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     };
 
     // Method Description:
-    // - Signals the ui automation client that some part of the uia tree has changed and should be updated
+    // - Signals the ui automation client that the terminal's selection has changed and should be updated
     // Arguments:
-    // - eventId: an identifier for what kind of event the console performed and is notifying the client of
+    // - <none>
     // Return Value:
     // - <none>
-    void TermControlAutomationPeer::SignalUia(ConsoleUiaEvent eventId)
+    void TermControlAutomationPeer::SignalSelectionChanged()
     {
-        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [this, eventId]() {
-            switch (eventId)
-            {
-            case ConsoleUiaEvent::CursorChanged:
-                // The event that is raised when the text was changed in an edit control.
-                RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);
-                break;
-            case ConsoleUiaEvent::SelectionChanged:
-                // The event that is raised when the text selection is modified.
-                RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
-                break;
-            case ConsoleUiaEvent::TextChanged:
-                // The event that is raised when textual content is modified.
-                RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
-                break;
-            default:
-                return;
-            }
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+            // The event that is raised when the text selection is modified.
+            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+        });
+    }
+
+    // Method Description:
+    // - Signals the ui automation client that the terminal's output has changed and should be updated
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControlAutomationPeer::SignalTextChanged()
+    {
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+            // The event that is raised when textual content is modified.
+            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
+        });
+    }
+
+    // Method Description:
+    // - Signals the ui automation client that the cursor's state has changed and should be updated
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControlAutomationPeer::SignalCursorChanged()
+    {
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+            // The event that is raised when the text was changed in an edit control.
+            RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);
         });
     }
 
