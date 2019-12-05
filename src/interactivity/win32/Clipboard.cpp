@@ -307,30 +307,30 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
 // - lpszFormat - the name of the format
 void Clipboard::CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
 {
-    const size_t rtfSize = stringToCopy.size() + 1; // +1 for '\0'
-    if (rtfSize)
+    const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
+    if (cbData)
     {
-        wil::unique_hglobal globalHandleHTML(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, rtfSize));
-        THROW_LAST_ERROR_IF_NULL(globalHandleHTML.get());
+        wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
+        THROW_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleHTML.get());
+        PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleData.get());
         THROW_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
         // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, rtfSize, stringToCopy.data());
-        GlobalUnlock(globalHandleHTML.get());
+        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
+        GlobalUnlock(globalHandleData.get());
         THROW_IF_FAILED(hr2);
 
         UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
         THROW_LAST_ERROR_IF(0 == CF_FORMAT);
 
-        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleHTML.get()));
+        THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
 
         // only free if we failed.
         // the memory has to remain allocated if we successfully placed it on the clipboard.
         // Releasing the smart pointer will leave it allocated as we exit scope.
-        globalHandleHTML.release();
+        globalHandleData.release();
     }
 }
 
