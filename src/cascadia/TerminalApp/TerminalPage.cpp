@@ -904,8 +904,9 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
                                   const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {

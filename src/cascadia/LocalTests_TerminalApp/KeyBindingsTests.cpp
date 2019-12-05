@@ -245,7 +245,8 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NULL(realArgs.ProfileIndex());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NULL(realArgs.TerminalArgs().ProfileIndex());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -256,8 +257,9 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(0, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(0, realArgs.TerminalArgs().ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -268,8 +270,9 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(0, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(0, realArgs.TerminalArgs().ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -281,8 +284,9 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(11, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(11, realArgs.TerminalArgs().ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
@@ -293,8 +297,9 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(8, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(8, realArgs.TerminalArgs().ProfileIndex().Value());
         }
 
         {

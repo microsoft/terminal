@@ -80,7 +80,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_TabTitle = winrt::to_hstring(tabTitle.asString());
             }
-            if (auto index{ json[JsonKey(TabTitleKey)] })
+            if (auto index{ json[JsonKey(ProfileIndexKey)] })
             {
                 args->_ProfileIndex = index.asInt();
             }

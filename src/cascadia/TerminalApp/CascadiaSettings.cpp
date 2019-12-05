@@ -532,33 +532,37 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
         {
             bool wasGuid = false;
 
-            try
+            // Do a quick heuristic check - is the profile 38 chars long (the
+            // length of a GUID string), and does it start with '{'? Because if
+            // it doesn't, it's _definitely_ not a GUID.
+            if (newTerminalArgs.Profile().size() == 38 && newTerminalArgs.Profile()[0] == L'{')
             {
-                const auto newGUID = Utils::GuidFromString(newTerminalArgs.Profile().c_str());
-
-                for (const auto& p : _profiles)
+                try
                 {
-                    if (p.GetGuid() == newGUID)
+                    const auto newGUID = Utils::GuidFromString(newTerminalArgs.Profile().c_str());
+
+                    for (const auto& p : _profiles)
                     {
-                        profileGuid = newGUID;
-                        wasGuid = true;
-                        break;
+                        if (p.GetGuid() == newGUID)
+                        {
+                            profileGuid = newGUID;
+                            wasGuid = true;
+                            break;
+                        }
                     }
                 }
+                CATCH_LOG();
             }
-            CATCH_LOG();
 
             // Here, we were unable to use the profile string as a GUID to
             // lookup a profile. Instead, try using the string to look the
             // Profile up by name.
             if (!wasGuid)
             {
-                for (const auto& p : _profiles)
+                const auto guidFromName = FindGuid(newTerminalArgs.Profile().c_str());
+                if (guidFromName.has_value())
                 {
-                    if (p.GetName() == newTerminalArgs.Profile())
-                    {
-                        profileGuid = p.GetGuid();
-                    }
+                    profileGuid = guidFromName.value();
                 }
             }
         }
