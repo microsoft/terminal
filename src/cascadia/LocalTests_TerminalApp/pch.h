@@ -33,18 +33,13 @@ Author(s):
 #include <json.h>
 #include "consoletaeftemplates.hpp"
 
-// Needed just for XamlIslands to work at all:
-#include <winrt/Windows.system.h>
-#include <winrt/Windows.Foundation.Collections.h>
-// #include <winrt/Windows.UI.Xaml.Hosting.h>
-// #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
-
 // Common includes for most tests:
 #include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 
+#include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/windows.ui.core.h>

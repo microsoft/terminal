@@ -5,7 +5,7 @@
 // - CppWinrtTailored.h
 //
 // Abstract:
-// - This is effectively a copy-paste of TAEF's Tailored.h, proted to cppwinrt.
+// - This is effectively a copy-paste of TAEF's Tailored.h, ported to cppwinrt.
 //   Unfortunately, TAEF only provides a CX or pure c++ version of the
 //   RunOnUIThread function, which doesn't compile for us. This version has been
 //   ported to cppwinrt for our uses.
