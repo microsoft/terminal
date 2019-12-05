@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-11-13
-last updated: 2019-11-13
+last updated: 2019-12-05
 issue id: #2325
 ---
 
@@ -12,14 +12,27 @@ issue id: #2325
 Oftentimes, users have some common settings that they'd like applied to all of
 their profiles, without needing to manually edit the settings of each of them.
 This doc will cover some of the many proposals on how to expose that
-functionality to the user in our JSON settings model. In this first draft, we'll
-examine a number of proposed solutions.
+functionality to the user in our JSON settings model. In this first document,
+we'll examine a number of proposed solutions, as well as state our finalized
+design.
 
 ## Inspiration
 
-During the course of the pull request review on [#3369], the original pull request for this feature's implementation, it became apparent that the entire team has differing opinions on how this feature should be exposed to the user. This doc is born from that discussion.
+During the course of the pull request review on [#3369], the original pull
+request for this feature's implementation, it became apparent that the entire
+team has differing opinions on how this feature should be exposed to the user.
+This doc is born from that discussion.
 
 ## Solution Proposals
+
+The following are a number of different proposals of different ways to achieve
+the proposed functionality:
+
+1. [`defaultSettings` Profile object in the global settings](#proposal-1-defaultsettings-profile-object-in-the-global-settings)
+2. [`__default__` Profile object in the user's profiles](#proposal-2-__default__-profile-object-in-the-users-profiles)
+3. [Change `profiles` to an object with a `list` of profiles and a `defaults`](#proposal-3-change-profiles-to-an-object-with-a-list-of-profiles-and-a-defaults-object)
+   object
+4. [`inheritFrom` in profiles](#proposal-4-inheritfrom-in-profiles)
 
 ### Proposal 1: `defaultSettings` Profile object in the global settings
 
@@ -191,15 +204,23 @@ In this proposal, the default profile is grouped into the same object as the
 list of profiles. All the profiles, and the defaults are all under the
 `"profiles"` object. Makes sense.
 
+##### Backwards compatible
+Fortunately, we can add this functionality _without breaking the existing
+schema_. With Jsoncpp, we can determine at runtime if an object is an _array_ or
+an _object_. If it's an array, we can fall back to the current behavior, safe in
+our knowledge that there's no defaults object. If the object is an array
+however, we can then dig into the object to find the default profile and the
+list of profiles.
+
 #### Concerns
 ##### Substantial schema change
 This is a pretty big delta to the settings schema. Instead of using `profiles`
 as a list of `Profile` objects, it instead becomes an object, with a list inside
 it.
 
-Technically, we could gracefully upgrade this. If the `profiles` object is a
+As noted above, we could gracefully upgrade this. If the `profiles` object is a
 list, then we can assume there's no `defaults`. This ensures that user's current
-settings files don't break.
+settings files don't break. This is not a major problem.
 
 ##### Adds another level of indentation to all profiles
 Some people just hate having things indented this much. 4 layers of indentation
@@ -302,13 +323,24 @@ their own head to understand how a profile gets its settings.
 
 ## Conclusions
 
-There are no conclusions here. This doc is submitted for review and discussion.
+After discussion the available options, the team has settled on proposal 3. The
+major selling points being:
+* It groups the new "default profile settings" with the rest of the profile
+  settings
+* While being a schema change, it's not a _breaking_ schema change.
+* When looking at the settings, it's easy to understand how they're related
+
+We also like the idea of proposal 4, but felt that it was too heavy-handed of an
+approach for this relatively simple feature. It's been added to the backlog of
+terminal features, tracked in [#3818].
 
 ## Resources
 
 * Default Profile for Common Profile Settings (the original issue) [#2325]
 * Add support for "User Default" settings (the original PR) [#3369]
+* Add support for inheriting and overriding another profile's settings [#3818]
 
 <!-- Footnotes -->
 [#2325]: https://github.com/microsoft/terminal/issues/2325
 [#3369]: https://github.com/microsoft/terminal/pull/3369
+[#3818]: https://github.com/microsoft/terminal/issues/3818
