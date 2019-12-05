@@ -20,7 +20,7 @@
     <ClInclude Include="AzureClientID.h" />
     <ClInclude Include="AzureConnection.h">
       <DependentUpon>AzureConnection.idl</DependentUpon>
-    </ClInclude>  
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
@@ -87,12 +87,12 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\vcpkg-telnetpp.1.0.0\build\native\vcpkg-telnetpp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-telnetpp.1.0.0\build\native\vcpkg-telnetpp.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets'))" />
   </Target>
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>$(OpenConsoleCommonOutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <Import Project="..\..\..\packages\vcpkg-telnetpp.1.0.0\build\native\vcpkg-telnetpp.targets" Condition="Exists('..\..\..\packages\vcpkg-telnetpp.1.0.0\build\native\vcpkg-telnetpp.targets')" />
+  <Import Project="..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets" Condition="Exists('..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets')" />
 </Project>

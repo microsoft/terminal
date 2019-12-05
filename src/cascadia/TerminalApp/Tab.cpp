@@ -171,13 +171,13 @@ winrt::hstring Tab::GetActiveTitle() const
 // - text: The new text string to use as the Header for our TabViewItem
 // Return Value:
 // - <none>
-void Tab::SetTabText(const winrt::hstring& /*text*/)
+void Tab::SetTabText(const winrt::hstring& text)
 {
     // Copy the hstring, so we don't capture a dead reference
-    //winrt::hstring textCopy{ text };
-    //_tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this]() {
-    //    _tabViewItem.Header(winrt::box_value(text));
-    //});
+    winrt::hstring textCopy{ text };
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this]() {
+        _tabViewItem.Header(winrt::box_value(text));
+    });
 }
 
 // Method Description:

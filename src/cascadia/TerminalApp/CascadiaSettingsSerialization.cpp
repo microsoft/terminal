@@ -132,14 +132,16 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 // - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
 {
+    // We're going to do this ourselves because we want to exclude almost everything
+    // from the special Universal-for-developers configuration
+
+    // Create settings and get the universal defaults loaded up.
     auto resultPtr = std::make_unique<CascadiaSettings>();
-
     resultPtr->_ParseJsonString(DefaultUniversalJson, true);
-
     resultPtr->LayerJson(resultPtr->_defaultSettings);
 
+    // Make ONLY the telnet generator and attach its profiles
     auto telnetGen = std::make_unique<TelnetGenerator>();
-
     for (auto& profile : telnetGen->GenerateProfiles())
     {
         // If the profile did not have a GUID when it was generated,
@@ -148,6 +150,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
         resultPtr->_profiles.emplace_back(profile);
     }
 
+    // Now validate.
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
 
