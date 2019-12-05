@@ -12,6 +12,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
+#include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
 
 using namespace winrt;
@@ -504,13 +505,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         if (profile->HasConnectionType() &&
-            profile->GetConnectionType() == AzureConnectionType /*&&
-            TerminalConnection::AzureConnection::IsAzureConnectionAvailable()*/)
+            profile->GetConnectionType() == AzureConnectionType &&
+            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            /*connection = TerminalConnection::AzureConnection(settings.InitialRows(),
-                                                             settings.InitialCols());*/
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
+                                                             settings.InitialCols());
+        }
 
-            connection = TerminalConnection::TelnetConnection();
+        else if (profile->HasConnectionType() &&
+                 profile->GetConnectionType() == TelnetConnectionType)
+        {
+            connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
 
         else

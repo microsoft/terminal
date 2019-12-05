@@ -132,6 +132,10 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
     //   for being a UWP
+    // Arguments:
+    // - <none> (sets to UWP = true, one way change)
+    // Return Value:
+    // - <none>
     void AppLogic::RunAsUwp()
     {
         _isUwp = true;
@@ -438,7 +442,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto newSettings = CascadiaSettings::LoadAll();
+            auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
             _settings = std::move(newSettings);
             const auto& warnings = _settings->GetWarnings();
             hr = warnings.size() == 0 ? S_OK : S_FALSE;

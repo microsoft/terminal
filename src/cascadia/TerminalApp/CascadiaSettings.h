@@ -48,6 +48,7 @@ public:
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
+    static std::unique_ptr<CascadiaSettings> LoadUniversal();
 
     static const CascadiaSettings& GetCurrentAppSettings();
 

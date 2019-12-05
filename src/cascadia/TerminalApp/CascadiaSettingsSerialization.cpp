@@ -10,8 +10,11 @@
 #include <appmodel.h>
 #include <shlobj.h>
 
+#include "TelnetGenerator.h"
+
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
+#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's profiles.json.
 #include "userDefaults.h"
 // Both defaults.h and userDefaults.h are generated at build time into the
@@ -113,6 +116,36 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
 
         _WriteSettings(resultPtr->_userSettingsString);
+    }
+
+    // If this throws, the app will catch it and use the default settings
+    resultPtr->_ValidateSettings();
+
+    return resultPtr;
+}
+
+// Function Description:
+// - Loads a batch of settings curated for the Universal variant of the terminal app
+// Arguments:
+// - <none>
+// Return Value:
+// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
+{
+    auto resultPtr = std::make_unique<CascadiaSettings>();
+
+    resultPtr->_ParseJsonString(DefaultUniversalJson, true);
+
+    resultPtr->LayerJson(resultPtr->_defaultSettings);
+
+    auto telnetGen = std::make_unique<TelnetGenerator>();
+
+    for (auto& profile : telnetGen->GenerateProfiles())
+    {
+        // If the profile did not have a GUID when it was generated,
+        // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
+        profile.SetSource(telnetGen->GetNamespace());
+        resultPtr->_profiles.emplace_back(profile);
     }
 
     // If this throws, the app will catch it and use the default settings
