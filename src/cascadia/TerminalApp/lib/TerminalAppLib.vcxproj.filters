@@ -8,7 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
-    <ClCompile Include="../Tab.cpp" />
     <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
@@ -54,9 +53,11 @@
     <ClCompile Include="../JsonUtils.cpp">
       <Filter>json</Filter>
     </ClCompile>
+    <ClCompile Include="../Tab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../Tab.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
@@ -98,6 +99,9 @@
     </ClInclude>
     <ClInclude Include="../JsonUtils.h">
       <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="../Tab.h">
+      <Filter>tab</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -149,6 +153,9 @@
     </Filter>
     <Filter Include="json">
       <UniqueIdentifier>{81a6314f-aa5b-4533-a499-13bc3a5c4af0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tab">
+      <UniqueIdentifier>{6d40e12f-b83f-462e-8f93-fa421f87b27e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
