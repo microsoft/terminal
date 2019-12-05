@@ -9,8 +9,8 @@
 #include <condition_variable>
 
 #pragma warning(push)
-#pragma warning(disable:4100)
-#pragma warning(disable:4251)
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4251)
 #include <telnetpp/core.hpp>
 #include <telnetpp/session.hpp>
 #include <telnetpp/options/echo/server.hpp>
@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         fire_and_forget _socketSend(telnetpp::bytes data);
         size_t _socketReceive(gsl::span<telnetpp::byte> buffer);
-        
+
         telnetpp::session _session;
         Windows::Networking::Sockets::StreamSocket _socket;
         Windows::Storage::Streams::DataWriter _writer;
