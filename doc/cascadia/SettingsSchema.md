@@ -85,9 +85,17 @@ Properties listed below are specific to each custom key binding.
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
 
-### Implemented Keybindings
+## Keybindings
+Properties listed below are specific to each custom key binding.
 
-Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
+| Property | Necessity | Type | Description |
+| -------- | ---- | ----------- | ----------- |
+| `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
+| `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+
+### Keybinding Actions
+
+Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`.
 
 | Action | Description |
 | -------- | ----------- |
@@ -139,6 +147,42 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 | `moveFocusUp` | Changes the focus direction to up. |
 | `moveFocusDown` | Changes the focus direction to down. |
 | `toggleFullscreen` | Make the window into or out of fullscreen mode. |
+
+Below is an example of how to add these keybindings in profiles.json:
+
+```
+"keybindings": 
+[
+    { "command": "newTabProfile0", "keys": ["ctrl+alt+0"] },
+    { "command": "newTabProfile1", "keys": ["ctrl+alt+1"] },
+    { "command": "newTabProfile2", "keys": ["ctrl+alt+2"] },
+    ...
+]
+```
+
+### Keybinding Actions with Arguments
+Some keybind actions have the ability to take in arguments. This allows additional funcionality and makes profiles.json more concise.
+
+| Action | Argument | Type | Default Value | Description |
+| --- | --- | --- | --- | ------------------- |
+| `copy` | index | boolean | true | If false, concatenates the copied text to one line. |
+| `newTab` | index | integer | 0 | The index in the new tab dropdown to open in a new tab. |
+| `switchToTab` | index | integer | 0 | Which tab to switch to, with the first being 0. |
+| `splitPane` | split | string | "vertical" | The orientation to split the pane in, either vertical or horizontal. |
+| `resizePane` | direction | string | "left" | The direction to move the pane separator in. |
+| `moveFocus` | direction | string | "left" | The direction to move focus in, between panes. |
+
+To impliment these keybindings please see the example below:
+
+```
+"keybindings": 
+[
+    { "command": { "action": "newTab", "index": 0 }, "keys": ["ctrl+alt+0"] },
+    { "command": { "action": "newTab", "index": 1 }, "keys": ["ctrl+alt+1"] },
+    { "command": { "action": "newTab", "index": 2 }, "keys": ["ctrl+alt+2"] },
+    ...
+]
+```
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
