@@ -2,7 +2,9 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#define GSL_MULTI_SPAN_H
+
+// We have to define GSL here, not PCH
+// because TelnetConnection has a conflicting GSL implementation.
 #include <gsl/gsl>
 
 #include "ConptyConnection.h"

@@ -15,22 +15,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     TelnetConnection::TelnetConnection(const hstring& hostname) :
         _reader{ nullptr },
+        _writer{ nullptr },
         _hostname{ hostname }
     {
         _session.install(_nawsServer);
-        _nawsServer.activate([&](auto&&) {}); 
+        _nawsServer.activate([&](auto&&) {});
     }
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
-    // - creates the output thread (where we will do the authentication and actually connect to Azure)
+    // - creates the output thread
     void TelnetConnection::Start()
+    try
     {
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
         _hOutputThread.reset(CreateThread(nullptr,
                                           0,
-                                          StaticOutputThreadProc,
+                                          [](LPVOID lpParameter) {
+                                              auto pInstance = reinterpret_cast<TelnetConnection*>(lpParameter);
+                                              return pInstance->_outputThread();
+                                          },
                                           this,
                                           0,
                                           nullptr));
@@ -38,6 +43,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         _transitionToState(ConnectionState::Connecting);
+
+        // Set initial winodw title.
+        _TerminalOutputHandlers(L"\x1b]0;Telnet\x7");
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        _transitionToState(ConnectionState::Failed);
     }
 
     // Method description:
@@ -91,124 +104,107 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
-    // - closes the websocket connection and the output thread
+    // - closes the socket connection and the output thread
     void TelnetConnection::Close()
+    try
     {
-        try
+        if (_transitionToState(ConnectionState::Closing))
         {
-            if (_transitionToState(ConnectionState::Closing))
+            _socket.Close();
+            if (_hOutputThread)
             {
-                _socket.Close();
-                if (_hOutputThread)
-                {
-                    // Tear down our output thread
-                    WaitForSingleObject(_hOutputThread.get(), INFINITE);
-                    _hOutputThread.reset();
-                }
-
-                _transitionToState(ConnectionState::Closed);
+                // Tear down our output thread
+                WaitForSingleObject(_hOutputThread.get(), INFINITE);
+                _hOutputThread.reset();
             }
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            _transitionToState(ConnectionState::Failed);
+
+            _transitionToState(ConnectionState::Closed);
         }
     }
-
-    // Method description:
-    // - this method bridges the thread to the Azure connection instance
-    // Arguments:
-    // - lpParameter: the Azure connection parameter
-    // Return value:
-    // - the exit code of the thread
-    DWORD WINAPI TelnetConnection::StaticOutputThreadProc(LPVOID lpParameter)
+    catch (...)
     {
-        auto pInstance = reinterpret_cast<TelnetConnection*>(lpParameter);
-        return pInstance->_outputThread();
+        LOG_CAUGHT_EXCEPTION();
+        _transitionToState(ConnectionState::Failed);
     }
 
     // Method description:
-    // - this is the output thread, where we initiate the connection to Azure
-    //  and establish a websocket connection
+    // - this is the output thread, where we initiate the connection to the remote host
+    //  and establish a socket connection
     // Return value:
     // - return status
     DWORD TelnetConnection::_outputThread()
+    try
     {
-        try
+        while (true)
         {
-            while (true)
+            if (_isStateOneOf(ConnectionState::Failed))
             {
-                if (_isStateOneOf(ConnectionState::Failed))
-                {
-                    _TerminalOutputHandlers(RS_(L"TelnetInternetOrServerIssue") + L"\r\n");
-                    return E_FAIL;
-                }
-                else if (_isStateAtOrBeyond(ConnectionState::Closing))
-                {
-                    return S_FALSE;
-                }
-                else if (_isStateOneOf(ConnectionState::Connecting))
-                {
-                    try
-                    {
-                        const auto host = Windows::Networking::HostName(_hostname);
-                        _socket = Windows::Networking::Sockets::StreamSocket();
-                        _socket.ConnectAsync(host, L"23").get();
-                        _writer = Windows::Storage::Streams::DataWriter(_socket.OutputStream());
-                        _reader = Windows::Storage::Streams::DataReader(_socket.InputStream());
-                        _reader.InputStreamOptions(Windows::Storage::Streams::InputStreamOptions::Partial); // returns when 1 or more bytes ready.
-                        _transitionToState(ConnectionState::Connected);
-
-                        // Send newline to bypass User Name prompt.
-                        const auto newline = winrt::to_hstring("\r\n");
-                        WriteInput(newline);
-
-                        // Wait for login.
-                        Sleep(1000);
-
-                        // Send "cls" enter to clear the thing and just look like a prompt.
-                        const auto clearScreen = winrt::to_hstring("cls\r\n");
-                        WriteInput(clearScreen);
-                    }
-                    catch (...)
-                    {
-                        LOG_CAUGHT_EXCEPTION();
-                        _transitionToState(ConnectionState::Failed);
-                    }
-                }
-                else if (_isStateOneOf(ConnectionState::Connected))
-                {
-                    // Read from websocket
-                    const auto amountReceived = _socketReceive(_receiveBuffer);
-
-                    _session.receive(
-                        telnetpp::bytes{ _receiveBuffer.data(), amountReceived },
-                        [=](telnetpp::bytes data,
-                            std::function<void(telnetpp::bytes)> const& send) {
-                            _applicationReceive(data, send);
-                        },
-                        [=](telnetpp::bytes data) {
-                            _socketSend(data);
-                        });
-                }
-            }
-        }
-        catch (...)
-        {
-            // If the exception was thrown while we were already supposed to be closing, fine. We're closed.
-            // This is because the socket got mad things were being torn down.
-            if (_isStateAtOrBeyond(ConnectionState::Closing))
-            {
-                _transitionToState(ConnectionState::Closed);
-                return S_OK;
-            }
-            else
-            {
-                LOG_CAUGHT_EXCEPTION();
-                _transitionToState(ConnectionState::Failed);
+                _TerminalOutputHandlers(RS_(L"TelnetInternetOrServerIssue") + L"\r\n");
                 return E_FAIL;
             }
+            else if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                return S_FALSE;
+            }
+            else if (_isStateOneOf(ConnectionState::Connecting))
+            {
+                try
+                {
+                    const auto host = Windows::Networking::HostName(_hostname);
+                    _socket.ConnectAsync(host, L"23").get();
+                    _writer = Windows::Storage::Streams::DataWriter(_socket.OutputStream());
+                    _reader = Windows::Storage::Streams::DataReader(_socket.InputStream());
+                    _reader.InputStreamOptions(Windows::Storage::Streams::InputStreamOptions::Partial); // returns when 1 or more bytes ready.
+                    _transitionToState(ConnectionState::Connected);
+
+                    // Send newline to bypass User Name prompt.
+                    const auto newline = winrt::to_hstring("\r\n");
+                    WriteInput(newline);
+
+                    // Wait for login.
+                    Sleep(1000);
+
+                    // Send "cls" enter to clear the thing and just look like a prompt.
+                    const auto clearScreen = winrt::to_hstring("cls\r\n");
+                    WriteInput(clearScreen);
+                }
+                catch (...)
+                {
+                    LOG_CAUGHT_EXCEPTION();
+                    _transitionToState(ConnectionState::Failed);
+                }
+            }
+            else if (_isStateOneOf(ConnectionState::Connected))
+            {
+                // Read from socket
+                const auto amountReceived = _socketReceive(_receiveBuffer);
+
+                _session.receive(
+                    telnetpp::bytes{ _receiveBuffer.data(), amountReceived },
+                    [=](telnetpp::bytes data,
+                        std::function<void(telnetpp::bytes)> const& send) {
+                        _applicationReceive(data, send);
+                    },
+                    [=](telnetpp::bytes data) {
+                        _socketSend(data);
+                    });
+            }
+        }
+    }
+    catch (...)
+    {
+        // If the exception was thrown while we were already supposed to be closing, fine. We're closed.
+        // This is because the socket got mad things were being torn down.
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
+        {
+            _transitionToState(ConnectionState::Closed);
+            return S_OK;
+        }
+        else
+        {
+            LOG_CAUGHT_EXCEPTION();
+            _transitionToState(ConnectionState::Failed);
+            return E_FAIL;
         }
     }
 
@@ -235,7 +231,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - <none>
     void TelnetConnection::_socketFlushBuffer()
     {
-        _writer.StoreAsync();
+        _writer.StoreAsync().get();
     }
 
     // Routine Description:

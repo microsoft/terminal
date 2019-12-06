@@ -60,7 +60,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         wil::unique_handle _hOutputThread;
 
-        static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _outputThread();
     };
 }
