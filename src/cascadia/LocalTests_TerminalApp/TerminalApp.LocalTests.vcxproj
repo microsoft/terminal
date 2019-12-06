@@ -9,7 +9,6 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <!-- We'll manage our own OutDir/IntDir -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
@@ -77,7 +76,7 @@
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
