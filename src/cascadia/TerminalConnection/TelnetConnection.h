@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct TelnetConnection : TelnetConnectionT<TelnetConnection>, ConnectionStateHolder<TelnetConnection>
     {
-        TelnetConnection(const hstring& hostname);
+        TelnetConnection(const hstring& uri);
 
         void Start();
         void WriteInput(hstring const& data);
@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
-        hstring _hostname;
+        hstring _uri;
 
         void _applicationReceive(telnetpp::bytes data,
                                  std::function<void(telnetpp::bytes)> const& send);

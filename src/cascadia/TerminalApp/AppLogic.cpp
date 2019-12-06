@@ -129,6 +129,17 @@ namespace winrt::TerminalApp::implementation
         _root = winrt::make_self<TerminalPage>();
     }
 
+    // Method Decscription:
+    // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
+    // Arguments:
+    // - <none> - reports internal state
+    // Return Value:
+    // - True if UWP, false otherwise.
+    bool AppLogic::IsUwp() const noexcept
+    {
+        return _isUwp;
+    }
+
     // Method Description:
     // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
     //   for being a UWP

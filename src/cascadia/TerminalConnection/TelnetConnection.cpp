@@ -13,13 +13,13 @@ using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    TelnetConnection::TelnetConnection(const hstring& hostname) :
+    TelnetConnection::TelnetConnection(const hstring& uri) :
         _reader{ nullptr },
         _writer{ nullptr },
-        _hostname{ hostname }
+        _uri{ uri }
     {
         _session.install(_nawsServer);
-        _nawsServer.activate([&](auto&&) {});
+        _nawsServer.activate([](auto&&) {});
     }
 
     // Method description:
@@ -151,8 +151,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 try
                 {
-                    const auto host = Windows::Networking::HostName(_hostname);
-                    _socket.ConnectAsync(host, L"23").get();
+                    const auto uri = Windows::Foundation::Uri(_uri);
+                    const auto host = Windows::Networking::HostName(uri.Host());
+                    _socket.ConnectAsync(host, winrt::to_hstring(uri.Port())).get();
                     _writer = Windows::Storage::Streams::DataWriter(_socket.OutputStream());
                     _reader = Windows::Storage::Streams::DataReader(_socket.InputStream());
                     _reader.InputStreamOptions(Windows::Storage::Streams::InputStreamOptions::Partial); // returns when 1 or more bytes ready.

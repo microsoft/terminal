@@ -28,6 +28,7 @@ namespace winrt::TerminalApp::implementation
         ~AppLogic() = default;
 
         void Create();
+        bool IsUwp() const noexcept;
         void RunAsUwp();
         void LoadSettings();
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;

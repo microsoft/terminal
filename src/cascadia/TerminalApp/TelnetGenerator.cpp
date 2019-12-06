@@ -30,7 +30,7 @@ std::vector<TerminalApp::Profile> TelnetGenerator::GenerateProfiles()
     std::vector<TerminalApp::Profile> profiles;
 
     auto telnetProfile{ CreateDefaultProfile(L"Telnet Loopback") };
-    telnetProfile.SetCommandline(L"127.0.0.1");
+    telnetProfile.SetCommandline(L"telnet://127.0.0.1:23");
     telnetProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     telnetProfile.SetColorScheme({ L"Vintage" });
     telnetProfile.SetAcrylicOpacity(1.0);

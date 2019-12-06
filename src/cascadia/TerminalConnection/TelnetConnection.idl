@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface]
     runtimeclass TelnetConnection : ITerminalConnection
     {
-        TelnetConnection(String hostname);
+        TelnetConnection(String uri);
     };
 
 }
