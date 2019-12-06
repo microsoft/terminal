@@ -41,7 +41,7 @@ DxEngine::DxEngine() :
     _displaySizePixels{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
-    _selectionBackground{ DEFAULT_FOREGROUND },
+    _selectionBackground{},
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -57,6 +57,10 @@ DxEngine::DxEngine() :
         DWRITE_FACTORY_TYPE_SHARED,
         __uuidof(_dwriteFactory),
         reinterpret_cast<IUnknown**>(_dwriteFactory.GetAddressOf())));
+
+    // Initialize our default selection color to DEFAULT_FOREGROUND, but make
+    // sure to set to to a D2D1::ColorF
+    SetSelectionBackground(DEFAULT_FOREGROUND);
 }
 
 // Routine Description:
