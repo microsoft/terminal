@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Tab.h"
+#include "../CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -13,8 +14,10 @@ using namespace WEX::TestExecution;
 
 namespace TerminalAppLocalTests
 {
-    // Unfortunately, these tests _WILL NOT_ work in our CI, until we have a lab
-    // machine available that can run Windows version 18362.
+    // TODO:microsoft/terminal#3838:
+    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
+    // an updated TAEF that will let us install framework packages when the test
+    // package is deployed. Until then, these tests won't deploy in CI.
 
     class TabTests
     {
@@ -24,13 +27,16 @@ namespace TerminalAppLocalTests
         // Islands to host our UI. However, in these tests, we don't really need
         // to run full trust - we just need to get some UI elements created. So
         // we can just rely on the normal UWP activation to create us.
-        // UNFORTUNATELY, this doesn't seem to work yet, and the tests fail when
-        // instantiating XAML elements
+        //
+        // IMPORTANTLY! When tests need to make XAML objects, or do XAML things,
+        // make sure to use RunOnUIThread. This helper will dispatch a lambda to
+        // be run on the UI thread.
 
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:Host", L"Xaml")
+            TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they
@@ -64,32 +70,53 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryCreateXamlObjects()
     {
-        // Verify we can create a some XAML objects
-        // Just creating all of them is enough to know that everything is working.
-        winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
-        VERIFY_IS_NOT_NULL(controlRoot);
-        winrt::Windows::UI::Xaml::Controls::Grid root;
-        VERIFY_IS_NOT_NULL(root);
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
-        VERIFY_IS_NOT_NULL(swapChainPanel);
-        winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
-        VERIFY_IS_NOT_NULL(scrollBar);
+        auto result = RunOnUIThread([]() {
+            VERIFY_IS_TRUE(true, L"Congrats! We're running on the UI thread!");
+
+            auto v = winrt::Windows::ApplicationModel::Core::CoreApplication::GetCurrentView();
+            VERIFY_IS_NOT_NULL(v, L"Ensure we have a current view");
+            // Verify we can create a some XAML objects
+            // Just creating all of them is enough to know that everything is working.
+            winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
+            VERIFY_IS_NOT_NULL(controlRoot, L"Try making a UserControl");
+            winrt::Windows::UI::Xaml::Controls::Grid root;
+            VERIFY_IS_NOT_NULL(root, L"Try making a Grid");
+            winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
+            VERIFY_IS_NOT_NULL(swapChainPanel, L"Try making a SwapChainPanel");
+            winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
+            VERIFY_IS_NOT_NULL(scrollBar, L"Try making a ScrollBar");
+        });
+
+        VERIFY_SUCCEEDED(result);
     }
 
     void TabTests::TryCreateTab()
     {
-        // Just try creating all of:
-        // 1. one of our pure c++ types (Profile)
-        // 2. one of our c++winrt types (TermControl)
-        // 3. one of our types that uses MUX/Xaml (Tab).
-        // Just creating all of them is enough to know that everything is working.
-        const auto profileGuid{ Utils::CreateGuid() };
-        winrt::Microsoft::Terminal::TerminalControl::TermControl term{};
-        VERIFY_IS_NOT_NULL(term);
+        // If you leave the Tab shared_ptr owned by the RunOnUIThread lambda, it
+        // will crash when the test tears down. Not totally clear why, but make
+        // sure it's owned outside the lambda
+        std::shared_ptr<Tab> newTab{ nullptr };
 
-        auto newTab = std::make_shared<Tab>(profileGuid, term);
+        auto result = RunOnUIThread([&newTab]() {
+            // Try creating all of:
+            // 1. one of our pure c++ types (Profile)
+            // 2. one of our c++winrt types (TerminalSettings, EchoConnection)
+            // 3. one of our types that uses MUX/Xaml (TermControl).
+            // 4. one of our types that uses MUX/Xaml in this dll (Tab).
+            // Just creating all of them is enough to know that everything is working.
+            const auto profileGuid{ Utils::CreateGuid() };
+            winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
+            VERIFY_IS_NOT_NULL(settings);
+            winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+            VERIFY_IS_NOT_NULL(conn);
+            winrt::Microsoft::Terminal::TerminalControl::TermControl term{ settings, conn };
+            VERIFY_IS_NOT_NULL(term);
 
-        VERIFY_IS_NOT_NULL(newTab);
+            newTab = std::make_shared<Tab>(profileGuid, term);
+            VERIFY_IS_NOT_NULL(newTab);
+        });
+
+        VERIFY_SUCCEEDED(result);
     }
 
 }

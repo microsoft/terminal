@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "TerminalPage.g.h"
 #include "Tab.h"
 #include "CascadiaSettings.h"
@@ -12,10 +10,7 @@
 
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 namespace winrt::TerminalApp::implementation
 {
