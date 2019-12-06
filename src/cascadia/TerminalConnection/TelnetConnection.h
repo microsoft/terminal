@@ -13,7 +13,7 @@
 #pragma warning(disable : 4251)
 #include <telnetpp/core.hpp>
 #include <telnetpp/session.hpp>
-#include <telnetpp/options/echo/server.hpp>
+#include <telnetpp/options/naws/server.hpp>
 #pragma warning(pop)
 
 #include "winrt/Windows.Networking.Sockets.h"
@@ -41,13 +41,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _applicationReceive(telnetpp::bytes data,
                                  std::function<void(telnetpp::bytes)> const& send);
 
-        fire_and_forget _socketSend(telnetpp::bytes data);
+        void _socketBufferedSend(telnetpp::bytes data);
+        void _socketFlushBuffer();
+        void _socketSend(telnetpp::bytes data);
         size_t _socketReceive(gsl::span<telnetpp::byte> buffer);
 
         telnetpp::session _session;
+        // NAWS = Negotiation About Window Size
+        telnetpp::options::naws::server _nawsServer;
         Windows::Networking::Sockets::StreamSocket _socket;
         Windows::Storage::Streams::DataWriter _writer;
         Windows::Storage::Streams::DataReader _reader;
+
+        std::optional<std::pair<uint32_t, uint32_t>> _prevResize;
 
         static constexpr size_t _receiveBufferSize = 1024;
         std::array<telnetpp::byte, _receiveBufferSize> _receiveBuffer;

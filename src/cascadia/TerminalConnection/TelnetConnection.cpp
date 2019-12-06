@@ -17,6 +17,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _reader{ nullptr },
         _hostname{ hostname }
     {
+        _session.install(_nawsServer);
+        _nawsServer.activate([&](auto&&) {}); 
     }
 
     // Method description:
@@ -67,16 +69,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - resizes the terminal
     // Arguments:
     // - the new rows/cols values
-    void TelnetConnection::Resize(uint32_t /*rows*/, uint32_t /*columns*/)
+    void TelnetConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_isConnected())
+        if (_prevResize.has_value() && _prevResize.value().first == rows && _prevResize.value().second == columns)
         {
-            /*_initialRows = rows;
-            _initialCols = columns;*/
+            return;
         }
-        else
-        {
-        }
+
+        _prevResize.emplace(std::pair{ rows, columns });
+
+        _nawsServer.set_window_size(gsl::narrow<uint16_t>(columns),
+                                    gsl::narrow<uint16_t>(rows),
+                                    [=](telnetpp::subnegotiation sub) {
+                                        _session.send(sub,
+                                                      [=](telnetpp::bytes data) {
+                                                          _socketBufferedSend(data);
+                                                      });
+                                        _socketFlushBuffer();
+                                    });
     }
 
     // Method description:
@@ -203,18 +213,41 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Routine Description:
-    // - Used to send bytes into the socket to the remote device
+    // - Call to buffer up bytes to send to the remote device.
+    // - You must flush before they'll go out.
     // Arguments:
-    // - data - View of bytes to be send
+    // - data - View of bytes to be sent
     // Return Value:
     // - <none>
-    fire_and_forget TelnetConnection::_socketSend(telnetpp::bytes data)
+    void TelnetConnection::_socketBufferedSend(telnetpp::bytes data)
     {
         const uint8_t* first = data.data();
         const uint8_t* last = data.data() + data.size();
         const winrt::array_view<const uint8_t> arrayView(first, last);
         _writer.WriteBytes(arrayView);
-        co_await _writer.StoreAsync();
+    }
+
+    // Routine Description:
+    // - Flushes any buffered bytes to the underlying socket
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TelnetConnection::_socketFlushBuffer()
+    {
+        _writer.StoreAsync();
+    }
+
+    // Routine Description:
+    // - Used to send bytes into the socket to the remote device
+    // Arguments:
+    // - data - View of bytes to be sent
+    // Return Value:
+    // - <none>
+    void TelnetConnection::_socketSend(telnetpp::bytes data)
+    {
+        _socketBufferedSend(data);
+        _socketFlushBuffer();
     }
 
     // Routine Description:
