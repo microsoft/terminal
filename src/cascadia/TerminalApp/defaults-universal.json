@@ -11,6 +11,22 @@
 
     "profiles":
     [
+		{
+            "guid": "{550ce7b8-d500-50ad-8a1a-c400c3262db3}",
+            "name": "Telnet Loopback",
+            "commandline": "telnet://127.0.0.1:23",
+            "connectionType" : "{311153fb-d3f0-4ac6-b920-038de7cf5289}",
+            "hidden": false,
+            "startingDirectory": "%USERPROFILE%",
+            "closeOnExit": "graceful",
+            "colorScheme": "Vintage",
+            "cursorColor": "#FFFFFF",
+            "cursorShape": "bar",
+            "icon": "ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png",
+            "padding": "8, 8, 8, 8",
+            "snapOnInput": true,
+            "useAcrylic": false
+        }
     ],
     "schemes":
     [

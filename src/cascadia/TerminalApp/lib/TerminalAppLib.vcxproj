@@ -133,7 +133,6 @@
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp" />
-    <ClCompile Include="../TelnetGenerator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -325,24 +324,15 @@
   <!-- This target will take our defaults.json and stamp it into a .h file that
   we can include in the code directly. This way, we don't need to worry about
   failing to load the default settings at runtime. -->
-  <Target Name="_TerminalAppGenerateDefaultsH"
-          Inputs="..\defaults.json"
-          Outputs="Generated Files\defaults.h"
-          BeforeTargets="BeforeClCompile">
+  <Target Name="_TerminalAppGenerateDefaultsH" Inputs="..\defaults.json" Outputs="Generated Files\defaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
   </Target>
   <!-- A different set of defaults for Universal variant -->
-  <Target Name="_TerminalAppGenerateDefaultsUniversalH"
-          Inputs="..\defaults-universal.json"
-          Outputs="Generated Files\defaults-universal.h"
-          BeforeTargets="BeforeClCompile">
+  <Target Name="_TerminalAppGenerateDefaultsUniversalH" Inputs="..\defaults-universal.json" Outputs="Generated Files\defaults-universal.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults-universal.json -OutPath '&quot;Generated Files\defaults-universal.h&quot;' -VariableName DefaultUniversalJson" />
   </Target>
   <!-- Same as above, but for the default profiles.json template -->
-  <Target Name="_TerminalAppGenerateUserSettingsH"
-          Inputs="..\userDefaults.json"
-          Outputs="Generated Files\userDefaults.h"
-          BeforeTargets="BeforeClCompile">
+  <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="..\userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
 </Project>
