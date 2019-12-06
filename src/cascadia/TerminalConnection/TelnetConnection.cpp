@@ -30,15 +30,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(nullptr,
-                                          0,
-                                          [](LPVOID lpParameter) {
-                                              auto pInstance = reinterpret_cast<TelnetConnection*>(lpParameter);
-                                              return pInstance->_outputThread();
-                                          },
-                                          this,
-                                          0,
-                                          nullptr));
+        _hOutputThread.reset(CreateThread(
+            nullptr,
+            0,
+            [](LPVOID lpParameter) {
+                auto pInstance = reinterpret_cast<TelnetConnection*>(lpParameter);
+                return pInstance->_outputThread();
+            },
+            this,
+            0,
+            nullptr));
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
