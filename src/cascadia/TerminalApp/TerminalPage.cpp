@@ -508,7 +508,7 @@ namespace winrt::TerminalApp::implementation
         {
             connectionType = profile->GetConnectionType();
         }
-        
+
         if (profile->HasConnectionType() &&
             profile->GetConnectionType() == AzureConnectionType &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
