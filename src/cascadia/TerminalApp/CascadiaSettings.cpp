@@ -475,10 +475,7 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerm
 TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
 {
     const Profile* const profile = FindProfile(profileGuid);
-    if (profile == nullptr)
-    {
-        throw E_INVALIDARG;
-    }
+    THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
     TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
 
@@ -516,31 +513,28 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
 
     if (newTerminalArgs)
     {
+        const auto profileString = newTerminalArgs.Profile();
+
         // First, try and parse the "profile" argument as a GUID. If it's a
         // GUID, and the GUID of one of our profiles, then use that as the
         // profile GUID instead. If it's not, then try looking it up as a
         // name of a profile. If it's still not that, then just ignore it.
-        if (!newTerminalArgs.Profile().empty())
+        if (!profileString.empty())
         {
             bool wasGuid = false;
 
             // Do a quick heuristic check - is the profile 38 chars long (the
             // length of a GUID string), and does it start with '{'? Because if
             // it doesn't, it's _definitely_ not a GUID.
-            if (newTerminalArgs.Profile().size() == 38 && newTerminalArgs.Profile()[0] == L'{')
+            if (profileString.size() == 38 && profileString[0] == L'{')
             {
                 try
                 {
-                    const auto newGUID = Utils::GuidFromString(newTerminalArgs.Profile().c_str());
-
-                    for (const auto& p : _profiles)
+                    const auto newGUID = Utils::GuidFromString(profileString.c_str());
+                    if (FindProfile(newGUID))
                     {
-                        if (p.GetGuid() == newGUID)
-                        {
-                            profileGuid = newGUID;
-                            wasGuid = true;
-                            break;
-                        }
+                        profileGuid = newGUID;
+                        wasGuid = true;
                     }
                 }
                 CATCH_LOG();
@@ -551,7 +545,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
             // Profile up by name.
             if (!wasGuid)
             {
-                const auto guidFromName = FindGuid(newTerminalArgs.Profile().c_str());
+                const auto guidFromName = FindGuid(profileString.c_str());
                 if (guidFromName.has_value())
                 {
                     profileGuid = guidFromName.value();
