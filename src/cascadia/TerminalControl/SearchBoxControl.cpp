@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         InitializeComponent();
 
+        this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
+
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Primitives::ToggleButton>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
         _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
@@ -72,7 +74,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
-            if (state == CoreVirtualKeyStates::Down || state == (CoreVirtualKeyStates::Locked | CoreVirtualKeyStates::Down))
+            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down) || state == (CoreVirtualKeyStates::Locked | CoreVirtualKeyStates::Down))
             {
                 // We do not want the direction flag to change permanately
                 _goForward = !_goForward;
@@ -95,10 +97,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void SearchBoxControl::SetFocusOnTextbox()
     {
-        auto suggestBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
-        if (suggestBox)
+        if (_textBox)
         {
-            Input::FocusManager::TryFocusAsync(suggestBox, FocusState::Keyboard);
+            Input::FocusManager::TryFocusAsync(_textBox, FocusState::Keyboard);
+            _textBox.SelectAll();
         }
     }
 
@@ -216,6 +218,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             e.Handled(true);
         }
+    }
+
+    // Method Description:
+    // - To avoid Characters input bubbling up to terminal, we implement this handler here,
+    //   simply mark the key input as handled
+    // Arguments:
+    // - sender: not used
+    // - e: event data
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, Input::CharacterReceivedRoutedEventArgs const& e)
+    {
+        e.Handled(true);
     }
 
     // Events proxies

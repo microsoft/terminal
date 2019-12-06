@@ -222,7 +222,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
-                                       const TerminalApp::ActionEventArgs& args)
+                                   const TerminalApp::ActionEventArgs& args)
     {
         _Find();
         args.Handled(true);

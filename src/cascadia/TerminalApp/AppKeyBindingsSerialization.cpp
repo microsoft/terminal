@@ -76,7 +76,7 @@ static constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" }; // Legacy
 static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" }; // Legacy
 static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" }; // Legacy
 static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" }; // Legacy
-static constexpr std::string_view FindKey{ "Find" };
+static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
