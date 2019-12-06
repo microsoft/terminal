@@ -574,11 +574,12 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
     {
         const auto realIndex = index.value();
         // If we don't have that many profiles, then do nothing.
-        if (realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
+        if (realIndex < 0 ||
+            realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
             return _globals.GetDefaultProfile();
         }
-        const auto& selectedProfile = _profiles[realIndex];
+        const auto& selectedProfile = _profiles.at(realIndex);
         profileGuid = selectedProfile.GetGuid();
     }
     else
