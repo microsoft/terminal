@@ -89,18 +89,18 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleSplitVertical(const IInspectable& /*sender*/,
-                                            const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
     {
-        _SplitVertical(std::nullopt);
-        args.Handled(true);
-    }
-
-    void TerminalPage::_HandleSplitHorizontal(const IInspectable& /*sender*/,
-                                              const TerminalApp::ActionEventArgs& args)
-    {
-        _SplitHorizontal(std::nullopt);
-        args.Handled(true);
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
+        {
+            _SplitPane(realArgs.SplitStyle(), std::nullopt);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,

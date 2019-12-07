@@ -60,23 +60,36 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        _tabView.TabDragStarting([this](auto&& /*o*/, auto&& /*a*/) {
-            _rearranging = true;
-            _rearrangeFrom = std::nullopt;
-            _rearrangeTo = std::nullopt;
+        // weak_ptr to this TerminalPage object lambda capturing
+        auto weakThis{ get_weak() };
+
+        _tabView.TabDragStarting([weakThis](auto&& /*o*/, auto&& /*a*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_rearranging = true;
+                page->_rearrangeFrom = std::nullopt;
+                page->_rearrangeTo = std::nullopt;
+            }
         });
 
-        _tabView.TabDragCompleted([this](auto&& /*o*/, auto&& /*a*/) {
-            if (_rearrangeFrom.has_value() && _rearrangeTo.has_value() && _rearrangeTo != _rearrangeFrom)
+        _tabView.TabDragCompleted([weakThis](auto&& /*o*/, auto&& /*a*/) {
+            if (auto page{ weakThis.get() })
             {
-                auto tab = _tabs.at(_rearrangeFrom.value());
-                _tabs.erase(_tabs.begin() + _rearrangeFrom.value());
-                _tabs.insert(_tabs.begin() + _rearrangeTo.value(), tab);
-            }
+                auto& from{ page->_rearrangeFrom };
+                auto& to{ page->_rearrangeTo };
 
-            _rearranging = false;
-            _rearrangeFrom = std::nullopt;
-            _rearrangeTo = std::nullopt;
+                if (from.has_value() && to.has_value() && to != from)
+                {
+                    auto& tabs{ page->_tabs };
+                    auto tab = tabs.at(from.value());
+                    tabs.erase(tabs.begin() + from.value());
+                    tabs.insert(tabs.begin() + to.value(), tab);
+                }
+
+                page->_rearranging = false;
+                from = std::nullopt;
+                to = std::nullopt;
+            }
         });
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
@@ -100,8 +113,11 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         //Event Bindings (Early)
-        _newTabButton.Click([this](auto&&, auto&&) {
-            this->_OpenNewTab(std::nullopt);
+        _newTabButton.Click([weakThis](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_OpenNewTab(std::nullopt);
+            }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
@@ -301,8 +317,13 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            profileMenuItem.Click([this, profileIndex](auto&&, auto&&) {
-                this->_OpenNewTab({ profileIndex });
+            auto weakThis{ get_weak() };
+
+            profileMenuItem.Click([profileIndex, weakThis](auto&&, auto&&) {
+                if (auto page{ weakThis.get() })
+                {
+                    page->_OpenNewTab({ profileIndex });
+                }
             });
             newTabFlyout.Items().Append(profileMenuItem);
         }
@@ -440,17 +461,21 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = newTab;
+        auto weakThis{ get_weak() };
+
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        newTab->ActivePaneChanged([this, weakTabPtr]() {
-            if (auto tab = weakTabPtr.lock())
+        newTab->ActivePaneChanged([weakTabPtr, weakThis]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTabPtr.lock() };
+
+            if (page && tab)
             {
                 // Possibly update the icon of the tab.
-                _UpdateTabIcon(tab);
-
+                page->_UpdateTabIcon(tab);
                 // Possibly update the title of the tab, window to match the newly
                 // focused pane.
-                _UpdateTitle(tab);
+                page->_UpdateTitle(tab);
             }
         });
 
@@ -467,10 +492,16 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, this](auto&& /*s*/, auto&& /*e*/) {
-            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
-                _RemoveTabViewItem(tabViewItem);
-            });
+        newTab->Closed([tabViewItem, weakThis](auto&& /*s*/, auto&& /*e*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, weakThis]() {
+                    if (auto page{ weakThis.get() })
+                    {
+                        page->_RemoveTabViewItem(tabViewItem);
+                    }
+                });
+            }
         });
 
         // This is one way to set the tab's selected background color.
@@ -609,8 +640,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
         _actionDispatch.NextTab({ this, &TerminalPage::_HandleNextTab });
         _actionDispatch.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        _actionDispatch.SplitVertical({ this, &TerminalPage::_HandleSplitVertical });
-        _actionDispatch.SplitHorizontal({ this, &TerminalPage::_HandleSplitHorizontal });
+        _actionDispatch.SplitPane({ this, &TerminalPage::_HandleSplitPane });
         _actionDispatch.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         _actionDispatch.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
@@ -763,19 +793,25 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
+        // Bind Tab events to the TermControl and the Tab's Pane
+        hostingTab->BindEventHandlers(term);
+
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr](auto newTitle) {
-            auto tab = weakTabPtr.lock();
-            if (!tab)
+        auto weakThis{ get_weak() };
+
+        term.TitleChanged([weakTabPtr, weakThis](auto newTitle) {
+            auto page{ weakThis.get() };
+            auto tab{ weakTabPtr.lock() };
+
+            if (page && tab)
             {
-                return;
+                // The title of the control changed, but not necessarily the title
+                // of the tab. Get the title of the focused pane of the tab, and set
+                // the tab's text to the focused panes' text.
+                page->_UpdateTitle(tab);
             }
-            // The title of the control changed, but not necessarily the title
-            // of the tab. Get the title of the focused pane of the tab, and set
-            // the tab's text to the focused panes' text.
-            _UpdateTitle(tab);
         });
     }
 
@@ -850,9 +886,12 @@ namespace winrt::TerminalApp::implementation
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
         auto tab = _tabs.at(tabIndex);
-        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this]() {
-            auto tabViewItem = tab->GetTabViewItem();
-            _tabView.SelectedItem(tabViewItem);
+        auto weakThis{ get_weak() };
+        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, weakThis]() {
+            if (auto page{ weakThis.get() })
+            {
+                page->_tabView.SelectedItem(tab->GetTabViewItem());
+            }
         });
     }
 
@@ -914,40 +953,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Vertically split the focused pane, and place the given TermControl into
-    //   the newly created pane.
-    // Arguments:
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitVertical(const std::optional<GUID>& profileGuid)
-    {
-        _SplitPane(Pane::SplitState::Vertical, profileGuid);
-    }
-
-    // Method Description:
-    // - Horizontally split the focused pane and place the given TermControl
-    //   into the newly created pane.
-    // Arguments:
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitHorizontal(const std::optional<GUID>& profileGuid)
-    {
-        _SplitPane(Pane::SplitState::Horizontal, profileGuid);
-    }
-
-    // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
     // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
-    // - splitType: one value from the Pane::SplitState enum, indicating how the
+    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid)
+    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid)
     {
         // Do nothing if we're requesting no split.
-        if (splitType == Pane::SplitState::None)
+        if (splitType == TerminalApp::SplitState::None)
         {
             return;
         }
@@ -1373,10 +1390,14 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         }
 
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        auto weakThis{ get_weak() };
+        this->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
             // repopulate the new tab button's flyout with entries for each
             // profile, which might have changed
-            _CreateNewTabFlyout();
+            if (auto page{ weakThis.get() })
+            {
+                page->_CreateNewTabFlyout();
+            }
         });
     }
 

@@ -12,6 +12,7 @@
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
+#include "SplitPaneArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -36,7 +37,7 @@ namespace winrt::TerminalApp::implementation
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
         CopyTextArgs() = default;
-        GETSET_PROPERTY(bool, TrimWhitespace, false);
+        GETSET_PROPERTY(bool, TrimWhitespace, true);
 
         static constexpr std::string_view TrimWhitespaceKey{ "trimWhitespace" };
 
@@ -237,6 +238,53 @@ namespace winrt::TerminalApp::implementation
             if (auto jsonDelta{ json[JsonKey(AdjustFontSizeDelta)] })
             {
                 args->_Delta = jsonDelta.asInt();
+            }
+            return *args;
+        }
+    };
+
+    // Possible SplitState values
+    // TODO:GH#2550/#3475 - move these to a centralized deserializing place
+    static constexpr std::string_view VerticalKey{ "vertical" };
+    static constexpr std::string_view HorizontalKey{ "horizontal" };
+    static TerminalApp::SplitState ParseSplitState(const std::string& stateString)
+    {
+        if (stateString == VerticalKey)
+        {
+            return TerminalApp::SplitState::Vertical;
+        }
+        else if (stateString == HorizontalKey)
+        {
+            return TerminalApp::SplitState::Horizontal;
+        }
+        // default behavior for invalid data
+        return TerminalApp::SplitState::None;
+    };
+
+    struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
+    {
+        SplitPaneArgs() = default;
+        GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::None);
+
+        static constexpr std::string_view SplitKey{ "split" };
+
+    public:
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SplitPaneArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SplitStyle == _SplitStyle;
+            }
+            return false;
+        };
+        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SplitPaneArgs>();
+            if (auto jsonStyle{ json[JsonKey(SplitKey)] })
+            {
+                args->_SplitStyle = ParseSplitState(jsonStyle.asString());
             }
             return *args;
         }

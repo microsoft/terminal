@@ -56,6 +56,7 @@
         "scrollUpPage",
         "splitHorizontal",
         "splitVertical",
+        "splitPane",
         "switchToTab",
         "switchToTab0",
         "switchToTab1",
@@ -76,6 +77,13 @@
         "right",
         "up",
         "down"
+      ],
+      "type": "string"
+    },
+    "SplitState": {
+      "enum": [
+        "vertical",
+        "horizontal"
       ],
       "type": "string"
     },
@@ -100,8 +108,8 @@
             "action": { "type": "string", "pattern": "copy" },
             "trimWhitespace": {
               "type": "boolean",
-              "default": false,
-              "description": "If true, will trim whitespace from the end of the line on copy."
+              "default": true,
+              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
             }
           }
         }
@@ -173,6 +181,23 @@
       ],
       "required": [ "direction" ]
     },
+    "SplitPaneAction": {
+      "description": "Arguments corresponding to a Split Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "splitPane" },
+            "split": {
+              "$ref": "#/definitions/SplitState",
+              "default": "vertical",
+              "description": "The orientation to split the pane in, either vertical (think [|]) or horizontal (think [-])"
+            }
+          }
+        }
+      ],
+      "required": [ "split" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -184,7 +209,8 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
-              { "$ref": "#/definitions/ResizePaneAction" }
+              { "$ref": "#/definitions/ResizePaneAction" },
+              { "$ref": "#/definitions/SplitPaneAction" }
             ]
         },
         "keys": {

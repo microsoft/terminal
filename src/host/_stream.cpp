@@ -746,7 +746,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             if (screenInfo.InVTMode())
             {
                 const COORD cCursorOld = cursor.GetPosition();
-                // Get Forward tab handles tabbing past the end of the buffer
                 CursorPosition = screenInfo.GetForwardTab(cCursorOld);
             }
             else

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
@@ -16,20 +16,21 @@ using namespace WEX::Common;
 
 namespace TerminalAppLocalTests
 {
-    // Unfortunately, these tests _WILL NOT_ work in our CI, until we have a lab
-    // machine available that can run Windows version 18362.
+    // TODO:microsoft/terminal#3838:
+    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
+    // an updated TAEF that will let us install framework packages when the test
+    // package is deployed. Until then, these tests won't deploy in CI.
 
     class SettingsTests : public JsonTestClass
     {
-        // Use a custom manifest to ensure that we can activate winrt types from
-        // our test. This property will tell taef to manually use this as the
-        // sxs manifest during this test class. It includes all the cppwinrt
-        // types we've defined, so if your test is crashing for an unknown
-        // reason, make sure it's included in that file.
-        // If you want to do anything XAML-y, you'll need to run your test in a
-        // packaged context. See TabTests.cpp for more details on that.
+        // Use a custom AppxManifest to ensure that we can activate winrt types
+        // from our test. This property will tell taef to manually use this as
+        // the AppxManifest for this test class.
+        // This does not yet work for anything XAML-y. See TabTests.cpp for more
+        // details on that.
         BEGIN_TEST_CLASS(SettingsTests)
-            TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
+            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
@@ -49,6 +50,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestExplodingNameOnlyProfiles);
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
+        TEST_METHOD(TestHelperFunctions);
 
         TEST_METHOD(TestLayerGlobalsOnRoot);
 
@@ -1262,6 +1264,66 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0)._schemeName.value());
         VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(1)._schemeName.value());
         VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(2)._schemeName.value());
+    }
+
+    void SettingsTests::TestHelperFunctions()
+    {
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile" : "{2C4DE342-38B7-51CF-B940-2309A097F518}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-5555-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-6666-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "ThisProfileShouldNotThrow"
+                },
+                {
+                    "name" : "Ubuntu",
+                    "guid" : "{2C4DE342-38B7-51CF-B940-2309A097F518}"
+                }
+            ]
+        })" };
+
+        auto name0{ L"profile0" };
+        auto name1{ L"profile1" };
+        auto name2{ L"Ubuntu" };
+        auto name3{ L"ThisProfileShouldNotThrow" };
+        auto badName{ L"DoesNotExist" };
+
+        auto guid0{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}") };
+        auto guid1{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-6666-49a3-80bd-e8fdd045185c}") };
+        auto guid2{ Microsoft::Console::Utils::GuidFromString(L"{2C4DE342-38B7-51CF-B940-2309A097F518}") };
+        auto fakeGuid{ Microsoft::Console::Utils::GuidFromString(L"{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}") };
+        std::optional<GUID> badGuid{};
+
+        VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings;
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(guid0, settings.FindGuid(name0));
+        VERIFY_ARE_EQUAL(guid1, settings.FindGuid(name1));
+        VERIFY_ARE_EQUAL(guid2, settings.FindGuid(name2));
+        VERIFY_ARE_EQUAL(badGuid, settings.FindGuid(name3));
+        VERIFY_ARE_EQUAL(badGuid, settings.FindGuid(badName));
+
+        auto prof0{ settings.FindProfile(guid0) };
+        auto prof1{ settings.FindProfile(guid1) };
+        auto prof2{ settings.FindProfile(guid2) };
+
+        auto badProf{ settings.FindProfile(fakeGuid) };
+        VERIFY_ARE_EQUAL(badProf, nullptr);
+
+        VERIFY_ARE_EQUAL(name0, prof0->GetName());
+        VERIFY_ARE_EQUAL(name1, prof1->GetName());
+        VERIFY_ARE_EQUAL(name2, prof2->GetName());
     }
 
     void SettingsTests::TestLayerGlobalsOnRoot()

@@ -33,6 +33,7 @@ namespace TerminalApp
         PrevTab,
         SplitVertical,
         SplitHorizontal,
+        SplitPane,
         SwitchToTab,
         SwitchToTab0, // Legacy
         SwitchToTab1, // Legacy
@@ -88,8 +89,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SwitchToTab;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> NextTab;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> PrevTab;
-        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitVertical;
-        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitHorizontal;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitPane;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> AdjustFontSize;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResetFontSize;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollUp;

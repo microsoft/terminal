@@ -64,8 +64,9 @@ static constexpr std::string_view SwitchToTab6Key{ "switchToTab6" }; // Legacy
 static constexpr std::string_view SwitchToTab7Key{ "switchToTab7" }; // Legacy
 static constexpr std::string_view SwitchToTab8Key{ "switchToTab8" }; // Legacy
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // Legacy
-static constexpr std::string_view SplitHorizontalKey{ "splitHorizontal" };
-static constexpr std::string_view SplitVerticalKey{ "splitVertical" };
+static constexpr std::string_view SplitPaneKey{ "splitPane" };
+static constexpr std::string_view SplitHorizontalKey{ "splitHorizontal" }; // Legacy
+static constexpr std::string_view SplitVerticalKey{ "splitVertical" }; // Legacy
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view ResizePaneLeftKey{ "resizePaneLeft" }; // Legacy
 static constexpr std::string_view ResizePaneRightKey{ "resizePaneRight" }; // Legacy
@@ -140,9 +141,31 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { MoveFocusDownKey, ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
     { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
+    { SplitPaneKey, ShortcutAction::SplitPane },
     { UnboundKey, ShortcutAction::Invalid },
     { FindKey, ShortcutAction::Find },
 };
+
+// Function Description:
+// - Creates a function that can be used to generate a SplitPaneArgs for the
+//   legacy Split[SplitState] actions. These actions don't accept args from
+//   json, instead, they just return a SplitPaneArgs with the style already
+//   pre-defined, based on the input param.
+// - TODO: GH#1069 Remove this before 1.0, and force an upgrade to the new args.
+// Arguments:
+// - style: the split style to create the parse function for.
+// Return Value:
+// - A function that can be used to "parse" json into one of the legacy
+//   Split[SplitState] args.
+std::function<IActionArgs(const Json::Value&)> LegacyParseSplitPaneArgs(SplitState style)
+{
+    auto pfn = [style](const Json::Value & /*value*/) -> IActionArgs {
+        auto args = winrt::make_self<winrt::TerminalApp::implementation::SplitPaneArgs>();
+        args->SplitStyle(style);
+        return *args;
+    };
+    return pfn;
+}
 
 // Function Description:
 // - Creates a function that can be used to generate a MoveFocusArgs for the
@@ -239,7 +262,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int in
 IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 {
     auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
-    args->TrimWhitespace(true);
+    args->TrimWhitespace(false);
     return *args;
 };
 
@@ -306,6 +329,10 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
 
     { ShortcutAction::DecreaseFontSize, LegacyParseAdjustFontSizeArgs(-1) },
     { ShortcutAction::IncreaseFontSize, LegacyParseAdjustFontSizeArgs(1) },
+
+    { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
+    { ShortcutAction::SplitVertical, LegacyParseSplitPaneArgs(SplitState::Vertical) },
+    { ShortcutAction::SplitHorizontal, LegacyParseSplitPaneArgs(SplitState::Horizontal) },
 
     { ShortcutAction::Invalid, nullptr },
 };

@@ -42,12 +42,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         rows;
         columns;
-
-        throw hresult_not_implemented();
     }
 
     void EchoConnection::Close()
     {
-        throw hresult_not_implemented();
     }
 }

@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "TerminalPage.g.h"
 #include "Tab.h"
 #include "CascadiaSettings.h"
@@ -12,10 +10,7 @@
 
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -107,9 +102,7 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitVertical(const std::optional<GUID>& profileGuid);
-        void _SplitHorizontal(const std::optional<GUID>& profileGuid);
-        void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
+        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid);
         void _ResizePane(const Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
@@ -145,8 +138,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleScrollDown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleNextTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandlePrevTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSplitVertical(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSplitHorizontal(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSplitPane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollUpPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleScrollDownPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenSettings(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

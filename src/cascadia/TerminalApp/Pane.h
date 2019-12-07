@@ -36,13 +36,6 @@ DEFINE_ENUM_FLAG_OPERATORS(Borders);
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    enum class SplitState : int
-    {
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
-    };
-
     Pane(const GUID& profile,
          const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
          const bool lastFocused = false);
@@ -64,8 +57,8 @@ public:
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-    bool CanSplit(SplitState splitType);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(SplitState splitType,
+    bool CanSplit(winrt::TerminalApp::SplitState splitType);
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::TerminalApp::SplitState splitType,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
@@ -83,7 +76,7 @@ private:
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
-    SplitState _splitState{ SplitState::None };
+    winrt::TerminalApp::SplitState _splitState{ winrt::TerminalApp::SplitState::None };
     std::optional<float> _firstPercent{ std::nullopt };
     std::optional<float> _secondPercent{ std::nullopt };
 
@@ -103,8 +96,8 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    bool _CanSplit(SplitState splitType);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(SplitState splitType,
+    bool _CanSplit(winrt::TerminalApp::SplitState splitType);
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::TerminalApp::SplitState splitType,
                                                                    const GUID& profile,
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
@@ -137,23 +130,23 @@ private:
     //   again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
-    // - splitType: The SplitState to compare
+    // - splitType: The winrt::TerminalApp::SplitState to compare
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
-    //   SplitState::None.
+    //   winrt::TerminalApp::SplitState::None.
     static constexpr bool DirectionMatchesSplit(const winrt::TerminalApp::Direction& direction,
-                                                const SplitState& splitType)
+                                                const winrt::TerminalApp::SplitState& splitType)
     {
-        if (splitType == SplitState::None)
+        if (splitType == winrt::TerminalApp::SplitState::None)
         {
             return false;
         }
-        else if (splitType == SplitState::Horizontal)
+        else if (splitType == winrt::TerminalApp::SplitState::Horizontal)
         {
             return direction == winrt::TerminalApp::Direction::Up ||
                    direction == winrt::TerminalApp::Direction::Down;
         }
-        else if (splitType == SplitState::Vertical)
+        else if (splitType == winrt::TerminalApp::SplitState::Vertical)
         {
             return direction == winrt::TerminalApp::Direction::Left ||
                    direction == winrt::TerminalApp::Direction::Right;
