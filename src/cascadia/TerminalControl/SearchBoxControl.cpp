@@ -9,6 +9,8 @@ using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 
+static const std::wstring_view _textBoxPlaceHolderText = L"Find...";
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Constructor
@@ -23,6 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Primitives::ToggleButton>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
         _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
+        _textBox.PlaceholderText(_textBoxPlaceHolderText);
 
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
         auto caseButton = this->FindName(L"CaseSensitivityButton").try_as<Controls::Primitives::ToggleButton>();
@@ -86,6 +89,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _searchEventHandler(*this, _textBox.Text());
             }
         }
+    }
+
+    // Method Description:
+    // - Handler for TextBox got focus. When TextBox got focus, we
+    //   remove the PlaceHolderText
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::_TextBoxGotFocus(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _textBox.PlaceholderText(L"");
+    }
+
+    // Method Description:
+    // - Handler for TextBox lost focus. When TextBox lost focus, we
+    //   add the PlaceHolderText back
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::_TextBoxLostFocus(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _textBox.PlaceholderText(_textBoxPlaceHolderText);
     }
 
     // Method Description:
