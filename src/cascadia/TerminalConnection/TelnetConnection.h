@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                  std::function<void(telnetpp::bytes)> const& send);
 
         void _socketBufferedSend(telnetpp::bytes data);
-        void _socketFlushBuffer();
+        fire_and_forget _socketFlushBuffer();
         void _socketSend(telnetpp::bytes data);
         size_t _socketReceive(gsl::span<telnetpp::byte> buffer);
 

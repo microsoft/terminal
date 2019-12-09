@@ -11,6 +11,9 @@
 
 using namespace ::Microsoft::Console;
 
+constexpr std::wstring_view telnetScheme = L"telnet";
+constexpr std::wstring_view msTelnetLoopbackScheme = L"ms-telnet-loop";
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     TelnetConnection::TelnetConnection(const hstring& uri) :
@@ -153,22 +156,38 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     const auto uri = Windows::Foundation::Uri(_uri);
                     const auto host = Windows::Networking::HostName(uri.Host());
+
+                    bool autoLogin = false;
+                    // If we specified the special ms loopback scheme, then set autologin and proceed below.
+                    if (msTelnetLoopbackScheme == uri.SchemeName())
+                    {
+                        autoLogin = true;
+                    }
+                    // Otherwise, make sure we said telnet://, anything else is not supported here.
+                    else if (telnetScheme != uri.SchemeName())
+                    {
+                        THROW_HR(E_INVALIDARG);
+                    }
+
                     _socket.ConnectAsync(host, winrt::to_hstring(uri.Port())).get();
                     _writer = Windows::Storage::Streams::DataWriter(_socket.OutputStream());
                     _reader = Windows::Storage::Streams::DataReader(_socket.InputStream());
                     _reader.InputStreamOptions(Windows::Storage::Streams::InputStreamOptions::Partial); // returns when 1 or more bytes ready.
                     _transitionToState(ConnectionState::Connected);
 
-                    // Send newline to bypass User Name prompt.
-                    const auto newline = winrt::to_hstring("\r\n");
-                    WriteInput(newline);
+                    if (autoLogin)
+                    {
+                        // Send newline to bypass User Name prompt.
+                        const auto newline = winrt::to_hstring("\r\n");
+                        WriteInput(newline);
 
-                    // Wait for login.
-                    Sleep(1000);
+                        // Wait for login.
+                        Sleep(1000);
 
-                    // Send "cls" enter to clear the thing and just look like a prompt.
-                    const auto clearScreen = winrt::to_hstring("cls\r\n");
-                    WriteInput(clearScreen);
+                        // Send "cls" enter to clear the thing and just look like a prompt.
+                        const auto clearScreen = winrt::to_hstring("cls\r\n");
+                        WriteInput(clearScreen);
+                    }
                 }
                 catch (...)
                 {
@@ -231,9 +250,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TelnetConnection::_socketFlushBuffer()
+    fire_and_forget TelnetConnection::_socketFlushBuffer()
     {
-        _writer.StoreAsync().get();
+        co_await _writer.StoreAsync();
     }
 
     // Routine Description:
