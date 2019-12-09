@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-11-08
-last updated: 2019-11-14
+last updated: 2019-12-09
 issue id: #607
 ---
 
@@ -312,10 +312,6 @@ same window.
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
 
-TODO: Should this be named `new-pane`, to match `new-tab`? If it's `new-pane`,
-then the `ShortcutAction` should probably be `NewPane` (`newPane`), not
-`SplitPane` (`splitPane`).
-
 **Parameters**:
 * `--target,-t target-pane`: Creates a new split in the given `target-pane`.
   Each pane has a unique index (per-tab) which can be used to identify them.
@@ -481,7 +477,7 @@ wt -p "Windows Powershell" -d "c:/Users/Foo/dev/MyProject"
 ## Implementation Details
 
 Following an investigation performed the week of Nov 18th, 2019, I've determined
-that we should be able to use the [CLI11](CLI11) open-source library to parse
+that we should be able to use the [CLI11] open-source library to parse
 our arguments. We'll need to add some additional logic on top of CLI11 in order
 to properly seperate commands with `;`, but that's not impossible to achieve.
 
@@ -515,16 +511,16 @@ in the codebase to enable this functionality in a way that users are expecting.
 The following is a suggestion of the individual changelists that could be made
 to iteratively work towards fulling implementing this funcionality.
 
-* [ ] Refactor `ShortcutAction` dispatching into its own class
+* [x] Refactor `ShortcutAction` dispatching into its own class
   - Right now, the `AppKeyBindings` is responsible for triggering all
     `ActionAndArgs` events, but only based upon keystrokes while the Terminal is
     running. As we'll be re-using `ActionAndArgs` for handling startup events,
     we'll need a more generic way of dispatching those events.
-* [ ] Add a `SplitPane` `ShortcutAction`, with a single parameter `style`,
+* [x] Add a `SplitPane` `ShortcutAction`, with a single parameter `split`,
   which accepts either `vertical` or `horizontal`
   - Make sure to convert the legacy `SplitVertical` and `SplitHorizontal` to use
-    `NewPane` with that arg set appropriately.
-* [ ] Add a `TerminalParameters` winrt object to `NewTabArgs` and `SplitPane`
+    `SplitPane` with that arg set appropriately.
+* [x] Add a `TerminalParameters` winrt object to `NewTabArgs` and `SplitPane`
   args. `TerminalParameters` will include the following properties:
 
 ```c#
@@ -536,7 +532,7 @@ runtimeclass TerminalParameters {
 }
 ```
   - These represent the arguments in `[terminal_parameters]`. When set, they'll
-    both `newTab` and `newPane` will accept [`profile`, `guid`, `commandline`,
+    both `newTab` and `splitPane` will accept [`profile`, `guid`, `commandline`,
     `startingDirectory`] as optional parameters, and when they're set, they'll
     override the default values used when creating a new terminal instance.
     - `profile` and `guid` will be used to look up the profile to create by
@@ -550,7 +546,7 @@ runtimeclass TerminalParameters {
   - This will include adding tests that validate a particular commandline
     generates the given sequence of `ActionAndArgs`.
   - This will _not_ include _performing_ those actions, or passing the
-    commadline from the `WindowsTerminal` executable to the `TerminalApp`
+    commandline from the `WindowsTerminal` executable to the `TerminalApp`
     library for parsing. This change does not add any user-facing functional
     behavior, but is self-contained enough that it can be its own changelist,
     without depending upon other functionality.
@@ -626,27 +622,27 @@ this works as expected.
 Painfully, powershell uses `;` as a seperator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
 the user would need to also escape those semicolons for powershell first. That
-means a command like ```wt new-tab ; new-pane``` would need to be ```wt new-tab
-`; new-pane``` in powershell, and ```wt new-tab ; new-pane commandline \; with
-\; semicolons``` would need to become ```wt new-tab `; new-pane commandline \`;
+means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab
+`; split-pane``` in powershell, and ```wt new-tab ; split-pane commandline \; with
+\; semicolons``` would need to become ```wt new-tab `; split-pane commandline \`;
 with \`; semicolons```, using ```\`;``` to first escape the semicolon for
 powershell, then the backslash to escape it for `wt`.
 
 Alternatively, the user could chose to escape the semicolons with quotes (either
-single or double), like so: ```wt new-tab ';' new-pane "commandline \; with \;
+single or double), like so: ```wt new-tab ';' split-pane "commandline \; with \;
 semicolons"```.
 
 This would get a little ridiculous when using powershell commands that also have
 semicolons possible escaped within them:
 
 ```powershell
-wt.exe ";" new-pane "powershell Write-Output 'Hello World' > foo.txt; type foo.txt"
+wt.exe ";" split-pane "powershell Write-Output 'Hello World' > foo.txt; type foo.txt"
 ```
 
-TODO FOR DISCUSSION: Is this behavior in powershell uncomfortable enough that we
-should pick another seperator for commands? Is there a reasonable alternative
-that makes enough logical sense? Or is this a reasonable expectation, that
-commandlines would be escaped like this?
+We've decided that although this behavior is uncomfortable in powershell, there
+doesn't seem to be any option out there that's _less_ painful. This is a
+reasonable option that makes enough logical sense. Users familiar with
+powershell will understand the need to escape commandlines like this.
 
 ### `/SUBSYSTEM:Windows` or `/SUBSYSTEM:Console`?
 
@@ -680,26 +676,41 @@ behavior, because they should have instead called `wt.exe /?`.
 To avoid this confusion, I propose we follow the example of `msiexec /?`. This
 is a Windows application that uses a `MessageBox` to display its help text.
 While this is less convenient for users coming exclusively from a commandline
-environment, it's also
+environment, it's also the least bad option available to us.
+* It's less confusing than having control returned to the shell
+* It's not as bad as forcing the creation of a console window for
+  non-commandline launches.
+* There's precedent for this kind of dialog (we're not inventing a new pattern
+  here.)
 
 ### What happens if `new-tab` isn't the first command?
 
 TODO: What should we do if we encounter the following?
 
 ```sh
-wt.exe new-pane -v ; new-tab
+wt.exe split-pane -v ; new-tab
 ```
 
 In the future, maybe we could presume in this case that the commands are
 intended for the current Windows Terminal window, though that's not
-functionality that will arrive in 1.0. Furthermore, even when sessions are
-supported like that, I'm not sure it'll be possible to know what session we're
-currently running in. Additionally, what would happen if theis was run in a
-`conhost` window, that wasn't attached to a Terminal session? I don't believe
-that implying the _current session_ is the correct behavior here.
+functionality that will arrive in 1.0. Even when sessions are supported like
+that, I'm not sure that when we're parsing a commandline, we'll be possible to
+know what session we're currently running in.That might make it challenging to
+dispatch this kind of command to "the current WT window".
 
-Should we just immediately display an error that the commandline is invalid, and
-that a commandline should start with a `new-tab ; `?
+Additionally, what would happen if this was run in a `conhost` window, that
+wasn't attached to a Terminal session? We wouldn't be able to tell _the current
+session_ to `split-pane`, since there wouldn't be one. What would we do then?
+Display an error message somehow?
+
+I don't believe that implying the _current Windows Terminal session_ is the
+correct behavior here. Instead we should either:
+* Assume that there's an implicit `new-tab` command that's run first, to create
+  the window, _then_ run `split-pane` in that tab.
+* Immediately display an error that the commandline is invalid, and that a
+  commandline should start with a `new-tab ; `?
+
+TODO: This ^ is left for discussion.
 
 ## Future considerations
 
@@ -739,7 +750,7 @@ that a commandline should start with a `new-tab ; `?
 * When working on "New Window", we'll want the user to be able to open a new
   window with not only the default profile, but also a specific profile. This
   will help us enable that scenario.
-* We might want to look into `Regsiter‑ArgumentCompleter` in powershell to
+* We might want to look into `Register‑ArgumentCompleter` in powershell to
   enable letting the user auto-complete our args in powershell.
 * If we're careful, we could maybe create short form aliases for all the
   commands, so the user wouldn't need to type them all out every time. `new-tab`
