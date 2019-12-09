@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
+#include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
 
@@ -25,6 +26,7 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
+using namespace ::Microsoft::Console;
 
 namespace winrt
 {
@@ -116,7 +118,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTab(std::nullopt);
+                page->_OpenNewTab(nullptr);
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
@@ -124,7 +126,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
-        _OpenNewTab(std::nullopt);
+        _OpenNewTab(nullptr);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
     }
@@ -284,7 +286,9 @@ namespace winrt::TerminalApp::implementation
                     auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
                     actionAndArgs->Action(ShortcutAction::NewTab);
                     auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                    newTabArgs->ProfileIndex(profileIndex);
+                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                    newTerminalArgs->ProfileIndex(profileIndex);
+                    newTabArgs->TerminalArgs(*newTerminalArgs);
                     actionAndArgs->Args(*newTabArgs);
                     profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
                 }
@@ -322,7 +326,9 @@ namespace winrt::TerminalApp::implementation
             profileMenuItem.Click([profileIndex, weakThis](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
-                    page->_OpenNewTab({ profileIndex });
+                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                    newTerminalArgs->ProfileIndex(profileIndex);
+                    page->_OpenNewTab(*newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -391,48 +397,27 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Open a new tab. This will create the TerminalControl hosting the
-    //      terminal, and add a new Tab to our list of tabs. The method can
-    //      optionally be provided a profile index, which will be used to create
-    //      a tab using the profile in that index.
-    //      If no index is provided, the default profile will be used.
+    //   terminal, and add a new Tab to our list of tabs. The method can
+    //   optionally be provided a NewTerminalArgs, which will be used to create
+    //   a tab using the values in that object.
     // Arguments:
-    // - profileIndex: an optional index into the list of profiles to use to
-    //      initialize this tab up with.
-    void TerminalPage::_OpenNewTab(std::optional<int> profileIndex)
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        GUID profileGuid;
+        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
-        if (profileIndex)
-        {
-            const auto realIndex = profileIndex.value();
-            const auto profiles = _settings->GetProfiles();
-
-            // If we don't have that many profiles, then do nothing.
-            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
-            {
-                return;
-            }
-
-            const auto& selectedProfile = profiles[realIndex];
-            profileGuid = selectedProfile.GetGuid();
-        }
-        else
-        {
-            // Getting Guid for default profile
-            const auto globalSettings = _settings->GlobalSettings();
-            profileGuid = globalSettings.GetDefaultProfile();
-        }
-
-        TerminalSettings settings = _settings->MakeSettings(profileGuid);
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
+        const bool usedManualProfile = (newTerminalArgs != nullptr) && (newTerminalArgs.ProfileIndex().Value() || newTerminalArgs.Profile().empty());
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
-            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -724,9 +709,11 @@ namespace winrt::TerminalApp::implementation
         const auto& _tab = _tabs.at(focusedTabIndex);
 
         const auto& profileGuid = _tab->GetFocusedProfile();
-        const auto& settings = _settings->MakeSettings(profileGuid);
-
-        _CreateNewTabFromSettings(profileGuid.value(), settings);
+        if (profileGuid.has_value())
+        {
+            const auto settings = _settings->BuildSettings(profileGuid.value());
+            _CreateNewTabFromSettings(profileGuid.value(), settings);
+        }
     }
 
     // Method Description:
@@ -959,9 +946,11 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid)
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
+                                  const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
         if (splitType == TerminalApp::SplitState::None)
@@ -969,9 +958,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto realGuid = profileGuid ? profileGuid.value() :
-                                            _settings->GlobalSettings().GetDefaultProfile();
-        const auto controlSettings = _settings->MakeSettings(realGuid);
+        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
@@ -1374,7 +1361,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
-            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+            const auto settings = _settings->BuildSettings(profileGuid);
 
             for (auto& tab : _tabs)
             {

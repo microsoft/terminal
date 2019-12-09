@@ -343,7 +343,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Use the default profile to determine how big of a window we need.
-        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
+        const auto [_, settings] = _settings->BuildSettings(nullptr);
 
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add

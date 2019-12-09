@@ -51,7 +51,8 @@ public:
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
+    std::tuple<GUID, winrt::Microsoft::Terminal::Settings::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings BuildSettings(GUID profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();
 
@@ -97,6 +98,9 @@ private:
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
+
+    GUID _GetProfileForIndex(std::optional<int> index) const;
+    GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
     void _ValidateProfilesExist();

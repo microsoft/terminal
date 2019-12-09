@@ -87,6 +87,31 @@
       ],
       "type": "string"
     },
+    "NewTerminalArgs": {
+      "properties": {
+        "commandline": {
+          "description": "A commandline to use instead of the profile's",
+          "type": "string"
+        },
+        "tabTitle": {
+          "description": "An initial tabTitle to use instead of the profile's",
+          "type": "string"
+        },
+        "startingDirectory": {
+          "description": "A startingDirectory to use instead of the profile's",
+          "type": "string"
+        },
+        "profile": {
+          "description": "Either the GUID or name of a profile to use, instead of launching the default",
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "description": "The index of the profile in the new tab dropdown to open"
+        }
+      },
+      "type": "object"
+    },
     "ShortcutAction": {
       "properties": {
         "action": {
@@ -119,13 +144,10 @@
       "description": "Arguments corresponding to a New Tab Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "newTab" },
-            "index": {
-              "type": "integer",
-              "description": "The index in the new tab dropdown to open in a new tab"
-            }
+            "action": { "type":"string", "pattern": "newTab" }
           }
         }
       ]
@@ -185,6 +207,7 @@
       "description": "Arguments corresponding to a Split Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
             "action": { "type": "string", "pattern": "splitPane" },
