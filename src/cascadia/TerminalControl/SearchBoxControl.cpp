@@ -9,8 +9,6 @@ using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 
-static const std::wstring_view _textBoxPlaceHolderText = L"Find...";
-
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Constructor
@@ -25,7 +23,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Primitives::ToggleButton>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
         _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
-        _textBox.PlaceholderText(_textBoxPlaceHolderText);
+
+        _textBoxPlaceHolderText = _textBox.PlaceholderText();
 
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
         auto caseButton = this->FindName(L"CaseSensitivityButton").try_as<Controls::Primitives::ToggleButton>();
@@ -77,7 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down) || state == (CoreVirtualKeyStates::Locked | CoreVirtualKeyStates::Down))
+            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
                 // We do not want the direction flag to change permanately
                 _goForward = !_goForward;
