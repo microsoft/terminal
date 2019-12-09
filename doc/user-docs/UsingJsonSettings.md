@@ -205,7 +205,7 @@ In [#2325](https://github.com/microsoft/terminal/issues/2325), we introduced the
 concept of "Default Profile Settings". These are settings that will apply to all
 of your profiles by default. Profiles can still override these settings
 individually. With default profile settings, you can easily make changes to all
-your profiles at once. For example, lets say I have the following settings:
+your profiles at once. For example, given the following settings:
 
 ```json
     "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
@@ -270,7 +270,7 @@ properties for all your profiles, like so:
 Note that the `profiles` property has changed in this example from a _list_ of
 profiles, to an _object_ with two properties:
 * a `list` that contains the list of all the profiles
-* the new `defaults` object, that contains all the settings that should apply to
+* the new `defaults` object, which contains all the settings that should apply to
   every profile.
 
 What if I wanted a profile to have a different value for a property other than
