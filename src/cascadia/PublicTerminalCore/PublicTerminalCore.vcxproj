@@ -47,9 +47,6 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>d3dcompiler.lib</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>
