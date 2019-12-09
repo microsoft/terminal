@@ -7,6 +7,7 @@
 #include "../TerminalApp/CascadiaSettings.h"
 #include "JsonTestClass.h"
 #include <defaults.h>
+#include "../ut_app/TestDynamicProfileGenerator.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -59,6 +60,10 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
+
+        TEST_METHOD(TestLayerUserDefaultsBeforeProfiles);
+        TEST_METHOD(TestDontLayerGuidFromUserDefaults);
+        TEST_METHOD(TestLayerUserDefaultsOnDynamics);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1542,4 +1547,235 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings._profiles[0].GetCloseOnExitMode());
         VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings._profiles[1].GetCloseOnExitMode());
     }
+
+    void SettingsTests::TestLayerUserDefaultsBeforeProfiles()
+    {
+        // Test for microsoft/terminal#2325. For this test, we'll be setting the
+        // "historySize" in the "defaultSettings", so it should apply to all
+        // profiles, unless they override it. In one of the user's profiles,
+        // we'll override that value, and in the other, we'll leave it
+        // untouched.
+
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": {
+                "defaults": {
+                    "historySize": 1234
+                },
+                "list": [
+                    {
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "name": "profile0",
+                        "historySize": 2345
+                    },
+                    {
+                        "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                        "name": "profile1"
+                    }
+                ]
+            }
+        })" };
+        VerifyParseSucceeded(settings0String);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        {
+            CascadiaSettings settings{ false };
+            settings._ParseJsonString(settings0String, false);
+            VERIFY_IS_TRUE(settings._userDefaultProfileSettings == Json::Value::null);
+            settings._ApplyDefaultsFromUserSettings();
+            VERIFY_IS_FALSE(settings._userDefaultProfileSettings == Json::Value::null);
+            settings.LayerJson(settings._userSettings);
+
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+
+            VERIFY_ARE_EQUAL(2345, settings._profiles.at(0)._historySize);
+            VERIFY_ARE_EQUAL(1234, settings._profiles.at(1)._historySize);
+        }
+    }
+
+    void SettingsTests::TestDontLayerGuidFromUserDefaults()
+    {
+        // Test for microsoft/terminal#2325. We don't want the user to put a
+        // "guid" in the "defaultSettings", and have that apply to all the other
+        // profiles
+
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": {
+                "defaults": {
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                "list": [
+                    {
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "name": "profile0",
+                        "historySize": 2345
+                    },
+                    {
+                        // Doesn't have a GUID, we'll auto-generate one
+                        "name": "profile1"
+                    }
+                ]
+            }
+        })" };
+        VerifyParseSucceeded(settings0String);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        {
+            CascadiaSettings settings{ false };
+            settings._ParseJsonString(DefaultJson, true);
+            settings.LayerJson(settings._defaultSettings);
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+
+            settings._ParseJsonString(settings0String, false);
+            VERIFY_IS_TRUE(settings._userDefaultProfileSettings == Json::Value::null);
+            settings._ApplyDefaultsFromUserSettings();
+            VERIFY_IS_FALSE(settings._userDefaultProfileSettings == Json::Value::null);
+
+            Log::Comment(NoThrowString().Format(
+                L"Ensure that cmd and powershell don't get their GUIDs overwritten"));
+            VERIFY_ARE_NOT_EQUAL(guid2, settings._profiles.at(0)._guid);
+            VERIFY_ARE_NOT_EQUAL(guid2, settings._profiles.at(1)._guid);
+
+            settings.LayerJson(settings._userSettings);
+
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+            VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+
+            VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2)._guid);
+            VERIFY_IS_FALSE(settings._profiles.at(3)._guid.has_value());
+        }
+    }
+
+    void SettingsTests::TestLayerUserDefaultsOnDynamics()
+    {
+        // Test for microsoft/terminal#2325. For this test, we'll be setting the
+        // "historySize" in the "defaultSettings", so it should apply to all
+        // profiles, unless they override it. The dynamic profiles will _also_
+        // set this value, but from discussion in GH#2325, we decided that
+        // settings in defaultSettings should apply _on top_ of settings from
+        // dynamic profiles.
+
+        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        GUID guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        GUID guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        const std::string userProfiles{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": {
+                "defaults": {
+                    "historySize": 1234
+                },
+                "list": [
+                    {
+                        "name" : "profile0FromUserSettings", // this is _profiles.at(0)
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "source": "Terminal.App.UnitTest.0"
+                    },
+                    {
+                        "name" : "profile1FromUserSettings", // this is _profiles.at(2)
+                        "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                        "source": "Terminal.App.UnitTest.1",
+                        "historySize": 4444
+                    },
+                    {
+                        "name" : "profile2FromUserSettings", // this is _profiles.at(3)
+                        "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
+                        "historySize": 5555
+                    }
+                ]
+            }
+        })" };
+
+        auto gen0 = std::make_unique<TerminalAppUnitTests::TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+        gen0->pfnGenerate = [guid1, guid2]() {
+            std::vector<Profile> profiles;
+            Profile p0{ guid1 };
+            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            p0._historySize = 1111;
+            profiles.push_back(p0);
+            return profiles;
+        };
+        auto gen1 = std::make_unique<TerminalAppUnitTests::TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
+        gen1->pfnGenerate = [guid1, guid2]() {
+            std::vector<Profile> profiles;
+            Profile p0{ guid1 }, p1{ guid2 };
+            p0.SetName(L"profile0"); // this is _profiles.at(1)
+            p1.SetName(L"profile1"); // this is _profiles.at(2)
+            p0._historySize = 2222;
+            profiles.push_back(p0);
+            p1._historySize = 3333;
+            profiles.push_back(p1);
+            return profiles;
+        };
+
+        CascadiaSettings settings{ false };
+        settings._profileGenerators.emplace_back(std::move(gen0));
+        settings._profileGenerators.emplace_back(std::move(gen1));
+
+        Log::Comment(NoThrowString().Format(
+            L"All profiles with the same name have the same GUID. However, they"
+            L" will not be layered, because they have different source's"));
+
+        // parse userProfiles as the user settings
+        settings._ParseJsonString(userProfiles, false);
+        VERIFY_ARE_EQUAL(0u, settings._profiles.size(), L"Just parsing the user settings doesn't actually layer them");
+        settings._LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+
+        VERIFY_ARE_EQUAL(1111, settings._profiles.at(0)._historySize);
+        VERIFY_ARE_EQUAL(2222, settings._profiles.at(1)._historySize);
+        VERIFY_ARE_EQUAL(3333, settings._profiles.at(2)._historySize);
+
+        settings._ApplyDefaultsFromUserSettings();
+
+        VERIFY_ARE_EQUAL(1234, settings._profiles.at(0)._historySize);
+        VERIFY_ARE_EQUAL(1234, settings._profiles.at(1)._historySize);
+        VERIFY_ARE_EQUAL(1234, settings._profiles.at(2)._historySize);
+
+        settings.LayerJson(settings._userSettings);
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+        VERIFY_IS_FALSE(settings._profiles.at(3)._source.has_value());
+
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings._profiles.at(0)._source.value());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1)._source.value());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2)._source.value());
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(0)._guid.value());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(1)._guid.value());
+        VERIFY_ARE_EQUAL(guid2, settings._profiles.at(2)._guid.value());
+
+        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings._profiles.at(3)._name);
+
+        Log::Comment(NoThrowString().Format(
+            L"This is the real meat of the test: The two dynamic profiles that "
+            L"_didn't_ have historySize set in the userSettings should have "
+            L"1234 as their historySize(from the defaultSettings).The other two"
+            L" profiles should have their custom historySize value."));
+
+        VERIFY_ARE_EQUAL(1234, settings._profiles.at(0)._historySize);
+        VERIFY_ARE_EQUAL(1234, settings._profiles.at(1)._historySize);
+        VERIFY_ARE_EQUAL(4444, settings._profiles.at(2)._historySize);
+        VERIFY_ARE_EQUAL(5555, settings._profiles.at(3)._historySize);
+    }
+
 }
