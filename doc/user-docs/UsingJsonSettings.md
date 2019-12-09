@@ -275,8 +275,8 @@ profiles, to an _object_ with two properties:
 
 What if I wanted a profile to have a different value for a property other than
 the default? Simply set the property in the profile's entry to override the
-value from `defaults`. Let's say you want the `cmd` profile to have `Consolas`
-as the font, but the rest of your profiles to still have "Cascadia Code". You
+value from `defaults`. Let's say you want the `cmd` profile to have _"Consolas"_
+as the font, but the rest of your profiles to still have _"Cascadia Code"_. You
 could achieve that with the following:
 
 ```json
@@ -309,7 +309,7 @@ could achieve that with the following:
 ```
 
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
-`"fontFace"` from the `defaultSettings`.
+`"fontFace"` from the `defaults`.
 
 
 ## Configuration Examples:
