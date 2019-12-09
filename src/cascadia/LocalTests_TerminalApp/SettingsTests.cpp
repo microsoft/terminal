@@ -6,6 +6,7 @@
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
 #include "JsonTestClass.h"
+#include "TestUtils.h"
 #include <defaults.h>
 #include "../ut_app/TestDynamicProfileGenerator.h"
 
@@ -14,6 +15,8 @@ using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace TerminalAppLocalTests
 {
@@ -64,6 +67,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestLayerUserDefaultsBeforeProfiles);
         TEST_METHOD(TestDontLayerGuidFromUserDefaults);
         TEST_METHOD(TestLayerUserDefaultsOnDynamics);
+
+        TEST_METHOD(TestTerminalArgsForBinding);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1778,4 +1783,306 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(5555, settings._profiles.at(3)._historySize);
     }
 
+    void SettingsTests::TestTerminalArgsForBinding()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "keybindings": [
+                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" } },
+                { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "vertical", "profile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}" } },
+                { "keys": ["ctrl+c"], "command": { "action": "splitPane", "split": "vertical", "profile": "profile1" } },
+                { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical", "profile": "profile2" } },
+                { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal", "commandline": "foo.exe" } },
+                { "keys": ["ctrl+f"], "command": { "action": "splitPane", "split": "horizontal", "profile": "profile1", "commandline": "foo.exe" } },
+                { "keys": ["ctrl+g"], "command": { "action": "newTab" } },
+                { "keys": ["ctrl+h"], "command": { "action": "newTab", "startingDirectory": "c:\\foo" } },
+                { "keys": ["ctrl+i"], "command": { "action": "newTab", "profile": "profile2", "startingDirectory": "c:\\foo" } },
+                { "keys": ["ctrl+j"], "command": { "action": "newTab", "tabTitle": "bar" } },
+                { "keys": ["ctrl+k"], "command": { "action": "newTab", "profile": "profile2", "tabTitle": "bar" } },
+                { "keys": ["ctrl+l"], "command": { "action": "newTab", "profile": "profile1", "tabTitle": "bar", "startingDirectory": "c:\\foo", "commandline":"foo.exe" } }
+            ]
+        })" };
+
+        const auto guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+        settings._ValidateSettings();
+
+        auto appKeyBindings = settings._globals._keybindings;
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        const auto profile2Guid = settings._profiles.at(2).GetGuid();
+        VERIFY_ARE_NOT_EQUAL(GUID{ 0 }, profile2Guid);
+
+        VERIFY_ARE_EQUAL(12u, appKeyBindings->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('B') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", realArgs.TerminalArgs().Profile());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
+            VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('J') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('K') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
+            VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('L') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
+            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
+            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+
+            const auto [guid, termSettings] = settings.BuildSettings(realArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
+            VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
+            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
+        }
+    }
 }
