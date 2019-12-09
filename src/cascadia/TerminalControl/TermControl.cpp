@@ -156,8 +156,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connection.TerminalDisconnected([=]() {
-            _connectionClosedHandlers();
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [weakThis = get_weak()](auto&& /*s*/, auto&& /*v*/) {
+            if (auto strongThis{ weakThis.get() })
+            {
+                strongThis->_ConnectionStateChangedHandlers(*strongThis, nullptr);
+            }
         });
     }
 
@@ -419,6 +422,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const Windows::UI::Xaml::Thickness TermControl::GetPadding() const
     {
         return _swapChainPanel.Margin();
+    }
+
+    TerminalConnection::ConnectionState TermControl::ConnectionState() const
+    {
+        return _connection.State();
     }
 
     void TermControl::SwapChainChanged()
@@ -990,29 +998,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Reset the font size of the terminal to its default size.
+    // Arguments:
+    // - none
+    void TermControl::ResetFontSize()
+    {
+        _SetFontSize(_settings.FontSize());
+    }
+
+    // Method Description:
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void TermControl::AdjustFontSize(int fontSizeDelta)
     {
-        try
-        {
-            // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontSizeDelta), static_cast<short>(1));
-            const auto* fontFace = _settings.FontFace().c_str();
-            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
-            _desiredFont = { _actualFont };
-
-            // Refresh our font with the renderer
-            _UpdateFont();
-            // Resize the terminal's BUFFER to match the new font size. This does
-            // NOT change the size of the window, because that can lead to more
-            // problems (like what happens when you change the font size while the
-            // window is maximized?)
-            auto lock = _terminal->LockForWriting();
-            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
-        }
-        CATCH_LOG();
+        const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
+        _SetFontSize(newSize);
     }
 
     // Method Description:
@@ -1293,6 +1294,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Set the font size of the terminal control.
+    // Arguments:
+    // - fontSize: The size of the font.
+    void TermControl::_SetFontSize(int fontSize)
+    {
+        try
+        {
+            // Make sure we have a non-zero font size
+            const auto newSize = std::max(gsl::narrow<short>(fontSize), static_cast<short>(1));
+            const auto* fontFace = _settings.FontFace().c_str();
+            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            _desiredFont = { _actualFont };
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+            // Resize the terminal's BUFFER to match the new font size. This does
+            // NOT change the size of the window, because that can lead to more
+            // problems (like what happens when you change the font size while the
+            // window is maximized?)
+            auto lock = _terminal->LockForWriting();
+            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
     // - Triggered when the swapchain changes size. We use this to resize the
     //      terminal buffers to match the new visible size.
     // Arguments:
@@ -1545,8 +1572,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
-            // Stop accepting new output before we disconnect everything.
+            // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionStateChangedRevoker.revoke();
 
             // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
             if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })
@@ -1840,17 +1868,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Returns true if this control should close when its connection is closed.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - true iff the control should close when the connection is closed.
-    bool TermControl::ShouldCloseOnExit() const noexcept
-    {
-        return _settings.CloseOnExit();
-    }
-
-    // Method Description:
     // - Gets the corresponding viewport terminal position for the cursor
     //    by excluding the padding and normalizing with the font size.
     //    This is used for selection.
@@ -1961,7 +1978,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, ConnectionClosed, _connectionClosedHandlers, TerminalControl::ConnectionClosedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);

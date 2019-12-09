@@ -44,6 +44,7 @@
         "openSettings",
         "paste",
         "prevTab",
+        "resetFontSize",
         "resizePane",
         "resizePaneDown",
         "resizePaneLeft",
@@ -55,6 +56,7 @@
         "scrollUpPage",
         "splitHorizontal",
         "splitVertical",
+        "splitPane",
         "switchToTab",
         "switchToTab0",
         "switchToTab1",
@@ -78,6 +80,38 @@
       ],
       "type": "string"
     },
+    "SplitState": {
+      "enum": [
+        "vertical",
+        "horizontal"
+      ],
+      "type": "string"
+    },
+    "NewTerminalArgs": {
+      "properties": {
+        "commandline": {
+          "description": "A commandline to use instead of the profile's",
+          "type": "string"
+        },
+        "tabTitle": {
+          "description": "An initial tabTitle to use instead of the profile's",
+          "type": "string"
+        },
+        "startingDirectory": {
+          "description": "A startingDirectory to use instead of the profile's",
+          "type": "string"
+        },
+        "profile": {
+          "description": "Either the GUID or name of a profile to use, instead of launching the default",
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "description": "The index of the profile in the new tab dropdown to open"
+        }
+      },
+      "type": "object"
+    },
     "ShortcutAction": {
       "properties": {
         "action": {
@@ -99,8 +133,8 @@
             "action": { "type": "string", "pattern": "copy" },
             "trimWhitespace": {
               "type": "boolean",
-              "default": false,
-              "description": "If true, will trim whitespace from the end of the line on copy."
+              "default": true,
+              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
             }
           }
         }
@@ -110,13 +144,10 @@
       "description": "Arguments corresponding to a New Tab Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "newTab" },
-            "index": {
-              "type": "integer",
-              "description": "The index in the new tab dropdown to open in a new tab"
-            }
+            "action": { "type":"string", "pattern": "newTab" }
           }
         }
       ]
@@ -172,6 +203,24 @@
       ],
       "required": [ "direction" ]
     },
+    "SplitPaneAction": {
+      "description": "Arguments corresponding to a Split Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "splitPane" },
+            "split": {
+              "$ref": "#/definitions/SplitState",
+              "default": "vertical",
+              "description": "The orientation to split the pane in, either vertical (think [|]) or horizontal (think [-])"
+            }
+          }
+        }
+      ],
+      "required": [ "split" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -183,7 +232,8 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
-              { "$ref": "#/definitions/ResizePaneAction" }
+              { "$ref": "#/definitions/ResizePaneAction" },
+              { "$ref": "#/definitions/SplitPaneAction" }
             ]
         },
         "keys": {
@@ -326,9 +376,21 @@
             "type": "string"
           },
           "closeOnExit": {
-            "default": true,
-            "description": "When set to true (default), the selected tab closes when the connected application exits. When set to false, the tab will remain open when the connected application exits.",
-            "type": "boolean"
+            "default": "graceful",
+            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+            "oneOf": [
+              {
+                "enum": [
+                  "never",
+                  "graceful",
+                  "always"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
           },
           "colorScheme": {
             "default": "Campbell",

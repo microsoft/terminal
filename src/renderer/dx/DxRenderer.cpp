@@ -15,7 +15,7 @@
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
-static constexpr std::wstring_view FALLBACK_FONT_FACE = L"Consolas";
+static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 
 using namespace Microsoft::Console::Render;
@@ -41,7 +41,7 @@ DxEngine::DxEngine() :
     _displaySizePixels{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
-    _selectionBackground{ DEFAULT_FOREGROUND },
+    _selectionBackground{},
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -57,6 +57,10 @@ DxEngine::DxEngine() :
         DWRITE_FACTORY_TYPE_SHARED,
         __uuidof(_dwriteFactory),
         reinterpret_cast<IUnknown**>(_dwriteFactory.GetAddressOf())));
+
+    // Initialize our default selection color to DEFAULT_FOREGROUND, but make
+    // sure to set to to a D2D1::ColorF
+    SetSelectionBackground(DEFAULT_FOREGROUND);
 }
 
 // Routine Description:
@@ -1442,7 +1446,11 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
-    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+    if (_hwndTarget != INVALID_HANDLE_VALUE)
+    {
+        return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+    }
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -1467,17 +1475,27 @@ float DxEngine::GetScaling() const noexcept
 
     if (!face)
     {
-        familyName = FALLBACK_FONT_FACE;
-        face = _FindFontFace(familyName, weight, stretch, style, localeName);
-    }
+        for (const auto fallbackFace : FALLBACK_FONT_FACES)
+        {
+            familyName = fallbackFace;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
 
-    if (!face)
-    {
-        familyName = FALLBACK_FONT_FACE;
-        weight = DWRITE_FONT_WEIGHT_NORMAL;
-        stretch = DWRITE_FONT_STRETCH_NORMAL;
-        style = DWRITE_FONT_STYLE_NORMAL;
-        face = _FindFontFace(familyName, weight, stretch, style, localeName);
+            if (face)
+            {
+                break;
+            }
+
+            familyName = fallbackFace;
+            weight = DWRITE_FONT_WEIGHT_NORMAL;
+            stretch = DWRITE_FONT_STRETCH_NORMAL;
+            style = DWRITE_FONT_STYLE_NORMAL;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+            if (face)
+            {
+                break;
+            }
+        }
     }
 
     THROW_IF_NULL_ALLOC(face);

@@ -12,6 +12,7 @@
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
+#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's profiles.json.
 #include "userDefaults.h"
 // Both defaults.h and userDefaults.h are generated at build time into the
@@ -115,6 +116,29 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         _WriteSettings(resultPtr->_userSettingsString);
     }
 
+    // If this throws, the app will catch it and use the default settings
+    resultPtr->_ValidateSettings();
+
+    return resultPtr;
+}
+
+// Function Description:
+// - Loads a batch of settings curated for the Universal variant of the terminal app
+// Arguments:
+// - <none>
+// Return Value:
+// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
+{
+    // We're going to do this ourselves because we want to exclude almost everything
+    // from the special Universal-for-developers configuration
+
+    // Create settings and get the universal defaults loaded up.
+    auto resultPtr = std::make_unique<CascadiaSettings>();
+    resultPtr->_ParseJsonString(DefaultUniversalJson, true);
+    resultPtr->LayerJson(resultPtr->_defaultSettings);
+
+    // Now validate.
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
 

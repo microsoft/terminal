@@ -26,7 +26,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
-                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
@@ -39,7 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
-                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
@@ -131,7 +131,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </StackPanel.Resources>
 
-    <Button Height="36.0" MinWidth="45.0" Width="45.0" x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Click="_MinimizeClick"
+    <Button Height="36.0" MinWidth="46.0" Width="46.0" x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Click="_MinimizeClick"
             AutomationProperties.Name="Minimize">
         <Button.Resources>
             <ResourceDictionary>
@@ -139,7 +139,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary>
         </Button.Resources>
     </Button>
-    <Button Height="36.0" MinWidth="45.0" Width="45.0" x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Click="_MaximizeClick"
+    <Button Height="36.0" MinWidth="46.0" Width="46.0" x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Click="_MaximizeClick"
             AutomationProperties.Name="Maximize">
         <Button.Resources>
             <ResourceDictionary>
@@ -148,7 +148,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary>
         </Button.Resources>
     </Button>
-    <Button Height="36.0" MinWidth="45.0" Width="45.0" x:Name="CloseButton" Style="{StaticResource CaptionButton}" Click="_CloseClick"
+    <Button Height="36.0" MinWidth="46.0" Width="46.0" x:Name="CloseButton" Style="{StaticResource CaptionButton}" Click="_CloseClick"
             AutomationProperties.Name="Close">
         <Button.Resources>
             <ResourceDictionary>

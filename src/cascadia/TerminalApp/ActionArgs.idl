@@ -23,6 +23,24 @@ namespace TerminalApp
         Down
     };
 
+    enum SplitState
+    {
+        None = 0,
+        Vertical = 1,
+        Horizontal = 2
+    };
+
+    [default_interface] runtimeclass NewTerminalArgs {
+        NewTerminalArgs();
+        String Commandline;
+        String StartingDirectory;
+        String TabTitle;
+        String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+    };
+
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
     {
         ActionEventArgs(IActionArgs args);
@@ -35,9 +53,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        // ProfileIndex can be null (for "use the default"), so this needs to be
-        // a IReference, so it's nullable
-        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+        NewTerminalArgs TerminalArgs { get; };
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
@@ -60,4 +76,9 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    {
+        SplitState SplitStyle { get; };
+        NewTerminalArgs TerminalArgs { get; };
+    };
 }

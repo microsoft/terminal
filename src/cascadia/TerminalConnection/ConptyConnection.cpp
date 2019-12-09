@@ -2,6 +2,11 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+
+// We have to define GSL here, not PCH
+// because TelnetConnection has a conflicting GSL implementation.
+#include <gsl/gsl>
+
 #include "ConptyConnection.h"
 
 #include <windows.h>
@@ -11,8 +16,24 @@
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/Environment.hpp"
 #include "../../types/inc/UTF8OutPipeReader.hpp"
+#include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
+
+// Notes:
+// There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
+// 1. The connection is Close()d
+// 2. The pseudoconsole or process cannot be spawned during Start()
+// 3. The client process exits with a code.
+//    (Successful (0) or any other code)
+// 4. The read handle is terminated.
+//    (This usually happens when the pseudoconsole host crashes.)
+// In each of these termination scenarios, we need to be mindful of tripping the others.
+// Closing the pseudoconsole in response to the client exiting (3) can trigger (4).
+// Close() (1) will cause the automatic triggering of (3) and (4).
+// In a lot of cases, we use the connection state to stop "flapping."
+//
+// To figure out where we handle these, search for comments containing "EXIT POINT"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -150,26 +171,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _guid;
     }
 
-    winrt::event_token ConptyConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
-    {
-        return _outputHandlers.add(handler);
-    }
-
-    void ConptyConnection::TerminalOutput(winrt::event_token const& token) noexcept
-    {
-        _outputHandlers.remove(token);
-    }
-
-    winrt::event_token ConptyConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        return _disconnectHandlers.add(handler);
-    }
-
-    void ConptyConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        _disconnectHandlers.remove(token);
-    }
-
     void ConptyConnection::Start()
     try
     {
@@ -205,32 +206,70 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         SetThreadpoolWait(_clientExitWait.get(), _piClient.hProcess, nullptr);
 
-        _connected = true;
+        _transitionToState(ConnectionState::Connected);
     }
     catch (...)
     {
+        // EXIT POINT
         const auto hr = wil::ResultFromCaughtException();
-        // TODO GH#2563 - signal a transition into failed state here!
-        LOG_HR(hr);
 
-        _disconnectHandlers();
+        winrt::hstring failureText{ wil::str_printf<std::wstring>(RS_(L"ProcessFailedToLaunch").c_str(), static_cast<unsigned int>(hr), _commandline.c_str()) };
+        _TerminalOutputHandlers(failureText);
+        _transitionToState(ConnectionState::Failed);
+
+        // Tear down any state we may have accumulated.
+        _hPC.reset();
     }
 
+    // Method Description:
+    // - prints out the "process exited" message formatted with the exit code
+    // Arguments:
+    // - status: the exit code.
+    void ConptyConnection::_indicateExitWithStatus(unsigned int status) noexcept
+    {
+        try
+        {
+            winrt::hstring exitText{ wil::str_printf<std::wstring>(RS_(L"ProcessExited").c_str(), (unsigned int)status) };
+            _TerminalOutputHandlers(L"\r\n");
+            _TerminalOutputHandlers(exitText);
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
+    // - called when the client application (not necessarily its pty) exits for any reason
     void ConptyConnection::_ClientTerminated() noexcept
     {
-        if (_closing.load())
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
-            // This is okay, break out to kill the thread
+            // This termination was expected.
             return;
         }
 
-        // TODO GH#2563 - get the exit code from the process and see whether it was a failing one.
-        _disconnectHandlers();
+        // EXIT POINT
+        DWORD exitCode{ 0 };
+        GetExitCodeProcess(_piClient.hProcess, &exitCode);
+
+        // Signal the closing or failure of the process.
+        // Load bearing. Terminating the pseudoconsole will make the output thread exit unexpectedly,
+        // so we need to signal entry into the correct closing state before we do that.
+        _transitionToState(exitCode == 0 ? ConnectionState::Closed : ConnectionState::Failed);
+
+        // Close the pseudoconsole and wait for all output to drain.
+        _hPC.reset();
+        if (auto localOutputThreadHandle = std::move(_hOutputThread))
+        {
+            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(localOutputThreadHandle.get(), INFINITE));
+        }
+
+        _indicateExitWithStatus(exitCode);
+
+        _piClient.reset();
     }
 
     void ConptyConnection::WriteInput(hstring const& data)
     {
-        if (!_connected || _closing.load())
+        if (!_isConnected())
         {
             return;
         }
@@ -248,7 +287,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _initialRows = rows;
             _initialCols = columns;
         }
-        else if (!_closing.load())
+        else if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
         }
@@ -256,28 +295,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::Close()
     {
-        if (!_connected)
+        if (_transitionToState(ConnectionState::Closing))
         {
-            return;
-        }
-
-        if (!_closing.exchange(true))
-        {
+            // EXIT POINT
             _clientExitWait.reset(); // immediately stop waiting for the client to exit.
 
-            _hPC.reset();
+            _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
 
-            _inPipe.reset();
+            _inPipe.reset(); // break the pipes
             _outPipe.reset();
 
-            // Tear down our output thread -- now that the output pipe was closed on the
-            // far side, we can run down our local reader.
-            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
-            _hOutputThread.reset();
+            if (_hOutputThread)
+            {
+                // Tear down our output thread -- now that the output pipe was closed on the
+                // far side, we can run down our local reader.
+                LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
+                _hOutputThread.reset();
+            }
 
-            // Wait for the client to terminate.
-            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_piClient.hProcess, INFINITE));
-            _piClient.reset();
+            if (_piClient.hProcess)
+            {
+                // Wait for the client to terminate (which it should do successfully)
+                LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_piClient.hProcess, INFINITE));
+                _piClient.reset();
+            }
+
+            _transitionToState(ConnectionState::Closed);
         }
     }
 
@@ -292,13 +335,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             HRESULT result = pipeReader.Read(strView);
             if (FAILED(result) || result == S_FALSE)
             {
-                if (_closing.load())
+                if (_isStateAtOrBeyond(ConnectionState::Closing))
                 {
-                    // This is okay, break out to kill the thread
+                    // This termination was expected.
                     return 0;
                 }
 
-                _disconnectHandlers();
+                // EXIT POINT
+                _indicateExitWithStatus(result); // print a message
+                _transitionToState(ConnectionState::Failed);
                 return (DWORD)-1;
             }
 
@@ -326,7 +371,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             auto hstr{ winrt::to_hstring(strView) };
 
             // Pass the output to our registered event handlers
-            _outputHandlers(hstr);
+            _TerminalOutputHandlers(hstr);
         }
 
         return 0;

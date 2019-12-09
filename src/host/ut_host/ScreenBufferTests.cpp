@@ -599,6 +599,19 @@ void ScreenBufferTests::TestGetForwardTab()
                          L"Cursor advanced to end of screen buffer.");
     }
 
+    Log::Comment(L"Find next tab from rightmost column.");
+    {
+        coordCursor.X = coordScreenBufferSize.X - 1;
+
+        COORD coordCursorExpected;
+        coordCursorExpected = coordCursor;
+
+        COORD const coordCursorResult = si.GetForwardTab(coordCursor);
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor remains in rightmost column.");
+    }
+
     si._tabStops.clear();
 }
 

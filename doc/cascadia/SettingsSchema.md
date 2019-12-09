@@ -28,7 +28,7 @@ Properties listed below are specific to each unique profile.
 | `backgroundImageAlignment` | Optional | String | `center` | Sets how the background image aligns to the boundaries of the window. Possible values: `"center"`, `"left"`, `"top"`, `"right"`, `"bottom"`, `"topLeft"`, `"topRight"`, `"bottomLeft"`, `"bottomRight"` |
 | `backgroundImageOpacity` | Optional | Number | `1.0` | Sets the transparency of the background image. Accepts floating point values from 0-1. |
 | `backgroundImageStretchMode` | Optional | String | `uniformToFill` | Sets how the background image is resized to fill the window. Possible values: `"none"`, `"fill"`, `"uniform"`, `"uniformToFill"` |
-| `closeOnExit` | Optional | Boolean | `true` | When set to `true`, the selected tab closes when `exit` is typed. When set to `false`, the tab will remain open when `exit` is typed. |
+| `closeOnExit` | Optional | String | `graceful` | Sets how the profile reacts to termination or failure to launch. Possible values: `"graceful"` (close when `exit` is typed or the process exits normally), `"always"` (always close) and `"never"` (never close). `true` and `false` are accepted as synonyms for `"graceful"` and `"never"` respectively. |
 | `colorScheme` | Optional | String | `Campbell` | Name of the terminal color scheme to use. Color schemes are defined under `schemes`. |
 | `colorTable` | Optional | Array[String] | | Array of colors used in the profile if `colorscheme` is not set. Array follows the format defined in `schemes`. |
 | `commandline` | Optional | String | | Executable used in the profile. |
@@ -85,9 +85,9 @@ Properties listed below are specific to each custom key binding.
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
 
-### Implemented Keybindings
+### Implemented Commands
 
-Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
+Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp)
 
 - copy
 - copyTextWithoutNewlines
@@ -112,6 +112,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - prevTab
 - increaseFontSize
 - decreaseFontSize
+- resetFontSize
 - scrollUp
 - scrollDown
 - scrollUpPage
@@ -126,8 +127,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - switchToTab7
 - switchToTab8
 - openSettings
-- splitHorizontal
-- splitVertical
+- splitPane
 - resizePaneLeft
 - resizePaneRight
 - resizePaneUp
@@ -137,6 +137,15 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusUp
 - moveFocusDown
 - toggleFullscreen
+
+## Example Keys
+- ctrl+1
+- ctrl+plus
+- alt+-
+- shift+numpad_1
+- ctrL+shift+numpad_plus
+- ctrl+pgdn
+- ctrl+alt+shift+pgup
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
