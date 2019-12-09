@@ -13,6 +13,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
+#include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
 
 using namespace winrt;
@@ -340,34 +341,39 @@ namespace winrt::TerminalApp::implementation
 
         // add static items
         {
-            // Create the settings button.
-            auto settingsItem = WUX::Controls::MenuFlyoutItem{};
-            settingsItem.Text(RS_(L"SettingsMenuItem"));
+            const auto isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
 
-            WUX::Controls::SymbolIcon ico{};
-            ico.Symbol(WUX::Controls::Symbol::Setting);
-            settingsItem.Icon(ico);
-
-            settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
-            newTabFlyout.Items().Append(settingsItem);
-
-            auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
-            if (settingsKeyChord)
+            if (!isUwp)
             {
-                _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
+                // Create the settings button.
+                auto settingsItem = WUX::Controls::MenuFlyoutItem{};
+                settingsItem.Text(RS_(L"SettingsMenuItem"));
+
+                WUX::Controls::SymbolIcon ico{};
+                ico.Symbol(WUX::Controls::Symbol::Setting);
+                settingsItem.Icon(ico);
+
+                settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
+                newTabFlyout.Items().Append(settingsItem);
+
+                auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
+                if (settingsKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
+                }
+
+                // Create the feedback button.
+                auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
+                feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
+
+                WUX::Controls::FontIcon feedbackIcon{};
+                feedbackIcon.Glyph(L"\xE939");
+                feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                feedbackFlyout.Icon(feedbackIcon);
+
+                feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
+                newTabFlyout.Items().Append(feedbackFlyout);
             }
-
-            // Create the feedback button.
-            auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
-
-            WUX::Controls::FontIcon feedbackIcon{};
-            feedbackIcon.Glyph(L"\xE939");
-            feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            feedbackFlyout.Icon(feedbackIcon);
-
-            feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
-            newTabFlyout.Items().Append(feedbackFlyout);
 
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
@@ -525,6 +531,12 @@ namespace winrt::TerminalApp::implementation
         {
             connection = TerminalConnection::AzureConnection(settings.InitialRows(),
                                                              settings.InitialCols());
+        }
+
+        else if (profile->HasConnectionType() &&
+                 profile->GetConnectionType() == TelnetConnectionType)
+        {
+            connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
 
         else
