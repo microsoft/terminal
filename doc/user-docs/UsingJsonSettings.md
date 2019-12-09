@@ -199,6 +199,119 @@ like to hide all the WSL profiles, you could add the following setting:
 
 ```
 
+### Default settings
+
+In [#2325](https://github.com/microsoft/terminal/issues/2325), we introduced the
+concept of "Default Profile Settings". These are settings that will apply to all
+of your profiles by default. Profiles can still override these settings
+individually. With default profile settings, you can easily make changes to all
+your profiles at once. For example, lets say I have the following settings:
+
+```json
+    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+    "profiles":
+    [
+        {
+            "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+            "name": "Windows PowerShell",
+            "commandline": "powershell.exe",
+            "fontFace": "Cascadia Code",
+            "fontSize": 14
+        },
+        {
+            "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+            "name": "cmd",
+            "commandline": "cmd.exe",
+            "fontFace": "Cascadia Code",
+            "fontSize": 14
+        },
+        {
+            "commandline" : "cmd.exe /k %CMDER_ROOT%\\vendor\\init.bat",
+            "name" : "cmder",
+            "startingDirectory" : "%USERPROFILE%",
+            "fontFace": "Cascadia Code",
+            "fontSize": 14
+        }
+    ],
+```
+
+All three of these profiles are using "Cascadia Code" as their `"fontFace"`, and
+14 as their `fontSize`. With default profile settings, you can easily set these
+properties for all your profiles, like so:
+
+```json
+    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+    "profiles": {
+        "defaults":
+        {
+            "fontFace": "Cascadia Code",
+            "fontSize": 14
+        },
+        "list": [
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+            },
+            {
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "name": "cmd",
+                "commandline": "cmd.exe"
+            },
+            {
+                "commandline" : "cmd.exe /k %CMDER_ROOT%\\vendor\\init.bat",
+                "name" : "cmder",
+                "startingDirectory" : "%USERPROFILE%"
+            }
+        ],
+    }
+```
+
+Note that the `profiles` property has changed in this example from a _list_ of
+profiles, to an _object_ with two properties:
+* a `list` that contains the list of all the profiles
+* the new `defaults` object, that contains all the settings that should apply to
+  every profile.
+
+What if I wanted a profile to have a different value for a property other than
+the default? Simply set the property in the profile's entry to override the
+value from `defaults`. Let's say you want the `cmd` profile to have `Consolas`
+as the font, but the rest of your profiles to still have "Cascadia Code". You
+could achieve that with the following:
+
+```json
+    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+    "profiles": {
+        "defaults":
+        {
+            "fontFace": "Cascadia Code",
+            "fontSize": 14
+        },
+        "list": [
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+            },
+            {
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "name": "cmd",
+                "commandline": "cmd.exe",
+                "fontFace": "Consolas"
+            },
+            {
+                "commandline" : "cmd.exe /k %CMDER_ROOT%\\vendor\\init.bat",
+                "name" : "cmder",
+                "startingDirectory" : "%USERPROFILE%"
+            }
+        ],
+    }
+```
+
+In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
+`"fontFace"` from the `defaultSettings`.
+
+
 ## Configuration Examples:
 
 ### Add a custom background to the WSL Debian terminal profile
