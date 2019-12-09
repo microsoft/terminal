@@ -224,7 +224,9 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(
 {
     auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-        args->ProfileIndex(index);
+        auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+        newTerminalArgs->ProfileIndex(index);
+        args->TerminalArgs(*newTerminalArgs);
         return *args;
     };
     return pfn;
