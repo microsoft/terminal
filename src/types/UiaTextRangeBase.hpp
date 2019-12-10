@@ -144,13 +144,13 @@ namespace Microsoft::Console::Types
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
-                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
@@ -158,7 +158,7 @@ namespace Microsoft::Console::Types
                                        const Endpoint start,
                                        const Endpoint end,
                                        const bool degenerate,
-                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
 
         HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 

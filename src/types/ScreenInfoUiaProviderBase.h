@@ -105,7 +105,7 @@ namespace Microsoft::Console::Types
         // weak reference to IUiaData
         IUiaData* _pData;
 
-        std::wstring _wordDelimiters;
+        std::wstring_view _wordDelimiters;
 
     private:
         // this is used to prevent the object from

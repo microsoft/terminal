@@ -195,7 +195,7 @@ private:
         DelimiterChar,
         RegularChar
     };
-    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const;
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

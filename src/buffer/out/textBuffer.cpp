@@ -1040,7 +1040,7 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 // - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
 // Return Value:
 // - the delimiter class for the given char
-TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const
+TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept
 {
     if (cellChar.at(0) <= UNICODE_SPACE)
     {
