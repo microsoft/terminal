@@ -692,19 +692,17 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 
     const MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
 
-    std::function<std::tuple<Endpoint, Endpoint, bool>(gsl::not_null<IUiaData*>,
-                                                       const int,
-                                                       const TextPatternRangeEndpoint,
-                                                       const MoveState,
-                                                       gsl::not_null<int*> const)>
-        moveFunc = &_moveEndpointByUnitDocument;
+    std::function<decltype(_moveEndpointByUnitDocument)> moveFunc = &_moveEndpointByUnitDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveEndpointByUnitCharacter;
     }
     else if (unit <= TextUnit::TextUnit_Word)
     {
-        moveFunc = std::bind(&_moveEndpointByUnitWord, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, _wordDelimiters, std::placeholders::_5);
+        // bind all params of this function, except put a _wordDelimiters in there
+        moveFunc = [=](auto&& pData, auto&& moveCount, auto&& endpoint, auto&& moveState, auto&& pAmountMoved) {
+            return _moveEndpointByUnitWord(pData, moveCount, endpoint, moveState, _wordDelimiters, pAmountMoved);
+        };
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
