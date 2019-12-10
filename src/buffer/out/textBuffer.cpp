@@ -1034,9 +1034,10 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 
 // Method Description:
 // - get delimiter class for buffer cell data
-// - used for double click selection
+// - used for double click selection and uia word navigation
 // Arguments:
 // - cellChar: the char saved to the buffer cell under observation
+// - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
 // Return Value:
 // - the delimiter class for the given char
 TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const

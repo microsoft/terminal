@@ -73,7 +73,7 @@ typedef unsigned int Endpoint;
 
 constexpr IdType InvalidId = 0;
 
-static constexpr std::wstring_view defaultWordDelimiter = std::wstring_view(&UNICODE_SPACE, 1);
+static constexpr std::wstring_view defaultWordDelimiter = UnicodeSpaceStringView;
 
 namespace Microsoft::Console::Types
 {
