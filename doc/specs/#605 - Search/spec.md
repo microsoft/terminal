@@ -19,17 +19,16 @@ One of the superior features of iTerm2 is it's content search. The search comes 
 
 Our ultimate goal is to provide both search within one tab and search from all tabs experiences. But we can start with one-tab search. The search experience should have following features:
 
-1. The search is triggered by KeyBindings. A new setting property named "openFind" will be enabled in the Json file. The user can set their own key bindings for search. The default is <kbd>ctrl+shift+f</kbd>. 
-2. The user search in a XAML TextBox, which is contained in a custom `SearchBoxControl`. The default position of the search box is the top right corner, the user can also move it to bottom right corner to avoid blocking text. 
+1. The search is triggered by KeyBindings. A new setting property named "find" will be enabled in the Json file. The user can set their own key bindings for search. The default is <kbd>ctrl+shift+f</kbd>. 
+2. The user search in a XAML TextBox, which is contained in a custom `SearchBoxControl`. The default position of the search box is the top right corner.
 3. We can have multiple search methods. The simplest one is exact text match. Other match methods include case-sensitive exact match and regex match. In the first phrase, we will focus on case sensitive/insensitive text exact match. 
-4. If currently there is no active selection, the search starts from the last line of the mutableViewport. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search. 
-5. The search dialog should not block terminal's view. In phrase one, this is achieved by make search box movable. The search box could be moved to the bottom right by clicking a button. It will be moved back to the top right corner by clicking the button again. The button contains a `DockBottom` icon and it will turn upside-down when the search box is on the bottom. 
-6. The user should be able to fully interact with the terminal when the search box is on screen. 
-7. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings. Close is usually binding to Esc.
+4. If currently there is no active selection, the search starts from the last line of the mutableViewport. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search.
+5. The user should be able to fully interact with the terminal when the search box is on screen. 
+6. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings. Close is usually binding to Esc.
 
 Conhost already has a module for search. It implements case sensitive or insensitive exact text match search, and it provides methods to select the found word. However, we want to make search as a shared component between Terminal and Console host. Now search module is part of Conhost, and its dependencies include BufferOut and some other types in ConHost such as SCREEN_INFORMATION. In order to make Search a shared component, we need to remove its dependency on ConHost types. BufferOut is already a shared component, but we need to make sure there is no other Conhost dependency.
 
-We will create a `SearchBoxControl` Xaml `UserControl` element. When a search process begins, a `SearchBoxControl` object will be created and attach to `TermControl` root grid. In other words, one SearchBox is added for each `TermControl`. The reasons for this design is:
+We will create a `SearchBoxControl` Xaml `UserControl` element. When a search process begins, a `SearchBoxControl` object will be created and attached to `TermControl` root grid. In other words, one SearchBox is added for each `TermControl`. The reasons for this design is:
 
 1. Each `TermControl` object is a Terminal Window and has a individual text buffer. In phrase 1 we are going to search witin the current terminal text buffer. 
 2. If we put the search box under TerminalApp, then the search can only happen on the current focused Terminal. 
@@ -51,9 +50,8 @@ We will create a `SearchBoxControl` Xaml `UserControl` element. When a search pr
 
 Above is the `SearchBoxControl`.
   - The two buttons with up/down arrows controls the search direction, Each button will be styled to indicate which search direction is currently selected. 
-  - The checkbox, if checked, means that we are searching case-sensitivily. 
-  - The `Dockbottom` button on the right of the checkbox is for moving the search box to top/bottom.
-  - The current style puts the `X` button, the text box and the case sensitivity check box on three different lines. This ensures that the `SearchBoxControl` won't be too wide and block terminal text. Another possible layout style is to put all the elements on one line and collapse the `SearchBoxControl` to a single row. However, this will make the whole search box too wide. If the community provides feedbacks in the future that single-row layout is prefered, we can change  in the future. 
+  - The button with a "Aa" icon, if pressed, means that we are searching case-sensitivily. 
+  - The current style puts all elements - the `X` button, the text box and the search pattern control buttons on one single line. This ensures that the `SearchBoxControl` won't be too high and block terminal text. This is similar with VSCode. Another possible layout style is to put elements in multiple layers. This will occupy more lines, but the search dialog will narrower. Considering that there is not many elements, we do not need multiple layers. 
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
 
@@ -77,10 +75,10 @@ The search box defaults to be on the top right corner of the Terminal window. If
 2. The user can choose to search case sensitively and insensitively. 
 3. The user can search up or down. 
 4. Found text will be selected. 
-5. The search will start from the active selected text (inclusive) if there is one, or where the cursor is. 
-5. The search will automatically go around when it reaches the starting point.
-7. The search box can be positioned at either the top left or the bottom left of the terminal. 
-8. The user can use Tab to navigate all the elements in the search box. 
+5. The search will start from the active selected text (inclusive) if there is one, or the end of the written text. 
+6. The search will automatically go around when it reaches the starting point.
+7. The user can use Tab to navigate all the elements in the search box. 
+8. The user can search in the opposite direction with <kbd>Shift + Enter</kbd> 
 
 ### Accessibility
 
@@ -94,7 +92,7 @@ This feature should not introduce any new security issues.
 ### Reliability
 
 1. The key input of Terminal command line and the search box should be separated. search box should not block interaction with the command line when it is open. 
-2. The search box should not block text. This issue could be addressed by make search box movable. 
+2. The search box should not block too much text. The search box only occupies one line, so it won't have big impact on the readibility of the terminal output. 
 
 ### Compatibility
 
@@ -118,7 +116,6 @@ In version 1, we want realize a case sensitive/insensitive exact text match. But
 3. Regular expression match. This is a useful search pattern and is implemented in some editors. However, this use scenario is not used as much as exact text search, thus, we put it in future phrase.
 4. Search history. Sometimes users would do the same search for several times, thus, storing the search history is useful. This is not realized by VSCode so it would be a good highlighting point in the future. 
 5. High-light while you type. Emphasizing all the other matches in the buffer with an outline or selection with another color. This provides a clearer view of searched text. But we need to change the search and selection algorithm, so we put it in the future phrase. 
-6. Enable <kbd>shift</kbd> + <kbd>Enter</kbd> for search in the opposite direction. This helps users to search in either direction with simple key bindings. However, tab navigation can help users to change search direction without mouse, so we put it in the future phrase. 
 
 ## Resources
 
