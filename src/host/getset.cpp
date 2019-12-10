@@ -2275,8 +2275,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         if (standardFillAttrs)
         {
             fillAttrs = screenInfo.GetAttributes();
-            fillAttrs.SetExtendedAttributes(ExtendedAttributes::Normal);
-            fillAttrs.SetMetaAttributes(0);
+            fillAttrs.SetStandardErase();
         }
 
         const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
@@ -2323,8 +2322,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         if (standardFillAttrs)
         {
             fillAttrs = screenInfo.GetAttributes();
-            fillAttrs.SetExtendedAttributes(ExtendedAttributes::Normal);
-            fillAttrs.SetMetaAttributes(0);
+            fillAttrs.SetStandardErase();
         }
 
         ScrollRegion(screenInfo,

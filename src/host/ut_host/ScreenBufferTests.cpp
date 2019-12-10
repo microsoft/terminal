@@ -1345,8 +1345,7 @@ void ScreenBufferTests::VtNewlinePastViewport()
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
-    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
-    expectedFillAttr.SetMetaAttributes(0);
+    expectedFillAttr.SetStandardErase();
 
     seq = L"\n";
     stateMachine.ProcessString(seq);
@@ -1425,8 +1424,7 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
-    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
-    expectedFillAttr.SetMetaAttributes(0);
+    expectedFillAttr.SetStandardErase();
 
     seq = L"\n";
     stateMachine.ProcessString(seq);
@@ -3367,8 +3365,7 @@ void ScreenBufferTests::ScrollOperations()
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
-    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
-    expectedFillAttr.SetMetaAttributes(0);
+    expectedFillAttr.SetStandardErase();
 
     // Place the cursor in the center.
     auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
@@ -3488,8 +3485,7 @@ void ScreenBufferTests::InsertChars()
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
-    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
-    expectedFillAttr.SetMetaAttributes(0);
+    expectedFillAttr.SetStandardErase();
 
     // Insert 5 spaces at the cursor position.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
@@ -3648,8 +3644,7 @@ void ScreenBufferTests::DeleteChars()
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
-    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
-    expectedFillAttr.SetMetaAttributes(0);
+    expectedFillAttr.SetStandardErase();
 
     // Delete 5 characters at the cursor position.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
@@ -3880,8 +3875,7 @@ void ScreenBufferTests::EraseTests()
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
-    expectedFillAttr.SetExtendedAttributes(ExtendedAttributes::Normal);
-    expectedFillAttr.SetMetaAttributes(0);
+    expectedFillAttr.SetStandardErase();
 
     // Place the cursor in the center.
     const short centerX = bufferWidth / 2;
