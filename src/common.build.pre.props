@@ -111,7 +111,6 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3dcompiler.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
