@@ -1407,7 +1407,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
 //  X Text cursor enable          DECTCEM     Cursor enabled.
 //    Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
-//    Autowrap                    DECAWM      No autowrap.
+//  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
 //        character set
 //    Keyboard action             KAM         Unlocked.
@@ -1436,6 +1436,10 @@ bool AdaptDispatch::SoftReset()
     if (success)
     {
         success = SetOriginMode(false); // Absolute cursor addressing.
+    }
+    if (success)
+    {
+        success = SetAutoWrapMode(true); // Wrap at end of line.
     }
     if (success)
     {
