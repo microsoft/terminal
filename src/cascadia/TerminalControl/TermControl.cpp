@@ -631,6 +631,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _connection.Start();
         _initializedTerminal = true;
+        _InitializedHandlers(*this, nullptr);
         return true;
     }
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "../TerminalPage.idl";
+import "../ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
@@ -11,8 +12,7 @@ namespace TerminalApp
         MaximizedMode,
     };
 
-    [default_interface] runtimeclass AppLogic
-    {
+    [default_interface] runtimeclass AppLogic {
         AppLogic();
 
         // For your own sanity, it's better to do setup outside the ctor.
@@ -24,6 +24,8 @@ namespace TerminalApp
 
         Boolean IsUwp();
         void RunAsUwp();
+
+        void SetStartupActions(ActionAndArgs[] commands);
 
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();

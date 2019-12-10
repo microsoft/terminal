@@ -127,9 +127,55 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
-        _OpenNewTab(nullptr);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
+
+        // Actually start the terminal.
+        if (_startupActions.size() == 0)
+        {
+            _OpenNewTab(nullptr);
+        }
+        else
+        {
+            // This will kick off a chain of events to perform each startup action. Each startup action should make sure to fire a _ProcessNextStartupAction when it's complete:
+            // - for opening a new tab/pane, this is done in TermControl::Initialized
+            // - for focusing a new pane, this isn't done TODO
+            // - for focusing a new tab, this isn't done TODO
+            _ProcessNextStartupAction();
+        }
+    }
+
+    void TerminalPage::_ProcessNextStartupAction()
+    {
+        // TODO: This seems fragile. How can we be sure that a particular
+        // startup action only triggers this once? that would require some
+        // careful planning, and seems very fragile.
+        //
+        // In 905d392bb, I tried making it so all of them are dispatched
+        // synchronously. This ran into problems, where panes would behave
+        // weird, because they'd start up with a size of 0x0, and even the new
+        // tab would not get it's size correct for some reason. I did get a
+        // weird behavior where trying to manually set the first tab's Root to a
+        // child of the _tabContent gave me a weird exception that it was
+        // already parented to another control, but I didn't think it should
+        // have been yet. Maybe that was the problem?
+        //
+        // Regardless, this whole process seems fragile. We NEED to ensure each
+        // action triggers a _ProcessNextStartupAction when it's done, and if
+        // someone wants to use the UI while we're starting this all up, what
+        // then? That could mess this chain up.
+        // ^^^ TODO all of this ^^^
+        if (_startupActions.size() == 0)
+        {
+            return;
+        }
+
+        auto nextAction = _startupActions.front();
+        _startupActions.pop_front();
+
+        Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this, nextAction]() {
+            _actionDispatch.DoAction(nextAction);
+        });
     }
 
     // Method Description:
@@ -812,6 +858,10 @@ namespace winrt::TerminalApp::implementation
                 page->_UpdateTitle(tab);
             }
         });
+
+        term.Initialized([this](auto&&, auto&&) {
+            _ProcessNextStartupAction();
+        });
     }
 
     // Method Description:
@@ -1398,6 +1448,14 @@ namespace winrt::TerminalApp::implementation
                 page->_CreateNewTabFlyout();
             }
         });
+    }
+
+    void TerminalPage::SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions)
+    {
+        for (const auto& a : actions)
+        {
+            _startupActions.push_back(a);
+        }
     }
 
     // Method Description:

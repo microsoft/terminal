@@ -31,6 +31,7 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
         // We expose this and ConnectionState here so that it might eventually be data bound.
         event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> ConnectionStateChanged;

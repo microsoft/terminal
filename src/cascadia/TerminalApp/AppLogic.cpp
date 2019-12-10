@@ -152,6 +152,11 @@ namespace winrt::TerminalApp::implementation
         _isUwp = true;
     }
 
+    void AppLogic::SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions)
+    {
+        _root->SetStartupActions(actions);
+    }
+
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
