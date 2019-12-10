@@ -359,6 +359,19 @@ bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
 }
 
 // Routine Description:
+// - Connects the PrivateSetAutoWrapMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetAutoWrapMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - true if successful (see DoSrvPrivateSetAutoWrapMode). false otherwise.
+bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    return NT_SUCCESS(DoSrvPrivateSetAutoWrapMode(wrapAtEOL));
+}
+
+// Routine Description:
 // - Connects the PrivateShowCursor call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateShowCursor is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
