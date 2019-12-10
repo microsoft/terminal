@@ -60,5 +60,3 @@ const wchar_t UNICODE_INVALID = 0xFFFF;
 //      With VKey=VK_CANCEL (0x3), it generates a CTRL_BREAK_EVENT
 const wchar_t UNICODE_ETX = L'\x3';
 const wchar_t UNICODE_REPLACEMENT = 0xFFFD;
-
-constexpr std::wstring_view UnicodeSpaceStringView = std::wstring_view(&UNICODE_SPACE, 1);

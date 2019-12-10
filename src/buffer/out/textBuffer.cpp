@@ -973,7 +973,7 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
 
     if (includeCharacterRun)
     {
-        // include delimiter run after word
+        // include character run for readable word
         if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
         {
             result = GetWordStart(result, wordDelimiters);

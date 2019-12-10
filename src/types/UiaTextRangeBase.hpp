@@ -73,8 +73,6 @@ typedef unsigned int Endpoint;
 
 constexpr IdType InvalidId = 0;
 
-static constexpr std::wstring_view defaultWordDelimiter = UnicodeSpaceStringView;
-
 namespace Microsoft::Console::Types
 {
     class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
@@ -141,6 +139,9 @@ namespace Microsoft::Console::Types
         };
 
     public:
+        // The default word delimiter for UiaTextRanges
+        static constexpr std::wstring_view defaultWordDelimiter{ &UNICODE_SPACE, 1 };
+
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,

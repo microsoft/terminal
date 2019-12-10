@@ -37,7 +37,7 @@ namespace Microsoft::Console::Types
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::defaultWordDelimiter) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
