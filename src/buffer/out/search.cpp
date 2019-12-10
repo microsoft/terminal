@@ -142,7 +142,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
-    COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
+    const COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
     if (uiaData.IsSelectionActive())
     {
         auto anchor = uiaData.GetSelectionAnchor();
@@ -168,7 +168,7 @@ COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
         }
         else
         {
-            return uiaData.GetTextBufferEndPosition();
+            return textBufferEndPosition;
         }
     }
 }
