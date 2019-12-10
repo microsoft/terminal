@@ -539,7 +539,7 @@ bool TextBuffer::NewlineCursor()
 //Routine Description:
 // - Increments the circular buffer by one. Circular buffer is represented by FirstRow variable.
 //Arguments:
-// - <none>
+// - inVtMode - set to true in VT mode, so standard erase attributes are used for the new row.
 //Return Value:
 // - true if we successfully incremented the buffer.
 bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
