@@ -563,7 +563,7 @@ class AttrRowTests
             testWalk(chain.get(), index, stepSize);
         }
 
-        Log::Comment(L"Reverse iterate past one boundary");
+        Log::Comment(L"Reverse iterate from 1 to 0 (new run)");
         {
             // Create attr row representing a buffer that's 3 wide.
             auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
@@ -591,7 +591,7 @@ class AttrRowTests
             verifyStep(chain.get(), index, stepSize, TextAttribute(0xB));
         }
 
-        Log::Comment(L"Reverse iterate past one boundary");
+        Log::Comment(L"Reverse iterate from 2 to 1 (new run)");
         {
             // Create attr row representing a buffer that's 3 wide.
             auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
