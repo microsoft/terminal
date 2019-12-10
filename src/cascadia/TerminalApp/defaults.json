@@ -245,7 +245,7 @@
         { "command": { "action": "switchToTab", "index": 6 }, "keys": ["ctrl+alt+7"] },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": ["ctrl+alt+8"] },
         { "command": { "action": "switchToTab", "index": 8 }, "keys": ["ctrl+alt+9"] },
-        { "command": "find", "keys": [ "ctrl+shift+f" ]},
+        { "command": "find", "keys": [ "ctrl+shift+f" ] },
         { "command": "toggleFullscreen", "keys": [ "alt+enter" ] },
         { "command": "toggleFullscreen", "keys": [ "f11" ] }
     ]

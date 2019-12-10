@@ -142,6 +142,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
+    COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
     if (uiaData.IsSelectionActive())
     {
         auto anchor = uiaData.GetSelectionAnchor();
@@ -152,6 +153,10 @@ COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
         else
         {
             textBuffer.GetSize().DecrementInBoundsCircular(anchor);
+            // If the selection starts at (0, 0), we need to make sure
+            // it does not exceed the text buffer end position
+            anchor.X = std::min(textBufferEndPosition.X, anchor.X);
+            anchor.Y = std::min(textBufferEndPosition.Y, anchor.Y);
         }
         return anchor;
     }

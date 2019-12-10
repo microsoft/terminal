@@ -13,8 +13,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Constructor
     SearchBoxControl::SearchBoxControl() :
-        _goForward(false),
-        _isCaseSensitive(false)
+        _goForward(false)
     {
         InitializeComponent();
 
@@ -22,17 +21,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _goForwardButton = this->FindName(L"SetGoForwardButton").try_as<Controls::Primitives::ToggleButton>();
         _goBackwardButton = this->FindName(L"SetGoBackwardButton").try_as<Controls::Primitives::ToggleButton>();
+        _caseButton = this->FindName(L"CaseSensitivityButton").try_as<Controls::Primitives::ToggleButton>();
         _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
 
         auto closeButton = this->FindName(L"CloseButton").try_as<Controls::Button>();
-        auto caseButton = this->FindName(L"CaseSensitivityButton").try_as<Controls::Primitives::ToggleButton>();
 
         if (closeButton)
             _focusableElements.insert(closeButton);
         if (_textBox)
             _focusableElements.insert(_textBox);
-        if (caseButton)
-            _focusableElements.insert(caseButton);
+        if (_caseButton)
+            _focusableElements.insert(_caseButton);
         if (_goForwardButton)
             _focusableElements.insert(_goForwardButton);
         if (_goBackwardButton)
@@ -51,14 +50,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Getter for _isCaseSensitive
+    // - Get the current state of the case button
     // Arguments:
     // - <none>
     // Return Value:
-    // - bool: the value of _isCaseSensitive
+    // - bool: whether the case button is checked (sensitive)
+    //   or not
     bool SearchBoxControl::GetIsCaseSensitive()
     {
-        return _isCaseSensitive;
+        return _caseButton.IsChecked().GetBoolean();
     }
 
     // Method Description:
@@ -78,12 +78,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // We do not want the direction flag to change permanately
                 _goForward = !_goForward;
-                _searchEventHandler(*this, _textBox.Text());
+                _SearchHandlers(*this, _textBox.Text());
                 _goForward = !_goForward;
             }
             else
             {
-                _searchEventHandler(*this, _textBox.Text());
+                _SearchHandlers(*this, _textBox.Text());
             }
         }
     }
@@ -131,7 +131,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::_GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = false;
         _goBackwardButton.IsChecked(true);
@@ -141,7 +141,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // kick off search
-        _searchEventHandler(*this, _textBox.Text());
+        _SearchHandlers(*this, _textBox.Text());
     }
 
     // Method Description:
@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::_GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         _goForward = true;
         _goForwardButton.IsChecked(true);
@@ -163,20 +163,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // kick off search
-        _searchEventHandler(*this, _textBox.Text());
-    }
-
-    // Method Description:
-    // - Handler for clicking the Case Sensitivity button. This changes
-    //   _isCaseSensitive value
-    // Arguments:
-    // - sender: not used
-    // - e: not used
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::_CaseSensitivityClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
-    {
-        _isCaseSensitive = !_isCaseSensitive;
+        _SearchHandlers(*this, _textBox.Text());
     }
 
     // Method Description:
@@ -187,37 +174,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& e)
+    void SearchBoxControl::CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& e)
     {
-        _CloseButtonClickedHanlder(*this, e);
-    }
-
-    // Method Description:
-    // - Handler for pressing Enter when focusing on the checkbox.
-    //   This is implented because XAML checkbox does not support
-    //   Enter
-    // Arguments:
-    // - sender: the XAML element responding to the pointer input
-    // - e: event data
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::_CheckboxKeyDown(winrt::Windows::Foundation::IInspectable const& sender, Input::KeyRoutedEventArgs const& e)
-    {
-        // Checkbox does not got checked when focused and pressing Enter, we
-        // manually listen to Enter and check here
-        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
-        {
-            auto checkbox = sender.try_as<Controls::CheckBox>();
-            if (checkbox.IsChecked().GetBoolean() == true)
-            {
-                checkbox.IsChecked(false);
-            }
-            else
-            {
-                checkbox.IsChecked(true);
-            }
-            e.Handled(true);
-        }
+        _CloseButtonClickedHandlers(*this, e);
     }
 
     // Method Description:
@@ -232,8 +191,4 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         e.Handled(true);
     }
-
-    // Events proxies
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, Search, _searchEventHandler, TerminalControl::SearchBoxControl, winrt::hstring);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(SearchBoxControl, CloseButtonClicked, _CloseButtonClickedHanlder, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 }
