@@ -131,7 +131,6 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3dcompiler.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
