@@ -23,6 +23,7 @@ Author(s):
 #include "inc/viewport.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "IUiaData.h"
+#include "unicode.hpp"
 
 #include <deque>
 #include <tuple>
@@ -72,7 +73,7 @@ typedef unsigned int Endpoint;
 
 constexpr IdType InvalidId = 0;
 
-constexpr auto defaultWordDelimiter = L" ";
+static constexpr std::wstring_view defaultWordDelimiter = std::wstring_view(&UNICODE_SPACE, 1);
 
 namespace Microsoft::Console::Types
 {
