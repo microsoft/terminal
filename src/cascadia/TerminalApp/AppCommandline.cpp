@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "AppCommandline.h"
+#include "ActionArgs.h"
+
+using namespace winrt::TerminalApp;
 
 AppCommandline::AppCommandline()
 {
@@ -74,79 +77,94 @@ int AppCommandline::ParseCommand(const Cmdline& command)
     return 0;
 }
 
+void AppCommandline::_AddNewTerminalArgs(CLI::App* subcommand)
+{
+    subcommand->add_option("-p,--profile", _profileName, "Open with the give profile");
+    subcommand->add_option("-d,--startingDirectory", _startingDirectory, "Open in the given directory instead of the profile's set startingDirectory");
+    subcommand->add_option("cmdline", _commandline, "Commandline to run in the given profile");
+}
+
 void AppCommandline::_BuildParser()
 {
-    // app{ "yeet, a test of the wt commandline" };
-
     ////////////////////////////////////////////////////////////////////////////
     _newTabCommand = _app.add_subcommand("new-tab", "Create a new tab");
-    _newTabCommand->add_option("cmdline", _commandline, "Commandline to run in the given profile");
-    _newTabCommand->add_option("-p,--profile", _profileName, "Open with the give profile");
-    _newTabCommand->add_option("-d,--startingDirectory", _startingDirectory, "Open in the given directory instead of the profile's set startingDirectory");
+    _AddNewTerminalArgs(_newTabCommand);
     _newTabCommand->callback([&, this]() {
-        std::cout << "######################### new-tab #########################\n";
-        if (!_profileName.empty())
-        {
-            std::cout << "profileName: " << _profileName << std::endl;
-        }
-        else
-        {
-            std::cout << "Use the default profile" << std::endl;
-        }
-        if (!_startingDirectory.empty())
-        {
-            std::cout << "startingDirectory: " << _startingDirectory << std::endl;
-        }
-        else
-        {
-            std::cout << "Use the default startingDirectory" << std::endl;
-        }
-        if (_commandline.empty())
-        {
-            std::cout << "Use the default cmdline" << std::endl;
-        }
-        else
-        {
-            auto i = 0;
-            for (auto arg : _commandline)
-            {
-                std::cout << "arg[" << i << "]=\"" << arg << "\"\n";
-                i++;
-            }
-        }
+        // std::cout << "######################### new-tab #########################\n";
 
-        winrt::TerminalApp::ActionAndArgs newTabAction;
-        newTabAction.Action(winrt::TerminalApp::ShortcutAction::NewTab);
-        newTabAction.Args(winrt::TerminalApp::NewTabArgs{});
-        _startupActions.push_back(newTabAction);
+        auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
+        newTabAction->Action(ShortcutAction::NewTab);
+        auto args = winrt::make_self<implementation::NewTabArgs>();
+        args->TerminalArgs(_GetNewTerminalArgs());
+        newTabAction->Args(*args);
+        _startupActions.push_back(*newTabAction);
     });
     ////////////////////////////////////////////////////////////////////////////
-    _newPaneCommand = _app.add_subcommand("new-pane", "Create a new pane");
-    _newPaneCommand->add_option("cmdline", _commandline, "Commandline to run in the given profile");
-    _newPaneCommand->add_option("-p,--profile", _profileName, "Open with the give profile");
-    _newPaneCommand->add_option("-d,--startingDirectory", _startingDirectory, "Open in the given directory instead of the profile's set startingDirectory");
-
+    _newPaneCommand = _app.add_subcommand("split-pane", "Create a new pane");
+    _AddNewTerminalArgs(_newPaneCommand);
     auto* horizontalOpt = _newPaneCommand->add_flag("-H,--horizontal", _splitHorizontal, "TODO");
     auto* verticalOpt = _newPaneCommand->add_flag("-V,--vertical", _splitVertical, "TODO");
-
     verticalOpt->excludes(horizontalOpt);
 
     _newPaneCommand->callback([&, this]() {
-        std::cout << "######################### new-pane #########################\n";
-        winrt::TerminalApp::ActionAndArgs newPaneAction;
+        // std::cout << "######################### new-pane #########################\n";
+        auto newPaneAction = winrt::make_self<implementation::ActionAndArgs>();
+        newPaneAction->Action(ShortcutAction::SplitPane);
+        auto args = winrt::make_self<implementation::SplitPaneArgs>();
+        args->TerminalArgs(_GetNewTerminalArgs());
+
         if (_splitHorizontal)
         {
-            newPaneAction.Action(winrt::TerminalApp::ShortcutAction::SplitHorizontal);
+            args->SplitStyle(SplitState::Horizontal);
         }
         else
         {
-            newPaneAction.Action(winrt::TerminalApp::ShortcutAction::SplitVertical);
+            args->SplitStyle(SplitState::Vertical);
         }
-        _startupActions.push_back(newPaneAction);
+
+        newPaneAction->Args(*args);
+        _startupActions.push_back(*newPaneAction);
     });
     ////////////////////////////////////////////////////////////////////////////
     _listProfilesCommand = _app.add_subcommand("list-profiles", "List all the available profiles");
     ////////////////////////////////////////////////////////////////////////////
+}
+
+NewTerminalArgs AppCommandline::_GetNewTerminalArgs()
+{
+    auto args = winrt::make_self<implementation::NewTerminalArgs>();
+
+    if (!_profileName.empty())
+    {
+        std::cout << "profileName: " << _profileName << std::endl;
+    }
+    // else
+    // {
+    //     std::cout << "Use the default profile" << std::endl;
+    // }
+    if (!_startingDirectory.empty())
+    {
+        std::cout << "startingDirectory: " << _startingDirectory << std::endl;
+    }
+    // else
+    // {
+    //     std::cout << "Use the default startingDirectory" << std::endl;
+    // }
+    if (!_commandline.empty())
+    {
+        auto i = 0;
+        for (auto arg : _commandline)
+        {
+            std::cout << "arg[" << i << "]=\"" << arg << "\"\n";
+            i++;
+        }
+    }
+    // else
+    // {
+    //     std::cout << "Use the default cmdline" << std::endl;
+    // }
+
+    return *args;
 }
 
 bool AppCommandline::_NoCommandsProvided()

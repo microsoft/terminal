@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-#include <winrt/TerminalApp.h>
+
+#include "ActionAndArgs.h"
 
 struct Cmdline
 {
@@ -33,6 +34,12 @@ struct Cmdline
     }
 };
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class CommandlineTest;
+};
+
 class AppCommandline
 {
 public:
@@ -41,8 +48,6 @@ public:
     int ParseCommand(const Cmdline& command);
 
     static std::vector<Cmdline> BuildCommands(const int w_argc, const wchar_t* w_argv[]);
-
-    std::vector<winrt::TerminalApp::ActionAndArgs> _startupActions;
 
 private:
     void _BuildParser();
@@ -62,4 +67,11 @@ private:
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
     // Are you adding more args here? Make sure to reset them in _ResetStateToDefault
+
+    std::vector<winrt::TerminalApp::ActionAndArgs> _startupActions;
+
+    winrt::TerminalApp::NewTerminalArgs _GetNewTerminalArgs();
+    void _AddNewTerminalArgs(CLI::App* subcommand);
+
+    friend class TerminalAppLocalTests::CommandlineTest;
 };

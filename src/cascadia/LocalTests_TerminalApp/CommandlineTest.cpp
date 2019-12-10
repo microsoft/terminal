@@ -35,6 +35,21 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ParseBasicCommandlineIntoArgs);
         TEST_METHOD(ParseNewPaneIntoArgs);
         TEST_METHOD(ParseComboCommandlineIntoArgs);
+
+    private:
+        void _buildCommandlinesHelper(AppCommandline& appArgs,
+                                      const size_t expectedSubcommands,
+                                      std::vector<const wchar_t*>& rawCommands)
+        {
+            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(expectedSubcommands, commandlines.size());
+            for (auto& cmdBlob : commandlines)
+            {
+                cmdBlob.BuildArgv();
+                const auto result = appArgs.ParseCommand(cmdBlob);
+                VERIFY_ARE_EQUAL(0, result);
+            }
+        }
     };
 
     void CommandlineTest::TryCreateWinRTType()
@@ -116,14 +131,10 @@ namespace TerminalAppLocalTests
         AppCommandline appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab" };
         auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
-        VERIFY_ARE_EQUAL(1u, commandlines.size());
-        for (auto& cmdBlob : commandlines)
-        {
-            cmdBlob.BuildArgv();
-            const auto result = appArgs.ParseCommand(cmdBlob);
-            VERIFY_ARE_EQUAL(0, result);
-        }
+        _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
         VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
     }
 
@@ -131,62 +142,63 @@ namespace TerminalAppLocalTests
     {
         {
             AppCommandline appArgs{};
-            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-pane" };
-            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
-            VERIFY_ARE_EQUAL(1u, commandlines.size());
-            for (auto& cmdBlob : commandlines)
-            {
-                cmdBlob.BuildArgv();
-                const auto result = appArgs.ParseCommand(cmdBlob);
-                VERIFY_ARE_EQUAL(0, result);
-            }
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
             VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitVertical, appArgs._startupActions.at(0).Action());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_EQUAL(SplitState::Vertical, myArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
         {
             AppCommandline appArgs{};
-            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-pane", L"-H" };
-            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
-            VERIFY_ARE_EQUAL(1u, commandlines.size());
-            for (auto& cmdBlob : commandlines)
-            {
-                cmdBlob.BuildArgv();
-                const auto result = appArgs.ParseCommand(cmdBlob);
-                VERIFY_ARE_EQUAL(0, result);
-            }
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane", L"-H" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
             VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitHorizontal, appArgs._startupActions.at(0).Action());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_EQUAL(SplitState::Horizontal, myArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
         {
             AppCommandline appArgs{};
-            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-pane", L"-V" };
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane", L"-V" };
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(1u, commandlines.size());
-            for (auto& cmdBlob : commandlines)
-            {
-                cmdBlob.BuildArgv();
-                const auto result = appArgs.ParseCommand(cmdBlob);
-                VERIFY_ARE_EQUAL(0, result);
-            }
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
             VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitVertical, appArgs._startupActions.at(0).Action());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_EQUAL(SplitState::Vertical, myArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
     }
 
     void CommandlineTest::ParseComboCommandlineIntoArgs()
     {
         AppCommandline appArgs{};
-        std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";", L"new-pane" };
+        std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";", L"split-pane" };
         auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
-        VERIFY_ARE_EQUAL(2u, commandlines.size());
-        for (auto& cmdBlob : commandlines)
-        {
-            cmdBlob.BuildArgv();
-            const auto result = appArgs.ParseCommand(cmdBlob);
-            VERIFY_ARE_EQUAL(0, result);
-        }
+        _buildCommandlinesHelper(appArgs, 2u, rawCommands);
+
         VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
-        VERIFY_ARE_EQUAL(ShortcutAction::SplitVertical, appArgs._startupActions.at(1).Action());
+        VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, appArgs._startupActions.at(1).Action());
     }
 }
