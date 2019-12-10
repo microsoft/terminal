@@ -940,6 +940,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
         break;
+    case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+        success = SetAutoWrapMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
@@ -1106,6 +1109,19 @@ bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
 {
     _isOriginModeRelative = relativeMode;
     return true;
+}
+
+// Routine Description:
+// - DECAWM - Sets the Auto Wrap Mode.
+//    This controls whether the cursor moves to the beginning of the next row
+//    when it reaches the end of the current row.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
+{
+    return _pConApi->PrivateSetAutoWrapMode(wrapAtEOL);
 }
 
 // Routine Description:
