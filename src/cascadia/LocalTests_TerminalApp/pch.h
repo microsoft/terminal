@@ -56,3 +56,5 @@ Author(s):
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
+
+#include <CLI11/CLI11.hpp>

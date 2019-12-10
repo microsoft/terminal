@@ -700,6 +700,43 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    int AppLogic::_ParseArgs(const int argc, const wchar_t* argv[])
+    {
+        auto commands = AppCommandline::BuildCommands(argc, argv);
+
+        for (auto& cmdBlob : commands)
+        {
+            cmdBlob.BuildArgv();
+            // On one hand, it seems like we should be able to have one
+            // AppCommandline for parsing all of them, and collect the results one
+            // at a time.
+            //
+            // On the other hand, re-using a CLI::App seems to leave state from
+            // previous parsings around, so we could get mysterious behavior where
+            // one command affects the values of the next.
+            //
+            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
+            // > If that option is not given, CLI11 will not touch the initial
+            // > value. This allows you to set up defaults by simply setting your
+            // > value beforehand.
+            //
+            // So we pretty much need the to either manually reset the state each
+            // command, or build new ones.
+            const auto result = _appArgs.ParseCommand(cmdBlob);
+
+            // If this succeeded, result will be 0. Otherwise, the caller should
+            // exit(result), to exit the program.
+            if (result != 0)
+            {
+                return result;
+            }
+        }
+
+        // If all the args were successfully parsed, we'll have some commands built
+        // in _appArgs, which we'll use when the application starts up.
+        return 0;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

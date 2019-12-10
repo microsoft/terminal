@@ -19,6 +19,8 @@
 
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
+#include "AppCommandline.h"
+
 namespace winrt::TerminalApp::implementation
 {
     struct AppLogic : AppLogicT<AppLogic>
@@ -73,6 +75,9 @@ namespace winrt::TerminalApp::implementation
         std::shared_mutex _dialogLock;
 
         std::atomic<bool> _settingsReloadQueued{ false };
+
+        AppCommandline _appArgs;
+        int _ParseArgs(const int argc, const wchar_t* argv[]);
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
