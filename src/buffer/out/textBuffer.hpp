@@ -130,8 +130,8 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
-    const COORD GetWordStart(const COORD target, const std::wstring& wordDelimiters, bool includeCharacterRun = false) const;
-    const COORD GetWordEnd(const COORD target, const std::wstring& wordDelimiters, bool includeDelimiterRun = false) const;
+    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun = false) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun = false) const;
 
     class TextAndColor
     {
@@ -195,7 +195,7 @@ private:
         DelimiterChar,
         RegularChar
     };
-    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring& wordDelimiters) const;
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
