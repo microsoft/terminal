@@ -506,10 +506,12 @@ class AttrRowTests
         // Then we're going to walk backwards through the iterator like a selection-expand-to-left
         // operation and ensure we don't run off the bounds.
 
-        auto testWalk = [&](ATTR_ROW* chain, size_t index, int stepSize) {
+        // walk the chain, from index, stepSize at a time
+        // ensure we don't crash
+        auto testWalk = [](ATTR_ROW* chain, size_t index, int stepSize) {
             // move to starting index
             auto iter = chain->cbegin();
-            iter += (chain->_cchRowWidth - index);
+            iter += index;
 
             // Now walk backwards in a loop until 0.
             while (iter)
@@ -520,10 +522,13 @@ class AttrRowTests
             Log::Comment(L"We made it through without crashing!");
         };
 
-        auto verifyStep = [&](ATTR_ROW* chain, size_t index, int stepSize, TextAttribute expectedAttribute) {
+        // take one step of size stepSize on the chain
+        // index is where we start from
+        // expectedAttribute is what we expect to read here
+        auto verifyStep = [](ATTR_ROW* chain, size_t index, int stepSize, TextAttribute expectedAttribute) {
             // move to starting index
             auto iter = chain->cbegin();
-            iter += (chain->_cchRowWidth - index);
+            iter += index;
 
             // Now step backwards
             iter -= stepSize;
@@ -563,7 +568,7 @@ class AttrRowTests
             testWalk(chain.get(), index, stepSize);
         }
 
-        Log::Comment(L"Reverse iterate from 1 to 0 (new run)");
+        Log::Comment(L"Reverse iterate across a text run in the chain");
         {
             // Create attr row representing a buffer that's 3 wide.
             auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
@@ -586,12 +591,13 @@ class AttrRowTests
             // The sum of the lengths should be 3.
             VERIFY_ARE_EQUAL(chain->_cchRowWidth, chain->_list[0]._cchLength + chain->_list[1]._cchLength + chain->_list[2]._cchLength);
 
+            // on 'ABC', step from B to A
             auto index = 1;
             auto stepSize = 1;
-            verifyStep(chain.get(), index, stepSize, TextAttribute(0xB));
+            verifyStep(chain.get(), index, stepSize, TextAttribute(0xA));
         }
 
-        Log::Comment(L"Reverse iterate from 2 to 1 (new run)");
+        Log::Comment(L"Reverse iterate across two text runs in the chain");
         {
             // Create attr row representing a buffer that's 3 wide.
             auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
@@ -614,8 +620,9 @@ class AttrRowTests
             // The sum of the lengths should be 3.
             VERIFY_ARE_EQUAL(chain->_cchRowWidth, chain->_list[0]._cchLength + chain->_list[1]._cchLength + chain->_list[2]._cchLength);
 
+            // on 'ABC', step from C to A
             auto index = 2;
-            auto stepSize = 1;
+            auto stepSize = 2;
             verifyStep(chain.get(), index, stepSize, TextAttribute(0xA));
         }
     }
