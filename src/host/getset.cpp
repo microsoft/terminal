@@ -1567,19 +1567,15 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
 
-    NTSTATUS Status = STATUS_SUCCESS;
     FAIL_FAST_IF(!(sNumTabs >= 0));
-    for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
+    for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs; sTabsExecuted++)
     {
-        const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
-        COORD cNewPos = (fForward) ? _screenBuffer.GetForwardTab(cursorPos) : _screenBuffer.GetReverseTab(cursorPos);
-        // GetForwardTab is smart enough to move the cursor to the next line if
-        // it's at the end of the current one already. AdjustCursorPos shouldn't
-        // to be doing anything funny, just moving the cursor to the location GetForwardTab returns
-        Status = AdjustCursorPosition(_screenBuffer, cNewPos, TRUE, nullptr);
+        cursorPos = (fForward) ? _screenBuffer.GetForwardTab(cursorPos) : _screenBuffer.GetReverseTab(cursorPos);
     }
-    return Status;
+
+    return AdjustCursorPosition(_screenBuffer, cursorPos, TRUE, nullptr);
 }
 
 // Routine Description:

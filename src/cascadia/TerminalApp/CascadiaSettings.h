@@ -48,10 +48,12 @@ public:
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
+    static std::unique_ptr<CascadiaSettings> LoadUniversal();
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
+    std::tuple<GUID, winrt::Microsoft::Terminal::Settings::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings BuildSettings(GUID profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();
 
@@ -65,6 +67,7 @@ public:
     static std::wstring GetSettingsPath(const bool useRoamingPath = false);
     static std::wstring GetDefaultSettingsPath();
 
+    std::optional<GUID> FindGuid(const std::wstring& profileName) const noexcept;
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
@@ -96,6 +99,9 @@ private:
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
+
+    GUID _GetProfileForIndex(std::optional<int> index) const;
+    GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
     void _ValidateProfilesExist();

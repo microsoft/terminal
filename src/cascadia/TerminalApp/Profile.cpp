@@ -138,7 +138,7 @@ bool Profile::HasSource() const noexcept
     return _source.has_value();
 }
 
-GUID Profile::GetGuid() const noexcept
+GUID Profile::GetGuid() const
 {
     // This can throw if we never had our guid set to a legitimate value.
     THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");

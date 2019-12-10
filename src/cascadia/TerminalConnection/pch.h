@@ -10,6 +10,8 @@
 // Needs to be defined or we get redeclaration errors
 #define WIN32_LEAN_AND_MEAN
 
+#define BLOCK_GSL
+
 #include <LibraryIncludes.h>
 
 // Must be included before any WinRT headers.
