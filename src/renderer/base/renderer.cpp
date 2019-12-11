@@ -268,7 +268,7 @@ void Renderer::TriggerTeardown()
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
+        const auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
@@ -372,7 +372,7 @@ void Renderer::TriggerCircling()
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
+        const auto hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
@@ -716,7 +716,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
 
     // Convert console grid line representations into rendering engine enum representations.
-    IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
+    const auto lines = Renderer::s_GetGridlines(textAttribute);
 
     // Draw the lines
     LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
@@ -738,8 +738,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         Viewport view = _pData->GetViewport();
         view.ConvertToOrigin(&coordCursor);
 
-        COLORREF cursorColor = _pData->GetCursorColor();
-        bool useColor = cursorColor != INVALID_COLOR;
+        const auto cursorColor = _pData->GetCursorColor();
+        const auto useColor = cursorColor != INVALID_COLOR;
 
         // Build up the cursor parameters including position, color, and drawing options
         IRenderEngine::CursorOptions options;
@@ -840,7 +840,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
+        const auto srDirty = pEngine->GetDirtyRectInChars();
         Viewport dirtyView = Viewport::FromInclusive(srDirty);
 
         // Get selection rectangles
