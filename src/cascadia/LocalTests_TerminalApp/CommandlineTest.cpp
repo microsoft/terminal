@@ -32,6 +32,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryCreateWinRTType);
         TEST_METHOD(ParseSimpleCommandline);
         TEST_METHOD(ParseTrickyCommandlines);
+        TEST_METHOD(TestEscapeDelimiters);
 
         TEST_METHOD(ParseBasicCommandlineIntoArgs);
         TEST_METHOD(ParseNewTabCommand);
@@ -177,6 +178,71 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
             VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
+        }
+    }
+
+    void CommandlineTest::TestEscapeDelimiters()
+    {
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg ; with spaces" };
+            _buildCommandlinesHelper(appArgs, 2u, rawCommands);
+
+            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+
+            {
+                auto actionAndArgs = appArgs._startupActions.at(0);
+                VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+                VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+                auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+                VERIFY_IS_NOT_NULL(myArgs);
+                VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+                VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+                auto myCommand = myArgs.TerminalArgs().Commandline();
+                VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg \"", myCommand);
+            }
+            {
+                auto actionAndArgs = appArgs._startupActions.at(1);
+                VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+                VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+                auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+                VERIFY_IS_NOT_NULL(myArgs);
+                VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+                VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+                auto myCommand = myArgs.TerminalArgs().Commandline();
+                VERIFY_ARE_EQUAL(L"\" with spaces\"", myCommand);
+            }
+        }
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg \\; with spaces" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            {
+                auto actionAndArgs = appArgs._startupActions.at(0);
+                VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+                VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+                auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+                VERIFY_IS_NOT_NULL(myArgs);
+                VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+                VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+                VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+                auto myCommand = myArgs.TerminalArgs().Commandline();
+                VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg ; with spaces\"", myCommand);
+            }
         }
     }
 
