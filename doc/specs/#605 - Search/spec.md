@@ -1,5 +1,5 @@
 ---
-author: Kaiyu Wang KaiyuWang16/kawa@microsoft.com
+author: Kaiyu Wang KaiyuWang16
 created on: 2019-12-10
 last updated: 2019-12-10
 issue id: #605
@@ -24,7 +24,7 @@ Our ultimate goal is to provide both search within one tab and search from all t
 3. We can have multiple search methods. The simplest one is exact text match. Other match methods include case-sensitive exact match and regex match. In the first phase, we will focus on case sensitive/insensitive text exact match. 
 4. If currently there is no active selection, the search starts from the last line of the mutableViewport. If there is an active selection, we start from the previous or the next text of the selected text. We automatically go around if we reach the start point of the search.
 5. The user should be able to fully interact with the terminal when the search box is on screen. 
-6. For accessibility concerns, the user should be able to navigate all the iteractive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings. Close is usually bound to Esc.
+6. For accessibility concerns, the user should be able to navigate all the interactive elements on the search box using keyboard tab if the search box is focused. Searchbox could be created and closed with keyboard bindings. Close is usually bound to Esc.
 
 Conhost already has a module for search. It implements case sensitive or insensitive exact text match search, and it provides methods to select the found word. However, we want to make search as a shared component between Terminal and Console host. Now search module is part of Conhost, and its dependencies include BufferOut and some other types in ConHost such as SCREEN_INFORMATION. In order to make Search a shared component, we need to remove its dependency on ConHost types. BufferOut is already a shared component, but we need to make sure there is no other Conhost dependency.
 
@@ -112,12 +112,14 @@ This feature only launches in need. It does not impact the performance of Termin
 
 In version 1, we want realize a case sensitive/insensitive exact text match. But we may consider the following features in version 2:
 
-1. Add "Find" button in dropdown menu to trigger search. This enables the search feature to be operated with mouse only. However, this is not required by Accessibility so we do not cover this in phase one. 
+1. Add "Find" button in dropdown menu to trigger search.Add "Find" button in dropdown menu to trigger search. This enables the search feature to be operated with mouse only. However, this is not required by Accessibility so we do not cover this in phase one. 
 2. Search from all tabs. For Version 1 we just want to realize search within one tab. However, the community also requests search from all tabs. This may require a big change to the search algorithm, but it is not seen as a popular use scenario, so we put it future phase. To implement multi-tab search, we can let TerminalPage or App own a `SearchBoxControl` object, and provide the text buffer of the current focused terminal. We need to change the search algorithm.  
 3. Regular expression match. This is a useful search pattern and is implemented in some editors. However, this use scenario is not used as much as exact text search, thus, we put it in future phase.
 4. Search history. Sometimes users would do the same search for several times, thus, storing the search history is useful. This is not realized by VSCode so it would be a good highlighting point in the future. 
 5. High-light while you type. Emphasizing all the other matches in the buffer with an outline or selection with another color. This provides a clearer view of searched text. But we need to change the search and selection algorithm, so we put it in the future phase. 
 6. Add size handle. Some text editors let the user resize the search box, and there is a size handle on the left side of the search box. This helps user when they search for long text. If the community desires it we may add a similar feature.
+
+This open issue tracks the phase features of Search: https://github.com/microsoft/terminal/issues/3920
 
 ## Resources
 
