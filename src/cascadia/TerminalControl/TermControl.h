@@ -10,6 +10,7 @@
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "cppwinrt_utils.h"
 
@@ -113,6 +114,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         Settings::IControlSettings _settings;
         bool _focused;
