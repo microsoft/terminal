@@ -1610,7 +1610,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
-            
+
             if (auto localConnection{ std::exchange(_connection, nullptr) })
             {
                 localConnection.Close();
