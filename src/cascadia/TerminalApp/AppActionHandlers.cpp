@@ -89,18 +89,18 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleSplitVertical(const IInspectable& /*sender*/,
-                                            const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
     {
-        _SplitVertical(std::nullopt);
-        args.Handled(true);
-    }
-
-    void TerminalPage::_HandleSplitHorizontal(const IInspectable& /*sender*/,
-                                              const TerminalApp::ActionEventArgs& args)
-    {
-        _SplitHorizontal(std::nullopt);
-        args.Handled(true);
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
+        {
+            _SplitPane(realArgs.SplitStyle(), realArgs.TerminalArgs());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
@@ -137,19 +137,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(std::nullopt);
+            _OpenNewTab(nullptr);
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabArgs>())
         {
-            if (realArgs.ProfileIndex() == nullptr)
-            {
-                _OpenNewTab(std::nullopt);
-            }
-            else
-            {
-                _OpenNewTab(realArgs.ProfileIndex().Value());
-            }
+            _OpenNewTab(realArgs.TerminalArgs());
             args.Handled(true);
         }
     }

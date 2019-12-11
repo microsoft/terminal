@@ -62,15 +62,6 @@ public:
     BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const override;
     BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) override;
 
-    BOOL FillConsoleOutputCharacterW(const WCHAR wch,
-                                     const DWORD nLength,
-                                     const COORD dwWriteCoord,
-                                     size_t& numberOfCharsWritten) noexcept override;
-    BOOL FillConsoleOutputAttribute(const WORD wAttribute,
-                                    const DWORD nLength,
-                                    const COORD dwWriteCoord,
-                                    size_t& numberOfAttrsWritten) noexcept override;
-
     BOOL SetConsoleTextAttribute(const WORD wAttr) override;
 
     BOOL PrivateSetLegacyAttributes(const WORD wAttr,
@@ -95,11 +86,6 @@ public:
 
     BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                    _Out_ size_t& eventsWritten) override;
-
-    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
-                                    _In_opt_ const SMALL_RECT* pClipRectangle,
-                                    _In_ COORD coordDestinationOrigin,
-                                    const CHAR_INFO* pFill) override;
 
     BOOL SetConsoleWindowInfo(BOOL const bAbsolute,
                               const SMALL_RECT* const lpConsoleWindow) override;
@@ -164,6 +150,16 @@ public:
     BOOL PrivateSetDefaultForeground(const COLORREF value) const noexcept override;
 
     BOOL PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
+
+    BOOL PrivateFillRegion(const COORD startPosition,
+                           const size_t fillLength,
+                           const wchar_t fillChar,
+                           const bool standardFillAttrs) noexcept override;
+
+    BOOL PrivateScrollRegion(const SMALL_RECT scrollRect,
+                             const std::optional<SMALL_RECT> clipRect,
+                             const COORD destinationOrigin,
+                             const bool standardFillAttrs) noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;
