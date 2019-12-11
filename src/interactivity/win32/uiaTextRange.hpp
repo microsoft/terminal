@@ -34,13 +34,13 @@ namespace Microsoft::Console::Interactivity::Win32
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ const std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
-                                       _In_ const std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
@@ -48,13 +48,13 @@ namespace Microsoft::Console::Interactivity::Win32
                                        const Endpoint start,
                                        const Endpoint end,
                                        const bool degenerate,
-                                       _In_ const std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // range from a UiaPoint
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const UiaPoint point,
-                                       _In_ const std::wstring_view wordDelimiters = defaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         HRESULT RuntimeClassInitialize(const UiaTextRange& a);
 

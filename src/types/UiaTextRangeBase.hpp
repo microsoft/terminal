@@ -140,18 +140,18 @@ namespace Microsoft::Console::Types
 
     public:
         // The default word delimiter for UiaTextRanges
-        static constexpr std::wstring_view defaultWordDelimiter{ &UNICODE_SPACE, 1 };
+        static constexpr std::wstring_view DefaultWordDelimiter{ &UNICODE_SPACE, 1 };
 
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
+                                       _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
-                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
+                                       _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
@@ -159,7 +159,7 @@ namespace Microsoft::Console::Types
                                        const Endpoint start,
                                        const Endpoint end,
                                        const bool degenerate,
-                                       _In_ std::wstring_view wordDelimiters = defaultWordDelimiter) noexcept;
+                                       _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
@@ -225,7 +225,7 @@ namespace Microsoft::Console::Types
 
         IRawElementProviderSimple* _pProvider;
 
-        std::wstring_view _wordDelimiters;
+        std::wstring _wordDelimiters;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;

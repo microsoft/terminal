@@ -700,6 +700,9 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     else if (unit <= TextUnit::TextUnit_Word)
     {
         // bind all params of this function, except put a _wordDelimiters in there
+        // NOTE: using a lambda function here because...
+        //    - lambda is cheaper than std::bind
+        //    - _move* functions are static, but this particular consumer needs access to a member (may be fixed by TODO GH #1993)
         moveFunc = [=](auto&& pData, auto&& moveCount, auto&& endpoint, auto&& moveState, auto&& pAmountMoved) {
             return _moveEndpointByUnitWord(pData, moveCount, endpoint, moveState, _wordDelimiters, pAmountMoved);
         };
