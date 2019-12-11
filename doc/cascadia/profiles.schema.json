@@ -285,8 +285,8 @@
           "type": "integer"
         },
         "rowsToScroll": {
-          "default": "system",
-          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is specified and can be parsed to a non-zero integer.",
+          "default": null,
+          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is specified and is not 0 or null.",
           "maximum": 999,
           "minimum": 0,
           "type": "integer"
