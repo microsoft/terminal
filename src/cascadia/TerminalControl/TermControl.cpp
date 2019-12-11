@@ -1215,7 +1215,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Event handler for the GotFocus event. This is used to...
     //   - enable accessibility notifications for this TermControl
     //   - start blinking the cursor when the window is focused
-	//   - update the number of lines to scroll to the value set in the system
+    //   - update the number of lines to scroll to the value set in the system
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
