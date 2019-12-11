@@ -1241,7 +1241,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &_systemRowsToScroll, 0))
+        {
             _systemRowsToScroll = 4;
+        }
     }
 
     // Method Description:
