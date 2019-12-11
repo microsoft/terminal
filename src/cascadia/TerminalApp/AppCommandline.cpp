@@ -77,16 +77,18 @@ int AppCommandline::ParseCommand(const Cmdline& command)
     return 0;
 }
 
-void AppCommandline::_AddNewTerminalArgs(CLI::App* subcommand)
-{
-    subcommand->add_option("-p,--profile", _profileName, "Open with the give profile");
-    subcommand->add_option("-d,--startingDirectory", _startingDirectory, "Open in the given directory instead of the profile's set startingDirectory");
-    subcommand->add_option("cmdline", _commandline, "Commandline to run in the given profile");
-}
-
 void AppCommandline::_BuildParser()
 {
+    _BuildNewTabParser();
+    _BuildSplitPaneParser();
+
     ////////////////////////////////////////////////////////////////////////////
+    _listProfilesCommand = _app.add_subcommand("list-profiles", "List all the available profiles");
+    ////////////////////////////////////////////////////////////////////////////
+}
+
+void AppCommandline::_BuildNewTabParser()
+{
     _newTabCommand = _app.add_subcommand("new-tab", "Create a new tab");
     _AddNewTerminalArgs(_newTabCommand);
     _newTabCommand->callback([&, this]() {
@@ -99,7 +101,10 @@ void AppCommandline::_BuildParser()
         newTabAction->Args(*args);
         _startupActions.push_back(*newTabAction);
     });
-    ////////////////////////////////////////////////////////////////////////////
+}
+
+void AppCommandline::_BuildSplitPaneParser()
+{
     _newPaneCommand = _app.add_subcommand("split-pane", "Create a new pane");
     _AddNewTerminalArgs(_newPaneCommand);
     auto* horizontalOpt = _newPaneCommand->add_flag("-H,--horizontal", _splitHorizontal, "TODO");
@@ -125,44 +130,52 @@ void AppCommandline::_BuildParser()
         newPaneAction->Args(*args);
         _startupActions.push_back(*newPaneAction);
     });
-    ////////////////////////////////////////////////////////////////////////////
-    _listProfilesCommand = _app.add_subcommand("list-profiles", "List all the available profiles");
-    ////////////////////////////////////////////////////////////////////////////
+}
+
+void AppCommandline::_AddNewTerminalArgs(CLI::App* subcommand)
+{
+    subcommand->add_option("-p,--profile", _profileName, "Open with the give profile");
+    subcommand->add_option("-d,--startingDirectory", _startingDirectory, "Open in the given directory instead of the profile's set startingDirectory");
+    subcommand->add_option("cmdline", _commandline, "Commandline to run in the given profile");
 }
 
 NewTerminalArgs AppCommandline::_GetNewTerminalArgs()
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
-
     if (!_profileName.empty())
     {
-        std::cout << "profileName: " << _profileName << std::endl;
+        args->Profile(winrt::to_hstring(_profileName));
     }
-    // else
-    // {
-    //     std::cout << "Use the default profile" << std::endl;
-    // }
+
     if (!_startingDirectory.empty())
     {
-        std::cout << "startingDirectory: " << _startingDirectory << std::endl;
+        args->StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
-    // else
-    // {
-    //     std::cout << "Use the default startingDirectory" << std::endl;
-    // }
+
     if (!_commandline.empty())
     {
+        std::string buffer;
         auto i = 0;
         for (auto arg : _commandline)
         {
-            std::cout << "arg[" << i << "]=\"" << arg << "\"\n";
+            if (arg.find(" ") != std::string::npos)
+            {
+                buffer += "\"";
+                buffer += arg;
+                buffer += "\"";
+            }
+            else
+            {
+                buffer += arg;
+            }
+            if (i + 1 < _commandline.size())
+            {
+                buffer += " ";
+            }
             i++;
         }
+        args->Commandline(winrt::to_hstring(buffer));
     }
-    // else
-    // {
-    //     std::cout << "Use the default cmdline" << std::endl;
-    // }
 
     return *args;
 }

@@ -51,6 +51,8 @@ public:
 
 private:
     void _BuildParser();
+    void _BuildNewTabParser();
+    void _BuildSplitPaneParser();
     bool _NoCommandsProvided();
     void _ResetStateToDefault();
 
