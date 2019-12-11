@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2019-09-09
+last updated: 2019-12-11
 issue id: 2046
 ---
 
@@ -86,6 +86,94 @@ In `App`, when someone clicks on an item in the list, we'll get the
 `ActionAndArgs` associated with that list element, and call PerformAction on
 the app's `ShortcutActionDispatch`. This will trigger the event handler just the
 same as pressing the keybinding.
+
+### Commands for each profile?
+
+[#3879] Is a request for being able to launch a profile directly, via the
+command pallete. Esentially, the user will type the name of a profile, and hit
+enter to launch that profile. I quite like this idea, but with the current spec,
+this won't work great. We'd need to manually have one entry in the command
+palette for each profile, and every time the user adds a profile, they'd need to
+update the list of commands to add a new entry for that profile as well.
+
+This is a fairly complicated addition to this feature, so I'd hold it for
+"Command Palette v2", thoguh I believe it's solution deserves special
+consideration from the outset.
+
+I suggest that we need a mechanism by which the user can specify a single
+command that would be expanded to one command for every profile in the list of
+profiles. Consider the following sample:
+
+```json
+    "commands": [
+        {
+            "expandOn": "profiles",
+            "icon": "${profile.icon}",
+            "name": "New Tab with ${profile.name}",
+            "command": { "action": "newTab", "profile": "${profile.name}" }
+        },
+        {
+            "expandOn": "profiles",
+            "icon": "${profile.icon}",
+            "name": "New Vertical Split with ${profile.name}",
+            "command": { "action": "splitPane", "split":"vertical", "profile": "${profile.name}" }
+        }
+    ],
+```
+
+In this example:
+* The `"expandOn": "profiles"` property indicates that each command should be
+  repeated for each individual profile.
+* The `${profile.name}` value is treated as "when expanded, use the given
+  profile's name". This allows each command to use the `name` and `icon`
+  properties of a `Profile` to customize the text of the command.
+
+To ensure that this works correctly, we'll need to make sure to expand these
+commands after all the other settings have been parsed, presumably in the
+`Validate` phase. If we do it earlier, it's possible that not all the profiles
+from various sources will have been added yet, which would lead to an incomplete
+command list.
+
+We'll need to have a placeholder property to indicate that a command should be
+expanded for each `Profile`. When the command is first parsed, we'll leave the
+format strings `${...}` unexpanded at this time. Then, in the validate phase,
+when we encounter a `"expandOn": "profiles"` command, we'll remove it from the
+list, and use it as a prototype to generate commands for every `Profile` in our
+profiles list. We'll do a string find-and-replace on the format strings to
+replace them with the values from the profile, before adding the completed
+command to the list of commands.
+
+Of course, how does this work with localization? Considering the [section
+below](#localization), we'd update the built-in commands to the following:
+
+```json
+    "commands": [
+        {
+            "iterateOn": "profiles",
+            "icon": "${profile.icon}",
+            "name": { "key": "NewTabWithProfileCommandName" },
+            "command": { "action": "newTab", "profile": "${profile.name}" }
+        },
+        {
+            "iterateOn": "profiles",
+            "icon": "${profile.icon}",
+            "name": { "key": "NewVerticalSplitWithProfileCommandName" },
+            "command": { "action": "splitPane", "split":"vertical", "profile": "${profile.name}" }
+        }
+    ],
+```
+
+In this example, we'll look up the `NewTabWithProfileCommandName` resource when we're first parsing the command, to find a string similar to `"New Tab with ${profile.name}"`. When we then later expand the command, we'll see the `${profile.name}` bit from the resource, and expand that like we normally would.
+
+Trickily, we'll need to make sure to have a helper for replacing strings like
+this that can be used for general purpose arg parsing. As you can see, the
+`profile` property of the `newTab` command also needs the name of the profile.
+Either the command validator will need to go through and update these strings
+manually, or we'll need another of enabling these `IActionArgs` classes to fill
+those parameters in based on the profile being used. Perhaps the command
+pre-expansion could just stash the json for the action, then expand it later?
+This implementation detail is why this particualr feature is not slated for
+inclusion in an initial Command Palette implementation.
 
 ## UI/UX Design
 
@@ -222,6 +310,7 @@ generation of the `defaults.json` file.
    `defaults.en-us.json`.
 2. Should we somehow build the Terminal for each locale separately? This doesn't
    seem like a feasible choice.
+3. Use strings straight from the resources file somehow?
 
 Option 1 seems more similar to how XAML resources work today, where all of the
 resources are compiled into the app, but only the appropriate one is used at
@@ -238,6 +327,33 @@ header, so that we don't need to worry about including lots of files.
 
 If at runtime we _don't_ find a `defaults.json` for the current locale, we'll
 fall back to the en-us variant.
+
+Overall, this seems wildly overcomplicated.
+
+Option 3 was suggested in passing one of the few times I was in the office.
+We'll use a syntax like the following to suggest that we should load a string
+from our resources, as opposed to using the value from the file:
+
+```json
+    "commands": [
+        { "icon": null, "name": { "key": "NewTabCommandName" }, "action": "newTab" },
+        { "icon": null, "name": { "key": "CloseTabCommandKey" }, "action": "closeTab" },
+        { "icon": null, "name": { "key": "ClosePaneCommandKey" }, "action": "closePane" },
+        { "icon": null, "name": { "key": "SplitHorizontalCommandKey" }, "action": "splitHorizontal" },
+        { "icon": null, "name": { "key": "SplitVerticalCommandKey" }, "action": "splitVertical" },
+        { "icon": null, "name": { "key": "NextTabCommandKey" }, "action": "nextTab" },
+        { "icon": null, "name": { "key": "PrevTabCommandKey" }, "action": "prevTab" },
+        { "icon": null, "name": { "key": "OpenSettingsCommandKey" }, "action": "openSettings" },
+    ],
+```
+
+We'll check at parse time if the `name` property is a string or an object. If
+it's a string, we'll treat that string as the literal text. Otherwise, if it's
+an object, we'll attempt to use the `key` property of that object to look up a
+string from our `ResourceDictionary`. This way, we'll be able to ship localized
+strings for all the built-in commands, while aslo allowing the user to easily
+add their own commands.
+
 
 ## Future considerations
 
@@ -308,9 +424,12 @@ Untie "active control" from "currently XAML-focused control" #[1205](https://git
 
 Allow dropdown menu customization in profiles.json [#1571](https://github.com/microsoft/terminal/issues/1571)
 
+Search or run a command in Dropdown menu [#3879]
+
 <!-- Footnotes -->
 [#754]: https://github.com/microsoft/terminal/issues/754
 [#1205]: https://github.com/microsoft/terminal/issues/1205
 [#1142]: https://github.com/microsoft/terminal/pull/1349
 [#2046]: https://github.com/microsoft/terminal/issues/2046
 [#1571]: https://github.com/microsoft/terminal/issues/1571
+[#3879]: https://github.com/microsoft/terminal/issues/3879
