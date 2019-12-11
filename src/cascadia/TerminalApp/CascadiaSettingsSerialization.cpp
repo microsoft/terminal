@@ -30,6 +30,8 @@ static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
 static constexpr std::string_view SchemaKey{ "$schema" };
 static constexpr std::string_view ProfilesKey{ "profiles" };
+static constexpr std::string_view DefaultSettingsKey{ "defaults" };
+static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view GlobalsKey{ "globals" };
 static constexpr std::string_view SchemesKey{ "schemes" };
@@ -81,6 +83,14 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // created by now, because we're going to check in there for any generators
     // that should be disabled.
     resultPtr->_LoadDynamicProfiles();
+
+    // See microsoft/terminal#2325: find the defaultSettings from the user's
+    // settings. Layer those settings upon all the existing profiles we have
+    // (defaults and dynamic profiles). We'll also set
+    // _userDefaultProfileSettings here. When we LayerJson below to apply the
+    // user settings, we'll make sure to use these defaultSettings _before_ any
+    // profiles the user might have.
+    resultPtr->_ApplyDefaultsFromUserSettings();
 
     // Apply the user's settings
     resultPtr->LayerJson(resultPtr->_userSettings);
@@ -491,7 +501,16 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            auto profile = Profile::FromJson(profileJson);
+            Profile profile{};
+
+            // GH#2325: If we have a set of default profile settings, apply them here.
+            // We _won't_ have these settings yet for defaults, dynamic profiles.
+            if (_userDefaultProfileSettings)
+            {
+                profile.LayerJson(_userDefaultProfileSettings);
+            }
+
+            profile.LayerJson(profileJson);
             _profiles.emplace_back(profile);
         }
     }
@@ -522,6 +541,46 @@ Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
         }
     }
     return nullptr;
+}
+
+// Method Description:
+// - Finds the "default profile settings" if they exist in the users settings,
+//   and applies them to the existing profiles. The "default profile settings"
+//   are settings that should be applied to every profile a user has, with the
+//   option of being overridden by explicit values in the profile. This should
+//   be called _after_ the defaults have been parsed and dynamic profiles have
+//   been generated, but before the other user profiles have been loaded.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_ApplyDefaultsFromUserSettings()
+{
+    // If `profiles` was an object, then look for the `defaults` object
+    // underneath it for the default profile settings.
+    auto defaultSettings{ Json::Value::null };
+
+    if (const auto profiles{ _userSettings[JsonKey(ProfilesKey)] })
+    {
+        if (profiles.isObject())
+        {
+            defaultSettings = profiles[JsonKey(DefaultSettingsKey)];
+        }
+    }
+
+    if (defaultSettings)
+    {
+        _userDefaultProfileSettings = defaultSettings;
+
+        // Remove the `guid` member from the default settings. That'll
+        // hyper-explode, so just don't let them do that.
+        _userDefaultProfileSettings.removeMember({ "guid" });
+
+        for (auto& profile : _profiles)
+        {
+            profile.LayerJson(_userDefaultProfileSettings);
+        }
+    }
 }
 
 // Method Description:
@@ -784,7 +843,10 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
 // - the Json::Value representing the profiles property from the given object
 const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& json)
 {
-    return json[JsonKey(ProfilesKey)];
+    const auto& profilesProperty = json[JsonKey(ProfilesKey)];
+    return profilesProperty.isArray() ?
+               profilesProperty :
+               profilesProperty[JsonKey(ProfilesListKey)];
 }
 
 // Function Description:
