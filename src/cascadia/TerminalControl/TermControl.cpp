@@ -171,40 +171,40 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::UpdateSettings(Settings::IControlSettings newSettings)
     {
         _settings = newSettings;
-        auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, this]() {
+            // If 'weakThis' is locked, then we can safely work with 'this'
             if (auto control{ weakThis.get() })
             {
                 // Update our control settings
-                control->_ApplyUISettings();
+                _ApplyUISettings();
 
                 // Update DxEngine's SelectionBackground
-                control->_renderEngine->SetSelectionBackground(control->_settings.SelectionBackground());
+                _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
                 // Update the terminal core with its new Core settings
-                control->_terminal->UpdateSettings(control->_settings);
+                _terminal->UpdateSettings(_settings);
 
                 // Refresh our font with the renderer
-                control->_UpdateFont();
+                _UpdateFont();
 
-                const auto width = control->_swapChainPanel.ActualWidth();
-                const auto height = control->_swapChainPanel.ActualHeight();
+                const auto width = _swapChainPanel.ActualWidth();
+                const auto height = _swapChainPanel.ActualHeight();
                 if (width != 0 && height != 0)
                 {
                     // If the font size changed, or the _swapchainPanel's size changed
                     // for any reason, we'll need to make sure to also resize the
                     // buffer. _DoResize will invalidate everything for us.
-                    auto lock = control->_terminal->LockForWriting();
-                    control->_DoResize(width, height);
+                    auto lock = _terminal->LockForWriting();
+                    _DoResize(width, height);
                 }
 
                 // set TSF Foreground
                 Media::SolidColorBrush foregroundBrush{};
-                foregroundBrush.Color(ColorRefToColor(control->_settings.DefaultForeground()));
-                control->_tsfInputControl.Foreground(foregroundBrush);
+                foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+                _tsfInputControl.Foreground(foregroundBrush);
             }
         });
     }
@@ -363,9 +363,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_BackgroundColorChanged(const uint32_t color)
     {
-        auto weakThis{ get_weak() };
-
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, color]() {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, this, color]() {
+            // If 'weakThis' is locked, then we can safely work with 'this'
             if (auto control{ weakThis.get() })
             {
                 const auto R = GetRValue(color);
@@ -378,19 +377,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 bgColor.B = B;
                 bgColor.A = 255;
 
-                if (auto acrylic = control->_root.Background().try_as<Media::AcrylicBrush>())
+                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
                 {
                     acrylic.FallbackColor(bgColor);
                     acrylic.TintColor(bgColor);
                 }
-                else if (auto solidColor = control->_root.Background().try_as<Media::SolidColorBrush>())
+                else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
                 {
                     solidColor.Color(bgColor);
                 }
 
                 // Set the default background as transparent to prevent the
                 // DX layer from overwriting the background image or acrylic effect
-                control->_settings.DefaultBackground(ARGB(0, R, G, B));
+                _settings.DefaultBackground(ARGB(0, R, G, B));
             }
         });
     }
@@ -444,13 +443,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         auto chain = _renderEngine->GetSwapChain();
-        auto weakThis{ get_weak() };
 
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis, chain]() {
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis{ get_weak() }, this, chain]() {
+            // If 'weakThis' is locked, then we can safely work with 'this'
             if (auto control{ weakThis.get() })
             {
-                auto lock = control->_terminal->LockForWriting();
-                auto nativePanel = control->_swapChainPanel.as<ISwapChainPanelNative>();
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
                 nativePanel->SetSwapChain(chain.Get());
             }
         });
@@ -534,15 +533,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal->SetWriteInputCallback(inputFn);
 
         auto chain = _renderEngine->GetSwapChain();
-        auto weakThis{ get_weak() };
 
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis, chain]() {
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis{ get_weak() }, this, chain]() {
             if (auto control{ weakThis.get() })
             {
-                control->_terminal->LockConsole();
-                auto nativePanel = control->_swapChainPanel.as<ISwapChainPanelNative>();
+                _terminal->LockConsole();
+                auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
                 nativePanel->SetSwapChain(chain.Get());
-                control->_terminal->UnlockConsole();
+                _terminal->UnlockConsole();
             }
         });
 
@@ -1497,20 +1495,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        auto weakThis{ get_weak() };
-
         // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis, viewTop, viewHeight, bufferSize]() {
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis{ get_weak() }, this, viewTop, viewHeight, bufferSize]() {
             // Even if we weren't closed/closing few lines above, we might be
             // while waiting for this block of code to be dispatched.
+            // If 'weakThis' is locked, then we can safely work with 'this'
             if (auto control{ weakThis.get() })
             {
-                if (control->_closing.load())
+                if (_closing.load())
                 {
                     return;
                 }
 
-                control->_ScrollbarUpdater(control->_scrollBar, viewTop, viewHeight, bufferSize);
+                _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
             }
         });
 
