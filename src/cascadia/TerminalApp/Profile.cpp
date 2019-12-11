@@ -4,22 +4,30 @@
 #include "pch.h"
 #include "Profile.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
+#include "LegacyProfileGeneratorNamespaces.h"
+
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
+static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
+static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
+static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -41,6 +49,11 @@ static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
+
+// Possible values for closeOnExit
+static constexpr std::string_view CloseOnExitAlways{ "always" };
+static constexpr std::string_view CloseOnExitGraceful{ "graceful" };
+static constexpr std::string_view CloseOnExitNever{ "never" };
 
 // Possible values for Scrollbar state
 static constexpr std::wstring_view AlwaysVisible{ L"visible" };
@@ -71,19 +84,22 @@ static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
 Profile::Profile() :
-    Profile(Utils::CreateGuid())
+    Profile(std::nullopt)
 {
 }
 
-Profile::Profile(const winrt::guid& guid) :
+Profile::Profile(const std::optional<GUID>& guid) :
     _guid(guid),
     _name{ L"Default" },
-    _schemeName{},
+    _schemeName{ L"Campbell" },
+    _hidden{ false },
 
     _defaultForeground{},
     _defaultBackground{},
+    _selectionBackground{},
     _colorTable{},
     _tabTitle{},
+    _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -98,7 +114,7 @@ Profile::Profile(const winrt::guid& guid) :
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{},
-    _closeOnExit{ true },
+    _closeOnExitMode{ CloseOnExitMode::Graceful },
     _padding{ DEFAULT_PADDING },
     _icon{},
     _backgroundImage{},
@@ -112,30 +128,26 @@ Profile::~Profile()
 {
 }
 
-GUID Profile::GetGuid() const noexcept
+bool Profile::HasGuid() const noexcept
 {
-    return _guid;
+    return _guid.has_value();
 }
 
-// Function Description:
-// - Searches a list of color schemes to find one matching the given name. Will
-//return the first match in the list, if the list has multiple schemes with the same name.
-// Arguments:
-// - schemes: a list of schemes to search
-// - schemeName: the name of the sceme to look for
-// Return Value:
-// - a non-ownership pointer to the matching scheme if we found one, else nullptr
-const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
-                               const std::wstring& schemeName)
+bool Profile::HasSource() const noexcept
 {
-    for (auto& scheme : schemes)
-    {
-        if (scheme.GetName() == schemeName)
-        {
-            return &scheme;
-        }
-    }
-    return nullptr;
+    return _source.has_value();
+}
+
+GUID Profile::GetGuid() const
+{
+    // This can throw if we never had our guid set to a legitimate value.
+    THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");
+    return _guid.value();
+}
+
+void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
+{
+    _source = sourceNamespace;
 }
 
 // Method Description:
@@ -145,7 +157,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>& schemes) const
+TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
 {
     TerminalSettings terminalSettings{};
 
@@ -163,7 +175,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
-    terminalSettings.CloseOnExit(_closeOnExit);
     terminalSettings.TintOpacity(_acrylicTransparency);
 
     terminalSettings.FontFace(_fontFace);
@@ -182,12 +193,17 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     // use the profile name
     terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
 
+    if (_suppressApplicationTitle)
+    {
+        terminalSettings.SuppressApplicationTitle(_suppressApplicationTitle);
+    }
+
     if (_schemeName)
     {
-        const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
-        if (matchingScheme)
+        const auto found = schemes.find(_schemeName.value());
+        if (found != schemes.end())
         {
-            matchingScheme->ApplyScheme(terminalSettings);
+            found->second.ApplyScheme(terminalSettings);
         }
     }
     if (_defaultForeground)
@@ -198,6 +214,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     {
         terminalSettings.DefaultBackground(_defaultBackground.value());
     }
+    if (_selectionBackground)
+    {
+        terminalSettings.SelectionBackground(_selectionBackground.value());
+    }
 
     if (_scrollbarState)
     {
@@ -205,9 +225,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.ScrollState(result);
     }
 
-    if (_backgroundImage)
+    if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(_backgroundImage.value());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
     }
 
     if (_backgroundImageOpacity)
@@ -222,8 +242,8 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     if (_backgroundImageAlignment)
     {
-        const auto imageHorizontalAlignment = std::get<winrt::Windows::UI::Xaml::HorizontalAlignment>(_backgroundImageAlignment.value());
-        const auto imageVerticalAlignment = std::get<winrt::Windows::UI::Xaml::VerticalAlignment>(_backgroundImageAlignment.value());
+        const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_backgroundImageAlignment.value());
+        const auto imageVerticalAlignment = std::get<VerticalAlignment>(_backgroundImageAlignment.value());
         terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
     }
@@ -239,11 +259,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 // - a JsonObject which is an equivalent serialization of this object.
 Json::Value Profile::ToJson() const
 {
-    Json::Value root;
+    Json::Value root = GenerateStub();
 
     ///// Profile-specific settings /////
-    root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid));
-    root[JsonKey(NameKey)] = winrt::to_string(_name);
+    // As of #2795, all profile-specific settings were moved to GenerateStub. If
+    // any new profiles-specific settings are added, they should probably be
+    // added here instead of in that method.
 
     ///// Core Settings /////
     if (_defaultForeground)
@@ -253,6 +274,10 @@ Json::Value Profile::ToJson() const
     if (_defaultBackground)
     {
         root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
+    }
+    if (_selectionBackground)
+    {
+        root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
     }
     if (_schemeName)
     {
@@ -278,13 +303,11 @@ Json::Value Profile::ToJson() const
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
 
-    ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
     root[JsonKey(FontFaceKey)] = winrt::to_string(_fontFace);
     root[JsonKey(FontSizeKey)] = _fontSize;
     root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
     root[JsonKey(UseAcrylicKey)] = _useAcrylic;
-    root[JsonKey(CloseOnExitKey)] = _closeOnExit;
     root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
     if (_connectionType)
@@ -306,6 +329,11 @@ Json::Value Profile::ToJson() const
     if (_tabTitle)
     {
         root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
+    }
+
+    if (_suppressApplicationTitle)
+    {
+        root[JsonKey(SuppressApplicationTitleKey)] = _suppressApplicationTitle;
     }
 
     if (_startingDirectory)
@@ -333,7 +361,103 @@ Json::Value Profile::ToJson() const
         root[JsonKey(BackgroundImageAlignmentKey)] = SerializeImageAlignment(_backgroundImageAlignment.value()).data();
     }
 
+    root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
+
     return root;
+}
+
+// Method Description:
+// - This generates a json object `diff` s.t.
+//      this = other.LayerJson(diff)
+// So if:
+// - this has a nullopt for an optional, diff will have null for that member
+// - this has a value for an optional, diff will have our value. If the other
+//   did _not_ have a value, and we did, diff will have our value.
+// Arguments:
+// - other: the other profile object to use as the "base" for this diff. The
+//   result could be layered upon that json object to re-create this object's
+//   serialization.
+// Return Value:
+// - a diff between this and the other object, such that this could be recreated
+//   from the diff and the other object.
+Json::Value Profile::DiffToJson(const Profile& other) const
+{
+    auto otherJson = other.ToJson();
+    auto myJson = ToJson();
+    Json::Value diff;
+
+    // Iterate in two steps:
+    // - first over all the keys in the 'other' object's serialization.
+    // - then over all the keys in our serialization.
+    // In this way, we ensure all keys from both objects are present in the
+    // final object.
+    for (const auto& key : otherJson.getMemberNames())
+    {
+        if (myJson.isMember(key))
+        {
+            // Both objects have the key
+            auto otherVal = otherJson[key];
+            auto myVal = myJson[key];
+            if (otherVal != myVal)
+            {
+                diff[key] = myVal;
+            }
+        }
+        else
+        {
+            // key is not in this json object. Set to null, so that when the
+            // diff is layered upon the original object, we'll properly set
+            // nullopt for any optionals that weren't present in this object.
+            diff[key] = Json::Value::null;
+        }
+    }
+    for (const auto& key : myJson.getMemberNames())
+    {
+        if (otherJson.isMember(key))
+        {
+            // both objects have this key. Do nothing, this is handled above
+        }
+        else
+        {
+            // We have a key the other object did not. Add our value.
+            diff[key] = myJson[key];
+        }
+    }
+
+    return diff;
+}
+
+// Method Description:
+// - Generates a Json::Value which is a "stub" of this profile. This stub will
+//   have enough information that it could be layered with this profile.
+// - This method is used during dynamic profile generation - if a profile is
+//   ever generated that didn't already exist in the user's settings, we'll add
+//   this stub to the user's settings file, so the user has an easy point to
+//   modify the generated profile.
+// Arguments:
+// - <none>
+// Return Value:
+// - A json::Value with a guid, name and source (if applicable).
+Json::Value Profile::GenerateStub() const
+{
+    Json::Value stub;
+
+    ///// Profile-specific settings /////
+    if (_guid.has_value())
+    {
+        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
+    }
+
+    stub[JsonKey(NameKey)] = winrt::to_string(_name);
+
+    if (_source.has_value())
+    {
+        stub[JsonKey(SourceKey)] = winrt::to_string(_source.value());
+    }
+
+    stub[JsonKey(HiddenKey)] = _hidden;
+
+    return stub;
 }
 
 // Method Description:
@@ -344,155 +468,252 @@ Json::Value Profile::ToJson() const
 // - a new Profile instance created from the values in `json`
 Profile Profile::FromJson(const Json::Value& json)
 {
-    Profile result{};
+    Profile result;
 
-    // Profile-specific Settings
-    if (auto name{ json[JsonKey(NameKey)] })
+    result.LayerJson(json);
+
+    return result;
+}
+
+// Method Description:
+// - Returns true if we think the provided json object represents an instance of
+//   the same object as this object. If true, we should layer that json object
+//   on us, instead of creating a new object.
+// Arguments:
+// - json: The json object to query to see if it's the same
+// Return Value:
+// - true iff the json object has the same `GUID` as we do.
+bool Profile::ShouldBeLayered(const Json::Value& json) const
+{
+    if (!_guid.has_value())
     {
-        result._name = GetWstringFromJson(name);
+        return false;
     }
-    if (auto guid{ json[JsonKey(GuidKey)] })
+
+    // First, check that GUIDs match. This is easy. If they don't match, they
+    // should _definitely_ not layer.
+    if (json.isMember(JsonKey(GuidKey)))
     {
-        result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
+        const auto guid{ json[JsonKey(GuidKey)] };
+        const auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
+        if (_guid.value() != otherGuid)
+        {
+            return false;
+        }
     }
     else
     {
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        const std::wstring_view name = result._name;
-        result._guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
+        // If the other json object didn't have a GUID, we definitely don't want
+        // to layer. We technically might have the same name, and would
+        // auto-generate the same guid, but they should be treated as different
+        // profiles.
+        return false;
+    }
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    const auto& otherSource = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
+
+    // For profiles with a `source`, also check the `source` property.
+    bool sourceMatches = false;
+    if (_source.has_value())
+    {
+        if (json.isMember(JsonKey(SourceKey)))
+        {
+            const auto otherSourceString = GetWstringFromJson(otherSource);
+            sourceMatches = otherSourceString == _source.value();
+        }
+        else
+        {
+            // Special case the legacy dynamic profiles here. In this case,
+            // `this` is a dynamic profile with a source, and our _source is one
+            // of the legacy DPG namespaces. We're looking to see if the other
+            // json object has the same guid, but _no_ "source"
+            if (_source.value() == WslGeneratorNamespace ||
+                _source.value() == AzureGeneratorNamespace ||
+                _source.value() == PowershellCoreGeneratorNamespace)
+            {
+                sourceMatches = true;
+            }
+        }
+    }
+    else
+    {
+        // We do not have a source. The only way we match is if source is set to null or "".
+        if (otherSource.isNull() || (otherSource.isString() && otherSource == ""))
+        {
+            sourceMatches = true;
+        }
+    }
+
+    return sourceMatches;
+}
+
+// Method Description:
+// - Helper function to convert a json value into a value of the Stretch enum.
+//   Calls into ParseImageStretchMode. Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - An appropriate value from Windows.UI.Xaml.Media.Stretch
+Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
+{
+    return Profile::ParseImageStretchMode(json.asString());
+}
+
+// Method Description:
+// - Helper function to convert a json value into a value of the Stretch enum.
+//   Calls into ParseImageAlignment. Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - A pair of HorizontalAlignment and VerticalAlignment
+std::tuple<HorizontalAlignment, VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
+{
+    return Profile::ParseImageAlignment(json.asString());
+}
+
+// Method Description:
+// - Layer values from the given json object on top of the existing properties
+//   of this object. For any keys we're expecting to be able to parse in the
+//   given object, we'll parse them and replace our settings with values from
+//   the new json object. Properties that _aren't_ in the json object will _not_
+//   be replaced.
+// - Optional values in the profile that are set to `null` in the json object
+//   will be set to nullopt.
+// Arguments:
+// - json: an object which should be a partial serialization of a Profile object.
+// Return Value:
+// <none>
+void Profile::LayerJson(const Json::Value& json)
+{
+    // Profile-specific Settings
+    if (json.isMember(JsonKey(NameKey)))
+    {
+        auto name{ json[JsonKey(NameKey)] };
+        _name = GetWstringFromJson(name);
+    }
+
+    JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
+
+    if (json.isMember(JsonKey(HiddenKey)))
+    {
+        auto hidden{ json[JsonKey(HiddenKey)] };
+        _hidden = hidden.asBool();
     }
 
     // Core Settings
-    if (auto foreground{ json[JsonKey(ForegroundKey)] })
+    JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
+
+    JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
+
+    JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
+
+    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
+    // TODO:GH#1069 deprecate old settings key
+    JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
+
+    // Only look for the "table" if there's no "schemeName"
+    if (!(json.isMember(JsonKey(ColorSchemeKey))) &&
+        !(json.isMember(JsonKey(ColorSchemeKeyOld))) &&
+        json.isMember(JsonKey(ColorTableKey)))
     {
-        const auto color = Utils::ColorFromHexString(foreground.asString());
-        result._defaultForeground = color;
-    }
-    if (auto background{ json[JsonKey(BackgroundKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(background.asString());
-        result._defaultBackground = color;
-    }
-    if (auto colorScheme{ json[JsonKey(ColorSchemeKey)] })
-    {
-        result._schemeName = GetWstringFromJson(colorScheme);
-    }
-    else if (auto colorScheme{ json[JsonKey(ColorSchemeKeyOld)] })
-    {
-        // TODO:GH#1069 deprecate old settings key
-        result._schemeName = GetWstringFromJson(colorScheme);
-    }
-    else if (auto colortable{ json[JsonKey(ColorTableKey)] })
-    {
+        auto colortable{ json[JsonKey(ColorTableKey)] };
         int i = 0;
         for (const auto& tableEntry : colortable)
         {
             if (tableEntry.isString())
             {
                 const auto color = Utils::ColorFromHexString(tableEntry.asString());
-                result._colorTable[i] = color;
+                _colorTable[i] = color;
             }
             i++;
         }
     }
-    if (auto historySize{ json[JsonKey(HistorySizeKey)] })
+    if (json.isMember(JsonKey(HistorySizeKey)))
     {
+        auto historySize{ json[JsonKey(HistorySizeKey)] };
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-        result._historySize = historySize.asInt();
+        _historySize = historySize.asInt();
     }
-    if (auto snapOnInput{ json[JsonKey(SnapOnInputKey)] })
+    if (json.isMember(JsonKey(SnapOnInputKey)))
     {
-        result._snapOnInput = snapOnInput.asBool();
+        auto snapOnInput{ json[JsonKey(SnapOnInputKey)] };
+        _snapOnInput = snapOnInput.asBool();
     }
-    if (auto cursorColor{ json[JsonKey(CursorColorKey)] })
+    if (json.isMember(JsonKey(CursorColorKey)))
     {
+        auto cursorColor{ json[JsonKey(CursorColorKey)] };
         const auto color = Utils::ColorFromHexString(cursorColor.asString());
-        result._cursorColor = color;
+        _cursorColor = color;
     }
-    if (auto cursorHeight{ json[JsonKey(CursorHeightKey)] })
+    if (json.isMember(JsonKey(CursorHeightKey)))
     {
-        result._cursorHeight = cursorHeight.asUInt();
+        auto cursorHeight{ json[JsonKey(CursorHeightKey)] };
+        _cursorHeight = cursorHeight.asUInt();
     }
-    if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
+    if (json.isMember(JsonKey(CursorShapeKey)))
     {
-        result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+        auto cursorShape{ json[JsonKey(CursorShapeKey)] };
+        _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
-    if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
-    {
-        result._tabTitle = GetWstringFromJson(tabTitle);
-    }
+    JsonUtils::GetOptionalString(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-    if (auto connectionType{ json[JsonKey(ConnectionTypeKey)] })
+    JsonUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
+
+    if (json.isMember(JsonKey(CommandlineKey)))
     {
-        result._connectionType = Utils::GuidFromString(GetWstringFromJson(connectionType));
+        auto commandline{ json[JsonKey(CommandlineKey)] };
+        _commandline = GetWstringFromJson(commandline);
     }
-    if (auto commandline{ json[JsonKey(CommandlineKey)] })
+    if (json.isMember(JsonKey(FontFaceKey)))
     {
-        result._commandline = GetWstringFromJson(commandline);
+        auto fontFace{ json[JsonKey(FontFaceKey)] };
+        _fontFace = GetWstringFromJson(fontFace);
     }
-    if (auto fontFace{ json[JsonKey(FontFaceKey)] })
+    if (json.isMember(JsonKey(FontSizeKey)))
     {
-        result._fontFace = GetWstringFromJson(fontFace);
+        auto fontSize{ json[JsonKey(FontSizeKey)] };
+        _fontSize = fontSize.asInt();
     }
-    if (auto fontSize{ json[JsonKey(FontSizeKey)] })
+    if (json.isMember(JsonKey(AcrylicTransparencyKey)))
     {
-        result._fontSize = fontSize.asInt();
+        auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] };
+        _acrylicTransparency = acrylicTransparency.asFloat();
     }
-    if (auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] })
+    if (json.isMember(JsonKey(UseAcrylicKey)))
     {
-        result._acrylicTransparency = acrylicTransparency.asFloat();
+        auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
+        _useAcrylic = useAcrylic.asBool();
     }
-    if (auto useAcrylic{ json[JsonKey(UseAcrylicKey)] })
+    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
     {
-        result._useAcrylic = useAcrylic.asBool();
+        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
+        _suppressApplicationTitle = suppressApplicationTitle.asBool();
     }
-    if (auto closeOnExit{ json[JsonKey(CloseOnExitKey)] })
+    if (json.isMember(JsonKey(CloseOnExitKey)))
     {
-        result._closeOnExit = closeOnExit.asBool();
+        auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
+        _closeOnExitMode = ParseCloseOnExitMode(closeOnExit);
     }
-    if (auto padding{ json[JsonKey(PaddingKey)] })
+    if (json.isMember(JsonKey(PaddingKey)))
     {
-        result._padding = GetWstringFromJson(padding);
-    }
-    if (auto scrollbarState{ json[JsonKey(ScrollbarStateKey)] })
-    {
-        result._scrollbarState = GetWstringFromJson(scrollbarState);
-    }
-    if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
-    {
-        result._startingDirectory = GetWstringFromJson(startingDirectory);
-    }
-    if (auto icon{ json[JsonKey(IconKey)] })
-    {
-        result._icon = GetWstringFromJson(icon);
-    }
-    if (auto backgroundImage{ json[JsonKey(BackgroundImageKey)] })
-    {
-        result._backgroundImage = GetWstringFromJson(backgroundImage);
-    }
-    if (auto backgroundImageOpacity{ json[JsonKey(BackgroundImageOpacityKey)] })
-    {
-        result._backgroundImageOpacity = backgroundImageOpacity.asFloat();
-    }
-    if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] })
-    {
-        result._backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
-    }
-    if (auto backgroundImageAlignment{ json[JsonKey(BackgroundImageAlignmentKey)] })
-    {
-        result._backgroundImageAlignment = ParseImageAlignment(backgroundImageAlignment.asString());
+        auto padding{ json[JsonKey(PaddingKey)] };
+        _padding = GetWstringFromJson(padding);
     }
 
-    return result;
+    JsonUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
+
+    JsonUtils::GetOptionalString(json, StartingDirectoryKey, _startingDirectory);
+
+    JsonUtils::GetOptionalString(json, IconKey, _icon);
+
+    JsonUtils::GetOptionalString(json, BackgroundImageKey, _backgroundImage);
+
+    JsonUtils::GetOptionalDouble(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
+
+    JsonUtils::GetOptionalValue(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode, &Profile::_ConvertJsonToStretchMode);
+
+    JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
@@ -503,6 +724,11 @@ void Profile::SetFontFace(std::wstring fontFace) noexcept
 void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
 {
     _schemeName = std::move(schemeName);
+}
+
+std::optional<std::wstring>& Profile::GetSchemeName() noexcept
+{
+    return _schemeName;
 }
 
 void Profile::SetAcrylicOpacity(double opacity) noexcept
@@ -540,9 +766,14 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
     _defaultBackground = defaultBackground;
 }
 
-void Profile::SetCloseOnExit(bool defaultClose) noexcept
+void Profile::SetSelectionBackground(COLORREF selectionBackground) noexcept
 {
-    _closeOnExit = defaultClose;
+    _selectionBackground = selectionBackground;
+}
+
+void Profile::SetCloseOnExitMode(CloseOnExitMode mode) noexcept
+{
+    _closeOnExitMode = mode;
 }
 
 void Profile::SetConnectionType(GUID connectionType) noexcept
@@ -555,6 +786,11 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value() && !_icon.value().empty();
 }
 
+bool Profile::HasBackgroundImage() const noexcept
+{
+    return _backgroundImage.has_value() && !_backgroundImage.value().empty();
+}
+
 // Method Description
 // - Sets this profile's tab title.
 // Arguments:
@@ -562,6 +798,15 @@ bool Profile::HasIcon() const noexcept
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
     _tabTitle = std::move(tabTitle);
+}
+
+// Method Description
+// - Sets if the application title will be suppressed in this profile.
+// Arguments:
+// - suppressApplicationTitle: boolean
+void Profile::SetSuppressApplicationTitle(bool suppressApplicationTitle) noexcept
+{
+    _suppressApplicationTitle = suppressApplicationTitle;
 }
 
 // Method Description:
@@ -591,6 +836,23 @@ winrt::hstring Profile::GetExpandedIconPath() const
 }
 
 // Method Description:
+// - Returns this profile's background image path, if one is set, expanding
+//   any environment variables in the path, if there are any.
+// Return Value:
+// - This profile's expanded background image path / the empty string.
+winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+{
+    winrt::hstring result{};
+
+    if (HasBackgroundImage())
+    {
+        result = wil::ExpandEnvironmentStringsW<std::wstring>(_backgroundImage.value().data());
+    }
+
+    return result;
+}
+
+// Method Description:
 // - Returns the name of this profile.
 // Arguments:
 // - <none>
@@ -599,6 +861,11 @@ winrt::hstring Profile::GetExpandedIconPath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::GetSuppressApplicationTitle() const noexcept
+{
+    return _suppressApplicationTitle;
 }
 
 bool Profile::HasConnectionType() const noexcept
@@ -613,9 +880,22 @@ GUID Profile::GetConnectionType() const noexcept
                _GUID{};
 }
 
-bool Profile::GetCloseOnExit() const noexcept
+CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
 {
-    return _closeOnExit;
+    return _closeOnExitMode;
+}
+
+// Method Description:
+// - If a profile is marked hidden, it should not appear in the dropdown list of
+//   profiles. This setting is used to "remove" default and dynamic profiles
+//   from the list of profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the profile chould be hidden from the list of profiles.
+bool Profile::IsHidden() const noexcept
+{
+    return _hidden;
 }
 
 // Method Description:
@@ -650,6 +930,60 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 }
 
 // Method Description:
+// - Helper function for converting a user-specified closeOnExit value to its corresponding enum
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+CloseOnExitMode Profile::ParseCloseOnExitMode(const Json::Value& json)
+{
+    if (json.isBool())
+    {
+        return json.asBool() ? CloseOnExitMode::Graceful : CloseOnExitMode::Never;
+    }
+
+    if (json.isString())
+    {
+        auto closeOnExit = json.asString();
+        if (closeOnExit == CloseOnExitAlways)
+        {
+            return CloseOnExitMode::Always;
+        }
+        else if (closeOnExit == CloseOnExitGraceful)
+        {
+            return CloseOnExitMode::Graceful;
+        }
+        else if (closeOnExit == CloseOnExitNever)
+        {
+            return CloseOnExitMode::Never;
+        }
+    }
+
+    return CloseOnExitMode::Graceful;
+}
+
+// Method Description:
+// - Helper function for converting a CloseOnExitMode to its corresponding string
+//   value.
+// Arguments:
+// - closeOnExitMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CloseOnExitMode
+std::string_view Profile::_SerializeCloseOnExitMode(const CloseOnExitMode closeOnExitMode)
+{
+    switch (closeOnExitMode)
+    {
+    case CloseOnExitMode::Always:
+        return CloseOnExitAlways;
+    case CloseOnExitMode::Never:
+        return CloseOnExitNever;
+    case CloseOnExitMode::Graceful:
+    default:
+        return CloseOnExitGraceful;
+    }
+}
+
+// Method Description:
 // - Helper function for converting a user-specified scrollbar state to its corresponding enum
 // Arguments:
 // - The value from the profiles.json file
@@ -678,23 +1012,23 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - The value from the profiles.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
-winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
+Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
 {
     if (imageStretchMode == ImageStretchModeNone)
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::None;
+        return Media::Stretch::None;
     }
     else if (imageStretchMode == ImageStretchModeFill)
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::Fill;
+        return Media::Stretch::Fill;
     }
     else if (imageStretchMode == ImageStretchModeUniform)
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::Uniform;
+        return Media::Stretch::Uniform;
     }
     else // Fall through to default behavior
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill;
+        return Media::Stretch::UniformToFill;
     }
 }
 
@@ -705,18 +1039,18 @@ winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const st
 // - imageStretchMode: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given ImageStretchMode
-std::string_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
+std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageStretchMode)
 {
     switch (imageStretchMode)
     {
-    case winrt::Windows::UI::Xaml::Media::Stretch::None:
+    case Media::Stretch::None:
         return ImageStretchModeNone;
-    case winrt::Windows::UI::Xaml::Media::Stretch::Fill:
+    case Media::Stretch::Fill:
         return ImageStretchModeFill;
-    case winrt::Windows::UI::Xaml::Media::Stretch::Uniform:
+    case Media::Stretch::Uniform:
         return ImageStretchModeUniform;
     default:
-    case winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill:
+    case Media::Stretch::UniformToFill:
         return ImageStretchModeUniformTofill;
     }
 }
@@ -728,52 +1062,52 @@ std::string_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xa
 // - The value from the profiles.json file
 // Return Value:
 // - The corresponding enum values tuple which maps to the string provided by the user
-std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> Profile::ParseImageAlignment(const std::string_view imageAlignment)
+std::tuple<HorizontalAlignment, VerticalAlignment> Profile::ParseImageAlignment(const std::string_view imageAlignment)
 {
     if (imageAlignment == ImageAlignmentTopLeft)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Left,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Top);
+        return std::make_tuple(HorizontalAlignment::Left,
+                               VerticalAlignment::Top);
     }
     else if (imageAlignment == ImageAlignmentBottomLeft)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Left,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Bottom);
+        return std::make_tuple(HorizontalAlignment::Left,
+                               VerticalAlignment::Bottom);
     }
     else if (imageAlignment == ImageAlignmentLeft)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Left,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        return std::make_tuple(HorizontalAlignment::Left,
+                               VerticalAlignment::Center);
     }
     else if (imageAlignment == ImageAlignmentTopRight)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Right,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Top);
+        return std::make_tuple(HorizontalAlignment::Right,
+                               VerticalAlignment::Top);
     }
     else if (imageAlignment == ImageAlignmentBottomRight)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Right,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Bottom);
+        return std::make_tuple(HorizontalAlignment::Right,
+                               VerticalAlignment::Bottom);
     }
     else if (imageAlignment == ImageAlignmentRight)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Right,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        return std::make_tuple(HorizontalAlignment::Right,
+                               VerticalAlignment::Center);
     }
     else if (imageAlignment == ImageAlignmentTop)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Center,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Top);
+        return std::make_tuple(HorizontalAlignment::Center,
+                               VerticalAlignment::Top);
     }
     else if (imageAlignment == ImageAlignmentBottom)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Center,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Bottom);
+        return std::make_tuple(HorizontalAlignment::Center,
+                               VerticalAlignment::Bottom);
     }
     else // Fall through to default alignment
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Center,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        return std::make_tuple(HorizontalAlignment::Center,
+                               VerticalAlignment::Center);
     }
 }
 
@@ -784,46 +1118,46 @@ std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xa
 // - imageAlignment: The enum values tuple to convert to a string.
 // Return Value:
 // - The string value for the given ImageAlignment
-std::string_view Profile::SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment)
+std::string_view Profile::SerializeImageAlignment(const std::tuple<HorizontalAlignment, VerticalAlignment> imageAlignment)
 {
-    const auto imageHorizontalAlignment = std::get<winrt::Windows::UI::Xaml::HorizontalAlignment>(imageAlignment);
-    const auto imageVerticalAlignment = std::get<winrt::Windows::UI::Xaml::VerticalAlignment>(imageAlignment);
+    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(imageAlignment);
+    const auto imageVerticalAlignment = std::get<VerticalAlignment>(imageAlignment);
     switch (imageHorizontalAlignment)
     {
-    case winrt::Windows::UI::Xaml::HorizontalAlignment::Left:
+    case HorizontalAlignment::Left:
         switch (imageVerticalAlignment)
         {
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Top:
+        case VerticalAlignment::Top:
             return ImageAlignmentTopLeft;
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Bottom:
+        case VerticalAlignment::Bottom:
             return ImageAlignmentBottomLeft;
         default:
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Center:
+        case VerticalAlignment::Center:
             return ImageAlignmentLeft;
         }
 
-    case winrt::Windows::UI::Xaml::HorizontalAlignment::Right:
+    case HorizontalAlignment::Right:
         switch (imageVerticalAlignment)
         {
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Top:
+        case VerticalAlignment::Top:
             return ImageAlignmentTopRight;
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Bottom:
+        case VerticalAlignment::Bottom:
             return ImageAlignmentBottomRight;
         default:
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Center:
+        case VerticalAlignment::Center:
             return ImageAlignmentRight;
         }
 
     default:
-    case winrt::Windows::UI::Xaml::HorizontalAlignment::Center:
+    case HorizontalAlignment::Center:
         switch (imageVerticalAlignment)
         {
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Top:
+        case VerticalAlignment::Top:
             return ImageAlignmentTop;
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Bottom:
+        case VerticalAlignment::Bottom:
             return ImageAlignmentBottom;
         default:
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Center:
+        case VerticalAlignment::Center:
             return ImageAlignmentCenter;
         }
     }
@@ -885,4 +1219,84 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
     case CursorStyle::Bar:
         return CursorShapeBar;
     }
+}
+
+// Method Description:
+// - If this profile never had a GUID set for it, generate a runtime GUID for
+//   the profile. If a profile had their guid manually set to {0}, this method
+//   will _not_ change the profile's GUID.
+void Profile::GenerateGuidIfNecessary() noexcept
+{
+    if (!_guid.has_value())
+    {
+        // Always use the name to generate the temporary GUID. That way, across
+        // reloads, we'll generate the same static GUID.
+        _guid = Profile::_GenerateGuidForProfile(_name, _source);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "SynthesizedGuidForProfile",
+            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    }
+}
+
+// Function Description:
+// - Returns true if the given JSON object represents a dynamic profile object.
+//   If it is a dynamic profile object, we should make sure to only layer the
+//   object on a matching profile from a dynamic source.
+// Arguments:
+// - json: the partial serialization of a profile object to check
+// Return Value:
+// - true iff the object has a non-null `source` property
+bool Profile::IsDynamicProfileObject(const Json::Value& json)
+{
+    const auto& source = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
+    return !source.isNull();
+}
+
+// Function Description:
+// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// Arguments:
+// - name: The name to generate a unique GUID from
+// Return Value:
+// - a uuidv5 GUID generated from the given name.
+GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
+{
+    // If we have a _source, then we can from a dynamic profile generator. Use
+    // our source to build the naespace guid, instead of using the default GUID.
+
+    const GUID namespaceGuid = source.has_value() ?
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.value()))) :
+                                   RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
+
+    // Always use the name to generate the temporary GUID. That way, across
+    // reloads, we'll generate the same static GUID.
+    return Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name)));
+}
+
+// Function Description:
+// - Parses the given JSON object to get its GUID. If the json object does not
+//   have a `guid` set, we'll generate one, using the `name` field.
+// Arguments:
+// - json: the JSON object to get a GUID from, or generate a unique GUID for
+//   (given the `name`)
+// Return Value:
+// - The json's `guid`, or a guid synthesized for it.
+GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
+{
+    std::optional<GUID> guid{ std::nullopt };
+
+    JsonUtils::GetOptionalGuid(json, GuidKey, guid);
+    if (guid)
+    {
+        return guid.value();
+    }
+
+    const auto name = GetWstringFromJson(json[JsonKey(NameKey)]);
+    std::optional<std::wstring> source{ std::nullopt };
+    JsonUtils::GetOptionalString(json, SourceKey, source);
+
+    return Profile::_GenerateGuidForProfile(name, source);
 }

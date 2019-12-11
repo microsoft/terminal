@@ -13,6 +13,8 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+using namespace Microsoft::WRL;
+
 using namespace Microsoft::Console::Interactivity::Win32;
 
 // UiaTextRange takes an object that implements
@@ -103,13 +105,12 @@ class UiaTextRangeTests
         }
 
         // set up default range
-        _range = new UiaTextRange{
-            _pUiaData,
-            &_dummyProvider,
-            0,
-            0,
-            false
-        };
+        Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&_range,
+                                                        _pUiaData,
+                                                        &_dummyProvider,
+                                                        0,
+                                                        0,
+                                                        false);
 
         return true;
     }
@@ -137,27 +138,27 @@ class UiaTextRangeTests
     TEST_METHOD(DegenerateRangesDetected)
     {
         // make a degenerate range and verify that it reports degenerate
-        UiaTextRange degenerate{
-            _pUiaData,
-            &_dummyProvider,
-            20,
-            19,
-            true
-        };
-        VERIFY_IS_TRUE(degenerate.IsDegenerate());
-        VERIFY_ARE_EQUAL(0u, degenerate._rowCountInRange(_pUiaData));
-        VERIFY_ARE_EQUAL(degenerate._start, degenerate._end);
+        Microsoft::WRL::ComPtr<UiaTextRange> degenerate;
+        Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&degenerate,
+                                                        _pUiaData,
+                                                        &_dummyProvider,
+                                                        20,
+                                                        19,
+                                                        true);
+        VERIFY_IS_TRUE(degenerate->IsDegenerate());
+        VERIFY_ARE_EQUAL(0u, degenerate->_rowCountInRange(_pUiaData));
+        VERIFY_ARE_EQUAL(degenerate->_start, degenerate->_end);
 
         // make a non-degenerate range and verify that it reports as such
-        UiaTextRange notDegenerate1{
-            _pUiaData,
-            &_dummyProvider,
-            20,
-            20,
-            false
-        };
-        VERIFY_IS_FALSE(notDegenerate1.IsDegenerate());
-        VERIFY_ARE_EQUAL(1u, notDegenerate1._rowCountInRange(_pUiaData));
+        Microsoft::WRL::ComPtr<UiaTextRange> notDegenerate1;
+        Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&notDegenerate1,
+                                                        _pUiaData,
+                                                        &_dummyProvider,
+                                                        20,
+                                                        20,
+                                                        false);
+        VERIFY_IS_FALSE(notDegenerate1->IsDegenerate());
+        VERIFY_ARE_EQUAL(1u, notDegenerate1->_rowCountInRange(_pUiaData));
     }
 
     TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)

@@ -6,19 +6,7 @@
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
-
-// Inspired from RETURN_IF_WIN32_BOOL_FALSE
-// WIL doesn't include a RETURN_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
-//  will actually return the value of GLE.
-#define RETURN_IF_FALSE(b)                    \
-    do                                        \
-    {                                         \
-        BOOL __boolRet = wil::verify_bool(b); \
-        if (!__boolRet)                       \
-        {                                     \
-            return b;                         \
-        }                                     \
-    } while (0, 0)
+#include "../../types/inc/utils.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -39,17 +27,14 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
                              AdaptDefaults* const pDefaults) :
     _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
+    _usingAltBuffer(false),
     _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
-    _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
     _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _fChangedBackground(false),
     _fChangedForeground(false),
     _fChangedMetaAttrs(false),
     _TermOutput()
 {
-    // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
-    _coordSavedCursor.X = 1;
-    _coordSavedCursor.Y = 1;
     _srScrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
@@ -427,12 +412,14 @@ bool AdaptDispatch::CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned
 }
 
 // Routine Description:
-// - DECSC - Saves the current cursor position into a memory buffer.
+// - DECSC - Saves the current "cursor state" into a memory buffer. This
+//   includes the cursor position, origin mode, graphic rendition, and
+//   active character set.
 // Arguments:
 // - <none>
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorSavePosition()
+bool AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -440,6 +427,9 @@ bool AdaptDispatch::CursorSavePosition()
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
     bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
+
+    TextAttribute attributes;
+    fSuccess = fSuccess && !!(_conApi->PrivateGetTextAttributes(&attributes));
 
     if (fSuccess)
     {
@@ -450,32 +440,53 @@ bool AdaptDispatch::CursorSavePosition()
         SMALL_RECT const srViewport = csbiex.srWindow;
 
         // VT is also 1 based, not 0 based, so correct by 1.
-        _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1;
-        _coordSavedCursor.Y = coordCursor.Y - srViewport.Top + 1;
-        _fIsSavedOriginModeRelative = _fIsOriginModeRelative;
+        auto& savedCursorState = _savedCursorState[_usingAltBuffer];
+        savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
+        savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
+        savedCursorState.IsOriginModeRelative = _fIsOriginModeRelative;
+        savedCursorState.Attributes = attributes;
+        savedCursorState.TermOutput = _TermOutput;
     }
 
     return fSuccess;
 }
 
 // Routine Description:
-// - DECRC - Restores a saved cursor position from the DECSC command back into the console state.
-// - If no position was set, this defaults to the top left corner (see AdaptDispatch constructor.)
+// - DECRC - Restores a saved "cursor state" from the DECSC command back into
+//   the console state. This includes the cursor position, origin mode, graphic
+//   rendition, and active character set.
 // Arguments:
 // - <none>
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::CursorRestorePosition()
+bool AdaptDispatch::CursorRestoreState()
 {
-    unsigned int const uiRow = _coordSavedCursor.Y;
-    unsigned int const uiCol = _coordSavedCursor.X;
+    auto& savedCursorState = _savedCursorState[_usingAltBuffer];
+
+    auto uiRow = savedCursorState.Row;
+    auto uiCol = savedCursorState.Column;
+
+    // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
+    // we need to make sure the restored position is clamped within the margins.
+    if (savedCursorState.IsOriginModeRelative && _srScrollMargins.Bottom != 0)
+    {
+        // VT origin is at 1,1 so we need to add 1 to these margins.
+        uiRow = std::clamp(uiRow, _srScrollMargins.Top + 1u, _srScrollMargins.Bottom + 1u);
+    }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _fIsOriginModeRelative = false;
-    bool const fSuccess = _CursorMovePosition(&uiRow, &uiCol);
+    bool fSuccess = _CursorMovePosition(&uiRow, &uiCol);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _fIsOriginModeRelative = _fIsSavedOriginModeRelative;
+    _fIsOriginModeRelative = savedCursorState.IsOriginModeRelative;
+
+    // Restore text attributes.
+    fSuccess = !!(_conApi->PrivateSetTextAttributes(savedCursorState.Attributes)) && fSuccess;
+
+    // Restore designated character set.
+    _TermOutput = savedCursorState.TermOutput;
+
     return fSuccess;
 }
 
@@ -504,22 +515,22 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT sDistance;
-    RETURN_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
 
-    // get current cursor, viewport
+    // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    RETURN_IF_FALSE(_conApi->MoveToBottom());
-    RETURN_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
+    RETURN_BOOL_IF_FALSE(_conApi->MoveToBottom());
+    RETURN_BOOL_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
-    const auto viewport = Viewport::FromExclusive(csbiex.srWindow);
-    // Rectangle to cut out of the existing buffer
+    // Rectangle to cut out of the existing buffer. This is inclusive.
+    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = viewport.RightExclusive();
+    srScroll.Right = SHORT_MAX;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -541,85 +552,16 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     }
     else
     {
-        // for delete, we need to add to the scroll region to move it off toward the right.
-        fSuccess = SUCCEEDED(ShortAdd(srScroll.Left, sDistance, &srScroll.Left));
+        // Delete scrolls the affected region to the left, relying on the clipping rect to actually delete the characters.
+        fSuccess = SUCCEEDED(ShortSub(coordDestination.X, sDistance, &coordDestination.X));
     }
 
     if (fSuccess)
     {
-        if (srScroll.Left >= viewport.RightExclusive() ||
-            coordDestination.X >= viewport.RightExclusive())
-        {
-            DWORD const nLength = viewport.RightExclusive() - cursor.X;
-            size_t written = 0;
-
-            // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-            fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
-                                                              nLength,
-                                                              cursor,
-                                                              written);
-
-            if (fSuccess)
-            {
-                written = 0;
-                fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
-                                                                 nLength,
-                                                                 cursor,
-                                                                 written);
-            }
-        }
-        else
-        {
-            // clip inside the viewport.
-            fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
-                                                             &csbiex.srWindow,
-                                                             coordDestination,
-                                                             &ciFill);
-
-            if (fSuccess && !fIsInsert)
-            {
-                // See MSFT:19888564
-                // We've now shifted a number of the characters to the left.
-                // If the number of chars we've shifted doesn't fill the
-                //      entire region we deleted, then artifacts of the
-                //      previous contents of the row can get left behind.
-                //
-                // Example: (this is tested by DeleteCharsNearEndOfLineSimpleFirstCase)
-                // start with the following buffer contents, and the cursor on the "D"
-                // [ABCDEFG ]
-                //     ^
-                // When you DCH(3) here, we are trying to delete the D, E and F.
-                // We do that by shifting the contents of the line after the deleted
-                // characters to the left. HOWEVER, there are only 2 chars left to move.
-                // So (before the fix) the buffer end up like this:
-                // [ABCG F  ]
-                //     ^
-                // The G and " " have moved, but the F did not get overwritten.
-                //
-                // Fill the remaining space after the characters we
-                //      shifted with spaces (empty cells).
-                const short scrolledChars = viewport.RightExclusive() - srScroll.Left;
-                const short shiftedRightPos = cursor.X + scrolledChars;
-                if (shiftedRightPos < srScroll.Left)
-                {
-                    size_t written = 0;
-                    const short spacesToFill = viewport.RightInclusive() - (shiftedRightPos);
-                    const COORD fillPos{ shiftedRightPos, cursor.Y };
-                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
-                                                                      spacesToFill,
-                                                                      fillPos,
-                                                                      written);
-                    if (fSuccess)
-                    {
-                        written = 0;
-                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
-                                                                         spacesToFill,
-                                                                         fillPos,
-                                                                         written);
-                    }
-                }
-            }
-        }
+        fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
+                                                         &srScroll,
+                                                         coordDestination,
+                                                         &ciFill);
     }
 
     return fSuccess;
@@ -1025,14 +967,24 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
 
         if (fSuccess)
         {
-            SMALL_RECT srScreen = csbiex.srWindow;
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+            SMALL_RECT srScreen;
+            srScreen.Left = 0;
+            srScreen.Right = SHORT_MAX;
+            srScreen.Top = csbiex.srWindow.Top;
+            srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
+            // Clip to the DECSTBM margin boundaries
+            if (_srScrollMargins.Top < _srScrollMargins.Bottom)
+            {
+                srScreen.Top = csbiex.srWindow.Top + _srScrollMargins.Top;
+                srScreen.Bottom = csbiex.srWindow.Top + _srScrollMargins.Bottom;
+            }
 
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = srScreen.Left;
-            // Scroll starting from the top of the scroll margins.
-            coordDestination.Y = (_srScrollMargins.Top + srScreen.Top) + sDistance * (sdDirection == ScrollDirection::Up ? -1 : 1);
-            // We don't need to worry about clipping the margins at all, ScrollRegion inside conhost will do that correctly for us
+            coordDestination.Y = srScreen.Top + sDistance * (sdDirection == ScrollDirection::Up ? -1 : 1);
 
             // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
             CHAR_INFO ciFill;
@@ -1420,7 +1372,16 @@ bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseAlternateScreenBuffer()
 {
-    return !!_conApi->PrivateUseAlternateScreenBuffer();
+    bool fSuccess = CursorSaveState();
+    if (fSuccess)
+    {
+        fSuccess = !!_conApi->PrivateUseAlternateScreenBuffer();
+        if (fSuccess)
+        {
+            _usingAltBuffer = true;
+        }
+    }
+    return fSuccess;
 }
 
 // Routine Description:
@@ -1432,7 +1393,16 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseMainScreenBuffer()
 {
-    return !!_conApi->PrivateUseMainScreenBuffer();
+    bool fSuccess = !!_conApi->PrivateUseMainScreenBuffer();
+    if (fSuccess)
+    {
+        _usingAltBuffer = false;
+        if (fSuccess)
+        {
+            fSuccess = CursorRestoreState();
+        }
+    }
+    return fSuccess;
 }
 
 //Routine Description:
@@ -1572,9 +1542,11 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        // Save cursor state: Home position; Absolute addressing.
-        _coordSavedCursor = { 1, 1 };
-        _fIsSavedOriginModeRelative = false;
+        // Reset the saved cursor state.
+        // Note that XTerm only resets the main buffer state, but that
+        // seems likely to be a bug. Most other terminals reset both.
+        _savedCursorState[0] = {}; // Main buffer
+        _savedCursorState[1] = {}; // Alt buffer
     }
 
     return fSuccess;

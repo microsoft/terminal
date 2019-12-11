@@ -36,7 +36,11 @@ class Microsoft::Terminal::Core::Terminal final :
 {
 public:
     Terminal();
-    virtual ~Terminal(){};
+    ~Terminal(){};
+    Terminal(const Terminal&) = default;
+    Terminal(Terminal&&) = default;
+    Terminal& operator=(const Terminal&) = default;
+    Terminal& operator=(Terminal&&) = default;
 
     void Create(COORD viewportSize,
                 SHORT scrollbackLines,
@@ -82,10 +86,14 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const Microsoft::Terminal::Core::ControlKeyStates states) override;
+    bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
+    bool SendCharEvent(const wchar_t ch) override;
+
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
+
+    void TrySnapOnInput() override;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -119,7 +127,9 @@ public:
     const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+    const COORD GetSelectionAnchor() const override;
     const std::wstring GetConsoleTitle() const noexcept override;
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
@@ -152,19 +162,27 @@ private:
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
     std::wstring _title;
+    std::wstring _startingTitle;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 
     bool _snapOnInput;
+    bool _suppressApplicationTitle;
 
 #pragma region Text Selection
-    enum SelectionExpansionMode
+    enum class SelectionExpansionMode
     {
         Cell,
         Word,
         Line
+    };
+    enum class DelimiterClass
+    {
+        ControlChar,
+        DelimiterChar,
+        RegularChar
     };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
@@ -172,8 +190,7 @@ private:
     bool _selectionActive;
     bool _allowSingleCharSelection;
     bool _copyOnSelect;
-    SHORT _selectionAnchor_YOffset;
-    SHORT _endSelectionPosition_YOffset;
+    SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -202,6 +219,9 @@ private:
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we sohould make this behavior controlled by a setting.
 
+    static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
+    static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
+
     int _ViewStartIndex() const noexcept;
     int _VisibleStartIndex() const noexcept;
 
@@ -216,13 +236,16 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<SMALL_RECT> _GetSelectionRects() const;
-    const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
-    const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
+    SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
     COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
-    const bool _isWordDelimiter(std::wstring_view cellChar) const;
-    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    const bool _isSingleCellSelection() const noexcept;
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar) const noexcept;
+    COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    const bool _IsSingleCellSelection() const noexcept;
+    std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
+    SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
+    void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 #pragma endregion
 };

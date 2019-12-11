@@ -20,7 +20,6 @@ namespace Microsoft.Terminal.Settings
     interface IControlSettings requires Microsoft.Terminal.Settings.ICoreSettings
     {
         Boolean UseAcrylic;
-        Boolean CloseOnExit;
         Double TintOpacity;
         ScrollbarState ScrollState;
 
@@ -32,7 +31,6 @@ namespace Microsoft.Terminal.Settings
 
         String Commandline;
         String StartingDirectory;
-        String StartingTitle;
         String EnvironmentVariables;
 
         String BackgroundImage;
@@ -40,5 +38,7 @@ namespace Microsoft.Terminal.Settings
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+
+        UInt32 SelectionBackground;
     };
 }

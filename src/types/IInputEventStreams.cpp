@@ -57,7 +57,7 @@ std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent
         L"keyCode: " << pKeyEvent->_virtualKeyCode << L", " <<
         L"scanCode: " << pKeyEvent->_virtualScanCode << L", " <<
         L"char: " << charData << L", " <<
-        L"mods: " << pKeyEvent->_activeModifierKeys << L")";
+        L"mods: " << pKeyEvent->GetActiveModifierKeys() << L")";
     // clang-format on
 }
 

@@ -307,7 +307,7 @@ bool WddmConEngine::IsInitialized()
 [[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                                           COLORREF const /*colorBackground*/,
                                                           const WORD legacyColorAttribute,
-                                                          const bool /*isBold*/,
+                                                          const ExtendedAttributes /*extendedAttrs*/,
                                                           bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = legacyColorAttribute;

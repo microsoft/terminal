@@ -26,6 +26,7 @@ Author(s):
 
 #include <deque>
 #include <tuple>
+#include <wrl/implements.h>
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -73,7 +74,7 @@ constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Types
 {
-    class UiaTextRangeBase : public ITextRangeProvider
+    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
     {
     private:
         static IdType id;
@@ -129,7 +130,7 @@ namespace Microsoft::Console::Types
                       const Column firstColumnInRow,
                       const Column lastColumnInRow,
                       const MovementIncrement increment,
-                      const MovementDirection direction);
+                      const MovementDirection direction) noexcept;
 
 #ifdef UNIT_TESTING
             friend class ::UiaTextRangeTests;
@@ -137,102 +138,95 @@ namespace Microsoft::Console::Types
         };
 
     public:
-        virtual ~UiaTextRangeBase() = default;
+        // degenerate range
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider) noexcept;
 
-        const IdType GetId() const;
-        const Endpoint GetStart() const;
-        const Endpoint GetEnd() const;
-        const bool IsDegenerate() const;
+        // degenerate range at cursor position
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Cursor& cursor) noexcept;
+
+        // specific endpoint range
+        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                       _In_ IRawElementProviderSimple* const pProvider,
+                                       const Endpoint start,
+                                       const Endpoint end,
+                                       const bool degenerate) noexcept;
+
+        HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
+
+        UiaTextRangeBase(UiaTextRangeBase&&) = default;
+        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
+        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
+        ~UiaTextRangeBase() = default;
+
+        const IdType GetId() const noexcept;
+        const Endpoint GetStart() const noexcept;
+        const Endpoint GetEnd() const noexcept;
+        const bool IsDegenerate() const noexcept;
 
         // TODO GitHub #605:
         // only used for UiaData::FindText. Remove after Search added properly
-        void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate);
-
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef();
-        IFACEMETHODIMP_(ULONG)
-        Release();
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface);
+        void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate) noexcept;
 
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
-        IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal);
+        IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept override;
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
                                         _In_ TextPatternRangeEndpoint targetEndpoint,
-                                        _Out_ int* pRetVal);
-        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit);
+                                        _Out_ int* pRetVal) noexcept override;
+        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) override;
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                      _In_ VARIANT val,
                                      _In_ BOOL searchBackward,
-                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept override;
         virtual IFACEMETHODIMP FindText(_In_ BSTR text,
                                         _In_ BOOL searchBackward,
                                         _In_ BOOL ignoreCase,
                                         _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                         _Out_ VARIANT* pRetVal);
-        IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-        IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
+                                         _Out_ VARIANT* pRetVal) noexcept override;
+        IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
+        IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) override;
         IFACEMETHODIMP GetText(_In_ int maxLength,
-                               _Out_ BSTR* pRetVal);
+                               _Out_ BSTR* pRetVal) override;
         IFACEMETHODIMP Move(_In_ TextUnit unit,
                             _In_ int count,
-                            _Out_ int* pRetVal);
+                            _Out_ int* pRetVal) override;
         IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                           _In_ TextUnit unit,
                                           _In_ int count,
-                                          _Out_ int* pRetVal);
+                                          _Out_ int* pRetVal) override;
         IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                            _In_ ITextRangeProvider* pTargetRange,
-                                           _In_ TextPatternRangeEndpoint targetEndpoint);
-        IFACEMETHODIMP Select();
-        IFACEMETHODIMP AddToSelection();
-        IFACEMETHODIMP RemoveFromSelection();
-        IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop);
-        IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+                                           _In_ TextPatternRangeEndpoint targetEndpoint) override;
+        IFACEMETHODIMP Select() override;
+        IFACEMETHODIMP AddToSelection() noexcept override;
+        IFACEMETHODIMP RemoveFromSelection() noexcept override;
+        IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) override;
+        IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
 
     protected:
+        UiaTextRangeBase() = default;
 #if _DEBUG
         void _outputRowConversions(IUiaData* pData);
         void _outputObjectState();
 #endif
-        IUiaData* const _pData;
+        IUiaData* _pData;
 
-        wil::com_ptr<IRawElementProviderSimple> const _pProvider;
+        IRawElementProviderSimple* _pProvider;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
-        // degenerate range
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider);
-
-        // degenerate range at cursor position
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider,
-                         const Cursor& cursor);
-
-        // specific endpoint range
-        UiaTextRangeBase(_In_ IUiaData* pData,
-                         _In_ IRawElementProviderSimple* const pProvider,
-                         const Endpoint start,
-                         const Endpoint end,
-                         const bool degenerate);
-
         void Initialize(_In_ const UiaPoint point);
-
-        UiaTextRangeBase(const UiaTextRangeBase& a);
 
         // used to debug objects passed back and forth
         // between the provider and the client
         IdType _id;
-
-        // Ref counter for COM object
-        ULONG _cRefs;
 
         // measure units in the form [_start, _end]. _start
         // may be a bigger number than _end if the range
@@ -259,126 +253,136 @@ namespace Microsoft::Console::Types
 
         RECT _getTerminalRect() const;
 
-        static const COORD _getScreenBufferCoords(IUiaData* pData);
+        static const COORD _getScreenBufferCoords(gsl::not_null<IUiaData*> pData);
         virtual const COORD _getScreenFontSize() const;
 
-        static const unsigned int _getTotalRows(IUiaData* pData);
-        static const unsigned int _getRowWidth(IUiaData* pData);
+        static const unsigned int _getTotalRows(gsl::not_null<IUiaData*> pData) noexcept;
+        static const unsigned int _getRowWidth(gsl::not_null<IUiaData*> pData);
 
-        static const unsigned int _getFirstScreenInfoRowIndex();
-        static const unsigned int _getLastScreenInfoRowIndex(IUiaData* pData);
+        static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
+        static const unsigned int _getLastScreenInfoRowIndex(gsl::not_null<IUiaData*> pData) noexcept;
 
-        static const Column _getFirstColumnIndex();
-        static const Column _getLastColumnIndex(IUiaData* pData);
+        static const Column _getFirstColumnIndex() noexcept;
+        static const Column _getLastColumnIndex(gsl::not_null<IUiaData*> pData);
 
-        const unsigned int _rowCountInRange(IUiaData* pData) const;
+        const unsigned int _rowCountInRange(gsl::not_null<IUiaData*> pData) const;
 
-        static const TextBufferRow _endpointToTextBufferRow(IUiaData* pData,
+        static const TextBufferRow _endpointToTextBufferRow(gsl::not_null<IUiaData*> pData,
                                                             const Endpoint endpoint);
-        static const ScreenInfoRow _textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                 const TextBufferRow row);
+        static const ScreenInfoRow _textBufferRowToScreenInfoRow(gsl::not_null<IUiaData*> pData,
+                                                                 const TextBufferRow row) noexcept;
 
-        static const TextBufferRow _screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                 const ScreenInfoRow row);
-        static const Endpoint _textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row);
+        static const TextBufferRow _screenInfoRowToTextBufferRow(gsl::not_null<IUiaData*> pData,
+                                                                 const ScreenInfoRow row) noexcept;
+        static const Endpoint _textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row);
 
-        static const ScreenInfoRow _endpointToScreenInfoRow(IUiaData* pData,
+        static const ScreenInfoRow _endpointToScreenInfoRow(gsl::not_null<IUiaData*> pData,
                                                             const Endpoint endpoint);
-        static const Endpoint _screenInfoRowToEndpoint(IUiaData* pData,
+        static const Endpoint _screenInfoRowToEndpoint(gsl::not_null<IUiaData*> pData,
                                                        const ScreenInfoRow row);
 
-        static COORD _endpointToCoord(IUiaData* pData,
+        static COORD _endpointToCoord(gsl::not_null<IUiaData*> pData,
                                       const Endpoint endpoint);
-        static Endpoint _coordToEndpoint(IUiaData* pData,
+        static Endpoint _coordToEndpoint(gsl::not_null<IUiaData*> pData,
                                          const COORD coord);
 
-        static const Column _endpointToColumn(IUiaData* pData,
+        static const Column _endpointToColumn(gsl::not_null<IUiaData*> pData,
                                               const Endpoint endpoint);
 
-        static const Row _normalizeRow(IUiaData* pData, const Row row);
+        static const Row _normalizeRow(gsl::not_null<IUiaData*> pData, const Row row) noexcept;
 
-        static const ViewportRow _screenInfoRowToViewportRow(IUiaData* pData,
-                                                             const ScreenInfoRow row);
-        static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                             const SMALL_RECT viewport);
+        static const ViewportRow _screenInfoRowToViewportRow(gsl::not_null<IUiaData*> pData,
+                                                             const ScreenInfoRow row) noexcept;
+        // Routine Description:
+        // - Converts a ScreenInfoRow to a ViewportRow.
+        // Arguments:
+        // - row - the ScreenInfoRow to convert
+        // - viewport - the viewport to use for the conversion
+        // Return Value:
+        // - the equivalent ViewportRow.
+        static constexpr const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
+                                                                       const SMALL_RECT viewport) noexcept
+        {
+            return row - viewport.Top;
+        }
 
-        static const bool _isScreenInfoRowInViewport(IUiaData* pData,
-                                                     const ScreenInfoRow row);
+        static const bool _isScreenInfoRowInViewport(gsl::not_null<IUiaData*> pData,
+                                                     const ScreenInfoRow row) noexcept;
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                     const SMALL_RECT viewport);
+                                                     const SMALL_RECT viewport) noexcept;
 
-        static const unsigned int _getViewportHeight(const SMALL_RECT viewport);
-        static const unsigned int _getViewportWidth(const SMALL_RECT viewport);
+        static const unsigned int _getViewportHeight(const SMALL_RECT viewport) noexcept;
+        static const unsigned int _getViewportWidth(const SMALL_RECT viewport) noexcept;
 
-        void _addScreenInfoRowBoundaries(IUiaData* pData,
+        void _addScreenInfoRowBoundaries(gsl::not_null<IUiaData*> pData,
                                          const ScreenInfoRow screenInfoRow,
                                          _Inout_ std::vector<double>& coords) const;
 
-        static const int _compareScreenCoords(IUiaData* pData,
+        static const int _compareScreenCoords(gsl::not_null<IUiaData*> pData,
                                               const ScreenInfoRow rowA,
                                               const Column colA,
                                               const ScreenInfoRow rowB,
                                               const Column colB);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacter(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacter(gsl::not_null<IUiaData*> pData,
                                                               const int moveCount,
                                                               const MoveState moveState,
-                                                              _Out_ int* const pAmountMoved);
+                                                              _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(gsl::not_null<IUiaData*> pData,
                                                                      const int moveCount,
                                                                      const MoveState moveState,
-                                                                     _Out_ int* const pAmountMoved);
+                                                                     _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(gsl::not_null<IUiaData*> pData,
                                                                       const int moveCount,
                                                                       const MoveState moveState,
-                                                                      _Out_ int* const pAmountMoved);
+                                                                      _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByLine(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
-                                                         _Out_ int* const pAmountMoved);
+                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByDocument(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByDocument(gsl::not_null<IUiaData*> pData,
                                                              const int moveCount,
                                                              const MoveState moveState,
-                                                             _Out_ int* const pAmountMoved);
+                                                             _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacter(IUiaData* pData,
+        _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
                                      const int moveCount,
                                      const TextPatternRangeEndpoint endpoint,
                                      const MoveState moveState,
-                                     _Out_ int* const pAmountMoved);
+                                     _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterForward(IUiaData* pData,
+        _moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> pData,
                                             const int moveCount,
                                             const TextPatternRangeEndpoint endpoint,
                                             const MoveState moveState,
-                                            _Out_ int* const pAmountMoved);
+                                            _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterBackward(IUiaData* pData,
+        _moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> pData,
                                              const int moveCount,
                                              const TextPatternRangeEndpoint endpoint,
                                              const MoveState moveState,
-                                             _Out_ int* const pAmountMoved);
+                                             _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitLine(IUiaData* pData,
+        _moveEndpointByUnitLine(gsl::not_null<IUiaData*> pData,
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
-                                _Out_ int* const pAmountMoved);
+                                _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitDocument(IUiaData* pData,
+        _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
                                     const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
-                                    _Out_ int* const pAmountMoved);
+                                    _Out_ gsl::not_null<int*> const pAmountMoved);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
@@ -390,9 +394,6 @@ namespace Microsoft::Console::Types
         enum class ApiCall
         {
             Constructor,
-            AddRef,
-            Release,
-            QueryInterface,
             Clone,
             Compare,
             CompareEndpoints,

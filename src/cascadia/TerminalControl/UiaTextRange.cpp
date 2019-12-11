@@ -7,152 +7,83 @@
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::WRL;
 
-std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
-                                                           _In_ IRawElementProviderSimple* pProvider)
+HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
+                                         _In_ IRawElementProviderSimple* pProvider,
+                                         _Out_ std::deque<ComPtr<UiaTextRange>>& ranges)
 {
-    std::deque<UiaTextRange*> ranges;
-
-    // get the selection rects
-    const auto rectangles = pData->GetSelectionRects();
-
-    // create a range for each row
-    for (const auto& rect : rectangles)
+    try
     {
-        ScreenInfoRow currentRow = rect.Top();
-        Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
-        Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
-        UiaTextRange* range = UiaTextRange::Create(pData,
-                                                   pProvider,
-                                                   start,
-                                                   end,
-                                                   false);
-        if (range == nullptr)
+        typename std::remove_reference<decltype(ranges)>::type temporaryResult;
+
+        // get the selection rects
+        const auto rectangles = pData->GetSelectionRects();
+
+        // create a range for each row
+        for (const auto& rect : rectangles)
         {
-            // something went wrong, clean up and throw
-            while (!ranges.empty())
-            {
-                UiaTextRangeBase* temp = ranges[0];
-                ranges.pop_front();
-            }
-            THROW_HR(E_INVALIDARG);
+            ScreenInfoRow currentRow = rect.Top();
+            Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
+            Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
+
+            ComPtr<UiaTextRange> range;
+            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false));
+            temporaryResult.emplace_back(std::move(range));
         }
-        else
-        {
-            ranges.push_back(range);
-        }
+        std::swap(temporaryResult, ranges);
+        return S_OK;
     }
-    return ranges;
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider)
-{
-    try
-    {
-        return new UiaTextRange(pData, pProvider);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor& cursor)
-{
-    try
-    {
-        return new UiaTextRange(pData, pProvider, cursor);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Endpoint start,
-                                   const Endpoint end,
-                                   const bool degenerate)
-{
-    try
-    {
-        return new UiaTextRange(pData,
-                                pProvider,
-                                start,
-                                end,
-                                degenerate);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const UiaPoint point)
-{
-    try
-    {
-        return new UiaTextRange(pData, pProvider, point);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
+    CATCH_RETURN();
 }
 
 // degenerate range constructor.
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
-    UiaTextRangeBase(pData, pProvider)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider)
 {
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider);
 }
 
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const Cursor& cursor) :
-    UiaTextRangeBase(pData, pProvider, cursor)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const Cursor& cursor)
 {
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor);
 }
 
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const Endpoint start,
-                           const Endpoint end,
-                           const bool degenerate) :
-    UiaTextRangeBase(pData, pProvider, start, end, degenerate)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const Endpoint start,
+                                             const Endpoint end,
+                                             const bool degenerate)
 {
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, degenerate);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const UiaPoint point) :
-    UiaTextRangeBase(pData, pProvider)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const UiaPoint point)
 {
+    RETURN_IF_FAILED(UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider));
     Initialize(point);
+    return S_OK;
+}
+
+HRESULT UiaTextRange::RuntimeClassInitialize(const UiaTextRange& a)
+{
+    return UiaTextRangeBase::RuntimeClassInitialize(a);
 }
 
 IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
-    try
-    {
-        *ppRetVal = new UiaTextRange(*this);
-    }
-    catch (...)
+    auto hr = MakeAndInitialize<UiaTextRange>(ppRetVal, *this);
+
+    if (hr != S_OK)
     {
         *ppRetVal = nullptr;
-        return wil::ResultFromCaughtException();
-    }
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
+        return hr;
     }
 
 #if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
@@ -172,10 +103,10 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                      _In_ BOOL searchBackward,
-                                      _In_ BOOL ignoreCase,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
+                                      _In_ BOOL /*searchBackward*/,
+                                      _In_ BOOL /*ignoreCase*/,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
     // TODO GitHub #605: Search functionality
     return E_NOTIMPL;
@@ -195,7 +126,7 @@ void UiaTextRange::_ChangeViewport(const SMALL_RECT /*NewWindow*/)
 // - <none>
 void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 {
-    auto provider = static_cast<TermControlUiaProvider*>(_pProvider.get());
+    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
     // update based on TermControl location (important for Panes)
     UiaRect boundingRect;
@@ -219,6 +150,6 @@ const COORD UiaTextRange::_getScreenFontSize() const
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to
     // ask our parent to get it for us.
-    auto provider = static_cast<TermControlUiaProvider*>(_pProvider.get());
+    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
     return provider->GetFontSize();
 }

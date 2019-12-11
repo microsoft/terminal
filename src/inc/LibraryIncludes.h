@@ -44,6 +44,7 @@
 #include <filesystem>
 #include <functional>
 #include <set>
+#include <unordered_set>
 
 // WIL
 #include <wil/Common.h>
@@ -53,12 +54,15 @@
 #include <wil/stl.h>
 #include <wil/com.h>
 #include <wil/filesystem.h>
+#include <wil/win32_helpers.h>
 
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
+#ifndef BLOCK_GSL
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
+#endif
 
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
@@ -69,6 +73,9 @@
 
 // SAL
 #include <sal.h>
+
+// WRL
+#include <wrl.h>
 
 #pragma warning(pop)
 

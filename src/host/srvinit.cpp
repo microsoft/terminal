@@ -46,7 +46,7 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
         Globals.pFontDefaultList = new RenderFontDefaults();
 
-        FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
+        FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
     }
     CATCH_RETURN();
 
@@ -139,6 +139,17 @@ static bool s_IsOnDesktop()
             reg.LoadFromRegistry(Title);
         }
     }
+    else
+    {
+        // microsoft/terminal#1965 - Let's just always enable VT processing by
+        // default for conpty clients. This prevents peculiar differences in
+        // behavior between conhost and terminal applications when the user has
+        // VirtualTerminalLevel=1 in their registry.
+        // We want everyone to be using VT by default anyways, so this is a
+        // strong nudge in that direction. If an application _doesn't_ want VT
+        // processing, it's free to disable this setting, even in conpty mode.
+        settings.SetVirtTermLevel(1);
+    }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings.ApplyStartupInfo(pStartupSettings);
@@ -176,7 +187,7 @@ static bool s_IsOnDesktop()
     //Save initial font name for comparison on exit. We want telemetry when the font has changed
     if (settings.IsFaceNameSet())
     {
-        settings.SetLaunchFaceName(settings.GetFaceName(), LF_FACESIZE);
+        settings.SetLaunchFaceName(settings.GetFaceName());
     }
 
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
@@ -490,6 +501,18 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     return STATUS_SUCCESS;
 }
 
+[[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p)
+{
+    Globals& g = ServiceLocator::LocateGlobals();
+    // processes that are created ...
+    //  ... with CREATE_NO_WINDOW never get a window.
+    //  ... on Desktop, with a visible window always get one (even a fake one)
+    //  ... not on Desktop, with a visible window only get one if we are headful (not ConPTY).
+    //  This prevents pseudoconsole-hosted applications from taking over the screen,
+    //  even if they really beg us for a window.
+    return p->WindowVisible && (s_IsOnDesktop() || !g.IsHeadless());
+}
+
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
@@ -534,7 +557,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    if (NT_SUCCESS(Status) && p->WindowVisible)
+    if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {
         HANDLE Thread = nullptr;
 
@@ -557,8 +580,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             g.hConsoleInputInitEvent.wait();
             LockConsole();
 
-            CloseHandle(Thread);
-            g.hConsoleInputInitEvent.release();
+            // OK, we've been told that the input thread is done initializing under lock.
+            // Cleanup the handles and events we used to maintain our virtual lock passing dance.
+
+            CloseHandle(Thread); // This doesn't stop the thread from running.
 
             if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
             {

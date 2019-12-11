@@ -42,7 +42,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     Next{ nullptr },
     WriteConsoleDbcsLeadByte{ 0, 0 },
     FillOutDbcsLeadChar{ 0 },
-    // LineChar initialized below.
     ConvScreenInfo{ nullptr },
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
@@ -62,12 +61,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo }
 {
-    LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
-    LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
-    LineChar[2] = UNICODE_BOX_DRAW_LIGHT_HORIZONTAL;
-    LineChar[3] = UNICODE_BOX_DRAW_LIGHT_VERTICAL;
-    LineChar[4] = UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT;
-    LineChar[5] = UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT;
+    // Check if VT mode is enabled. Note that this can be true w/o calling
+    // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetVirtTermLevel() != 0)
     {
@@ -131,6 +126,16 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
+
+        if (pScreen->InVTMode())
+        {
+            // microsoft/terminal#411: If VT mode is enabled, lets construct the
+            // VT tab stops. Without this line, if a user has
+            // VirtualTerminalLevel set, then
+            // SetConsoleMode(ENABLE_VIRTUAL_TERMINAL_PROCESSING) won't set our
+            // tab stops, because we're never going from vt off -> on
+            pScreen->SetDefaultVtTabStops();
+        }
 
         if (NT_SUCCESS(status))
         {
@@ -2027,7 +2032,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          WindowSize,
                                                          GetAttributes(),
                                                          *GetPopupAttributes(),
-                                                         CURSOR_SMALL_SIZE,
+                                                         Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
@@ -2206,12 +2211,7 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexce
 {
     COORD cNewCursorPos = cCurrCursorPos;
     SHORT sWidth = GetBufferSize().RightInclusive();
-    if (cCurrCursorPos.X == sWidth)
-    {
-        cNewCursorPos.X = 0;
-        cNewCursorPos.Y += 1;
-    }
-    else if (_tabStops.empty() || cCurrCursorPos.X >= _tabStops.back())
+    if (_tabStops.empty() || cCurrCursorPos.X >= _tabStops.back())
     {
         cNewCursorPos.X = sWidth;
     }
@@ -2222,7 +2222,8 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexce
         {
             if (*it > cCurrCursorPos.X)
             {
-                cNewCursorPos.X = *it;
+                // make sure we don't exceed the width of the buffer
+                cNewCursorPos.X = std::min(*it, sWidth);
                 break;
             }
         }
@@ -2586,14 +2587,17 @@ OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it)
 // Arguments:
 // - it - Iterator representing output cell data to write.
 // - target - The position to start writing at
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
 // Return Value:
 // - the iterator at its final position
 // Note:
 // - will throw exception on error.
 OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it,
-                                             const COORD target)
+                                             const COORD target,
+                                             const std::optional<bool> wrap)
 {
-    return _textBuffer->Write(it, target);
+    // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
+    return _textBuffer->Write(it, target, wrap);
 }
 
 // Routine Description:

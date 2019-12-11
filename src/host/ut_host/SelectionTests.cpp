@@ -414,6 +414,7 @@ class SelectionInputTests
 
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalInputBuffer();
 
         return true;
     }
@@ -422,6 +423,7 @@ class SelectionInputTests
     {
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
+        m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
 

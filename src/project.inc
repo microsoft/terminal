@@ -26,7 +26,6 @@ USE_NATIVE_EH           = 1
 # -------------------------------------
 
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS            = $(USER_C_FLAGS) /std:c++17
 
 # -------------------------------------
 # Common Console Includes and Libraries
@@ -39,6 +38,7 @@ INCLUDES= \
     $(CONSOLE_SRC_PATH)\inc; \
     $(CONSOLE_SRC_PATH)\..\..\inc; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
+    $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(ONECORE_INTERNAL_SDK_INC_PATH); \
     $(ONECORE_EXTERNAL_SDK_INC_PATH); \

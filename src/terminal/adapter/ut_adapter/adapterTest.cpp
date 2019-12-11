@@ -47,12 +47,6 @@ enum class CursorDirection : unsigned int
     PREVLINE = 5
 };
 
-enum class ScrollDirection : unsigned int
-{
-    UP = 0,
-    DOWN = 1
-};
-
 enum class AbsolutePosition : unsigned int
 {
     CursorHorizontal = 0,
@@ -345,6 +339,30 @@ public:
         return !!_fPrivateBoldTextResult;
     }
 
+    BOOL PrivateGetExtendedTextAttributes(ExtendedAttributes* const /*pAttrs*/)
+    {
+        Log::Comment(L"PrivateGetExtendedTextAttributes MOCK called...");
+        return true;
+    }
+
+    BOOL PrivateSetExtendedTextAttributes(const ExtendedAttributes /*attrs*/)
+    {
+        Log::Comment(L"PrivateSetExtendedTextAttributes MOCK called...");
+        return true;
+    }
+
+    BOOL PrivateGetTextAttributes(TextAttribute* const /*pAttrs*/) const
+    {
+        Log::Comment(L"PrivateGetTextAttributes MOCK called...");
+        return true;
+    }
+
+    BOOL PrivateSetTextAttributes(const TextAttribute& /*attrs*/)
+    {
+        Log::Comment(L"PrivateSetTextAttributes MOCK called...");
+        return true;
+    }
+
     BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                    _Out_ size_t& eventsWritten) override
     {
@@ -395,113 +413,9 @@ public:
         return _fPrivateWriteConsoleControlInputResult;
     }
 
-    bool _IsInsideClip(const SMALL_RECT* const pClipRectangle, const SHORT iRow, const SHORT iCol)
-    {
-        if (pClipRectangle == nullptr)
-        {
-            return true;
-        }
-        else
-        {
-            return iRow >= pClipRectangle->Top && iRow < pClipRectangle->Bottom && iCol >= pClipRectangle->Left && iCol < pClipRectangle->Right;
-        }
-    }
-
-    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD dwDestinationOrigin, const CHAR_INFO* pFill) override
+    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* /*pScrollRectangle*/, _In_opt_ const SMALL_RECT* /*pClipRectangle*/, _In_ COORD /*dwDestinationOrigin*/, const CHAR_INFO* /*pFill*/) override
     {
         Log::Comment(L"ScrollConsoleScreenBufferW MOCK called...");
-
-        if (_fScrollConsoleScreenBufferWResult)
-        {
-            if (pClipRectangle != nullptr)
-            {
-                Log::Comment(NoThrowString().Format(
-                    L"\tScrolling Rectangle (T: %d, B: %d, L: %d, R: %d) "
-                    L"into new top-left coordinate (X: %d, Y:%d) with Fill ('%c', 0x%x) "
-                    L"clipping to (T: %d, B: %d, L: %d, R: %d)...",
-                    pScrollRectangle->Top,
-                    pScrollRectangle->Bottom,
-                    pScrollRectangle->Left,
-                    pScrollRectangle->Right,
-                    dwDestinationOrigin.X,
-                    dwDestinationOrigin.Y,
-                    pFill->Char.UnicodeChar,
-                    pFill->Attributes,
-                    pClipRectangle->Top,
-                    pClipRectangle->Bottom,
-                    pClipRectangle->Left,
-                    pClipRectangle->Right));
-            }
-            else
-            {
-                Log::Comment(NoThrowString().Format(
-                    L"\tScrolling Rectangle (T: %d, B: %d, L: %d, R: %d) "
-                    L"into new top-left coordinate (X: %d, Y:%d) with Fill ('%c', 0x%x) ",
-                    pScrollRectangle->Top,
-                    pScrollRectangle->Bottom,
-                    pScrollRectangle->Left,
-                    pScrollRectangle->Right,
-                    dwDestinationOrigin.X,
-                    dwDestinationOrigin.Y,
-                    pFill->Char.UnicodeChar,
-                    pFill->Attributes));
-            }
-
-            // allocate buffer space to hold scrolling rectangle
-            SHORT width = pScrollRectangle->Right - pScrollRectangle->Left;
-            SHORT height = pScrollRectangle->Bottom - pScrollRectangle->Top + 1;
-            size_t const cch = width * height;
-            CHAR_INFO* const ciBuffer = new CHAR_INFO[cch];
-            size_t cciFilled = 0;
-
-            Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %zu chars", cch));
-
-            for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
-            {
-                // back up space and fill it with the fill.
-                for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
-                {
-                    COORD coordTarget;
-                    coordTarget.X = (SHORT)iCharX;
-                    coordTarget.Y = iCharY;
-
-                    CHAR_INFO* const pciStored = _GetCharAt(coordTarget.Y, coordTarget.X);
-
-                    // back up to buffer
-                    ciBuffer[cciFilled] = *pciStored;
-                    cciFilled++;
-
-                    // fill with fill
-                    if (_IsInsideClip(pClipRectangle, coordTarget.Y, coordTarget.X))
-                    {
-                        *pciStored = *pFill;
-                    }
-                }
-            }
-            Log::Comment(NoThrowString().Format(L"\tCopied a total %zu chars", cciFilled));
-            Log::Comment(L"\tCopying chars back");
-            for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
-            {
-                // back up space and fill it with the fill.
-                for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
-                {
-                    COORD coordTarget;
-                    coordTarget.X = dwDestinationOrigin.X + (iCharX - pScrollRectangle->Left);
-                    coordTarget.Y = dwDestinationOrigin.Y + (iCharY - pScrollRectangle->Top);
-
-                    CHAR_INFO* const pciStored = _GetCharAt(coordTarget.Y, coordTarget.X);
-
-                    if (_IsInsideClip(pClipRectangle, coordTarget.Y, coordTarget.X) && _IsInsideClip(pClipRectangle, iCharY, iCharX))
-                    {
-                        size_t index = (width) * (iCharY - pScrollRectangle->Top) + (iCharX - pScrollRectangle->Left);
-                        CHAR_INFO charFromBuffer = ciBuffer[index];
-                        *pciStored = charFromBuffer;
-                    }
-                }
-            }
-
-            delete[] ciBuffer;
-        }
 
         return _fScrollConsoleScreenBufferWResult;
     }
@@ -978,55 +892,6 @@ public:
         }
     }
 
-    void InsertString(COORD coordTarget, PWSTR pwszText, WORD wAttr)
-    {
-        Log::Comment(NoThrowString().Format(L"Writing string '%s' to target (X: %d, Y:%d) with color/attr 0x%x", pwszText, coordTarget.X, coordTarget.Y, wAttr));
-
-        size_t cchModified = 0;
-
-        if (pwszText != nullptr)
-        {
-            size_t cch;
-            if (SUCCEEDED(StringCchLengthW(pwszText, STRSAFE_MAX_LENGTH, &cch)))
-            {
-                COORD coordInsertPoint = coordTarget;
-
-                for (size_t i = 0; i < cch; i++)
-                {
-                    CHAR_INFO* const pci = _GetCharAt(coordInsertPoint.Y, coordInsertPoint.X);
-                    pci->Char.UnicodeChar = pwszText[i];
-                    pci->Attributes = wAttr;
-
-                    _IncrementCoordPos(&coordInsertPoint);
-                    cchModified++;
-                }
-            }
-        }
-
-        Log::Comment(NoThrowString().Format(L"Wrote %zu characters into buffer.", cchModified));
-    }
-
-    void FillRectangle(SMALL_RECT srRect, wchar_t wch, WORD wAttr)
-    {
-        Log::Comment(NoThrowString().Format(L"Filling area (L: %d, R: %d, T: %d, B: %d) with '%c' in attr 0x%x", srRect.Left, srRect.Right, srRect.Top, srRect.Bottom, wch, wAttr));
-
-        size_t cchModified = 0;
-
-        for (SHORT iRow = srRect.Top; iRow < srRect.Bottom; iRow++)
-        {
-            for (SHORT iCol = srRect.Left; iCol < srRect.Right; iCol++)
-            {
-                CHAR_INFO* const pci = _GetCharAt(iRow, iCol);
-                pci->Char.UnicodeChar = wch;
-                pci->Attributes = wAttr;
-
-                cchModified++;
-            }
-        }
-
-        Log::Comment(NoThrowString().Format(L"Filled %zu characters.", cchModified));
-    }
-
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
         size_t const cchResponse = wcslen(pwszExpectedResponse);
@@ -1051,132 +916,6 @@ public:
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
         }
-    }
-
-    bool ValidateString(COORD const coordTarget, PCWSTR pwszText, WORD const wAttr)
-    {
-        Log::Comment(NoThrowString().Format(L"Validating that the string %s is written starting at (X: %d, Y: %d) with the color/attr 0x%x", pwszText, coordTarget.X, coordTarget.Y, wAttr));
-
-        bool fSuccess = true;
-
-        if (pwszText != nullptr)
-        {
-            size_t cch;
-            fSuccess = SUCCEEDED(StringCchLengthW(pwszText, STRSAFE_MAX_LENGTH, &cch));
-
-            if (fSuccess)
-            {
-                COORD coordGetPos = coordTarget;
-
-                for (size_t i = 0; i < cch; i++)
-                {
-                    const CHAR_INFO* const pci = _GetCharAt(coordGetPos.Y, coordGetPos.X);
-
-                    const wchar_t wchActual = pci->Char.UnicodeChar;
-                    const wchar_t wchExpected = pwszText[i];
-
-                    fSuccess = wchExpected == wchActual;
-
-                    if (!fSuccess)
-                    {
-                        Log::Comment(NoThrowString().Format(L"ValidateString failed char comparison at (X: %d, Y: %d). Expected: '%c' Actual: '%c'", coordGetPos.X, coordGetPos.Y, wchExpected, wchActual));
-                        break;
-                    }
-
-                    const WORD wAttrActual = pci->Attributes;
-                    const WORD wAttrExpected = wAttr;
-
-                    if (!fSuccess)
-                    {
-                        Log::Comment(NoThrowString().Format(L"ValidateString failed attr comparison at (X: %d, Y: %d). Expected: '0x%x' Actual: '0x%x'", coordGetPos.X, coordGetPos.Y, wAttrExpected, wAttrActual));
-                        break;
-                    }
-
-                    _IncrementCoordPos(&coordGetPos);
-                }
-            }
-        }
-
-        return fSuccess;
-    }
-
-    bool ValidateRectangleContains(SMALL_RECT srRect, wchar_t wchExpected, WORD wAttrExpected)
-    {
-        Log::Comment(NoThrowString().Format(L"Validating that the area inside (L: %d, R: %d, T: %d, B: %d) char '%c' and attr 0x%x", srRect.Left, srRect.Right, srRect.Top, srRect.Bottom, wchExpected, wAttrExpected));
-
-        bool fStateValid = true;
-
-        for (SHORT iRow = srRect.Top; iRow < srRect.Bottom; iRow++)
-        {
-            Log::Comment(NoThrowString().Format(L"Validating row(y=) %d", iRow));
-            for (SHORT iCol = srRect.Left; iCol < srRect.Right; iCol++)
-            {
-                CHAR_INFO* const pci = _GetCharAt(iRow, iCol);
-
-                fStateValid = pci->Char.UnicodeChar == wchExpected;
-                if (!fStateValid)
-                {
-                    Log::Comment(NoThrowString().Format(L"Region match failed at (X: %d, Y: %d). Expected: '%c'. Actual: '%c'", iCol, iRow, wchExpected, pci->Char.UnicodeChar));
-                    break;
-                }
-
-                fStateValid = pci->Attributes == wAttrExpected;
-                if (!fStateValid)
-                {
-                    Log::Comment(NoThrowString().Format(L"Region match failed at (X: %d, Y: %d). Expected Attr: 0x%x. Actual Attr: 0x%x", iCol, iRow, wAttrExpected, pci->Attributes));
-                }
-            }
-
-            if (!fStateValid)
-            {
-                break;
-            }
-        }
-
-        return fStateValid;
-    }
-
-    bool ValidateRectangleContains(SMALL_RECT srRect, wchar_t wchExpected, WORD wAttrExpected, SMALL_RECT srExcept)
-    {
-        bool fStateValid = true;
-
-        Log::Comment(NoThrowString().Format(L"Validating that the area inside (L: %d, R: %d, T: %d, B: %d) but outside (L: %d, R: %d, T: %d, B: %d) contains char '%c' and attr 0x%x", srRect.Left, srRect.Right, srRect.Top, srRect.Bottom, srExcept.Left, srExcept.Right, srExcept.Top, srExcept.Bottom, wchExpected, wAttrExpected));
-
-        for (SHORT iRow = srRect.Top; iRow < srRect.Bottom; iRow++)
-        {
-            for (SHORT iCol = srRect.Left; iCol < srRect.Right; iCol++)
-            {
-                if (iRow >= srExcept.Top && iRow < srExcept.Bottom && iCol >= srExcept.Left && iCol < srExcept.Right)
-                {
-                    // if in exception range, skip comparison.
-                    continue;
-                }
-                else
-                {
-                    CHAR_INFO* const pci = _GetCharAt(iRow, iCol);
-
-                    fStateValid = pci->Char.UnicodeChar == wchExpected;
-                    if (!fStateValid)
-                    {
-                        Log::Comment(NoThrowString().Format(L"Region match failed at (X: %d, Y: %d). Expected: '%c'. Actual: '%c'", iCol, iRow, wchExpected, pci->Char.UnicodeChar));
-                        break;
-                    }
-
-                    fStateValid = pci->Attributes == wAttrExpected;
-                    if (!fStateValid)
-                    {
-                        Log::Comment(NoThrowString().Format(L"Region match failed at (X: %d, Y: %d). Expected Attr: 0x%x. Actual Attr: 0x%x", iCol, iRow, wAttrExpected, pci->Attributes));
-                    }
-                }
-            }
-
-            if (!fStateValid)
-            {
-                break;
-            }
-        }
-
-        return fStateValid;
     }
 
     bool ValidateEraseBufferState(SMALL_RECT* rgsrRegions, size_t cRegions, wchar_t wchExpectedInRegions, WORD wAttrExpectedInRegions)
@@ -1272,20 +1011,6 @@ public:
         }
 
         return pchar;
-    }
-
-    void _PrepForScroll(ScrollDirection const dir, int const distance)
-    {
-        _fExpectedWindowAbsolute = FALSE;
-        _srExpectedConsoleWindow.Top = (SHORT)distance;
-        _srExpectedConsoleWindow.Bottom = (SHORT)distance;
-        _srExpectedConsoleWindow.Left = 0;
-        _srExpectedConsoleWindow.Right = 0;
-        if (dir == ScrollDirection::UP)
-        {
-            _srExpectedConsoleWindow.Top *= -1;
-            _srExpectedConsoleWindow.Bottom *= -1;
-        }
     }
 
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
@@ -1892,11 +1617,11 @@ public:
         _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
         _testGetSet->_coordExpectedCursorPos = coordExpected;
 
-        VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"By default, restore to top left corner (0,0 offset from viewport).");
+        VERIFY_IS_TRUE(_pDispatch->CursorRestoreState(), L"By default, restore to top left corner (0,0 offset from viewport).");
 
         Log::Comment(L"Test 2: Place cursor in center. Save. Move cursor to corner. Restore. Should come back to center.");
         _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        VERIFY_IS_TRUE(_pDispatch->CursorSavePosition(), L"Succeed at saving position.");
+        VERIFY_IS_TRUE(_pDispatch->CursorSaveState(), L"Succeed at saving position.");
 
         Log::Comment(L"Backup expected cursor (in the middle). Move cursor to corner. Then re-set expected cursor to middle.");
         // save expected cursor position
@@ -1908,7 +1633,7 @@ public:
         // restore expected cursor position to center.
         _testGetSet->_coordExpectedCursorPos = coordExpected;
 
-        VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
+        VERIFY_IS_TRUE(_pDispatch->CursorRestoreState(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
     }
 
     TEST_METHOD(CursorHideShowTest)
@@ -1937,315 +1662,6 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_privateShowCursorResult = false;
         VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
-    }
-
-    TEST_METHOD(InsertCharacterTests)
-    {
-        Log::Comment(L"Starting test...");
-
-        Log::Comment(L"Test 1: The big one. Fill the buffer with Qs. Fill the window with Rs. Write a line of ABCDE at the cursor. Then insert 5 spaces at the cursor. Watch spaces get inserted, ABCDE slide right eating up the Rs in the viewport but not modifying the Qs outside.");
-
-        // place the cursor in the center.
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-
-        // Save the cursor position. It shouldn't move for the rest of the test.
-        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // Fill the entire buffer with Qs. Blue on Green.
-        WCHAR const wchOuterBuffer = 'Q';
-        WORD const wAttrOuterBuffer = FOREGROUND_BLUE | BACKGROUND_GREEN;
-        SMALL_RECT srOuterBuffer;
-        srOuterBuffer.Top = 0;
-        srOuterBuffer.Left = 0;
-        srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
-        srOuterBuffer.Right = _testGetSet->_coordBufferSize.X;
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-
-        // Fill the viewport with Rs. Red on Blue.
-        WCHAR const wchViewport = 'R';
-        WORD const wAttrViewport = FOREGROUND_RED | BACKGROUND_BLUE;
-        SMALL_RECT srViewport = _testGetSet->_srViewport;
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // fill some of the text right of the cursor so we can verify it moved it and didn't overwrite it.
-        // change the color too so we can make sure that it's fine
-
-        WORD const wAttrTestText = FOREGROUND_GREEN;
-        PWSTR const pwszTestText = L"ABCDE";
-        size_t cchTestText = wcslen(pwszTestText);
-        SMALL_RECT srTestText;
-        srTestText.Top = _testGetSet->_coordCursorPos.Y;
-        srTestText.Bottom = srTestText.Top + 1;
-        srTestText.Left = _testGetSet->_coordCursorPos.X;
-        srTestText.Right = srTestText.Left + (SHORT)cchTestText;
-        _testGetSet->InsertString(_testGetSet->_coordCursorPos, pwszTestText, wAttrTestText);
-
-        WCHAR const wchInsertExpected = L' ';
-        WORD const wAttrInsertExpected = _testGetSet->_wAttribute;
-        size_t const cchInsertSize = 5;
-        SMALL_RECT srInsertExpected;
-        srInsertExpected.Top = _testGetSet->_coordCursorPos.Y;
-        srInsertExpected.Bottom = srInsertExpected.Top + 1;
-        srInsertExpected.Left = _testGetSet->_coordCursorPos.X;
-        srInsertExpected.Right = srInsertExpected.Left + (SHORT)cchInsertSize;
-
-        // the text we inserted is going to move right by the insert size, so adjust that rectangle right.
-        srTestText.Left += cchInsertSize;
-        srTestText.Right += cchInsertSize;
-
-        // insert out 5 spots. this should clear them out with spaces and the default fill from the original cursor position
-        VERIFY_IS_TRUE(_pDispatch->InsertCharacter(cchInsertSize), L"Verify insert call was sucessful.");
-
-        // the combined area of the letters + the spaces will be 10 characters wide:
-        SMALL_RECT srModifiedSpace;
-        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
-        srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
-        srModifiedSpace.Right = srModifiedSpace.Left + (SHORT)cchInsertSize + (SHORT)cchTestText;
-
-        // verify cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-
-        // e.g. we had this in the buffer: QQQRRRRRRABCDERRRRRRRQQQ with the cursor on the A.
-        // now we should have this buffer: QQQRRRRRR     ABCDERRQQQ with the cursor on the first space.
-
-        // Verify the field of Qs didn't change outside the viewport.
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
-
-        // Verify the field of Rs within the viewport not including the inserted range and the ABCDE shifted right. (10 characters)
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
-
-        // Verify the 5 spaces inserted from the cursor.
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srInsertExpected, wchInsertExpected, wAttrInsertExpected), L"Spaces should be inserted with the proper attributes at the cursor.");
-
-        // Verify the ABCDE sequence was shifted right.
-        COORD coordTestText;
-        coordTestText.X = srTestText.Left;
-        coordTestText.Y = srTestText.Top;
-        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"Inserted string should have moved to the right by the number of spaces inserted, attributes and text preserved.");
-
-        // Test case needed for exact end of line (and full line) insert/delete lengths
-        Log::Comment(L"Test 2: Inserting at the exact end of the line. Same field of Qs and Rs. Move cursor to right edge of window and insert > 1 space. Only 1 should be inserted, everything else unchanged.");
-
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // move cursor to right edge
-        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Right - 1;
-        coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // the rectangle where the space should be is exactly the size of the cursor.
-        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
-        srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
-        srModifiedSpace.Right = srModifiedSpace.Left + 1;
-
-        // insert out 5 spots. this should clear them out with spaces and the default fill from the original cursor position
-        VERIFY_IS_TRUE(_pDispatch->InsertCharacter(cchInsertSize), L"Verify insert call was sucessful.");
-
-        // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-
-        // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
-
-        // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
-
-        // The 5 inserted spaces at the right edge resulted in 1 space at the right edge
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchInsertExpected, wAttrInsertExpected), L"A space was inserted at the cursor position. All extra spaces were discarded as they hit the right boundary.");
-
-        Log::Comment(L"Test 3: Inserting at the exact beginning of the line. Same field of Qs and Rs. Move cursor to left edge of window and insert > screen width of space. The whole row should be spaces but nothing outside the viewport should be changed.");
-
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // move cursor to left edge
-        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Left;
-        coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // the rectangle of spaces should be the entire line at the cursor.
-        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
-        srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _testGetSet->_srViewport.Left;
-        srModifiedSpace.Right = _testGetSet->_srViewport.Right;
-
-        // insert greater than the entire viewport (the entire buffer width) at the cursor position
-        VERIFY_IS_TRUE(_pDispatch->InsertCharacter(_testGetSet->_coordBufferSize.X), L"Verify insert call was successful.");
-
-        // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-
-        // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
-
-        // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
-
-        // The inserted spaces at the left edge resulted in an entire line of spaces bounded by the viewport
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchInsertExpected, wAttrInsertExpected), L"A whole line of spaces was inserted at the cursor position. All extra spaces were discarded as they hit the right boundary.");
-    }
-
-    TEST_METHOD(DeleteCharacterTests)
-    {
-        Log::Comment(L"Starting test...");
-
-        Log::Comment(L"Test 1: The big one. Fill the buffer with Qs. Fill the window with Rs. Write a line of ABCDE at the cursor. Then insert 5 spaces at the cursor. Watch spaces get inserted, ABCDE slide right eating up the Rs in the viewport but not modifying the Qs outside.");
-
-        // place the cursor in the center.
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-
-        // Save the cursor position. It shouldn't move for the rest of the test.
-        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // Fill the entire buffer with Qs. Blue on Green.
-        WCHAR const wchOuterBuffer = 'Q';
-        WORD const wAttrOuterBuffer = FOREGROUND_BLUE | BACKGROUND_GREEN;
-        SMALL_RECT srOuterBuffer;
-        srOuterBuffer.Top = 0;
-        srOuterBuffer.Left = 0;
-        srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
-        srOuterBuffer.Right = _testGetSet->_coordBufferSize.X;
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-
-        // Fill the viewport with Rs. Red on Blue.
-        WCHAR const wchViewport = 'R';
-        WORD const wAttrViewport = FOREGROUND_RED | BACKGROUND_BLUE;
-        SMALL_RECT srViewport = _testGetSet->_srViewport;
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // fill some of the text right of the cursor so we can verify it moved it and wasn't deleted
-        // change the color too so we can make sure that it's fine
-        WORD const wAttrTestText = FOREGROUND_GREEN;
-        PWSTR const pwszTestText = L"ABCDE";
-        size_t cchTestText = wcslen(pwszTestText);
-        SMALL_RECT srTestText;
-        srTestText.Top = _testGetSet->_coordCursorPos.Y;
-        srTestText.Bottom = srTestText.Top + 1;
-        srTestText.Left = _testGetSet->_coordCursorPos.X;
-        srTestText.Right = srTestText.Left + (SHORT)cchTestText;
-        _testGetSet->InsertString(_testGetSet->_coordCursorPos, pwszTestText, wAttrTestText);
-
-        // We're going to delete "in" from the right edge, so set up that rectangle.
-        WCHAR const wchDeleteExpected = L' ';
-        WORD const wAttrDeleteExpected = _testGetSet->_wAttribute;
-        size_t const cchDeleteSize = 5;
-        SMALL_RECT srDeleteExpected;
-        srDeleteExpected.Top = _testGetSet->_coordCursorPos.Y;
-        srDeleteExpected.Bottom = srDeleteExpected.Top + 1;
-        srDeleteExpected.Right = _testGetSet->_srViewport.Right;
-        srDeleteExpected.Left = srDeleteExpected.Right - cchDeleteSize;
-
-        // We want the ABCDE to shift left when we delete and onto the cursor. So move the cursor left 5 and adjust the srTestText rectangle left 5 to the new
-        // final destination of where they will be after the delete operation occurs.
-        _testGetSet->_coordCursorPos.X -= cchDeleteSize;
-        coordCursorExpected = _testGetSet->_coordCursorPos;
-        srTestText.Left -= cchDeleteSize;
-        srTestText.Right -= cchDeleteSize;
-
-        // delete out 5 spots. this should shift the ABCDE text left by 5 and insert 5 spaces at the end of the line
-        VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(cchDeleteSize), L"Verify delete call was sucessful.");
-
-        // we're going to have ABCDERRRRRRRRRRRRR      QQQQQQQ
-        // since this is a bit more complicated than the insert case, make this the "special" region and exempt it from the bulk "R" check
-        // we'll check the inside of this rect in 3 pieces, for the ABCDE, then for the inner Rs, then for the 5 spaces after.
-        SMALL_RECT srSpecialSpace;
-        srSpecialSpace.Top = _testGetSet->_coordCursorPos.Y;
-        srSpecialSpace.Bottom = srSpecialSpace.Top + 1;
-        srSpecialSpace.Left = _testGetSet->_coordCursorPos.X;
-        srSpecialSpace.Right = _testGetSet->_srViewport.Right;
-
-        SMALL_RECT srGap; // gap space is the Rs between ABCDE and the spaces shifted in from the right
-        srGap.Left = srTestText.Right;
-        srGap.Right = srDeleteExpected.Left;
-        srGap.Top = _testGetSet->_coordCursorPos.Y;
-        srGap.Bottom = srGap.Top + 1;
-
-        // verify cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-
-        // e.g. we had this in the buffer: QQQRRRRRR-RRRRABCDERRQQQ with the cursor on the -.
-        // now we should have this buffer: QQQRRRRRRABCDERR     QQQ with the cursor on the A.
-
-        // Verify the field of Qs didn't change outside the viewport.
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
-
-        // Verify the field of Rs within the viewport not including the special range of the ABCDE, the spaces shifted in from the right, and the Rs between them that went along for the ride.
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srSpecialSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
-
-        // Verify the 5 spaces shifted in from the right edge due to the delete
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srDeleteExpected, wchDeleteExpected, wAttrDeleteExpected), L"Spaces should be inserted with the proper attributes from the right end of this line (viewport edge.)");
-
-        // Verify the ABCDE sequence was shifted left by 5 toward the cursor.
-        COORD coordTestText;
-        coordTestText.X = srTestText.Left;
-        coordTestText.Y = srTestText.Top;
-        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"Inserted string should have moved to the left by the number of deletes, attributes and text preserved.");
-
-        // Verify the field of Rs between the ABCDE and the spaces shifted in from the right
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srGap, wchViewport, wAttrViewport), L"Viewport Rs should be preserved/shifted left in between the ABCDE and the spaces that came in from the right edge.");
-
-        // Test case needed for exact end of line (and full line) insert/delete lengths
-        Log::Comment(L"Test 2: Deleting at the exact end of the line. Same field of Qs and Rs. Move cursor to right edge of window and delete > 1 space. Only 1 should be inserted from the right edge (delete inserts from the right), everything else unchanged.");
-
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // move cursor to right edge
-        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Right - 1;
-        coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // the rectangle where the space should be is exactly the size of the cursor.
-        SMALL_RECT srModifiedSpace;
-        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
-        srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _testGetSet->_coordCursorPos.X;
-        srModifiedSpace.Right = srModifiedSpace.Left + 1;
-
-        // delete out 5 spots. this should clear them out with spaces and the default fill from the original cursor position
-        VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(cchDeleteSize), L"Verify delete call was sucessful.");
-
-        // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from delete operation.");
-
-        // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
-
-        // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
-
-        // The 5 deleted spaces at the right edge resulted in 1 space at the right edge
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A space was inserted at the cursor position. All extra spaces deleted in from the right continued to cover that one space.");
-
-        Log::Comment(L"Test 3: Deleting at the exact beginning of the line. Same field of Qs and Rs. Move cursor to left edge of window and delete > screen width of space. The whole row should be spaces but nothing outside the viewport should be changed.");
-
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // move cursor to left edge
-        _testGetSet->_coordCursorPos.X = _testGetSet->_srViewport.Left;
-        coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // the rectangle of spaces should be the entire line at the cursor.
-        srModifiedSpace.Top = _testGetSet->_coordCursorPos.Y;
-        srModifiedSpace.Bottom = srModifiedSpace.Top + 1;
-        srModifiedSpace.Left = _testGetSet->_srViewport.Left;
-        srModifiedSpace.Right = _testGetSet->_srViewport.Right;
-
-        // delete greater than the entire viewport (the entire buffer width) at the cursor position
-        VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(_testGetSet->_coordBufferSize.X), L"Verify delete call was successful.");
-
-        // cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-
-        // Qs are the same outside the viewport
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport), L"Field of Qs outside viewport should remain unchanged.");
-
-        // Entire viewport is Rs except the one space spot
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srViewport, wchViewport, wAttrViewport, srModifiedSpace), L"Field of Rs in the viewport outside modified space should remain unchanged.");
-
-        // The inserted spaces at the left edge resulted in an entire line of spaces bounded by the viewport
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
     }
 
     // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer
@@ -2982,129 +2398,6 @@ public:
         VERIFY_IS_FALSE(_pDispatch->DeviceAttributes());
     }
 
-    TEST_METHOD(ScrollTest)
-    {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1}") // These values align with the ScrollDirection enum class to try all the directions.
-            TEST_METHOD_PROPERTY(L"Data:uiMagnitude", L"{1, 2, 5}") // These values align with the ScrollDirection enum class to try all the directions.
-        END_TEST_METHOD_PROPERTIES()
-
-        Log::Comment(L"Starting test...");
-
-        // Used to switch between the various function options.
-        typedef bool (AdaptDispatch::*ScrollFunc)(const unsigned int);
-        ScrollFunc scrollFunc = nullptr;
-
-        // Modify variables based on directionality of this test
-        ScrollDirection direction;
-        unsigned int dir;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDirection", dir));
-        direction = (ScrollDirection)dir;
-        unsigned int uiMagnitude;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiMagnitude", uiMagnitude));
-        SHORT sMagnitude = (SHORT)uiMagnitude;
-
-        switch (direction)
-        {
-        case ScrollDirection::UP:
-            Log::Comment(L"Testing up direction.");
-            scrollFunc = &AdaptDispatch::ScrollUp;
-            break;
-        case ScrollDirection::DOWN:
-            Log::Comment(L"Testing down direction.");
-            scrollFunc = &AdaptDispatch::ScrollDown;
-            break;
-        }
-        Log::Comment(NoThrowString().Format(L"Scrolling by %d lines", uiMagnitude));
-        if (scrollFunc == nullptr)
-        {
-            VERIFY_FAIL();
-            return;
-        }
-
-        // place the cursor in the center.
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-
-        // Save the cursor position. It shouldn't move for the rest of the test.
-        COORD coordCursorExpected = _testGetSet->_coordCursorPos;
-
-        // Fill the entire buffer with Qs. Blue on Green.
-        WCHAR const wchOuterBuffer = 'Q';
-        WORD const wAttrOuterBuffer = FOREGROUND_BLUE | BACKGROUND_GREEN;
-        SMALL_RECT srOuterBuffer;
-        srOuterBuffer.Top = 0;
-        srOuterBuffer.Left = 0;
-        srOuterBuffer.Bottom = _testGetSet->_coordBufferSize.Y;
-        srOuterBuffer.Right = _testGetSet->_coordBufferSize.X;
-        _testGetSet->FillRectangle(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer);
-
-        // Fill the viewport with Rs. Red on Blue.
-        WCHAR const wchViewport = 'R';
-        WORD const wAttrViewport = FOREGROUND_RED | BACKGROUND_BLUE;
-        SMALL_RECT srViewport = _testGetSet->_srViewport;
-        _testGetSet->FillRectangle(srViewport, wchViewport, wAttrViewport);
-
-        // Add some characters to see if they moved.
-        // change the color too so we can make sure that it's fine
-
-        WORD const wAttrTestText = FOREGROUND_GREEN;
-        PWSTR const pwszTestText = L"ABCDE"; // Text is written at y=34, moves to y=33
-        size_t cchTestText = wcslen(pwszTestText);
-        SMALL_RECT srTestText;
-        srTestText.Top = _testGetSet->_coordCursorPos.Y;
-        srTestText.Bottom = srTestText.Top + 1;
-        srTestText.Left = _testGetSet->_coordCursorPos.X;
-        srTestText.Right = srTestText.Left + (SHORT)cchTestText;
-        _testGetSet->InsertString(_testGetSet->_coordCursorPos, pwszTestText, wAttrTestText);
-
-        //Scroll Up one line
-        VERIFY_IS_TRUE((_pDispatch->*(scrollFunc))(sMagnitude), L"Verify Scroll call was sucessful.");
-
-        // verify cursor didn't move
-        VERIFY_ARE_EQUAL(coordCursorExpected, _testGetSet->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-
-        // Verify the field of Qs didn't change outside the viewport.
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport),
-                       L"Field of Qs outside viewport should remain unchanged.");
-
-        // Okay, this part get confusing. These change depending on the direction of the test.
-        // direction    InViewport      Outside
-        // UP           Bottom Line     Top minus One
-        // DOWN         Top Line        Bottom plus One
-        const bool fScrollUp = (direction == ScrollDirection::UP);
-        SMALL_RECT srInViewport = srViewport;
-        srInViewport.Top = (fScrollUp) ? (srViewport.Bottom - sMagnitude) : (srViewport.Top);
-        srInViewport.Bottom = srInViewport.Top + sMagnitude;
-        WCHAR const wchInViewport = ' ';
-        WORD const wAttrInViewport = _testGetSet->_wAttribute;
-
-        // Verify the bottom line is now empty
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srInViewport, wchInViewport, wAttrInViewport),
-                       L"InViewport line(s) should now be blank, with default buffer attributes");
-
-        SMALL_RECT srOutside = srViewport;
-        srOutside.Top = (fScrollUp) ? (srViewport.Top - sMagnitude) : (srViewport.Bottom);
-        srOutside.Bottom = srOutside.Top + sMagnitude;
-        WCHAR const wchOutside = wchOuterBuffer;
-        WORD const wAttrOutside = wAttrOuterBuffer;
-
-        // Verify the line above the viewport is unchanged
-        VERIFY_IS_TRUE(_testGetSet->ValidateRectangleContains(srOutside, wchOutside, wAttrOutside),
-                       L"Line(s) above the viewport is unchanged");
-
-        // Verify that the line where the ABCDE is now wchViewport
-        COORD coordTestText;
-        PWSTR const pwszNewTestText = L"RRRRR";
-        coordTestText.X = srTestText.Left;
-        coordTestText.Y = srTestText.Top;
-        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszNewTestText, wAttrViewport), L"Contents of viewport should have shifted to where the string used to be.");
-
-        // Verify that the line above/below the ABCDE now has the ABCDE
-        coordTestText.X = srTestText.Left;
-        coordTestText.Y = (fScrollUp) ? (srTestText.Top - sMagnitude) : (srTestText.Top + sMagnitude);
-        VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"String should have moved up/down by given magnitude.");
-    }
-
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");
@@ -3361,7 +2654,7 @@ public:
 
         Log::Comment(L"Test 1: Change Foreground");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_iExpectedXtermTableEntry = 2;
@@ -3371,7 +2664,7 @@ public:
 
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;
@@ -3381,7 +2674,7 @@ public:
 
         Log::Comment(L"Test 3: Change Foreground to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)42; // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 42;
         _testGetSet->_fExpectedIsForeground = true;
@@ -3390,7 +2683,7 @@ public:
 
         Log::Comment(L"Test 4: Change Background to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)142; // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 142;
         _testGetSet->_fExpectedIsForeground = false;
@@ -3402,7 +2695,7 @@ public:
         //   to have its own color table and translate the pre-existing RGB BG into a legacy BG.
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_wExpectedAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;

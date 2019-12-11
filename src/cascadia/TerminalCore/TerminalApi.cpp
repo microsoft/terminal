@@ -265,18 +265,20 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
         break;
     case DispatchTypes::EraseType::ToEnd:
         startPos.X = cursorPos.X;
-        nlength = viewport.RightInclusive() - startPos.X;
+        nlength = viewport.RightExclusive() - startPos.X;
         break;
     case DispatchTypes::EraseType::All:
         startPos.X = viewport.Left();
-        nlength = viewport.RightInclusive() - startPos.X;
+        nlength = viewport.RightExclusive() - startPos.X;
         break;
     case DispatchTypes::EraseType::Scrollback:
         return false;
     }
 
     auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), nlength);
-    _buffer->Write(eraseIter, startPos);
+
+    // Explicitly turn off end-of-line wrap-flag-setting when erasing cells.
+    _buffer->Write(eraseIter, startPos, false);
     return true;
 }
 
@@ -363,12 +365,9 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
 bool Terminal::SetWindowTitle(std::wstring_view title)
 {
-    _title = title;
+    _title = _suppressApplicationTitle ? _startingTitle : title;
 
-    if (_pfnTitleChanged)
-    {
-        _pfnTitleChanged(title);
-    }
+    _pfnTitleChanged(_title);
 
     return true;
 }

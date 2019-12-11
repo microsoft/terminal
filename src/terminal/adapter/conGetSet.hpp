@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "..\..\types\inc\IInputEvent.hpp"
+#include "..\..\buffer\out\TextAttribute.hpp"
 #include "..\..\inc\conattrs.hpp"
 
 #include <deque>
@@ -52,6 +53,10 @@ namespace Microsoft::Console::VirtualTerminal
                                                   const bool fIsForeground) = 0;
         virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground) = 0;
         virtual BOOL PrivateBoldText(const bool bolded) = 0;
+        virtual BOOL PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs) = 0;
+        virtual BOOL PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs) = 0;
+        virtual BOOL PrivateGetTextAttributes(TextAttribute* const pAttrs) const = 0;
+        virtual BOOL PrivateSetTextAttributes(const TextAttribute& attrs) = 0;
 
         virtual BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                _Out_ size_t& eventsWritten) = 0;

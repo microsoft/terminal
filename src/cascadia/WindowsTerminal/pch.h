@@ -28,6 +28,7 @@ Abstract:
 #include <stdlib.h>
 #include <string.h>
 #include <shellscalingapi.h>
+#include <windowsx.h>
 
 #include "../inc/LibraryIncludes.h"
 
@@ -38,6 +39,9 @@ Abstract:
 #ifdef GetCurrentTime
 #undef GetCurrentTime
 #endif
+
+#include <wil/cppwinrt.h>
+
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.Collections.h>

@@ -21,7 +21,7 @@ Revision History:
 #include "../buffer/out/TextAttribute.hpp"
 
 // To prevent invisible windows, set a lower threshold on window alpha channel.
-#define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
+constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
 #include "ConsoleArguments.hpp"
 #include "../inc/conattrs.hpp"
@@ -55,8 +55,8 @@ public:
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
 
-    const WCHAR* const GetLaunchFaceName() const;
-    void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength);
+    const std::wstring_view GetLaunchFaceName() const;
+    void SetLaunchFaceName(const std::wstring_view launchFaceName);
 
     UINT GetCodePage() const;
     void SetCodePage(const UINT uCodePage);
@@ -130,7 +130,7 @@ public:
 
     const WCHAR* const GetFaceName() const;
     bool IsFaceNameSet() const;
-    void SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength);
+    void SetFaceName(const std::wstring_view faceName);
 
     UINT GetCursorSize() const;
     void SetCursorSize(const UINT uCursorSize);
@@ -226,7 +226,7 @@ private:
     BYTE _bWindowAlpha; // describes the opacity of the window
 
     bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
-    WCHAR _LaunchFaceName[LF_FACESIZE];
+    std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;

@@ -26,7 +26,7 @@ Windows Terminal.
 Panes within the context of a single terminal window are not a new idea. The
 design of the panes for the Windows Terminal was heavily inspired by the
 application `tmux`, which is a commandline application which acts as a "terminal
-multiplexer", allowing for the easy managment of many terminal sessions from a
+multiplexer", allowing for the easy management of many terminal sessions from a
 single application.
 
 Other applications that include pane-like functionality include (but are not
@@ -115,7 +115,7 @@ We could also split `A` in horizontally, creating a fourth terminal pane `D`.
   +---------------+
 ```
 
-While it may appear that there's a single horizonal separator and a single
+While it may appear that there's a single horizontal separator and a single
 vertical separator here, that's not actually the case. Due to the tree-like
 structure of the pane splitting, the horizontal splits exist only between the
 two panes they're splitting. So, the user could move each of the horizontal
@@ -230,5 +230,5 @@ for swapping the positions of tabs, or a shortcut for both "zooming" a tab
 tab. Additionally, a right-click menu option could be added to do the
 aformentioned actions. Discoverability of these two actions is not as high as
 just dragging a tab from one pane to another; however, it's believed that panes
-are more of a power-user scenario, and power users will not neccessarily be
+are more of a power-user scenario, and power users will not necessarily be
 turned off by the feature's discoverability.

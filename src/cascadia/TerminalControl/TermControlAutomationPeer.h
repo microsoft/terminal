@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public TermControlAutomationPeerT<TermControlAutomationPeer>
     {
     public:
-        TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner);
+        TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* owner);
 
         winrt::hstring GetClassNameCore() const;
         winrt::Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         RECT GetBoundingRectWrapped();
 
     private:
-        ::Microsoft::Terminal::TermControlUiaProvider _uiaProvider;
+        ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
