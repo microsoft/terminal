@@ -22,7 +22,7 @@ void AppCommandline::_ResetStateToDefault()
 
 int AppCommandline::ParseCommand(const Cmdline& command)
 {
-    int localArgc = static_cast<int>(command.argc());
+    int localArgc = static_cast<int>(command.Argc());
     auto localArgv = command.Argv();
 
     // std::cout << "######################### starting command #########################\n";
@@ -192,33 +192,42 @@ std::vector<Cmdline> AppCommandline::BuildCommands(const int w_argc, const wchar
     std::wstring cmdSeperator = L";";
     std::vector<Cmdline> commands;
     commands.emplace_back(Cmdline{});
+
+    // For each arg in argv:
+    // Check the string for a delimiter.
+    // * If there isn't a delimiter, add the arg to the current commandline.
+    // * If there is a delimiter, split the string at that delimiter. Add the
+    //   first part of the string to the current command, ansd start a new
+    //   command with the second bit.
     for (auto i = 0; i < w_argc; i++)
     {
         const auto nextFullArg = std::wstring{ w_argv[i] };
         auto nextDelimiter = nextFullArg.find(cmdSeperator);
         if (nextDelimiter == std::wstring::npos)
         {
-            commands.rbegin()->wargs.emplace_back(nextFullArg);
+            // Easy case: no delimiter. Add it to the current command.
+            commands.rbegin()->AddArg(nextFullArg);
         }
         else
         {
+            // Harder case: There's at least one delimiter in this string.1
             auto remaining = nextFullArg;
             auto nextArg = remaining.substr(0, nextDelimiter);
             remaining = remaining.substr(nextDelimiter + 1);
             if (nextArg != L"")
             {
-                commands.rbegin()->wargs.emplace_back(nextArg);
+                commands.rbegin()->AddArg(nextArg);
             }
             do
             {
                 // TODO: For delimiters that are escaped, skip them and go to the next
                 nextDelimiter = remaining.find(cmdSeperator);
                 commands.emplace_back(Cmdline{});
-                commands.rbegin()->wargs.emplace_back(std::wstring{ L"wt.exe" });
+                commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
                 nextArg = remaining.substr(0, nextDelimiter);
                 if (nextArg != L"")
                 {
-                    commands.rbegin()->wargs.emplace_back(nextArg);
+                    commands.rbegin()->AddArg(nextArg);
                 }
                 remaining = remaining.substr(nextDelimiter + 1);
             } while (nextDelimiter != std::wstring::npos);

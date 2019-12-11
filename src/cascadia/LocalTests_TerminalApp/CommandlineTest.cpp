@@ -30,12 +30,15 @@ namespace TerminalAppLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
-        TEST_METHOD(ParseSimmpleCommandline);
+        TEST_METHOD(ParseSimpleCommandline);
+        TEST_METHOD(ParseTrickyCommandlines);
 
         TEST_METHOD(ParseBasicCommandlineIntoArgs);
         TEST_METHOD(ParseNewTabCommand);
         TEST_METHOD(ParseSplitPaneIntoArgs);
         TEST_METHOD(ParseComboCommandlineIntoArgs);
+
+        TEST_METHOD(ParseNoCommandIsNewTab);
 
     private:
         void _buildCommandlinesHelper(AppCommandline& appArgs,
@@ -64,43 +67,43 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, newTabAction.Action());
     }
 
-    void CommandlineTest::ParseSimmpleCommandline()
+    void CommandlineTest::ParseSimpleCommandline()
     {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe" };
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(1u, commandlines.size());
-            VERIFY_ARE_EQUAL(1u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"an arg with spaces" };
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(1u, commandlines.size());
-            VERIFY_ARE_EQUAL(2u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--parameter", L"an arg with spaces" };
 
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(1u, commandlines.size());
-            VERIFY_ARE_EQUAL(3u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab" };
 
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(1u, commandlines.size());
-            VERIFY_ARE_EQUAL(2u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";" };
 
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(2u, commandlines.size());
-            VERIFY_ARE_EQUAL(2u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
             VERIFY_ARE_EQUAL(L"new-tab", commandlines.at(0).Wargs().at(1));
-            VERIFY_ARE_EQUAL(1u, commandlines.at(1).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
         }
         {
@@ -108,9 +111,9 @@ namespace TerminalAppLocalTests
 
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(2u, commandlines.size());
-            VERIFY_ARE_EQUAL(1u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
-            VERIFY_ARE_EQUAL(1u, commandlines.at(1).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
         }
         {
@@ -118,11 +121,61 @@ namespace TerminalAppLocalTests
 
             auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(3u, commandlines.size());
-            VERIFY_ARE_EQUAL(1u, commandlines.at(0).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
-            VERIFY_ARE_EQUAL(1u, commandlines.at(1).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
-            VERIFY_ARE_EQUAL(1u, commandlines.at(2).argc());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
+        }
+    }
+
+    void CommandlineTest::ParseTrickyCommandlines()
+    {
+        {
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab;" };
+
+            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(2u, commandlines.size());
+            VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+            VERIFY_ARE_EQUAL(L"new-tab", commandlines.at(0).Wargs().at(1));
+            VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
+        }
+        {
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L";new-tab;" };
+
+            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(3u, commandlines.size());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+            VERIFY_ARE_EQUAL(2u, commandlines.at(1).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
+            VERIFY_ARE_EQUAL(L"new-tab", commandlines.at(1).Wargs().at(1));
+            VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
+        }
+        {
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe;" };
+
+            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(2u, commandlines.size());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+            VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
+        }
+        {
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe;;" };
+
+            auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(3u, commandlines.size());
+            VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+            VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
+            VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
         }
     }
@@ -132,6 +185,7 @@ namespace TerminalAppLocalTests
         AppCommandline appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab" };
         auto commandlines = AppCommandline::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+
         _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
         VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
@@ -238,7 +292,29 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myArgs.TerminalArgs().Commandline().c_str());
+            auto myCommand = myArgs.TerminalArgs().Commandline();
+            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myCommand);
+        }
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg with spaces", L"another-arg", L"more spaces in this one" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            auto myCommand = myArgs.TerminalArgs().Commandline();
+            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\" another-arg \"more spaces in this one\"", myCommand);
         }
     }
 
@@ -305,4 +381,108 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
         VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, appArgs._startupActions.at(1).Action());
     }
+
+    void CommandlineTest::ParseNoCommandIsNewTab()
+    {
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+        }
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--profile", L"cmd" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"cmd", myArgs.TerminalArgs().Profile());
+        }
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--startingDirectory", L"c:\\Foo" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"c:\\Foo", myArgs.TerminalArgs().StartingDirectory());
+        }
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"powershell.exe" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"powershell.exe", myArgs.TerminalArgs().Commandline());
+        }
+        {
+            AppCommandline appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"powershell.exe", L"This is an arg with spaces" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myArgs.TerminalArgs().Commandline());
+        }
+    }
+
 }

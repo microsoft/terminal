@@ -5,11 +5,9 @@
 
 struct Cmdline
 {
-    std::vector<std::wstring> wargs;
-    char** _argv = nullptr;
-    size_t argc() const { return wargs.size(); }
+    size_t Argc() const { return _wargs.size(); }
     char** Argv() const { return _argv; }
-    const std::vector<std::wstring>& Wargs() const { return wargs; };
+    const std::vector<std::wstring>& Wargs() const { return _wargs; };
     char** BuildArgv()
     {
         // If we've already build our array of args, then we don't need to worry
@@ -19,18 +17,49 @@ struct Cmdline
             return _argv;
         }
 
-        // TODO: This is horrifying
-        _argv = new char*[argc()];
-        for (int i = 0; i < argc(); i++)
+        // Build an argv array. The array should be an array of char* strings,
+        // so that CLI11 can parse the args like a normal posix application.
+        _argv = new char*[Argc()];
+        THROW_IF_NULL_ALLOC(_argv);
+
+        // Convert each
+        for (int i = 0; i < Argc(); i++)
         {
-            auto len = wargs[i].size();
+            const auto& warg = _wargs[i];
+            auto arg = winrt::to_string(warg);
+            auto len = arg.size();
             _argv[i] = new char[len + 1];
-            for (int j = 0; j <= len; j++)
+            THROW_IF_NULL_ALLOC(_argv[i]);
+
+            for (int j = 0; j < len; j++)
             {
-                _argv[i][j] = char(wargs[i][j]);
+                _argv[i][j] = arg.at(j);
             }
+            _argv[i][len] = '\0';
         }
         return _argv;
+    }
+
+    void AddArg(const std::wstring& nextArg)
+    {
+        if (_argv)
+        {
+            _resetArgv();
+        }
+
+        _wargs.emplace_back(nextArg);
+    }
+
+private:
+    std::vector<std::wstring> _wargs;
+    char** _argv = nullptr;
+    void _resetArgv()
+    {
+        for (int i = 0; i < Argc(); i++)
+        {
+            delete[] _argv[i];
+        }
+        delete[] _argv;
     }
 };
 
