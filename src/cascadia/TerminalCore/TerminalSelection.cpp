@@ -115,9 +115,8 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 // - None
 const COORD Terminal::GetSelectionAnchor() const
 {
-    COORD selectionAnchorPos;
-    selectionAnchorPos.X = _selectionAnchor.X;
-    selectionAnchorPos.Y = _selectionAnchor.Y + gsl::narrow<short>(ViewStartIndex());
+    COORD selectionAnchorPos{ _selectionAnchor };
+    THROW_IF_FAILED(ShortAdd(selectionAnchorPos.Y, _selectionVerticalOffset, &selectionAnchorPos.Y));
 
     return selectionAnchorPos;
 }
