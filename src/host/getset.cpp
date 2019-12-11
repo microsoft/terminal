@@ -836,32 +836,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& buffer = context.GetActiveBuffer();
 
         TextAttribute useThisAttr(fillAttribute);
-
-        // Here we're being a little clever - similar to FillConsoleOutputAttributeImpl
-        // Because RGB/default color can't roundtrip the API, certain VT
-        //      sequences will forget the RGB color because their first call to
-        //      GetScreenBufferInfo returned a legacy attr.
-        // If they're calling this with the legacy attrs version of our current
-        //      attributes, they likely wanted to use the full version of
-        //      our current attributes, whether that be RGB or _default_ colored.
-        // This could create a scenario where someone emitted RGB with VT,
-        //      THEN used the API to ScrollConsoleOutput with the legacy attrs,
-        //      and DIDN'T want the RGB color. As in FillConsoleOutputAttribute,
-        //      this scenario is highly unlikely, and we can reasonably do this
-        //      on their behalf.
-        // see MSFT:19853701
-
-        if (buffer.InVTMode())
-        {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto currentAttributes = buffer.GetAttributes();
-            const auto bufferLegacy = gci.GenerateLegacyAttributes(currentAttributes);
-            if (bufferLegacy == fillAttribute)
-            {
-                useThisAttr = currentAttributes;
-            }
-        }
-
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
         return S_OK;
@@ -1422,25 +1396,12 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
             coordDestination.X = 0;
             coordDestination.Y = viewport.Top + 1;
 
-            // Here we previously called to ScrollConsoleScreenBufferWImpl to
-            // perform the scrolling operation. However, that function only
-            // accepts a WORD for the fill attributes. That means we'd lose
-            // 256/RGB fidelity for fill attributes. So instead, we'll just call
-            // ScrollRegion ourselves, with the same params that
-            // ScrollConsoleScreenBufferWImpl would have.
-            // See microsoft/terminal#832, #2702 for more context.
-            try
-            {
-                LockConsole();
-                auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-                ScrollRegion(screenInfo,
-                             srScroll,
-                             srScroll,
-                             coordDestination,
-                             UNICODE_SPACE,
-                             screenInfo.GetAttributes());
-            }
-            CATCH_LOG();
+            // Note the revealed lines are filled with the standard erase attributes.
+            Status = NTSTATUS_FROM_HRESULT(DoSrvPrivateScrollRegion(screenInfo,
+                                                                    srScroll,
+                                                                    srScroll,
+                                                                    coordDestination,
+                                                                    true));
         }
     }
     return Status;
@@ -2145,25 +2106,12 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
             coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
         }
 
-        // Here we previously called to ScrollConsoleScreenBufferWImpl to
-        // perform the scrolling operation. However, that function only accepts
-        // a WORD for the fill attributes. That means we'd lose 256/RGB fidelity
-        // for fill attributes. So instead, we'll just call ScrollRegion
-        // ourselves, with the same params that ScrollConsoleScreenBufferWImpl
-        // would have.
-        // See microsoft/terminal#832 for more context.
-        try
-        {
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-            ScrollRegion(screenInfo,
-                         srScroll,
-                         srScroll,
-                         coordDestination,
-                         UNICODE_SPACE,
-                         screenInfo.GetAttributes());
-        }
-        CATCH_LOG();
+        // Note the revealed lines are filled with the standard erase attributes.
+        LOG_IF_FAILED(DoSrvPrivateScrollRegion(screenInfo,
+                                               srScroll,
+                                               srScroll,
+                                               coordDestination,
+                                               true));
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
@@ -2283,6 +2231,102 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
             g.pRender->TriggerRedrawAll();
         }
 
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Routine Description:
+// - A private API call for filling a region of the screen buffer.
+// Arguments:
+// - screenInfo - Reference to screen buffer info.
+// - startPosition - The position to begin filling at.
+// - fillLength - The number of characters to fill.
+// - fillChar - Character to fill the target region with.
+// - standardFillAttrs - If true, fill with the standard erase attributes.
+//                       If false, fill with the default attributes.
+// Return value:
+// - S_OK or failure code from thrown exception
+[[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
+                                             const COORD startPosition,
+                                             const size_t fillLength,
+                                             const wchar_t fillChar,
+                                             const bool standardFillAttrs) noexcept
+{
+    try
+    {
+        if (fillLength == 0)
+        {
+            return S_OK;
+        }
+
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        // For most VT erasing operations, the standard requires that the
+        // erased area be filled with the current background color, but with
+        // no additional meta attributes set. For all other cases, we just
+        // fill with the default attributes.
+        auto fillAttrs = TextAttribute{};
+        if (standardFillAttrs)
+        {
+            fillAttrs = screenInfo.GetAttributes();
+            fillAttrs.SetStandardErase();
+        }
+
+        const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+        screenInfo.Write(fillData, startPosition, false);
+
+        // Notify accessibility
+        auto endPosition = startPosition;
+        const auto bufferSize = screenInfo.GetBufferSize();
+        bufferSize.MoveInBounds(fillLength - 1, endPosition);
+        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Routine Description:
+// - A private API call for moving a block of data in the screen buffer,
+//    optionally limiting the effects of the move to a clipping rectangle.
+// Arguments:
+// - screenInfo - Reference to screen buffer info.
+// - scrollRect - Region to copy/move (source and size).
+// - clipRect - Optional clip region to contain buffer change effects.
+// - destinationOrigin - Upper left corner of target region.
+// - standardFillAttrs - If true, fill with the standard erase attributes.
+//                       If false, fill with the default attributes.
+// Return value:
+// - S_OK or failure code from thrown exception
+[[nodiscard]] HRESULT DoSrvPrivateScrollRegion(SCREEN_INFORMATION& screenInfo,
+                                               const SMALL_RECT scrollRect,
+                                               const std::optional<SMALL_RECT> clipRect,
+                                               const COORD destinationOrigin,
+                                               const bool standardFillAttrs) noexcept
+{
+    try
+    {
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+        // For most VT scrolling operations, the standard requires that the
+        // erased area be filled with the current background color, but with
+        // no additional meta attributes set. For all other cases, we just
+        // fill with the default attributes.
+        auto fillAttrs = TextAttribute{};
+        if (standardFillAttrs)
+        {
+            fillAttrs = screenInfo.GetAttributes();
+            fillAttrs.SetStandardErase();
+        }
+
+        ScrollRegion(screenInfo,
+                     scrollRect,
+                     clipRect,
+                     destinationOrigin,
+                     UNICODE_SPACE,
+                     fillAttrs);
         return S_OK;
     }
     CATCH_RETURN();

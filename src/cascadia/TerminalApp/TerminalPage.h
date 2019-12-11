@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
-        ShortcutActionDispatch _actionDispatch{};
+        winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
