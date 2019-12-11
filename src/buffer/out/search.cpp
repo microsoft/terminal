@@ -97,11 +97,7 @@ bool Search::FindNext()
 // - Takes the found word and selects it in the screen buffer
 void Search::Select() const
 {
-    // Only select if we've found something.
-    if (_coordSelStart != _coordSelEnd)
-    {
-        _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
-    }
+    _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
 }
 
 // Routine Description:
