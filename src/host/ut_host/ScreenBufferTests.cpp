@@ -117,6 +117,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtNewlinePastViewport);
     TEST_METHOD(VtNewlinePastEndOfBuffer);
+    TEST_METHOD(VtNewlineOutsideMargins);
 
     TEST_METHOD(VtSetColorTable);
 
@@ -1473,6 +1474,37 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
         const auto& attr = attrs[x];
         VERIFY_ARE_EQUAL(expectedFillAttr, attr);
     }
+}
+
+void ScreenBufferTests::VtNewlineOutsideMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    const auto viewportTop = si.GetViewport().Top();
+    const auto viewportBottom = si.GetViewport().BottomInclusive();
+    // Make sure the bottom margin will fit inside the viewport.
+    VERIFY_IS_TRUE(si.GetViewport().Height() > 5);
+
+    Log::Comment(L"LF at bottom of viewport scrolls the viewport");
+    cursor.SetPosition({ 0, viewportBottom });
+    stateMachine.ProcessString(L"\n");
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportBottom + 1 }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportTop + 1 }), si.GetViewport().Origin());
+
+    Log::Comment(L"Reset viewport and apply DECSTBM margins");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, viewportTop }), true));
+    stateMachine.ProcessString(L"\x1b[1;5r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+    Log::Comment(L"LF no longer scrolls the viewport when below bottom margin");
+    cursor.SetPosition({ 0, viewportBottom });
+    stateMachine.ProcessString(L"\n");
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportBottom }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportTop }), si.GetViewport().Origin());
 }
 
 void ScreenBufferTests::VtSetColorTable()
