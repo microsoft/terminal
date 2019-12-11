@@ -23,7 +23,7 @@ namespace Microsoft::Console::Render
     {
     public:
         RenderThread();
-        virtual ~RenderThread() override;
+        ~RenderThread();
 
         [[nodiscard]] HRESULT Initialize(_In_ IRenderer* const pRendererParent) noexcept;
 

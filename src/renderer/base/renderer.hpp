@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
                                                       _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
-        virtual ~Renderer() override;
+        ~Renderer();
 
         [[nodiscard]] HRESULT PaintFrame();
 
