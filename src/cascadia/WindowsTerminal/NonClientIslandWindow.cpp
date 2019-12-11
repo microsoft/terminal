@@ -411,17 +411,14 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE NonClientIslandWindow::GetClient2WindowSizeDelta(UINT dpi) const noexcept
+SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
 {
     RECT islandFrame{};
-    bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi);
-    if (!succeeded)
-    {
-        // If we failed to get the correct window size for whatever reason, log
-        // the error and go on. We'll use whatever the control proposed as the
-        // size of our window, which will be at least close.
-        LOG_LAST_ERROR();
-    }
+
+    // If we failed to get the correct window size for whatever reason, log
+    // the error and go on. We'll use whatever the control proposed as the
+    // size of our window, which will be at least close.
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi));
 
     islandFrame.top = -topBorderVisibleHeight;
 

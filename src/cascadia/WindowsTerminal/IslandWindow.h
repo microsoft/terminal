@@ -29,7 +29,7 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
-    virtual SIZE GetClient2WindowSizeDelta(const UINT dpi) const noexcept;
+    virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
 
@@ -92,6 +92,7 @@ protected:
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+    [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
 
     bool _fullscreen{ false };
     RECT _fullscreenWindowSize;

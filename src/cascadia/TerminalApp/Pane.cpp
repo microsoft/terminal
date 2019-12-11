@@ -1066,7 +1066,7 @@ std::pair<float, float> Pane::_CalcChildrenSizes(const float fullSize) const
 // Return Value:
 // - a structure holding the result of this calculation. The 'lower' field represents the
 //   children sizes that would fit in the fullSize, but might (and usually do) not fill it
-//   complicity. The 'higher' field represents the size of the children if they slightly exceed
+//   completely. The 'higher' field represents the size of the children if they slightly exceed
 //   the fullSize, but are snapped. If the children can be snapped and also exactly match
 //   the fullSize, then both this fields have the same value that represent this situation.
 Pane::SnapChildrenSizeResult Pane::_CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const
@@ -1128,9 +1128,7 @@ Pane::SnapChildrenSizeResult Pane::_CalcSnappedChildrenSizes(const bool widthOrH
 // - A value corresponding to the next closest snap size for this Pane, either upward or downward
 float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
-    const auto snapPossibilites = _CalcSnappedDimension(widthOrHeight, dimension);
-    const auto lower = snapPossibilites.lower;
-    const auto higher = snapPossibilites.higher;
+    const auto [lower, higher] = _CalcSnappedDimension(widthOrHeight, dimension);
     return dimension - lower < higher - dimension ? lower : higher;
 }
 
@@ -1160,7 +1158,6 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
         }
 
         float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
-
         if (widthOrHeight)
         {
             lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
@@ -1233,7 +1230,7 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         if (sizeNode.isMinimumSize)
         {
             // If the node is of its minimum size, this size might not be snapped (it might
-            // be say half a character, or fixed 10 pixels), so snap it upward. It might
+            // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
             // however be already snapped, so add 1 to make sure it really increases
             // (not strictly necessary but to avoid surprises).
             sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
@@ -1251,16 +1248,16 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
 
         // To choose which child pane to advance, we actually need to know their advanced sizes
         // in advance (oh), to see which one would 'fit' better. Often, this is already cached
-        // by the previous invocation of this function  in nextFirstChild and nextSecondChild
-        // fields. If not, we need to calculate them now.
+        // by the previous invocation of this function in nextFirstChild and nextSecondChild
+        // fields of given node. If not, we need to calculate them now.
         if (sizeNode.nextFirstChild == nullptr)
         {
-            sizeNode.nextFirstChild.reset(new LayoutSizeNode(*sizeNode.firstChild));
+            sizeNode.nextFirstChild = std::make_unique<LayoutSizeNode>(*sizeNode.firstChild);
             _firstChild->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
         }
         if (sizeNode.nextSecondChild == nullptr)
         {
-            sizeNode.nextSecondChild.reset(new LayoutSizeNode(*sizeNode.secondChild));
+            sizeNode.nextSecondChild = std::make_unique<LayoutSizeNode>(*sizeNode.secondChild);
             _secondChild->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextSecondChild);
         }
 
@@ -1278,8 +1275,8 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         }
         else
         {
-            // If we're growing perpendicularly to separator axis, choose
-            // a child so that their size ratio is closer to that we're trying
+            // If we're growing perpendicularly to separator axis, choose a
+            // child so that their size ratio is closer to that we're trying
             // to maintain (this is, the relative separator position is closer
             // to the _desiredSplitPosition field).
 
@@ -1386,8 +1383,8 @@ Pane::LayoutSizeNode Pane::_CreateMinSizeTree(const bool widthOrHeight) const
     LayoutSizeNode node(widthOrHeight ? size.Width : size.Height);
     if (!_IsLeaf())
     {
-        node.firstChild.reset(new LayoutSizeNode(_firstChild->_CreateMinSizeTree(widthOrHeight)));
-        node.secondChild.reset(new LayoutSizeNode(_secondChild->_CreateMinSizeTree(widthOrHeight)));
+        node.firstChild = std::make_unique<LayoutSizeNode>(_firstChild->_CreateMinSizeTree(widthOrHeight));
+        node.secondChild = std::make_unique<LayoutSizeNode>(_secondChild->_CreateMinSizeTree(widthOrHeight));
     }
 
     return node;

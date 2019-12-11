@@ -63,7 +63,7 @@ void Pane::LayoutSizeNode::_AssignChildNode(std::unique_ptr<LayoutSizeNode>& nod
         }
         else
         {
-            nodeField.reset(new LayoutSizeNode(*newNode));
+            nodeField = std::make_unique<LayoutSizeNode>(*newNode);
         }
     }
     else

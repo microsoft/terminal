@@ -146,6 +146,95 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindow(_window.get());
 }
 
+// Method Description:
+// - Handles a WM_SIZING message, which occurs when user drags a window border
+//   or corner. It intercepts this resize action and applies 'snapping' i.e.
+//   aligns the terminal's size to its cell grid. We're given the window size,
+//   which we then adjust based on the terminal's properties (like font size).
+// Arguments:
+// - wParam: Specifies which edge of the window is being dragged.
+// - lParam: Pointer to the requested window rectangle (this is, the one that
+//   originates from current drag action). It also acts as the return value
+//   (it's a ref parameter).
+// Return Value:
+// - <none>
+LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
+{
+    if (!_pfnSnapDimensionCallback)
+    {
+        // If we haven't been given the callback that would adjust the dimension,
+        // then we can't do anything, so just bail out.
+        return FALSE;
+    }
+
+    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+
+    // Find nearest monitor.
+    HMONITOR hmon = MonitorFromRect(winRect, MONITOR_DEFAULTTONEAREST);
+
+    // This API guarantees that dpix and dpiy will be equal, but neither is an
+    // optional parameter so give two UINTs.
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96.
+    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+    const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
+    auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
+    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+
+    if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
+    {
+        // If user has dragged anything but the top or bottom border (so e.g. left border,
+        // top-right corner etc.), then this means that the width has changed. We thus ask to
+        // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
+        clientWidth = static_cast<int>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));
+    }
+    if (wParam != WMSZ_LEFT && wParam != WMSZ_RIGHT)
+    {
+        // Analogous to above, but for height.
+        clientHeight = static_cast<int>(_pfnSnapDimensionCallback(false, static_cast<float>(clientHeight)));
+    }
+
+    // Now make the window rectangle match the calculated client width and height,
+    // regarding which border the user is dragging. E.g. if user drags left border, then
+    // we make sure to adjust the 'left' component of rectangle and not the 'right'. Note
+    // that top-left and bottom-left corners also 'include' left border, hence we match
+    // this in multi-case switch.
+
+    // Set width
+    switch (wParam)
+    {
+    case WMSZ_LEFT:
+    case WMSZ_TOPLEFT:
+    case WMSZ_BOTTOMLEFT:
+        winRect->left = winRect->right - (clientWidth + nonClientSize.cx);
+        break;
+    case WMSZ_RIGHT:
+    case WMSZ_TOPRIGHT:
+    case WMSZ_BOTTOMRIGHT:
+        winRect->right = winRect->left + (clientWidth + nonClientSize.cx);
+        break;
+    }
+
+    // Set height
+    switch (wParam)
+    {
+    case WMSZ_BOTTOM:
+    case WMSZ_BOTTOMLEFT:
+    case WMSZ_BOTTOMRIGHT:
+        winRect->bottom = winRect->top + (clientHeight + nonClientSize.cy);
+        break;
+    case WMSZ_TOP:
+    case WMSZ_TOPLEFT:
+    case WMSZ_TOPRIGHT:
+        winRect->top = winRect->bottom - (clientHeight + nonClientSize.cy);
+        break;
+    }
+
+    return TRUE;
+}
+
 void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
@@ -227,78 +316,7 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
     case WM_SIZING:
     {
-        // Here we intercept a window border (or corner) drag action and apply 'snapping'
-        // i.e. align the terminal's size to its cell grid. We're given the requested
-        // window rectangle (this is the one that originates form current drag action) in
-        // lparam, which we then adjust based on the terminal properties (like font size).
-        // Note that lparam also acts as the return value (it's a ref parameter).
-
-        LPRECT winRect = reinterpret_cast<LPRECT>(lparam);
-
-        // Find nearest monitor.
-        HMONITOR hmon = MonitorFromRect(winRect, MONITOR_DEFAULTTONEAREST);
-
-        // This API guarantees that dpix and dpiy will be equal, but neither is an
-        // optional parameter so give two UINTs.
-        UINT dpix = USER_DEFAULT_SCREEN_DPI;
-        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-        // If this fails, we'll use the default of 96.
-        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
-
-        const auto nonClientSize = GetClient2WindowSizeDelta(dpix);
-        auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
-        auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
-
-        if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
-        {
-            // If user has dragged anything but the top or bottom border (so e.g. left border,
-            // top-right corner etc.), then this means that the width has changed. We thus ask to
-            // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
-            clientWidth = static_cast<int>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));
-        }
-        if (wparam != WMSZ_LEFT && wparam != WMSZ_RIGHT)
-        {
-            // Analogous to above, but for height.
-            clientHeight = static_cast<int>(_pfnSnapDimensionCallback(false, static_cast<float>(clientHeight)));
-        }
-
-        // Now make the window rectangle match the calculated client width and height,
-        // regarding which border the user is dragging. E.g. if user drags left border, then
-        // we make sure to adjust the 'left' component of rectangle and not the 'right'. Note
-        // that top-left and bottom-left corners also 'include' left border, hence we match
-        // this in multi-case switch.
-
-        // Set width
-        switch (wparam)
-        {
-        case WMSZ_LEFT:
-        case WMSZ_TOPLEFT:
-        case WMSZ_BOTTOMLEFT:
-            winRect->left = winRect->right - (clientWidth + nonClientSize.cx);
-            break;
-        case WMSZ_RIGHT:
-        case WMSZ_TOPRIGHT:
-        case WMSZ_BOTTOMRIGHT:
-            winRect->right = winRect->left + (clientWidth + nonClientSize.cx);
-            break;
-        }
-
-        // Set height
-        switch (wparam)
-        {
-        case WMSZ_BOTTOM:
-        case WMSZ_BOTTOMLEFT:
-        case WMSZ_BOTTOMRIGHT:
-            winRect->bottom = winRect->top + (clientHeight + nonClientSize.cy);
-            break;
-        case WMSZ_TOP:
-        case WMSZ_TOPLEFT:
-        case WMSZ_TOPRIGHT:
-            winRect->top = winRect->bottom - (clientHeight + nonClientSize.cy);
-            break;
-        }
-
-        return TRUE;
+        return _OnSizing(wparam, lparam);
     }
     case WM_CLOSE:
     {
@@ -378,17 +396,14 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 // - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE IslandWindow::GetClient2WindowSizeDelta(const UINT dpi) const noexcept
+SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
 {
     RECT islandFrame{};
-    bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi);
-    if (!succeeded)
-    {
-        // If we failed to get the correct window size for whatever reason, log
-        // the error and go on. We'll use whatever the control proposed as the
-        // size of our window, which will be at least close.
-        LOG_LAST_ERROR();
-    }
+
+    // If we failed to get the correct window size for whatever reason, log
+    // the error and go on. We'll use whatever the control proposed as the
+    // size of our window, which will be at least close.
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi));
 
     return {
         islandFrame.right - islandFrame.left,
