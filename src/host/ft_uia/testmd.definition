@@ -1,5 +1,5 @@
 {
-  "$schema": "http://universaltest/schema/testmddefinition-2.json",
+  "$schema": "http://universaltest/schema/testmddefinition-5.json",
   "Package": {
     "ComponentName": "Console",
     "SubComponentName": "Host-UIAutomationTests"
@@ -9,15 +9,15 @@
     "Parameter": ""
   },
   "Dependencies": {
-    "Files": [ ],
-    "RemoteFiles": [ ],
-    "Packages": [ 
-        "Microsoft.Console.Tools.Nihilist",
-        "Microsoft.Console.Tools.VtApp",
-        "Microsoft.Test.WinAppDriver.ClientRuntimeLibraries",
-        "Microsoft.Test.WinAppDriver.Server"
+    "Files": [],
+    "RemoteFiles": [],
+    "Packages": [
+      "Microsoft.Console.Tools.Nihilist",
+      "Microsoft.Console.Tools.VtApp",
+      "Microsoft.Test.WinAppDriver.ClientRuntimeLibraries",
+      "Microsoft.Test.WinAppDriver.Server"
     ]
   },
-  "Logs": [ ],
-  "Plugins": [ ]
+  "Logs": [],
+  "Plugins": []
 }

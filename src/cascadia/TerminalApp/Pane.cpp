@@ -6,8 +6,6 @@
 #include "Profile.h"
 #include "CascadiaSettings.h"
 
-#include "winrt/Microsoft.Terminal.TerminalConnection.h"
-
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
@@ -1444,7 +1442,7 @@ void Pane::_SetupResources()
     }
 
     const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(accentColorKey))
+    if (res.HasKey(tabViewBackgroundKey))
     {
         winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();

@@ -1,0 +1,103 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import "../ActionArgs.idl";
+
+namespace TerminalApp
+{
+    // TODO: GH#1069 - Many of these shortcut actions are "legacy" now that we
+    // have support for arbitrary args (#1142). We should remove them, and our
+    // legacy deserializers.
+    enum ShortcutAction
+    {
+        Invalid = 0,
+        CopyText,
+        CopyTextWithoutNewlines,
+        PasteText,
+        OpenNewTabDropdown,
+        DuplicateTab,
+        NewTab,
+        NewTabProfile0, // Legacy
+        NewTabProfile1, // Legacy
+        NewTabProfile2, // Legacy
+        NewTabProfile3, // Legacy
+        NewTabProfile4, // Legacy
+        NewTabProfile5, // Legacy
+        NewTabProfile6, // Legacy
+        NewTabProfile7, // Legacy
+        NewTabProfile8, // Legacy
+        NewWindow,
+        CloseWindow,
+        CloseTab,
+        ClosePane,
+        NextTab,
+        PrevTab,
+        SplitVertical,
+        SplitHorizontal,
+        SplitPane,
+        SwitchToTab,
+        SwitchToTab0, // Legacy
+        SwitchToTab1, // Legacy
+        SwitchToTab2, // Legacy
+        SwitchToTab3, // Legacy
+        SwitchToTab4, // Legacy
+        SwitchToTab5, // Legacy
+        SwitchToTab6, // Legacy
+        SwitchToTab7, // Legacy
+        SwitchToTab8, // Legacy
+        IncreaseFontSize,
+        DecreaseFontSize,
+        ResetFontSize,
+        ScrollUp,
+        ScrollDown,
+        ScrollUpPage,
+        ScrollDownPage,
+        ResizePane,
+        ResizePaneLeft, // Legacy
+        ResizePaneRight, // Legacy
+        ResizePaneUp, // Legacy
+        ResizePaneDown, // Legacy
+        MoveFocus,
+        MoveFocusLeft, // Legacy
+        MoveFocusRight, // Legacy
+        MoveFocusUp, // Legacy
+        MoveFocusDown, // Legacy
+        ToggleFullscreen,
+        OpenSettings
+    };
+
+    [default_interface] runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        IActionArgs Args;
+        ShortcutAction Action;
+    };
+
+    [default_interface] runtimeclass ShortcutActionDispatch {
+        ShortcutActionDispatch();
+
+        Boolean DoAction(ActionAndArgs actionAndArgs);
+
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CopyText;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> PasteText;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> NewTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenNewTabDropdown;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> DuplicateTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> NewWindow;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseWindow;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> CloseTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ClosePane;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SwitchToTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> NextTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> PrevTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> SplitPane;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> AdjustFontSize;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResetFontSize;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollUp;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollDown;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollUpPage;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollDownPage;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenSettings;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResizePane;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> MoveFocus;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
+    }
+}

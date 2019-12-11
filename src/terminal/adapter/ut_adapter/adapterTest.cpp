@@ -186,62 +186,6 @@ public:
         return _fPrivateAllowCursorBlinkingResult;
     }
 
-    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept override
-    {
-        Log::Comment(L"FillConsoleOutputCharacterW MOCK called...");
-
-        DWORD dwCharsWritten = 0;
-
-        if (_fFillConsoleOutputCharacterWResult)
-        {
-            Log::Comment(NoThrowString().Format(L"Filling (X: %d, Y:%d) for %d characters with '%c'...", dwWriteCoord.X, dwWriteCoord.Y, nLength, wch));
-
-            COORD dwCurrentPos = dwWriteCoord;
-
-            while (dwCharsWritten < nLength)
-            {
-                CHAR_INFO* pchar = _GetCharAt(dwCurrentPos.Y, dwCurrentPos.X);
-                pchar->Char.UnicodeChar = wch;
-                dwCharsWritten++;
-                _IncrementCoordPos(&dwCurrentPos);
-            }
-        }
-
-        numberOfCharsWritten = dwCharsWritten;
-
-        Log::Comment(NoThrowString().Format(L"Fill wrote %d characters.", dwCharsWritten));
-
-        return _fFillConsoleOutputCharacterWResult;
-    }
-
-    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept override
-    {
-        Log::Comment(L"FillConsoleOutputAttribute MOCK called...");
-
-        DWORD dwCharsWritten = 0;
-
-        if (_fFillConsoleOutputAttributeResult)
-        {
-            Log::Comment(NoThrowString().Format(L"Filling (X: %d, Y:%d) for %d characters with 0x%x attribute...", dwWriteCoord.X, dwWriteCoord.Y, nLength, wAttribute));
-
-            COORD dwCurrentPos = dwWriteCoord;
-
-            while (dwCharsWritten < nLength)
-            {
-                CHAR_INFO* pchar = _GetCharAt(dwCurrentPos.Y, dwCurrentPos.X);
-                pchar->Attributes = wAttribute;
-                dwCharsWritten++;
-                _IncrementCoordPos(&dwCurrentPos);
-            }
-        }
-
-        numberOfAttrsWritten = dwCharsWritten;
-
-        Log::Comment(NoThrowString().Format(L"Fill modified %d characters.", dwCharsWritten));
-
-        return _fFillConsoleOutputAttributeResult;
-    }
-
     BOOL SetConsoleTextAttribute(const WORD wAttr) override
     {
         Log::Comment(L"SetConsoleTextAttribute MOCK called...");
@@ -411,13 +355,6 @@ public:
         }
 
         return _fPrivateWriteConsoleControlInputResult;
-    }
-
-    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* /*pScrollRectangle*/, _In_opt_ const SMALL_RECT* /*pClipRectangle*/, _In_ COORD /*dwDestinationOrigin*/, const CHAR_INFO* /*pFill*/) override
-    {
-        Log::Comment(L"ScrollConsoleScreenBufferW MOCK called...");
-
-        return _fScrollConsoleScreenBufferWResult;
     }
 
     BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins) override
@@ -723,20 +660,24 @@ public:
         return _fPrivateSetDefaultBackgroundResult;
     }
 
-    void _IncrementCoordPos(_Inout_ COORD* pcoord)
+    BOOL PrivateFillRegion(const COORD /*startPosition*/,
+                           const size_t /*fillLength*/,
+                           const wchar_t /*fillChar*/,
+                           const bool /*standardFillAttrs*/) noexcept override
     {
-        pcoord->X++;
+        Log::Comment(L"PrivateFillRegion MOCK called...");
 
-        if (pcoord->X >= _coordBufferSize.X)
-        {
-            pcoord->X = 0;
-            pcoord->Y++;
+        return TRUE;
+    }
 
-            if (pcoord->Y >= _coordBufferSize.Y)
-            {
-                pcoord->Y = _coordBufferSize.Y - 1;
-            }
-        }
+    BOOL PrivateScrollRegion(const SMALL_RECT /*scrollRect*/,
+                             const std::optional<SMALL_RECT> /*clipRect*/,
+                             const COORD /*destinationOrigin*/,
+                             const bool /*standardFillAttrs*/) noexcept override
+    {
+        Log::Comment(L"PrivateScrollRegion MOCK called...");
+
+        return TRUE;
     }
 
     void PrepData()
@@ -765,11 +706,6 @@ public:
 
     void PrepData(CursorX xact, CursorY yact)
     {
-        PrepData(xact, yact, s_wchDefault, s_wDefaultAttribute);
-    }
-
-    void PrepData(CursorX xact, CursorY yact, WCHAR wch, WORD wAttr)
-    {
         Log::Comment(L"Resetting mock data state.");
 
         // APIs succeed by default
@@ -777,18 +713,16 @@ public:
         _fGetConsoleScreenBufferInfoExResult = TRUE;
         _fGetConsoleCursorInfoResult = TRUE;
         _fSetConsoleCursorInfoResult = TRUE;
-        _fFillConsoleOutputCharacterWResult = TRUE;
-        _fFillConsoleOutputAttributeResult = TRUE;
         _fSetConsoleTextAttributeResult = TRUE;
         _fPrivateWriteConsoleInputWResult = TRUE;
         _fPrivatePrependConsoleInputResult = TRUE;
         _fPrivateWriteConsoleControlInputResult = TRUE;
-        _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
         _fMoveToBottomResult = true;
 
-        _PrepCharsBuffer(wch, wAttr);
+        _coordBufferSize.X = 100;
+        _coordBufferSize.Y = 600;
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _srViewport.Top = 20;
@@ -851,47 +785,6 @@ public:
         _coordExpectedCursorPos = _coordCursorPos;
     }
 
-    void _PrepCharsBuffer()
-    {
-        _PrepCharsBuffer(s_wchDefault, s_wDefaultAttribute);
-    }
-
-    void _PrepCharsBuffer(WCHAR const wch, WORD const wAttr)
-    {
-        // Buffer large
-        _coordBufferSize.X = 100;
-        _coordBufferSize.Y = 600;
-
-        // Buffer data
-        _FreeCharsBuffer();
-
-        DWORD const cchTotalBufferSize = _coordBufferSize.Y * _coordBufferSize.X;
-
-        _rgchars = new CHAR_INFO[cchTotalBufferSize];
-
-        COORD coordStart = { 0 };
-        size_t written = 0;
-
-        // Fill buffer with Zs.
-        Log::Comment(L"Filling buffer with characters so we can tell what's deleted.");
-        FillConsoleOutputCharacterW(wch, cchTotalBufferSize, coordStart, written);
-
-        // Fill attributes with 0s
-        Log::Comment(L"Filling buffer with attributes so we can tell what happened.");
-        FillConsoleOutputAttribute(wAttr, cchTotalBufferSize, coordStart, written);
-
-        VERIFY_ARE_EQUAL(((DWORD)cchTotalBufferSize), ((DWORD)written), L"Ensure the writer says all characters in the buffer were filled.");
-    }
-
-    void _FreeCharsBuffer()
-    {
-        if (_rgchars != nullptr)
-        {
-            delete[] _rgchars;
-            _rgchars = nullptr;
-        }
-    }
-
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
         size_t const cchResponse = wcslen(pwszExpectedResponse);
@@ -918,101 +811,6 @@ public:
         }
     }
 
-    bool ValidateEraseBufferState(SMALL_RECT* rgsrRegions, size_t cRegions, wchar_t wchExpectedInRegions, WORD wAttrExpectedInRegions)
-    {
-        bool fStateValid = true;
-
-        Log::Comment(NoThrowString().Format(L"The following %zu regions are used as in-bounds for this test:", cRegions));
-        for (size_t iRegion = 0; iRegion < cRegions; iRegion++)
-        {
-            SMALL_RECT srRegion = rgsrRegions[iRegion];
-
-            Log::Comment(NoThrowString().Format(L"#%zu - (T: %d, B: %d, L: %d, R:%d)", iRegion, srRegion.Top, srRegion.Bottom, srRegion.Left, srRegion.Right));
-        }
-
-        Log::Comment(L"Now checking every character within the buffer...");
-        for (short iRow = 0; iRow < _coordBufferSize.Y; iRow++)
-        {
-            for (short iCol = 0; iCol < _coordBufferSize.X; iCol++)
-            {
-                CHAR_INFO* pchar = _GetCharAt(iRow, iCol);
-
-                bool const fIsInclusive = _IsAnyRegionInclusive(rgsrRegions, cRegions, iRow, iCol);
-
-                WCHAR const wchExpected = fIsInclusive ? wchExpectedInRegions : TestGetSet::s_wchDefault;
-
-                WORD const wAttrExpected = fIsInclusive ? wAttrExpectedInRegions : TestGetSet::s_wDefaultAttribute;
-
-                if (pchar->Char.UnicodeChar != wchExpected)
-                {
-                    fStateValid = false;
-
-                    Log::Comment(NoThrowString().Format(L"Region match failed at (X: %d, Y: %d). Expected: '%c'. Actual: '%c'", iCol, iRow, wchExpected, pchar->Char.UnicodeChar));
-
-                    break;
-                }
-
-                if (pchar->Attributes != wAttrExpected)
-                {
-                    fStateValid = false;
-
-                    Log::Comment(NoThrowString().Format(L"Region match failed at (X: %d, Y: %d). Expected Attr: 0x%x. Actual Attr: 0x%x", iCol, iRow, wAttrExpected, pchar->Attributes));
-
-                    break;
-                }
-            }
-
-            if (!fStateValid)
-            {
-                break;
-            }
-        }
-
-        return fStateValid;
-    }
-
-    bool _IsAnyRegionInclusive(SMALL_RECT* rgsrRegions, size_t cRegions, short sRow, short sCol)
-    {
-        bool fIncludesChar = false;
-
-        for (size_t iRegion = 0; iRegion < cRegions; iRegion++)
-        {
-            fIncludesChar = _IsInRegionInclusive(rgsrRegions[iRegion], sRow, sCol);
-
-            if (fIncludesChar)
-            {
-                break;
-            }
-        }
-
-        return fIncludesChar;
-    }
-
-    bool _IsInRegionInclusive(SMALL_RECT srRegion, short sRow, short sCol)
-    {
-        return srRegion.Left <= sCol &&
-               srRegion.Right >= sCol &&
-               srRegion.Top <= sRow &&
-               srRegion.Bottom >= sRow;
-    }
-
-    CHAR_INFO* _GetCharAt(size_t const iRow, size_t const iCol)
-    {
-        CHAR_INFO* pchar = nullptr;
-
-        if (_rgchars != nullptr)
-        {
-            pchar = &(_rgchars[(iRow * _coordBufferSize.X) + iCol]);
-        }
-
-        if (pchar == nullptr)
-        {
-            VERIFY_FAIL(L"Failed to retrieve character position from buffer.");
-        }
-
-        return pchar;
-    }
-
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
     {
         rect->Top = top;
@@ -1024,7 +822,6 @@ public:
 
     ~TestGetSet()
     {
-        _FreeCharsBuffer();
     }
 
     static const WCHAR s_wchErase = (WCHAR)0x20;
@@ -1033,7 +830,6 @@ public:
     static const WORD s_wDefaultAttribute = 0;
     static const WORD s_wDefaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
-    CHAR_INFO* _rgchars = nullptr;
     std::deque<std::unique_ptr<IInputEvent>> _events;
 
     COORD _coordBufferSize = { 0, 0 };
@@ -1075,13 +871,10 @@ public:
     BOOL _fSetConsoleCursorPositionResult = false;
     BOOL _fGetConsoleCursorInfoResult = false;
     BOOL _fSetConsoleCursorInfoResult = false;
-    BOOL _fFillConsoleOutputCharacterWResult = false;
-    BOOL _fFillConsoleOutputAttributeResult = false;
     BOOL _fSetConsoleTextAttributeResult = false;
     BOOL _fPrivateWriteConsoleInputWResult = false;
     BOOL _fPrivatePrependConsoleInputResult = false;
     BOOL _fPrivateWriteConsoleControlInputResult = false;
-    BOOL _fScrollConsoleScreenBufferWResult = false;
 
     BOOL _fSetConsoleWindowInfoResult = false;
     BOOL _fExpectedWindowAbsolute = false;
@@ -1662,247 +1455,6 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_privateShowCursorResult = false;
         VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
-    }
-
-    // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer
-    //  above the viewport, and moves the contents of the buffer in the
-    //  viewport to 0,0. This emulates the xterm behavior of clearing any
-    //  scrollback content.
-    TEST_METHOD(EraseScrollbackTests)
-    {
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        _testGetSet->_wAttribute = _testGetSet->s_wAttrErase;
-        Log::Comment(L"Starting Test");
-
-        _testGetSet->_fSetConsoleWindowInfoResult = true;
-        _testGetSet->_fExpectedWindowAbsolute = true;
-        SMALL_RECT srRegion = { 0 };
-        srRegion.Bottom = _testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top - 1;
-        srRegion.Right = _testGetSet->_srViewport.Right - _testGetSet->_srViewport.Left - 1;
-        _testGetSet->_srExpectedConsoleWindow = srRegion;
-
-        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
-        const COORD coordRelativeCursor = { _testGetSet->_coordCursorPos.X - _testGetSet->_srViewport.Left,
-                                            _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
-        _testGetSet->_coordExpectedCursorPos = coordRelativeCursor;
-
-        VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(DispatchTypes::EraseType::Scrollback));
-
-        // There are two portions of the screen that are cleared -
-        //  below the viewport and to the right of the viewport.
-        size_t cRegionsToCheck = 2;
-        SMALL_RECT rgsrRegionsModified[2];
-
-        // Region 0 - Below the viewport
-        srRegion.Top = _testGetSet->_srViewport.Bottom + 1;
-        srRegion.Left = 0;
-
-        srRegion.Bottom = _testGetSet->_coordBufferSize.Y;
-        srRegion.Right = _testGetSet->_coordBufferSize.X;
-
-        rgsrRegionsModified[0] = srRegion;
-
-        // Region 1 - To the right of the viewport
-        srRegion.Top = 0;
-        srRegion.Left = _testGetSet->_srViewport.Right + 1;
-
-        srRegion.Bottom = _testGetSet->_coordBufferSize.Y;
-        srRegion.Right = _testGetSet->_coordBufferSize.X;
-
-        rgsrRegionsModified[1] = srRegion;
-
-        // Scan entire buffer and ensure only the necessary region has changed.
-        bool fRegionSuccess = _testGetSet->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
-        VERIFY_IS_TRUE(fRegionSuccess);
-
-        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
-        _testGetSet->PrepData();
-        _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
-
-        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(DispatchTypes::EraseType::Scrollback));
-
-        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
-        _testGetSet->PrepData();
-        _testGetSet->_fFillConsoleOutputCharacterWResult = false;
-
-        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(DispatchTypes::EraseType::Scrollback));
-    }
-
-    TEST_METHOD(EraseTests)
-    {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiEraseType", L"{0, 1, 2}") // corresponds to options in DispatchTypes::EraseType
-            TEST_METHOD_PROPERTY(L"Data:fEraseScreen", L"{FALSE, TRUE}") // corresponds to Line (FALSE) or Screen (TRUE)
-        END_TEST_METHOD_PROPERTIES()
-
-        // Modify variables based on type of this test
-        DispatchTypes::EraseType eraseType;
-        unsigned int uiEraseType;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiEraseType", uiEraseType));
-        eraseType = (DispatchTypes::EraseType)uiEraseType;
-
-        bool fEraseScreen;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fEraseScreen", fEraseScreen));
-
-        Log::Comment(L"Starting test...");
-
-        // This combiniation is a simple VT api call
-        // Verify that the adapter calls that function, and do nothing else.
-        // This functionality is covered by ScreenBufferTests::EraseAllTests
-        if (eraseType == DispatchTypes::EraseType::All && fEraseScreen)
-        {
-            Log::Comment(L"Testing Erase in Display - All");
-            VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(eraseType));
-            return;
-        }
-
-        Log::Comment(L"Test 1: Perform standard erase operation.");
-        switch (eraseType)
-        {
-        case DispatchTypes::EraseType::FromBeginning:
-            Log::Comment(L"Erasing line from beginning to cursor.");
-            break;
-        case DispatchTypes::EraseType::ToEnd:
-            Log::Comment(L"Erasing line from cursor to end.");
-            break;
-        case DispatchTypes::EraseType::All:
-            Log::Comment(L"Erasing all.");
-            break;
-        default:
-            VERIFY_FAIL(L"Unsupported erase type.");
-        }
-
-        if (!fEraseScreen)
-        {
-            Log::Comment(L"Erasing just one line (the cursor's line).");
-        }
-        else
-        {
-            Log::Comment(L"Erasing entire display (viewport). May be bounded by the cursor.");
-        }
-
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        _testGetSet->_wAttribute = _testGetSet->s_wAttrErase;
-
-        if (!fEraseScreen)
-        {
-            VERIFY_IS_TRUE(_pDispatch->EraseInLine(eraseType));
-        }
-        else
-        {
-            VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(eraseType));
-        }
-
-        // Will be always the region of the cursor line (minimum 1)
-        // and 2 more if it's the display (for the regions before and after the cursor line, total 3)
-        SMALL_RECT rgsrRegionsModified[3]; // max of 3 regions.
-
-        // Determine selection rectangle for line containing the cursor.
-        // All sides are inclusive of modified data. (unlike viewport normally)
-        SMALL_RECT srRegion = { 0 };
-        srRegion.Top = _testGetSet->_coordCursorPos.Y;
-        srRegion.Bottom = srRegion.Top;
-
-        switch (eraseType)
-        {
-        case DispatchTypes::EraseType::FromBeginning:
-        case DispatchTypes::EraseType::All:
-            srRegion.Left = _testGetSet->_srViewport.Left;
-            break;
-        case DispatchTypes::EraseType::ToEnd:
-            srRegion.Left = _testGetSet->_coordCursorPos.X;
-            break;
-        default:
-            VERIFY_FAIL(L"Unsupported erase type.");
-            break;
-        }
-
-        switch (eraseType)
-        {
-        case DispatchTypes::EraseType::FromBeginning:
-            srRegion.Right = _testGetSet->_coordCursorPos.X;
-            break;
-        case DispatchTypes::EraseType::All:
-        case DispatchTypes::EraseType::ToEnd:
-            srRegion.Right = _testGetSet->_srViewport.Right - 1;
-            break;
-        default:
-            VERIFY_FAIL(L"Unsupported erase type.");
-            break;
-        }
-        rgsrRegionsModified[0] = srRegion;
-
-        size_t cRegionsToCheck = 1; // start with 1 region to check from the line above. We may add up to 2 more.
-
-        // Need to calculate up to two more regions if this is a screen erase.
-        if (fEraseScreen)
-        {
-            // If from beginning or all, add the region *before* the cursor line.
-            if (eraseType == DispatchTypes::EraseType::FromBeginning ||
-                eraseType == DispatchTypes::EraseType::All)
-            {
-                srRegion.Left = _testGetSet->_srViewport.Left;
-                srRegion.Right = _testGetSet->_srViewport.Right - 1; // viewport is exclusive on the right. this test is inclusive so -1.
-                srRegion.Top = _testGetSet->_srViewport.Top;
-
-                srRegion.Bottom = _testGetSet->_coordCursorPos.Y - 1; // this might end up being above top. This will be checked below.
-
-                // Only add it if this is still valid.
-                if (srRegion.Bottom >= srRegion.Top)
-                {
-                    rgsrRegionsModified[cRegionsToCheck] = srRegion;
-                    cRegionsToCheck++;
-                }
-            }
-
-            // If from end or all, add the region *after* the cursor line.
-            if (eraseType == DispatchTypes::EraseType::ToEnd ||
-                eraseType == DispatchTypes::EraseType::All)
-            {
-                srRegion.Left = _testGetSet->_srViewport.Left;
-                srRegion.Right = _testGetSet->_srViewport.Right - 1; // viewport is exclusive rectangle on the right. this test uses inclusive rectangles so -1.
-                srRegion.Bottom = _testGetSet->_srViewport.Bottom - 1; // viewport is exclusive rectangle on the bottom. this test uses inclusive rectangles so -1;
-
-                srRegion.Top = _testGetSet->_coordCursorPos.Y + 1; // this might end up being below bottom. This will be checked below.
-
-                // Only add it if this is still valid.
-                if (srRegion.Bottom >= srRegion.Top)
-                {
-                    rgsrRegionsModified[cRegionsToCheck] = srRegion;
-                    cRegionsToCheck++;
-                }
-            }
-        }
-
-        // Scan entire buffer and ensure only the necessary region has changed.
-        bool fRegionSuccess = _testGetSet->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
-        VERIFY_IS_TRUE(fRegionSuccess);
-
-        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
-        _testGetSet->PrepData();
-        _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
-
-        if (!fEraseScreen)
-        {
-            VERIFY_IS_FALSE(_pDispatch->EraseInLine(eraseType));
-        }
-        else
-        {
-            VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(eraseType));
-        }
-
-        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
-        _testGetSet->PrepData();
-        _testGetSet->_fFillConsoleOutputCharacterWResult = false;
-
-        if (!fEraseScreen)
-        {
-            VERIFY_IS_FALSE(_pDispatch->EraseInLine(eraseType));
-        }
-        else
-        {
-            VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(eraseType));
-        }
     }
 
     TEST_METHOD(GraphicsBaseTests)
@@ -2702,75 +2254,6 @@ public:
         _testGetSet->_fExpectedIsForeground = true;
         _testGetSet->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-    }
-
-    TEST_METHOD(HardReset)
-    {
-        Log::Comment(L"Starting test...");
-
-        _testGetSet->PrepData();
-
-        ///////////////// Components of a EraseScrollback //////////////////////
-        _testGetSet->_fExpectedWindowAbsolute = true;
-        SMALL_RECT srRegion = { 0 };
-        srRegion.Bottom = _testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top - 1;
-        srRegion.Right = _testGetSet->_srViewport.Right - _testGetSet->_srViewport.Left - 1;
-        _testGetSet->_srExpectedConsoleWindow = srRegion;
-        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
-        const COORD coordRelativeCursor = { _testGetSet->_coordCursorPos.X - _testGetSet->_srViewport.Left,
-                                            _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
-        const COORD coordExpectedCursorPos = { 0, 0 };
-
-        auto prepExpectedParameters = [&]() {
-            // Cursor to 1,1
-            _testGetSet->_coordExpectedCursorPos = { 0, 0 };
-            _testGetSet->_fSetConsoleCursorPositionResult = true;
-            _testGetSet->_fPrivateSetLegacyAttributesResult = true;
-            _testGetSet->_fPrivateSetDefaultAttributesResult = true;
-            _testGetSet->_fPrivateBoldTextResult = true;
-            _testGetSet->_fExpectedForeground = true;
-            _testGetSet->_fExpectedBackground = true;
-            _testGetSet->_fExpectedMeta = true;
-            _testGetSet->_fExpectedIsBold = false;
-            _testGetSet->_expectedShowCursor = true;
-            _testGetSet->_privateShowCursorResult = true;
-
-            // We're expecting _SetDefaultColorHelper to call
-            //      PrivateSetLegacyAttributes with 0 as the wAttr param.
-            _testGetSet->_wExpectedAttribute = 0;
-
-            // Prepare the results of SoftReset api calls
-            _testGetSet->_fPrivateSetCursorKeysModeResult = true;
-            _testGetSet->_fPrivateSetKeypadModeResult = true;
-            _testGetSet->_fGetConsoleScreenBufferInfoExResult = true;
-            _testGetSet->_fPrivateSetScrollingRegionResult = true;
-        };
-        prepExpectedParameters();
-
-        VERIFY_IS_TRUE(_pDispatch->HardReset());
-        VERIFY_ARE_EQUAL(_testGetSet->_coordCursorPos, coordExpectedCursorPos);
-        VERIFY_ARE_EQUAL(_testGetSet->_fUsingRgbColor, false);
-
-        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
-        _testGetSet->PrepData();
-        prepExpectedParameters();
-        _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
-
-        VERIFY_IS_FALSE(_pDispatch->HardReset());
-
-        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
-        _testGetSet->PrepData();
-        prepExpectedParameters();
-        _testGetSet->_fFillConsoleOutputCharacterWResult = false;
-
-        VERIFY_IS_FALSE(_pDispatch->HardReset());
-
-        Log::Comment(L"Test 4: Gracefully fail when setting the window fails.");
-        _testGetSet->PrepData();
-        prepExpectedParameters();
-        _testGetSet->_fSetConsoleWindowInfoResult = false;
-
-        VERIFY_IS_FALSE(_pDispatch->HardReset());
     }
 
     TEST_METHOD(SetColorTableValue)

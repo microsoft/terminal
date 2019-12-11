@@ -25,12 +25,13 @@
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-  <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="precomp.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="JsonTestClass.h" />
+    <ClInclude Include="CppWinrtTailored.h" />
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
@@ -40,7 +41,7 @@
     <ClCompile Include="ColorSchemeTests.cpp" />
     <ClCompile Include="KeyBindingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
-    <ClCompile Include="precomp.cpp">
+    <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
@@ -69,13 +70,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
 
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -93,11 +94,11 @@
     <!-- From Microsoft.UI.Xaml.targets -->
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
   </PropertyGroup>
 
 <!-- We actually can just straight up reference MUX here, it's fine -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.191021001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
 
   <!-- This project will generate individual sxs manifests for each of our winrt libraries -->
@@ -166,7 +167,8 @@
     </MSBuild>
 
     <ItemGroup>
-      <MyPackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" Condition="'%(Extension)'=='.dll' Or '%(Extension)'=='.pri' Or '%(Extension)'=='.xbf'" />
+      <!-- IMPORTANT: Grab all the xbf files _except_ App.xbf. If that's there, then the tests will hyperexplode. -->
+      <MyPackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" Condition="'%(Extension)'=='.dll' Or '%(Extension)'=='.pri' Or ('%(Extension)'=='.xbf' And '%(Filename)' != 'App')" />
     </ItemGroup>
   </Target>
 

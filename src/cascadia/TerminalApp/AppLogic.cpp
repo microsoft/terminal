@@ -129,9 +129,24 @@ namespace winrt::TerminalApp::implementation
         _root = winrt::make_self<TerminalPage>();
     }
 
+    // Method Decscription:
+    // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
+    // Arguments:
+    // - <none> - reports internal state
+    // Return Value:
+    // - True if UWP, false otherwise.
+    bool AppLogic::IsUwp() const noexcept
+    {
+        return _isUwp;
+    }
+
     // Method Description:
     // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
     //   for being a UWP
+    // Arguments:
+    // - <none> (sets to UWP = true, one way change)
+    // Return Value:
+    // - <none>
     void AppLogic::RunAsUwp()
     {
         _isUwp = true;
@@ -343,7 +358,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Use the default profile to determine how big of a window we need.
-        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
+        const auto [_, settings] = _settings->BuildSettings(nullptr);
 
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
@@ -445,7 +460,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto newSettings = CascadiaSettings::LoadAll();
+            auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
             _settings = std::move(newSettings);
             const auto& warnings = _settings->GetWarnings();
             hr = warnings.size() == 0 ? S_OK : S_FALSE;

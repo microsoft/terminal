@@ -22,6 +22,7 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
+        Boolean IsUwp();
         void RunAsUwp();
 
         void LoadSettings();
