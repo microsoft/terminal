@@ -110,22 +110,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _sizeChangedRevoker = swapChainPanel.SizeChanged(winrt::auto_revoke, { this, &TermControl::_SwapChainSizeChanged });
         _compositionScaleChangedRevoker = swapChainPanel.CompositionScaleChanged(winrt::auto_revoke, { this, &TermControl::_SwapChainScaleChanged });
 
-        // Initialize a weak pointer of this object
-        auto weakThis{ get_weak() };
-
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        _layoutUpdatedRevoker = swapChainPanel.LayoutUpdated(winrt::auto_revoke, [weakThis](auto /*s*/, auto /*e*/) {
+        _layoutUpdatedRevoker = swapChainPanel.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // This event fires every time the layout changes, but it is always the last one to fire
             // in any layout change chain. That gives us great flexibility in finding the right point
             // at which to initialize our renderer (and our terminal).
             // Any earlier than the last layout update and we may not know the terminal's starting size.
-            auto control{ weakThis.get() };
 
-            if (control && control->_InitializeTerminal())
+            if (_InitializeTerminal())
             {
                 // Only let this succeed once.
-                control->_layoutUpdatedRevoker.revoke();
+                _layoutUpdatedRevoker.revoke();
             }
         });
 
@@ -149,12 +145,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // These are important:
         // 1. When we get tapped, focus us
-        this->Tapped([weakThis](auto&, auto& e) {
-            if (auto control{ weakThis.get() })
-            {
-                control->Focus(FocusState::Pointer);
-                e.Handled(true);
-            }
+        _tappedRevoker = this->Tapped(winrt::auto_revoke, [this](auto&, auto& e) {
+            Focus(FocusState::Pointer);
+            e.Handled(true);
         });
         // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
         this->IsTabStop(true);
@@ -164,11 +157,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [weakThis](auto&& /*s*/, auto&& /*v*/) {
-            if (auto control{ weakThis.get() })
-            {
-                control->_ConnectionStateChangedHandlers(*control, nullptr);
-            }
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+            _ConnectionStateChangedHandlers(*this, nullptr);
         });
     }
 
@@ -534,13 +524,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
 
-        auto weakThis{ get_weak() };
-
-        auto onRecieveOutputFn = [weakThis](const hstring str) {
-            if (auto control{ weakThis.get() })
-            {
-                control->_terminal->Write(str.c_str());
-            }
+        // This event is explicitly revoked in the destructor: does not need weak_ref
+        auto onRecieveOutputFn = [this](const hstring str) {
+            _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
 
@@ -548,6 +534,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal->SetWriteInputCallback(inputFn);
 
         auto chain = _renderEngine->GetSwapChain();
+        auto weakThis{ get_weak() };
+
         _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis, chain]() {
             if (auto control{ weakThis.get() })
             {
