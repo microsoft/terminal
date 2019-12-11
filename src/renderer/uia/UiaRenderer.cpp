@@ -95,8 +95,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     // early exit: different number of rows
     if (_prevSelection.size() != rectangles.size())
     {
-        _selectionChanged = true;
-        _prevSelection = rectangles;
+        try
+        {
+            _selectionChanged = true;
+            _prevSelection = rectangles;
+        }
+        CATCH_LOG_RETURN_HR(E_FAIL);
         return S_OK;
     }
 
@@ -115,9 +119,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
                 return S_OK;
             }
         }
-        catch (...)
-        {
-        }
+        CATCH_LOG_RETURN_HR(E_FAIL);
     }
 
     // assume selection has not changed
