@@ -401,21 +401,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Return Value:
     // - The automation peer for our control
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
+    try
     {
-        try
+        if (GetUiaData())
         {
-            if (GetUiaData())
-            {
-                // create a custom automation peer with this code pattern:
-                // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-                auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
+            // create a custom automation peer with this code pattern:
+            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+            auto autoPeer = winrt::make_self<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(this);
 
-                _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
-                _renderer->AddRenderEngine(_uiaEngine.get());
-                return *autoPeer;
-            }
+            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+            _renderer->AddRenderEngine(_uiaEngine.get());
+            return *autoPeer;
         }
-        CATCH_LOG();
+        return nullptr;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
         return nullptr;
     }
 

@@ -92,14 +92,11 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
-    auto updateSelection = wil::scope_exit([&]() {
-        _prevSelection = rectangles;
-    });
-
     // early exit: different number of rows
     if (_prevSelection.size() != rectangles.size())
     {
         _selectionChanged = true;
+        _prevSelection = rectangles;
         return S_OK;
     }
 
@@ -114,6 +111,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
             if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
             {
                 _selectionChanged = true;
+                _prevSelection = rectangles;
                 return S_OK;
             }
         }
