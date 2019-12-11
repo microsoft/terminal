@@ -48,7 +48,7 @@ We will create a `SearchBoxControl` Xaml `UserControl` element. When a search pr
 
 ![SearchBox mockup](images/SearchBoxControl.png)
 
-Above is the `SearchBoxControl`.
+Above is the `SearchBoxControl` in dark theme and light theme.
   - The two buttons with up/down arrows controls the search direction, Each button will be styled to indicate which search direction is currently selected. 
   - The button with a "Aa" icon, if pressed, means that we are searching case-sensitivily. 
   - The current style puts all elements - the `X` button, the text box and the search pattern control buttons on one single line. This ensures that the `SearchBoxControl` won't be too high and block terminal text. This is similar with VSCode. Another possible layout style is to put elements in multiple layers. This will occupy more lines, but the search dialog will narrower. Considering that there is not many elements, we do not need multiple layers. 
@@ -104,7 +104,8 @@ This feature only launches in need. It does not impact the performance of Termin
 
 ## Potential Issues
                                                               
-1. If the terminal window is not wide enough for the search box to be visible, the buttons on the right of the `TextBox` will become invisible, but the `TextBox` is still visible and the window could not be narrower than the `TextBox`. This is similar to the behavior of other editors.
+1. If the terminal window is not wide enough for the search box to be visible, the buttons on the right of the `TextBox` will become invisible, but the `TextBox` is still visible and the window could not be narrower than the `TextBox`. This is similar to the behavior of other editors. Please see the image below:
+   ![SearchBox width not enough](images/SearchBoxControlNoEnoughWidth.png)
 2. If the terminal window is not high enough for the search box to be visible, the whole terminal screen, inlcuding the `SearchBoxControl` can disappear. This is similar to the behavior of other editors.
 
 ## Future considerations
