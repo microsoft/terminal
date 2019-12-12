@@ -47,6 +47,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                             const BOOL fKeepCursorVisible,
                                             _Inout_opt_ PSHORT psScrollY)
 {
+    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.X < 0)
     {
@@ -70,7 +71,16 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         else
         {
-            coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
+            if (inVtMode)
+            {
+                // In VT mode, the cursor must be left in the last column.
+                coordCursor.X = bufferSize.X - 1;
+            }
+            else
+            {
+                // For legacy apps, it is left where it was at the start of the write.
+                coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
+            }
         }
     }
 
@@ -85,7 +95,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     const int iCurrentCursorY = currentCursor.Y;
-    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     const bool cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
