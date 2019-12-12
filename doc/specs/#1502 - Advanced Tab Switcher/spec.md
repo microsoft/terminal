@@ -47,7 +47,7 @@ First, we'll give a quick overview of how the tab switcher UI would look like, t
 
 The tab switcher will appear as a box in the center of the terminal. It'll have a maximum and minimum height and width. We want the switcher to stretch, but it shouldn't stretch to take up the entirety of the terminal. If the user has a ton of tabs or has really long tab names, the box should still be fairly contained and shouldn't run wild.  
 
-In the box will be a vertical list of tabs with their titles and their assigned number for quick switching, and only one line will be highlighted to signify that tab is currently selected. There will only be 9 numbered tabs for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
+In the box will be a vertical list of tabs with their titles and their assigned number for quick switching, and only one line will be highlighted to signify that tab is currently selected. The top 9 tabs in the list are numbered for quick switching, and the rest of the tabs will simply have an empty space where a number would be.
 
 The list would look (roughly) like this:
 ```
@@ -67,26 +67,26 @@ The list would look (roughly) like this:
 
 The highlighted line can move up or down, and if the user moves up while the highlighted line is already at the top of the list, the highlight will wrap around to the bottom of the list. Similarly, it will wrap to the top if the highlight is at the bottom of the list and the user moves down.
 
-If there's more tabs than the UI can display, the list of tabs will scroll up/down as the user keeps iterating up/down. However, the number column does not move. The first nine tabs in the list will always be numbered.
+If there's more tabs than the UI can display, the list of tabs will scroll up/down as the user keeps iterating up/down. Even if some of the numbered tabs (the first 9 tabs) are not visible, the user can still press any number 1 through 9 to quick switch to that tab.
 
 To give an example of what happens after scrolling past the end, imagine a user is starting from the state in the mock above. The user then iterates down past the end of the visible list four times. The below mock shows the result.
 
 ```
-1 Git Moo
-2 shoo
-3 /c/
-4 /d
-5 /e/
-6 /f/
-7 /g/
-8 /h/
-9 /i/
+5 Git Moo
+6 shoo
+7 /c/
+8 /d
+9 /e/
+  /f/
+  /g/
+  /h/
+  /i/
   /j/
   /k/
   /l/ (highlighted)
 ```
 
-`Git Moo` is now associated with number 1, and the `foo`, `boo`, `Windows boofoo`, and `/c/Users/booboo` tabs are no longer visible.
+The tabs designated by numbers 1 through 4 are no longer visible (but still quick-switchable), and the list now starts with "Git Moo", which is associated with number 5.
 
 ### Using the Switcher
 
@@ -105,7 +105,7 @@ Here's an example of how to set the `anchor` key in the settings:
   {"keys": ["ctrl+tab"], "command": {"action": "openTabSwitcher", "anchor": "ctrl" }}
 ```
 
-This user provided the `anchor` key arg, and set it to <kbd>ctrl</kbd>. So, the user would open the UI with <kbd>ctrl+tab</kbd>, and as long as the user is holding <kbd>ctrl</kbd> down, the UI won't dismiss. The moment the user releases <kbd>ctrl</kbd>, the UI dismisses. The `anchor` key needs to be one of the keys in the `openTabSwitcher` keybinding. If it isn't, then the UI will act as if it wasn't given an `anchor` key in the first place.
+This user provided the `anchor` key arg, and set it to <kbd>ctrl</kbd>. So, the user would open the UI with <kbd>ctrl+tab</kbd>, and as long as the user is holding <kbd>ctrl</kbd> down, the UI won't dismiss. The moment the user releases <kbd>ctrl</kbd>, the UI dismisses. The `anchor` key needs to be one of the keys in the `openTabSwitcher` keybinding. If it isn't, we'll display a warning dialog in this case saying that the `anchor` key isn't actually part of the keybinding, and the user might run into some weird behavior.
 
 If `openTabSwitcher` is not given an `anchor` key, the switcher will stay visible even after the release of the keybinding.
 
@@ -139,6 +139,12 @@ Pressing the `openTabSwitcher` keychord again will _not_ close the Switcher.
 ### Most Recently Used Order
 
 We'll provide a setting that will allow the list of tabs to be presented in either _in-order_ (how the tabs are ordered on the tab bar), or _Most Recently Used Order_ (MRU). MRU means that the tab that the terminal most recently visited will be on the top of the list, and the tab that the terminal has not visited for the longest time will be on the bottom.
+
+There will be an argument for the `openTabSwitcher` action called `displayOrder`. This can be either `inOrder` or `mruOrder`. Making the setting an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
+```
+  {"keys": ["ctrl+tab"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"mruOrder"}}
+  {"keys": ["ctrl+shift+p"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"inOrder"}}
+```
 
 ### Numbered Tabs
 
