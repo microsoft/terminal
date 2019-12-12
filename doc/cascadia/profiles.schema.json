@@ -509,6 +509,10 @@
           ],
           "type": "string"
         },
+        "experimental.retroTerminalEffect": {
+          "description": "When set to true, enable retro terminal effects.",
+          "type": "boolean"
+        },
         "fontFace": {
           "default": "Consolas",
           "description": "Name of the font face used in the profile.",
@@ -564,10 +568,6 @@
           ],
           "type": "string"
         },
-        "retroTerminalEffect": {
-          "description": "When set to true, enable retro terminal effects.",
-          "type": "boolean"
-        }
         "selectionBackground": {
           "$ref": "#/definitions/Color",
           "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."

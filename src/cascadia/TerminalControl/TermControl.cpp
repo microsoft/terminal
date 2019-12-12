@@ -521,6 +521,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
 
+        // TODO:GH#3927 - Make it possible to hot-reload this setting. Right
+        // here, the setting will only be used when the Temrinal is initialized.
         dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
 
         THROW_IF_FAILED(dxEngine->Enable());
