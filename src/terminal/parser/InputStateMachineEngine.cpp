@@ -119,7 +119,9 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         switch (wch)
         {
         case L'\b':
-            fSuccess = _GenerateKeyFromChar(wch + 0x40, &vkey, nullptr);
+            // A received Ctrl+Backspace needs to be processed as Delete
+            actualChar = L'\x7f';
+            fSuccess = _GenerateKeyFromChar(actualChar, &vkey, nullptr);
             break;
         case L'\r':
             writeCtrl = false;
@@ -148,7 +150,8 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
             {
                 WI_SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
             }
-            if (writeAlt)
+            // Some Ctrl+Backspace paths trigger the Alt flag, but WSL doesn't like this.
+            if (writeAlt && actualChar != L'\x7f')
             {
                 WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
             }
