@@ -61,7 +61,9 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         wchar_t wch;
         bool fGotChar = GetChar(&wch);
 
-        StateMachine machine(new OutputStateMachineEngine(new EchoDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new EchoDispatch);
+
+        StateMachine machine(std::move(engine));
 
         wprintf(L"Sending characters to state machine...\r\n");
         while (fGotChar)

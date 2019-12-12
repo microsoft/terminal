@@ -62,7 +62,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         unsigned int uiTest;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiTest", uiTest));
 
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         // The OscString state shouldn't escape out after an ESC.
         bool shouldEscapeOut = true;
@@ -153,7 +154,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestEscapeImmediatePath)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -172,7 +174,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestEscapeThenC0Path)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -194,7 +197,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestGroundPrint)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'a');
@@ -203,7 +207,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestCsiEntry)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -216,7 +221,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestC1CsiEntry)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x9b');
@@ -227,7 +233,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestCsiImmediate)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -246,7 +253,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestCsiParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -273,7 +281,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestLeadingZeroCsiParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -297,7 +306,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestCsiIgnore)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -344,7 +354,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestOscStringSimple)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -409,7 +420,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
     }
     TEST_METHOD(TestLongOscString)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -431,7 +443,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(NormalTestOscParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -454,7 +467,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestLeadingZeroOscParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -482,7 +496,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestLongOscParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -523,7 +538,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestSs3Entry)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -537,7 +553,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
     TEST_METHOD(TestSs3Immediate)
     {
         // Intermediates aren't supported by Ss3 - they just get dispatched
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -571,7 +588,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
     TEST_METHOD(TestSs3Param)
     {
-        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(new DummyDispatch());
+        StateMachine mach(std::move(engine));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -955,7 +973,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         TestEscCursorMovement(L'A', &pDispatch->_fCursorUp, mach, *pDispatch);
         TestEscCursorMovement(L'B', &pDispatch->_fCursorDown, mach, *pDispatch);
@@ -1038,7 +1057,8 @@ class StateMachineExternalTest final
 
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         TestCsiCursorMovement(L'A', uiDistance, true, &pDispatch->_fCursorUp, mach, *pDispatch);
         pDispatch->ClearState();
@@ -1067,7 +1087,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         unsigned int uiDistance = 9999; // this value should be ignored with the false below.
         TestCsiCursorMovement(L'A', uiDistance, false, &pDispatch->_fCursorUp, mach, *pDispatch);
@@ -1107,7 +1128,8 @@ class StateMachineExternalTest final
 
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
@@ -1137,7 +1159,8 @@ class StateMachineExternalTest final
 
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
@@ -1157,7 +1180,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'7');
@@ -1190,14 +1214,15 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?1h", 5);
+        mach.ProcessString(L"\x1b[?1h");
         VERIFY_IS_TRUE(pDispatch->_fCursorKeysMode);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?1l", 5);
+        mach.ProcessString(L"\x1b[?1l");
         VERIFY_IS_FALSE(pDispatch->_fCursorKeysMode);
 
         pDispatch->ClearState();
@@ -1207,14 +1232,15 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?3h", 5);
+        mach.ProcessString(L"\x1b[?3h");
         VERIFY_ARE_EQUAL(pDispatch->_uiWindowWidth, static_cast<unsigned int>(DispatchTypes::s_sDECCOLMSetColumns));
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?3l", 5);
+        mach.ProcessString(L"\x1b[?3l");
         VERIFY_ARE_EQUAL(pDispatch->_uiWindowWidth, static_cast<unsigned int>(DispatchTypes::s_sDECCOLMResetColumns));
 
         pDispatch->ClearState();
@@ -1224,9 +1250,10 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?6h", 5);
+        mach.ProcessString(L"\x1b[?6h");
         VERIFY_IS_TRUE(pDispatch->_fIsOriginModeRelative);
         VERIFY_IS_TRUE(pDispatch->_fCursorPosition);
         VERIFY_ARE_EQUAL(pDispatch->_uiLine, 1u);
@@ -1235,7 +1262,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
         pDispatch->_fIsOriginModeRelative = true;
 
-        mach.ProcessString(L"\x1b[?6l", 5);
+        mach.ProcessString(L"\x1b[?6l");
         VERIFY_IS_FALSE(pDispatch->_fIsOriginModeRelative);
         VERIFY_IS_TRUE(pDispatch->_fCursorPosition);
         VERIFY_ARE_EQUAL(pDispatch->_uiLine, 1u);
@@ -1248,14 +1275,15 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?12h", 6);
+        mach.ProcessString(L"\x1b[?12h");
         VERIFY_IS_TRUE(pDispatch->_fCursorBlinking);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?12l", 6);
+        mach.ProcessString(L"\x1b[?12l");
         VERIFY_IS_FALSE(pDispatch->_fCursorBlinking);
 
         pDispatch->ClearState();
@@ -1265,14 +1293,15 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?25h", 6);
+        mach.ProcessString(L"\x1b[?25h");
         VERIFY_IS_TRUE(pDispatch->_fCursorVisible);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?25l", 6);
+        mach.ProcessString(L"\x1b[?25l");
         VERIFY_IS_FALSE(pDispatch->_fCursorVisible);
 
         pDispatch->ClearState();
@@ -1282,35 +1311,36 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?1049h", 8);
+        mach.ProcessString(L"\x1b[?1049h");
         VERIFY_IS_TRUE(pDispatch->_fIsAltBuffer);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?1049h", 8);
+        mach.ProcessString(L"\x1b[?1049h");
         VERIFY_IS_TRUE(pDispatch->_fIsAltBuffer);
-        mach.ProcessString(L"\x1b[?1049h", 8);
+        mach.ProcessString(L"\x1b[?1049h");
         VERIFY_IS_TRUE(pDispatch->_fIsAltBuffer);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?1049l", 8);
+        mach.ProcessString(L"\x1b[?1049l");
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?1049h", 8);
+        mach.ProcessString(L"\x1b[?1049h");
         VERIFY_IS_TRUE(pDispatch->_fIsAltBuffer);
-        mach.ProcessString(L"\x1b[?1049l", 8);
+        mach.ProcessString(L"\x1b[?1049l");
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
 
         pDispatch->ClearState();
 
-        mach.ProcessString(L"\x1b[?1049l", 8);
+        mach.ProcessString(L"\x1b[?1049l");
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
-        mach.ProcessString(L"\x1b[?1049l", 8);
+        mach.ProcessString(L"\x1b[?1049l");
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
 
         pDispatch->ClearState();
@@ -1320,7 +1350,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         mach.ProcessString(L"\x1b[?40h");
         VERIFY_IS_TRUE(pDispatch->_fIsDECCOLMAllowed);
@@ -1351,7 +1382,8 @@ class StateMachineExternalTest final
 
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         switch (uiEraseOperation)
         {
@@ -1433,7 +1465,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         DispatchTypes::GraphicsOptions rgExpected[16];
 
@@ -1551,7 +1584,7 @@ class StateMachineExternalTest final
         Log::Comment(L"Test 5.a: Test an empty param at the end of a sequence");
 
         std::wstring sequence = L"\x1b[1;m";
-        mach.ProcessString(&sequence[0], sequence.length());
+        mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
@@ -1563,7 +1596,7 @@ class StateMachineExternalTest final
         Log::Comment(L"Test 5.b: Test an empty param in the middle of a sequence");
 
         sequence = L"\x1b[1;;1m";
-        mach.ProcessString(&sequence[0], sequence.length());
+        mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
@@ -1576,7 +1609,7 @@ class StateMachineExternalTest final
         Log::Comment(L"Test 5.c: Test an empty param at the start of a sequence");
 
         sequence = L"\x1b[;31;1m";
-        mach.ProcessString(&sequence[0], sequence.length());
+        mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
@@ -1591,7 +1624,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         Log::Comment(L"Test 1: Check empty case. Should fail.");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -1628,7 +1662,8 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         Log::Comment(L"Test 1: Check default case, no params.");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -1664,14 +1699,15 @@ class StateMachineExternalTest final
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
         VERIFY_IS_NOT_NULL(pDispatch);
-        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+        auto engine = std::make_unique<OutputStateMachineEngine>(pDispatch);
+        StateMachine mach(std::move(engine));
 
         DispatchTypes::GraphicsOptions rgExpected[16];
         DispatchTypes::EraseType expectedDispatchTypes;
         ///////////////////////////////////////////////////////////////////////
 
         Log::Comment(L"Test 1: Basic String processing. One sequence in a string.");
-        mach.ProcessString(L"\x1b[0m", 4);
+        mach.ProcessString(L"\x1b[0m");
 
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
 
@@ -1681,7 +1717,7 @@ class StateMachineExternalTest final
 
         Log::Comment(L"Test 2: A couple of sequences all in one string");
 
-        mach.ProcessString(L"\x1b[1;4;7;30;45m\x1b[2J", 18);
+        mach.ProcessString(L"\x1b[1;4;7;30;45m\x1b[2J");
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
         VERIFY_IS_TRUE(pDispatch->_fEraseDisplay);
 
@@ -1699,7 +1735,7 @@ class StateMachineExternalTest final
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 3: Two sequences seperated by a non-sequence of characters");
 
-        mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J", 22);
+        mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J");
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -1715,11 +1751,11 @@ class StateMachineExternalTest final
 
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 4: An entire sequence broke into multiple strings");
-        mach.ProcessString(L"\x1b[1;", 4);
+        mach.ProcessString(L"\x1b[1;");
         VERIFY_IS_FALSE(pDispatch->_fSetGraphics);
         VERIFY_IS_FALSE(pDispatch->_fEraseDisplay);
 
-        mach.ProcessString(L"30mHello World\x1b[2J", 18);
+        mach.ProcessString(L"30mHello World\x1b[2J");
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -1739,7 +1775,7 @@ class StateMachineExternalTest final
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
 
-        mach.ProcessString(L"\x1b[1;", 4);
+        mach.ProcessString(L"\x1b[1;");
         VERIFY_IS_FALSE(pDispatch->_fSetGraphics);
         VERIFY_IS_FALSE(pDispatch->_fEraseDisplay);
 
@@ -1757,7 +1793,7 @@ class StateMachineExternalTest final
         VERIFY_IS_FALSE(pDispatch->_fEraseDisplay);
         VerifyDispatchTypes(rgExpected, 2, *pDispatch);
 
-        mach.ProcessString(L"Hello World\x1b[2J", 15);
+        mach.ProcessString(L"Hello World\x1b[2J");
 
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 

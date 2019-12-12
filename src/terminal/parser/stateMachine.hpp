@@ -29,11 +29,10 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(IStateMachineEngine* const pEngine);
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine);
 
         void ProcessCharacter(const wchar_t wch);
-        void ProcessString(const wchar_t* const rgwch, const size_t cch);
-        void ProcessString(const std::wstring& wstr);
+        void ProcessString(const std::wstring_view string);
 
         void ResetState();
 
@@ -64,8 +63,6 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_IsOscInvalid(const wchar_t wch);
         static bool s_IsOscTerminator(const wchar_t wch);
         static bool s_IsOscTerminationInitiator(const wchar_t wch);
-        static bool s_IsDesignateCharsetIndicator(const wchar_t wch);
-        static bool s_IsCharsetCode(const wchar_t wch);
         static bool s_IsNumber(const wchar_t wch);
         static bool s_IsSs3Indicator(const wchar_t wch);
 
@@ -128,7 +125,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
 
-        std::unique_ptr<IStateMachineEngine> _pEngine;
+        std::unique_ptr<IStateMachineEngine> _engine;
 
         VTStates _state;
 

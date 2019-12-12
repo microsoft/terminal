@@ -95,11 +95,11 @@ void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
     auto firstEnginePtr{ std::make_unique<TestStateMachineEngine>() };
     // this dance is required because StateMachine presumes to take ownership of its engine.
     const auto& firstEngine{ *firstEnginePtr.get() };
-    StateMachine firstStateMachine{ firstEnginePtr.release() };
+    StateMachine firstStateMachine{ std::move(firstEnginePtr) };
 
     auto secondEnginePtr{ std::make_unique<TestStateMachineEngine>() };
     const auto& secondEngine{ *secondEnginePtr.get() };
-    StateMachine secondStateMachine{ secondEnginePtr.release() };
+    StateMachine secondStateMachine{ std::move(secondEnginePtr) };
 
     firstStateMachine.ProcessString(L"\x1b[12"); // partial sequence
     secondStateMachine.ProcessString(L"\x1b[3C"); // full sequence on second parser

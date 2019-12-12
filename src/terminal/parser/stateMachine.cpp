@@ -10,8 +10,8 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(IStateMachineEngine* const pEngine) :
-    _pEngine(THROW_IF_NULL_ALLOC(pEngine)),
+StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
+    _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _cParams(0),
@@ -35,12 +35,12 @@ StateMachine::StateMachine(IStateMachineEngine* const pEngine) :
 
 const IStateMachineEngine& StateMachine::Engine() const noexcept
 {
-    return *_pEngine;
+    return *_engine;
 }
 
 IStateMachineEngine& StateMachine::Engine() noexcept
 {
-    return *_pEngine;
+    return *_engine;
 }
 
 // Routine Description:
@@ -299,7 +299,7 @@ bool StateMachine::s_IsNumber(const wchar_t wch)
 void StateMachine::_ActionExecute(const wchar_t wch)
 {
     _trace.TraceOnExecute(wch);
-    _pEngine->ActionExecute(wch);
+    _engine->ActionExecute(wch);
 }
 
 // Routine Description:
@@ -313,7 +313,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 {
     _trace.TraceOnExecuteFromEscape(wch);
-    _pEngine->ActionExecuteFromEscape(wch);
+    _engine->ActionExecuteFromEscape(wch);
 }
 
 // Routine Description:
@@ -325,7 +325,7 @@ void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 void StateMachine::_ActionPrint(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Print");
-    _pEngine->ActionPrint(wch);
+    _engine->ActionPrint(wch);
 }
 
 // Routine Description:
@@ -339,7 +339,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    bool fSuccess = _pEngine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
+    bool fSuccess = _engine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -362,7 +362,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
 
-    bool fSuccess = _pEngine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
+    bool fSuccess = _engine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -497,7 +497,7 @@ void StateMachine::_ActionClear()
     _sOscParam = 0;
     _sOscNextChar = 0;
 
-    _pEngine->ActionClear();
+    _engine->ActionClear();
 }
 
 // Routine Description:
@@ -583,7 +583,7 @@ void StateMachine::_ActionOscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscDispatch");
 
-    bool fSuccess = _pEngine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
+    bool fSuccess = _engine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -606,7 +606,7 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Ss3Dispatch");
 
-    bool fSuccess = _pEngine->ActionSs3Dispatch(wch, _rgusParams, _cParams);
+    bool fSuccess = _engine->ActionSs3Dispatch(wch, _rgusParams, _cParams);
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -838,7 +838,7 @@ void StateMachine::_EventEscape(const wchar_t wch)
     _trace.TraceOnEvent(L"Escape");
     if (s_IsC0Code(wch))
     {
-        if (_pEngine->DispatchControlCharsFromEscape())
+        if (_engine->DispatchControlCharsFromEscape())
         {
             _ActionExecuteFromEscape(wch);
             _EnterGround();
@@ -854,7 +854,7 @@ void StateMachine::_EventEscape(const wchar_t wch)
     }
     else if (s_IsIntermediate(wch))
     {
-        if (_pEngine->DispatchIntermediatesFromEscape())
+        if (_engine->DispatchIntermediatesFromEscape())
         {
             _ActionEscDispatch(wch);
             _EnterGround();
@@ -1327,7 +1327,7 @@ bool StateMachine::FlushToTerminal()
     //      that pwchCurr was processed.
     // However, if we're here, then the processing of pwchChar triggered the
     //      engine to request the entire sequence get passed through, including pwchCurr.
-    return _pEngine->ActionPassThroughString(_pwchSequenceStart,
+    return _engine->ActionPassThroughString(_pwchSequenceStart,
                                              _pwchCurr - _pwchSequenceStart + 1);
 }
 
@@ -1337,17 +1337,16 @@ bool StateMachine::FlushToTerminal()
 //     a escape sequence, then feed characters into the state machine one at a
 //     time until we return to the ground state.
 // Arguments:
-// - rgwch - Array of new characters to operate upon
-// - cch - Count of characters in array
+// - string - String of text to operate on
 // Return Value:
 // - <none>
-void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
+void StateMachine::ProcessString(const std::wstring_view string)
 {
-    _pwchCurr = rgwch;
-    _pwchSequenceStart = rgwch;
+    _pwchCurr = string.data();
+    _pwchSequenceStart = string.data();
     _currRunLength = 0;
 
-    for (size_t cchCharsRemaining = cch; cchCharsRemaining > 0; cchCharsRemaining--)
+    for (size_t cchCharsRemaining = string.size(); cchCharsRemaining > 0; cchCharsRemaining--)
     {
         if (_fProcessingIndividually)
         {
@@ -1365,8 +1364,8 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
         {
             if (s_IsActionableFromGround(*_pwchCurr)) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                FAIL_FAST_IF(!(_pwchSequenceStart + _currRunLength <= rgwch + cch));
-                _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
+                FAIL_FAST_IF(!(_pwchSequenceStart + _currRunLength <= string.data() + string.size()));
+                _engine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
                 _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
                 _fProcessingIndividually = true; // begin processing future characters individually...
                 _currRunLength = 0;
@@ -1391,7 +1390,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
     if (!_fProcessingIndividually && _currRunLength > 0)
     {
         // print the rest of the characters in the string
-        _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength);
+        _engine->ActionPrintString(_pwchSequenceStart, _currRunLength);
         _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
     }
     else if (_fProcessingIndividually)
@@ -1415,7 +1414,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
         // means we'll make sure to call `_ActionEscDispatch('[')`., which will
         // properly decode the string as <kbd>alt+[</kbd>.
 
-        if (_pEngine->FlushAtEndOfString())
+        if (_engine->FlushAtEndOfString())
         {
             // Reset our state, and put all but the last char in again.
             ResetState();
@@ -1456,11 +1455,6 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             _EnterGround();
         }
     }
-}
-
-void StateMachine::ProcessString(const std::wstring& wstr)
-{
-    return ProcessString(wstr.c_str(), wstr.length());
 }
 
 // Routine Description:

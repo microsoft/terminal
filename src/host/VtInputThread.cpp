@@ -43,7 +43,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     auto engine = std::make_unique<InputStateMachineEngine>(new InteractDispatch(pGetSet.release()), inheritCursor);
     THROW_IF_NULL_ALLOC(engine.get());
 
-    _pInputStateMachine = std::make_unique<StateMachine>(engine.release());
+    _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
     THROW_IF_NULL_ALLOC(_pInputStateMachine.get());
 }
 
@@ -77,7 +77,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
         {
             return S_FALSE;
         }
-        _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
+        _pInputStateMachine->ProcessString({ pwsSequence.get(), cchSequence });
     }
     CATCH_RETURN();
 
