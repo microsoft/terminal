@@ -84,7 +84,7 @@ static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
 // Terminal effects
-static constexpr std::string_view RetroTerminalEffectKey{ "retroTerminalEffect" };
+static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 
 Profile::Profile() :
     Profile(std::nullopt)
