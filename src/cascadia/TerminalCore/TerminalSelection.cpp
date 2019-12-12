@@ -360,33 +360,11 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 // - updated copy of "position" to new expanded location (with vertical offset)
 COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
-    const auto bufferViewport = _buffer->GetSize();
-
     // force position to be within bounds
     COORD positionWithOffsets = position;
-    bufferViewport.Clamp(positionWithOffsets);
+    _buffer->GetSize().Clamp(positionWithOffsets);
 
-    // can't expand left
-    if (position.X == bufferViewport.Left())
-    {
-        return positionWithOffsets;
-    }
-
-    auto bufferIterator = _buffer->GetTextDataAt(positionWithOffsets);
-    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator);
-    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
-    {
-        bufferViewport.DecrementInBounds(positionWithOffsets);
-        --bufferIterator;
-    }
-
-    if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
-    {
-        // move off of delimiter to highlight properly
-        bufferViewport.IncrementInBounds(positionWithOffsets);
-    }
-
-    return positionWithOffsets;
+    return _buffer->GetWordStart(positionWithOffsets, _wordDelimiters);
 }
 
 // Method Description:
@@ -398,56 +376,11 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 // - updated copy of "position" to new expanded location (with vertical offset)
 COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
-    const auto bufferViewport = _buffer->GetSize();
-
     // force position to be within bounds
     COORD positionWithOffsets = position;
-    bufferViewport.Clamp(positionWithOffsets);
+    _buffer->GetSize().Clamp(positionWithOffsets);
 
-    // can't expand right
-    if (position.X == bufferViewport.RightInclusive())
-    {
-        return positionWithOffsets;
-    }
-
-    auto bufferIterator = _buffer->GetTextDataAt(positionWithOffsets);
-    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator);
-    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
-    {
-        bufferViewport.IncrementInBounds(positionWithOffsets);
-        ++bufferIterator;
-    }
-
-    if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
-    {
-        // move off of delimiter to highlight properly
-        bufferViewport.DecrementInBounds(positionWithOffsets);
-    }
-
-    return positionWithOffsets;
-}
-
-// Method Description:
-// - get delimiter class for buffer cell data
-// - used for double click selection
-// Arguments:
-// - cellChar: the char saved to the buffer cell under observation
-// Return Value:
-// - the delimiter class for the given char
-Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_view cellChar) const noexcept
-{
-    if (cellChar[0] <= UNICODE_SPACE)
-    {
-        return DelimiterClass::ControlChar;
-    }
-    else if (_wordDelimiters.find(cellChar) != std::wstring_view::npos)
-    {
-        return DelimiterClass::DelimiterChar;
-    }
-    else
-    {
-        return DelimiterClass::RegularChar;
-    }
+    return _buffer->GetWordEnd(positionWithOffsets, _wordDelimiters);
 }
 
 // Method Description:
