@@ -510,7 +510,7 @@
           "type": "string"
         },
         "experimental.retroTerminalEffect": {
-          "description": "When set to true, enable retro terminal effects.",
+          "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "fontFace": {
