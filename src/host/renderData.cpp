@@ -33,7 +33,10 @@ Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 // - COORD of the end position of the text buffer
 COORD RenderData::GetTextBufferEndPosition() const noexcept
 {
-    return GetCursorPosition();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Viewport bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
+    COORD endPosition{ bufferSize.Width() - 1, bufferSize.BottomInclusive() };
+    return endPosition;
 }
 
 // Routine Description:

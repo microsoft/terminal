@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
 
-        _textBox = this->FindName(L"TextBox").try_as<Controls::TextBox>();
+        _textBox = TextBox();
 
         if (_textBox)
             _focusableElements.insert(_textBox);
@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _SearchHandlers(*this, _textBox.Text());
             }
+            e.Handled(true);
         }
     }
 
