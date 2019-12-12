@@ -55,6 +55,24 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Create()
     {
+        {
+            // So this works to apply theming to _all_ tab items
+            auto appResources = ::winrt::Windows::UI::Xaml::Application::Current().Resources();
+
+            Media::SolidColorBrush myBrush{};
+            myBrush.Color(winrt::Windows::UI::Colors::Red());
+            // These two will colorize the tabs:
+            // appResources.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), myBrush);
+            // appResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), myBrush);
+
+            // This will colorize the background (the titlebar)
+            appResources.Insert(winrt::box_value(L"TabViewBackground"), myBrush);
+
+            // When the color picker sets the color of a tab, it will only set
+            // the color for that tab, and clearing the color will revert to the
+            // one we set here.
+        }
+
         // Hookup the key bindings
         _HookupKeyBindings(_settings->GetKeybindings());
 
