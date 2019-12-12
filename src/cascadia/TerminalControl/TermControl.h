@@ -13,6 +13,7 @@
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
+#include "SearchBoxControl.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -109,7 +110,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
 
-        SearchBoxControl _searchBox;
+        winrt::com_ptr<SearchBoxControl> _searchBox;
 
         TSFInputControl _tsfInputControl;
 
@@ -210,8 +211,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        void _Search(const SearchBoxControl& sender, winrt::hstring text);
-        void _CloseSearchBoxControl(const SearchBoxControl& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void _Search(const winrt::Windows::Foundation::IInspectable& sender, const winrt::hstring& text);
+        void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void _CloseSearchBoxControlHelper();
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);

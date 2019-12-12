@@ -26,10 +26,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         SearchBoxControl();
 
-        void QuerySubmitted(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void TextBoxKeyDown(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
-        bool GetGoForward();
-        bool GetIsCaseSensitive();
+        bool GoForward();
+        bool IsCaseSensitive();
 
         void SetFocusOnTextbox();
         bool ContainsFocus();
@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         TYPED_EVENT(Search, TerminalControl::SearchBoxControl, winrt::hstring);
-        TYPED_EVENT(CloseButtonClicked, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Closed, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         bool _goForward; // The direction of the search, controlled by the buttons with arrows
