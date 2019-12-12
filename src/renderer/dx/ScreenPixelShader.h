@@ -27,7 +27,7 @@ float4 Blur(Texture2D input, float2 tex_coord, float sigma)
 
     int sampleCount = 13;
 
-    for (int x = 0; x < sampleCount; x++) 
+    for (int x = 0; x < sampleCount; x++)
     {
         float2 samplePos = { 0, 0 };
 
@@ -53,7 +53,7 @@ float4 Scanline(float4 color, float4 pos)
 {
     float wave = SquareWave(pos.y);
 
-    // TODO make this configurable.
+    // TODO:GH#3929 make this configurable.
     // Remove the && false to draw scanlines everywhere.
     if (length(color.rgb) < 0.2 && false)
     {
@@ -69,7 +69,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 {
     Texture2D input = shaderTexture;
 
-    // TODO Make these configurable in some way.
+    // TODO:GH#3930 Make these configurable in some way.
     float4 color = input.Sample(samplerState, tex);
     color += Blur(input, tex, 2)*0.3;
     color = Scanline(color, pos);

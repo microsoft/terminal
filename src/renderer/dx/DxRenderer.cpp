@@ -223,7 +223,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     // Prepare shaders.
     auto vertexBlob = _CompileShader(screenVertexShaderString, "vs_5_0");
     auto pixelBlob = _CompileShader(screenPixelShaderString, "ps_5_0");
-    // TODO: move the shader files to to hlsl files and package their
+    // TODO:GH#3928 move the shader files to to hlsl files and package their
     // build output to UWP app and load with these.
     // ::Microsoft::WRL::ComPtr<ID3DBlob> vertexBlob, pixelBlob;
     // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenVertexShader.cso", &vertexBlob));
