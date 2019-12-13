@@ -72,8 +72,7 @@ namespace Microsoft::Console::VirtualTerminal
         friend class InputEngineTest;
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         bool _lookingForDSR;
-        DWORD _mouseButtonState;
-        COORD _mouseButtonPos;
+        DWORD _mouseButtonState = 0;
 
         enum CsiActionCodes : wchar_t
         {
@@ -104,26 +103,28 @@ namespace Microsoft::Console::VirtualTerminal
             MOUSE_UP = L'm',
         };
 
-        enum CsiActionMouseCodes : unsigned short
+        enum CsiMouseButtonCodes : unsigned short
         {
-            Left = 0x0000,
-            Middle = 0x0001,
-            Right = 0x0002,
+            Left = 0,
+            Middle = 1,
+            Right = 2,
+            Released = 3,
+            ScrollForward = 4,
+            ScrollBack = 5,
+            Button6 = 6,
+            Button7 = 7,
+            Button8 = 8,
+            Button9 = 9,
+            Button10 = 10,
+            Button11 = 11,
+        };
 
-            Shift = 0x0004,
-            Meta = 0x0008,
-            Ctrl = 0x0016,
-            Drag = 0x0032,
-
-            ScrollForward = 0x0064,
-            ScrollBack = 0x0065,
-            Button6 = 0x0066,
-            Button7 = 0x0067,
-
-            Button8 = 0x0128,
-            Button9 = 0x0129,
-            Button10 = 0x0130,
-            Button11 = 0x0131,
+        enum CsiMouseModifierCodes : unsigned short
+        {
+            Shift = 4,
+            Meta = 8,
+            Ctrl = 16,
+            Drag = 32,
         };
 
         enum Ss3ActionCodes : wchar_t
@@ -196,8 +197,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _UpdateSGRMouseButtonState(const wchar_t wch,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned int uiColumn,
-                                        const unsigned int uiLine,
                                         _Out_ DWORD* const pdwButtonState,
                                         _Out_ DWORD* const pdwEventFlags);
         bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams,

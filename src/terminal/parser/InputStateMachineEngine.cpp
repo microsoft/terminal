@@ -320,7 +320,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             DWORD dwEventFlags = 0;
             dwModifierState = _GetSGRMouseModifierState(rgusParams, cParams);
             fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
-            fSuccess = fSuccess ? _UpdateSGRMouseButtonState(wch, rgusParams, col, row, &dwButtonState, &dwEventFlags) : false;
+            fSuccess = fSuccess ? _UpdateSGRMouseButtonState(wch, rgusParams, &dwButtonState, &dwEventFlags) : false;
             return fSuccess ? _WriteMouseEvent(col, row, dwButtonState, dwModifierState, dwEventFlags) : false;
         }
         default:
@@ -697,8 +697,8 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwMo
 // Method Description:
 // - Writes a Mouse Event Record to the input callback based on the state of the mouse.
 // Arguments:
-// - uiColumn - the X/Column position on the viewport (1 = left-most)
-// - uiLine - the Y/Line/Row position on the viewport (1 = top-most)
+// - uiColumn - the X/Column position on the viewport (0 = left-most)
+// - uiLine - the Y/Line/Row position on the viewport (0 = top-most)
 // - dwButtonState - the mouse buttons that are being modified
 // - dwModifierState - the modifier state to write mouse record.
 // - dwEventFlags - the type of mouse event to write to the mouse record.
@@ -711,7 +711,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const unsigned int uiColumn, cons
     INPUT_RECORD rgInput[MAX_LENGTH];
     size_t cInput = MAX_LENGTH;
 
-    COORD uiPos = { gsl::narrow<short>(uiColumn), gsl::narrow<short>(uiLine) };
+    COORD uiPos = { gsl::narrow<short>(uiColumn) - 1, gsl::narrow<short>(uiLine) - 1 };
 
     rgInput[0].EventType = MOUSE_EVENT;
     rgInput[0].Event.MouseEvent.dwMousePosition = uiPos;
@@ -826,38 +826,36 @@ DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam, 
 // true iff we were able to synthesize pdwButtonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
                                                          _In_reads_(cParams) const unsigned short* const rgusParams,
-                                                         const unsigned int uiColumn,
-                                                         const unsigned int uiLine,
                                                          _Out_ DWORD* const pdwButtonState,
                                                          _Out_ DWORD* const pdwEventFlags)
 {
-    *pdwButtonState = 0;
+    *pdwButtonState = _mouseButtonState;
     *pdwEventFlags = 0;
     bool fSuccess = true;
 
-    // Clear the middle 4 bits.
+    // We don't care about the middle 4 bits. So let's contatenate the top 2 bits and the bottom 2 bits from the 8 bit value
     // The remaining bits represent which button had a change in state
-    const auto buttonID = rgusParams[0] & 0b11000011;
+    const auto buttonID = (rgusParams[0] & 0x3) | (rgusParams[0] & 0xC0);
 
     // Step 1: Translate which button was affected
     DWORD buttonFlag = 0;
     switch (buttonID)
     {
-    case CsiActionMouseCodes::Left:
+    case CsiMouseButtonCodes::Left:
         buttonFlag = FROM_LEFT_1ST_BUTTON_PRESSED;
         break;
-    case CsiActionMouseCodes::Right:
+    case CsiMouseButtonCodes::Right:
         buttonFlag = RIGHTMOST_BUTTON_PRESSED;
         break;
-    case CsiActionMouseCodes::Middle:
+    case CsiMouseButtonCodes::Middle:
         buttonFlag = FROM_LEFT_2ND_BUTTON_PRESSED;
         break;
-    case CsiActionMouseCodes::Button6:
-    case CsiActionMouseCodes::Button7:
-    case CsiActionMouseCodes::Button8:
-    case CsiActionMouseCodes::Button9:
-    case CsiActionMouseCodes::Button10:
-    case CsiActionMouseCodes::Button11:
+    case CsiMouseButtonCodes::Button6:
+    case CsiMouseButtonCodes::Button7:
+    case CsiMouseButtonCodes::Button8:
+    case CsiMouseButtonCodes::Button9:
+    case CsiMouseButtonCodes::Button10:
+    case CsiMouseButtonCodes::Button11:
     default:
         fSuccess = false;
         break;
@@ -883,7 +881,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     // Step 3: append the mouse wheel data to out param
     switch (buttonID)
     {
-    case CsiActionMouseCodes::ScrollBack:
+    case CsiMouseButtonCodes::ScrollBack:
     {
         // set high word to proper scroll direction
         // scroll intensity is assumed to be constant value
@@ -893,7 +891,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
         *pdwEventFlags |= MOUSE_WHEELED;
         break;
     }
-    case CsiActionMouseCodes::ScrollForward:
+    case CsiMouseButtonCodes::ScrollForward:
     {
         // set high word to proper scroll direction
         // scroll intensity is assumed to be constant value
@@ -904,13 +902,11 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
         break;
     }
     default:
-        fSuccess = false;
         break;
     }
 
     // Step 4: check if mouse moved
-    COORD currentPos = { gsl::narrow<short>(uiColumn), gsl::narrow<short>(uiLine) };
-    if (_mouseButtonPos.X != currentPos.X || _mouseButtonPos.Y != currentPos.Y)
+    if (WI_IsFlagSet(rgusParams[0], CsiMouseModifierCodes::Drag))
     {
         *pdwEventFlags |= MOUSE_MOVED;
     }
@@ -918,7 +914,6 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     // Step 5: update internal state before returning, even if we couldn't fully understand this
     // only take LOWORD here because HIWORD is reserved for mouse wheel delta and release events for the wheel buttons are not reported
     _mouseButtonState = LOWORD(*pdwButtonState);
-    _mouseButtonPos = currentPos;
 
     return fSuccess;
 }
@@ -1153,8 +1148,8 @@ _Success_(return ) bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cPara
     else if (cParams == 3)
     {
         // If there are exactly 3 parameters, assume SGR Sequence and use them.
-        *puiLine = rgusParams[1];
-        *puiColumn = rgusParams[2];
+        *puiColumn = rgusParams[1];
+        *puiLine = rgusParams[2];
     }
     else
     {
