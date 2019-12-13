@@ -52,5 +52,8 @@ namespace Microsoft.Terminal.TerminalControl
 
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
+
+        event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> BackgroundColorChanged;
+        Windows.UI.Color BackgroundColor { get; };
     }
 }

@@ -356,6 +356,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    winrt::Windows::UI::Color TermControl::BackgroundColor() const
+    {
+        return ColorRefToColor(_settings.DefaultBackground());
+    }
+
     // Method Description:
     // - Style the background of the control with the provided background color
     // Arguments:
@@ -391,6 +396,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // Set the default background as transparent to prevent the
                 // DX layer from overwriting the background image or acrylic effect
                 _settings.DefaultBackground(ARGB(0, R, G, B));
+
+                _BackgroundColorChangedHandlers(*control, nullptr);
             }
         });
     }

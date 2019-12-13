@@ -362,19 +362,7 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 
 winrt::Windows::UI::Color Tab::GetActiveTerminalBackground()
 {
-    static int iteration = 1;
-    winrt::Windows::UI::Color color;
-    color.A = 255;
-    color.R = (((iteration * 2) << 4) + iteration) % 255;
-    color.G = (((iteration * 4) << 4) + iteration) % 255;
-    color.B = (((iteration * 8) << 4) + iteration) % 255;
-    // color.R = GetRValue(colorref);
-    // color.G = GetGValue(colorref);
-    // color.B = GetBValue(colorref);
-    iteration++;
-    return color;
-
-    // return winrt::Windows::UI::Colors::Red();
+    return _activePane->GetTerminalControl().BackgroundColor();
 }
 
 DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

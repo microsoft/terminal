@@ -534,6 +534,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         {
             // Create brush for titlebar color.
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+            _backgroundBrushColor = color;
         }
 
         // To hide the original title bar, we have to paint on top of it with

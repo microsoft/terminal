@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const Windows::UI::Xaml::Thickness GetPadding() const;
 
         TerminalConnection::ConnectionState ConnectionState() const;
+        winrt::Windows::UI::Color BackgroundColor() const;
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
@@ -95,6 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
 
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
+        TYPED_EVENT(BackgroundColorChanged, TerminalControl::TermControl, IInspectable);
         // clang-format on
 
     private:
