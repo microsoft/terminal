@@ -39,23 +39,22 @@
                     </Style>
                     <!-- TextBox colors !-->
                     <SolidColorBrush x:Key="TextControlBackground" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#B5B5B5"/>
+                    <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#B5B5B5"/>
                     <SolidColorBrush x:Key="TextControlForeground" Color="#B5B5B5"/>
                     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#404040"/>
                     <SolidColorBrush x:Key="TextControlButtonForeground" Color="#B5B5B5"/>
 
                     <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#404040"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#404040"/>
                     <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
 
                     <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#333333"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#B5B5B5"/>
                     <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
                     <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
+                    
                     <!-- ToggleButton colors !-->
                     <SolidColorBrush x:Key="ToggleButtonCustomForeground" Color="#B5B5B5"/>
 
@@ -97,23 +96,21 @@
                     </Style>
                     <!-- TextBox colors !-->
                     <SolidColorBrush x:Key="TextControlBackground" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#636363"/>
+                    <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#636363"/>
                     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#636363"/>
                     <SolidColorBrush x:Key="TextControlButtonForeground" Color="#636363"/>
 
                     <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#DADADA"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#000000"/>
                     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#636363"/>
                     <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver" Color="#FF4343"/>
 
                     <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#CCCCCC"/>
-                    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#636363"/>
                     <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#636363"/>
                     <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
                     <!-- ToggleButton colors !-->
                     <SolidColorBrush x:Key="ToggleButtonCustomForeground" Color="#636363"/>
-                    
+
                     <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="#DADADA"/>
                     <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver" Color="#000000"/>
                     <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver" Color="Transparent"/>
@@ -158,7 +155,7 @@
 
     <StackPanel Orientation="Horizontal" Style="{ThemeResource SearchBoxBackground}" Padding="5" CornerRadius="0,0,2,2">
         <TextBox  x:Name="TextBox" AutomationProperties.Name="Search Text" CornerRadius="2" Width="160"
-                  FontSize="15" PlaceholderText="Find..." KeyDown = "TextBoxKeyDown"
+                  PlaceholderForeground="{ThemeResource TextBoxPlaceholderForeground}"   FontSize="15" PlaceholderText="Find..." KeyDown = "TextBoxKeyDown"
                   Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center">
         </TextBox>
 
