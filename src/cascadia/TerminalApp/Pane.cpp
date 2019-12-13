@@ -1118,59 +1118,36 @@ void Pane::_SetupResources()
 {
     const auto res = Application::Current().Resources();
 
-    // First setup the pane border TabViewBackground color
-    const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(tabViewBackgroundKey))
     {
-        winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
-        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
-    }
-
-    // Now try and set the pane border color.
-    // - If it's null, we'll use the TabViewBackground color.
-    // - if it's "accent", we'll use the accent color
-    // - if it's "#rrbbgg", we'll use the given color
-    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
-    const auto& globals = settings.GlobalSettings();
-    if (!globals.HasPaneFocusBorderColor())
-    {
-        s_focusedBorderBrush = s_unfocusedBorderBrush;
-    }
-    else
-    {
-        if (globals.IsPaneFocusColorAccentColor())
+        // First setup the pane border TabViewBackground color
+        const auto tabViewBackgroundKey = winrt::box_value(L"PaneBorderBrush");
+        if (res.HasKey(tabViewBackgroundKey))
         {
-            // Use the accent color for the pane border
-
-            const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
-            if (res.HasKey(accentColorKey))
-            {
-                const auto colorFromResources = res.Lookup(accentColorKey);
-                // If SystemAccentColor is _not_ a Color for some reason, use
-                // Transparent as the color, so we don't do this process again on
-                // the next pane (by leaving s_focusedBorderBrush nullptr)
-                auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-                s_focusedBorderBrush = SolidColorBrush(actualColor);
-            }
-            else
-            {
-                // DON'T use Transparent here - see earlier comment for why
-                s_focusedBorderBrush = s_unfocusedBorderBrush;
-            }
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
+            s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
         }
         else
         {
-            // Create a brush for the color the user specified
-            const COLORREF focusColor = globals.GetPaneFocusColor();
-            s_focusedBorderBrush = Media::SolidColorBrush{};
-            s_focusedBorderBrush.Color(ColorRefToColor(focusColor));
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
+    }
+
+    {
+        const auto activeBorderKey = winrt::box_value(L"ActivePaneBorderBrush");
+        if (res.HasKey(activeBorderKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(activeBorderKey);
+            s_focusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
     }
 }

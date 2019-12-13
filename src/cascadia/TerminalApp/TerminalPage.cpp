@@ -6,6 +6,7 @@
 #include "ActionAndArgs.h"
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
+#include "../../WinRTUtils/inc/Utils.h"
 
 #include <LibraryResources.h>
 
@@ -18,6 +19,7 @@
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::UI::Core;
@@ -58,16 +60,23 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Create()
     {
+        auto res = ::winrt::Windows::UI::Xaml::Application::Current().Resources();
+
+        {
+            Media::SolidColorBrush myBrush{};
+            myBrush.Color(winrt::Windows::UI::Colors::Red());
+            res.Insert(winrt::box_value(L"PaneBorderBrush"), myBrush);
+        }
+
         {
             // So this works to apply theming to _all_ tab items
-            auto appResources = ::winrt::Windows::UI::Xaml::Application::Current().Resources();
 
             Media::SolidColorBrush myBrush{};
 
             const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
-            if (appResources.HasKey(accentColorKey))
+            if (res.HasKey(accentColorKey))
             {
-                const auto colorFromResources = appResources.Lookup(accentColorKey);
+                const auto colorFromResources = res.Lookup(accentColorKey);
                 // If SystemAccentColor is _not_ a Color for some reason, use
                 // Transparent as the color, so we don't do this process again on
                 // the next pane (by leaving s_focusedBorderBrush nullptr)
@@ -79,15 +88,59 @@ namespace winrt::TerminalApp::implementation
                 myBrush.Color(winrt::Windows::UI::Colors::Red());
             }
             // These two will colorize the tabs:
-            // appResources.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), myBrush);
-            // appResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), myBrush);
+            // res.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), myBrush);
+            // res.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), myBrush);
 
             // This will colorize the background (the titlebar)
-            appResources.Insert(winrt::box_value(L"TabViewBackground"), myBrush);
+            res.Insert(winrt::box_value(L"TabViewBackground"), myBrush);
 
             // When the color picker sets the color of a tab, it will only set
             // the color for that tab, and clearing the color will revert to the
             // one we set here.
+        }
+        {
+            // Now try and set the pane border color.
+            // - If it's null, we'll use the TabViewBackground color.
+            // - if it's "accent", we'll use the accent color
+            // - if it's "#rrbbgg", we'll use the given color
+            Media::SolidColorBrush activeBorderBrush{};
+            const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+            const auto& globals = settings.GlobalSettings();
+            if (!globals.HasPaneFocusBorderColor())
+            {
+                // do nothing
+                // Make sure it's the unfocused border brush?
+            }
+            else
+            {
+                if (globals.IsPaneFocusColorAccentColor())
+                {
+                    // Use the accent color for the pane border
+
+                    const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+                    if (res.HasKey(accentColorKey))
+                    {
+                        const auto colorFromResources = res.Lookup(accentColorKey);
+                        // If SystemAccentColor is _not_ a Color for some reason, use
+                        // Transparent as the color, so we don't do this process again on
+                        // the next pane (by leaving s_focusedBorderBrush nullptr)
+                        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+                        activeBorderBrush.Color(actualColor);
+                    }
+                    else
+                    {
+                        // // DON'T use Transparent here - see earlier comment for why
+                        // s_focusedBorderBrush = s_unfocusedBorderBrush;
+                    }
+                }
+                else
+                {
+                    // Create a brush for the color the user specified
+                    const COLORREF focusColor = globals.GetPaneFocusColor();
+                    activeBorderBrush.Color(ColorRefToColor(focusColor));
+                }
+                res.Insert(winrt::box_value(L"ActivePaneBorderBrush"), activeBorderBrush);
+            }
         }
 
         // Hookup the key bindings
