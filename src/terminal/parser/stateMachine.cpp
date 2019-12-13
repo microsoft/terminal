@@ -14,22 +14,11 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
-    _cParams(0),
-    _pusActiveParam(nullptr),
-    _cIntermediate(0),
-    _wchIntermediate(UNICODE_NULL),
-    _pwchCurr(nullptr),
-    _iParamAccumulatePos(0),
-    // pwchOscStringBuffer Initialized below
-    _pwchSequenceStart(nullptr),
-    // rgusParams Initialized below
-    _sOscNextChar(0),
-    _sOscParam(0),
-    _currRunLength(0),
-    _fProcessingIndividually(false)
+    _intermediate{},
+    _parameters{},
+    _oscString{},
+    _processingIndividually(false)
 {
-    ZeroMemory(_pwchOscStringBuffer, sizeof(_pwchOscStringBuffer));
-    ZeroMemory(_rgusParams, sizeof(_rgusParams));
     _ActionClear();
 }
 
@@ -339,7 +328,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    bool fSuccess = _engine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
+    bool fSuccess = _engine->ActionEscDispatch(wch, _intermediate);
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -362,7 +351,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
 
-    bool fSuccess = _engine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
+    bool fSuccess = _engine->ActionCsiDispatch(wch, _intermediate, { _parameters.data(), _parameters.size() });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -385,12 +374,10 @@ void StateMachine::_ActionCollect(const wchar_t wch)
     _trace.TraceOnAction(L"Collect");
 
     // store collect data
-    if (_cIntermediate < s_cIntermediateMax)
+    if (!_intermediate)
     {
-        _wchIntermediate = wch;
+        _intermediate.emplace(wch);
     }
-
-    _cIntermediate++;
 }
 
 // Routine Description:
@@ -404,70 +391,24 @@ void StateMachine::_ActionParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Param");
 
-    // Verify both the count and that the pointer didn't run off the end of the
-    //      array. If we're past the end, this param is just ignored.
-    if (_cParams <= s_cParamsMax && _pusActiveParam < &_rgusParams[s_cParamsMax])
+    // If we have no parameters and we're about to add one, get the 0 value ready here.
+    if (!_parameters.size())
     {
-        // If we're adding a character to the first parameter,
-        //      then we now have one parameter.
-        if (_iParamAccumulatePos == 0 && _cParams == 0)
-        {
-            _cParams++;
-        }
+        _parameters.push_back(0);
+    }
 
-        // On a delimiter, increase the number of params we've seen.
-        // "Empty" params should still count as a param -
-        //      eg "\x1b[0;;m" should be three "0" params
-        if (wch == L';')
-        {
-            // Move to next param.
-            //      If we're on the last param (_cParams == s_cParamsMax),
-            //      then _pusActiveParam will now be past the end of _rgusParams,
-            //      and any future params will be ignored.
-            _pusActiveParam++;
-
-            // clear out the accumulator count to prepare for the next one
-            _iParamAccumulatePos = 0;
-
-            // Don't increment the _cParams to be greater than s_cParamsMax.
-            //      We're using _pusActiveParam to make sure we don't fill too
-            //      many params.
-            if (_cParams < s_cParamsMax)
-            {
-                _cParams++;
-            }
-        }
-        else
-        {
-            // don't bother accumulating if we're storing more than 4 digits (since we're putting it into a short)
-            if (_iParamAccumulatePos < 5)
-            {
-                // convert character into digit.
-                unsigned short const usDigit = wch - L'0'; // convert character into value
-
-                // multiply existing values by 10 to make space in the 1s digit
-                *_pusActiveParam *= 10;
-
-                // store the digit in the 1s place.
-                *_pusActiveParam += usDigit;
-
-                // if the total is zero, it must be a leading zero digit, so we don't count it.
-                if (*_pusActiveParam != 0)
-                {
-                    // otherwise mark that we've now stored another digit.
-                    _iParamAccumulatePos++;
-                }
-
-                if (*_pusActiveParam > SHORT_MAX)
-                {
-                    *_pusActiveParam = SHORT_MAX;
-                }
-            }
-            else
-            {
-                *_pusActiveParam = SHORT_MAX;
-            }
-        }
+    // On a delimiter, increase the number of params we've seen.
+    // "Empty" params should still count as a param -
+    //      eg "\x1b[0;;m" should be three "0" params
+    if (wch == L';')
+    {
+        // Move to next param.
+        _parameters.push_back(0);
+    }
+    else
+    {
+        // Accumulate the character given into the last (current) parameter
+        _AccumulateTo(wch, _parameters.back());
     }
 }
 
@@ -482,20 +423,12 @@ void StateMachine::_ActionClear()
     _trace.TraceOnAction(L"Clear");
 
     // clear all internal stored state.
-    _wchIntermediate = 0;
-    _cIntermediate = 0;
+    _intermediate.reset();
 
-    for (unsigned short i = 0; i < s_cParamsMax; i++)
-    {
-        _rgusParams[i] = 0;
-    }
+    _parameters.clear();
 
-    _cParams = 0;
-    _iParamAccumulatePos = 0;
-    _pusActiveParam = _rgusParams; // set pointer back to beginning of array
-
-    _sOscParam = 0;
-    _sOscNextChar = 0;
+    _oscString.clear();
+    _oscParameter = 0;
 
     _engine->ActionClear();
 }
@@ -522,34 +455,7 @@ void StateMachine::_ActionOscParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscParamCollect");
 
-    // don't bother accumulating if we're storing more than 4 digits (since we're putting it into a short)
-    if (_iParamAccumulatePos < 5)
-    {
-        // convert character into digit.
-        unsigned short const usDigit = wch - L'0'; // convert character into value
-
-        // multiply existing values by 10 to make space in the 1s digit
-        _sOscParam *= 10;
-
-        // store the digit in the 1s place.
-        _sOscParam += usDigit;
-
-        // if the total is zero, it must be a leading zero digit, so we don't count it.
-        if (_sOscParam != 0)
-        {
-            // otherwise mark that we've now stored another digit.
-            _iParamAccumulatePos++;
-        }
-
-        if (_sOscParam > SHORT_MAX)
-        {
-            _sOscParam = SHORT_MAX;
-        }
-    }
-    else
-    {
-        _sOscParam = SHORT_MAX;
-    }
+    _AccumulateTo(wch, _oscParameter);
 }
 
 // Routine Description:
@@ -562,14 +468,7 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscPut");
 
-    // if we're past the end, this param is just ignored.
-    // need to leave one char for \0 at end
-    if (_sOscNextChar < s_cOscStringMaxLength - 1)
-    {
-        _pwchOscStringBuffer[_sOscNextChar] = wch;
-        _sOscNextChar++;
-        //we'll place the null at the end of the string when we send the actual action.
-    }
+    _oscString.push_back(wch);
 }
 
 // Routine Description:
@@ -583,7 +482,7 @@ void StateMachine::_ActionOscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscDispatch");
 
-    bool fSuccess = _engine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
+    bool fSuccess = _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -606,7 +505,7 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Ss3Dispatch");
 
-    bool fSuccess = _engine->ActionSs3Dispatch(wch, _rgusParams, _cParams);
+    bool fSuccess = _engine->ActionSs3Dispatch(wch, { _parameters.data(), _parameters.size() });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(fSuccess);
@@ -1327,8 +1226,7 @@ bool StateMachine::FlushToTerminal()
     //      that pwchCurr was processed.
     // However, if we're here, then the processing of pwchChar triggered the
     //      engine to request the entire sequence get passed through, including pwchCurr.
-    return _engine->ActionPassThroughString(_pwchSequenceStart,
-                                             _pwchCurr - _pwchSequenceStart + 1);
+    return _engine->ActionPassThroughString(_run);
 }
 
 // Routine Description:
@@ -1337,63 +1235,58 @@ bool StateMachine::FlushToTerminal()
 //     a escape sequence, then feed characters into the state machine one at a
 //     time until we return to the ground state.
 // Arguments:
-// - string - String of text to operate on
+// - string - Characters to operate upon
 // Return Value:
 // - <none>
 void StateMachine::ProcessString(const std::wstring_view string)
 {
-    _pwchCurr = string.data();
-    _pwchSequenceStart = string.data();
-    _currRunLength = 0;
+    size_t start = 0;
+    size_t current = start;
 
-    for (size_t cchCharsRemaining = string.size(); cchCharsRemaining > 0; cchCharsRemaining--)
+    while (current < string.size())
     {
-        if (_fProcessingIndividually)
+        _run = string.substr(start, current + 1);
+
+        if (_processingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(*_pwchCurr);
-            _pwchCurr++;
+            ProcessCharacter(string.at(current));
+            ++current;
             if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
             { //   is the start of the next run of characters that might be printable.
-                _fProcessingIndividually = false;
-                _pwchSequenceStart = _pwchCurr;
-                _currRunLength = 0;
+                _processingIndividually = false;
+                start = current;
             }
         }
         else
         {
-            if (s_IsActionableFromGround(*_pwchCurr)) // If the current char is the start of an escape sequence, or should be executed in ground state...
+            if (s_IsActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                FAIL_FAST_IF(!(_pwchSequenceStart + _currRunLength <= string.data() + string.size()));
-                _engine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
-                _fProcessingIndividually = true; // begin processing future characters individually...
-                _currRunLength = 0;
-                _pwchSequenceStart = _pwchCurr;
-                ProcessCharacter(*_pwchCurr); // ... Then process the character individually.
-                if (_state == VTStates::Ground) // If the character took us right back to ground, start another run after it.
-                {
-                    _fProcessingIndividually = false;
-                    _pwchSequenceStart = _pwchCurr + 1;
-                    _currRunLength = 0;
-                }
+                _engine->ActionPrintString(_run); // ... print all the chars leading up to it as part of the run...
+                _trace.DispatchPrintRunTrace(_run);
+                _processingIndividually = true; // begin processing future characters individually...
+
+                ++current;
+                start = current;
+                continue;
             }
             else
             {
-                _currRunLength++; // Otherwise, add this char to the current run to be printed.
+                ++current; // Otherwise, add this char to the current run to be printed.
             }
-            _pwchCurr++;
         }
     }
 
+    _run = string.substr(start, current + 1);
+
     // If we're at the end of the string and have remaining un-printed characters,
-    if (!_fProcessingIndividually && _currRunLength > 0)
+    if (!_processingIndividually && !_run.empty())
     {
         // print the rest of the characters in the string
-        _engine->ActionPrintString(_pwchSequenceStart, _currRunLength);
-        _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
+        _engine->ActionPrintString(_run);
+        _trace.DispatchPrintRunTrace(_run);
     }
-    else if (_fProcessingIndividually)
+    else if (_processingIndividually)
     {
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
@@ -1419,35 +1312,36 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            const wchar_t* pwch = _pwchSequenceStart;
-            for (; pwch < _pwchCurr - 1; pwch++)
+            auto current = _run.cbegin();
+            while (current < _run.cend() - 1)
             {
-                ProcessCharacter(*pwch);
+                ProcessCharacter(*current);
+                current++;
             }
             // Manually execute the last char [pwchCurr]
             switch (_state)
             {
             case VTStates::Ground:
-                _ActionExecute(*pwch);
+                _ActionExecute(*current);
                 break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*pwch);
+                _ActionEscDispatch(*current);
                 break;
             case VTStates::CsiEntry:
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
-                _ActionCsiDispatch(*pwch);
+                _ActionCsiDispatch(*current);
                 break;
             case VTStates::OscParam:
             case VTStates::OscString:
             case VTStates::OscTermination:
-                _ActionOscDispatch(*pwch);
+                _ActionOscDispatch(*current);
                 break;
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*pwch);
+                _ActionSs3Dispatch(*current);
                 break;
             }
             // microsoft/terminal#2746: Make sure to return to the ground state
@@ -1468,4 +1362,18 @@ void StateMachine::ProcessString(const std::wstring_view string)
 void StateMachine::ResetState()
 {
     _EnterGround();
+}
+
+// Routine Description:
+// Arguments:
+// Return Value:
+void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value)
+{
+    const size_t digit = wch - L'0';
+
+    if (FAILED(SizeTMult(value, 10, &value)) ||
+        FAILED(SizeTAdd(value, digit, &value)))
+    {
+        value = std::numeric_limits<size_t>().max();
+    }
 }

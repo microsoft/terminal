@@ -26,33 +26,26 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionExecute(const wchar_t wch) = 0;
         virtual bool ActionExecuteFromEscape(const wchar_t wch) = 0;
         virtual bool ActionPrint(const wchar_t wch) = 0;
-        virtual bool ActionPrintString(const wchar_t* const rgwch,
-                                       size_t const cch) = 0;
+        virtual bool ActionPrintString(const std::wstring_view string) = 0;
 
-        virtual bool ActionPassThroughString(const wchar_t* const rgwch,
-                                             size_t const cch) = 0;
+        virtual bool ActionPassThroughString(const std::wstring_view string) = 0;
 
         virtual bool ActionEscDispatch(const wchar_t wch,
-                                       const unsigned short cIntermediate,
-                                       const wchar_t wchIntermediate) = 0;
+                                       const std::optional<wchar_t> intermediate) = 0;
         virtual bool ActionCsiDispatch(const wchar_t wch,
-                                       const unsigned short cIntermediate,
-                                       const wchar_t wchIntermediate,
-                                       _In_reads_(cParams) const unsigned short* const rgusParams,
-                                       const unsigned short cParams) = 0;
+                                       const std::optional<wchar_t> intermediate,
+                                       std::basic_string_view<size_t> parameters) = 0;
 
         virtual bool ActionClear() = 0;
 
         virtual bool ActionIgnore() = 0;
 
         virtual bool ActionOscDispatch(const wchar_t wch,
-                                       const unsigned short sOscParam,
-                                       _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                       const unsigned short cchOscString) = 0;
+                                       const size_t parameter,
+                                       const std::wstring_view string) = 0;
 
         virtual bool ActionSs3Dispatch(const wchar_t wch,
-                                       _In_reads_(cParams) const unsigned short* const rgusParams,
-                                       const unsigned short cParams) = 0;
+                                       std::basic_string_view<size_t> parameters) = 0;
 
         virtual bool FlushAtEndOfString() const = 0;
         virtual bool DispatchControlCharsFromEscape() const = 0;

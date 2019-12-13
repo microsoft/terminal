@@ -25,7 +25,7 @@ public:
     virtual ~ITermDispatch() = 0;
     virtual void Execute(const wchar_t wchControl) = 0;
     virtual void Print(const wchar_t wchPrintable) = 0;
-    virtual void PrintString(const wchar_t* const rgwch, const size_t cch) = 0;
+    virtual void PrintString(const std::wstring_view string) = 0;
 
     virtual bool CursorUp(const unsigned int uiDistance) = 0; // CUU
     virtual bool CursorDown(const unsigned int uiDistance) = 0; // CUD
@@ -50,15 +50,15 @@ public:
     virtual bool SetKeypadMode(const bool fApplicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool fEnable) = 0; // ATT610
     virtual bool SetOriginMode(const bool fRelativeMode) = 0; // DECOM
-    virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin) = 0; // DECSTBM
+    virtual bool SetTopBottomScrollingMargins(const size_t sTopMargin, const size_t sBottomMargin) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
     virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
     virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS
-    virtual bool ForwardTab(const SHORT sNumTabs) = 0; // CHT
-    virtual bool BackwardsTab(const SHORT sNumTabs) = 0; // CBT
-    virtual bool TabClear(const SHORT sClearType) = 0; // TBC
+    virtual bool ForwardTab(const size_t sNumTabs) = 0; // CHT
+    virtual bool BackwardsTab(const size_t sNumTabs) = 0; // CBT
+    virtual bool TabClear(const size_t sClearType) = 0; // TBC
     virtual bool EnableDECCOLMSupport(const bool fEnabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool fEnabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool fEnabled) = 0; // ?1005
@@ -74,14 +74,11 @@ public:
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const unsigned int uiNumChars) = 0; // ECH
 
-    virtual bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
-                                      const size_t cOptions) = 0; // SGR
+    virtual bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) = 0; // SGR
 
-    virtual bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rgParams,
-                                 const size_t cParams) = 0; // DECSET
+    virtual bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECSET 
 
-    virtual bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rgParams,
-                                   const size_t cParams) = 0; // DECRST
+    virtual bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR
     virtual bool DeviceAttributes() = 0; // DA
@@ -96,7 +93,6 @@ public:
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                    _In_reads_(cParams) const unsigned short* const rgusParams,
-                                    const size_t cParams) = 0;
+                                    const std::basic_string_view<size_t> parameters) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}

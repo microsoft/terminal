@@ -2512,7 +2512,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 
 // Method Description:
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
-//      understand will be written to tthe pTtyConnection passed in here.
+//      understand will be written to the pTtyConnection passed in here.
 // Arguments:
 // - pTtyConnection: This is a TerminaOutputConnection that we can write the
 //      sequence we didn't understand to.
