@@ -69,8 +69,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool DispatchIntermediatesFromEscape() const override;
 
     private:
+        friend class InputEngineTest;
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         bool _lookingForDSR;
+        DWORD _mouseButtonState;
+        COORD _mouseButtonPos;
 
         enum CsiActionCodes : wchar_t
         {
@@ -88,6 +91,39 @@ namespace Microsoft::Console::VirtualTerminal
             CSI_F4 = L'S',
             DTTERM_WindowManipulation = L't',
             CursorBackTab = L'Z',
+        };
+
+        enum CsiIntermediateCodes : wchar_t
+        {
+            MOUSE_SGR = L'<',
+        };
+
+        enum CsiEndCodes : wchar_t
+        {
+            MOUSE_DOWN = L'M',
+            MOUSE_UP = L'm',
+        };
+
+        enum CsiActionMouseCodes : unsigned short
+        {
+            Left = 0x0000,
+            Middle = 0x0001,
+            Right = 0x0002,
+
+            Shift = 0x0004,
+            Meta = 0x0008,
+            Ctrl = 0x0016,
+            Drag = 0x0032,
+
+            ScrollForward = 0x0064,
+            ScrollBack = 0x0065,
+            Button6 = 0x0066,
+            Button7 = 0x0067,
+
+            Button8 = 0x0128,
+            Button9 = 0x0129,
+            Button10 = 0x0130,
+            Button11 = 0x0131,
         };
 
         enum Ss3ActionCodes : wchar_t
@@ -151,11 +187,19 @@ namespace Microsoft::Console::VirtualTerminal
                                           const unsigned short cParams);
         DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
                                            const unsigned short cParams);
+        DWORD _GetSGRMouseModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                        const unsigned short cParams);
         bool _GenerateKeyFromChar(const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
 
         bool _IsModified(const unsigned short cParams);
-        DWORD _GetModifier(const unsigned short modifierParam);
+        DWORD _GetModifier(const unsigned short modifierParam, bool SGRMode = false);
 
+        bool _UpdateSGRMouseButtonState(const wchar_t wch,
+                                        _In_reads_(cParams) const unsigned short* const rgusParams,
+                                        const unsigned int uiColumn,
+                                        const unsigned int uiLine,
+                                        _Out_ DWORD* const pdwButtonState,
+                                        _Out_ DWORD* const pdwEventFlags);
         bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams,
                              const unsigned short cParams,
                              _Out_ short* const pVkey) const;
@@ -164,6 +208,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _WriteSingleKey(const short vkey, const DWORD dwModifierState);
         bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD dwModifierState);
+
+        bool _WriteMouseEvent(const unsigned int uiColumn, const unsigned int uiLine, const DWORD dwButtonState, const DWORD dwControlKeyState, const DWORD dwEventFlags);
 
         size_t _GenerateWrappedSequence(const wchar_t wch,
                                         const short vkey,

@@ -287,13 +287,13 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // - wch - Character to dispatch.
 // - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
 // - wchIntermediate - Intermediate character in the sequence, if there was one.
-// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - rgusParams - set of numeric parameters collected while parsing the sequence.
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                const unsigned short /*cIntermediate*/,
-                                                const wchar_t /*wchIntermediate*/,
+                                                const unsigned short cIntermediate,
+                                                const wchar_t wchIntermediate,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 const unsigned short cParams)
 {
@@ -308,6 +308,26 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
 
     bool fSuccess = false;
+
+    // Handle "Intermediate" characters, if any
+    if (cIntermediate > 0)
+    {
+        switch (wchIntermediate)
+        {
+        case CsiIntermediateCodes::MOUSE_SGR:
+        {
+            DWORD dwButtonState = 0;
+            DWORD dwEventFlags = 0;
+            dwModifierState = _GetSGRMouseModifierState(rgusParams, cParams);
+            fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
+            fSuccess = fSuccess ? _UpdateSGRMouseButtonState(wch, rgusParams, col, row, &dwButtonState, &dwEventFlags) : false;
+            return fSuccess ? _WriteMouseEvent(col, row, dwButtonState, dwModifierState, dwEventFlags) : false;
+        }
+        default:
+            fSuccess = false;
+            break;
+        }
+    }
     switch (wch)
     {
     case CsiActionCodes::Generic:
@@ -675,6 +695,36 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwMo
 }
 
 // Method Description:
+// - Writes a Mouse Event Record to the input callback based on the state of the mouse.
+// Arguments:
+// - uiColumn - the X/Column position on the viewport (1 = left-most)
+// - uiLine - the Y/Line/Row position on the viewport (1 = top-most)
+// - dwButtonState - the mouse buttons that are being modified
+// - dwModifierState - the modifier state to write mouse record.
+// - dwEventFlags - the type of mouse event to write to the mouse record.
+// Return Value:
+// - true iff we successfully wrote the keypress to the input callback.
+bool InputStateMachineEngine::_WriteMouseEvent(const unsigned int uiColumn, const unsigned int uiLine, const DWORD dwButtonState, const DWORD dwControlKeyState, const DWORD dwEventFlags)
+{
+    // At most 1 record - the modifiers don't get their own events
+    const size_t MAX_LENGTH = 1;
+    INPUT_RECORD rgInput[MAX_LENGTH];
+    size_t cInput = MAX_LENGTH;
+
+    COORD uiPos = { gsl::narrow<short>(uiColumn), gsl::narrow<short>(uiLine) };
+
+    rgInput[0].EventType = MOUSE_EVENT;
+    rgInput[0].Event.MouseEvent.dwMousePosition = uiPos;
+    rgInput[0].Event.MouseEvent.dwButtonState = dwButtonState;
+    rgInput[0].Event.MouseEvent.dwControlKeyState = dwControlKeyState;
+    rgInput[0].Event.MouseEvent.dwEventFlags = dwEventFlags;
+
+    // pack and write input records
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(rgInput, cInput));
+    return _pDispatch->WriteInput(inputEvents);
+}
+
+// Method Description:
 // - Retrieves the modifier state from a set of parameters for a cursor keys
 //      sequence. This is for Arrow keys, Home, End, etc.
 // Arguments:
@@ -707,6 +757,27 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) 
 }
 
 // Method Description:
+// - Retrieves the modifier state from a set of parameters for an SGR
+//      Mouse Sequence - one who's sequence is terminated with an 'M' or 'm'.
+// Arguments:
+// - rgusParams - the set of parameters to get the modifier state from.
+// - cParams - the number of elements in rgusParams
+// Return Value:
+// - the INPUT_RECORD compatible modifier state.
+DWORD InputStateMachineEngine::_GetSGRMouseModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
+{
+    DWORD dwModifiers = 0;
+    if (cParams >= 1)
+    {
+        // first two bits are something else
+        // 3rd through 5th are of interest
+        const unsigned short modifierSequence = rgusParams[0] >> 2;
+        dwModifiers = _GetModifier(modifierSequence, /*SGRMode*/ true);
+    }
+    return dwModifiers;
+}
+
+// Method Description:
 // - Determines if a set of parameters indicates a modified keypress
 // Arguments:
 // - cParams - the nummber of parameters we've collected in this sequence
@@ -726,16 +797,130 @@ bool InputStateMachineEngine::_IsModified(const unsigned short cParams)
 // - modifierParam - the VT modifier value to convert
 // Return Value:
 // - The equivalent INPUT_RECORD modifier value.
-DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam)
+DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam, bool SGRMode)
 {
-    // VT Modifiers are 1+(modifier flags)
-    unsigned short vtParam = modifierParam - 1;
-    DWORD modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
+    unsigned short vtParam = modifierParam;
+    DWORD modifierState = 0;
+    if (!SGRMode)
+    {
+        // VT Modifiers are 1+(modifier flags)
+        vtParam = modifierParam - 1;
+        modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
+    }
 
     bool fShift = WI_IsFlagSet(vtParam, VT_SHIFT);
     bool fAlt = WI_IsFlagSet(vtParam, VT_ALT);
     bool fCtrl = WI_IsFlagSet(vtParam, VT_CTRL);
     return modifierState | (fShift ? SHIFT_PRESSED : 0) | (fAlt ? LEFT_ALT_PRESSED : 0) | (fCtrl ? LEFT_CTRL_PRESSED : 0);
+}
+
+// Method Description:
+// - Synthesize the button state for the Mouse Input Record from an SGR VT Sequence
+// - Here, we refer to and maintain the global state of our mouse.
+// - Mouse wheel events are added at the end no keep them out of the global state
+// Arguments:
+// - wch: the wchar_t representing whether the button was pressed or released
+// - rgusParams: the wchar_t to get the mapped vkey of. Represents the direction of the button (down vs up)
+// - pdwButtonState: Recieves the button state for the record
+// Return Value:
+// true iff we were able to synthesize pdwButtonState
+bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
+                                                         _In_reads_(cParams) const unsigned short* const rgusParams,
+                                                         const unsigned int uiColumn,
+                                                         const unsigned int uiLine,
+                                                         _Out_ DWORD* const pdwButtonState,
+                                                         _Out_ DWORD* const pdwEventFlags)
+{
+    *pdwButtonState = 0;
+    *pdwEventFlags = 0;
+    bool fSuccess = true;
+
+    // Clear the middle 4 bits.
+    // The remaining bits represent which button had a change in state
+    const auto buttonID = rgusParams[0] & 0b11000011;
+
+    // Step 1: Translate which button was affected
+    DWORD buttonFlag = 0;
+    switch (buttonID)
+    {
+    case CsiActionMouseCodes::Left:
+        buttonFlag = FROM_LEFT_1ST_BUTTON_PRESSED;
+        break;
+    case CsiActionMouseCodes::Right:
+        buttonFlag = RIGHTMOST_BUTTON_PRESSED;
+        break;
+    case CsiActionMouseCodes::Middle:
+        buttonFlag = FROM_LEFT_2ND_BUTTON_PRESSED;
+        break;
+    case CsiActionMouseCodes::Button6:
+    case CsiActionMouseCodes::Button7:
+    case CsiActionMouseCodes::Button8:
+    case CsiActionMouseCodes::Button9:
+    case CsiActionMouseCodes::Button10:
+    case CsiActionMouseCodes::Button11:
+    default:
+        fSuccess = false;
+        break;
+    }
+
+    // Step 2: Decide whether to set or clear that button's bit
+    // NOTE: WI_SetFlag/WI_ClearFlag can't be used herebecause buttonFlag would have to be a compile-time constant
+    switch (wch)
+    {
+    case CsiEndCodes::MOUSE_DOWN:
+        // set flag
+        *pdwButtonState |= buttonFlag;
+        break;
+    case CsiEndCodes::MOUSE_UP:
+        // clear flag
+        *pdwButtonState &= (~buttonFlag);
+        break;
+    default:
+        fSuccess = false;
+        break;
+    }
+
+    // Step 3: append the mouse wheel data to out param
+    switch (buttonID)
+    {
+    case CsiActionMouseCodes::ScrollBack:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        DWORD hi_word = static_cast<DWORD>(-128) << 4;
+        *pdwButtonState |= hi_word;
+
+        *pdwEventFlags |= MOUSE_WHEELED;
+        break;
+    }
+    case CsiActionMouseCodes::ScrollForward:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        DWORD hi_word = static_cast<DWORD>(128) << 4;
+        *pdwButtonState |= hi_word;
+
+        *pdwEventFlags |= MOUSE_WHEELED;
+        break;
+    }
+    default:
+        fSuccess = false;
+        break;
+    }
+
+    // Step 4: check if mouse moved
+    COORD currentPos = { gsl::narrow<short>(uiColumn), gsl::narrow<short>(uiLine) };
+    if (_mouseButtonPos.X != currentPos.X || _mouseButtonPos.Y != currentPos.Y)
+    {
+        *pdwEventFlags |= MOUSE_MOVED;
+    }
+
+    // Step 5: update internal state before returning, even if we couldn't fully understand this
+    // only take LOWORD here because HIWORD is reserved for mouse wheel delta and release events for the wheel buttons are not reported
+    _mouseButtonState = LOWORD(*pdwButtonState);
+    _mouseButtonPos = currentPos;
+
+    return fSuccess;
 }
 
 // Method Description:
@@ -964,6 +1149,12 @@ _Success_(return ) bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cPara
         // If there are exactly two parameters, use them.
         *puiLine = rgusParams[0];
         *puiColumn = rgusParams[1];
+    }
+    else if (cParams == 3)
+    {
+        // If there are exactly 3 parameters, assume SGR Sequence and use them.
+        *puiLine = rgusParams[1];
+        *puiColumn = rgusParams[2];
     }
     else
     {
