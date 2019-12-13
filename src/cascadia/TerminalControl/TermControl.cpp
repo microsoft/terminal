@@ -118,10 +118,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // in any layout change chain. That gives us great flexibility in finding the right point
             // at which to initialize our renderer (and our terminal).
             // Any earlier than the last layout update and we may not know the terminal's starting size.
+
             if (_InitializeTerminal())
             {
                 // Only let this succeed once.
-                this->_layoutUpdatedRevoker.revoke();
+                _layoutUpdatedRevoker.revoke();
             }
         });
 
@@ -145,8 +146,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // These are important:
         // 1. When we get tapped, focus us
-        this->Tapped([this](auto&, auto& e) {
-            this->Focus(FocusState::Pointer);
+        _tappedRevoker = this->Tapped(winrt::auto_revoke, [this](auto&, auto& e) {
+            Focus(FocusState::Pointer);
             e.Handled(true);
         });
         // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
@@ -157,11 +158,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [weakThis = get_weak()](auto&& /*s*/, auto&& /*v*/) {
-            if (auto strongThis{ weakThis.get() })
-            {
-                strongThis->_ConnectionStateChangedHandlers(*strongThis, nullptr);
-            }
+        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+            _ConnectionStateChangedHandlers(*this, nullptr);
         });
     }
 
@@ -177,34 +175,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-            // Update our control settings
-            _ApplyUISettings();
-
-            // Update DxEngine's SelectionBackground
-            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
-            // Update the terminal core with its new Core settings
-            _terminal->UpdateSettings(_settings);
-
-            // Refresh our font with the renderer
-            _UpdateFont();
-
-            const auto width = _swapChainPanel.ActualWidth();
-            const auto height = _swapChainPanel.ActualHeight();
-            if (width != 0 && height != 0)
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, this]() {
+            // If 'weakThis' is locked, then we can safely work with 'this'
+            if (auto control{ weakThis.get() })
             {
-                // If the font size changed, or the _swapchainPanel's size changed
-                // for any reason, we'll need to make sure to also resize the
-                // buffer. _DoResize will invalidate everything for us.
-                auto lock = _terminal->LockForWriting();
-                _DoResize(width, height);
-            }
+                // Update our control settings
+                _ApplyUISettings();
 
-            // set TSF Foreground
-            Media::SolidColorBrush foregroundBrush{};
-            foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
-            _tsfInputControl.Foreground(foregroundBrush);
+                // Update DxEngine's SelectionBackground
+                _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+                // Update the terminal core with its new Core settings
+                _terminal->UpdateSettings(_settings);
+
+                // Refresh our font with the renderer
+                _UpdateFont();
+
+                const auto width = _swapChainPanel.ActualWidth();
+                const auto height = _swapChainPanel.ActualHeight();
+                if (width != 0 && height != 0)
+                {
+                    // If the font size changed, or the _swapchainPanel's size changed
+                    // for any reason, we'll need to make sure to also resize the
+                    // buffer. _DoResize will invalidate everything for us.
+                    auto lock = _terminal->LockForWriting();
+                    _DoResize(width, height);
+                }
+
+                // set TSF Foreground
+                Media::SolidColorBrush foregroundBrush{};
+                foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+                _tsfInputControl.Foreground(foregroundBrush);
+            }
         });
     }
 
@@ -362,30 +364,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_BackgroundColorChanged(const uint32_t color)
     {
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, color]() {
-            const auto R = GetRValue(color);
-            const auto G = GetGValue(color);
-            const auto B = GetBValue(color);
-
-            winrt::Windows::UI::Color bgColor{};
-            bgColor.R = R;
-            bgColor.G = G;
-            bgColor.B = B;
-            bgColor.A = 255;
-
-            if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, this, color]() {
+            // If 'weakThis' is locked, then we can safely work with 'this'
+            if (auto control{ weakThis.get() })
             {
-                acrylic.FallbackColor(bgColor);
-                acrylic.TintColor(bgColor);
-            }
-            else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
-            {
-                solidColor.Color(bgColor);
-            }
+                const auto R = GetRValue(color);
+                const auto G = GetGValue(color);
+                const auto B = GetBValue(color);
 
-            // Set the default background as transparent to prevent the
-            // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(ARGB(0, R, G, B));
+                winrt::Windows::UI::Color bgColor{};
+                bgColor.R = R;
+                bgColor.G = G;
+                bgColor.B = B;
+                bgColor.A = 255;
+
+                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
+                {
+                    acrylic.FallbackColor(bgColor);
+                    acrylic.TintColor(bgColor);
+                }
+                else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
+                {
+                    solidColor.Color(bgColor);
+                }
+
+                // Set the default background as transparent to prevent the
+                // DX layer from overwriting the background image or acrylic effect
+                _settings.DefaultBackground(ARGB(0, R, G, B));
+            }
         });
     }
 
@@ -449,10 +455,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]() {
-            auto lock = _terminal->LockForWriting();
-            auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
+
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis{ get_weak() }, this, chain]() {
+            // If 'weakThis' is locked, then we can safely work with 'this'
+            if (auto control{ weakThis.get() })
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         });
     }
 
@@ -528,6 +539,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
 
+        // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onRecieveOutputFn = [this](const hstring str) {
             _terminal->Write(str.c_str());
         };
@@ -537,11 +549,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal->SetWriteInputCallback(inputFn);
 
         auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]() {
-            _terminal->LockConsole();
-            auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockConsole();
+
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis{ get_weak() }, this, chain]() {
+            if (auto control{ weakThis.get() })
+            {
+                _terminal->LockConsole();
+                auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+                _terminal->UnlockConsole();
+            }
         });
 
         // Set up the height of the ScrollViewer and the grid we're using to fake our scrolling height
@@ -615,7 +631,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
@@ -624,7 +640,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Create a timer
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+            _cursorTimer.value().Tick({ get_weak(), &TermControl::_BlinkCursor });
             _cursorTimer.value().Start();
         }
         else
@@ -1506,15 +1522,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis{ get_weak() }, this, viewTop, viewHeight, bufferSize]() {
             // Even if we weren't closed/closing few lines above, we might be
             // while waiting for this block of code to be dispatched.
-            if (_closing.load())
+            // If 'weakThis' is locked, then we can safely work with 'this'
+            if (auto control{ weakThis.get() })
             {
-                return;
-            }
+                if (_closing.load())
+                {
+                    return;
+                }
 
-            _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
+                _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
+            }
         });
 
         // Set this value as our next expected scroll position.
@@ -1601,19 +1621,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
-
-            // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
-            if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })
-            {
-                localCursorTimer->Stop();
-                // cursorTimer timer, now stopped, is destroyed.
-            }
-
-            if (auto localAutoScrollTimer{ std::exchange(_autoScrollTimer, nullptr) })
-            {
-                localAutoScrollTimer.Stop();
-                // _autoScrollTimer timer, now stopped, is destroyed.
-            }
 
             if (auto localConnection{ std::exchange(_connection, nullptr) })
             {

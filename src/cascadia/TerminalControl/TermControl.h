@@ -108,6 +108,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TSFInputControl _tsfInputControl;
 
         event_token _connectionOutputEventToken;
+        TermControl::Tapped_revoker _tappedRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
