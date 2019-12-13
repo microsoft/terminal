@@ -123,8 +123,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
 
-        int _settingsRowsToScroll;
-        uint32_t _systemRowsToScroll;
+        int _rowsToScroll;
 
         std::optional<int> _lastScrollOffset;
 
@@ -212,8 +211,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
-
-        int32_t DetermineRowsToScroll();
     };
 }
 

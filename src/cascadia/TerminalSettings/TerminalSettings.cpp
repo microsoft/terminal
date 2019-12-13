@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
-        _rowsToScroll{ NULL },
+        _rowsToScroll{ 0 },
         _snapOnInput{ true },
         _cursorColor{ DEFAULT_CURSOR_COLOR },
         _cursorShape{ CursorStyle::Vintage },
@@ -113,7 +113,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
     int32_t TerminalSettings::RowsToScroll()
     {
-        return _rowsToScroll;
+        if (_rowsToScroll != 0)
+        {
+            return _rowsToScroll;
+        }
+        int systemRowsToScroll;
+        if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &systemRowsToScroll, 0))
+        {
+            systemRowsToScroll = 4;
+        }
+        return systemRowsToScroll;
     }
 
     void TerminalSettings::RowsToScroll(int32_t value)

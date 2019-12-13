@@ -245,7 +245,15 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
     if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
     {
-        _rowsToScroll = rowsToScroll.asInt();
+        //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
+        if (rowsToScroll.isInt())
+        {
+            _rowsToScroll = rowsToScroll.asInt();
+        }
+        else
+        {
+            _rowsToScroll = 0;
+        }
     }
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {

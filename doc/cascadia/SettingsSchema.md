@@ -10,7 +10,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
 | `initialCols` | _Required_ | Integer | `120` | The number of columns displayed in the window upon first load. |
 | `initialRows` | _Required_ | Integer | `30` | The number of rows displayed in the window upon first load. |
-| `rowsToScroll` | Optional | Integer | `null` | The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is specified and is not 0 or null. |
+| `rowsToScroll` | Optional | Integer | `system` | The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or "system". |
 | `requestedTheme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | `true` | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
 | `showTabsInTitlebar` | Optional | Boolean | `true` | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |

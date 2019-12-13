@@ -35,7 +35,7 @@ constexpr int DEFAULT_FONT_SIZE = 12;
 
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;
-constexpr int DEFAULT_ROWSTOSCROLL = NULL;
+constexpr int DEFAULT_ROWSTOSCROLL = 0;
 
 const std::wstring DEFAULT_PADDING{ L"8, 8, 8, 8" };
 const std::wstring DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };
