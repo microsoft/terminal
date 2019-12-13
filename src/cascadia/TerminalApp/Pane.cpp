@@ -18,8 +18,8 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
-static const int PaneBorderSize = 2;
-static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
+static int PaneBorderSize = 2;
+static int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const float Half = 0.50f;
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
@@ -1119,6 +1119,8 @@ void Pane::_SetupResources()
     const auto res = Application::Current().Resources();
 
     {
+        //TODO: Does this hot-reload?
+
         // First setup the pane border TabViewBackground color
         const auto tabViewBackgroundKey = winrt::box_value(L"PaneBorderBrush");
         if (res.HasKey(tabViewBackgroundKey))
@@ -1148,6 +1150,27 @@ void Pane::_SetupResources()
             // be able to hittest for clicks, and then clicking on the border
             // will eat focus.
             s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
+    }
+
+    {
+        // TODO: This needs to be able to hot-reload, by changing all the
+        // existing borders to the current width
+
+        // TODO: we shouldn't do this once per-pane on a reload, we should do it
+        // once at the root. maybe use a std::optional<> to hold the value,
+        // clear it on reload, and only set it when it's unset
+        const auto activeBorderKey = winrt::box_value(L"PaneBorderWidth");
+        if (res.HasKey(activeBorderKey))
+        {
+            const auto colorFromResources = res.Lookup(activeBorderKey);
+            auto actualColor = winrt::unbox_value_or<double>(colorFromResources, 2.0);
+
+            PaneBorderSize = gsl::narrow_cast<int>(actualColor);
+            CombinedPaneBorderSize = 2 * PaneBorderSize;
+        }
+        else
+        {
         }
     }
 }

@@ -52,6 +52,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <!-- Suppress all padding except left around the tabs. The TabView looks far better like this. -->
                     <Thickness x:Key="TabViewHeaderPadding">8,0,0,0</Thickness>
 
+                    <x:Double x:Key="PaneBorderWidth">2.0</x:Double>
 
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">

@@ -63,6 +63,10 @@ namespace winrt::TerminalApp::implementation
         auto res = ::winrt::Windows::UI::Xaml::Application::Current().Resources();
 
         {
+            res.Insert(winrt::box_value(L"PaneBorderWidth"), winrt::box_value(8.0));
+        }
+
+        {
             Media::SolidColorBrush myBrush{};
             myBrush.Color(winrt::Windows::UI::Colors::Red());
             res.Insert(winrt::box_value(L"PaneBorderBrush"), myBrush);
