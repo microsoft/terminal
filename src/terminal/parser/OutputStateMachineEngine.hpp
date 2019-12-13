@@ -39,7 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionCsiDispatch(const wchar_t wch,
                                const std::optional<wchar_t> intermediate,
-                               std::basic_string_view<size_t> parameters) override;
+                               const std::basic_string_view<size_t> parameters) override;
 
         bool ActionClear() override;
 
@@ -50,7 +50,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const std::wstring_view string) override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                               std::basic_string_view<size_t> parameters) override;
+                               const std::basic_string_view<size_t> parameters) override;
 
         bool FlushAtEndOfString() const override;
         bool DispatchControlCharsFromEscape() const override;
@@ -69,10 +69,10 @@ namespace Microsoft::Console::VirtualTerminal
         wchar_t _lastPrintedChar;
 
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
-                                               std::basic_string_view<size_t> parameters);
+                                               const std::basic_string_view<size_t> parameters);
         bool _IntermediateExclamationDispatch(const wchar_t wch);
         bool _IntermediateSpaceDispatch(const wchar_t wchAction,
-                                        std::basic_string_view<size_t> parameters);
+                                        const std::basic_string_view<size_t> parameters);
 
         enum VTActionCodes : wchar_t
         {

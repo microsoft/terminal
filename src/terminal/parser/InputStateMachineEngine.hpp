@@ -35,34 +35,27 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPrint(const wchar_t wch) override;
 
-        bool ActionPrintString(const wchar_t* const rgwch,
-                               const size_t cch) override;
+        bool ActionPrintString(const std::wstring_view string) override;
 
-        bool ActionPassThroughString(const wchar_t* const rgwch,
-                                     size_t const cch) override;
+        bool ActionPassThroughString(const std::wstring_view string) override;
 
         bool ActionEscDispatch(const wchar_t wch,
-                               const unsigned short cIntermediate,
-                               const wchar_t wchIntermediate) override;
+                               const std::optional<wchar_t> intermediate) override;
 
         bool ActionCsiDispatch(const wchar_t wch,
-                               const unsigned short cIntermediate,
-                               const wchar_t wchIntermediate,
-                               _In_reads_(cParams) const unsigned short* const rgusParams,
-                               const unsigned short cParams);
+                               const std::optional<wchar_t> intermediate,
+                               const std::basic_string_view<size_t> parameters) override;
 
         bool ActionClear() override;
 
         bool ActionIgnore() override;
 
         bool ActionOscDispatch(const wchar_t wch,
-                               const unsigned short sOscParam,
-                               _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                               const unsigned short cchOscString) override;
+                               const size_t parameter,
+                               const std::wstring_view string) override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                               _In_reads_(cParams) const unsigned short* const rgusParams,
-                               const unsigned short cParams) override;
+                               const std::basic_string_view<size_t> parameters) override;
 
         bool FlushAtEndOfString() const override;
         bool DispatchControlCharsFromEscape() const override;
@@ -125,68 +118,43 @@ namespace Microsoft::Console::VirtualTerminal
             F12 = 24,
         };
 
-        struct CSI_TO_VKEY
-        {
-            CsiActionCodes Action;
-            short vkey;
-        };
+        static const std::map<CsiActionCodes, short> CsiMap;
+        static const std::map<GenericKeyIdentifiers, short> GenericMap;
+        static const std::map<Ss3ActionCodes, short> Ss3Map;
 
-        struct GENERIC_TO_VKEY
-        {
-            GenericKeyIdentifiers Identifier;
-            short vkey;
-        };
+        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters);
+        DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters);
+        bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState);
 
-        struct SS3_TO_VKEY
-        {
-            Ss3ActionCodes Action;
-            short vkey;
-        };
+        bool _IsModified(const size_t paramCount);
+        DWORD _GetModifier(const size_t parameter);
 
-        static const CSI_TO_VKEY s_rgCsiMap[];
-        static const GENERIC_TO_VKEY s_rgGenericMap[];
-        static const SS3_TO_VKEY s_rgSs3Map[];
+        bool _GetGenericVkey(const std::basic_string_view<size_t> parameters,
+                             short& vkey) const;
+        bool _GetCursorKeysVkey(const wchar_t wch, short& vkey) const;
+        bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
 
-        DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                          const unsigned short cParams);
-        DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                           const unsigned short cParams);
-        bool _GenerateKeyFromChar(const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
+        bool _WriteSingleKey(const short vkey, const DWORD modifierState);
+        bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _IsModified(const unsigned short cParams);
-        DWORD _GetModifier(const unsigned short modifierParam);
+        void _GenerateWrappedSequence(const wchar_t wch,
+                                      const short vkey,
+                                      const DWORD modifierState,
+                                      std::vector<INPUT_RECORD>& input);
 
-        bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams,
-                             const unsigned short cParams,
-                             _Out_ short* const pVkey) const;
-        bool _GetCursorKeysVkey(const wchar_t wch, _Out_ short* const pVkey) const;
-        bool _GetSs3KeysVkey(const wchar_t wch, _Out_ short* const pVkey) const;
+        void _GetSingleKeypress(const wchar_t wch,
+                                const short vkey,
+                                const DWORD modifierState,
+                                std::vector<INPUT_RECORD>& input);
 
-        bool _WriteSingleKey(const short vkey, const DWORD dwModifierState);
-        bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD dwModifierState);
+        bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+                                        unsigned int& function) const;
 
-        size_t _GenerateWrappedSequence(const wchar_t wch,
-                                        const short vkey,
-                                        const DWORD dwModifierState,
-                                        _Inout_updates_(cInput) INPUT_RECORD* rgInput,
-                                        const size_t cInput);
-
-        size_t _GetSingleKeypress(const wchar_t wch,
-                                  const short vkey,
-                                  const DWORD dwModifierState,
-                                  _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
-                                  const size_t cRecords);
-
-        bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned short cParams,
-                                        _Out_ unsigned int* const puiFunction) const;
-
-        static const unsigned int s_uiDefaultLine = 1;
-        static const unsigned int s_uiDefaultColumn = 1;
-        bool _GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
-                            const unsigned short cParams,
-                            _Out_ unsigned int* const puiLine,
-                            _Out_ unsigned int* const puiColumn) const;
+        static constexpr size_t DefaultLine = 1;
+        static constexpr size_t DefaultColumn = 1;
+        bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
+                            size_t& line,
+                            size_t& column) const;
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
     };

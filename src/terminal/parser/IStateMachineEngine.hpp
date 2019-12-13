@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
                                        const std::optional<wchar_t> intermediate) = 0;
         virtual bool ActionCsiDispatch(const wchar_t wch,
                                        const std::optional<wchar_t> intermediate,
-                                       std::basic_string_view<size_t> parameters) = 0;
+                                       const std::basic_string_view<size_t> parameters) = 0;
 
         virtual bool ActionClear() = 0;
 
@@ -45,7 +45,7 @@ namespace Microsoft::Console::VirtualTerminal
                                        const std::wstring_view string) = 0;
 
         virtual bool ActionSs3Dispatch(const wchar_t wch,
-                                       std::basic_string_view<size_t> parameters) = 0;
+                                       const std::basic_string_view<size_t> parameters) = 0;
 
         virtual bool FlushAtEndOfString() const = 0;
         virtual bool DispatchControlCharsFromEscape() const = 0;

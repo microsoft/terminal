@@ -29,11 +29,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool WriteCtrlC() = 0;
 
-        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) = 0;
+        virtual bool WriteString(const std::wstring_view string) = 0;
 
         virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const size_t cParams) = 0;
+                                        const std::basic_string_view<size_t> parameters) = 0;
 
         virtual bool MoveCursor(const unsigned int row,
                                 const unsigned int col) = 0;
