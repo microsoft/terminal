@@ -133,6 +133,10 @@
     <value>Found a profile with an invalid "colorScheme". Defaulting that profile to the default colors. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.
 </value>
   </data>
+  <data name="BadActivePaneBorderColorValueText" xml:space="preserve">
+    <value>Found an invalid value for "activePaneBorderColor". This must either be set to null, "accent", or a hex color code in format "#RRGGBB". Defaulting to no color.
+</value>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>No profiles were found in your settings.
 </value>

@@ -52,6 +52,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <!-- Suppress all padding except left around the tabs. The TabView looks far better like this. -->
                     <Thickness x:Key="TabViewHeaderPadding">8,0,0,0</Thickness>
 
+
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->
@@ -61,12 +62,20 @@ the MIT License. See LICENSE in the project root for license information. -->
                             sample the pixels out of it, or premultiply the alpha into the background. For obvious reasons, we've chosen
                             the latter. -->
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FF333333" />
+
+                            <StaticResource x:Key="PaneBorderBrush" ResourceKey="TabViewBackground" />
+                            <SolidColorBrush x:Key="ActivePaneBorderBrush" Color="{ThemeResource SystemAccentColor}" />
+
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!-- Define resources for Light mode here -->
                             <!-- See note about premultiplication above. -->
                             <SolidColorBrush x:Key="TabViewBackground" Color="#FFCCCCCC" />
+
+                            <StaticResource x:Key="PaneBorderBrush" ResourceKey="TabViewBackground" />
+                            <SolidColorBrush x:Key="ActivePaneBorderBrush" Color="{ThemeResource SystemAccentColor}" />
+
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

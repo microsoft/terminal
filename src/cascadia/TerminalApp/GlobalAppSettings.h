@@ -76,6 +76,11 @@ public:
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
+    bool HasPaneFocusBorderColor() const noexcept;
+    bool IsPaneFocusColorAccentColor() const noexcept;
+    COLORREF GetPaneFocusColor() const;
+    void SetPaneFocusColor(std::optional<std::wstring> newValue);
+
 private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
@@ -96,8 +101,8 @@ private:
     std::wstring _wordDelimiters;
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
-
     winrt::TerminalApp::LaunchMode _launchMode;
+    std::optional<std::wstring> _activePaneBorderColor{ std::nullopt };
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;

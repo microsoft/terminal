@@ -70,7 +70,7 @@ std::string Utils::ColorToHexString(const COLORREF color)
 // Return Value:
 // - A COLORREF if the string could successfully be parsed. If the string is not
 //      the correct format, throws E_INVALIDARG
-COLORREF Utils::ColorFromHexString(const std::string str)
+COLORREF Utils::ColorFromHexString(const std::string& str)
 {
     THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
@@ -90,6 +90,42 @@ COLORREF Utils::ColorFromHexString(const std::string str)
         rStr = std::string(&str.at(1), 2);
         gStr = std::string(&str.at(3), 2);
         bStr = std::string(&str.at(5), 2);
+    }
+
+    const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+
+    return RGB(r, g, b);
+}
+
+// Function Description:
+// - Parses a color from a string. The string should be in the format "#RRGGBB" or "#RGB"
+// Arguments:
+// - str: a string representation of the COLORREF to parse
+// Return Value:
+// - A COLORREF if the string could successfully be parsed. If the string is not
+//      the correct format, throws E_INVALIDARG
+COLORREF Utils::ColorFromHexString(const std::wstring& str)
+{
+    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
+
+    std::wstring rStr;
+    std::wstring gStr;
+    std::wstring bStr;
+
+    if (str.size() == 4)
+    {
+        rStr = std::wstring(2, str.at(1));
+        gStr = std::wstring(2, str.at(2));
+        bStr = std::wstring(2, str.at(3));
+    }
+    else
+    {
+        rStr = std::wstring(&str.at(1), 2);
+        gStr = std::wstring(&str.at(3), 2);
+        bStr = std::wstring(&str.at(5), 2);
     }
 
     const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));

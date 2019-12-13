@@ -149,6 +149,17 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 }
 
 // Method Description:
+// - Get a const reference to our global settings
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to our global settings
+const GlobalAppSettings& CascadiaSettings::GlobalSettings() const
+{
+    return _globals;
+}
+
+// Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
@@ -205,6 +216,9 @@ void CascadiaSettings::_ValidateSettings()
     // TODO:GH#3522 With variable args to keybindings, it's possible that a user
     // set a keybinding without all the required args for an action. Display a
     // warning if an action didn't have a required arg.
+
+    // Validate that pane colors are either a color or "accent"
+    _ValidatePaneAccentColorValues();
 }
 
 // Method Description:
@@ -588,4 +602,40 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
         profileGuid = _globals.GetDefaultProfile();
     }
     return profileGuid;
+}
+
+// Method Description:
+// - Ensures that the value set for "activePaneBorderColor" is a reasonable
+//   value. This should be one of:
+//   - `null`: to clear the active pane border color
+//   - `"accent"`:
+//   - a color string in format `"#RRGGBB"`
+// - If the color is not set to one of these values, this will reset the value
+//   to null and display a warning.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::BadActivePaneBorderColorValue to our list
+//   of warnings if the color is not an appropriate value.
+void CascadiaSettings::_ValidatePaneAccentColorValues()
+{
+    // The only real case we need to check here is if the pane border color was
+    // set, but it wasn't set to "accent", nor was it otherwise able to be
+    // parsed.
+    if (_globals.HasPaneFocusBorderColor() && !_globals.IsPaneFocusColorAccentColor())
+    {
+        // Try parsing the color. If we fail to parse the color, then add the
+        // warning. Otherwise, the setting is good to go.
+        try
+        {
+            const auto color = _globals.GetPaneFocusColor();
+            color;
+        }
+        catch (...)
+        {
+            _warnings.push_back(::TerminalApp::SettingsLoadWarnings::BadActivePaneBorderColorValue);
+            _globals.SetPaneFocusColor(std::nullopt);
+        }
+    }
 }
