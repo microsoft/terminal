@@ -37,6 +37,8 @@ public:
 
     void ClosePane();
 
+    winrt::Windows::UI::Color GetActiveTerminalBackground();
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 

@@ -76,6 +76,20 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.Children().Append(_titlebar);
 
     Controls::Grid::SetRow(_titlebar, 0);
+
+    // Add a _pair_ of handlers here: When the titlebar's background brush
+    // changes, add an event handler that listens for when that brush's color
+    // changes. When that coor changes, invalidate the window, so the titlebar
+    // will get an updated color.
+    auto panel = _titlebar.try_as<Controls::Panel>();
+    panel.RegisterPropertyChangedCallback(panel.BackgroundProperty(), [this](auto&&, auto&&) {
+        auto bg = _titlebar.Background();
+        auto bgBrush = bg.try_as<Media::SolidColorBrush>();
+        bgBrush.RegisterPropertyChangedCallback(bgBrush.ColorProperty(), [this](auto&&, auto&&) {
+            auto hwnd = GetHandle();
+            InvalidateRect(hwnd, NULL, TRUE);
+        });
+    });
 }
 
 // Method Description:

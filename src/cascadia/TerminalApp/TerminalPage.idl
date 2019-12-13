@@ -15,5 +15,9 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.Controls.ContentDialog> ShowDialog;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+
+        // // TODO: this should probably just be a dependency property
+        // event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> TitlebarBackgroundColorChanged;
+        // Windows.UI.Color TitlebarBackgroundColor { get; };
     }
 }

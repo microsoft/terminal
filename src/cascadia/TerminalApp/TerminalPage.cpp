@@ -1376,7 +1376,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
+    void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender,
+                                              const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
     {
         if (!_rearranging)
         {
@@ -1400,6 +1401,35 @@ namespace winrt::TerminalApp::implementation
 
                     tab->SetFocused(true);
                     _titleChangeHandlers(*this, Title());
+
+                    // DANGER: Make sure to _modify_ the current brush. Don't
+                    // insert a new one. If we modify the current brush, then
+                    // the TitlebarControl will auto-update, because the value
+                    // of it's brush's color changed. If we Insert instead, then
+                    // the titlebar's background will still be the old,
+                    // unmodified brush.
+
+                    auto res = Application::Current().Resources();
+                    // This will colorize the background (the titlebar)
+                    auto obj = res.Lookup(winrt::box_value(L"TabViewBackground"));
+                    auto tvbBrush = obj.try_as<SolidColorBrush>();
+                    tvbBrush.Color(tab->GetActiveTerminalBackground());
+
+                    // Don't do the tab here -
+                    // res.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), myBrush);
+                    // res.Insert(winrt::box_value(L"TabViewBackground"), myBrush);
+                    // _tabView.Background(myBrush);
+                    // The tab will want to update it's color on it's own
+
+                    // IF tabRow.background == "terminalBackground":
+                    //   The TerminalPage will listen for the
+                    //
+                    //   * active tab changing
+                    //   * The active pane changing
+                    //
+                    //   And use both of those as a chance to query the acctive
+                    //   tab's active pane's terminal's BG color, to set
+                    //   TabViewBackground.
                 }
                 CATCH_LOG();
             }
