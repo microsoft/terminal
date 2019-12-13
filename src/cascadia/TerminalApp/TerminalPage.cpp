@@ -17,8 +17,11 @@
 #include "TabRowControl.h"
 
 using namespace winrt;
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::UI::Core;
+
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
@@ -60,7 +63,21 @@ namespace winrt::TerminalApp::implementation
             auto appResources = ::winrt::Windows::UI::Xaml::Application::Current().Resources();
 
             Media::SolidColorBrush myBrush{};
-            myBrush.Color(winrt::Windows::UI::Colors::Red());
+
+            const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+            if (appResources.HasKey(accentColorKey))
+            {
+                const auto colorFromResources = appResources.Lookup(accentColorKey);
+                // If SystemAccentColor is _not_ a Color for some reason, use
+                // Transparent as the color, so we don't do this process again on
+                // the next pane (by leaving s_focusedBorderBrush nullptr)
+                auto actualColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(colorFromResources, winrt::Windows::UI::Colors::Black());
+                myBrush.Color(actualColor);
+            }
+            else
+            {
+                myBrush.Color(winrt::Windows::UI::Colors::Red());
+            }
             // These two will colorize the tabs:
             // appResources.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), myBrush);
             // appResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), myBrush);
