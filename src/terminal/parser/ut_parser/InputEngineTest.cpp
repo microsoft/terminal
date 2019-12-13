@@ -201,9 +201,46 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 {
     TEST_CLASS(InputEngineTest);
 
+    TestState testState;
+
     void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    std::wstring GenerateSgrMouseSequence(const unsigned short button, const COORD position, const InputStateMachineEngine::CsiEndCodes direction);
+
+    // We need to manually call this at the end of the tests so that we know _which_ tests failed, rather than that the method cleanup failed
+    void VerifyExpectedInputDrained()
+    {
+        if (!testState.vExpectedInput.empty())
+        {
+            for (const auto& exp : testState.vExpectedInput)
+            {
+                switch (exp.EventType)
+                {
+                case KEY_EVENT:
+                    Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: KEY_EVENT"));
+                    break;
+                case MOUSE_EVENT:
+                    Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: MOUSE_EVENT"));
+                    break;
+                case WINDOW_BUFFER_SIZE_EVENT:
+                    Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: WINDOW_BUFFER_SIZE_EVENT"));
+                    break;
+                case MENU_EVENT:
+                    Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: MENU_EVENT"));
+                    break;
+                case FOCUS_EVENT:
+                    Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: FOCUS_EVENT"));
+                    break;
+                default:
+                    Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: UNKNOWN TYPE"));
+                    break;
+                }
+            }
+            VERIFY_FAIL(L"there should be no remaining un-drained expected input");
+            testState.vExpectedInput.clear();
+        }
+    }
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -231,6 +268,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(AltCtrlDTest);
     TEST_METHOD(AltIntermediateTest);
     TEST_METHOD(AltBackspaceEnterTest);
+    TEST_METHOD(SGRMouseTest_ButtonClick);
 
     friend class TestInteractDispatch;
 };
@@ -321,7 +359,6 @@ bool TestInteractDispatch::MoveCursor(const unsigned int row,
 
 void InputEngineTest::C0Test()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -414,11 +451,11 @@ void InputEngineTest::C0Test()
 
         _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
     }
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::AlphanumericTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -459,12 +496,13 @@ void InputEngineTest::AlphanumericTest()
 
         _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
     }
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::RoundTripTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
     auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
     VERIFY_IS_NOT_NULL(_stateMachine);
@@ -519,11 +557,11 @@ void InputEngineTest::RoundTripTest()
         auto inputKey = IInputEvent::Create(irTest);
         terminalInput.HandleKey(inputKey.get());
     }
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::WindowManipulationTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -590,7 +628,6 @@ void InputEngineTest::WindowManipulationTest()
 
 void InputEngineTest::NonAsciiTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputStringCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -640,11 +677,12 @@ void InputEngineTest::NonAsciiTest()
     test.Event.KeyEvent.bKeyDown = FALSE;
     testState.vExpectedInput.push_back(test);
     _stateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::CursorPositioningTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
@@ -684,11 +722,12 @@ void InputEngineTest::CursorPositioningTest()
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(&seq[0], seq.length());
+
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::CSICursorBackTabTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -712,11 +751,12 @@ void InputEngineTest::CSICursorBackTabTest()
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(&seq[0], seq.length());
+
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::AltBackspaceTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -739,11 +779,12 @@ void InputEngineTest::AltBackspaceTest()
     const std::wstring seq = L"\x1b\x7f";
     Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x7f\""));
     _stateMachine->ProcessString(seq);
+
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::AltCtrlDTest()
 {
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -766,6 +807,8 @@ void InputEngineTest::AltCtrlDTest()
     const std::wstring seq = L"\x1b\x04";
     Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x04\""));
     _stateMachine->ProcessString(seq);
+
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::AltIntermediateTest()
@@ -773,7 +816,6 @@ void InputEngineTest::AltIntermediateTest()
     // Tests GH#1209. When we process a alt+key combination where the key just
     // so happens to be an intermediate character, we should make sure that an
     // immediately subsequent ctrl character is handled correctly.
-    TestState testState;
 
     // We'll test this by creating both a TerminalInput and an
     // InputStateMachine, and piping the KeyEvents generated by the
@@ -826,6 +868,8 @@ void InputEngineTest::AltIntermediateTest()
     expectedTranslation = seq;
     Log::Comment(NoThrowString().Format(L"Processing \"\\x05\""));
     stateMachine->ProcessString(seq);
+
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::AltBackspaceEnterTest()
@@ -835,7 +879,6 @@ void InputEngineTest::AltBackspaceEnterTest()
     // enter. The enter should be processed as just a single VK_ENTER, not a
     // alt+enter.
 
-    TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
@@ -877,4 +920,83 @@ void InputEngineTest::AltBackspaceEnterTest()
 
     // Ensure the state machine has correctly returned to the ground state
     VERIFY_ARE_EQUAL(StateMachine::VTStates::Ground, _stateMachine->_state);
+
+    VerifyExpectedInputDrained();
+}
+
+// Method Description:
+// - Writes an SGR VT sequence based on the necessary parameters
+// Arguments:
+// - button - the state of the buttons (constructed via InputStateMachineEngine::CsiActionMouseCodes)
+// - position - the {x,y} position of the event on the viewport where the top-left is {1,1}
+// - direction - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
+// Return Value:
+// - the SGR VT sequence
+std::wstring InputEngineTest::GenerateSgrMouseSequence(const unsigned short button,
+                                                       const COORD position,
+                                                       const InputStateMachineEngine::CsiEndCodes direction)
+{
+    return wil::str_printf_failfast<std::wstring>(L"\x1b[<%d;%d;%d%c", static_cast<int>(button), position.X, position.Y, direction);
+}
+
+void InputEngineTest::SGRMouseTest_ButtonClick()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    // SGR_PARAMS serves as test input
+    // - the state of the buttons (constructed via InputStateMachineEngine::CsiActionMouseCodes)
+    // - the {x,y} position of the event on the viewport where the top-left is {1,1}
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
+    typedef std::tuple<unsigned short, COORD, InputStateMachineEngine::CsiEndCodes> SGR_PARAMS;
+
+    // MOUSE_EVENT_PARAMS serves as expected output
+    // - dwButtonState
+    // - dwControlKeyState
+    // - dwMousePosition
+    // - dwEventFlags
+    typedef std::tuple<DWORD, DWORD, COORD, DWORD> MOUSE_EVENT_PARAMS;
+
+    // clang-format off
+    const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
+        //  TEST INPUT                                                                                                                  EXPECTED OUTPUT
+        {   { InputStateMachineEngine::CsiActionMouseCodes::Left, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { InputStateMachineEngine::CsiActionMouseCodes::Left, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },           { 0, 0, { 0, 0 }, 0 } },
+            
+        {   { InputStateMachineEngine::CsiActionMouseCodes::Middle, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },       { FROM_LEFT_2ND_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { InputStateMachineEngine::CsiActionMouseCodes::Middle, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },         { 0, 0, { 0, 0 }, 0 } },
+            
+        {   { InputStateMachineEngine::CsiActionMouseCodes::Right, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { InputStateMachineEngine::CsiActionMouseCodes::Right, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { 0, 0, { 0, 0 }, 0 } },
+    };
+    // clang-format on
+
+    SGR_PARAMS input;
+    MOUSE_EVENT_PARAMS expected;
+    INPUT_RECORD inputRec;
+    for (int i = 0; i < testData.size(); i++)
+    {
+        // construct test input
+        input = std::get<0>(testData[i]);
+        const std::wstring seq = GenerateSgrMouseSequence(std::get<0>(input), std::get<1>(input), std::get<2>(input));
+
+        // construct expected result
+        expected = std::get<1>(testData[i]);
+        inputRec.EventType = MOUSE_EVENT;
+        inputRec.Event.MouseEvent.dwButtonState = std::get<0>(expected);
+        inputRec.Event.MouseEvent.dwControlKeyState = std::get<1>(expected);
+        inputRec.Event.MouseEvent.dwMousePosition = std::get<2>(expected);
+        inputRec.Event.MouseEvent.dwEventFlags = std::get<3>(expected);
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        Log::Comment(NoThrowString().Format(L"Processing \"%s\"", seq.c_str()));
+        _stateMachine->ProcessString(&seq[0], seq.length());
+    }
+
+    VerifyExpectedInputDrained();
 }
