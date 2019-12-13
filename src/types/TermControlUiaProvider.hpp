@@ -19,32 +19,29 @@ Author(s):
 
 #pragma once
 
-#include "..\types\ScreenInfoUiaProviderBase.h"
-#include "..\types\UiaTextRangeBase.hpp"
-#include "UiaTextRange.hpp"
-
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
-{
-    struct TermControl;
-}
-
+#include "ScreenInfoUiaProviderBase.h"
+#include "UiaTextRangeBase.hpp"
+#include "IControlAccessibilityInfo.h"
+#include "TermControlUiaTextRange.hpp"
 namespace Microsoft::Terminal
 {
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
         TermControlUiaProvider() = default;
-        HRESULT RuntimeClassInitialize(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* termControl,
-                                       _In_ std::function<RECT()> GetBoundingRect);
+        HRESULT RuntimeClassInitialize(_In_ ::Microsoft::Console::Types::IUiaData* const uiaData,
+                                       _In_ ::Microsoft::Console::Types::IControlAccessibilityInfo* controlInfo) noexcept;
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
-                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
+                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) noexcept override;
+        IFACEMETHODIMP get_HostRawElementProvider(IRawElementProviderSimple** ppProvider) noexcept override;
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
-        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
+        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) noexcept override;
 
         const COORD GetFontSize() const;
-        const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
+        const RECT GetPadding() const;
+        const double GetScaleFactor() const;
         void ChangeViewport(const SMALL_RECT NewWindow) override;
 
     protected:
@@ -73,7 +70,6 @@ namespace Microsoft::Terminal
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
     private:
-        std::function<RECT(void)> _getBoundingRect;
-        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* _termControl;
+        ::Microsoft::Console::Types::IControlAccessibilityInfo* _controlInfo{ nullptr };
     };
 }

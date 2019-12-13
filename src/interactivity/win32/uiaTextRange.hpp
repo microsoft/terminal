@@ -29,20 +29,20 @@ namespace Microsoft::Console::Interactivity::Win32
         // degenerate range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const Cursor& cursor,
-                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        _In_ const COORD start,
                                        _In_ const COORD end,
-                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
+                                       _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
         // range from a UiaPoint
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,

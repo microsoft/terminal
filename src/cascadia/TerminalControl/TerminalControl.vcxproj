@@ -36,7 +36,6 @@
     <ClInclude Include="SearchBoxControl.h">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
@@ -46,7 +45,6 @@
     <ClInclude Include="TSFInputControl.h">
       <DependentUpon>TSFInputControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="UiaTextRange.hpp" />
     <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
   <ItemGroup>
@@ -57,7 +55,6 @@
     <ClCompile Include="SearchBoxControl.cpp">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
@@ -68,7 +65,6 @@
     <ClCompile Include="TermControlAutomationPeer.cpp">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
