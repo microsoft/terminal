@@ -19,10 +19,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                  CanDragTabs="True"
                  AllowDropTabs="True">
 
-        <!-- This didn't work: -->
-        <mux:TabView.CornerRadius>0,0,0,0</mux:TabView.CornerRadius>
-        <!-- I'm not sure that corner radius is actually exposed in by the TabView -->
-
         <mux:TabView.TabStripFooter>
             <mux:SplitButton
                 x:Name="NewTabButton"

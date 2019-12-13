@@ -53,10 +53,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Thickness x:Key="TabViewHeaderPadding">8,0,0,0</Thickness>
 
                     <x:Double x:Key="PaneBorderWidth">2.0</x:Double>
-                    <x:Double x:Key="CaptionButtonHeight">36.0</x:Double>
-
-                    <!-- This didn't work: -->
-                    <!-- <x:Double x:Key="TabCornerRadius">2.0</x:Double> -->
 
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">

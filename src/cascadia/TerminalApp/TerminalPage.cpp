@@ -65,12 +65,6 @@ namespace winrt::TerminalApp::implementation
         {
             res.Insert(winrt::box_value(L"PaneBorderWidth"), winrt::box_value(8.0));
         }
-        {
-            res.Insert(winrt::box_value(L"TabViewItemHeaderFontSize"), winrt::box_value(6.0));
-            res.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonSize"), winrt::box_value(6.0));
-            res.Insert(winrt::box_value(L"TabViewItemHeaderIconSize"), winrt::box_value(6.0));
-            res.Insert(winrt::box_value(L"CaptionButtonHeight"), winrt::box_value(18.0));
-        }
 
         {
             Media::SolidColorBrush myBrush{};
