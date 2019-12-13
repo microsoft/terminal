@@ -615,7 +615,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
@@ -624,7 +624,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Create a timer
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+            _cursorTimer.value().Tick({ get_weak(), &TermControl::_BlinkCursor });
             _cursorTimer.value().Start();
         }
         else
