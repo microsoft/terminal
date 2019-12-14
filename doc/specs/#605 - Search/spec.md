@@ -112,7 +112,7 @@ This feature only launches in need. It does not impact the performance of Termin
 
 In version 1, we want realize a case sensitive/insensitive exact text match. But we may consider the following features in version 2:
 
-1. Add "Find" button in dropdown menu to trigger search.Add "Find" button in dropdown menu to trigger search. This enables the search feature to be operated with mouse only. However, this is not required by Accessibility so we do not cover this in phase one. 
+1. Add "Find" button in dropdown menu to trigger search. This enables the search feature to be operated with mouse only. However, this is not required by Accessibility so we do not cover this in phase one. 
 2. Search from all tabs. For Version 1 we just want to realize search within one tab. However, the community also requests search from all tabs. This may require a big change to the search algorithm, but it is not seen as a popular use scenario, so we put it future phase. To implement multi-tab search, we can let TerminalPage or App own a `SearchBoxControl` object, and provide the text buffer of the current focused terminal. We need to change the search algorithm.  
 3. Regular expression match. This is a useful search pattern and is implemented in some editors. However, this use scenario is not used as much as exact text search, thus, we put it in future phase.
 4. Search history. Sometimes users would do the same search for several times, thus, storing the search history is useful. This is not realized by VSCode so it would be a good highlighting point in the future. 
