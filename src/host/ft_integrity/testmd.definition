@@ -1,5 +1,5 @@
 {
-  "$schema": "http://universaltest/schema/testmddefinition-2.json",
+  "$schema": "http://universaltest/schema/testmddefinition-5.json",
   "Package": {
     "ComponentName": "Console",
     "SubComponentName": "Host-IntegrityTests"
@@ -15,13 +15,13 @@
         "DestinationFolderPath": "$$(TEST_DEPLOY_BIN)"
       }
     ],
-    "RemoteFiles": [ ],
-    "Packages": [ 
+    "RemoteFiles": [],
+    "Packages": [
       "Microsoft.AppModel.TestAreaLibrary.FunctionalTests.Native",
       "Microsoft.Console.Tools.ConIntegrity",
-      "Microsoft.Console.Tools.ConIntegrityUWP" 
+      "Microsoft.Console.Tools.ConIntegrityUWP"
     ]
   },
-  "Logs": [ ],
-  "Plugins": [ ]
+  "Logs": [],
+  "Plugins": []
 }

@@ -2,13 +2,15 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Pane.h"
 
-class Tab
+class Tab : public std::enable_shared_from_this<Tab>
 {
 public:
     Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    // Called after construction to setup events with weak_ptr
+    void BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
@@ -20,8 +22,8 @@ public:
 
     void Scroll(const int delta);
 
-    bool CanSplitPane(Pane::SplitState splitType);
-    void SplitPane(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
+    void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void UpdateIcon(const winrt::hstring iconPath);
 
@@ -35,7 +37,7 @@ public:
 
     void ClosePane();
 
-    DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+    WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 
 private:

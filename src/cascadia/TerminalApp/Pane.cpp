@@ -3,6 +3,8 @@
 
 #include "pch.h"
 #include "Pane.h"
+#include "Profile.h"
+#include "CascadiaSettings.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI;
@@ -11,7 +13,9 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
+using namespace TerminalApp;
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
@@ -28,7 +32,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _root.Children().Append(_border);
     _border.Child(_control);
 
-    _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+    _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
 
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
@@ -302,7 +306,7 @@ bool Pane::NavigateFocus(const Direction& direction)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlClosedHandler()
+void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
     // It's possible that this event handler started being executed, then before
@@ -317,10 +321,24 @@ void Pane::_ControlClosedHandler()
         return;
     }
 
-    if (_control.ShouldCloseOnExit())
+    const auto newConnectionState = _control.ConnectionState();
+
+    if (newConnectionState < ConnectionState::Closed)
     {
-        // Fire our Closed event to tell our parent that we should be removed.
-        _closedHandlers();
+        // Pane doesn't care if the connection isn't entering a terminal state.
+        return;
+    }
+
+    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+    auto paneProfile = settings.FindProfile(_profile.value());
+    if (paneProfile)
+    {
+        auto mode = paneProfile->GetCloseOnExitMode();
+        if ((mode == CloseOnExitMode::Always) ||
+            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        {
+            _ClosedHandlers(nullptr, nullptr);
+        }
     }
 }
 
@@ -333,7 +351,7 @@ void Pane::_ControlClosedHandler()
 void Pane::Close()
 {
     // Fire our Closed event to tell our parent that we should be removed.
-    _closedHandlers();
+    _ClosedHandlers(nullptr, nullptr);
 }
 
 // Method Description:
@@ -570,7 +588,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _profile = remainingChild->_profile;
 
         // Add our new event handler before revoking the old one.
-        _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+        _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -578,8 +596,8 @@ void Pane::_CloseChild(const bool closeFirst)
         // they'll trigger only our event handler for the control's close.
         _firstChild->Closed(_firstClosedToken);
         _secondChild->Closed(_secondClosedToken);
-        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
-        remainingChild->_control.ConnectionClosed(remainingChild->_connectionClosedToken);
+        closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+        remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
 
         // If either of our children was focused, we want to take that focus from
         // them.
@@ -659,7 +677,7 @@ void Pane::_CloseChild(const bool closeFirst)
         // Revoke event handlers on old panes and controls
         oldFirst->Closed(oldFirstToken);
         oldSecond->Closed(oldSecondToken);
-        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
+        closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -720,13 +738,13 @@ void Pane::_CloseChild(const bool closeFirst)
 // - <none>
 void Pane::_SetupChildCloseHandlers()
 {
-    _firstClosedToken = _firstChild->Closed([this]() {
+    _firstClosedToken = _firstChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
             _CloseChild(true);
         });
     });
 
-    _secondClosedToken = _secondChild->Closed([this]() {
+    _secondClosedToken = _secondChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
             _CloseChild(false);
         });
@@ -965,8 +983,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     std::unique_lock lock{ _createCloseLock };
 
     // revoke our handler - the child will take care of the control now.
-    _control.ConnectionClosed(_connectionClosedToken);
-    _connectionClosedToken.value = 0;
+    _control.ConnectionStateChanged(_connectionStateChangedToken);
+    _connectionStateChangedToken.value = 0;
 
     // Remove our old GotFocus handler from the control. We don't what the
     // control telling us that it's now focused, we want it telling its new
@@ -1110,7 +1128,7 @@ void Pane::_SetupResources()
     }
 
     const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(accentColorKey))
+    if (res.HasKey(tabViewBackgroundKey))
     {
         winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
@@ -1124,5 +1142,4 @@ void Pane::_SetupResources()
     }
 }
 
-DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

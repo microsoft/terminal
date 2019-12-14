@@ -10,6 +10,7 @@
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "cppwinrt_utils.h"
 
@@ -62,7 +63,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
-        bool ShouldCloseOnExit() const noexcept;
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize() const;
 
@@ -71,6 +71,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         int GetViewHeight() const;
 
         void AdjustFontSize(int fontSizeDelta);
+        void ResetFontSize();
 
         void SwapChainChanged();
         ~TermControl();
@@ -80,16 +81,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const FontInfo GetActualFont() const;
         const Windows::UI::Xaml::Thickness GetPadding() const;
 
+        TerminalConnection::ConnectionState ConnectionState() const;
+
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
-        DECLARE_EVENT(ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+
+        TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         // clang-format on
 
     private:
@@ -103,11 +107,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TSFInputControl _tsfInputControl;
 
         event_token _connectionOutputEventToken;
+        TermControl::Tapped_revoker _tappedRevoker;
+        TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         Settings::IControlSettings _settings;
         bool _focused;
@@ -157,6 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
         void _UpdateFont();
+        void _SetFontSize(int fontSize);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);

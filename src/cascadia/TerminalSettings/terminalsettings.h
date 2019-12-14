@@ -55,8 +55,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         bool UseAcrylic();
         void UseAcrylic(bool value);
-        bool CloseOnExit();
-        void CloseOnExit(bool value);
         double TintOpacity();
         void TintOpacity(double value);
         hstring Padding();
@@ -99,6 +97,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         ScrollbarState ScrollState() const noexcept;
         void ScrollState(winrt::Microsoft::Terminal::Settings::ScrollbarState const& value) noexcept;
 
+        bool RetroTerminalEffect();
+        void RetroTerminalEffect(bool value);
+
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
@@ -114,7 +115,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _wordDelimiters;
 
         bool _useAcrylic;
-        bool _closeOnExit;
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;
@@ -132,6 +132,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;
+
+        bool _retroTerminalEffect;
     };
 }
 
