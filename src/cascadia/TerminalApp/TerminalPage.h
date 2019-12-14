@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "TerminalPage.g.h"
 #include "Tab.h"
 #include "CascadiaSettings.h"
@@ -12,10 +10,7 @@
 
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -65,14 +60,14 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
-        ShortcutActionDispatch _actionDispatch{};
+        winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
-        void _OpenNewTab(std::optional<int> profileIndex);
+        void _OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs);
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
@@ -107,7 +102,7 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid);
+        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);

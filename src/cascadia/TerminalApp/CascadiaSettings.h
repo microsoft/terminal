@@ -48,10 +48,12 @@ public:
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
+    static std::unique_ptr<CascadiaSettings> LoadUniversal();
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
+    std::tuple<GUID, winrt::Microsoft::Terminal::Settings::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings BuildSettings(GUID profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();
 
@@ -80,6 +82,7 @@ private:
     std::string _userSettingsString;
     Json::Value _userSettings;
     Json::Value _defaultSettings;
+    Json::Value _userDefaultProfileSettings{ Json::Value::null };
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
@@ -91,12 +94,17 @@ private:
     bool _PrependSchemaDirective();
     bool _AppendDynamicProfilesToUserSettings();
 
+    void _ApplyDefaultsFromUserSettings();
+
     void _LoadDynamicProfiles();
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
+
+    GUID _GetProfileForIndex(std::optional<int> index) const;
+    GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
     void _ValidateProfilesExist();

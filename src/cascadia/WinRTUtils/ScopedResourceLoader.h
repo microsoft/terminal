@@ -7,7 +7,7 @@ class ScopedResourceLoader
 {
 public:
     ScopedResourceLoader(const std::wstring_view resourceLocatorBase);
-    winrt::Windows::ApplicationModel::Resources::Core::ResourceMap GetResourceMap() const;
+    winrt::Windows::ApplicationModel::Resources::Core::ResourceMap GetResourceMap() const noexcept;
     winrt::hstring GetLocalizedString(const std::wstring_view resourceName) const;
     bool HasResourceWithName(const std::wstring_view resourceName) const;
 

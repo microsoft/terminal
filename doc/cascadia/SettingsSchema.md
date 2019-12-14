@@ -50,6 +50,7 @@ Properties listed below are specific to each unique profile.
 | `suppressApplicationTitle` | Optional | Boolean | | When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal. |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 | `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
+| `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
 
 ## Schemes
 Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
@@ -85,9 +86,9 @@ Properties listed below are specific to each custom key binding.
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
 
-### Implemented Keybindings
+### Implemented Commands
 
-Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
+Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp)
 
 - copy
 - copyTextWithoutNewlines
@@ -137,6 +138,15 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusUp
 - moveFocusDown
 - toggleFullscreen
+
+## Example Keys
+- ctrl+1
+- ctrl+plus
+- alt+-
+- shift+numpad_1
+- ctrL+shift+numpad_plus
+- ctrl+pgdn
+- ctrl+alt+shift+pgup
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).

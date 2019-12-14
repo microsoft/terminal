@@ -87,6 +87,31 @@
       ],
       "type": "string"
     },
+    "NewTerminalArgs": {
+      "properties": {
+        "commandline": {
+          "description": "A commandline to use instead of the profile's",
+          "type": "string"
+        },
+        "tabTitle": {
+          "description": "An initial tabTitle to use instead of the profile's",
+          "type": "string"
+        },
+        "startingDirectory": {
+          "description": "A startingDirectory to use instead of the profile's",
+          "type": "string"
+        },
+        "profile": {
+          "description": "Either the GUID or name of a profile to use, instead of launching the default",
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "description": "The index of the profile in the new tab dropdown to open"
+        }
+      },
+      "type": "object"
+    },
     "ShortcutAction": {
       "properties": {
         "action": {
@@ -108,8 +133,8 @@
             "action": { "type": "string", "pattern": "copy" },
             "trimWhitespace": {
               "type": "boolean",
-              "default": false,
-              "description": "If true, will trim whitespace from the end of the line on copy."
+              "default": true,
+              "description": "If true, whitespace is removed and newlines are maintained. If false, newlines are removed and whitespace is maintained."
             }
           }
         }
@@ -119,13 +144,10 @@
       "description": "Arguments corresponding to a New Tab Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "newTab" },
-            "index": {
-              "type": "integer",
-              "description": "The index in the new tab dropdown to open in a new tab"
-            }
+            "action": { "type":"string", "pattern": "newTab" }
           }
         }
       ]
@@ -185,6 +207,7 @@
       "description": "Arguments corresponding to a Split Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
+        { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
             "action": { "type": "string", "pattern": "splitPane" },
@@ -299,287 +322,307 @@
       ],
       "type": "object"
     },
-    "ProfileList": {
-      "description": "Properties are specific to each unique profile.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "acrylicOpacity": {
-            "default": 0.5,
-            "description": "When useAcrylic is set to true, it sets the transparency of the window for the profile. Accepts floating point values from 0-1 (default 0.5).",
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          "background": {
-            "$ref": "#/definitions/Color",
-            "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
-            "type": ["string", "null"]
-          },
-          "backgroundImage": {
-            "description": "Sets the file location of the Image to draw over the window background.",
-            "type": "string"
-          },
-          "backgroundImageAlignment": {
-            "default": "center",
-            "enum": [
-              "bottom",
-              "bottomLeft",
-              "bottomRight",
-              "center",
-              "left",
-              "right",
-              "top",
-              "topLeft",
-              "topRight"
-            ],
-            "type": "string"
-          },
-          "backgroundImageOpacity": {
-            "description": "(Not in SettingsSchema.md)",
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          "backgroundImageStretchMode": {
-            "default": "uniformToFill",
-            "description": "Sets how the background image is resized to fill the window.",
-            "enum": [
-              "fill",
-              "none",
-              "uniform",
-              "uniformToFill"
-            ],
-            "type": "string"
-          },
-          "closeOnExit": {
-            "default": "graceful",
-            "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
-            "oneOf": [
-              {
-                "enum": [
-                  "never",
-                  "graceful",
-                  "always"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "boolean"
-              }
-            ]
-          },
-          "colorScheme": {
-            "default": "Campbell",
-            "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
-            "type": "string"
-          },
-          "colorTable": {
-            "description": "Array of colors used in the profile if colorscheme is not set. Colors use hex color format: \"#rrggbb\". Ordering is as follows: [black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]",
-            "items": {
-              "additionalProperties": false,
-              "properties": {
-                "background": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the background color of the color table."
-                },
-                "black": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI black."
-                },
-                "blue": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI blue."
-                },
-                "brightBlack": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright black."
-                },
-                "brightBlue": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright blue."
-                },
-                "brightCyan": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright cyan."
-                },
-                "brightGreen": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright green."
-                },
-                "brightPurple": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright purple."
-                },
-                "brightRed": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright red."
-                },
-                "brightWhite": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright white."
-                },
-                "brightYellow": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI bright yellow."
-                },
-                "cyan": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI cyan."
-                },
-                "foreground": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the foreground color of the color table."
-                },
-                "green": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI green."
-                },
-                "purple": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI purple."
-                },
-                "red": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI red."
-                },
-                "white": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI white."
-                },
-                "yellow": {
-                  "$ref": "#/definitions/Color",
-                  "description": "Sets the color used as ANSI yellow."
-                }
-              },
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "commandline": {
-            "description": "Executable used in the profile.",
-            "type": "string"
-          },
-          "connectionType": {
-            "$ref": "#/definitions/ProfileGuid",
-            "description": "A GUID reference to a connection type. Currently undocumented as of 0.3, this is used for Azure Cloud Shell"
-          },
-          "cursorColor": {
-            "$ref": "#/definitions/Color",
-            "default": "#FFFFFF",
-            "description": "Sets the cursor color for the profile. Uses hex color format: \"#rrggbb\"."
-          },
-          "cursorHeight": {
-            "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
-            "maximum": 100,
-            "minimum": 25,
-            "type": "integer"
-          },
-          "cursorShape": {
-            "default": "bar",
-            "description": "Sets the cursor shape for the profile. Possible values: \"vintage\" ( ▃ ), \"bar\" ( ┃, default ), \"underscore\" ( ▁ ), \"filledBox\" ( █ ), \"emptyBox\" ( ▯ )",
-            "enum": [
-              "bar",
-              "emptyBox",
-              "filledBox",
-              "underscore",
-              "vintage"
-            ],
-            "type": "string"
-          },
-          "fontFace": {
-            "default": "Consolas",
-            "description": "Name of the font face used in the profile.",
-            "type": "string"
-          },
-          "fontSize": {
-            "default": 12,
-            "description": "Sets the font size.",
-            "minimum": 1,
-            "type": "integer"
-          },
-          "foreground": {
-            "$ref": "#/definitions/Color",
-            "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
-            "type": ["string", "null"]
-          },
-          "guid": {
-            "$ref": "#/definitions/ProfileGuid",
-            "description": "Unique identifier of the profile. Written in registry format: \"{00000000-0000-0000-0000-000000000000}\"."
-          },
-          "hidden": {
-            "default": false,
-            "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file.",
-            "type": "boolean"
-          },
-          "historySize": {
-            "default": 9001,
-            "description": "The number of lines above the ones displayed in the window you can scroll back to.",
-            "minimum": -1,
-            "type": "integer"
-          },
-          "icon": {
-            "description": "Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.",
-            "type": "string"
-          },
-          "name": {
-            "description": "Name of the profile. Displays in the dropdown menu.",
-            "minLength": 1,
-            "type": "string"
-          },
-          "padding": {
-            "default": "8, 8, 8, 8",
-            "description": "Sets the padding around the text within the window. Can have three different formats: \"#\" sets the same padding for all sides, \"#, #\" sets the same padding for left-right and top-bottom, and \"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
-            "type": "string"
-          },
-          "scrollbarState": {
-            "default": "visible",
-            "description": "Defines the visibility of the scrollbar.",
-            "enum": [
-              "visible",
-              "hidden"
-            ],
-            "type": "string"
-          },
-          "selectionBackground": {
-            "$ref": "#/definitions/Color",
-            "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
-          },
-          "snapOnInput": {
-            "default": true,
-            "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
-            "type": "boolean"
-          },
-          "source": {
-            "description": "Stores the name of the profile generator that originated this profile.",
-            "type": "string"
-          },
-          "startingDirectory": {
-            "description": "The directory the shell starts in when it is loaded.",
-            "type": "string"
-          },
-          "suppressApplicationTitle": {
-            "description": "When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal.",
-            "type": "boolean"
-          },
-          "tabTitle": {
-            "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
-            "type": "string"
-          },
-          "useAcrylic": {
-            "default": false,
-            "description": "When set to true, the window will have an acrylic background. When set to false, the window will have a plain, untextured background.",
-            "type": "boolean"
-          }
+    "Profile": {
+      "description": "Properties specific to a unique profile.",
+      "additionalProperties": false,
+      "properties": {
+        "acrylicOpacity": {
+          "default": 0.5,
+          "description": "When useAcrylic is set to true, it sets the transparency of the window for the profile. Accepts floating point values from 0-1 (default 0.5).",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
         },
+        "background": {
+          "$ref": "#/definitions/Color",
+          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
+          "type": ["string", "null"]
+        },
+        "backgroundImage": {
+          "description": "Sets the file location of the Image to draw over the window background.",
+          "type": "string"
+        },
+        "backgroundImageAlignment": {
+          "default": "center",
+          "enum": [
+            "bottom",
+            "bottomLeft",
+            "bottomRight",
+            "center",
+            "left",
+            "right",
+            "top",
+            "topLeft",
+            "topRight"
+          ],
+          "type": "string"
+        },
+        "backgroundImageOpacity": {
+          "description": "(Not in SettingsSchema.md)",
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "backgroundImageStretchMode": {
+          "default": "uniformToFill",
+          "description": "Sets how the background image is resized to fill the window.",
+          "enum": [
+            "fill",
+            "none",
+            "uniform",
+            "uniformToFill"
+          ],
+          "type": "string"
+        },
+        "closeOnExit": {
+          "default": "graceful",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values: \"graceful\" (close when exit is typed or the process exits normally), \"always\" (always close) and \"never\" (never close). true and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "oneOf": [
+            {
+              "enum": [
+                "never",
+                "graceful",
+                "always"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "colorScheme": {
+          "default": "Campbell",
+          "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
+          "type": "string"
+        },
+        "colorTable": {
+          "description": "Array of colors used in the profile if colorscheme is not set. Colors use hex color format: \"#rrggbb\". Ordering is as follows: [black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "background": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the background color of the color table."
+              },
+              "black": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI black."
+              },
+              "blue": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI blue."
+              },
+              "brightBlack": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright black."
+              },
+              "brightBlue": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright blue."
+              },
+              "brightCyan": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright cyan."
+              },
+              "brightGreen": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright green."
+              },
+              "brightPurple": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright purple."
+              },
+              "brightRed": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright red."
+              },
+              "brightWhite": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright white."
+              },
+              "brightYellow": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI bright yellow."
+              },
+              "cyan": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI cyan."
+              },
+              "foreground": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the foreground color of the color table."
+              },
+              "green": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI green."
+              },
+              "purple": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI purple."
+              },
+              "red": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI red."
+              },
+              "white": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI white."
+              },
+              "yellow": {
+                "$ref": "#/definitions/Color",
+                "description": "Sets the color used as ANSI yellow."
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "commandline": {
+          "description": "Executable used in the profile.",
+          "type": "string"
+        },
+        "connectionType": {
+          "$ref": "#/definitions/ProfileGuid",
+          "description": "A GUID reference to a connection type. Currently undocumented as of 0.3, this is used for Azure Cloud Shell"
+        },
+        "cursorColor": {
+          "$ref": "#/definitions/Color",
+          "default": "#FFFFFF",
+          "description": "Sets the cursor color for the profile. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorHeight": {
+          "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
+          "maximum": 100,
+          "minimum": 25,
+          "type": "integer"
+        },
+        "cursorShape": {
+          "default": "bar",
+          "description": "Sets the cursor shape for the profile. Possible values: \"vintage\" ( ▃ ), \"bar\" ( ┃, default ), \"underscore\" ( ▁ ), \"filledBox\" ( █ ), \"emptyBox\" ( ▯ )",
+          "enum": [
+            "bar",
+            "emptyBox",
+            "filledBox",
+            "underscore",
+            "vintage"
+          ],
+          "type": "string"
+        },
+        "experimental.retroTerminalEffect": {
+          "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
+        "fontFace": {
+          "default": "Consolas",
+          "description": "Name of the font face used in the profile.",
+          "type": "string"
+        },
+        "fontSize": {
+          "default": 12,
+          "description": "Sets the font size.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "foreground": {
+          "$ref": "#/definitions/Color",
+          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+          "type": ["string", "null"]
+        },
+        "guid": {
+          "$ref": "#/definitions/ProfileGuid",
+          "description": "Unique identifier of the profile. Written in registry format: \"{00000000-0000-0000-0000-000000000000}\"."
+        },
+        "hidden": {
+          "default": false,
+          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file.",
+          "type": "boolean"
+        },
+        "historySize": {
+          "default": 9001,
+          "description": "The number of lines above the ones displayed in the window you can scroll back to.",
+          "minimum": -1,
+          "type": "integer"
+        },
+        "icon": {
+          "description": "Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name of the profile. Displays in the dropdown menu.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "padding": {
+          "default": "8, 8, 8, 8",
+          "description": "Sets the padding around the text within the window. Can have three different formats: \"#\" sets the same padding for all sides, \"#, #\" sets the same padding for left-right and top-bottom, and \"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
+          "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
+          "type": "string"
+        },
+        "scrollbarState": {
+          "default": "visible",
+          "description": "Defines the visibility of the scrollbar.",
+          "enum": [
+            "visible",
+            "hidden"
+          ],
+          "type": "string"
+        },
+        "selectionBackground": {
+          "$ref": "#/definitions/Color",
+          "description": "Sets the selection background color of the profile. Overrides selection background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
+        },
+        "snapOnInput": {
+          "default": true,
+          "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
+          "type": "boolean"
+        },
+        "source": {
+          "description": "Stores the name of the profile generator that originated this profile.",
+          "type": "string"
+        },
+        "startingDirectory": {
+          "description": "The directory the shell starts in when it is loaded.",
+          "type": "string"
+        },
+        "suppressApplicationTitle": {
+          "description": "When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal.",
+          "type": "boolean"
+        },
+        "tabTitle": {
+          "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
+          "type": "string"
+        },
+        "useAcrylic": {
+          "default": false,
+          "description": "When set to true, the window will have an acrylic background. When set to false, the window will have a plain, untextured background.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ProfileList": {
+      "description": "A list of profiles and the properties specific to each.",
+      "items": {
+        "$ref": "#/definitions/Profile",
         "required": [
           "guid",
           "name"
-        ],
-        "type": "object"
+        ]
       },
       "type": "array"
+    },
+    "ProfilesObject": {
+      "description": "A list of profiles and default settings that apply to all of them",
+      "properties": {
+        "list": {
+          "$ref": "#/definitions/ProfileList"
+        },
+        "defaults": {
+          "description": "The default settings that apply to every profile.",
+          "$ref": "#/definitions/Profile"
+        }
+      }
     },
     "SchemeList": {
       "description": "Properties are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.",
@@ -680,7 +723,12 @@
         {
           "additionalItems": true,
           "properties": {
-            "profiles": { "$ref": "#/definitions/ProfileList" },
+            "profiles": {
+              "oneOf": [
+              { "$ref": "#/definitions/ProfileList" },
+              { "$ref": "#/definitions/ProfilesObject" }
+              ]
+            },
             "schemes": { "$ref": "#/definitions/SchemeList" }
           },
           "required": [
@@ -695,7 +743,12 @@
       "additionalItems": false,
       "properties": {
         "globals": { "$ref": "#/definitions/Globals" },
-        "profiles": { "$ref": "#/definitions/ProfileList" },
+        "profiles": {
+          "oneOf": [
+          { "$ref": "#/definitions/ProfileList" },
+          { "$ref": "#/definitions/ProfilesObject" }
+          ]
+        },
         "schemes": { "$ref": "#/definitions/SchemeList" }
       },
       "required": [

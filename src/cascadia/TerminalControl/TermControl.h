@@ -10,6 +10,7 @@
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "cppwinrt_utils.h"
 
@@ -107,12 +108,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TSFInputControl _tsfInputControl;
 
         event_token _connectionOutputEventToken;
+        TermControl::Tapped_revoker _tappedRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
         Settings::IControlSettings _settings;
         bool _focused;

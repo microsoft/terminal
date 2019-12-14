@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
 #include "JsonTestClass.h"
+#include "TestUtils.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -17,20 +18,21 @@ using namespace WEX::Common;
 
 namespace TerminalAppLocalTests
 {
-    // Unfortunately, these tests _WILL NOT_ work in our CI, until we have a lab
-    // machine available that can run Windows version 18362.
+    // TODO:microsoft/terminal#3838:
+    // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
+    // an updated TAEF that will let us install framework packages when the test
+    // package is deployed. Until then, these tests won't deploy in CI.
 
     class KeyBindingsTests : public JsonTestClass
     {
-        // Use a custom manifest to ensure that we can activate winrt types from
-        // our test. This property will tell taef to manually use this as the
-        // sxs manifest during this test class. It includes all the cppwinrt
-        // types we've defined, so if your test is crashing for an unknown
-        // reason, make sure it's included in that file.
-        // If you want to do anything XAML-y, you'll need to run your test in a
-        // packaged context. See TabTests.cpp for more details on that.
+        // Use a custom AppxManifest to ensure that we can activate winrt types
+        // from our test. This property will tell taef to manually use this as
+        // the AppxManifest for this test class.
+        // This does not yet work for anything XAML-y. See TabTests.cpp for more
+        // details on that.
         BEGIN_TEST_CLASS(KeyBindingsTests)
-            TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
+            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(ManyKeysSameAction);
@@ -45,26 +47,6 @@ namespace TerminalAppLocalTests
             InitializeJsonReader();
             return true;
         }
-
-        // Function Description:
-        // - This is a helper to retrieve the ActionAndArgs from the keybindings
-        //   for a given chord.
-        // Arguments:
-        // - bindings: The AppKeyBindings to lookup the ActionAndArgs from.
-        // - kc: The key chord to look up the bound ActionAndArgs for.
-        // Return Value:
-        // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
-        static const ActionAndArgs KeyBindingsTests::GetActionAndArgs(const implementation::AppKeyBindings& bindings,
-                                                                      const KeyChord& kc)
-        {
-            const auto keyIter = bindings._keyShortcuts.find(kc);
-            VERIFY_IS_TRUE(keyIter != bindings._keyShortcuts.end(), L"Expected to find an action bound to the given KeyChord");
-            if (keyIter != bindings._keyShortcuts.end())
-            {
-                return keyIter->second;
-            }
-            return nullptr;
-        };
     };
 
     void KeyBindingsTests::ManyKeysSameAction()
@@ -199,8 +181,8 @@ namespace TerminalAppLocalTests
             { "command": { "action": "copy", "madeUpBool": true }, "keys": ["ctrl+b"] },
             { "command": { "action": "copy" }, "keys": ["ctrl+shift+b"] },
 
-            { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
-            { "command": "increaseFontSize", "keys": ["ctrl+="] }
+            { "command": "increaseFontSize", "keys": ["ctrl+f"] },
+            { "command": "decreaseFontSize", "keys": ["ctrl+g"] }
 
         ])" };
 
@@ -214,20 +196,9 @@ namespace TerminalAppLocalTests
 
         {
             Log::Comment(NoThrowString().Format(
-                L"Verify that `copy` without args parses as Copy(TrimWhitespace=false)"));
+                L"Verify that `copy` without args parses as Copy(TrimWhitespace=true)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
-        }
-
-        {
-            Log::Comment(NoThrowString().Format(
-                L"Verify that `copyTextWithoutNewlines` parses as Copy(TrimWhitespace=true)"));
-            KeyChord kc{ false, true, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -236,9 +207,20 @@ namespace TerminalAppLocalTests
 
         {
             Log::Comment(NoThrowString().Format(
+                L"Verify that `copyTextWithoutNewlines` parses as Copy(TrimWhitespace=false)"));
+            KeyChord kc{ false, true, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` with args parses them correctly"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('C') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -249,7 +231,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` with args parses them correctly"));
             KeyChord kc{ false, true, true, static_cast<int32_t>('C') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -260,92 +242,97 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTab` without args parses as NewTab(Index=null)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('T') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NULL(realArgs.ProfileIndex());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NULL(realArgs.TerminalArgs().ProfileIndex());
         }
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTab` parses args correctly"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('T') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(0, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(0, realArgs.TerminalArgs().ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTabProfile0` parses as NewTab(Index=0)"));
             KeyChord kc{ false, true, true, static_cast<int32_t>('T') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTabProfile0, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(0, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(0, realArgs.TerminalArgs().ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTab` with an index greater than the legacy "
                 L"args afforded parses correctly"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('Y') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(11, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(11, realArgs.TerminalArgs().ProfileIndex().Value());
         }
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTabProfile8` parses as NewTab(Index=8)"));
             KeyChord kc{ false, true, true, static_cast<int32_t>('Y') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTabProfile8, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.ProfileIndex());
-            VERIFY_ARE_EQUAL(8, realArgs.ProfileIndex().Value());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
+            VERIFY_ARE_EQUAL(8, realArgs.TerminalArgs().ProfileIndex().Value());
         }
 
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` ignores args it doesn't understand"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
         }
 
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` null as it's `args` parses as the default option"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_FALSE(realArgs.TrimWhitespace());
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
         }
 
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `increaseFontSize` without args parses as AdjustFontSize(Delta=1)"));
-            KeyChord kc{ false, true, false, static_cast<int32_t>('=') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::IncreaseFontSize, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -356,8 +343,8 @@ namespace TerminalAppLocalTests
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `decreaseFontSize` without args parses as AdjustFontSize(Delta=-1)"));
-            KeyChord kc{ false, true, false, static_cast<int32_t>('-') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::DecreaseFontSize, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -368,19 +355,14 @@ namespace TerminalAppLocalTests
 
     void KeyBindingsTests::TestSplitPaneArgs()
     {
-        // TODO:GH#3536 - These tests _should_ work, but since the LocalTests
-        // fail to run at all right now, I can't be sure that they do. When
-        // #3536 is fixed, make sure that these tests were authored correctly.
-
         const std::string bindings0String{ R"([
-            { "command": "splitVertical", "keys": ["ctrl+a"] },
-            { "command": "splitHorizontal", "keys": ["ctrl+b"] },
-            { "command": { "action": "splitPane", "split": null }, "keys": ["ctrl+c"] },
-            { "command": { "action": "splitPane", "split": "vertical" }, "keys": ["ctrl+d"] },
-            { "command": { "action": "splitPane", "split": "horizontal" }, "keys": ["ctrl+e"] },
-            { "command": { "action": "splitPane", "split": "none" }, "keys": ["ctrl+f"] },
-            { "command": { "action": "splitPane" }, "keys": ["ctrl+g"] }
-
+            { "keys": ["ctrl+a"], "command": "splitVertical" },
+            { "keys": ["ctrl+b"], "command": "splitHorizontal" },
+            { "keys": ["ctrl+c"], "command": { "action": "splitPane", "split": null } },
+            { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
+            { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
+            { "keys": ["ctrl+f"], "command": { "action": "splitPane", "split": "none" } },
+            { "keys": ["ctrl+g"], "command": { "action": "splitPane" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -392,26 +374,26 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(7u, appKeyBindings->_keyShortcuts.size());
 
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('A') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitVertical, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            KeyChord kc{ true, false, false, static_cast<int32_t>('B') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitHorizontal, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('C') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -419,8 +401,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('D') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -428,8 +410,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('E') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -437,8 +419,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('F') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -446,8 +428,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
         }
         {
-            KeyChord kc{ true, false, true, static_cast<int32_t>('G') };
-            auto actionAndArgs = GetActionAndArgs(*appKeyBindings, kc);
+            KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);

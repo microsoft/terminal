@@ -2,14 +2,16 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
 
-class Tab
+class Tab : public std::enable_shared_from_this<Tab>
 {
 public:
     Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    // Called after construction to setup events with weak_ptr
+    void BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();

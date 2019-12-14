@@ -28,10 +28,6 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 
     _activePane = _rootPane;
 
-    _AttachEventHandlersToPane(_rootPane);
-
-    _AttachEventHandlersToControl(control);
-
     _MakeTabViewItem();
 }
 
@@ -113,6 +109,19 @@ std::optional<GUID> Tab::GetFocusedProfile() const noexcept
 }
 
 // Method Description:
+// - Called after construction of a Tab object to bind event handlers to its
+//   associated Pane and TermControl object
+// Arguments:
+// - control: reference to the TermControl object to bind event to
+// Return Value:
+// - <none>
+void Tab::BindEventHandlers(const TermControl& control) noexcept
+{
+    _AttachEventHandlersToPane(_rootPane);
+    _AttachEventHandlersToControl(control);
+}
+
+// Method Description:
 // - Attempts to update the settings of this tab's tree of panes.
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
@@ -151,8 +160,13 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 
     _lastIconPath = iconPath;
 
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-        _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
+        if (auto tab{ weakThis.lock() })
+        {
+            tab->_tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(tab->_lastIconPath));
+        }
     });
 }
 
@@ -179,8 +193,13 @@ void Tab::SetTabText(const winrt::hstring& text)
 {
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this]() {
-        _tabViewItem.Header(winrt::box_value(text));
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), weakThis]() {
+        if (auto tab{ weakThis.lock() })
+        {
+            tab->_tabViewItem.Header(winrt::box_value(text));
+        }
     });
 }
 
@@ -300,12 +319,16 @@ void Tab::ClosePane()
 // - <none>
 void Tab::_AttachEventHandlersToControl(const TermControl& control)
 {
-    control.TitleChanged([this](auto newTitle) {
-        // The title of the control changed, but not necessarily the title
-        // of the tab. Get the title of the active pane of the tab, and set
-        // the tab's text to the active panes' text.
-        auto newTabTitle = GetActiveTitle();
-        SetTabText(newTabTitle);
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    control.TitleChanged([weakThis](auto newTitle) {
+        // Check if Tab's lifetime has expired
+        if (auto tab{ weakThis.lock() })
+        {
+            // The title of the control changed, but not necessarily the title of the tab.
+            // Set the tab's text to the active panes' text.
+            tab->SetTabText(tab->GetActiveTitle());
+        }
     });
 }
 
@@ -320,22 +343,24 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
 // - <none>
 void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 {
-    pane->GotFocus([this](std::shared_ptr<Pane> sender) {
-        // Do nothing if it's the same pane as before.
-        if (sender == _activePane)
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
+        // Do nothing if the Tab's lifetime is expired or pane isn't new.
+        auto tab{ weakThis.lock() };
+        if (tab && sender != tab->_activePane)
         {
-            return;
+            // Clear the active state of the entire tree, and mark only the sender as active.
+            tab->_rootPane->ClearActive();
+            tab->_activePane = sender;
+            tab->_activePane->SetActive();
+
+            // Update our own title text to match the newly-active pane.
+            tab->SetTabText(tab->GetActiveTitle());
+
+            // Raise our own ActivePaneChanged event.
+            tab->_ActivePaneChangedHandlers();
         }
-        // Clear the active state of the entire tree, and mark only the sender as active.
-        _rootPane->ClearActive();
-        _activePane = sender;
-        _activePane->SetActive();
-
-        // Update our own title text to match the newly-active pane.
-        SetTabText(GetActiveTitle());
-
-        // Raise our own ActivePaneChanged event.
-        _ActivePaneChangedHandlers();
     });
 }
 

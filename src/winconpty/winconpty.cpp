@@ -200,7 +200,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 //      write the resize message to the pty.
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size)
 {
-    if (pPty == NULL)
+    if (pPty == NULL || size.X < 0 || size.Y < 0)
     {
         return E_INVALIDARG;
     }

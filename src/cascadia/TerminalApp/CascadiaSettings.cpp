@@ -78,7 +78,12 @@ std::optional<GUID> CascadiaSettings::FindGuid(const std::wstring& profileName) 
     {
         if (profileName == profile.GetName())
         {
-            profileGuid = profile.GetGuid();
+            try
+            {
+                profileGuid = profile.GetGuid();
+            }
+            CATCH_LOG();
+
             break;
         }
     }
@@ -98,41 +103,16 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 {
     for (auto& profile : _profiles)
     {
-        if (profile.GetGuid() == profileGuid)
+        try
         {
-            return &profile;
+            if (profile.GetGuid() == profileGuid)
+            {
+                return &profile;
+            }
         }
+        CATCH_LOG();
     }
     return nullptr;
-}
-
-// Method Description:
-// - Create a TerminalSettings object from the given profile.
-//      If the profileGuidArg is not provided, this method will use the default
-//      profile.
-//   The TerminalSettings object that is created can be used to initialize both
-//      the Control's settings, and the Core settings of the terminal.
-// Arguments:
-// - profileGuidArg: an optional GUID to use to lookup the profile to create the
-//      settings from. If this arg is not provided, or the GUID does not match a
-//       profile, then this method will use the default profile.
-// Return Value:
-// - <none>
-TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg) const
-{
-    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
-    const Profile* const profile = FindProfile(profileGuid);
-    if (profile == nullptr)
-    {
-        throw E_INVALIDARG;
-    }
-
-    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
-
-    // Place our appropriate global settings into the Terminal Settings
-    _globals.ApplyToSettings(result);
-
-    return result;
 }
 
 // Method Description:
@@ -442,4 +422,170 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
     }
+}
+
+// Method Description:
+// - Create a TerminalSettings object for the provided newTerminalArgs. We'll
+//   use the newTerminalArgs to look up the profile that should be used to
+//   create these TerminalSettings. Then, we'll apply settings contained in the
+//   newTerminalArgs to the profile's settings, to enable customization on top
+//   of the profile's default values.
+// Arguments:
+// - newTerminalArgs: An object that may contain a profile name or GUID to
+//   actually use. If the Profile value is not a guid, we'll treat it as a name,
+//   and attempt to look the profile up by name instead.
+//   * Additionally, we'll use other values (such as Commandline,
+//     StartingDirectory) in this object to override the settings directly from
+//     the profile.
+// Return Value:
+// - the GUID of the created profile, and a fully initialized TerminalSettings object
+std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
+{
+    const GUID profileGuid = _GetProfileForArgs(newTerminalArgs);
+    auto settings = BuildSettings(profileGuid);
+
+    if (newTerminalArgs)
+    {
+        // Override commandline, starting directory if they exist in newTerminalArgs
+        if (!newTerminalArgs.Commandline().empty())
+        {
+            settings.Commandline(newTerminalArgs.Commandline());
+        }
+        if (!newTerminalArgs.StartingDirectory().empty())
+        {
+            settings.StartingDirectory(newTerminalArgs.StartingDirectory());
+        }
+        if (!newTerminalArgs.TabTitle().empty())
+        {
+            settings.StartingTitle(newTerminalArgs.TabTitle());
+        }
+    }
+
+    return { profileGuid, settings };
+}
+
+// Method Description:
+// - Create a TerminalSettings object for the profile with a GUID matching the
+//   provided GUID. If no profile matches this GUID, then this method will
+//   throw.
+// Arguments:
+// - profileGuid: The GUID of a profile to use to create a settings object for.
+// Return Value:
+// - the GUID of the created profile, and a fully initialized TerminalSettings object
+TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
+{
+    const Profile* const profile = FindProfile(profileGuid);
+    THROW_HR_IF_NULL(E_INVALIDARG, profile);
+
+    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
+
+    // Place our appropriate global settings into the Terminal Settings
+    _globals.ApplyToSettings(result);
+
+    return result;
+}
+
+// Method Description:
+// - Helper to get the GUID of a profile, given an optional index and a possible
+//   "profile" value to override that.
+// - First, we'll try looking up the profile for the given index. This will
+//   either get us the GUID of the Nth profile, or the GUID of the default
+//   profile.
+// - Then, if there was a Profile set in the NewTerminalArgs, we'll use that to
+//   try and look the profile up by either GUID or name.
+// Arguments:
+// - index: if provided, the index in the list of profiles to get the GUID for.
+//   If omitted, instead use the default profile's GUID
+// - newTerminalArgs: An object that may contain a profile name or GUID to
+//   actually use. If the Profile value is not a guid, we'll treat it as a name,
+//   and attempt to look the profile up by name instead.
+// Return Value:
+// - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
+GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
+{
+    std::optional<int> profileIndex{ std::nullopt };
+    if (newTerminalArgs &&
+        newTerminalArgs.ProfileIndex() != nullptr)
+    {
+        profileIndex = newTerminalArgs.ProfileIndex().Value();
+    }
+    GUID profileGuid = _GetProfileForIndex(profileIndex);
+
+    if (newTerminalArgs)
+    {
+        const auto profileString = newTerminalArgs.Profile();
+
+        // First, try and parse the "profile" argument as a GUID. If it's a
+        // GUID, and the GUID of one of our profiles, then use that as the
+        // profile GUID instead. If it's not, then try looking it up as a
+        // name of a profile. If it's still not that, then just ignore it.
+        if (!profileString.empty())
+        {
+            bool wasGuid = false;
+
+            // Do a quick heuristic check - is the profile 38 chars long (the
+            // length of a GUID string), and does it start with '{'? Because if
+            // it doesn't, it's _definitely_ not a GUID.
+            if (profileString.size() == 38 && profileString[0] == L'{')
+            {
+                try
+                {
+                    const auto newGUID = Utils::GuidFromString(profileString.c_str());
+                    if (FindProfile(newGUID))
+                    {
+                        profileGuid = newGUID;
+                        wasGuid = true;
+                    }
+                }
+                CATCH_LOG();
+            }
+
+            // Here, we were unable to use the profile string as a GUID to
+            // lookup a profile. Instead, try using the string to look the
+            // Profile up by name.
+            if (!wasGuid)
+            {
+                const auto guidFromName = FindGuid(profileString.c_str());
+                if (guidFromName.has_value())
+                {
+                    profileGuid = guidFromName.value();
+                }
+            }
+        }
+    }
+
+    return profileGuid;
+}
+
+// Method Description:
+// - Helper to find the profile GUID for a the profile at the given index in the
+//   list of profiles. If no index is provided, this instead returns the default
+//   profile's guid. This is used by the NewTabProfile<N> ShortcutActions to
+//   create a tab for the Nth profile in the list of profiles.
+// Arguments:
+// - index: if provided, the index in the list of profiles to get the GUID for.
+//   If omitted, instead return the default profile's GUID
+// Return Value:
+// - the Nth profile's GUID, or the default profile's GUID
+GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
+{
+    GUID profileGuid;
+    if (index)
+    {
+        const auto realIndex = index.value();
+        // If we don't have that many profiles, then do nothing.
+        if (realIndex < 0 ||
+            realIndex >= gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
+        {
+            return _globals.GetDefaultProfile();
+        }
+        const auto& selectedProfile = _profiles.at(realIndex);
+        profileGuid = selectedProfile.GetGuid();
+    }
+    else
+    {
+        // get Guid for the default profile
+        profileGuid = _globals.GetDefaultProfile();
+    }
+    return profileGuid;
 }

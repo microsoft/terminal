@@ -17,7 +17,7 @@ ScopedResourceLoader::ScopedResourceLoader(const std::wstring_view resourceLocat
 // - Gets the resource map associated with the scoped resource subcompartment.
 // Return Value:
 // - the resource map associated with the scoped resource subcompartment.
-ResourceMap ScopedResourceLoader::GetResourceMap() const
+ResourceMap ScopedResourceLoader::GetResourceMap() const noexcept
 {
     return _resourceMap;
 }

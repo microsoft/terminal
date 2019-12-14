@@ -27,14 +27,14 @@ Author(s):
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include "../../renderer/inc/IRenderData.hpp"
-#include "../types/WindowUiaProviderBase.hpp"
 #include "TermControlUiaProvider.hpp"
+#include "../types/IUiaEventDispatcher.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct TermControlAutomationPeer :
-        public TermControlAutomationPeerT<TermControlAutomationPeer>
+        public TermControlAutomationPeerT<TermControlAutomationPeer>,
+        ::Microsoft::Console::Types::IUiaEventDispatcher
     {
     public:
         TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* owner);
@@ -43,6 +43,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
         winrt::hstring GetLocalizedControlTypeCore() const;
         winrt::Windows::Foundation::IInspectable GetPatternCore(winrt::Windows::UI::Xaml::Automation::Peers::PatternInterface patternInterface) const;
+
+#pragma region IUiaEventDispatcher
+        void SignalSelectionChanged() override;
+        void SignalTextChanged() override;
+        void SignalCursorChanged() override;
+#pragma endregion
 
 #pragma region ITextProvider Pattern
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromPoint(Windows::Foundation::Point screenLocation);
