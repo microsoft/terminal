@@ -32,11 +32,7 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TryCreateWinRTType);
         TEST_METHOD(ParseSimpleCommandline);
-        TEST_METHOD(ParseTrickyCommandlines000);
-        TEST_METHOD(ParseTrickyCommandlines001);
-        TEST_METHOD(ParseTrickyCommandlines002);
-        TEST_METHOD(ParseTrickyCommandlines003);
-        TEST_METHOD(ParseTrickyCommandlines004);
+        TEST_METHOD(ParseTrickyCommandlines);
         TEST_METHOD(TestEscapeDelimiters);
 
         TEST_METHOD(ParseBasicCommandlineIntoArgs);
@@ -135,7 +131,7 @@ namespace TerminalAppLocalTests
         }
     }
 
-    void CommandlineTest::ParseTrickyCommandlines000()
+    void CommandlineTest::ParseTrickyCommandlines()
     {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab;" };
@@ -148,9 +144,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
         }
-    }
-    void CommandlineTest::ParseTrickyCommandlines001()
-    {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L";new-tab;" };
             auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
@@ -163,9 +156,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
         }
-    }
-    void CommandlineTest::ParseTrickyCommandlines002()
-    {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe;" };
 
@@ -176,9 +166,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(1u, commandlines.at(1).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
         }
-    }
-    void CommandlineTest::ParseTrickyCommandlines003()
-    {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe;;" };
 
@@ -191,12 +178,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
         }
-    }
-    void CommandlineTest::ParseTrickyCommandlines004()
-    {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe;foo;bar;baz" };
-            DebugBreak();
 
             auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
             VERIFY_ARE_EQUAL(4u, commandlines.size());

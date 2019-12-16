@@ -206,62 +206,43 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int w_argc, con
     //   command with the second bit.
     for (auto i = 0; i < w_argc; i++)
     {
-        // const auto nextFullArg = std::wstring{ w_argv[i] };
-        auto nextFullArg = std::wstring{ w_argv[i] };
-        // std::match_results<std::wstring::iterator> matches;
-        std::wsmatch matches;
-        std::regex_search(nextFullArg, matches, reg);
-
-        // auto nextDelimiter = nextFullArg.find(cmdSeperator);
-        if (matches.size() == 0)
-        // if (nextDelimiter == std::wstring::npos)
+        auto remaining = std::wstring{ w_argv[i] };
+        std::wsmatch match;
+        // Keep looking for matches until we've found no unescaped delimiters,
+        // or we've hit the end of the string.
+        std::regex_search(remaining, match, reg);
+        do
         {
-            // Easy case: no delimiter. Add it to the current command.
-            commands.rbegin()->AddArg(nextFullArg);
-        }
-        else
-        {
-            size_t lastStart = 0;
-            for (size_t i = 0; i < matches.size(); i++)
+            if (match.size() == 0)
             {
-                auto delimiterPosition = matches.position(i) == 0 ? matches.position(i) : matches.position(i) + 1;
-                auto nextArg = nextFullArg.substr(lastStart, delimiterPosition);
-                // if (i > 0)
-                // {
-                // }
+                // Easy case: no delimiter. Add it to the current command.
+                commands.rbegin()->AddArg(remaining);
+                break;
+            }
+            else
+            {
+                // Harder case: There was a match.
+                const bool matchedFirstChar = match.position(0) == 0;
+                // If the match was at the beginning of the string, then the
+                // next arg should be "", since there was no content before the
+                // delimiter. Otherwise, add one, since the regex will include
+                // the last character of the string before the delimiter.
+                auto delimiterPosition = matchedFirstChar ? match.position(0) : match.position(0) + 1;
+                auto nextArg = remaining.substr(0, delimiterPosition);
+
                 if (nextArg != L"")
                 {
                     commands.rbegin()->AddArg(nextArg);
                 }
 
+                // Create a new commandline
                 commands.emplace_back(Commandline{});
                 commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
 
-                lastStart = delimiterPosition;
+                remaining = match.suffix().str();
+                std::regex_search(remaining, match, reg);
             }
-
-            // // Harder case: There's at least one delimiter in this string.
-            // auto remaining = nextFullArg;
-            // auto nextArg = remaining.substr(0, nextDelimiter);
-            // remaining = remaining.substr(nextDelimiter + 1);
-            // if (nextArg != L"")
-            // {
-            //     commands.rbegin()->AddArg(nextArg);
-            // }
-            // do
-            // {
-            //     // TODO: For delimiters that are escaped, skip them and go to the next
-            //     nextDelimiter = remaining.find(cmdSeperator);
-            //     commands.emplace_back(Commandline{});
-            //     commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
-            //     nextArg = remaining.substr(0, nextDelimiter);
-            //     if (nextArg != L"")
-            //     {
-            //         commands.rbegin()->AddArg(nextArg);
-            //     }
-            //     remaining = remaining.substr(nextDelimiter + 1);
-            // } while (nextDelimiter != std::wstring::npos);
-        }
+        } while (remaining.size() > 0);
     }
 
     return commands;
