@@ -54,6 +54,7 @@ private:
     std::vector<TextAttributeRun>::const_iterator _run;
     const ATTR_ROW* _pAttrRow;
     size_t _currentAttributeIndex; // index of TextAttribute within the current TextAttributeRun
+    bool _exceeded;
 
     void _increment(size_t count);
     void _decrement(size_t count);

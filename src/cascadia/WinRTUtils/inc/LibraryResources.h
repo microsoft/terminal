@@ -49,7 +49,6 @@ namespace Microsoft::Console::Utils
     return pRes->resourceKey;                                     \
 }())
 #define RS_(x) GetLibraryResourceString(USES_RESOURCE(x))
-#define UTILS_NONDEBUG_NOEXCEPT
 
 #else // _DEBUG
 
@@ -57,11 +56,10 @@ namespace Microsoft::Console::Utils
 
 #define USES_RESOURCE(x) (x)
 #define RS_(x) GetLibraryResourceString((x))
-#define UTILS_NONDEBUG_NOEXCEPT noexcept
 
 #endif
 
 #define UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(x) \
     __declspec(selectany) extern const wchar_t* g_WinRTUtilsLibraryResourceScope{ (x) };
 
-winrt::hstring GetLibraryResourceString(const std::wstring_view key) UTILS_NONDEBUG_NOEXCEPT;
+winrt::hstring GetLibraryResourceString(const std::wstring_view key);

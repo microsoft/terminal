@@ -33,6 +33,48 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, owner, std::bind(&TermControlAutomationPeer::GetBoundingRectWrapped, this)));
     };
 
+    // Method Description:
+    // - Signals the ui automation client that the terminal's selection has changed and should be updated
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControlAutomationPeer::SignalSelectionChanged()
+    {
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+            // The event that is raised when the text selection is modified.
+            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+        });
+    }
+
+    // Method Description:
+    // - Signals the ui automation client that the terminal's output has changed and should be updated
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControlAutomationPeer::SignalTextChanged()
+    {
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+            // The event that is raised when textual content is modified.
+            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
+        });
+    }
+
+    // Method Description:
+    // - Signals the ui automation client that the cursor's state has changed and should be updated
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControlAutomationPeer::SignalCursorChanged()
+    {
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+            // The event that is raised when the text was changed in an edit control.
+            RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);
+        });
+    }
+
     winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
     {
         return L"TermControl";

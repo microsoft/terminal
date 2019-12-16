@@ -51,18 +51,13 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::string_view ProfileKey{ "profile" };
 
     public:
-        bool Equals(const IActionArgs& other)
+        bool Equals(const winrt::TerminalApp::NewTerminalArgs& other)
         {
-            auto otherAsUs = other.try_as<NewTerminalArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Commandline == _Commandline &&
-                       otherAsUs->_StartingDirectory == _StartingDirectory &&
-                       otherAsUs->_TabTitle == _TabTitle &&
-                       otherAsUs->_ProfileIndex == _ProfileIndex &&
-                       otherAsUs->_Profile == _Profile;
-            }
-            return false;
+            return other.Commandline() == _Commandline &&
+                   other.StartingDirectory() == _StartingDirectory &&
+                   other.TabTitle() == _TabTitle &&
+                   other.ProfileIndex() == _ProfileIndex &&
+                   other.Profile() == _Profile;
         };
         static winrt::TerminalApp::NewTerminalArgs FromJson(const Json::Value& json)
         {
@@ -132,7 +127,7 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<NewTabArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_TerminalArgs == _TerminalArgs;
+                return otherAsUs->_TerminalArgs.Equals(_TerminalArgs);
             }
             return false;
         };

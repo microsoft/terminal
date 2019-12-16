@@ -463,7 +463,9 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
-        const bool usedManualProfile = (newTerminalArgs != nullptr) && (newTerminalArgs.ProfileIndex().Value() || newTerminalArgs.Profile().empty());
+        const bool usedManualProfile = (newTerminalArgs != nullptr) &&
+                                       (newTerminalArgs.ProfileIndex() != nullptr ||
+                                        newTerminalArgs.Profile().empty());
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
@@ -659,7 +661,7 @@ namespace winrt::TerminalApp::implementation
     // - bindings: A AppKeyBindings object to wire up with our event handlers
     void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
-        bindings.SetDispatch(_actionDispatch);
+        bindings.SetDispatch(*_actionDispatch);
     }
 
     // Method Description:
@@ -675,28 +677,28 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
 
-        _actionDispatch.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
-        _actionDispatch.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
-        _actionDispatch.CloseTab({ this, &TerminalPage::_HandleCloseTab });
-        _actionDispatch.ClosePane({ this, &TerminalPage::_HandleClosePane });
-        _actionDispatch.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
-        _actionDispatch.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
-        _actionDispatch.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
-        _actionDispatch.NextTab({ this, &TerminalPage::_HandleNextTab });
-        _actionDispatch.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        _actionDispatch.SplitPane({ this, &TerminalPage::_HandleSplitPane });
-        _actionDispatch.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
-        _actionDispatch.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        _actionDispatch.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
-        _actionDispatch.PasteText({ this, &TerminalPage::_HandlePasteText });
-        _actionDispatch.NewTab({ this, &TerminalPage::_HandleNewTab });
-        _actionDispatch.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
-        _actionDispatch.ResizePane({ this, &TerminalPage::_HandleResizePane });
-        _actionDispatch.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
-        _actionDispatch.CopyText({ this, &TerminalPage::_HandleCopyText });
-        _actionDispatch.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        _actionDispatch.ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
-        _actionDispatch.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
+        _actionDispatch->DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
+        _actionDispatch->CloseTab({ this, &TerminalPage::_HandleCloseTab });
+        _actionDispatch->ClosePane({ this, &TerminalPage::_HandleClosePane });
+        _actionDispatch->CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
+        _actionDispatch->ScrollUp({ this, &TerminalPage::_HandleScrollUp });
+        _actionDispatch->ScrollDown({ this, &TerminalPage::_HandleScrollDown });
+        _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
+        _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
+        _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
+        _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
+        _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
+        _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
+        _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
+        _actionDispatch->SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
+        _actionDispatch->ResizePane({ this, &TerminalPage::_HandleResizePane });
+        _actionDispatch->MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
+        _actionDispatch->CopyText({ this, &TerminalPage::_HandleCopyText });
+        _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
+        _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
     // Method Description:

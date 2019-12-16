@@ -147,6 +147,7 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
 * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 * Mike Griese, Developer: [@zadjii](https://twitter.com/zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
+* Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 
 ## Developer Guidance
 
