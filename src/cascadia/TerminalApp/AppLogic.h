@@ -19,7 +19,7 @@
 
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
-#include "AppCommandline.h"
+#include "AppCommandlineArgs.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -76,7 +76,7 @@ namespace winrt::TerminalApp::implementation
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
-        AppCommandline _appArgs;
+        ::TerminalApp::AppCommandlineArgs _appArgs;
         int _ParseArgs(const int argc, const wchar_t* argv[]);
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);

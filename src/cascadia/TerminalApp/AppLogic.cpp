@@ -702,13 +702,13 @@ namespace winrt::TerminalApp::implementation
 
     int AppLogic::_ParseArgs(const int argc, const wchar_t* argv[])
     {
-        auto commands = AppCommandline::BuildCommands(argc, argv);
+        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(argc, argv);
 
         for (auto& cmdBlob : commands)
         {
             cmdBlob.BuildArgv();
             // On one hand, it seems like we should be able to have one
-            // AppCommandline for parsing all of them, and collect the results one
+            // AppCommandlineArgs for parsing all of them, and collect the results one
             // at a time.
             //
             // On the other hand, re-using a CLI::App seems to leave state from

@@ -174,7 +174,7 @@ namespace winrt::TerminalApp::implementation
         _startupActions.pop_front();
 
         Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this, nextAction]() {
-            _actionDispatch.DoAction(nextAction);
+            _actionDispatch->DoAction(nextAction);
         });
     }
 

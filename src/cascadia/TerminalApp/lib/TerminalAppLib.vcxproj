@@ -63,7 +63,8 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="../App.base.h" />
-    <ClInclude Include="../AppCommandline.h" />
+    <ClInclude Include="../AppCommandlineArgs.h" />
+    <ClInclude Include="../Commandline.h" />
     <ClInclude Include="../MinMaxCloseControl.h">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
@@ -116,7 +117,8 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
-    <ClCompile Include="../AppCommandline.cpp" />
+    <ClCompile Include="../AppCommandlineArgs.cpp" />
+    <ClCompile Include="../Commandline.cpp" />
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>

@@ -2,25 +2,26 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "AppCommandline.h"
+#include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
 
 using namespace winrt::TerminalApp;
+using namespace TerminalApp;
 
-AppCommandline::AppCommandline()
+AppCommandlineArgs::AppCommandlineArgs()
 {
     _BuildParser();
     _ResetStateToDefault();
 }
 
-void AppCommandline::_ResetStateToDefault()
+void AppCommandlineArgs::_ResetStateToDefault()
 {
     _profileName = "";
     _startingDirectory = "";
     _commandline.clear();
 }
 
-int AppCommandline::ParseCommand(const Cmdline& command)
+int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
     int localArgc = static_cast<int>(command.Argc());
     auto localArgv = command.Argv();
@@ -77,7 +78,7 @@ int AppCommandline::ParseCommand(const Cmdline& command)
     return 0;
 }
 
-void AppCommandline::_BuildParser()
+void AppCommandlineArgs::_BuildParser()
 {
     _BuildNewTabParser();
     _BuildSplitPaneParser();
@@ -87,7 +88,7 @@ void AppCommandline::_BuildParser()
     ////////////////////////////////////////////////////////////////////////////
 }
 
-void AppCommandline::_BuildNewTabParser()
+void AppCommandlineArgs::_BuildNewTabParser()
 {
     _newTabCommand = _app.add_subcommand("new-tab", "Create a new tab");
     _AddNewTerminalArgs(_newTabCommand);
@@ -103,7 +104,7 @@ void AppCommandline::_BuildNewTabParser()
     });
 }
 
-void AppCommandline::_BuildSplitPaneParser()
+void AppCommandlineArgs::_BuildSplitPaneParser()
 {
     _newPaneCommand = _app.add_subcommand("split-pane", "Create a new pane");
     _AddNewTerminalArgs(_newPaneCommand);
@@ -132,14 +133,14 @@ void AppCommandline::_BuildSplitPaneParser()
     });
 }
 
-void AppCommandline::_AddNewTerminalArgs(CLI::App* subcommand)
+void AppCommandlineArgs::_AddNewTerminalArgs(CLI::App* subcommand)
 {
     subcommand->add_option("-p,--profile", _profileName, "Open with the give profile");
     subcommand->add_option("-d,--startingDirectory", _startingDirectory, "Open in the given directory instead of the profile's set startingDirectory");
     subcommand->add_option("cmdline", _commandline, "Commandline to run in the given profile");
 }
 
-NewTerminalArgs AppCommandline::_GetNewTerminalArgs()
+NewTerminalArgs AppCommandlineArgs::_GetNewTerminalArgs()
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
     if (!_profileName.empty())
@@ -180,18 +181,18 @@ NewTerminalArgs AppCommandline::_GetNewTerminalArgs()
     return *args;
 }
 
-bool AppCommandline::_NoCommandsProvided()
+bool AppCommandlineArgs::_NoCommandsProvided()
 {
     return !(*_listProfilesCommand ||
              *_newTabCommand ||
              *_newPaneCommand);
 }
 
-std::vector<Cmdline> AppCommandline::BuildCommands(const int w_argc, const wchar_t* w_argv[])
+std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int w_argc, const wchar_t* w_argv[])
 {
     std::wstring cmdSeperator = L";";
-    std::vector<Cmdline> commands;
-    commands.emplace_back(Cmdline{});
+    std::vector<Commandline> commands;
+    commands.emplace_back(Commandline{});
 
     // For each arg in argv:
     // Check the string for a delimiter.
@@ -222,7 +223,7 @@ std::vector<Cmdline> AppCommandline::BuildCommands(const int w_argc, const wchar
             {
                 // TODO: For delimiters that are escaped, skip them and go to the next
                 nextDelimiter = remaining.find(cmdSeperator);
-                commands.emplace_back(Cmdline{});
+                commands.emplace_back(Commandline{});
                 commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
                 nextArg = remaining.substr(0, nextDelimiter);
                 if (nextArg != L"")
