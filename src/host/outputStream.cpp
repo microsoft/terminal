@@ -403,10 +403,10 @@ bool ConhostInternalGetSet::PrivateReverseLineFeed()
 //     but it is not represented as a function call on out public API surface.
 // Return Value:
 // - true if successful (see DoSrvMoveCursorVertically). false otherwise.
-bool ConhostInternalGetSet::MoveCursorVertically(const size_t lines)
+bool ConhostInternalGetSet::MoveCursorVertically(const ptrdiff_t lines)
 {
     SHORT l;
-    if (FAILED(SizeTToShort(lines, &l)))
+    if (FAILED(PtrdiffTToShort(lines, &l)))
     {
         return false;
     }

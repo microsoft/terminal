@@ -447,7 +447,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter(L's');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         }
-        VERIFY_ARE_EQUAL(mach._oscString.size(), mach.s_oscStringMaxLength - 1);
+        VERIFY_ARE_EQUAL(mach._oscString.size(), MAX_PATH);
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -518,12 +518,14 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L']');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
-        for (int i = 0; i < 6; i++) // We're only expecting to be able to keep 5 digits max
+        constexpr auto sizeMax = std::numeric_limits<size_t>::max();
+        const auto sizeMaxStr = wil::str_printf<std::wstring>(L"%zu", sizeMax);
+        for (auto& wch : sizeMaxStr)
         {
-            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            mach.ProcessCharacter(wch);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, SHORT_MAX);
+        VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -531,17 +533,16 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
-        Log::Comment(L"Make sure we cap the param value to SHORT_MAX");
         mach.ProcessCharacter(AsciiChars::ESC);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L']');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (const auto& wch : sizeMaxStr)
         {
-            mach.ProcessCharacter((wchar_t)(L'4' + i)); // 45678 > (SHORT_MAX===32767)
+            mach.ProcessCharacter(wch); 
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, SHORT_MAX);
+        VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -979,7 +980,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestEscCursorMovement)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1008,19 +1009,14 @@ class StateMachineExternalTest final
     void ApplyParameterBoundary(size_t* uiExpected, size_t uiGiven)
     {
         // 0 and 1 should be 1. Use the preset value.
-        // 1-SHORT_MAX should be what we set.
-        // > SHORT_MAX should be SHORT_MAX.
+        // 2019-12: No longer bound by SHORT_MAX. Goes all the way to size_t.
         if (uiGiven <= 1)
         {
             *uiExpected = 1u;
         }
-        else if (uiGiven > 1 && uiGiven <= SHORT_MAX)
+        else if (uiGiven > 1)
         {
             *uiExpected = uiGiven;
-        }
-        else if (uiGiven > SHORT_MAX)
-        {
-            *uiExpected = SHORT_MAX; // 16383 is our max value.
         }
     }
 
@@ -1062,7 +1058,7 @@ class StateMachineExternalTest final
         size_t uiDistance;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDistance", uiDistance));
 
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1092,7 +1088,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestCsiCursorMovementWithoutValues)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1133,7 +1129,7 @@ class StateMachineExternalTest final
         size_t uiCol;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiCol", uiCol));
 
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1164,7 +1160,7 @@ class StateMachineExternalTest final
         size_t uiRow;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiRow", uiRow));
 
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1185,7 +1181,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestCursorSaveLoad)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1219,7 +1215,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestCursorKeysMode)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1237,7 +1233,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestSetNumberOfColumns)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1255,7 +1251,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestOriginMode)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1280,7 +1276,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestCursorBlinking)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1298,7 +1294,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestCursorVisibility)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1316,7 +1312,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestAltBufferSwapping)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1355,7 +1351,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestEnableDECCOLMSupport)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1387,7 +1383,7 @@ class StateMachineExternalTest final
         WCHAR wchOp = L'\0';
         bool* pfOperationCallback = nullptr;
 
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1469,12 +1465,12 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestSetGraphicsRendition)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        DispatchTypes::GraphicsOptions rgExpected[16];
+        DispatchTypes::GraphicsOptions rgExpected[17];
 
         Log::Comment(L"Test 1: Check default case.");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -1483,7 +1479,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
-        VerifyDispatchTypes({rgExpected, 1}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 1 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1496,7 +1492,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
-        VerifyDispatchTypes({rgExpected, 1}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 1 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1523,11 +1519,11 @@ class StateMachineExternalTest final
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
-        VerifyDispatchTypes({rgExpected, 5}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 5 }, *pDispatch);
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 4: Check 'too many options' (>16) case.");
+        Log::Comment(L"Test 4: Check 'many options' (>16) case.");
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
@@ -1583,7 +1579,8 @@ class StateMachineExternalTest final
         rgExpected[13] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[14] = DispatchTypes::GraphicsOptions::BoldBright;
         rgExpected[15] = DispatchTypes::GraphicsOptions::Underline;
-        VerifyDispatchTypes({rgExpected, 6}, *pDispatch);
+        rgExpected[16] = DispatchTypes::GraphicsOptions::BoldBright;
+        VerifyDispatchTypes({ rgExpected, 17 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1595,7 +1592,7 @@ class StateMachineExternalTest final
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
-        VerifyDispatchTypes({rgExpected, 2}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1608,7 +1605,7 @@ class StateMachineExternalTest final
         rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
         rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
-        VerifyDispatchTypes({rgExpected, 3}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
 
@@ -1621,14 +1618,14 @@ class StateMachineExternalTest final
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundRed;
         rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
-        VerifyDispatchTypes({rgExpected, 3}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
     }
 
     TEST_METHOD(TestDeviceStatusReport)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1666,7 +1663,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestDeviceAttributes)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1703,7 +1700,7 @@ class StateMachineExternalTest final
 
     TEST_METHOD(TestStrings)
     {
-        auto dispatch = std::unique_ptr<StatefulDispatch>();
+        auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
@@ -1733,7 +1730,7 @@ class StateMachineExternalTest final
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         rgExpected[4] = DispatchTypes::GraphicsOptions::BackgroundMagenta;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
-        VerifyDispatchTypes({rgExpected, 5}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 5 }, *pDispatch);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
@@ -1750,7 +1747,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
-        VerifyDispatchTypes({rgExpected, 2}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
@@ -1770,7 +1767,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
-        VerifyDispatchTypes({rgExpected, 2}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
@@ -1797,7 +1794,7 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_FALSE(pDispatch->_eraseDisplay);
-        VerifyDispatchTypes({rgExpected, 2}, *pDispatch);
+        VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
 
         mach.ProcessString(L"Hello World\x1b[2J");
 

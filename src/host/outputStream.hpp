@@ -100,7 +100,7 @@ public:
 
     bool PrivateReverseLineFeed() override;
 
-    bool MoveCursorVertically(const size_t lines) override;
+    bool MoveCursorVertically(const ptrdiff_t lines) override;
 
     bool SetConsoleTitleW(const std::wstring_view title) override;
 

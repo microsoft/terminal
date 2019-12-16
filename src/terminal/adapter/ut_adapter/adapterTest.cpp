@@ -376,11 +376,11 @@ public:
         return TRUE;
     }
 
-    bool MoveCursorVertically(const size_t lines) override
+    bool MoveCursorVertically(const ptrdiff_t lines) override
     {
         Log::Comment(L"MoveCursorVertically MOCK called...");
         short l;
-        VERIFY_SUCCEEDED(SizeTToShort(lines, &l));
+        VERIFY_SUCCEEDED(PtrdiffTToShort(lines, &l));
         if (_moveCursorVerticallyResult)
         {
             VERIFY_ARE_EQUAL(_expectedLines, l);

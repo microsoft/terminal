@@ -132,7 +132,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::optional<wchar_t> _intermediate;
         std::vector<size_t> _parameters;
 
-        static constexpr size_t s_oscStringMaxLength = 256;
         std::wstring _oscString;
         size_t _oscParameter;
 

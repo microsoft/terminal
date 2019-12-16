@@ -468,10 +468,7 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscPut");
 
-    if (_oscString.size() < s_oscStringMaxLength - 1)
-    {
-        _oscString.push_back(wch);
-    }
+    _oscString.push_back(wch);
 }
 
 // Routine Description:
@@ -1248,7 +1245,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
     while (current < string.size())
     {
-        _run = string.substr(start, current + 1);
+        _run = string.substr(start, current - start);
 
         if (_processingIndividually)
         {
@@ -1268,8 +1265,6 @@ void StateMachine::ProcessString(const std::wstring_view string)
                 _engine->ActionPrintString(_run); // ... print all the chars leading up to it as part of the run...
                 _trace.DispatchPrintRunTrace(_run);
                 _processingIndividually = true; // begin processing future characters individually...
-
-                ++current;
                 start = current;
                 continue;
             }
@@ -1280,7 +1275,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
     }
 
-    _run = string.substr(start, current + 1);
+    _run = string.substr(start, current - start);
 
     // If we're at the end of the string and have remaining un-printed characters,
     if (!_processingIndividually && !_run.empty())

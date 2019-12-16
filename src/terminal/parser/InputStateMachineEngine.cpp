@@ -390,7 +390,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     size_t row = 0;
 
     // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : parameters;
+    const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
 
     bool success = false;
     switch ((CsiActionCodes)wch)
