@@ -194,6 +194,10 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int w_argc, con
     std::vector<Commandline> commands;
     commands.emplace_back(Commandline{});
 
+    // Either a ; at the start of a line, or a ; preceeded by any non-\ char.
+    // We need \\\\ here, to have an escaped backslash in the actual regex itself.
+    std::wregex reg{ L"^;|[^\\\\];" };
+
     // For each arg in argv:
     // Check the string for a delimiter.
     // * If there isn't a delimiter, add the arg to the current commandline.
@@ -202,36 +206,61 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int w_argc, con
     //   command with the second bit.
     for (auto i = 0; i < w_argc; i++)
     {
-        const auto nextFullArg = std::wstring{ w_argv[i] };
-        auto nextDelimiter = nextFullArg.find(cmdSeperator);
-        if (nextDelimiter == std::wstring::npos)
+        // const auto nextFullArg = std::wstring{ w_argv[i] };
+        auto nextFullArg = std::wstring{ w_argv[i] };
+        // std::match_results<std::wstring::iterator> matches;
+        std::wsmatch matches;
+        std::regex_search(nextFullArg, matches, reg);
+
+        // auto nextDelimiter = nextFullArg.find(cmdSeperator);
+        if (matches.size() == 0)
+        // if (nextDelimiter == std::wstring::npos)
         {
             // Easy case: no delimiter. Add it to the current command.
             commands.rbegin()->AddArg(nextFullArg);
         }
         else
         {
-            // Harder case: There's at least one delimiter in this string.1
-            auto remaining = nextFullArg;
-            auto nextArg = remaining.substr(0, nextDelimiter);
-            remaining = remaining.substr(nextDelimiter + 1);
-            if (nextArg != L"")
+            size_t lastStart = 0;
+            for (size_t i = 0; i < matches.size(); i++)
             {
-                commands.rbegin()->AddArg(nextArg);
-            }
-            do
-            {
-                // TODO: For delimiters that are escaped, skip them and go to the next
-                nextDelimiter = remaining.find(cmdSeperator);
-                commands.emplace_back(Commandline{});
-                commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
-                nextArg = remaining.substr(0, nextDelimiter);
+                auto delimiterPosition = matches.position(i) == 0 ? matches.position(i) : matches.position(i) + 1;
+                auto nextArg = nextFullArg.substr(lastStart, delimiterPosition);
+                // if (i > 0)
+                // {
+                // }
                 if (nextArg != L"")
                 {
                     commands.rbegin()->AddArg(nextArg);
                 }
-                remaining = remaining.substr(nextDelimiter + 1);
-            } while (nextDelimiter != std::wstring::npos);
+
+                commands.emplace_back(Commandline{});
+                commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
+
+                lastStart = delimiterPosition;
+            }
+
+            // // Harder case: There's at least one delimiter in this string.
+            // auto remaining = nextFullArg;
+            // auto nextArg = remaining.substr(0, nextDelimiter);
+            // remaining = remaining.substr(nextDelimiter + 1);
+            // if (nextArg != L"")
+            // {
+            //     commands.rbegin()->AddArg(nextArg);
+            // }
+            // do
+            // {
+            //     // TODO: For delimiters that are escaped, skip them and go to the next
+            //     nextDelimiter = remaining.find(cmdSeperator);
+            //     commands.emplace_back(Commandline{});
+            //     commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
+            //     nextArg = remaining.substr(0, nextDelimiter);
+            //     if (nextArg != L"")
+            //     {
+            //         commands.rbegin()->AddArg(nextArg);
+            //     }
+            //     remaining = remaining.substr(nextDelimiter + 1);
+            // } while (nextDelimiter != std::wstring::npos);
         }
     }
 

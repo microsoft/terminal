@@ -62,3 +62,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include <CLI11/CLI11.hpp>
+#include <regex>
