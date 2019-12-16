@@ -468,7 +468,10 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscPut");
 
-    _oscString.push_back(wch);
+    if (_oscString.size() < s_oscStringMaxLength - 1)
+    {
+        _oscString.push_back(wch);
+    }
 }
 
 // Routine Description:
@@ -1312,36 +1315,36 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            auto current = _run.cbegin();
-            while (current < _run.cend() - 1)
+            auto wchIter = _run.cbegin();
+            while (wchIter < _run.cend() - 1)
             {
-                ProcessCharacter(*current);
-                current++;
+                ProcessCharacter(*wchIter);
+                wchIter++;
             }
             // Manually execute the last char [pwchCurr]
             switch (_state)
             {
             case VTStates::Ground:
-                _ActionExecute(*current);
+                _ActionExecute(*wchIter);
                 break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*current);
+                _ActionEscDispatch(*wchIter);
                 break;
             case VTStates::CsiEntry:
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
-                _ActionCsiDispatch(*current);
+                _ActionCsiDispatch(*wchIter);
                 break;
             case VTStates::OscParam:
             case VTStates::OscString:
             case VTStates::OscTermination:
-                _ActionOscDispatch(*current);
+                _ActionOscDispatch(*wchIter);
                 break;
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*current);
+                _ActionSs3Dispatch(*wchIter);
                 break;
             }
             // microsoft/terminal#2746: Make sure to return to the ground state

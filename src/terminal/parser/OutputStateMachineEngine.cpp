@@ -11,8 +11,8 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // takes ownership of pDispatch
-OutputStateMachineEngine::OutputStateMachineEngine(ITermDispatch* const pDispatch) :
-    _dispatch(pDispatch),
+OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
+    _dispatch(std::move(pDispatch)),
     _pfnFlushToTerminal(nullptr),
     _pTtyConnection(nullptr),
     _lastPrintedChar(AsciiChars::NUL)
@@ -1169,7 +1169,7 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
 // Return Value:
 // - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size_t> parameters,
-                                               size_t& const distance) const
+                                               size_t& distance) const
 {
     bool success = false;
     distance = DefaultTabDistance;

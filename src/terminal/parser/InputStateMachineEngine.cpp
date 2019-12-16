@@ -38,52 +38,139 @@ const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 // CAPSLOCK_ON         0x0080
 // ENHANCED_KEY        0x0100
 
-const std::map<InputStateMachineEngine::CsiActionCodes, short> InputStateMachineEngine::CsiMap = {
-    { CsiActionCodes::ArrowUp, VK_UP },
-    { CsiActionCodes::ArrowDown, VK_DOWN },
-    { CsiActionCodes::ArrowRight, VK_RIGHT },
-    { CsiActionCodes::ArrowLeft, VK_LEFT },
-    { CsiActionCodes::Home, VK_HOME },
-    { CsiActionCodes::End, VK_END },
-    { CsiActionCodes::CSI_F1, VK_F1 },
-    { CsiActionCodes::CSI_F2, VK_F2 },
-    { CsiActionCodes::CSI_F3, VK_F3 },
-    { CsiActionCodes::CSI_F4, VK_F4 },
+enum class CsiActionCodes : wchar_t
+{
+    ArrowUp = L'A',
+    ArrowDown = L'B',
+    ArrowRight = L'C',
+    ArrowLeft = L'D',
+    Home = L'H',
+    End = L'F',
+    Generic = L'~', // Used for a whole bunch of possible keys
+    CSI_F1 = L'P',
+    CSI_F2 = L'Q',
+    CSI_F3 = L'R', // Both F3 and DSR are on R.
+    // DSR_DeviceStatusReportResponse = L'R',
+    CSI_F4 = L'S',
+    DTTERM_WindowManipulation = L't',
+    CursorBackTab = L'Z',
 };
 
-const std::map<InputStateMachineEngine::GenericKeyIdentifiers, short> InputStateMachineEngine::GenericMap = {
-    { GenericKeyIdentifiers::GenericHome, VK_HOME },
-    { GenericKeyIdentifiers::Insert, VK_INSERT },
-    { GenericKeyIdentifiers::Delete, VK_DELETE },
-    { GenericKeyIdentifiers::GenericEnd, VK_END },
-    { GenericKeyIdentifiers::Prior, VK_PRIOR },
-    { GenericKeyIdentifiers::Next, VK_NEXT },
-    { GenericKeyIdentifiers::F5, VK_F5 },
-    { GenericKeyIdentifiers::F6, VK_F6 },
-    { GenericKeyIdentifiers::F7, VK_F7 },
-    { GenericKeyIdentifiers::F8, VK_F8 },
-    { GenericKeyIdentifiers::F9, VK_F9 },
-    { GenericKeyIdentifiers::F10, VK_F10 },
-    { GenericKeyIdentifiers::F11, VK_F11 },
-    { GenericKeyIdentifiers::F12, VK_F12 },
+struct CsiToVkey
+{
+    CsiActionCodes action;
+    short vkey;
 };
 
-const std::map<InputStateMachineEngine::Ss3ActionCodes, short> InputStateMachineEngine::Ss3Map{
-    { Ss3ActionCodes::SS3_F1, VK_F1 },
-    { Ss3ActionCodes::SS3_F2, VK_F2 },
-    { Ss3ActionCodes::SS3_F3, VK_F3 },
-    { Ss3ActionCodes::SS3_F4, VK_F4 },
+static constexpr std::array<CsiToVkey, 10> s_csiMap = {
+    CsiToVkey{ CsiActionCodes::ArrowUp, VK_UP },
+    CsiToVkey{ CsiActionCodes::ArrowDown, VK_DOWN },
+    CsiToVkey{ CsiActionCodes::ArrowRight, VK_RIGHT },
+    CsiToVkey{ CsiActionCodes::ArrowLeft, VK_LEFT },
+    CsiToVkey{ CsiActionCodes::Home, VK_HOME },
+    CsiToVkey{ CsiActionCodes::End, VK_END },
+    CsiToVkey{ CsiActionCodes::CSI_F1, VK_F1 },
+    CsiToVkey{ CsiActionCodes::CSI_F2, VK_F2 },
+    CsiToVkey{ CsiActionCodes::CSI_F3, VK_F3 },
+    CsiToVkey{ CsiActionCodes::CSI_F4, VK_F4 }
 };
 
-InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch) :
-    InputStateMachineEngine(pDispatch, false)
+static bool operator==(const CsiToVkey& pair, const CsiActionCodes code) noexcept
+{
+    return pair.action == code;
+}
+
+// Sequences ending in '~' use these numbers as identifiers.
+enum class GenericKeyIdentifiers : unsigned short
+{
+    GenericHome = 1,
+    Insert = 2,
+    Delete = 3,
+    GenericEnd = 4,
+    Prior = 5, //PgUp
+    Next = 6, //PgDn
+    F5 = 15,
+    F6 = 17,
+    F7 = 18,
+    F8 = 19,
+    F9 = 20,
+    F10 = 21,
+    F11 = 23,
+    F12 = 24,
+};
+
+struct GenericToVkey
+{
+    GenericKeyIdentifiers identifier;
+    short vkey;
+};
+
+static constexpr std::array<GenericToVkey, 14> s_genericMap = {
+    GenericToVkey{ GenericKeyIdentifiers::GenericHome, VK_HOME },
+    GenericToVkey{ GenericKeyIdentifiers::Insert, VK_INSERT },
+    GenericToVkey{ GenericKeyIdentifiers::Delete, VK_DELETE },
+    GenericToVkey{ GenericKeyIdentifiers::GenericEnd, VK_END },
+    GenericToVkey{ GenericKeyIdentifiers::Prior, VK_PRIOR },
+    GenericToVkey{ GenericKeyIdentifiers::Next, VK_NEXT },
+    GenericToVkey{ GenericKeyIdentifiers::F5, VK_F5 },
+    GenericToVkey{ GenericKeyIdentifiers::F6, VK_F6 },
+    GenericToVkey{ GenericKeyIdentifiers::F7, VK_F7 },
+    GenericToVkey{ GenericKeyIdentifiers::F8, VK_F8 },
+    GenericToVkey{ GenericKeyIdentifiers::F9, VK_F9 },
+    GenericToVkey{ GenericKeyIdentifiers::F10, VK_F10 },
+    GenericToVkey{ GenericKeyIdentifiers::F11, VK_F11 },
+    GenericToVkey{ GenericKeyIdentifiers::F12, VK_F12 },
+};
+
+static bool operator==(const GenericToVkey& pair, const GenericKeyIdentifiers identifier) noexcept
+{
+    return pair.identifier == identifier;
+}
+
+enum class Ss3ActionCodes : wchar_t
+{
+    // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
+    //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
+    // ArrowUp = L'A',
+    // ArrowDown = L'B',
+    // ArrowRight = L'C',
+    // ArrowLeft = L'D',
+    // Home = L'H',
+    // End = L'F',
+    SS3_F1 = L'P',
+    SS3_F2 = L'Q',
+    SS3_F3 = L'R',
+    SS3_F4 = L'S',
+};
+
+struct Ss3ToVkey
+{
+    Ss3ActionCodes action;
+    short vkey;
+};
+
+static constexpr std::array<Ss3ToVkey, 4> s_ss3Map = {
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F1, VK_F1 },
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F2, VK_F2 },
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F3, VK_F3 },
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F4, VK_F4 },
+};
+
+static bool operator==(const Ss3ToVkey& pair, const Ss3ActionCodes code) noexcept
+{
+    return pair.action == code;
+}
+
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch) :
+    InputStateMachineEngine(std::move(pDispatch), false)
 {
 }
 
-InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch, const bool lookingForDSR) :
-    _pDispatch(THROW_IF_NULL_ALLOC(pDispatch)),
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
+    _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR)
 {
+    THROW_IF_NULL_ALLOC(_pDispatch.get());
 }
 
 // Method Description:
@@ -306,7 +393,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : parameters;
 
     bool success = false;
-    switch (wch)
+    switch ((CsiActionCodes)wch)
     {
     case CsiActionCodes::Generic:
         modifierState = _GetGenericKeysModifierState(parameters);
@@ -350,7 +437,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 
     if (success)
     {
-        switch (wch)
+        switch ((CsiActionCodes)wch)
         {
         // case CsiActionCodes::DSR_DeviceStatusReportResponse:
         case CsiActionCodes::CSI_F3:
@@ -720,10 +807,10 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
 
     const auto identifier = (GenericKeyIdentifiers)parameters.front();
 
-    const auto mapping = GenericMap.find(identifier);
-    if (mapping != GenericMap.end())
+    const auto mapping = std::find(s_genericMap.cbegin(), s_genericMap.cend(), identifier);
+    if (mapping != s_genericMap.end())
     {
-        vkey = mapping->second;
+        vkey = mapping->vkey;
         return true;
     }
 
@@ -741,10 +828,10 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey)
 {
     vkey = 0;
 
-    const auto mapping = CsiMap.find((CsiActionCodes)wch);
-    if (mapping != CsiMap.end())
+    const auto mapping = std::find(s_csiMap.cbegin(), s_csiMap.cend(), (CsiActionCodes)wch);
+    if (mapping != s_csiMap.end())
     {
-        vkey = mapping->second;
+        vkey = mapping->vkey;
         return true;
     }
 
@@ -762,10 +849,10 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) co
 {
     vkey = 0;
 
-    const auto mapping = Ss3Map.find((Ss3ActionCodes)wch);
-    if (mapping != Ss3Map.end())
+    const auto mapping = std::find(s_ss3Map.cbegin(), s_ss3Map.cend(), (Ss3ActionCodes)wch);
+    if (mapping != s_ss3Map.end())
     {
-        vkey = mapping->second;
+        vkey = mapping->vkey;
         return true;
     }
 

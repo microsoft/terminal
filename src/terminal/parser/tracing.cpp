@@ -19,7 +19,7 @@ void ParserTracing::TraceStateChange(const std::wstring_view name) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_EnterState",
-                      TraceLoggingCountedWideString(name.data(), name.size()),
+                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
@@ -27,7 +27,7 @@ void ParserTracing::TraceOnAction(const std::wstring_view name) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Action",
-                      TraceLoggingCountedWideString(name.data(), name.size()),
+                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
@@ -55,7 +55,7 @@ void ParserTracing::TraceOnEvent(const std::wstring_view name) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Event",
-                      TraceLoggingCountedWideString(name.data(), name.size()),
+                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
@@ -116,10 +116,12 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
     }
     else
     {
+        const auto length = gsl::narrow_cast<ULONG>(string.size());
+
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",
-                          TraceLoggingCountedWideString(string.data(), string.size()),
-                          TraceLoggingValue(string.size()),
+                          TraceLoggingCountedWideString(string.data(), length),
+                          TraceLoggingValue(length),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 }

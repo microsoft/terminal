@@ -242,14 +242,12 @@ public:
                          _In_ TestState* testState);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
     virtual bool WriteCtrlC() override;
-    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                    _In_reads_(cParams) const unsigned short* const rgusParams,
-                                    const size_t cParams) override; // DTTERM_WindowManipulation
-    virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
-                             const size_t cch) override;
+    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                    const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+    virtual bool WriteString(const std::wstring_view string) override;
 
-    virtual bool MoveCursor(const unsigned int row,
-                            const unsigned int col) override;
+    virtual bool MoveCursor(const size_t row,
+                            const size_t col) override;
 
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
@@ -278,27 +276,26 @@ bool TestInteractDispatch::WriteCtrlC()
     return WriteInput(inputEvents);
 }
 
-bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                              _In_reads_(cParams) const unsigned short* const rgusParams,
-                                              const size_t cParams)
+bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                              const std::basic_string_view<size_t> parameters)
 {
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
-    VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, uiFunction);
-    for (size_t i = 0; i < cParams; i++)
+    VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
+    for (size_t i = 0; i < parameters.size(); i++)
     {
-        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], rgusParams[i]);
+        unsigned short actual;
+        VERIFY_SUCCEEDED(SizeTToUShort(parameters.at(i), &actual));
+        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
     }
     return true;
 }
 
-bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
-                                       const size_t cch)
+bool TestInteractDispatch::WriteString(const std::wstring_view string)
 {
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
-    for (size_t i = 0; i < cch; ++i)
+    for (const auto& wch : string)
     {
-        const wchar_t wch = pws[i];
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
         std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_USA);
@@ -310,8 +307,7 @@ bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
     return WriteInput(keyEvents);
 }
 
-bool TestInteractDispatch::MoveCursor(const unsigned int row,
-                                      const unsigned int col)
+bool TestInteractDispatch::MoveCursor(const size_t row, const size_t col)
 {
     VERIFY_IS_TRUE(_testState->_expectCursorPosition);
     COORD received = { static_cast<short>(col), static_cast<short>(row) };
@@ -324,7 +320,8 @@ void InputEngineTest::C0Test()
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -420,8 +417,8 @@ void InputEngineTest::AlphanumericTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -465,7 +462,8 @@ void InputEngineTest::RoundTripTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -525,8 +523,8 @@ void InputEngineTest::WindowManipulationTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine.get());
     testState._stateMachine = _stateMachine.get();
@@ -592,8 +590,8 @@ void InputEngineTest::NonAsciiTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputStringCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine.get());
     testState._stateMachine = _stateMachine.get();
@@ -649,7 +647,7 @@ void InputEngineTest::CursorPositioningTest()
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     VERIFY_IS_NOT_NULL(dispatch.get());
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(dispatch.release(), true);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
     VERIFY_IS_NOT_NULL(inputEngine.get());
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
@@ -690,8 +688,8 @@ void InputEngineTest::CSICursorBackTabTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -718,8 +716,8 @@ void InputEngineTest::AltBackspaceTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -745,8 +743,8 @@ void InputEngineTest::AltCtrlDTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -809,7 +807,8 @@ void InputEngineTest::AltIntermediateTest()
             terminalInput.HandleKey(ev.get());
         }
     };
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfnInputStateMachineCallback, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfnInputStateMachineCallback, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(stateMachine);
     testState._stateMachine = stateMachine.get();
@@ -837,8 +836,8 @@ void InputEngineTest::AltBackspaceEnterTest()
 
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();

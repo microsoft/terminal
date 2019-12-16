@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
     class OutputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        OutputStateMachineEngine(ITermDispatch* const pDispatch);
+        OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
         ~OutputStateMachineEngine();
 
         bool ActionExecute(const wchar_t wch) override;
@@ -192,7 +192,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         static constexpr size_t DefaultTabDistance = 1;
         bool _GetTabDistance(const std::basic_string_view<size_t> parameters,
-                             size_t& const distance) const;
+                             size_t& distance) const;
 
         static constexpr size_t DefaultTabClearType = 0;
         bool _GetTabClearType(const std::basic_string_view<size_t> parameters,
@@ -230,5 +230,6 @@ namespace Microsoft::Console::VirtualTerminal
                              size_t& repeatCount) const noexcept;
 
         void _ClearLastChar() noexcept;
+
     };
 }

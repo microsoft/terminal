@@ -12,9 +12,9 @@ void EchoDispatch::Print(const wchar_t wchPrintable)
     wprintf(L"Print: %c (0x%x)\r\n", wchPrintable, wchPrintable);
 }
 
-void EchoDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
+void EchoDispatch::PrintString(const std::wstring_view string)
 {
-    wprintf(L"PrintString: \"%s\" (%zd chars)\r\n", rgwch, cch);
+    wprintf(L"PrintString: \"%s\" (%zd chars)\r\n", string.data(), string.size());
 }
 
 void EchoDispatch::Execute(const wchar_t wchControl)

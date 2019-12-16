@@ -50,7 +50,8 @@ Terminal::Terminal() :
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
 {
-    auto engine = std::make_unique<OutputStateMachineEngine>(new TerminalDispatch(*this));
+    auto dispatch = std::make_unique<TerminalDispatch>(*this);
+    auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
 
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
