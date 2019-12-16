@@ -989,7 +989,7 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
     SGR_PARAMS input;
     MOUSE_EVENT_PARAMS expected;
     INPUT_RECORD inputRec;
-    for (int i = 0; i < testData.size(); i++)
+    for (size_t i = 0; i < testData.size(); i++)
     {
         // construct test input
         input = std::get<0>(testData[i]);

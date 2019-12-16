@@ -320,8 +320,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             DWORD dwEventFlags = 0;
             dwModifierState = _GetSGRMouseModifierState(rgusParams, cParams);
             fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
-            fSuccess = fSuccess ? _UpdateSGRMouseButtonState(wch, rgusParams, &dwButtonState, &dwEventFlags) : false;
-            return fSuccess ? _WriteMouseEvent(col, row, dwButtonState, dwModifierState, dwEventFlags) : false;
+            fSuccess = _UpdateSGRMouseButtonState(wch, rgusParams, &dwButtonState, &dwEventFlags) && fSuccess;
+            return _WriteMouseEvent(col, row, dwButtonState, dwModifierState, dwEventFlags) && fSuccess;
         }
         default:
             fSuccess = false;
