@@ -55,7 +55,18 @@ void Commandline::AddArg(const std::wstring& nextArg)
         _resetArgv();
     }
 
-    _wargs.emplace_back(nextArg);
+    // Attempt to convert '\;' in the arg to just '\', removing the escaping
+    std::wstring modifiedArg{ nextArg };
+    const std::wstring escapedDelimiter = L"\\;";
+    const std::wstring delimiter = L";";
+    size_t pos = modifiedArg.find(escapedDelimiter, 0);
+    while (pos != std::string::npos)
+    {
+        modifiedArg.replace(pos, escapedDelimiter.length(), delimiter);
+        pos = modifiedArg.find(escapedDelimiter, pos + delimiter.length());
+    }
+
+    _wargs.emplace_back(modifiedArg);
 }
 
 void Commandline::_resetArgv()
