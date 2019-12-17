@@ -39,7 +39,7 @@ void AppCommandlineArgs::_ResetStateToDefault()
 int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
     const int argc = gsl::narrow_cast<int>(command.Argc());
-    const auto argv = command.BuildArgv();
+    const auto argv = command.Argv();
 
     // Revert our state to the initial state. As this function can be called
     // multiple times during the parsing of a single commandline (once for each
