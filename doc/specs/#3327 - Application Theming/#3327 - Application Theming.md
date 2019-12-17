@@ -32,15 +32,15 @@ should be able to customize:
 * [ ] Pane Border colors (both the background, and the "focused" color) (#3061)
 * [ ] Pane border width (#3062)
 * [ ] Tab _Row_ and _Item_ Background color (#702/#1337/#2994/#3774/#1963)
-  - Some users want to set these to the accent color
-  - Some users want to set these to a specific custom color
-  - Some users want this to use the color straight from the active Terminal,
-    allowing the tab or titlebar to "blend into" the terminal
+    - Some users want to set these to the accent color
+    - Some users want to set these to a specific custom color
+    - Some users want this to use the color straight from the active Terminal,
+      allowing the tab or titlebar to "blend into" the terminal
 * [ ] Feature Request: Setting to hide/remove close ("x") button from tabs (#3335)
 * [ ] Various different tab sizing modes
-  - the current sizing, which is `SizeToContent`
-  - Setting a min/max width on tabs
-  - Configuring tabs to split the available space
+    - the current sizing, which is `SizeToContent`
+    - Setting a min/max width on tabs
+    - Configuring tabs to split the available space
 
 Other lower-priority ideas:
 * [ ] Enable hiding the tab icon altogether
@@ -56,12 +56,12 @@ Other lower-priority ideas:
 * [ ] Enable/disable a shadow cast by terminals on pane borders or a shadow cast
   by pane borders on Terminal panes
 * [ ] Similarly to the tabs, styling the Status Bar (#3459)
-  - Maybe enable it to have the same color as the active TermControl, causing
-    the same "seamless" effect (see [this
-    comment](https://github.com/microsoft/terminal/issues/3459#issuecomment-550501577))
-  - Change font size, face, colors
-  - Control the borders on the status bar - no top border would give the
-    impression it's "seamless"
+    - Maybe enable it to have the same color as the active TermControl, causing
+      the same "seamless" effect (see [this
+      comment](https://github.com/microsoft/terminal/issues/3459#issuecomment-550501577))
+    - Change font size, face, colors
+    - Control the borders on the status bar - no top border would give the
+      impression it's "seamless"
 
 Additionally, the user should be able to easily switch from one installed theme
 to another. The user should be able to copy a simple blob of settings from the
@@ -158,16 +158,17 @@ control the UI.
   values might not be aesthetically pleasing.
 * `tab.closeButton`: Control the visibility of the close button for a tab item.
   Accepts the following values:
-  - `visible`: The default behavior of the tab item close button - always
-    visible.
-  - `hover`: The close button on a tab item only appears when the tab is hovered.
-  - `hidden`: The close button on a tab is always hidden.
+    - `visible`: The default behavior of the tab item close button - always
+      visible.
+    - `hover`: The close button on a tab item only appears when the tab is
+      hovered.
+    - `hidden`: The close button on a tab is always hidden.
 * `tab.icon`: Control the visibility, appearance of the tab icon
-  - `visible`: The default behavior of the tab item icon - always visible, and
-    in full color.
-  - `outline`: The icon is always visible, but is only drawn as an outline,
-    using `BitmapIconSource.ShowAsMonochrome(true)`
-  - `hidden`: The icon is hidden
+    - `visible`: The default behavior of the tab item icon - always visible, and
+      in full color.
+    - `outline`: The icon is always visible, but is only drawn as an outline,
+      using `BitmapIconSource.ShowAsMonochrome(true)`
+    - `hidden`: The icon is hidden
 * `tab.background`: Control the color of the background of tab items. See below
   for accepted colors.
 * `tabRow.background`: Control the color of the background of the tab row items.
@@ -176,6 +177,11 @@ control the UI.
   This is the color of the inactive border between panes.
 * `pane.activeBorderColor`: Control the color of the border of the active pane
 * `pane.borderWidth`: Control the width of the borders used to seperate panes.
+* `window.requestedTheme`: If set, will override the `requestedTheme` property
+  (currently in the globals), to manually control the `RequestedTheme` of the
+  application window. This controls whether WinUI displays elements in the
+  `light`, `dark` or `system` theme.
+    - DISCUSSION: Naming for this property?
 
 #### Theme Colors
 
@@ -189,9 +195,9 @@ be one of:
   terminal instance.
 * `key:SomeXamlKey` to try and look `SomeXamlKey` up from our resources as a
   `Color`, and use that color for the value.
-  - DISCUSSION: Does anyone want this?
-  - is `accent` just `key:SystemAccentColor`? If it is, is it a reasonable alias
-    that we'd want to provide anyways?
+    - DISCUSSION: Does anyone want this?
+    - is `accent` just `key:SystemAccentColor`? If it is, is it a reasonable
+      alias that we'd want to provide anyways?
 
 This will enable users to not only provide custom colors, but also use the
 dynamic color of the active terminal instance as well.
@@ -205,35 +211,120 @@ must have opted in to theis behavior, they'll need to decide personally if
 that's something that bothers them aesthetically. It's entirely possible that a
 user doesn't use panes, and this wouldn't even be a problem for them.
 
-<!-- We could maybe mitigate this by providing the user a way of specifying the `tab.background` color as having both a "single pane" and "multiple pane" mode, though I'm not sure I'm in love with this:
+<!-- We could maybe mitigate this by providing the user a way of specifying the
+`tab.background` color as having both a "single pane" and "multiple pane" mode,
+though I'm not sure I'm in love with this:
 
 ```json
     "tab.background": {"single": "terminalBackground", "multiple": null},
     "tab.background": {"single": "terminalBackground", "multiple": "#ff0000"},
     "tab.background": [ "terminalBackground", null ]
 ```
- Also shown is an array based implementation, as an option.
 
- -->
+ Also shown is an array based implementation, as an option. Overall I'm not
+ happy with this, so I think it shouldn't be in the final draft of the spec, but
+ I'm leaving it for now as an option.
+-->
 
 ### Implementation of theming
 
+Largely, whenever possible, we should be able to implement this theming support
+by modifying our application's `ResourceDictionary` with custom values to
+control the appearance of UI elements.
 
+For example, the `TabView` already exposes a number of XAML resources we can
+modify to adjust it's appearance.
+* `TabViewBackground` controls the appearance of the background of the tab view.
+  In `showTabsInTitlebar: true` mode, this is the color of the titlebar.
+* `TabViewItemHeaderBackground` and `TabViewItemHeaderBackgroundSelected`
+  control the appearance of an individual tab.
 
+By modifying the values of these brushes, we can control the appearance of the
+tabs. So long as we only in-place modify the resources, XAML is smart enough to
+be able to update it's appearance automatically. We can do this by querying the
+`ResourceDictionary` for a given resource, and changing it's value, rather than
+`insert`ing a new value into the `ResourceDictionary` to replace the old one.
+
+In addition to the above properties, I propose adding a couple of our own
+properties: `PaneBorderWidth`: To control the width of pane borders
+`PaneBorderBrush`: To control the appearance of _inactive_ pane borders
+`ActivePaneBorderBrush`: To control the appearance of _active_ pane borders
+
+In order to respond to the live-updating of the `TermControl`'s background
+color, we'l need to add some more specific logic beyond simply updating a XAML
+resource when settings change. Whenever a `TermControl`'s background color
+changes, or the active pane in a tab changes:
+* If `tab.background == "terminalBackground"`:
+    - If this control is the tab's active terminal control (and the tab doesn't
+      have a custom color set by the color picker), update the tab's own
+      `TabViewItem` with updated `TabViewItemHeaderBackground` and
+      `TabViewItemHeaderBackgroundSelected` values.
+        - Here, we _don't_ want to update the `App`'s resources, since those
+          apply globally, and each tab might have a control with a different
+          color.
+        - The color set by the color picker should override the color from the
+          theme (as the former is a run-time property set to override the
+          latter).
+* If `tabRow.background == "terminalBackground"`:
+    - If this control is the active terminal of the active `Tab`, then we should
+      make sure to change the value of the application's `TabViewBackground`.
+      This will update the color of the titlebar area.
+    - Make sure to register an event handler in the `NonClientIslandWindow` to
+      listen for when the `Color` of the `TitlebarControl`'s `Background` brush
+      changes. When that happens, the window will need to be invalidated, so
+      that we can get a `WM_PAINT` and redraw the potion of the titlebar we're
+      drawing with GDI.
+
+The `tab.cornerRadius` might be a bit trickier to implement. Currently, there's
+not a XAML resource that controls this, nor is this something that's exposed by
+the TabView control. Fortunately, this is something that's exposed to us
+programattically. We'll need to manually set that value on each `TabViewItem` as
+we create new tabs. When we reload settings, we'll need to make sure to come
+through and update those values manually.
 
 ### Tab Background Color, Overline Color, and the Tab Color Picker
 
-We want to have an overline color, but will we get support for it?
+Concurrently with the writing of this spec, work is being done to add a "color
+picker" for tabs, that lets the user manually set a background color for tabs.
+This may in the future cause some complications with setting a color for tabs
+from the theme.
 
-When there is an overline color, themes should be able to set it
+When both features are combined, the color set at runtime but the color picker
+should override whatever color the user has set in the theme. When the color
+picker "clears" the color it has set for the tab, it should revert to the color
+from the theme (if one is set).
 
-Furthermore, the user should be able to configure if the tab color picker sets the overline color or the background color of a tab.
+Also mentioned in the implementation of the color picker feature was the ability
+to not set the entire color of the tab, but just the color of a tab "overline",
+similar to the way Firefox (by default) styles the focused tab.
+
+Currently, the `TabView` doesn't support a tab "overline" like this, however, in
+the future where this is possible, we'd love to also support such an overline.
+However, the story of setting the tab color manually becomes a bit more
+confusing now.
+
+* The user should be able to set both the `tab.background` and `tab.overline`
+  colors in a theme.
+* The user should be able to configure whether the color picker sets the
+  `background` or the `overline` color of the tab.
+
+The second setting added above will allow the user to change what's controlled
+by the color picker. Similarly to how the color picker can set the background of
+the tab to override the background from the theme, the user could configure the
+color picker to be able to change the overline color, not the background color
+of the tab. Then, when the user uses the color picker, the overline color will
+be overridden by the color picker, instead of the tab background color.
 
 ### `requestedTheme`
 
-This is currently a global
+`requestedTheme` is a setting which is currently a global property. This
+controls whether the application is in `light`, `dark` or the `system` theme. If
+a theme specifies the `window.requestedTheme` property, this value from the
+theme should override the setting from the globals, because the theme the user
+has selected would prefer a differnent theme for the window.
 
-It should be overridable by setting the `applicationTheme`
+<!-- This is slightly confusing currently if you ask me. More discussion below
+in "Potential Issues" -->
 
 ## UI/UX Design
 
@@ -281,6 +372,19 @@ Windows Terminal". Is this something we're really all that concerned about
 though? If this is something users want (it is), then shouldn't that be what
 matters?
 
+### `requestedTheme` - Confusing?
+
+Is the `requestedTheme` property now confusing with the addition of the
+`applicationTheme` setting? This is a concern that was similarly raised in the
+"Default Profile Settings" feature. How do we make it apparent that one of these
+properties is the theme from the list of themes, and the other is one of
+[`light`, `dark`, `system`]? Should we deprecate the `requestedTheme` property
+entirely?
+
+Alternatively, could we re-use the `requestedTheme` property? We could first try
+looking up the theme to see if it's the name of a theme that's installed in the
+user's settings, and if it's not, fall back to trying it as one of the original
+enum values?
 
 ## Future considerations
 
