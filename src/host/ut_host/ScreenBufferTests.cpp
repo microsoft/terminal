@@ -200,6 +200,8 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownExactlyAtMargins);
 
     TEST_METHOD(CursorSaveRestore);
+
+    TEST_METHOD(ScreenAlignmentPattern);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -5410,4 +5412,63 @@ void ScreenBufferTests::CursorSaveRestore()
     // Reset origin mode and margins.
     stateMachine.ProcessString(resetDECOM);
     stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::ScreenAlignmentPattern()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = si.GetTextBuffer().GetCursor();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    Log::Comment(L"Set the initial buffer state.");
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Move the viewport down a few lines, and only cover part of the buffer width.
+    si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 30 }), true);
+    const auto viewportStart = si.GetViewport().Top();
+    const auto viewportEnd = si.GetViewport().BottomExclusive();
+
+    // Fill the entire buffer with Zs. Blue on Green.
+    const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    _FillLines(0, bufferHeight, L'Z', bufferAttr);
+
+    // Set the initial attributes.
+    auto initialAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    initialAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    si.SetAttributes(initialAttr);
+
+    // Set some margins.
+    stateMachine.ProcessString(L"\x1b[10;20r");
+    VERIFY_IS_TRUE(si.AreMarginsSet());
+
+    // Place the cursor in the center.
+    auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+
+    Log::Comment(L"Execute the DECALN escape sequence.");
+    stateMachine.ProcessString(L"\x1b#8");
+
+    Log::Comment(L"Lines within view should be filled with Es, with default attributes.");
+    auto defaultAttr = TextAttribute{};
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportStart, viewportEnd, L'E', defaultAttr));
+
+    Log::Comment(L"Field of Zs outside viewport should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, viewportStart, L'Z', bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportEnd, bufferHeight, L'Z', bufferAttr));
+
+    Log::Comment(L"Margins should not be set.");
+    VERIFY_IS_FALSE(si.AreMarginsSet());
+
+    Log::Comment(L"Cursor position shold be moved to home.");
+    auto homePosition = COORD{ 0, viewportStart };
+    VERIFY_ARE_EQUAL(homePosition, cursor.GetPosition());
+
+    Log::Comment(L"Meta/rendition attributes should be reset.");
+    auto expectedAttr = initialAttr;
+    expectedAttr.SetMetaAttributes(0);
+    VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 }

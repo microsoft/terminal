@@ -119,7 +119,8 @@ namespace Microsoft::Console::VirtualTerminal
             // 'q' is overloaded - no postfix is DECLL, ' ' postfix is DECSCUSR, and '"' is DECSCA
             DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
             DTTERM_WindowManipulation = L't',
-            REP_RepeatCharacter = L'b'
+            REP_RepeatCharacter = L'b',
+            DECALN_ScreenAlignmentPattern = L'8'
         };
 
         enum OscActionCodes : unsigned int

@@ -84,6 +84,7 @@ public:
 
     bool SoftReset() override { return false; } // DECSTR
     bool HardReset() override { return false; } // RIS
+    bool ScreenAlignmentPattern() override { return false; } // DECALN
 
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*color*/) override { return false; } // OSCSetCursorColor, OSCResetCursorColor

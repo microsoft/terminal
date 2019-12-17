@@ -1567,6 +1567,42 @@ bool AdaptDispatch::HardReset()
 }
 
 // Routine Description:
+// - DECALN - Fills the entire screen with a test pattern of uppercase Es,
+//    resets the margins and rendition attributes, and moves the cursor to
+//    the home position.
+// Arguments:
+// - None
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::ScreenAlignmentPattern()
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    bool success = _pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+
+    if (success)
+    {
+        // Fill the screen with the letter E using the default attributes.
+        auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
+        auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
+        success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
+        // Reset the meta/extended attributes (but leave the colors unchanged).
+        success = success && _pConApi->PrivateSetLegacyAttributes(0, false, false, true);
+        success = success && _pConApi->PrivateSetExtendedTextAttributes(ExtendedAttributes::Normal);
+        // Reset the origin mode to absolute.
+        success = success && SetOriginMode(false);
+        // Clear the scrolling margins.
+        success = success && _DoSetTopBottomScrollingMargins(0, 0);
+        // Set the cursor position to home.
+        success = success && CursorPosition(1, 1);
+    }
+
+    return success;
+}
+
+//Routine Description:
 //  - Erase Scrollback (^[[3J - ED extension by xterm)
 //    Because conhost doesn't exactly have a scrollback, We have to be tricky here.
 //    We need to move the entire viewport to 0,0, and clear everything outside

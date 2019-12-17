@@ -80,6 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DesignateCharset(const wchar_t wchCharset) override; // DesignateCharset
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
+        bool ScreenAlignmentPattern() override; // DECALN
         bool EnableDECCOLMSupport(const bool enabled) override; // ?40
         bool EnableVT200MouseMode(const bool enabled) override; // ?1000
         bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005

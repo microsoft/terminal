@@ -87,6 +87,7 @@ public:
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS
+    virtual bool ScreenAlignmentPattern() = 0; // DECALN
 
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor

@@ -252,6 +252,20 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                 break;
             }
         }
+        else if (value == L'#')
+        {
+            switch (wch)
+            {
+            case VTActionCodes::DECALN_ScreenAlignmentPattern:
+                success = _dispatch->ScreenAlignmentPattern();
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
+                break;
+            default:
+                // If no functions to call, overall dispatch was a failure.
+                success = false;
+                break;
+            }
+        }
     }
 
     _ClearLastChar();
