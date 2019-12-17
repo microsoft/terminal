@@ -6,6 +6,9 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 
+#include <shellapi.h>
+#include <processenv.h>
+
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -84,6 +87,25 @@ void AppHost::Initialize()
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
     _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
+
+    // If there were commandline args to our process, try and process them here.
+    // Do this before AppLogic::Create, otherwise this will have no effect
+    if (auto commandline{ GetCommandLineW() })
+    {
+        int argc = 0;
+
+        // Get the argv, and turn them into a hstring array to pass to the app.
+        LPWSTR* argv = CommandLineToArgvW(commandline, &argc);
+        if (argc > 0)
+        {
+            std::vector<winrt::hstring> args;
+            for (auto i = 0; i < argc; i++)
+            {
+                args.push_back({ argv[i] });
+            }
+            _logic.SetStartupCommandline({ args });
+        }
+    }
 
     _logic.Create();
 

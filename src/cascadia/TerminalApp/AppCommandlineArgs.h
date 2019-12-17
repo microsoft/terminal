@@ -27,7 +27,8 @@ public:
     ~AppCommandlineArgs() = default;
     int ParseCommand(const Commandline& command);
 
-    static std::vector<Commandline> BuildCommands(const int w_argc, const wchar_t* w_argv[]);
+    static std::vector<Commandline> BuildCommands(const int argc, const wchar_t* argv[]);
+    static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
 
@@ -57,6 +58,8 @@ private:
     void _BuildSplitPaneParser();
     bool _NoCommandsProvided();
     void _ResetStateToDefault();
+
+    static void _addCommandsForArg(std::vector<Commandline>& commands, std::wstring_view arg);
 
     friend class TerminalAppLocalTests::CommandlineTest;
 };

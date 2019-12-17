@@ -24,7 +24,7 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
 
-        // void SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions);
+        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);

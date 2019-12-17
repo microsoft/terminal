@@ -152,11 +152,6 @@ namespace winrt::TerminalApp::implementation
         _isUwp = true;
     }
 
-    // void AppLogic::SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions)
-    // {
-    //     _root->SetStartupActions(actions);
-    // }
-
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
@@ -698,6 +693,15 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
+    }
+
+    int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> actions)
+    {
+        if (_root)
+        {
+            return _root->SetStartupCommandline(actions);
+        }
+        return 0;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

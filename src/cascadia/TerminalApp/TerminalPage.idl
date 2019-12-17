@@ -10,6 +10,8 @@ namespace TerminalApp
     {
         TerminalPage();
 
+        Int32 SetStartupCommandline(String[] commands);
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;

@@ -31,8 +31,7 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
-        int SetStartupCommandline(winrt::array_view<hstring> args);
-        // void SetStartupActions(std::deque<const TerminalApp::ActionAndArgs>& actions);
+        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -65,10 +64,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
-        std::deque<TerminalApp::ActionAndArgs> _startupActions;
-
         ::TerminalApp::AppCommandlineArgs _appArgs;
-        int _ParseArgs(const int argc, const wchar_t* argv[]);
+        int _ParseArgs(winrt::array_view<const hstring>& args);
         void _ProcessNextStartupAction();
 
         void _ShowAboutDialog();

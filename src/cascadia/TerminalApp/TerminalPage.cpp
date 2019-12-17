@@ -55,10 +55,10 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Create()
     {
-        std::vector<const wchar_t*> rawCommands{
-            L"wt.exe", L"new-tab", L"cmd.exe", L";", L"split-pane", L"-V", L"-p", L"Ubuntu", L";", L"new-tab"
-        };
-        _ParseArgs(static_cast<int>(rawCommands.size()), rawCommands.data());
+        // std::vector<const wchar_t*> rawCommands{
+        //     L"wt.exe", L"new-tab", L"cmd.exe", L";", L"split-pane", L"-V", L"-p", L"Ubuntu", L";", L"new-tab"
+        // };
+        // _ParseArgs(static_cast<int>(rawCommands.size()), rawCommands.data());
 
         // Hookup the key bindings
         _HookupKeyBindings(_settings->GetKeybindings());
@@ -142,48 +142,40 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            // This will kick off a chain of events to perform each startup action. Each startup action should make sure to fire a _ProcessNextStartupAction when it's complete:
-            // - for opening a new tab/pane, this is done in TermControl::Initialized
-            // - for focusing a new pane, this isn't done TODO
-            // - for focusing a new tab, this isn't done TODO
+            // This will kick off a chain of events to perform each startup
+            // action. As each startup action is completed, the next will be
+            // fired.
             _ProcessNextStartupAction();
         }
     }
 
+    // Method Description:
+    // - Process the next startup action in our list of startup actions. When
+    //   that action is complete, fire the next (if there are any more).
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::_ProcessNextStartupAction()
     {
-        // TODO: This seems fragile. How can we be sure that a particular
-        // startup action only triggers this once? that would require some
-        // careful planning, and seems very fragile.
-        //
-        // In 905d392bb, I tried making it so all of them are dispatched
-        // synchronously. This ran into problems, where panes would behave
-        // weird, because they'd start up with a size of 0x0, and even the new
-        // tab would not get it's size correct for some reason. I did get a
-        // weird behavior where trying to manually set the first tab's Root to a
-        // child of the _tabContent gave me a weird exception that it was
-        // already parented to another control, but I didn't think it should
-        // have been yet. Maybe that was the problem?
-        //
-        // Regardless, this whole process seems fragile. We NEED to ensure each
-        // action triggers a _ProcessNextStartupAction when it's done, and if
-        // someone wants to use the UI while we're starting this all up, what
-        // then? That could mess this chain up.
-        // ^^^ TODO all of this ^^^
+        // If there are no actions left, do nothing.
         if (_appArgs.GetStartupActions().size() == 0)
         {
             return;
         }
 
+        // Get the next action to be processed
         auto nextAction = _appArgs.GetStartupActions().front();
         _appArgs.GetStartupActions().pop_front();
 
-        Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis = get_weak(), nextAction]() {
-            if (auto self = weakThis.get())
+        // Handle it on the UI thread.
+        Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis{ get_weak() }, nextAction]() {
+            if (auto page{ weakThis.get() })
             {
-                self->_actionDispatch->DoAction(nextAction);
+                page->_actionDispatch->DoAction(nextAction);
 
-                self->_ProcessNextStartupAction();
+                // Kick off the next action to be handled (if necessary)
+                page->_ProcessNextStartupAction();
             }
         });
     }
@@ -554,21 +546,17 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // This is one way to set the tab's selected background color.
-        //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-
-        // // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
-        // // Xaml control to the Xaml root.
-        // _tabView.SelectedItem(tabViewItem);
-
+        // If this is the first tab, we don't need to kick off the event to get
+        // the tab's content added to the root of the page. just do it
+        // immediately.
         if (isFirstTab)
         {
             _tabContent.Children().Append(newTab->GetRootElement());
         }
         else
         {
-            // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
-            // Xaml control to the Xaml root.
+            // This kicks off TabView::SelectionChanged, in response to which
+            // we'll attach the terminal's Xaml control to the Xaml root.
             _tabView.SelectedItem(tabViewItem);
         }
     }
@@ -882,10 +870,6 @@ namespace winrt::TerminalApp::implementation
                 page->_UpdateTitle(tab);
             }
         });
-
-        // term.Initialized([this](auto&&, auto&&) {
-        //     _ProcessNextStartupAction();
-        // });
     }
 
     // Method Description:
@@ -1474,28 +1458,23 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    // void TerminalPage::SetStartupActions(std::deque<const TerminalApp::ActionAndArgs>& actions)
-    // {
-    //     for (const auto& a : actions)
-    //     {
-    //         _startupActions.push_back(a);
-    //     }
-    // }
-    int TerminalPage::SetStartupCommandline(winrt::array_view<hstring> args)
+    // Method Description:
+    // - Sets the initial commandline to process on startup, and attempts to
+    //   parse it. Commands will be parsed into a list of ShortcutActions that
+    //   will be processed on TerminalPage::Create().
+    // - This function will have no effective result after Create() is called.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see TerminalPage::_ParseArgs)
+    int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
     {
-        const wchar_t** argv = new const wchar_t*[args.size()];
-        for (uint32_t i = 0; i < args.size(); i++)
-        {
-            auto arg = args.at(i);
-            auto c_str = arg.data();
-            argv[i] = c_str;
-            // argv[i] = args.at(i).data();
-        }
-        return _ParseArgs(args.size(), argv);
-        // for (const auto& a : actions)
-        // {
-        //     _startupActions.push_back(a);
-        // }
+        return _ParseArgs(args);
     }
 
     // Method Description:
@@ -1510,9 +1489,9 @@ namespace winrt::TerminalApp::implementation
     // - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
     // Return Value:
     // - 0 if the commandline was successfully parsed
-    int TerminalPage::_ParseArgs(const int argc, const wchar_t* argv[])
+    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
     {
-        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(argc, argv);
+        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 
         for (auto& cmdBlob : commands)
         {
