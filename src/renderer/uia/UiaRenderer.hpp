@@ -17,6 +17,7 @@ Author(s):
 
 #include "../../renderer/inc/RenderEngineBase.hpp"
 
+#include "../../types/IUiaEventDispatcher.h"
 #include "../../types/inc/Viewport.hpp"
 
 namespace Microsoft::Console::Render
@@ -24,7 +25,7 @@ namespace Microsoft::Console::Render
     class UiaEngine final : public RenderEngineBase
     {
     public:
-        UiaEngine() noexcept;
+        UiaEngine(Microsoft::Console::Types::IUiaEventDispatcher* dispatcher);
 
         // Only one UiaEngine may present information at a time.
         // This ensures that an automation client isn't overwhelmed
@@ -79,5 +80,10 @@ namespace Microsoft::Console::Render
     private:
         bool _isEnabled;
         bool _isPainting;
+        bool _selectionChanged;
+
+        Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
+
+        std::vector<SMALL_RECT> _prevSelection;
     };
 }

@@ -71,8 +71,6 @@ private:
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
 
     void _SetIsFullscreen(const bool fFullscreenEnabled) override;
-    // See IslandWindow::_SetIsFullscreen for details on this method.
-    bool _ShouldUpdateStylesOnFullscreen() const override { return false; };
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;

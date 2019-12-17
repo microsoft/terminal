@@ -2027,10 +2027,15 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 
     const FontInfo& existingFont = GetCurrentFont();
 
+    // The buffer needs to be initialized with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto initAttributes = GetAttributes();
+    initAttributes.SetStandardErase();
+
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
                                                          WindowSize,
-                                                         GetAttributes(),
+                                                         initAttributes,
                                                          *GetPopupAttributes(),
                                                          Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
@@ -2489,9 +2494,14 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     _viewport.ConvertFromOrigin(&relativeCursor);
     RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
-    // Update all the rows in the current viewport with the currently active attributes.
-    OutputCellIterator it(GetAttributes());
-    WriteRect(it, _viewport);
+    // Update all the rows in the current viewport with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto fillAttributes = GetAttributes();
+    fillAttributes.SetStandardErase();
+    auto fillPosition = COORD{ 0, _viewport.Top() };
+    auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
+    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
+    Write(fillData, fillPosition, false);
 
     return S_OK;
 }
@@ -2789,7 +2799,7 @@ void SCREEN_INFORMATION::UpdateBottom()
 }
 
 // Method Description:
-// - Initialize the row with the cursor on it to the current text attributes.
+// - Initialize the row with the cursor on it to the standard erase attributes.
 //      This is executed when we move the cursor below the current viewport in
 //      VT mode. When that happens in a real terminal, the line is brand new,
 //      so it gets initialized for the first time with the current attributes.
@@ -2806,7 +2816,11 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
     {
         const auto& cursor = _textBuffer->GetCursor();
         ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
-        row.GetAttrRow().SetAttrToEnd(0, GetAttributes());
+        // The VT standard requires that the new row is initialized with
+        // the current background color, but with no meta attributes set.
+        auto fillAttributes = GetAttributes();
+        fillAttributes.SetStandardErase();
+        row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
     }
 }
 

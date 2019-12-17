@@ -152,6 +152,9 @@
     <ClInclude Include="..\IBaseData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\IUiaEventDispatcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\inc\utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -36,6 +36,7 @@
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 #include <winrt/Windows.UI.Xaml.Input.h>
 #include <winrt/Windows.UI.Xaml.Interop.h>
+#include <winrt/Windows.ui.xaml.markup.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 

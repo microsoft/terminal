@@ -39,6 +39,7 @@ namespace TerminalApp
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+        Boolean Equals(NewTerminalArgs other);
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs

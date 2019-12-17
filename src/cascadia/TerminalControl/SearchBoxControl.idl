@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.TerminalControl
+{
+    [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
+    {
+        SearchBoxControl();
+        Boolean GoForward { get; };
+        Boolean IsCaseSensitive { get; };
+        void SetFocusOnTextbox();
+        Boolean ContainsFocus();
+
+        event Windows.Foundation.TypedEventHandler<SearchBoxControl, String> Search;
+        event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> Closed;
+    }
+}
