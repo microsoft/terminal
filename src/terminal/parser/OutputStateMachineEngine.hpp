@@ -203,7 +203,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetDesignateType(const wchar_t intermediate,
                                DesignateCharsetTypes& designateType) const;
 
-
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
                                         unsigned int& function) const;
@@ -231,6 +230,5 @@ namespace Microsoft::Console::VirtualTerminal
                              size_t& repeatCount) const noexcept;
 
         void _ClearLastChar() noexcept;
-
     };
 }

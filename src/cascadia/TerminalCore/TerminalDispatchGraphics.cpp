@@ -121,8 +121,8 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
             {
                 unsigned int tableIndex = options.at(2);
                 success = isForeground ?
-                               _terminalApi.SetTextForegroundIndex((BYTE)tableIndex) :
-                               _terminalApi.SetTextBackgroundIndex((BYTE)tableIndex);
+                              _terminalApi.SetTextForegroundIndex((BYTE)tableIndex) :
+                              _terminalApi.SetTextBackgroundIndex((BYTE)tableIndex);
             }
         }
     }

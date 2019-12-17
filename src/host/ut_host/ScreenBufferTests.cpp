@@ -861,13 +861,13 @@ void ScreenBufferTests::OutputNULTest()
 
     Log::Comment(NoThrowString().Format(
         L"Writing many NULs"));
-    stateMachine.ProcessString({L"\0\0\0\0\0\0\0\0", 8});
+    stateMachine.ProcessString({ L"\0\0\0\0\0\0\0\0", 8 });
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
 
     Log::Comment(NoThrowString().Format(
         L"Testing a single NUL followed by real text"));
-    stateMachine.ProcessString({L"\0foo", 4});
+    stateMachine.ProcessString({ L"\0foo", 4 });
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
 
@@ -877,7 +877,7 @@ void ScreenBufferTests::OutputNULTest()
 
     Log::Comment(NoThrowString().Format(
         L"Writing NULs in between other strings"));
-    stateMachine.ProcessString({L"\0foo\0bar\0", 9});
+    stateMachine.ProcessString({ L"\0foo\0bar\0", 9 });
     VERIFY_ARE_EQUAL(6, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
 }
@@ -2119,7 +2119,6 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     Log::Comment(NoThrowString().Format(L"  The fifth with bright-green on dark-blue"));
     Log::Comment(NoThrowString().Format(L"  The sixth with bright-green on default-bg"));
 
-    
     stateMachine.ProcessString(L"\x1b[m"); // Reset to defaults
     stateMachine.ProcessString(L"X");
 
@@ -2366,7 +2365,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
 
     stateMachine.ProcessString(L"\x1b[m");
     stateMachine.ProcessString(L"XX");
-    stateMachine.ProcessString({&UNICODE_BACKSPACE, 1});
+    stateMachine.ProcessString({ &UNICODE_BACKSPACE, 1 });
 
     TextAttribute expectedDefaults{};
     expectedDefaults.SetDefaultBackground();

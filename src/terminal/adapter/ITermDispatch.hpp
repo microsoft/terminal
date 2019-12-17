@@ -24,7 +24,7 @@ class Microsoft::Console::VirtualTerminal::ITermDispatch
 public:
     virtual ~ITermDispatch() = 0;
     virtual void Execute(const wchar_t wchControl) = 0;
-    virtual void Print(const wchar_t wchPrintable) = 0; 
+    virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const std::wstring_view string) = 0;
 
     virtual bool CursorUp(const size_t distance) = 0; // CUU
@@ -76,7 +76,7 @@ public:
 
     virtual bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) = 0; // SGR
 
-    virtual bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECSET 
+    virtual bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECSET
 
     virtual bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECRST
 

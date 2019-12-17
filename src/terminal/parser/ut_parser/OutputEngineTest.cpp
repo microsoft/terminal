@@ -539,7 +539,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         for (const auto& wch : sizeMaxStr)
         {
-            mach.ProcessCharacter(wch); 
+            mach.ProcessCharacter(wch);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
         VERIFY_ARE_EQUAL(mach._oscParameter, sizeMax);

@@ -180,13 +180,13 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 
             // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
             success = SUCCEEDED(SizeTToShort(rowFixed, &coordCursor.Y)) &&
-                       SUCCEEDED(SizeTToShort(colFixed, &coordCursor.X));
+                      SUCCEEDED(SizeTToShort(colFixed, &coordCursor.X));
 
             if (success)
             {
                 // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
                 success = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                           SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+                          SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
 
                 if (success)
                 {

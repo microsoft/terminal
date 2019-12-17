@@ -514,9 +514,9 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
 
                 // _SetRgbColorsHelper will call the appropriate ConApi function
                 success = _SetRgbColorsHelper(options.substr(i),
-                                               rgbColor,
-                                               isForeground,
-                                               optionsConsumed);
+                                              rgbColor,
+                                              isForeground,
+                                              optionsConsumed);
 
                 i += (optionsConsumed - 1); // cOptionsConsumed includes the opt we're currently on.
             }
@@ -524,9 +524,9 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             {
                 _SetGraphicsOptionHelper(opt, attr);
                 success = _pConApi->PrivateSetLegacyAttributes(attr,
-                                                                 _changedForeground,
-                                                                 _changedBackground,
-                                                                 _changedMetaAttrs);
+                                                               _changedForeground,
+                                                               _changedBackground,
+                                                               _changedMetaAttrs);
 
                 // Make sure we un-bold
                 if (success && opt == DispatchTypes::GraphicsOptions::Off)
