@@ -101,6 +101,8 @@ public:
 
     static GUID GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
+    void SetRetroTerminalEffect(bool value) noexcept;
+
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
@@ -119,6 +121,8 @@ private:
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
+
+    static bool _ConvertJsonToBool(const Json::Value& json);
 
     std::optional<GUID> _guid{ std::nullopt };
     std::optional<std::wstring> _source{ std::nullopt };
@@ -163,4 +167,6 @@ private:
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppUnitTests::JsonTests;
     friend class TerminalAppUnitTests::DynamicProfileTests;
+
+    std::optional<bool> _retroTerminalEffect;
 };

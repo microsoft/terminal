@@ -76,7 +76,8 @@ static void EnsureAllResourcesArePresent(const ScopedResourceLoader& loader)
 
 #endif
 
-static ScopedResourceLoader GetLibraryResourceLoader() UTILS_NONDEBUG_NOEXCEPT
+static ScopedResourceLoader GetLibraryResourceLoader()
+try
 {
     ScopedResourceLoader loader{ g_WinRTUtilsLibraryResourceScope };
 #ifdef _DEBUG
@@ -84,9 +85,12 @@ static ScopedResourceLoader GetLibraryResourceLoader() UTILS_NONDEBUG_NOEXCEPT
 #endif
     return loader;
 }
+CATCH_FAIL_FAST()
 
-winrt::hstring GetLibraryResourceString(const std::wstring_view key) UTILS_NONDEBUG_NOEXCEPT
+winrt::hstring GetLibraryResourceString(const std::wstring_view key)
+try
 {
     static auto loader{ GetLibraryResourceLoader() };
     return loader.GetLocalizedString(key);
 }
+CATCH_FAIL_FAST()

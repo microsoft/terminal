@@ -203,6 +203,15 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         coordCursor.Y -= diff;
     }
 
+    // If the margins are set, then it shouldn't be possible for the cursor to
+    //   move below the bottom of the viewport. Either it should be constrained
+    //   inside the margins by one of the scrollDown cases handled above, or
+    //   we'll need to clamp it inside the viewport here.
+    if (fMarginsSet && coordCursor.Y > viewport.BottomInclusive())
+    {
+        coordCursor.Y = viewport.BottomInclusive();
+    }
+
     NTSTATUS Status = STATUS_SUCCESS;
 
     if (coordCursor.Y >= bufferSize.Y)

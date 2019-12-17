@@ -103,7 +103,8 @@ void UiaTextRangeBase::_outputObjectState()
 
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) noexcept
+HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ std::wstring_view wordDelimiters) noexcept
+try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pProvider);
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -113,6 +114,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
     _end = 0;
     _degenerate = true;
     _pData = pData;
+    _wordDelimiters = wordDelimiters;
 
     _id = id;
     ++id;
@@ -125,13 +127,15 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRaw
 
     return S_OK;
 }
+CATCH_RETURN();
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
-                                                 const Cursor& cursor) noexcept
+                                                 const Cursor& cursor,
+                                                 _In_ std::wstring_view wordDelimiters) noexcept
 {
-    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
+    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
     try
     {
@@ -156,9 +160,10 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  const Endpoint start,
                                                  const Endpoint end,
-                                                 const bool degenerate) noexcept
+                                                 const bool degenerate,
+                                                 _In_ std::wstring_view wordDelimiters) noexcept
 {
-    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider));
+    RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
     RETURN_HR_IF(E_INVALIDARG, !degenerate && start > end);
 
     _degenerate = degenerate;
@@ -340,6 +345,14 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         if (unit == TextUnit::TextUnit_Character)
         {
             _end = _start;
+        }
+        else if (unit <= TextUnit::TextUnit_Word)
+        {
+            // expand to word
+            const auto target = _start;
+            _start = _wordBeginEndpoint(_pData, target, _wordDelimiters);
+            _end = _wordEndEndpoint(_pData, target, _wordDelimiters);
+            FAIL_FAST_IF(!(_start <= _end));
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
@@ -601,10 +614,14 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     _outputRowConversions();
 #endif
 
-    auto moveFunc = &_moveByDocument;
+    std::function<std::pair<Endpoint, Endpoint>(gsl::not_null<IUiaData*>, const int, const MoveState, gsl::not_null<int*> const)> moveFunc = &_moveByDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveByCharacter;
+    }
+    else if (unit <= TextUnit::TextUnit_Word)
+    {
+        moveFunc = std::bind(&_moveByWord, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, _wordDelimiters, std::placeholders::_4);
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
@@ -677,10 +694,20 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 
     const MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
 
-    auto moveFunc = &_moveEndpointByUnitDocument;
+    std::function<decltype(_moveEndpointByUnitDocument)> moveFunc = &_moveEndpointByUnitDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveEndpointByUnitCharacter;
+    }
+    else if (unit <= TextUnit::TextUnit_Word)
+    {
+        // bind all params of this function, except put a _wordDelimiters in there
+        // NOTE: using a lambda function here because...
+        //    - lambda is cheaper than std::bind
+        //    - _move* functions are static, but this particular consumer needs access to a member (may be fixed by TODO GH #1993)
+        moveFunc = [=](auto&& pData, auto&& moveCount, auto&& endpoint, auto&& moveState, auto&& pAmountMoved) {
+            return _moveEndpointByUnitWord(pData, moveCount, endpoint, moveState, _wordDelimiters, pAmountMoved);
+        };
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
@@ -965,7 +992,7 @@ const COORD UiaTextRangeBase::_getScreenFontSize() const
 // Routine Description:
 // - Gets the number of rows in the output text buffer.
 // Arguments:
-// - <none>
+// - pData - the UiaData for the terminal we are operating on
 // Return Value:
 // - The number of rows
 const unsigned int UiaTextRangeBase::_getTotalRows(gsl::not_null<IUiaData*> pData) noexcept
@@ -976,7 +1003,7 @@ const unsigned int UiaTextRangeBase::_getTotalRows(gsl::not_null<IUiaData*> pDat
 // Routine Description:
 // - Gets the width of the screen buffer rows
 // Arguments:
-// - <none>
+// - pData - the UiaData for the terminal we are operating on
 // Return Value:
 // - The row width
 const unsigned int UiaTextRangeBase::_getRowWidth(gsl::not_null<IUiaData*> pData)
@@ -988,6 +1015,7 @@ const unsigned int UiaTextRangeBase::_getRowWidth(gsl::not_null<IUiaData*> pData
 // Routine Description:
 // - calculates the column refered to by the endpoint.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - endpoint - the endpoint to translate
 // Return Value:
 // - the column value
@@ -999,6 +1027,7 @@ const Column UiaTextRangeBase::_endpointToColumn(gsl::not_null<IUiaData*> pData,
 // Routine Description:
 // - converts an Endpoint into its equivalent text buffer row.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the text buffer row value
@@ -1012,7 +1041,7 @@ const TextBufferRow UiaTextRangeBase::_endpointToTextBufferRow(gsl::not_null<IUi
 // - counts the number of rows that are fully or partially part of the
 // range.
 // Arguments:
-// - <none>
+// - pData - the UiaData for the terminal we are operating on
 // Return Value:
 // - The number of rows in the range.
 const unsigned int UiaTextRangeBase::_rowCountInRange(gsl::not_null<IUiaData*> pData) const
@@ -1036,6 +1065,7 @@ const unsigned int UiaTextRangeBase::_rowCountInRange(gsl::not_null<IUiaData*> p
 // Routine Description:
 // - Converts a TextBufferRow to a ScreenInfoRow.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
@@ -1050,6 +1080,7 @@ const ScreenInfoRow UiaTextRangeBase::_textBufferRowToScreenInfoRow(gsl::not_nul
 // - Converts a ScreenInfoRow to a ViewportRow. Uses the default
 // viewport for the conversion.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent ViewportRow.
@@ -1064,7 +1095,8 @@ const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(gsl::not_null<IU
 // buffer. The output buffer stores the text in a circular buffer so
 // this method makes sure that we circle around gracefully.
 // Arguments:
-// - the non-normalized row index
+// - pData - the UiaData for the terminal we are operating on
+// - row - the non-normalized row index
 // Return Value:
 // - the normalized row index
 const Row UiaTextRangeBase::_normalizeRow(gsl::not_null<IUiaData*> pData, const Row row) noexcept
@@ -1106,6 +1138,7 @@ const unsigned int UiaTextRangeBase::_getViewportWidth(const SMALL_RECT viewport
 // - checks if the row is currently visible in the viewport. Uses the
 // default viewport.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - row - the screen info row to check
 // Return Value:
 // - true if the row is within the bounds of the viewport
@@ -1133,6 +1166,7 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 // Routine Description:
 // - Converts a ScreenInfoRow to a TextBufferRow.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent TextBufferRow.
@@ -1146,6 +1180,7 @@ const TextBufferRow UiaTextRangeBase::_screenInfoRowToTextBufferRow(gsl::not_nul
 // Routine Description:
 // - Converts a TextBufferRow to an Endpoint.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the TextBufferRow.
@@ -1155,8 +1190,41 @@ const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(gsl::not_null<IUiaData
 }
 
 // Routine Description:
+// - Finds the beginning of the word (Endpoint) for the current target (Endpoint).
+// Arguments:
+// - pData - the UiaData for the terminal we are operating on
+// - target - the Endpoint that is on the word we want to expand to
+// - wordDelimiters - characters to determine the separation between words
+// Return Value:
+// - the equivalent Endpoint, starting at the beginning of the word where _start is located.
+const Endpoint UiaTextRangeBase::_wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters)
+{
+    auto coord = _endpointToCoord(pData, target);
+    coord = pData->GetTextBuffer().GetWordStart(coord, wordDelimiters);
+    return _coordToEndpoint(pData, coord);
+}
+
+// Routine Description:
+// - Finds the end of the word (Endpoint) for the current target (Endpoint).
+// - The "end of the word" is defined to include the following:
+//    any word break characters that are present at the end of the "word", but before the start of the next word.
+// Arguments:
+// - pData - the UiaData for the terminal we are operating on
+// - target - the Endpoint that is on the word we want to expand to
+// - wordDelimiters - characters to determine the separation between words
+// Return Value:
+// - the equivalent Endpoint, starting at the end of the word where _start is located.
+const Endpoint UiaTextRangeBase::_wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters)
+{
+    auto coord = _endpointToCoord(pData, target);
+    coord = pData->GetTextBuffer().GetWordEnd(coord, wordDelimiters, true);
+    return _coordToEndpoint(pData, coord);
+}
+
+// Routine Description:
 // - Converts a ScreenInfoRow to an Endpoint.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent Endpoint.
@@ -1169,6 +1237,7 @@ const Endpoint UiaTextRangeBase::_screenInfoRowToEndpoint(gsl::not_null<IUiaData
 // Routine Description:
 // - Converts an Endpoint to an ScreenInfoRow.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
@@ -1181,6 +1250,7 @@ const ScreenInfoRow UiaTextRangeBase::_endpointToScreenInfoRow(gsl::not_null<IUi
 // Routine Description:
 // - adds the relevant coordinate points from screenInfoRow to coords.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - screenInfoRow - row to calculate coordinate positions from
 // - coords - vector to add the calucated coords to
 // Return Value:
@@ -1252,7 +1322,7 @@ const unsigned int UiaTextRangeBase::_getFirstScreenInfoRowIndex() noexcept
 // Routine Description:
 // - returns the index of the last row of the screen info
 // Arguments:
-// - <none>
+// - pData - the UiaData for the terminal we are operating on
 // Return Value:
 // - the index of the last row (0-indexed) of the screen info
 const unsigned int UiaTextRangeBase::_getLastScreenInfoRowIndex(gsl::not_null<IUiaData*> pData) noexcept
@@ -1274,7 +1344,7 @@ const Column UiaTextRangeBase::_getFirstColumnIndex() noexcept
 // Routine Description:
 // - returns the index of the last column of the screen info rows
 // Arguments:
-// - <none>
+// - pData - the UiaData for the terminal we are operating on
 // Return Value:
 // - the index of the last column (0-indexed) of the screen info rows
 const Column UiaTextRangeBase::_getLastColumnIndex(gsl::not_null<IUiaData*> pData)
@@ -1285,6 +1355,7 @@ const Column UiaTextRangeBase::_getLastColumnIndex(gsl::not_null<IUiaData*> pDat
 // Routine Description:
 // - Compares two sets of screen info coordinates
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - rowA - the row index of the first position
 // - colA - the column index of the first position
 // - rowB - the row index of the second position
@@ -1336,6 +1407,7 @@ const int UiaTextRangeBase::_compareScreenCoords(gsl::not_null<IUiaData*> pData,
 // - calculates new Endpoints if they were to be moved moveCount times
 // by character.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - moveCount - the number of times to move
 // - moveState - values indicating the state of the console for the
 // move operation
@@ -1363,23 +1435,23 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterForward(gsl::not
                                                                         _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
-    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
     Column currentColumn = moveState.StartColumn;
 
-    for (int i = 0; i < abs(count); ++i)
+    for (int i = 0; i < abs(moveCount); ++i)
     {
         // get the current row's right
         const ROW& row = pData->GetTextBuffer().GetRowByOffset(currentScreenInfoRow);
         const size_t right = row.GetCharRow().MeasureRight();
+        const auto expectedColumn = gsl::narrow_cast<size_t>(currentColumn) + 1;
 
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
-            gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
+            expectedColumn >= right)
         {
             break;
         }
-        else if (gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
+        else if (expectedColumn >= right)
         {
             // we're at the edge of a row and need to go to the next one
             currentColumn = moveState.FirstColumnInRow;
@@ -1409,11 +1481,10 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(gsl::no
                                                                          _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
-    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
     Column currentColumn = moveState.StartColumn;
 
-    for (int i = 0; i < abs(count); ++i)
+    for (int i = 0; i < abs(moveCount); ++i)
     {
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
@@ -1452,8 +1523,206 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(gsl::no
 
 // Routine Description:
 // - calculates new Endpoints if they were to be moved moveCount times
+// by word.
+// Arguments:
+// - pData - the UiaData for the terminal we are operating on
+// - moveCount - the number of times to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - wordDelimiters - the list of characters that define a separation of different words
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWord(gsl::not_null<IUiaData*> pData,
+                                                            const int moveCount,
+                                                            const MoveState moveState,
+                                                            const std::wstring_view wordDelimiters,
+                                                            _Out_ gsl::not_null<int*> const pAmountMoved)
+{
+    if (moveState.Direction == MovementDirection::Forward)
+    {
+        return _moveByWordForward(pData, moveCount, moveState, wordDelimiters, pAmountMoved);
+    }
+    else
+    {
+        return _moveByWordBackward(pData, moveCount, moveState, wordDelimiters, pAmountMoved);
+    }
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times in the forward direction
+// by word.
+// Arguments:
+// - pData - the UiaData for the terminal we are operating on
+// - moveCount - the number of times to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - wordDelimiters - the list of characters that define a separation of different words
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordForward(gsl::not_null<IUiaData*> pData,
+                                                                   const int moveCount,
+                                                                   const MoveState moveState,
+                                                                   const std::wstring_view wordDelimiters,
+                                                                   _Out_ gsl::not_null<int*> const pAmountMoved)
+{
+    // STRATEGY:
+    //    - move the "end" Endpoint to the proper place (if need to move multiple times, do it here)
+    //    - find the "start" Endpoint based on that
+
+    *pAmountMoved = 0;
+    ScreenInfoRow currentScreenInfoRow = moveState.EndScreenInfoRow;
+    Column currentColumn = moveState.EndColumn;
+
+    auto& buffer = pData->GetTextBuffer();
+    for (int i = 0; i < abs(moveCount); ++i)
+    {
+        // get the current row's right
+        const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+        const size_t right = row.GetCharRow().MeasureRight();
+        const auto expectedColumn = gsl::narrow_cast<size_t>(currentColumn) + 1;
+
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            expectedColumn >= right)
+        {
+            break;
+        }
+        else if (expectedColumn >= right)
+        {
+            // we're at the edge of a row and need to go to the next one
+            currentColumn = moveState.FirstColumnInRow;
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
+
+            const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+
+            target = buffer.GetWordEnd(target, wordDelimiters, true);
+
+            currentColumn = target.X;
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+            buffer.GetSize().IncrementInBounds(target);
+
+            target = (moveState.Increment == MovementIncrement::Forward) ?
+                         buffer.GetWordEnd(target, wordDelimiters, true) :
+                         buffer.GetWordStart(target, wordDelimiters, true);
+
+            currentColumn = target.X;
+        }
+        *pAmountMoved += static_cast<int>(moveState.Increment);
+
+        FAIL_FAST_IF(!(currentColumn >= _getFirstColumnIndex()));
+        FAIL_FAST_IF(!(currentColumn <= _getLastColumnIndex(pData)));
+        FAIL_FAST_IF(!(currentScreenInfoRow >= _getFirstScreenInfoRowIndex()));
+        FAIL_FAST_IF(!(currentScreenInfoRow <= _getLastScreenInfoRowIndex(pData)));
+    }
+
+    Endpoint end = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+
+    auto target = _endpointToCoord(pData, end);
+    target = buffer.GetWordStart(target, wordDelimiters, true);
+    Endpoint start = _coordToEndpoint(pData, target);
+
+    return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times in the backwards direction
+// by word.
+// Arguments:
+// - pData - the UiaData for the terminal we are operating on
+// - moveCount - the number of times to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - wordDelimiters - the list of characters that define a separation of different words
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByWordBackward(gsl::not_null<IUiaData*> pData,
+                                                                    const int moveCount,
+                                                                    const MoveState moveState,
+                                                                    const std::wstring_view wordDelimiters,
+                                                                    _Out_ gsl::not_null<int*> const pAmountMoved)
+{
+    // STRATEGY:
+    //    - move the "start" Endpoint to the proper place (if need to move multiple times, do it here)
+    //    - find the "end" Endpoint based on that
+
+    *pAmountMoved = 0;
+    ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
+    Column currentColumn = moveState.StartColumn;
+
+    auto& buffer = pData->GetTextBuffer();
+    for (int i = 0; i < abs(moveCount); ++i)
+    {
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            currentColumn == moveState.LastColumnInRow)
+        {
+            break;
+        }
+        else if (currentColumn == moveState.LastColumnInRow)
+        {
+            // we're at the edge of a row and need to go to the
+            // previous one. move to the cell with the last non-whitespace charactor
+
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
+
+            // get the right-most char for the previous row
+            const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+            const size_t right = row.GetCharRow().MeasureRight();
+            currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
+
+            // get the right-most word for the previous row
+            const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+
+            target = buffer.GetWordStart(target, wordDelimiters, true);
+            buffer.GetSize().IncrementInBounds(target);
+
+            currentColumn = target.X;
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+            buffer.GetSize().DecrementInBounds(target);
+
+            target = (moveState.Increment == MovementIncrement::Forward) ?
+                         buffer.GetWordEnd(target, wordDelimiters, true) :
+                         buffer.GetWordStart(target, wordDelimiters, true);
+
+            currentColumn = target.X;
+        }
+        *pAmountMoved += static_cast<int>(moveState.Increment);
+
+        FAIL_FAST_IF(!(currentColumn >= _getFirstColumnIndex()));
+        FAIL_FAST_IF(!(currentColumn <= _getLastColumnIndex(pData)));
+        FAIL_FAST_IF(!(currentScreenInfoRow >= _getFirstScreenInfoRowIndex()));
+        FAIL_FAST_IF(!(currentScreenInfoRow <= _getLastScreenInfoRowIndex(pData)));
+    }
+
+    Endpoint start = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+
+    auto target = _endpointToCoord(pData, start);
+    target = buffer.GetWordEnd(target, wordDelimiters, true);
+    Endpoint end = _coordToEndpoint(pData, target);
+
+    return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
 // by line.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - moveCount - the number of times to move
 // - moveState - values indicating the state of the console for the
 // move operation
@@ -1501,6 +1770,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByLine(gsl::not_null<IUiaDa
 // - calculates new Endpoints if they were to be moved moveCount times
 // by document.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - moveCount - the number of times to move
 // - moveState - values indicating the state of the console for the
 // move operation
@@ -1527,6 +1797,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByDocument(gsl::not_null<IU
 // - calculates new Endpoints/degenerate state if the indicated
 // endpoint was moved moveCount times by character.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - moveCount - the number of times to move
 // - endpoint - the endpoint to move
 // - moveState - values indicating the state of the console for the
@@ -1558,7 +1829,6 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> p
                                                       _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
-    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = 0;
     Column currentColumn = 0;
 
@@ -1574,19 +1844,20 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> p
         currentColumn = moveState.EndColumn;
     }
 
-    for (int i = 0; i < abs(count); ++i)
+    for (int i = 0; i < abs(moveCount); ++i)
     {
         // get the current row's right
         const ROW& row = pData->GetTextBuffer().GetRowByOffset(currentScreenInfoRow);
         const size_t right = row.GetCharRow().MeasureRight();
+        const auto expectedColumn = gsl::narrow_cast<size_t>(currentColumn) + 1;
 
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
-            gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
+            expectedColumn >= right)
         {
             break;
         }
-        else if (gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
+        else if (expectedColumn >= right)
         {
             // we're at the edge of a row and need to go to the next one
             currentColumn = moveState.FirstColumnInRow;
@@ -1647,7 +1918,6 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> 
                                                        _Out_ gsl::not_null<int*> const pAmountMoved)
 {
     *pAmountMoved = 0;
-    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = 0;
     Column currentColumn = 0;
 
@@ -1663,7 +1933,7 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> 
         currentColumn = moveState.EndColumn;
     }
 
-    for (int i = 0; i < abs(count); ++i)
+    for (int i = 0; i < abs(moveCount); ++i)
     {
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
@@ -1731,8 +2001,280 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> 
 
 // Routine Description:
 // - calculates new Endpoints/degenerate state if the indicated
+// endpoint was moved moveCount times by word.
+// Arguments:
+// - pData - the UiaData for the terminal we are operating on
+// - moveCount - the number of times to move
+// - endpoint - the endpoint to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - A tuple of elements of the form <start, end, degenerate>
+std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitWord(gsl::not_null<IUiaData*> pData,
+                                                                               const int moveCount,
+                                                                               const TextPatternRangeEndpoint endpoint,
+                                                                               const MoveState moveState,
+                                                                               const std::wstring_view wordDelimiters,
+                                                                               _Out_ gsl::not_null<int*> const pAmountMoved)
+{
+    if (moveState.Direction == MovementDirection::Forward)
+    {
+        return _moveEndpointByUnitWordForward(pData, moveCount, endpoint, moveState, wordDelimiters, pAmountMoved);
+    }
+    else
+    {
+        return _moveEndpointByUnitWordBackward(pData, moveCount, endpoint, moveState, wordDelimiters, pAmountMoved);
+    }
+}
+
+std::tuple<Endpoint, Endpoint, bool>
+UiaTextRangeBase::_moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
+                                                 const int moveCount,
+                                                 const TextPatternRangeEndpoint endpoint,
+                                                 const MoveState moveState,
+                                                 const std::wstring_view wordDelimiters,
+                                                 _Out_ gsl::not_null<int*> const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    ScreenInfoRow currentScreenInfoRow = 0;
+    Column currentColumn = 0;
+
+    // set current location vars
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        currentScreenInfoRow = moveState.StartScreenInfoRow;
+        currentColumn = moveState.StartColumn;
+    }
+    else
+    {
+        currentScreenInfoRow = moveState.EndScreenInfoRow;
+        currentColumn = moveState.EndColumn;
+    }
+
+    auto& buffer = pData->GetTextBuffer();
+    for (int i = 0; i < abs(moveCount); ++i)
+    {
+        // get the current row's right
+        const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+        const size_t right = row.GetCharRow().MeasureRight();
+        const auto expectedColumn = gsl::narrow_cast<size_t>(currentColumn) + 1;
+
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            expectedColumn >= right)
+        {
+            break;
+        }
+        else if (expectedColumn >= right)
+        {
+            // we're at the edge of a row and need to go to the next one
+            currentColumn = moveState.FirstColumnInRow;
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
+
+            // when moving end, we need to encompass the word
+            if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
+            {
+                const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+                auto target = _endpointToCoord(pData, point);
+
+                target = buffer.GetWordEnd(target, wordDelimiters, true);
+
+                currentColumn = target.X;
+            }
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+            buffer.GetSize().IncrementInBounds(target);
+
+            target = (moveState.Increment == MovementIncrement::Forward) ?
+                         buffer.GetWordEnd(target, wordDelimiters, true) :
+                         buffer.GetWordStart(target, wordDelimiters, true);
+
+            if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+            {
+                buffer.GetSize().IncrementInBounds(target);
+
+                if (static_cast<Column>(target.X) == moveState.FirstColumnInRow && currentScreenInfoRow != moveState.LimitingRow)
+                {
+                    currentScreenInfoRow += static_cast<int>(moveState.Increment);
+                }
+            }
+
+            currentColumn = target.X;
+        }
+        *pAmountMoved += static_cast<int>(moveState.Increment);
+
+        FAIL_FAST_IF(!(currentColumn >= _getFirstColumnIndex()));
+        FAIL_FAST_IF(!(currentColumn <= _getLastColumnIndex(pData)));
+        FAIL_FAST_IF(!(currentScreenInfoRow >= _getFirstScreenInfoRowIndex()));
+        FAIL_FAST_IF(!(currentScreenInfoRow <= _getLastScreenInfoRowIndex(pData)));
+    }
+
+    // translate the row back to an endpoint and handle any crossed endpoints
+    const Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+    Endpoint start = _screenInfoRowToEndpoint(pData, moveState.StartScreenInfoRow) + moveState.StartColumn;
+    Endpoint end = _screenInfoRowToEndpoint(pData, moveState.EndScreenInfoRow) + moveState.EndColumn;
+    bool degenerate = false;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        start = convertedEndpoint;
+        if (_compareScreenCoords(pData,
+                                 currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.EndScreenInfoRow,
+                                 moveState.EndColumn) == 1)
+        {
+            end = start;
+            degenerate = true;
+        }
+    }
+    else
+    {
+        end = convertedEndpoint;
+        if (_compareScreenCoords(pData,
+                                 currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.StartScreenInfoRow,
+                                 moveState.StartColumn) == -1)
+        {
+            start = end;
+            degenerate = true;
+        }
+    }
+    return std::make_tuple(start, end, degenerate);
+}
+
+std::tuple<Endpoint, Endpoint, bool>
+UiaTextRangeBase::_moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData,
+                                                  const int moveCount,
+                                                  const TextPatternRangeEndpoint endpoint,
+                                                  const MoveState moveState,
+                                                  const std::wstring_view wordDelimiters,
+                                                  _Out_ gsl::not_null<int*> const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    ScreenInfoRow currentScreenInfoRow = 0;
+    Column currentColumn = 0;
+
+    // set current location vars
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        currentScreenInfoRow = moveState.StartScreenInfoRow;
+        currentColumn = moveState.StartColumn;
+    }
+    else
+    {
+        currentScreenInfoRow = moveState.EndScreenInfoRow;
+        currentColumn = moveState.EndColumn;
+    }
+
+    auto& buffer = pData->GetTextBuffer();
+    for (int i = 0; i < abs(moveCount); ++i)
+    {
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            currentColumn == moveState.LastColumnInRow)
+        {
+            break;
+        }
+        else if (currentColumn == moveState.LastColumnInRow)
+        {
+            // we're at the edge of a row and need to go to the
+            // next one. move to the cell with the last non-whitespace charactor
+
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
+            // get the right cell for the next row
+            const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+            const size_t right = row.GetCharRow().MeasureRight();
+            currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
+
+            // get the right-most word for the previous row
+            const auto point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+
+            target = buffer.GetWordStart(target, wordDelimiters, true);
+
+            if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+            {
+                buffer.GetSize().IncrementInBounds(target);
+            }
+
+            currentColumn = target.X;
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            const Endpoint point = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+            auto target = _endpointToCoord(pData, point);
+            buffer.GetSize().DecrementInBounds(target);
+
+            target = (moveState.Increment == MovementIncrement::Forward) ?
+                         buffer.GetWordEnd(target, wordDelimiters, true) :
+                         buffer.GetWordStart(target, wordDelimiters, true);
+
+            if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
+            {
+                buffer.GetSize().DecrementInBounds(target);
+
+                if (static_cast<Column>(target.X) == moveState.FirstColumnInRow && currentScreenInfoRow != moveState.LimitingRow)
+                {
+                    currentScreenInfoRow += static_cast<int>(moveState.Increment);
+                }
+            }
+
+            currentColumn = target.X;
+        }
+        *pAmountMoved += static_cast<int>(moveState.Increment);
+
+        FAIL_FAST_IF(!(currentColumn >= _getFirstColumnIndex()));
+        FAIL_FAST_IF(!(currentColumn <= _getLastColumnIndex(pData)));
+        FAIL_FAST_IF(!(currentScreenInfoRow >= _getFirstScreenInfoRowIndex()));
+        FAIL_FAST_IF(!(currentScreenInfoRow <= _getLastScreenInfoRowIndex(pData)));
+    }
+
+    // translate the row back to an endpoint and handle any crossed endpoints
+    const Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+    Endpoint start = _screenInfoRowToEndpoint(pData, moveState.StartScreenInfoRow) + moveState.StartColumn;
+    Endpoint end = _screenInfoRowToEndpoint(pData, moveState.EndScreenInfoRow) + moveState.EndColumn;
+    bool degenerate = false;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        start = convertedEndpoint;
+        if (_compareScreenCoords(pData,
+                                 currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.EndScreenInfoRow,
+                                 moveState.EndColumn) == 1)
+        {
+            end = start;
+            degenerate = true;
+        }
+    }
+    else
+    {
+        end = convertedEndpoint;
+        if (_compareScreenCoords(pData,
+                                 currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.StartScreenInfoRow,
+                                 moveState.StartColumn) == -1)
+        {
+            start = end;
+            degenerate = true;
+        }
+    }
+    return std::make_tuple(start, end, degenerate);
+}
+
+// Routine Description:
+// - calculates new Endpoints/degenerate state if the indicated
 // endpoint was moved moveCount times by line.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - moveCount - the number of times to move
 // - endpoint - the endpoint to move
 // - moveState - values indicating the state of the console for the
@@ -1892,6 +2434,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitLine(g
 // - calculates new Endpoints/degenerate state if the indicate
 // endpoint was moved moveCount times by document.
 // Arguments:
+// - pData - the UiaData for the terminal we are operating on
 // - moveCount - the number of times to move
 // - endpoint - the endpoint to move
 // - moveState - values indicating the state of the console for the

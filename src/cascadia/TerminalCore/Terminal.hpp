@@ -59,6 +59,9 @@ public:
 
     short GetBufferHeight() const noexcept;
 
+    int ViewStartIndex() const noexcept;
+    int ViewEndIndex() const noexcept;
+
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     bool PrintString(std::wstring_view stringView) override;
@@ -98,6 +101,7 @@ public:
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
+    COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
 
@@ -178,12 +182,6 @@ private:
         Word,
         Line
     };
-    enum class DelimiterClass
-    {
-        ControlChar,
-        DelimiterChar,
-        RegularChar
-    };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
@@ -222,8 +220,8 @@ private:
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    int _ViewStartIndex() const noexcept;
     int _VisibleStartIndex() const noexcept;
+    int _VisibleEndIndex() const noexcept;
 
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
@@ -241,7 +239,6 @@ private:
     SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
     COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
-    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar) const noexcept;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
     std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;

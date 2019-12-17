@@ -382,15 +382,18 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 // - true iff we successfully updated the color table entry.
 bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
-    if (tableIndex > _colorTable.size())
+    try
+    {
+        _colorTable.at(tableIndex) = color;
+
+        // Repaint everything - the colors might have changed
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        return true;
+    }
+    catch (std::out_of_range&)
     {
         return false;
     }
-    _colorTable.at(tableIndex) = color;
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
 }
 
 // Method Description:
