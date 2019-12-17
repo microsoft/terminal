@@ -307,7 +307,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
-        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345);
+        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345u);
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -442,12 +442,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'0');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         mach.ProcessCharacter(L';');
-        for (int i = 0; i < MAX_PATH; i++) // The buffer is only 256 long, so any longer value should work :P
+        for (int i = 0; i < 260u; i++) // The buffer is only 256 long, so any longer value should work :P
         {
             mach.ProcessCharacter(L's');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         }
-        VERIFY_ARE_EQUAL(mach._oscString.size(), MAX_PATH);
+        VERIFY_ARE_EQUAL(mach._oscString.size(), 260u);
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -468,7 +468,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -498,7 +498,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
