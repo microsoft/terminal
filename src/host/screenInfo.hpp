@@ -39,7 +39,6 @@ Revision History:
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../inc/ITerminalOutputConnection.hpp"
@@ -48,6 +47,7 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 
 #include "../types/inc/Viewport.hpp"
+#include "../types/IConsoleWindow.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
@@ -131,7 +131,8 @@ public:
     OutputCellIterator Write(const OutputCellIterator it);
 
     OutputCellIterator Write(const OutputCellIterator it,
-                             const COORD target);
+                             const COORD target,
+                             const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteRect(const OutputCellIterator it,
                                  const Microsoft::Console::Types::Viewport viewport);
@@ -167,13 +168,6 @@ public:
     SCREEN_INFORMATION* Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
-    WCHAR LineChar[6];
-#define UPPER_LEFT_CORNER 0
-#define UPPER_RIGHT_CORNER 1
-#define HORIZONTAL_LINE 2
-#define VERTICAL_LINE 3
-#define BOTTOM_LEFT_CORNER 4
-#define BOTTOM_RIGHT_CORNER 5
 
     // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;

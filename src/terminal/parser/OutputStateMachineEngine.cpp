@@ -42,8 +42,27 @@ ITermDispatch& OutputStateMachineEngine::Dispatch() noexcept
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
+    // microsoft/terminal#1825 - VT applications expect to be able to write NUL
+    // and have _nothing_ happen. Filter the NULs here, so they don't fill the
+    // buffer with empty spaces.
+    if (wch == AsciiChars::NUL)
+    {
+        return true;
+    }
+
     _dispatch->Execute(wch);
     _ClearLastChar();
+
+    if (wch == AsciiChars::BEL)
+    {
+        // microsoft/terminal#2952
+        // If we're attached to a terminal, let's also pass the BEL through.
+        if (_pfnFlushToTerminal != nullptr)
+        {
+            _pfnFlushToTerminal();
+        }
+    }
+
     return true;
 }
 
@@ -175,11 +194,11 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
             break;
         case VTActionCodes::DECSC_CursorSave:
-            fSuccess = _dispatch->CursorSavePosition();
+            fSuccess = _dispatch->CursorSaveState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
             break;
         case VTActionCodes::DECRC_CursorRestore:
-            fSuccess = _dispatch->CursorRestorePosition();
+            fSuccess = _dispatch->CursorRestoreState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
             break;
         case VTActionCodes::DECKPAM_KeypadApplicationMode:
@@ -293,6 +312,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case VTActionCodes::CNL_CursorNextLine:
         case VTActionCodes::CPL_CursorPrevLine:
         case VTActionCodes::CHA_CursorHorizontalAbsolute:
+        case VTActionCodes::HPA_HorizontalPositionAbsolute:
         case VTActionCodes::VPA_VerticalLinePositionAbsolute:
         case VTActionCodes::ICH_InsertCharacter:
         case VTActionCodes::DCH_DeleteCharacter:
@@ -380,6 +400,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
                 break;
             case VTActionCodes::CHA_CursorHorizontalAbsolute:
+            case VTActionCodes::HPA_HorizontalPositionAbsolute:
                 fSuccess = _dispatch->CursorHorizontalPositionAbsolute(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
                 break;
@@ -433,11 +454,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
                 break;
             case VTActionCodes::ANSISYSSC_CursorSave:
-                fSuccess = _dispatch->CursorSavePosition();
+                fSuccess = _dispatch->CursorSaveState();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
                 break;
             case VTActionCodes::ANSISYSRC_CursorRestore:
-                fSuccess = _dispatch->CursorRestorePosition();
+                fSuccess = _dispatch->CursorRestoreState();
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
                 break;
             case VTActionCodes::IL_InsertLine:

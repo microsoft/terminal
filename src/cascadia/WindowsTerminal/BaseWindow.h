@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include "..\types\IConsoleWindow.hpp"
+#include "..\types\WindowUiaProviderBase.hpp"
+
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
 
 #include <wil/resource.h>
+
+using namespace Microsoft::Console::Types;
 
 template<typename T>
 class BaseWindow
@@ -29,10 +34,8 @@ public:
             WINRT_ASSERT(that);
             WINRT_ASSERT(!that->_window);
             that->_window = wil::unique_hwnd(window);
-            SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
 
-            EnableNonClientDpiScaling(window);
-            that->_currentDpi = GetDpiForWindow(window);
+            return that->_OnNcCreate(wparam, lparam);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -51,8 +54,24 @@ public:
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
 
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+        case WM_GETOBJECT:
+        {
+            return HandleGetObject(_window.get(), wparam, lparam);
+        }
+        */
+
         case WM_DESTROY:
         {
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+            // signal to uia that they can disconnect our uia provider
+            if (_pUiaProvider)
+            {
+                UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+            }
+            */
             PostQuitMessage(0);
             return 0;
         }
@@ -121,6 +140,22 @@ public:
         return 0;
     }
 
+    [[nodiscard]] LRESULT HandleGetObject(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
+    {
+        LRESULT retVal = 0;
+
+        // If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
+        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+        {
+            retVal = UiaReturnRawElementProvider(hWnd, wParam, lParam, _GetUiaProvider());
+        }
+        // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).
+
+        return retVal;
+    }
+
+    virtual IRawElementProviderSimple* _GetUiaProvider() = 0;
+
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
     virtual void OnRestore() = 0;
@@ -135,7 +170,7 @@ public:
     HWND GetHandle() const noexcept
     {
         return _window.get();
-    };
+    }
 
     float GetCurrentDpiScale() const noexcept
     {
@@ -187,7 +222,16 @@ public:
     {
         _title = newTitle;
         PostMessageW(_window.get(), CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
-    };
+    }
+
+    // Method Description:
+    // Reset the current dpi of the window. This method is only called after we change the
+    // initial launch position. This makes sure the dpi is consistent with the monitor on which
+    // the window will launch
+    void RefreshCurrentDPI()
+    {
+        _currentDpi = GetDpiForWindow(_window.get());
+    }
 
 protected:
     using base_type = BaseWindow<T>;
@@ -199,6 +243,20 @@ protected:
     std::wstring _title = L"";
 
     bool _minimized = false;
+
+    // Method Description:
+    // - This method is called when the window receives the WM_NCCREATE message.
+    // Return Value:
+    // - The value returned from the window proc.
+    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+    {
+        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
+        EnableNonClientDpiScaling(_window.get());
+        _currentDpi = GetDpiForWindow(_window.get());
+
+        return DefWindowProc(_window.get(), WM_NCCREATE, wParam, lParam);
+    };
 };
 
 template<typename T>

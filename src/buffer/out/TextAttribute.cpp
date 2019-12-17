@@ -16,7 +16,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - color that should be displayed as the foreground color
 COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                                COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const
+                                               COLORREF defaultBgColor) const noexcept
 {
     return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
 }
@@ -29,7 +29,7 @@ COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> 
 // - color that should be displayed as the background color
 COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                                COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const
+                                               COLORREF defaultBgColor) const noexcept
 {
     return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
 }
@@ -42,9 +42,9 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
 // Return Value:
 // - color that is stored as the foreground color
 COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const
+                                          COLORREF defaultColor) const noexcept
 {
-    return _foreground.GetColor(colorTable, defaultColor, _isBold);
+    return _foreground.GetColor(colorTable, defaultColor, IsBold());
 }
 
 // Routine Description:
@@ -55,7 +55,7 @@ COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> color
 // Return Value:
 // - color that is stored as the background color
 COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const
+                                          COLORREF defaultColor) const noexcept
 {
     return _background.GetColor(colorTable, defaultColor, false);
 }
@@ -75,22 +75,22 @@ WORD TextAttribute::GetMetaAttributes() const noexcept
     return wMeta;
 }
 
-void TextAttribute::SetForeground(const COLORREF rgbForeground)
+void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);
 }
 
-void TextAttribute::SetBackground(const COLORREF rgbBackground)
+void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 {
     _background = TextColor(rgbBackground);
 }
 
 void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
-    _wAttrLegacy = static_cast<WORD>(wLegacy & META_ATTRS);
+    _wAttrLegacy = gsl::narrow_cast<WORD>(wLegacy & META_ATTRS);
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-    BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
-    BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
+    const BYTE fgIndex = gsl::narrow_cast<BYTE>(wLegacy & FG_ATTRS);
+    const BYTE bgIndex = gsl::narrow_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
     _foreground = TextColor(fgIndex);
     _background = TextColor(bgIndex);
 }
@@ -98,16 +98,16 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 void TextAttribute::SetLegacyAttributes(const WORD attrs,
                                         const bool setForeground,
                                         const bool setBackground,
-                                        const bool setMeta)
+                                        const bool setMeta) noexcept
 {
     if (setForeground)
     {
-        BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
+        const BYTE fgIndex = gsl::narrow_cast<BYTE>(attrs & FG_ATTRS);
         _foreground = TextColor(fgIndex);
     }
     if (setBackground)
     {
-        BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
+        const BYTE bgIndex = gsl::narrow_cast<BYTE>(attrs & BG_ATTRS) >> 4;
         _background = TextColor(bgIndex);
     }
     if (setMeta)
@@ -133,17 +133,17 @@ void TextAttribute::SetIndexedAttributes(const std::optional<const BYTE> foregro
 {
     if (foreground)
     {
-        BYTE fgIndex = (*foreground) & 0xFF;
+        const BYTE fgIndex = (*foreground) & 0xFF;
         _foreground = TextColor(fgIndex);
     }
     if (background)
     {
-        BYTE bgIndex = (*background) & 0xFF;
+        const BYTE bgIndex = (*background) & 0xFF;
         _background = TextColor(bgIndex);
     }
 }
 
-void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
+void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
 {
     if (fIsForeground)
     {
@@ -153,11 +153,6 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
     {
         SetBackground(rgbColor);
     }
-}
-
-bool TextAttribute::IsBold() const noexcept
-{
-    return _isBold;
 }
 
 bool TextAttribute::_IsReverseVideo() const noexcept
@@ -215,6 +210,11 @@ void TextAttribute::Debolden() noexcept
     _SetBoldness(false);
 }
 
+void TextAttribute::SetExtendedAttributes(const ExtendedAttributes attrs) noexcept
+{
+    _extendedAttrs = attrs;
+}
+
 // Routine Description:
 // - swaps foreground and background color
 void TextAttribute::Invert() noexcept
@@ -224,7 +224,7 @@ void TextAttribute::Invert() noexcept
 
 void TextAttribute::_SetBoldness(const bool isBold) noexcept
 {
-    _isBold = isBold;
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
 }
 
 void TextAttribute::SetDefaultForeground() noexcept
@@ -265,4 +265,13 @@ bool TextAttribute::ForegroundIsDefault() const noexcept
 bool TextAttribute::BackgroundIsDefault() const noexcept
 {
     return _background.IsDefault();
+}
+
+// Routine Description:
+// - Resets the meta and extended attributes, which is what the VT standard
+//      requires for most erasing and filling operations.
+void TextAttribute::SetStandardErase() noexcept
+{
+    SetExtendedAttributes(ExtendedAttributes::Normal);
+    SetMetaAttributes(0);
 }

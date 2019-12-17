@@ -1,111 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "../ActionArgs.idl";
+import "../ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    enum Direction
-    {
-        Left = 0,
-        Right,
-        Up,
-        Down
-    };
-
-    enum ShortcutAction
-    {
-        CopyText = 0,
-        CopyTextWithoutNewlines,
-        PasteText,
-        NewTab,
-        DuplicateTab,
-        NewTabProfile0,
-        NewTabProfile1,
-        NewTabProfile2,
-        NewTabProfile3,
-        NewTabProfile4,
-        NewTabProfile5,
-        NewTabProfile6,
-        NewTabProfile7,
-        NewTabProfile8,
-        NewWindow,
-        CloseWindow,
-        CloseTab,
-        NextTab,
-        PrevTab,
-        SplitVertical,
-        SplitHorizontal,
-        SwitchToTab0,
-        SwitchToTab1,
-        SwitchToTab2,
-        SwitchToTab3,
-        SwitchToTab4,
-        SwitchToTab5,
-        SwitchToTab6,
-        SwitchToTab7,
-        SwitchToTab8,
-        IncreaseFontSize,
-        DecreaseFontSize,
-        ScrollUp,
-        ScrollDown,
-        ScrollUpPage,
-        ScrollDownPage,
-        ResizePaneLeft,
-        ResizePaneRight,
-        ResizePaneUp,
-        ResizePaneDown,
-        OpenSettings
-    };
-
-    delegate void CopyTextEventArgs(Boolean trimWhitespace);
-    delegate void PasteTextEventArgs();
-    delegate void NewTabEventArgs();
-    delegate void DuplicateTabEventArgs();
-    delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
-    delegate void NewWindowEventArgs();
-    delegate void CloseWindowEventArgs();
-    delegate void CloseTabEventArgs();
-    delegate void NextTabEventArgs();
-    delegate void PrevTabEventArgs();
-    delegate void SplitVerticalEventArgs();
-    delegate void SplitHorizontalEventArgs();
-    delegate void SwitchToTabEventArgs(Int32 profileIndex);
-    delegate void IncreaseFontSizeEventArgs();
-    delegate void DecreaseFontSizeEventArgs();
-    delegate void ScrollUpEventArgs();
-    delegate void ScrollDownEventArgs();
-    delegate void ScrollUpPageEventArgs();
-    delegate void ScrollDownPageEventArgs();
-    delegate void OpenSettingsEventArgs();
-    delegate void ResizePaneEventArgs(Direction direction);
-
-    [default_interface]
-    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
-        Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
+        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.Settings.KeyChord chord);
+        void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
 
-        event CopyTextEventArgs CopyText;
-        event PasteTextEventArgs PasteText;
-        event NewTabEventArgs NewTab;
-        event DuplicateTabEventArgs DuplicateTab;
-        event NewTabWithProfileEventArgs NewTabWithProfile;
-        event NewWindowEventArgs NewWindow;
-        event CloseWindowEventArgs CloseWindow;
-        event CloseTabEventArgs CloseTab;
-        event SwitchToTabEventArgs SwitchToTab;
-        event NextTabEventArgs NextTab;
-        event PrevTabEventArgs PrevTab;
-        event SplitVerticalEventArgs SplitVertical;
-        event SplitHorizontalEventArgs SplitHorizontal;
-        event IncreaseFontSizeEventArgs IncreaseFontSize;
-        event DecreaseFontSizeEventArgs DecreaseFontSize;
-        event ScrollUpEventArgs ScrollUp;
-        event ScrollDownEventArgs ScrollDown;
-        event ScrollUpPageEventArgs ScrollUpPage;
-        event ScrollDownPageEventArgs ScrollDownPage;
-        event OpenSettingsEventArgs OpenSettings;
-        event ResizePaneEventArgs ResizePane;
+        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

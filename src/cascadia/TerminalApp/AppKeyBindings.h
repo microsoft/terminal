@@ -4,7 +4,17 @@
 #pragma once
 
 #include "AppKeyBindings.g.h"
+#include "ActionArgs.h"
+#include "ShortcutActionDispatch.h"
 #include "..\inc\cppwinrt_utils.h"
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class KeyBindingsTests;
+    class TestUtils;
+}
 
 namespace winrt::TerminalApp::implementation
 {
@@ -33,45 +43,33 @@ namespace winrt::TerminalApp::implementation
         AppKeyBindings() = default;
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
-        void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
-        Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
+
+        void SetKeyBinding(TerminalApp::ActionAndArgs const& actionAndArgs,
+                           winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+        void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+        Microsoft::Terminal::Settings::KeyChord GetKeyBindingForAction(TerminalApp::ShortcutAction const& action);
+        Microsoft::Terminal::Settings::KeyChord GetKeyBindingForActionWithArgs(TerminalApp::ActionAndArgs const& actionAndArgs);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
-        static winrt::hstring FormatOverrideShortcutText(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
-        // clang-format off
-        DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
-        DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
-        DECLARE_EVENT(NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
-        DECLARE_EVENT(DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
-        DECLARE_EVENT(NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
-        DECLARE_EVENT(NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
-        DECLARE_EVENT(CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
-        DECLARE_EVENT(CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
-        DECLARE_EVENT(SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
-        DECLARE_EVENT(NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
-        DECLARE_EVENT(PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
-        DECLARE_EVENT(SplitVertical,     _SplitVerticalHandlers,     TerminalApp::SplitVerticalEventArgs);
-        DECLARE_EVENT(SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
-        DECLARE_EVENT(IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
-        DECLARE_EVENT(DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
-        DECLARE_EVENT(ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
-        DECLARE_EVENT(ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
-        DECLARE_EVENT(ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
-        DECLARE_EVENT(ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
-        DECLARE_EVENT(OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
-        DECLARE_EVENT(ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
-        // clang-format on
+        // Defined in AppKeyBindingsSerialization.cpp
+        void LayerJson(const Json::Value& json);
+        Json::Value ToJson();
+
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
     private:
-        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
-        bool _DoAction(ShortcutAction action);
+        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
+
+        winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
+
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::KeyBindingsTests;
+        friend class TerminalAppLocalTests::TestUtils;
     };
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings, implementation::AppKeyBindings>
-    {
-    };
+    BASIC_FACTORY(AppKeyBindings);
 }

@@ -47,6 +47,20 @@ bool TerminalDispatch::CursorForward(const unsigned int uiDistance)
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
 
+bool TerminalDispatch::CursorBackward(const unsigned int uiDistance)
+{
+    const auto cursorPos = _terminalApi.GetCursorPosition();
+    const COORD newCursorPos{ cursorPos.X - gsl::narrow<short>(uiDistance), cursorPos.Y };
+    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+}
+
+bool TerminalDispatch::CursorUp(const unsigned int uiDistance)
+{
+    const auto cursorPos = _terminalApi.GetCursorPosition();
+    const COORD newCursorPos{ cursorPos.X, cursorPos.Y + gsl::narrow<short>(uiDistance) };
+    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+}
+
 bool TerminalDispatch::EraseCharacters(const unsigned int uiNumChars)
 {
     return _terminalApi.EraseCharacters(uiNumChars);
@@ -95,4 +109,48 @@ bool TerminalDispatch::SetDefaultForeground(const DWORD dwColor)
 bool TerminalDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     return _terminalApi.SetDefaultBackground(dwColor);
+}
+
+// Method Description:
+// - Erases characters in the buffer depending on the erase type
+// Arguments:
+// - eraseType: the erase type (from beginning, to end, or all)
+// Return Value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
+{
+    return _terminalApi.EraseInLine(eraseType);
+}
+
+// Method Description:
+// - Deletes uiCount number of characters starting from where the cursor is currently
+// Arguments:
+// - uiCount, the number of characters to delete
+// Return Value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::DeleteCharacter(const unsigned int uiCount)
+{
+    return _terminalApi.DeleteCharacter(uiCount);
+}
+
+// Method Description:
+// - Adds uiCount number of spaces starting from where the cursor is currently
+// Arguments:
+// - uiCount, the number of spaces to add
+// Return Value:
+// True if handled successfully, false otherwise
+bool TerminalDispatch::InsertCharacter(const unsigned int uiCount)
+{
+    return _terminalApi.InsertCharacter(uiCount);
+}
+
+// Method Description:
+// - Moves the viewport and erases text from the buffer depending on the eraseType
+// Arguments:
+// - eraseType: the desired erase type
+// Return Value:
+// True if handled successfully. False otherwise
+bool TerminalDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
+{
+    return _terminalApi.EraseInDisplay(eraseType);
 }

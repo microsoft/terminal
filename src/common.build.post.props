@@ -1,33 +1,63 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- By default, binplace our output under the bin/ directory in the root of
-       the project. The other non-cppwinrt projects are binplaced there as well.
-       However, Cascadia projects want to be built into an appx, and the wapproj
-       that consumes them will complain if you do this. So they'll set
-       NoOutputRedirection before including this props file.
-  -->
-  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <!-- Definition the program database type has to come after Microsoft.Cpp.props or it will be
-       rewritten to /ZI (edit-and-continue) type every time. -->
+
   <ItemDefinitionGroup>
+    <!-- Definition the program database type has to come after Microsoft.Cpp.props or it will be
+         rewritten to /ZI (edit-and-continue) type every time. -->
     <ClCompile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>onecoreuap_apiset.lib;d3dcompiler.lib;dwmapi.lib;uxtheme.lib;shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
-  <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
+
+  <!-- DLLs Only -->
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'DynamicLibrary'">
+    <ClCompile>
+      <PreprocessorDefinitions>_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Static Libs Only -->
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'StaticLibrary'">
+    <ClCompile>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->
   <PropertyGroup>
     <CAExcludePath>$(SolutionDir)\dep\;$(CAExcludePath)</CAExcludePath>
   </PropertyGroup>
+
+  <Target Name="_ComputePrecompToCleanUp">
+    <ItemGroup>
+      <PCHFileToClean Include="$(IntDir)\**\*.pch" />
+      <PCHFileToClean Include="$(IntDir)\**\precomp.obj" />
+      <_PCHFileToCleanWithTimestamp Include="@(PCHFileToClean)" Condition="'%(Identity)' != ''">
+        <LastWriteTime>$([System.IO.File]::GetLastWriteTime('%(Identity)'))</LastWriteTime>
+      </_PCHFileToCleanWithTimestamp>
+    </ItemGroup>
+  </Target>
+  <!-- Instead of outright deleting the PCHs, we want to trick the "project freshness detector" by
+       emitting empty files that look suspiciously like the PCHs it's expecting.
+       It's of utmost importance that their timestamps match up. -->
+  <Target Name="CleanUpPrecompForSmallCIAgents"
+          DependsOnTargets="_ComputePrecompToCleanUp"
+          AfterTargets="AfterBuild"
+          Condition="'$(AGENT_ID)' != ''">
+    <!-- We just need to keep *TerminalApp*'s PCHs because they get rebuilt more often. -->
+    <Delete Files="@(_PCHFileToCleanWithTimestamp)"/>
+    <Touch Files="@(_PCHFileToCleanWithTimestamp)" Time="%(LastWriteTime)" AlwaysCreate="true" />
+    <Message Text="PCH and Precomp object @(_PCHFileToCleanWithTimestamp) has been deleted for $(ProjectName)." />
+  </Target>
 </Project>

@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     TerminalSettings::TerminalSettings() :
         _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
         _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+        _selectionBackground{ DEFAULT_FOREGROUND },
         _colorTable{},
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
@@ -21,8 +22,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorShape{ CursorStyle::Vintage },
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
+        _copyOnSelect{ false },
         _useAcrylic{ false },
-        _closeOnExit{ true },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
@@ -30,6 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
         _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
+        _backgroundImageHorizontalAlignment{ winrt::Windows::UI::Xaml::HorizontalAlignment::Center },
+        _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
@@ -55,6 +58,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _defaultBackground = value;
     }
 
+    uint32_t TerminalSettings::SelectionBackground()
+    {
+        return _selectionBackground;
+    }
+
+    void TerminalSettings::SelectionBackground(uint32_t value)
+    {
+        _selectionBackground = value;
+    }
+
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const
     {
         return _colorTable[index];
@@ -62,7 +75,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
     void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
     {
-        THROW_HR_IF(E_INVALIDARG, index > _colorTable.size());
+        auto const colorTableCount = gsl::narrow_cast<decltype(index)>(_colorTable.size());
+        THROW_HR_IF(E_INVALIDARG, index >= colorTableCount);
         _colorTable[index] = value;
     }
 
@@ -146,6 +160,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _wordDelimiters = value;
     }
 
+    bool TerminalSettings::CopyOnSelect()
+    {
+        return _copyOnSelect;
+    }
+
+    void TerminalSettings::CopyOnSelect(bool value)
+    {
+        _copyOnSelect = value;
+    }
+
     bool TerminalSettings::UseAcrylic()
     {
         return _useAcrylic;
@@ -154,16 +178,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::UseAcrylic(bool value)
     {
         _useAcrylic = value;
-    }
-
-    bool TerminalSettings::CloseOnExit()
-    {
-        return _closeOnExit;
-    }
-
-    void TerminalSettings::CloseOnExit(bool value)
-    {
-        _closeOnExit = value;
     }
 
     double TerminalSettings::TintOpacity()
@@ -236,6 +250,26 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImageStretchMode = value;
     }
 
+    winrt::Windows::UI::Xaml::HorizontalAlignment TerminalSettings::BackgroundImageHorizontalAlignment()
+    {
+        return _backgroundImageHorizontalAlignment;
+    }
+
+    void TerminalSettings::BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value)
+    {
+        _backgroundImageHorizontalAlignment = value;
+    }
+
+    winrt::Windows::UI::Xaml::VerticalAlignment TerminalSettings::BackgroundImageVerticalAlignment()
+    {
+        return _backgroundImageVerticalAlignment;
+    }
+
+    void TerminalSettings::BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value)
+    {
+        _backgroundImageVerticalAlignment = value;
+    }
+
     Settings::IKeyBindings TerminalSettings::KeyBindings()
     {
         return _keyBindings;
@@ -266,6 +300,26 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _startingDir = value;
     }
 
+    hstring TerminalSettings::StartingTitle()
+    {
+        return _startingTitle;
+    }
+
+    void TerminalSettings::StartingTitle(hstring const& value)
+    {
+        _startingTitle = value;
+    }
+
+    bool TerminalSettings::SuppressApplicationTitle()
+    {
+        return _suppressApplicationTitle;
+    }
+
+    void TerminalSettings::SuppressApplicationTitle(bool value)
+    {
+        _suppressApplicationTitle = value;
+    }
+
     hstring TerminalSettings::EnvironmentVariables()
     {
         return _envVars;
@@ -284,6 +338,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::ScrollState(Settings::ScrollbarState const& value) noexcept
     {
         _scrollbarState = value;
+    }
+
+    bool TerminalSettings::RetroTerminalEffect()
+    {
+        return _retroTerminalEffect;
+    }
+
+    void TerminalSettings::RetroTerminalEffect(bool value)
+    {
+        _retroTerminalEffect = value;
     }
 
 }

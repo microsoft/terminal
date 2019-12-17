@@ -1,4 +1,6 @@
-﻿//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
 // Declaration of the MainUserControl class.
 //
 
@@ -8,6 +10,7 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Interop.h"
 #include "MinMaxCloseControl.g.h"
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -15,17 +18,18 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl();
 
-        void Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e);
+        void SetWindowVisualState(WindowVisualState visualState);
 
-        uint64_t ParentWindowHandle() const;
-        void ParentWindowHandle(uint64_t handle);
+        void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                            winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                            winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
+                         winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-    private:
-        void _OnMaximize(byte flag);
-        HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseClick, _closeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
     };
 }
 

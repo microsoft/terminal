@@ -10,8 +10,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
-
-std::unique_ptr<Selection> Selection::_instance;
+using namespace Microsoft::Console::Types;
 
 Selection::Selection() :
     _fSelectionVisible(false),
@@ -31,10 +30,7 @@ Selection::Selection() :
 
 Selection& Selection::Instance()
 {
-    if (!_instance)
-    {
-        _instance.reset(new Selection());
-    }
+    static std::unique_ptr<Selection> _instance{ new Selection() };
     return *_instance;
 }
 

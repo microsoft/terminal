@@ -9,8 +9,8 @@
 
 #pragma hdrstop
 
-#define DEFAULT_NUMBER_OF_COMMANDS 25
-#define DEFAULT_NUMBER_OF_BUFFERS 4
+constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
+constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
@@ -29,7 +29,7 @@ Settings::Settings() :
     _uFontFamily(0),
     _uFontWeight(0),
     // FaceName initialized below
-    _uCursorSize(CURSOR_SMALL_SIZE),
+    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
     _bFullScreen(false),
     _bQuickEdit(true),
     _bInsertMode(true),
@@ -45,6 +45,7 @@ Settings::Settings() :
     _fCtrlKeyShortcutsDisabled(false),
     _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
     _fFilterOnPaste(false),
+    _LaunchFaceName{},
     _fTrimLeadingZeros(FALSE),
     _fEnableColorSelection(FALSE),
     _fAllowAltF4Close(true),
@@ -76,15 +77,13 @@ Settings::Settings() :
     ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
 
-    ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
-
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
     gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
     gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
     ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
 
 // Routine Description:
@@ -124,7 +123,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _bHistoryNoDup = FALSE;
 
     gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
@@ -326,6 +325,24 @@ void Settings::Validate()
     WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
+    // If the extended color options are set to invalid values (all the same color), reset them.
+    if (_CursorColor != Cursor::s_InvertCursorColor && _CursorColor == _DefaultBackground)
+    {
+        _CursorColor = Cursor::s_InvertCursorColor;
+    }
+
+    if (_DefaultForeground != INVALID_COLOR && _DefaultForeground == _DefaultBackground)
+    {
+        // INVALID_COLOR is used as an "unset" sentinel in future attribute functions.
+        _DefaultForeground = _DefaultBackground = INVALID_COLOR;
+        // If the damaged settings _further_ propagated to the default fill attribute, fix it.
+        if (_wFillAttribute == 0)
+        {
+            // These attributes were taken from the Settings ctor and equal "gray on black"
+            _wFillAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        }
+    }
+
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
     FAIL_FAST_IF(!(_dwScreenBufferSize.X > 0));
@@ -386,13 +403,13 @@ void Settings::SetFilterOnPaste(const bool fFilterOnPaste)
     _fFilterOnPaste = fFilterOnPaste;
 }
 
-const WCHAR* const Settings::GetLaunchFaceName() const
+const std::wstring_view Settings::GetLaunchFaceName() const
 {
     return _LaunchFaceName;
 }
-void Settings::SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength)
+void Settings::SetLaunchFaceName(const std::wstring_view launchFaceName)
 {
-    StringCchCopyW(_LaunchFaceName, cchLength, LaunchFaceName);
+    _LaunchFaceName = launchFaceName;
 }
 
 UINT Settings::GetCodePage() const
@@ -612,9 +629,10 @@ const WCHAR* const Settings::GetFaceName() const
 {
     return _FaceName;
 }
-void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength)
+void Settings::SetFaceName(const std::wstring_view faceName)
 {
-    StringCchCopyW(_FaceName, cchLength, pcszFaceName);
+    auto extent = std::min<size_t>(faceName.size(), ARRAYSIZE(_FaceName));
+    StringCchCopyW(_FaceName, extent, faceName.data());
 }
 
 UINT Settings::GetCursorSize() const

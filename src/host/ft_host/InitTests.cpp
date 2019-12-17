@@ -16,6 +16,7 @@ static PCWSTR pwszForceV2ValueName = L"ForceV2";
 // instead of using the Windows-default copy of console host.
 
 wil::unique_handle hJob;
+wil::unique_process_information pi;
 
 static FILE* std_out = nullptr;
 static FILE* std_in = nullptr;
@@ -135,7 +136,6 @@ MODULE_SETUP(ModuleSetup)
     // Setup and call create process.
     STARTUPINFOW si = { 0 };
     si.cb = sizeof(STARTUPINFOW);
-    wil::unique_process_information pi;
 
     // We start suspended so we can put it in the job before it does anything
     // We say new console so it doesn't run in the same window as our test.

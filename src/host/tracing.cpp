@@ -3,10 +3,12 @@
 
 #include "precomp.h"
 #include "tracing.hpp"
-#include "../interactivity/win32/UiaTextRange.hpp"
-#include "../interactivity/win32/screenInfoUiaProvider.hpp"
-#include "../interactivity/win32/windowUiaProvider.hpp"
+#include "../types/UiaTextRangeBase.hpp"
+#include "../types/ScreenInfoUiaProviderBase.h"
 
+#include "../types/WindowUiaProviderBase.hpp"
+
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
 enum TraceKeywords
@@ -245,7 +247,7 @@ void Tracing::s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
-void Tracing::s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport)
+void Tracing::s_TraceWindowViewport(const Viewport& viewport)
 {
     TraceLoggingWrite(
         g_hConhostV2EventTraceProvider,
@@ -397,6 +399,8 @@ void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
         TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
 }
 
+// TODO GitHub #1914: Re-attach Tracing to UIA Tree
+#if 0
 void Tracing::s_TraceUia(const UiaTextRange* const range,
                          const UiaTextRangeTracing::ApiCall apiCall,
                          const UiaTextRangeTracing::IApiMsg* const apiMsg)
@@ -729,7 +733,7 @@ void Tracing::s_TraceUia(const UiaTextRange* const range,
     }
 }
 
-void Tracing::s_TraceUia(const ScreenInfoUiaProvider* const /*pProvider*/,
+void Tracing::s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const /*pProvider*/,
                          const ScreenInfoUiaProviderTracing::ApiCall apiCall,
                          const ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg)
 {
@@ -898,22 +902,22 @@ void Tracing::s_TraceUia(const ScreenInfoUiaProvider* const /*pProvider*/,
     }
 }
 
-void Tracing::s_TraceUia(const WindowUiaProvider* const /*pProvider*/,
-                         const WindowUiaProviderTracing::ApiCall apiCall,
-                         const WindowUiaProviderTracing::IApiMsg* const apiMsg)
+void Tracing::s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const /*pProvider*/,
+                         const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
+                         const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg)
 {
     switch (apiCall)
     {
-    case WindowUiaProviderTracing::ApiCall::Create:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Create:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::Create",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::Signal:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Signal:
     {
-        const WindowUiaProviderTracing::ApiMessageSignal* const msg = static_cast<const WindowUiaProviderTracing::ApiMessageSignal* const>(apiMsg);
+        const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMessageSignal* const msg = static_cast<const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMessageSignal* const>(apiMsg);
         const wchar_t* const eventName = _eventIdToString(msg->Signal);
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
@@ -924,58 +928,58 @@ void Tracing::s_TraceUia(const WindowUiaProvider* const /*pProvider*/,
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
     }
-    case WindowUiaProviderTracing::ApiCall::AddRef:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::AddRef:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::AddRef",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::Release:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Release:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::Release",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::QueryInterface:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::QueryInterface:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::QueryInterface",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetProviderOptions:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetProviderOptions:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetProviderOptions",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetPatternProvider:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetPatternProvider:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetPatternProvider",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetPropertyValue:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetPropertyValue:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetPropertyValue",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetHostRawElementProvider:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetHostRawElementProvider:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetHostRawElementProvider",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::Navigate:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Navigate:
     {
-        const WindowUiaProviderTracing::ApiMsgNavigate* const msg = static_cast<const WindowUiaProviderTracing::ApiMsgNavigate* const>(apiMsg);
+        const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMsgNavigate* const msg = static_cast<const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMsgNavigate* const>(apiMsg);
         const wchar_t* const direction = _directionToString(msg->Direction);
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
@@ -985,49 +989,49 @@ void Tracing::s_TraceUia(const WindowUiaProvider* const /*pProvider*/,
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
     }
-    case WindowUiaProviderTracing::ApiCall::GetRuntimeId:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetRuntimeId:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetRuntimeId",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetBoundingRectangle:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetBoundingRectangle:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetBoundingRectangle",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetEmbeddedFragmentRoots:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetEmbeddedFragmentRoots:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetEmbeddedFragmentRoots",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::SetFocus:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::SetFocus:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::SetFocus",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetFragmentRoot:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetFragmentRoot:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetFragmentRoot",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::ElementProviderFromPoint:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::ElementProviderFromPoint:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::ElementProviderFromPoint",
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TraceKeywords::UIA));
         break;
-    case WindowUiaProviderTracing::ApiCall::GetFocus:
+    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetFocus:
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "WindowUiaProvider::GetFocus",
@@ -1038,6 +1042,7 @@ void Tracing::s_TraceUia(const WindowUiaProvider* const /*pProvider*/,
         break;
     }
 }
+#endif
 
 const wchar_t* const Tracing::_textPatternRangeEndpointToString(int endpoint)
 {

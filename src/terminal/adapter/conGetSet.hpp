@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "..\..\types\inc\IInputEvent.hpp"
+#include "..\..\buffer\out\TextAttribute.hpp"
 #include "..\..\inc\conattrs.hpp"
 
 #include <deque>
@@ -31,14 +32,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) = 0;
         virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) = 0;
         virtual BOOL SetConsoleCursorPosition(const COORD coordCursorPosition) = 0;
-        virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch,
-                                                 const DWORD nLength,
-                                                 const COORD dwWriteCoord,
-                                                 size_t& numberOfCharsWritten) noexcept = 0;
-        virtual BOOL FillConsoleOutputAttribute(const WORD wAttribute,
-                                                const DWORD nLength,
-                                                const COORD dwWriteCoord,
-                                                size_t& numberOfAttrsWritten) noexcept = 0;
         virtual BOOL SetConsoleTextAttribute(const WORD wAttr) = 0;
 
         virtual BOOL PrivateSetLegacyAttributes(const WORD wAttr,
@@ -52,13 +45,13 @@ namespace Microsoft::Console::VirtualTerminal
                                                   const bool fIsForeground) = 0;
         virtual BOOL SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool fIsForeground) = 0;
         virtual BOOL PrivateBoldText(const bool bolded) = 0;
+        virtual BOOL PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs) = 0;
+        virtual BOOL PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs) = 0;
+        virtual BOOL PrivateGetTextAttributes(TextAttribute* const pAttrs) const = 0;
+        virtual BOOL PrivateSetTextAttributes(const TextAttribute& attrs) = 0;
 
         virtual BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                _Out_ size_t& eventsWritten) = 0;
-        virtual BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
-                                                _In_opt_ const SMALL_RECT* pClipRectangle,
-                                                _In_ COORD dwDestinationOrigin,
-                                                const CHAR_INFO* pFill) = 0;
         virtual BOOL SetConsoleWindowInfo(const BOOL bAbsolute,
                                           const SMALL_RECT* const lpConsoleWindow) = 0;
         virtual BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) = 0;
@@ -108,5 +101,15 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const = 0;
         virtual BOOL PrivateSetDefaultForeground(const COLORREF value) const = 0;
         virtual BOOL PrivateSetDefaultBackground(const COLORREF value) const = 0;
+
+        virtual BOOL PrivateFillRegion(const COORD startPosition,
+                                       const size_t fillLength,
+                                       const wchar_t fillChar,
+                                       const bool standardFillAttrs) = 0;
+
+        virtual BOOL PrivateScrollRegion(const SMALL_RECT scrollRect,
+                                         const std::optional<SMALL_RECT> clipRect,
+                                         const COORD destinationOrigin,
+                                         const bool standardFillAttrs) = 0;
     };
 }

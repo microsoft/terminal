@@ -15,12 +15,14 @@
 #endif
 
 #include "..\..\inc\unicode.hpp"
+#include "..\..\types\inc\Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
-TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
+TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
+    _leadingSurrogate{}
 {
     _pfnWriteEvents = pfn;
 }
@@ -466,6 +468,45 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
     return fKeyHandled;
 }
 
+bool TerminalInput::HandleChar(const wchar_t ch)
+{
+    if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
+    {
+        return false;
+    }
+    else if (Utf16Parser::IsLeadingSurrogate(ch))
+    {
+        if (_leadingSurrogate.has_value())
+        {
+            // we already were storing a leading surrogate but we got another one. Go ahead and send the
+            // saved surrogate piece and save the new one
+            wchar_t buffer[32];
+            swprintf_s(buffer, L"%I32u", _leadingSurrogate.value());
+            _SendInputSequence(buffer);
+        }
+        // save the leading portion of a surrogate pair so that they can be sent at the same time
+        _leadingSurrogate.emplace(ch);
+    }
+    else if (_leadingSurrogate.has_value())
+    {
+        std::wstring wstr;
+        wstr.reserve(2);
+        wstr.push_back(_leadingSurrogate.value());
+        wstr.push_back(ch);
+        _leadingSurrogate.reset();
+
+        _SendInputSequence(wstr);
+    }
+    else
+    {
+        wchar_t buffer[2] = { ch, 0 };
+        std::wstring_view buffer_view(buffer, 1);
+        _SendInputSequence(buffer_view);
+    }
+
+    return true;
+}
+
 // Routine Description:
 // - Sends the given char as a sequence representing Alt+wch, also the same as
 //      Meta+wch.
@@ -507,18 +548,17 @@ void TerminalInput::_SendNullInputSequence(const DWORD dwControlKeyState) const
     }
 }
 
-void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
+void TerminalInput::_SendInputSequence(_In_ const std::wstring_view sequence) const
 {
-    size_t cch = 0;
-    // + 1 to max sequence length for null terminator count which is required by StringCchLengthW
-    if (SUCCEEDED(StringCchLengthW(pwszSequence, _TermKeyMap::s_cchMaxSequenceLength + 1, &cch)) && cch > 0)
+    const auto length = sequence.length();
+    if (length <= _TermKeyMap::s_cchMaxSequenceLength && length > 0)
     {
         try
         {
             std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-            for (size_t i = 0; i < cch; i++)
+            for (size_t i = 0; i < length; i++)
             {
-                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
+                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, sequence[i], 0));
             }
             _pfnWriteEvents(inputEvents);
         }

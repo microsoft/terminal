@@ -21,42 +21,61 @@ Author(s):
 #include "IslandWindow.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
-#include <windowsx.h>
-#include <wil\resource.h>
+#include <wil/resource.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
 public:
-    NonClientIslandWindow() noexcept;
+    // this is the same for all DPIs
+    static constexpr const int topBorderVisibleHeight = 1;
+
+    NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
     virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    MARGINS GetFrameMargins() const noexcept;
+    void Initialize() override;
 
-    void OnAppInitialized(winrt::TerminalApp::App app) override;
+    void OnAppInitialized() override;
+    void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
+    void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
+    void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
+    std::optional<COORD> _oldIslandPos;
+
+    winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
+    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
+
     wil::unique_hbrush _backgroundBrush;
+    COLORREF _backgroundBrushColor;
+
+    winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hrgn _dragBarRegion;
 
-    MARGINS _maximizedMargins = { 0 };
+    winrt::Windows::UI::Xaml::ElementTheme _theme;
+
     bool _isMaximized;
-    winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
-    RECT GetDragAreaRect() const noexcept;
+    int _GetResizeHandleHeight() const noexcept;
+    RECT _GetDragAreaRect() const noexcept;
+    int _GetTopBorderHeight() const noexcept;
 
-    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
+    [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
+    [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT _OnPaint() noexcept;
+    void _OnMaximizeChange() noexcept;
+    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
 
-    [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
+    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    bool _IsTitlebarVisible() const;
 
-    void _HandleActivateWindow();
-    bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
-    void _UpdateDragRegion();
-
-    void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
-
-    RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
+    void _UpdateFrameMargins() const noexcept;
+    void _UpdateMaximizedState();
+    void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
+    void _UpdateIslandRegion() const;
+    void _UpdateFrameTheme() const;
 };

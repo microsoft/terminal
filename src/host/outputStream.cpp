@@ -158,42 +158,6 @@ BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* cons
 }
 
 // Routine Description:
-// - Connects the FillConsoleOutputCharacter API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - wch - Character to use for filling the buffer
-// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
-// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - numberOfCharsWritten - Pointer to memory location to hold the total number of characters written into the buffer
-// Return Value:
-// - TRUE if successful (see FillConsoleOutputCharacterWImpl). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.FillConsoleOutputCharacterWImpl(_io.GetActiveOutputBuffer(),
-                                                                                         wch,
-                                                                                         nLength,
-                                                                                         dwWriteCoord,
-                                                                                         numberOfCharsWritten));
-}
-
-// Routine Description:
-// - Connects the FillConsoleOutputAttribute API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - wAttribute - Text attribute (colors/font style) for filling the buffer
-// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
-// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - numberOfCharsWritten - Pointer to memory location to hold the total number of text attributes written into the buffer
-// Return Value:
-// - TRUE if successful (see FillConsoleOutputAttributeImpl). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.FillConsoleOutputAttributeImpl(_io.GetActiveOutputBuffer(),
-                                                                                        wAttribute,
-                                                                                        nLength,
-                                                                                        dwWriteCoord,
-                                                                                        numberOfAttrsWritten));
-}
-
-// Routine Description:
 // - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
 //     Sets BOTH the FG and the BG component of the attributes.
 // Arguments:
@@ -273,6 +237,57 @@ BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
     return TRUE;
 }
 
+// Method Description:
+// - Retrieves the currently active ExtendedAttributes. See also
+//   DoSrvPrivateGetExtendedTextAttributes
+// Arguments:
+// - pAttrs: Recieves the ExtendedAttributes value.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateGetExtendedTextAttributes). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs)
+{
+    *pAttrs = DoSrvPrivateGetExtendedTextAttributes(_io.GetActiveOutputBuffer());
+    return TRUE;
+}
+
+// Method Description:
+// - Sets the active ExtendedAttributes of the active screen buffer. Text
+//   written to this buffer will be written with these attributes.
+// Arguments:
+// - extendedAttrs: The new ExtendedAttributes to use
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetExtendedTextAttributes). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs)
+{
+    DoSrvPrivateSetExtendedTextAttributes(_io.GetActiveOutputBuffer(), attrs);
+    return TRUE;
+}
+
+// Method Description:
+// - Retrieves the current TextAttribute of the active screen buffer.
+// Arguments:
+// - pAttrs: Receives the TextAttribute value.
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute* const pAttrs) const
+{
+    *pAttrs = _io.GetActiveOutputBuffer().GetAttributes();
+    return TRUE;
+}
+
+// Method Description:
+// - Sets the current TextAttribute of the active screen buffer. Text
+//   written to this buffer will be written with these attributes.
+// Arguments:
+// - attrs: The new TextAttribute to use
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
+{
+    _io.GetActiveOutputBuffer().SetAttributes(attrs);
+    return TRUE;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
@@ -290,28 +305,6 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleInputW(_Inout_ std::deque<std::un
                                                     events,
                                                     eventsWritten,
                                                     true)); // append
-}
-
-// Routine Description:
-// - Connects the ScrollConsoleScreenBuffer API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - pScrollRectangle - The region to "cut" from the existing buffer text
-// - pClipRectangle - The bounding rectangle within which all modifications should happen. Any modification outside this RECT should be clipped.
-// - coordDestinationOrigin - The top left corner of the "paste" from pScrollREctangle
-// - pFill - The text/attribute pair to fill all remaining space behind after the "cut" operation (bounded by clip, of course.)
-// Return Value:
-// - TRUE if successful (see DoSrvScrollConsoleScreenBuffer). FALSE otherwise.
-BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
-                                                       _In_opt_ const SMALL_RECT* pClipRectangle,
-                                                       _In_ COORD coordDestinationOrigin,
-                                                       const CHAR_INFO* pFill)
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(_io.GetActiveOutputBuffer(),
-                                                                                        *pScrollRectangle,
-                                                                                        coordDestinationOrigin,
-                                                                                        pClipRectangle != nullptr ? std::optional<SMALL_RECT>(*pClipRectangle) : std::nullopt,
-                                                                                        pFill->Char.UnicodeChar,
-                                                                                        pFill->Attributes));
 }
 
 // Routine Description:
@@ -785,4 +778,55 @@ BOOL ConhostInternalGetSet::PrivateSetDefaultForeground(const COLORREF value) co
 BOOL ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) const noexcept
 {
     return SUCCEEDED(DoSrvPrivateSetDefaultBackgroundColor(value));
+}
+
+// Routine Description:
+// - Connects the PrivateFillRegion call directly into our Driver Message servicing
+//    call inside Conhost.exe
+//   PrivateFillRegion is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - screenInfo - Reference to screen buffer info.
+// - startPosition - The position to begin filling at.
+// - fillLength - The number of characters to fill.
+// - fillChar - Character to fill the target region with.
+// - standardFillAttrs - If true, fill with the standard erase attributes.
+//                       If false, fill with the default attributes.
+// Return value:
+// - TRUE if successful (see DoSrvPrivateScrollRegion). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
+                                              const size_t fillLength,
+                                              const wchar_t fillChar,
+                                              const bool standardFillAttrs) noexcept
+{
+    return SUCCEEDED(DoSrvPrivateFillRegion(_io.GetActiveOutputBuffer(),
+                                            startPosition,
+                                            fillLength,
+                                            fillChar,
+                                            standardFillAttrs));
+}
+
+// Routine Description:
+// - Connects the PrivateScrollRegion call directly into our Driver Message servicing
+//    call inside Conhost.exe
+//   PrivateScrollRegion is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - scrollRect - Region to copy/move (source and size).
+// - clipRect - Optional clip region to contain buffer change effects.
+// - destinationOrigin - Upper left corner of target region.
+// - standardFillAttrs - If true, fill with the standard erase attributes.
+//                       If false, fill with the default attributes.
+// Return value:
+// - TRUE if successful (see DoSrvPrivateScrollRegion). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
+                                                const std::optional<SMALL_RECT> clipRect,
+                                                const COORD destinationOrigin,
+                                                const bool standardFillAttrs) noexcept
+{
+    return SUCCEEDED(DoSrvPrivateScrollRegion(_io.GetActiveOutputBuffer(),
+                                              scrollRect,
+                                              clipRect,
+                                              destinationOrigin,
+                                              standardFillAttrs));
 }

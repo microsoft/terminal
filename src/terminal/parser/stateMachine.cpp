@@ -25,7 +25,8 @@ StateMachine::StateMachine(IStateMachineEngine* const pEngine) :
     // rgusParams Initialized below
     _sOscNextChar(0),
     _sOscParam(0),
-    _currRunLength(0)
+    _currRunLength(0),
+    _fProcessingIndividually(false)
 {
     ZeroMemory(_pwchOscStringBuffer, sizeof(_pwchOscStringBuffer));
     ZeroMemory(_rgusParams, sizeof(_rgusParams));
@@ -1346,20 +1347,16 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
     _pwchSequenceStart = rgwch;
     _currRunLength = 0;
 
-    // This should be static, because if one string starts a sequence, and the next finishes it,
-    //   we want the partial sequence state to persist.
-    static bool s_fProcessIndividually = false;
-
     for (size_t cchCharsRemaining = cch; cchCharsRemaining > 0; cchCharsRemaining--)
     {
-        if (s_fProcessIndividually)
+        if (_fProcessingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
             ProcessCharacter(*_pwchCurr);
             _pwchCurr++;
             if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
             { //   is the start of the next run of characters that might be printable.
-                s_fProcessIndividually = false;
+                _fProcessingIndividually = false;
                 _pwchSequenceStart = _pwchCurr;
                 _currRunLength = 0;
             }
@@ -1371,13 +1368,13 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
                 FAIL_FAST_IF(!(_pwchSequenceStart + _currRunLength <= rgwch + cch));
                 _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
                 _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
-                s_fProcessIndividually = true; // begin processing future characters individually...
+                _fProcessingIndividually = true; // begin processing future characters individually...
                 _currRunLength = 0;
                 _pwchSequenceStart = _pwchCurr;
                 ProcessCharacter(*_pwchCurr); // ... Then process the character individually.
                 if (_state == VTStates::Ground) // If the character took us right back to ground, start another run after it.
                 {
-                    s_fProcessIndividually = false;
+                    _fProcessingIndividually = false;
                     _pwchSequenceStart = _pwchCurr + 1;
                     _currRunLength = 0;
                 }
@@ -1391,14 +1388,33 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
     }
 
     // If we're at the end of the string and have remaining un-printed characters,
-    if (!s_fProcessIndividually && _currRunLength > 0)
+    if (!_fProcessingIndividually && _currRunLength > 0)
     {
         // print the rest of the characters in the string
         _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength);
         _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
     }
-    else if (s_fProcessIndividually)
+    else if (_fProcessingIndividually)
     {
+        // One of the "weird things" in VT input is the case of something like
+        // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
+        // also the start of a CSI, and could be the start of a longer sequence,
+        // there's no way to know for sure. For an <kbd>alt+[</kbd> keypress,
+        // the parser originally would just sit in the `CsiEntry` state after
+        // processing it, which would pollute the following keypress (e.g.
+        // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
+        // which is _wrong_).
+        //
+        // Fortunately, for VT input, each keystroke comes in as an individual
+        // write operation. So, if at the end of processing a string for the
+        // InputEngine, we find that we're not in the Ground state, that implies
+        // that we've processed some input, but not dispatched it yet. This
+        // block at the end of `ProcessString` will then re-process the
+        // undispatched string, but it will ensure that it dispatches on the
+        // last character of the string. For our previous `\x1b[` scenario, that
+        // means we'll make sure to call `_ActionEscDispatch('[')`., which will
+        // properly decode the string as <kbd>alt+[</kbd>.
+
         if (_pEngine->FlushAtEndOfString())
         {
             // Reset our state, and put all but the last char in again.
@@ -1413,25 +1429,31 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             switch (_state)
             {
             case VTStates::Ground:
-                return _ActionExecute(*pwch);
+                _ActionExecute(*pwch);
+                break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
-                return _ActionEscDispatch(*pwch);
+                _ActionEscDispatch(*pwch);
+                break;
             case VTStates::CsiEntry:
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
-                return _ActionCsiDispatch(*pwch);
+                _ActionCsiDispatch(*pwch);
+                break;
             case VTStates::OscParam:
             case VTStates::OscString:
             case VTStates::OscTermination:
-                return _ActionOscDispatch(*pwch);
+                _ActionOscDispatch(*pwch);
+                break;
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
-                return _ActionSs3Dispatch(*pwch);
-            default:
-                return;
+                _ActionSs3Dispatch(*pwch);
+                break;
             }
+            // microsoft/terminal#2746: Make sure to return to the ground state
+            // after dispatching the characters
+            _EnterGround();
         }
     }
 }

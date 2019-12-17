@@ -176,7 +176,7 @@ GdiEngine::~GdiEngine()
 // - colorForeground - Foreground Color
 // - colorBackground - Background colo
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:
@@ -184,7 +184,7 @@ GdiEngine::~GdiEngine()
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                       const COLORREF colorBackground,
                                                       const WORD /*legacyColorAttribute*/,
-                                                      const bool /*isBold*/,
+                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());
@@ -374,7 +374,7 @@ GdiEngine::~GdiEngine()
         // Because the API is affected by the raster/TT status of the actively selected font, we can't have
         // GDI choosing a TT font for us when we ask for Raster. We have to settle for forcing the current system
         // Terminal font to load even if it doesn't have the glyphs necessary such that the APIs continue to work fine.
-        if (0 == wcscmp(FontDesired.GetFaceName(), L"Terminal"))
+        if (FontDesired.GetFaceName() == DEFAULT_RASTER_FONT_FACENAME)
         {
             lf.lfCharSet = OEM_CHARSET;
         }
@@ -385,7 +385,7 @@ GdiEngine::~GdiEngine()
             {
                 // if we failed to translate from codepage to charset, choose our charset depending on what kind of font we're
                 // dealing with. Raster Fonts need to be presented with the OEM charset, while TT fonts need to be ANSI.
-                csi.ciCharset = (((FontDesired.GetFamily()) & TMPF_TRUETYPE) == TMPF_TRUETYPE) ? ANSI_CHARSET : OEM_CHARSET;
+                csi.ciCharset = FontDesired.IsTrueTypeFont() ? ANSI_CHARSET : OEM_CHARSET;
             }
 
             lf.lfCharSet = (BYTE)csi.ciCharset;
@@ -396,7 +396,7 @@ GdiEngine::~GdiEngine()
         // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
         lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
 
-        wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), FontDesired.GetFaceName());
+        RETURN_IF_FAILED(FontDesired.FillLegacyNameBuffer(gsl::make_span(lf.lfFaceName)));
 
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));
@@ -438,8 +438,14 @@ GdiEngine::~GdiEngine()
     // Now fill up the FontInfo we were passed with the full details of which font we actually chose
     {
         // Get the actual font face that we chose
-        WCHAR wszFaceName[LF_FACESIZE];
-        RETURN_HR_IF(E_FAIL, !(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName)));
+        const size_t faceNameLength{ gsl::narrow<size_t>(GetTextFaceW(hdcTemp.get(), 0, nullptr)) };
+
+        std::wstring currentFaceName{};
+        currentFaceName.resize(faceNameLength);
+
+        RETURN_HR_IF(E_FAIL, !(GetTextFaceW(hdcTemp.get(), gsl::narrow_cast<int>(faceNameLength), currentFaceName.data())));
+
+        currentFaceName.resize(faceNameLength - 1); // remove the null terminator (wstring!)
 
         if (FontDesired.IsDefaultRasterFont())
         {
@@ -450,9 +456,9 @@ GdiEngine::~GdiEngine()
             coordFontRequested.X = (SHORT)s_ShrinkByDpi(coordFont.X, iDpi);
         }
 
-        Font.SetFromEngine(wszFaceName,
+        Font.SetFromEngine(currentFaceName,
                            tm.tmPitchAndFamily,
-                           tm.tmWeight,
+                           gsl::narrow_cast<unsigned int>(tm.tmWeight),
                            FontDesired.IsDefaultRasterFont(),
                            coordFont,
                            coordFontRequested);

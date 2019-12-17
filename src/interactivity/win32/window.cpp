@@ -11,7 +11,6 @@
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
 #include "windowtheme.hpp"
-#include "windowUiaProvider.hpp"
 
 #include "..\..\host\globals.h"
 #include "..\..\host\dbcs.h"
@@ -32,6 +31,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\types\inc\Viewport.hpp"
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
@@ -52,7 +52,8 @@ Window* Window::s_Instance = nullptr;
 Window::Window() :
     _fIsInFullscreen(false),
     _pSettings(nullptr),
-    _hWnd(0)
+    _hWnd(0),
+    _pUiaProvider(nullptr)
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcNonFullscreenWindowSize, sizeof(_rcNonFullscreenWindowSize));
@@ -61,12 +62,6 @@ Window::Window() :
 
 Window::~Window()
 {
-    if (nullptr != _pUiaProvider)
-    {
-        // This is a COM object, so call Release. It will clean up itself when the last ref is released.
-        _pUiaProvider->Release();
-    }
-
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         delete ServiceLocator::LocateGlobals().pRender;
@@ -314,16 +309,16 @@ void Window::_UpdateSystemMetrics() const
 
             if (useDx)
             {
-                status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
 
                 if (NT_SUCCESS(status))
                 {
-                    status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
+                    status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
                 }
             }
             else
             {
-                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }
 
             if (NT_SUCCESS(status))
@@ -979,7 +974,7 @@ void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
     prectWindow->bottom = prectWindow->top + RECT_HEIGHT(&rectProposed);
 }
 
-RECT Window::GetWindowRect() const
+RECT Window::GetWindowRect() const noexcept
 {
     RECT rc = { 0 };
     ::GetWindowRect(GetWindowHandle(), &rc);
@@ -1285,18 +1280,10 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
 {
     if (nullptr == _pUiaProvider)
     {
-        try
-        {
-            _pUiaProvider = WindowUiaProvider::Create();
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            _pUiaProvider = nullptr;
-        }
+        LOG_IF_FAILED(WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this));
     }
 
-    return _pUiaProvider;
+    return _pUiaProvider.Get();
 }
 
 [[nodiscard]] HRESULT Window::SignalUia(_In_ EVENTID id)

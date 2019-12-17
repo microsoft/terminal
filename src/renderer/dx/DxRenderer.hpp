@@ -31,7 +31,11 @@ namespace Microsoft::Console::Render
     {
     public:
         DxEngine();
-        virtual ~DxEngine() override;
+        ~DxEngine();
+        DxEngine(const DxEngine&) = default;
+        DxEngine(DxEngine&&) = default;
+        DxEngine& operator=(const DxEngine&) = default;
+        DxEngine& operator=(DxEngine&&) = default;
 
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
@@ -45,7 +49,9 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
-        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain() noexcept;
+        void SetRetroTerminalEffects(bool enable) noexcept;
+
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -76,7 +82,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
                                                    COLORREF const colorBackground,
                                                    const WORD legacyColorAttribute,
-                                                   const bool isBold,
+                                                   const ExtendedAttributes extendedAttrs,
                                                    bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
@@ -93,8 +99,11 @@ namespace Microsoft::Console::Render
 
         float GetScaling() const noexcept;
 
+        void SetSelectionBackground(const COLORREF color) noexcept;
+
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
 
     private:
         enum class SwapChainMode
@@ -123,6 +132,7 @@ namespace Microsoft::Console::Render
 
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
+        D2D1_COLOR_F _selectionBackground;
 
         [[nodiscard]] RECT _GetDisplayRect() const noexcept;
 
@@ -133,7 +143,7 @@ namespace Microsoft::Console::Render
         void _InvalidOr(SMALL_RECT sr) noexcept;
         void _InvalidOr(RECT rc) noexcept;
 
-        void _InvalidOffset(POINT pt) noexcept;
+        void _InvalidOffset(POINT pt);
 
         bool _presentReady;
         RECT _presentDirty;
@@ -151,6 +161,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
+        ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
 
         // Device-Dependent Resources
         bool _haveDeviceResources;
@@ -163,7 +174,18 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
 
+        // Terminal effects resources.
+        bool _retroTerminalEffects;
+        ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
+        ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
+        ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
+        ::Microsoft::WRL::ComPtr<ID3D11InputLayout> _vertexLayout;
+        ::Microsoft::WRL::ComPtr<ID3D11Buffer> _screenQuadVertexBuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
+
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        HRESULT _SetupTerminalEffects();
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
@@ -178,10 +200,22 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(const std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT weight,
-                                                                               DWRITE_FONT_STRETCH stretch,
-                                                                               DWRITE_FONT_STYLE style) const;
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
+                                                                                              DWRITE_FONT_WEIGHT& weight,
+                                                                                              DWRITE_FONT_STRETCH& stretch,
+                                                                                              DWRITE_FONT_STYLE& style,
+                                                                                              std::wstring& localeName) const;
+
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
+                                                                               DWRITE_FONT_WEIGHT& weight,
+                                                                               DWRITE_FONT_STRETCH& stretch,
+                                                                               DWRITE_FONT_STYLE& style,
+                                                                               std::wstring& localeName) const;
+
+        [[nodiscard]] std::wstring _GetLocaleName() const;
+
+        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
+                                                      std::wstring& localeName) const;
 
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
                                                FontInfo& actual,
@@ -196,6 +230,15 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
-        [[nodiscard]] static DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;
+        // Routine Description:
+        // - Helps convert a Direct2D ColorF into a DXGI RGBA
+        // Arguments:
+        // - color - Direct2D Color F
+        // Return Value:
+        // - DXGI RGBA
+        [[nodiscard]] constexpr DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
+        {
+            return { color.r, color.g, color.b, color.a };
+        }
     };
 }

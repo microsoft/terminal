@@ -1,0 +1,85 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    interface IActionArgs
+    {
+        Boolean Equals(IActionArgs other);
+    };
+
+    interface IActionEventArgs
+    {
+        Boolean Handled;
+        IActionArgs ActionArgs { get; };
+    };
+
+    enum Direction
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum SplitState
+    {
+        None = 0,
+        Vertical = 1,
+        Horizontal = 2
+    };
+
+    [default_interface] runtimeclass NewTerminalArgs {
+        NewTerminalArgs();
+        String Commandline;
+        String StartingDirectory;
+        String TabTitle;
+        String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+        Boolean Equals(NewTerminalArgs other);
+    };
+
+    [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
+    {
+        ActionEventArgs(IActionArgs args);
+    };
+
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs
+    {
+        Boolean TrimWhitespace { get; };
+    };
+
+    [default_interface] runtimeclass NewTabArgs : IActionArgs
+    {
+        NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
+    {
+        Int32 TabIndex { get; };
+    };
+
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs
+    {
+        Direction Direction { get; };
+    };
+
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs
+    {
+        Direction Direction { get; };
+    };
+
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
+    {
+        Int32 Delta { get; };
+    };
+
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    {
+        SplitState SplitStyle { get; };
+        NewTerminalArgs TerminalArgs { get; };
+    };
+}

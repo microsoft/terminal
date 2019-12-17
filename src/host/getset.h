@@ -60,6 +60,9 @@ void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
 
 void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded);
 
+ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo);
+void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo, const ExtendedAttributes attrs);
+
 [[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
@@ -89,3 +92,15 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
 [[nodiscard]] HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept;
 
 [[nodiscard]] HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept;
+
+[[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
+                                             const COORD startPosition,
+                                             const size_t fillLength,
+                                             const wchar_t fillChar,
+                                             const bool standardFillAttrs) noexcept;
+
+[[nodiscard]] HRESULT DoSrvPrivateScrollRegion(SCREEN_INFORMATION& screenInfo,
+                                               const SMALL_RECT scrollRect,
+                                               const std::optional<SMALL_RECT> clipRect,
+                                               const COORD destinationOrigin,
+                                               const bool standardFillAttrs) noexcept;
