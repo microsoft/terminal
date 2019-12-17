@@ -63,7 +63,7 @@ void WriteBuffer::Execute(const wchar_t wch)
 // - <none>
 void WriteBuffer::_DefaultCase(const wchar_t wch)
 {
-    _DefaultStringCase({&wch, 1}); // WriteCharsLegacy wants mutable chars, so we'll givve it mutable chars.
+    _DefaultStringCase({&wch, 1});
 }
 
 // Routine Description:

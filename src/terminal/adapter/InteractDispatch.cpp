@@ -115,7 +115,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         // the ConGetSet interface, that specifically handles a conpty resize.
         if (parameters.size() == 2)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters.front(), parameters.back());
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters.back(), parameters.front());
             if (success)
             {
                 DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
