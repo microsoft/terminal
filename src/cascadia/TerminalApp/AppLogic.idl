@@ -25,7 +25,7 @@ namespace TerminalApp
         Boolean IsUwp();
         void RunAsUwp();
 
-        void SetStartupActions(ActionAndArgs[] commands);
+        // void SetStartupActions(ActionAndArgs[] commands);
 
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();

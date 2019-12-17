@@ -152,10 +152,10 @@ namespace winrt::TerminalApp::implementation
         _isUwp = true;
     }
 
-    void AppLogic::SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions)
-    {
-        _root->SetStartupActions(actions);
-    }
+    // void AppLogic::SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions)
+    // {
+    //     _root->SetStartupActions(actions);
+    // }
 
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
@@ -698,55 +698,6 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
-    }
-
-    // Method Description:
-    // - Attempts to parse a c-style array of commandline args into a list of
-    //   commands to execute, and then parses these commands. As commands are
-    //   succesfully parsed, they will generate ShortcutAction's for us to be
-    //   able to execute. If we fail to parse any commands, we'll return the
-    //   error code from the failure to parse that command, and stop processing
-    //   additional commands.
-    // Arguments:
-    // - argc: the number of arguments provided in argv
-    // - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
-    // Return Value:
-    // - 0 if the commandline was successfully parsed
-    int AppLogic::_ParseArgs(const int argc, const wchar_t* argv[])
-    {
-        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(argc, argv);
-
-        for (auto& cmdBlob : commands)
-        {
-            cmdBlob.BuildArgv();
-            // On one hand, it seems like we should be able to have one
-            // AppCommandlineArgs for parsing all of them, and collect the
-            // results one at a time.
-            //
-            // On the other hand, re-using a CLI::App seems to leave state from
-            // previous parsings around, so we could get mysterious behavior
-            // where one command affects the values of the next.
-            //
-            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
-            // > If that option is not given, CLI11 will not touch the initial
-            // > value. This allows you to set up defaults by simply setting
-            // > your value beforehand.
-            //
-            // So we pretty much need the to either manually reset the state
-            // each command, or build new ones.
-            const auto result = _appArgs.ParseCommand(cmdBlob);
-
-            // If this succeeded, result will be 0. Otherwise, the caller should
-            // exit(result), to exit the program.
-            if (result != 0)
-            {
-                return result;
-            }
-        }
-
-        // If all the args were successfully parsed, we'll have some commands
-        // built in _appArgs, which we'll use when the application starts up.
-        return 0;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

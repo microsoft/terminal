@@ -55,6 +55,9 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Create()
     {
+        std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"cmd.exe" };
+        _ParseArgs(static_cast<int>(rawCommands.size()), rawCommands.data());
+
         // Hookup the key bindings
         _HookupKeyBindings(_settings->GetKeybindings());
 
@@ -131,7 +134,7 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
         // Actually start the terminal.
-        if (_startupActions.size() == 0)
+        if (_appArgs.GetStartupActions().size() == 0)
         {
             _OpenNewTab(nullptr);
         }
@@ -165,16 +168,19 @@ namespace winrt::TerminalApp::implementation
         // someone wants to use the UI while we're starting this all up, what
         // then? That could mess this chain up.
         // ^^^ TODO all of this ^^^
-        if (_startupActions.size() == 0)
+        if (_appArgs.GetStartupActions().size() == 0)
         {
             return;
         }
 
-        auto nextAction = _startupActions.front();
-        _startupActions.pop_front();
+        auto nextAction = _appArgs.GetStartupActions().front();
+        _appArgs.GetStartupActions().pop_front();
 
-        Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this, nextAction]() {
-            _actionDispatch->DoAction(nextAction);
+        Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis = get_weak(), nextAction]() {
+            if (auto self = weakThis.get())
+            {
+                self->_actionDispatch->DoAction(nextAction);
+            }
         });
     }
 
@@ -1452,12 +1458,77 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void TerminalPage::SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions)
+    // void TerminalPage::SetStartupActions(std::deque<const TerminalApp::ActionAndArgs>& actions)
+    // {
+    //     for (const auto& a : actions)
+    //     {
+    //         _startupActions.push_back(a);
+    //     }
+    // }
+    int TerminalPage::SetStartupCommandline(winrt::array_view<hstring> args)
     {
-        for (const auto& a : actions)
+        const wchar_t** argv = new const wchar_t*[args.size()];
+        for (uint32_t i = 0; i < args.size(); i++)
         {
-            _startupActions.push_back(a);
+            auto arg = args.at(i);
+            auto c_str = arg.data();
+            argv[i] = c_str;
+            // argv[i] = args.at(i).data();
         }
+        return _ParseArgs(args.size(), argv);
+        // for (const auto& a : actions)
+        // {
+        //     _startupActions.push_back(a);
+        // }
+    }
+
+    // Method Description:
+    // - Attempts to parse a c-style array of commandline args into a list of
+    //   commands to execute, and then parses these commands. As commands are
+    //   succesfully parsed, they will generate ShortcutAction's for us to be
+    //   able to execute. If we fail to parse any commands, we'll return the
+    //   error code from the failure to parse that command, and stop processing
+    //   additional commands.
+    // Arguments:
+    // - argc: the number of arguments provided in argv
+    // - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
+    // Return Value:
+    // - 0 if the commandline was successfully parsed
+    int TerminalPage::_ParseArgs(const int argc, const wchar_t* argv[])
+    {
+        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(argc, argv);
+
+        for (auto& cmdBlob : commands)
+        {
+            cmdBlob.BuildArgv();
+            // On one hand, it seems like we should be able to have one
+            // AppCommandlineArgs for parsing all of them, and collect the
+            // results one at a time.
+            //
+            // On the other hand, re-using a CLI::App seems to leave state from
+            // previous parsings around, so we could get mysterious behavior
+            // where one command affects the values of the next.
+            //
+            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
+            // > If that option is not given, CLI11 will not touch the initial
+            // > value. This allows you to set up defaults by simply setting
+            // > your value beforehand.
+            //
+            // So we pretty much need the to either manually reset the state
+            // each command, or build new ones.
+            const auto result = _appArgs.ParseCommand(cmdBlob);
+
+            // If this succeeded, result will be 0. Otherwise, the caller should
+            // exit(result), to exit the program.
+            if (result != 0)
+            {
+                return result;
+            }
+        }
+
+        // If all the args were successfully parsed, we'll have some commands
+        // built in _appArgs, which we'll use when the application starts up.
+        return 0;
     }
 
     // Method Description:

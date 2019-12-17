@@ -29,6 +29,8 @@ public:
 
     static std::vector<Commandline> BuildCommands(const int w_argc, const wchar_t* w_argv[]);
 
+    std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
+
 private:
     static const std::wregex _commandDelimiterRegex;
 
@@ -46,7 +48,7 @@ private:
     bool _splitHorizontal{ false };
     // Are you adding more args here? Make sure to reset them in _ResetStateToDefault
 
-    std::vector<winrt::TerminalApp::ActionAndArgs> _startupActions;
+    std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
 
     winrt::TerminalApp::NewTerminalArgs _GetNewTerminalArgs();
     void _AddNewTerminalArgs(CLI::App* subcommand);

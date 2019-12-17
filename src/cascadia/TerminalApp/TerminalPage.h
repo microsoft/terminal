@@ -8,9 +8,9 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
-#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
+#include "AppCommandlineArgs.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -31,7 +31,8 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
-        void SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions);
+        int SetStartupCommandline(winrt::array_view<hstring> args);
+        // void SetStartupActions(std::deque<const TerminalApp::ActionAndArgs>& actions);
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -65,6 +66,9 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         std::deque<TerminalApp::ActionAndArgs> _startupActions;
+
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        int _ParseArgs(const int argc, const wchar_t* argv[]);
         void _ProcessNextStartupAction();
 
         void _ShowAboutDialog();

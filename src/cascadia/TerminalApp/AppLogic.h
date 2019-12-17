@@ -10,17 +10,6 @@
 #include "TerminalPage.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
-
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
-
-#include "AppCommandlineArgs.h"
-
 namespace winrt::TerminalApp::implementation
 {
     struct AppLogic : AppLogicT<AppLogic>
@@ -35,7 +24,7 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
 
-        void SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions);
+        // void SetStartupActions(array_view<const TerminalApp::ActionAndArgs> actions);
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
@@ -75,9 +64,6 @@ namespace winrt::TerminalApp::implementation
         std::shared_mutex _dialogLock;
 
         std::atomic<bool> _settingsReloadQueued{ false };
-
-        ::TerminalApp::AppCommandlineArgs _appArgs;
-        int _ParseArgs(const int argc, const wchar_t* argv[]);
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);

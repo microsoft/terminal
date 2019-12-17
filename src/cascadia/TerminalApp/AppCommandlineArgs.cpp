@@ -319,3 +319,8 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const
 
     return commands;
 }
+
+std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
+{
+    return _startupActions;
+}
