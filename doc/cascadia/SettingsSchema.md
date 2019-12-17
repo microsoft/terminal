@@ -138,6 +138,7 @@ Commands listed below are per the implementation in [`src/cascadia/TerminalApp/A
 - moveFocusUp
 - moveFocusDown
 - toggleFullscreen
+- find
 
 ## Example Keys
 - ctrl+1
