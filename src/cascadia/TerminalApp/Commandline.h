@@ -1,4 +1,5 @@
-
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -13,6 +14,9 @@ namespace TerminalApp
 class TerminalApp::Commandline
 {
 public:
+    static constexpr std::wstring_view Delimiter{ L";" };
+    static constexpr std::wstring_view EscapedDelimiter{ L"\\;" };
+
     size_t Argc() const;
     char** Argv() const;
     const std::vector<std::wstring>& Wargs() const;

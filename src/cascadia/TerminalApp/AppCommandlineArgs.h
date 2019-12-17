@@ -20,6 +20,9 @@ namespace TerminalApp
 class TerminalApp::AppCommandlineArgs final
 {
 public:
+    static constexpr std::string_view NixHelpFlag{ "-?" };
+    static constexpr std::string_view WindowsHelpFlag{ "/?" };
+
     AppCommandlineArgs();
     ~AppCommandlineArgs() = default;
     int ParseCommand(const Commandline& command);
@@ -27,13 +30,9 @@ public:
     static std::vector<Commandline> BuildCommands(const int w_argc, const wchar_t* w_argv[]);
 
 private:
-    void _BuildParser();
-    void _BuildNewTabParser();
-    void _BuildSplitPaneParser();
-    bool _NoCommandsProvided();
-    void _ResetStateToDefault();
+    static const std::wregex _commandDelimiterRegex;
 
-    CLI::App _app{ "yeet, a test of the wt commandline" };
+    CLI::App _app{ "wt - the Windows Terminal" };
     // --- Subcommands ---
     CLI::App* _newTabCommand;
     CLI::App* _newPaneCommand;
@@ -51,6 +50,11 @@ private:
 
     winrt::TerminalApp::NewTerminalArgs _GetNewTerminalArgs();
     void _AddNewTerminalArgs(CLI::App* subcommand);
+    void _BuildParser();
+    void _BuildNewTabParser();
+    void _BuildSplitPaneParser();
+    bool _NoCommandsProvided();
+    void _ResetStateToDefault();
 
     friend class TerminalAppLocalTests::CommandlineTest;
 };

@@ -57,4 +57,5 @@ Author(s):
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 
+#include <regex>
 #include <CLI11/CLI11.hpp>
