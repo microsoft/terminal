@@ -22,7 +22,10 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
+#pragma warning(push)
+#pragma warning(disable:26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
+
     virtual void Execute(const wchar_t wchControl) = 0;
     virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const std::wstring_view string) = 0;
@@ -97,3 +100,4 @@ public:
                                     const std::basic_string_view<size_t> parameters) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
+#pragma warning(pop)

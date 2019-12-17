@@ -17,10 +17,7 @@ OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch
     _pTtyConnection(nullptr),
     _lastPrintedChar(AsciiChars::NUL)
 {
-}
-
-OutputStateMachineEngine::~OutputStateMachineEngine()
-{
+    THROW_IF_NULL_ALLOC(_dispatch.get());
 }
 
 const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
@@ -298,7 +295,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
     std::vector<DispatchTypes::GraphicsOptions> graphicsOptions;
-    DispatchTypes::AnsiStatusType deviceStatusType = (DispatchTypes::AnsiStatusType)-1; // there is no default status type.
+    DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(-1); // there is no default status type.
     size_t repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingParams = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
@@ -669,7 +666,7 @@ bool OutputStateMachineEngine::_IntermediateSpaceDispatch(const wchar_t wchActio
 // - <none>
 // Return Value:
 // - <none>
-bool OutputStateMachineEngine::ActionClear()
+bool OutputStateMachineEngine::ActionClear() noexcept
 {
     // do nothing.
     return true;
@@ -682,7 +679,7 @@ bool OutputStateMachineEngine::ActionClear()
 // - <none>
 // Return Value:
 // - <none>
-bool OutputStateMachineEngine::ActionIgnore()
+bool OutputStateMachineEngine::ActionIgnore() noexcept
 {
     // do nothing.
     return true;
@@ -790,7 +787,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
-                                                 const std::basic_string_view<size_t> /*parameters*/)
+                                                 const std::basic_string_view<size_t> /*parameters*/) noexcept
 {
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
@@ -841,7 +838,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(const std::basic_string_view<
 // Return Value:
 // - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<size_t> parameters,
-                                                  DispatchTypes::EraseType& eraseType) const
+                                                  DispatchTypes::EraseType& eraseType) const noexcept
 {
     bool success = false; // If we have too many parameters or don't know what to do with the given value, return false.
     eraseType = DefaultEraseType; // if we fail, just put the default type in.
@@ -880,7 +877,7 @@ bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<s
 // Return Value:
 // - True if we successfully pulled the cursor distance from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<size_t> parameters,
-                                                  size_t& distance) const
+                                                  size_t& distance) const noexcept
 {
     bool success = false;
     distance = DefaultCursorDistance;
@@ -914,7 +911,7 @@ bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<s
 // Return Value:
 // - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<size_t> parameters,
-                                                  size_t& distance) const
+                                                  size_t& distance) const noexcept
 {
     bool success = false;
     distance = DefaultScrollDistance;
@@ -948,7 +945,7 @@ bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<s
 // Return Value:
 // - True if we successfully pulled the width from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<size_t> parameters,
-                                                size_t& consoleWidth) const
+                                                size_t& consoleWidth) const noexcept
 {
     bool success = false;
     consoleWidth = DefaultConsoleWidth;
@@ -984,7 +981,7 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<siz
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t> parameters,
                                               size_t& line,
-                                              size_t& column) const
+                                              size_t& column) const noexcept
 {
     bool success = false;
     line = DefaultLine;
@@ -1033,7 +1030,7 @@ bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_
 // - True if we successfully pulled the margin settings from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view<size_t> parameters,
                                                     size_t& topMargin,
-                                                    size_t& bottomMargin) const
+                                                    size_t& bottomMargin) const noexcept
 {
     // Notes:                           (input -> state machine out)
     // having only a top param is legal         ([3;r   -> 3,0)
@@ -1077,10 +1074,10 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view
 // Return Value:
 // - True if we successfully found a device operation in the parameters stored. False otherwise.
 bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string_view<size_t> parameters,
-                                                         DispatchTypes::AnsiStatusType& statusType) const
+                                                         DispatchTypes::AnsiStatusType& statusType) const noexcept
 {
     bool success = false;
-    statusType = (DispatchTypes::AnsiStatusType)0;
+    statusType = static_cast<DispatchTypes::AnsiStatusType>(0);
 
     if (parameters.size() == 1)
     {
@@ -1129,7 +1126,7 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_vie
 // - parameters - The parameters to parse
 // Return Value:
 // - True if there were no parameters. False otherwise.
-bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const
+bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const noexcept
 {
     return parameters.empty();
 }
@@ -1141,7 +1138,7 @@ bool OutputStateMachineEngine::_VerifyHasNoParameters(const std::basic_string_vi
 // - parameters - The parameters to parse
 // Return Value:
 // - True if the DA params were valid. False otherwise.
-bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const
+bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const noexcept
 {
     bool success = false;
 
@@ -1183,7 +1180,7 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
 // Return Value:
 // - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size_t> parameters,
-                                               size_t& distance) const
+                                               size_t& distance) const noexcept
 {
     bool success = false;
     distance = DefaultTabDistance;
@@ -1217,7 +1214,7 @@ bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size
 // Return Value:
 // - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<size_t> parameters,
-                                                size_t& clearType) const
+                                                size_t& clearType) const noexcept
 {
     bool success = false;
     clearType = DefaultTabClearType;
@@ -1244,7 +1241,7 @@ bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<siz
 // Return Value:
 // - True if we successfully pulled the designate type from the intermediate we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
-                                                 DesignateCharsetTypes& designateType) const
+                                                 DesignateCharsetTypes& designateType) const noexcept
 {
     bool success = false;
     designateType = DefaultDesignateCharsetType;
@@ -1282,7 +1279,7 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
-bool OutputStateMachineEngine::FlushAtEndOfString() const
+bool OutputStateMachineEngine::FlushAtEndOfString() const noexcept
 {
     return false;
 }
@@ -1297,7 +1294,7 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 // Return Value:
 // - True iff we should return to the Ground state when the state machine
 //      encounters a Control (C0) character in the Escape state.
-bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
+bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const noexcept
 {
     return false;
 }
@@ -1309,7 +1306,7 @@ bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
 // Return Value:
 // - True iff we should dispatch in the Escape state when we encounter a
 //   Intermediate character.
-bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const
+bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 {
     return false;
 }
@@ -1322,7 +1319,7 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const
 // Return Value:
 // - true iff the character is a hex character.
 bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
-                                           unsigned int& value)
+                                           unsigned int& value) noexcept
 {
     value = 0;
     bool success = false;
@@ -1344,13 +1341,16 @@ bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
     return success;
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
+
 // Routine Description:
 // - Determines if a character is a valid number character, 0-9.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool OutputStateMachineEngine::s_IsNumber(const wchar_t wch)
+bool OutputStateMachineEngine::s_IsNumber(const wchar_t wch) noexcept
 {
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
@@ -1361,12 +1361,14 @@ bool OutputStateMachineEngine::s_IsNumber(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool OutputStateMachineEngine::s_IsHexNumber(const wchar_t wch)
+bool OutputStateMachineEngine::s_IsHexNumber(const wchar_t wch) noexcept
 {
     return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
            (wch >= L'A' && wch <= L'F') ||
            (wch >= L'a' && wch <= L'f');
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - Given a color spec string, attempts to parse the color that's encoded.
@@ -1380,11 +1382,11 @@ bool OutputStateMachineEngine::s_IsHexNumber(const wchar_t wch)
 // Return Value:
 // - True if a color was successfully parsed
 bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
-                                                DWORD& rgb)
+                                                DWORD& rgb) noexcept
 {
     bool foundRGB = false;
     bool foundValidColorSpec = false;
-    unsigned int rguiColorValues[3] = { 0 };
+    std::array<unsigned int, 3> colorValues = { 0 };
     bool success = false;
     // We can have anywhere between [11,15] characters
     // 9 "rgb:h/h/h"
@@ -1415,18 +1417,18 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            unsigned int* const pValue = &(rguiColorValues[component]);
+            auto value = colorValues.at(component);
             for (size_t i = 0; i < 3; i++)
             {
                 const wchar_t wch = *curr++;
 
                 if (s_IsHexNumber(wch))
                 {
-                    *pValue *= 16;
+                    value *= 16;
                     unsigned int intVal = 0;
                     if (s_HexToUint(wch, intVal))
                     {
-                        *pValue += intVal;
+                        value += intVal;
                     }
                     else
                     {
@@ -1466,9 +1468,9 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
-        DWORD color = RGB(LOBYTE(rguiColorValues[0]),
-                          LOBYTE(rguiColorValues[1]),
-                          LOBYTE(rguiColorValues[2]));
+        DWORD color = RGB(LOBYTE(colorValues.at(0)),
+                          LOBYTE(colorValues.at(1)),
+                          LOBYTE(colorValues.at(2)));
 
         rgb = color;
         success = true;
@@ -1490,7 +1492,7 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
                                                     size_t& tableIndex,
-                                                    DWORD& rgb) const
+                                                    DWORD& rgb) const noexcept
 {
     tableIndex = 0;
     rgb = 0;
@@ -1563,7 +1565,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
-                                               DWORD& rgb) const
+                                               DWORD& rgb) const noexcept
 {
     rgb = 0;
 
@@ -1591,7 +1593,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
 bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
-                                                          unsigned int& function) const
+                                                          unsigned int& function) const noexcept
 {
     bool success = false;
     function = DefaultWindowManipulationType;
@@ -1625,7 +1627,7 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_strin
 // Return Value:
 // - True if we successfully pulled the cursor style from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetCursorStyle(const std::basic_string_view<size_t> parameters,
-                                               DispatchTypes::CursorStyle& cursorStyle) const
+                                               DispatchTypes::CursorStyle& cursorStyle) const noexcept
 {
     bool success = false;
     cursorStyle = DefaultCursorStyle;
