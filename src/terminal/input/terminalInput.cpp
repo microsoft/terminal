@@ -171,7 +171,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]{
 //      rules above.
 const TerminalInput::_TermKeyMap TerminalInput::s_rgSimpleModifedKeyMapping[]{
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
-    { VK_BACK, CTRL_PRESSED, L"\x1b\x8" },
+    { VK_BACK, CTRL_PRESSED, L"\x8" },
     { VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
     { VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
     { VK_TAB, CTRL_PRESSED, L"\t" },
