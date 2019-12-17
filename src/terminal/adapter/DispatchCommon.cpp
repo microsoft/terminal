@@ -25,17 +25,17 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
     SHORT sRows = 0;
 
     // We should do nothing if 0 is passed in for a size.
-    bool fSuccess = SUCCEEDED(SizeTToShort(width, &sColumns)) &&
+    bool success = SUCCEEDED(SizeTToShort(width, &sColumns)) &&
                     SUCCEEDED(SizeTToShort(height, &sRows)) &&
                     (width > 0 && height > 0);
 
-    if (fSuccess)
+    if (success)
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!conApi.GetConsoleScreenBufferInfoEx(csbiex);
+        success = conApi.GetConsoleScreenBufferInfoEx(csbiex);
 
-        if (fSuccess)
+        if (success)
         {
             const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
             const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(),
@@ -51,20 +51,20 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
             }
 
             // SetConsoleWindowInfo expect inclusive rects
-            SMALL_RECT sri = newViewport.ToInclusive();
+            const auto sri = newViewport.ToInclusive();
 
             // SetConsoleScreenBufferInfoEx however expects exclusive rects
-            SMALL_RECT sre = newViewport.ToExclusive();
+            const auto sre = newViewport.ToExclusive();
             csbiex.srWindow = sre;
 
-            fSuccess = conApi.SetConsoleScreenBufferInfoEx(csbiex);
-            if (fSuccess)
+            success = conApi.SetConsoleScreenBufferInfoEx(csbiex);
+            if (success)
             {
-                fSuccess = conApi.SetConsoleWindowInfo(true, sri);
+                success = conApi.SetConsoleWindowInfo(true, sri);
             }
         }
     }
-    return fSuccess;
+    return success;
 }
 
 // Routine Description:

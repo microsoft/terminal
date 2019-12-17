@@ -20,7 +20,7 @@ using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 // - isForeground - True if we're modifying the FOREGROUND colors. False if we're doing BACKGROUND.
 // Return Value:
 // - <none>
-void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground)
+void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground) noexcept
 {
     if (isForeground)
     {
@@ -42,7 +42,7 @@ void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground)
 //   upon.
 // Return Value:
 // - <none>
-void AdaptDispatch::s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground)
+void AdaptDispatch::s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground) noexcept
 {
     // Copy the new attribute to apply
     WORD wNewColors = applyThis;
@@ -267,6 +267,9 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
     }
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // we do not want constexpr compilation because these always evaluate at runtime
+
 // Routine Description:
 // Returns true if the GraphicsOption represents an extended text attribute.
 //   These include things such as Underlined, Italics, Blinking, etc.
@@ -296,7 +299,7 @@ bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptio
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
+bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::ForegroundExtended ||
            opt == DispatchTypes::GraphicsOptions::BackgroundExtended;
@@ -325,6 +328,8 @@ bool AdaptDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions 
            opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
 }
 
+#pragma warning(pop)
+
 // Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
 //     These options are followed by either a 2 (RGB) or 5 (xterm index)
@@ -352,8 +357,8 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
     if (options.size() >= 2 && s_IsRgbColorOption(options.at(0)))
     {
         optionsConsumed = 2;
-        DispatchTypes::GraphicsOptions extendedOpt = options.at(0);
-        DispatchTypes::GraphicsOptions typeOpt = options.at(1);
+        const auto extendedOpt = options.at(0);
+        const auto typeOpt = options.at(1);
 
         if (extendedOpt == DispatchTypes::GraphicsOptions::ForegroundExtended)
         {
@@ -381,7 +386,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
             optionsConsumed = 3;
             if (options.at(2) <= 255) // ensure that the provided index is on the table
             {
-                unsigned int tableIndex = options.at(2);
+                const auto tableIndex = options.at(2);
 
                 success = _pConApi->SetConsoleXtermTextAttribute(tableIndex, isForeground);
             }
@@ -428,7 +433,10 @@ bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::Graphic
 {
     ExtendedAttributes attrs{ ExtendedAttributes::Normal };
 
-    RETURN_BOOL_IF_FALSE(_pConApi->PrivateGetExtendedTextAttributes(attrs));
+    if (!_pConApi->PrivateGetExtendedTextAttributes(attrs))
+    {
+        return false;
+    }
 
     switch (opt)
     {
@@ -492,7 +500,7 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
         // Run through the graphics options and apply them
         for (size_t i = 0; i < options.size(); i++)
         {
-            DispatchTypes::GraphicsOptions opt = options.at(i);
+            const auto opt = options.at(i);
             if (s_IsDefaultColorOption(opt))
             {
                 success = _SetDefaultColorHelper(opt);
@@ -507,7 +515,7 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             }
             else if (s_IsRgbColorOption(opt))
             {
-                COLORREF rgbColor;
+                COLORREF rgbColor{ 0 };
                 bool isForeground = true;
 
                 size_t optionsConsumed = 0;

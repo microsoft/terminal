@@ -26,24 +26,23 @@ namespace Microsoft::Console::VirtualTerminal
     class MouseInput sealed
     {
     public:
-        MouseInput(const WriteInputEvents pfnWriteEvents);
-        ~MouseInput();
+        MouseInput(const WriteInputEvents pfnWriteEvents) noexcept;
 
-        bool HandleMouse(const COORD coordMousePosition,
-                         const unsigned int uiButton,
-                         const short sModifierKeystate,
-                         const short sWheelDelta);
+        bool HandleMouse(const COORD position,
+                         const unsigned int button,
+                         const short modifierKeyState,
+                         const short delta);
 
-        void SetUtf8ExtendedMode(const bool fEnable);
-        void SetSGRExtendedMode(const bool fEnable);
+        void SetUtf8ExtendedMode(const bool enable) noexcept;
+        void SetSGRExtendedMode(const bool enable) noexcept;
 
-        void EnableDefaultTracking(const bool fEnable);
-        void EnableButtonEventTracking(const bool fEnable);
-        void EnableAnyEventTracking(const bool fEnable);
+        void EnableDefaultTracking(const bool enable) noexcept;
+        void EnableButtonEventTracking(const bool enable) noexcept;
+        void EnableAnyEventTracking(const bool enable) noexcept;
 
-        void EnableAlternateScroll(const bool fEnable);
-        void UseAlternateScreenBuffer();
-        void UseMainScreenBuffer();
+        void EnableAlternateScroll(const bool enable) noexcept;
+        void UseAlternateScreenBuffer() noexcept;
+        void UseMainScreenBuffer() noexcept;
 
         enum class ExtendedMode : unsigned int
         {
@@ -67,56 +66,50 @@ namespace Microsoft::Console::VirtualTerminal
         WriteInputEvents _pfnWriteEvents;
 
         ExtendedMode _ExtendedMode = ExtendedMode::None;
-        TrackingMode _TrackingMode = TrackingMode::None;
+        TrackingMode _trackingMode = TrackingMode::None;
 
-        bool _fAlternateScroll = false;
-        bool _fInAlternateBuffer = false;
+        bool _alternateScroll = false;
+        bool _inAlternateBuffer = false;
 
-        COORD _coordLastPos;
+        COORD _lastPos;
         unsigned int _lastButton;
 
-        void _SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence, const size_t cchLength) const;
-        bool _GenerateDefaultSequence(const COORD coordMousePosition,
-                                      const unsigned int uiButton,
-                                      const bool fIsHover,
-                                      const short sModifierKeystate,
-                                      const short sWheelDelta,
-                                      _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
-                                      _Out_ size_t* const pcchLength) const;
-        bool _GenerateUtf8Sequence(const COORD coordMousePosition,
-                                   const unsigned int uiButton,
-                                   const bool fIsHover,
-                                   const short sModifierKeystate,
-                                   const short sWheelDelta,
-                                   _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
-                                   _Out_ size_t* const pcchLength) const;
-        bool _GenerateSGRSequence(const COORD coordMousePosition,
-                                  const unsigned int uiButton,
+        void _SendInputSequence(const std::wstring_view sequence) const noexcept;
+        std::wstring _GenerateDefaultSequence(const COORD position,
+                                      const unsigned int button,
+                                      const bool isHover,
+                                      const short modifierKeyState,
+                                      const short delta) const;
+        std::wstring _GenerateUtf8Sequence(const COORD position,
+                                   const unsigned int button,
+                                   const bool isHover,
+                                   const short modifierKeyState,
+                                   const short delta) const;
+        std::wstring _GenerateSGRSequence(const COORD position,
+                                  const unsigned int button,
                                   const bool isDown,
-                                  const bool fIsHover,
-                                  const short sModifierKeystate,
-                                  const short sWheelDelta,
-                                  _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
-                                  _Out_ size_t* const pcchLength) const;
+                                  const bool isHover,
+                                  const short modifierKeyState,
+                                  const short delta) const;
 
-        bool _ShouldSendAlternateScroll(_In_ unsigned int uiButton, _In_ short sScrollDelta) const;
-        bool _SendAlternateScroll(_In_ short sScrollDelta) const;
+        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
+        bool _SendAlternateScroll(const short delta) const noexcept;
 
-        static int s_WindowsButtonToXEncoding(const unsigned int uiButton,
-                                              const bool fIsHover,
-                                              const short sModifierKeystate,
-                                              const short sWheelDelta);
+        static int s_WindowsButtonToXEncoding(const unsigned int button,
+                                              const bool isHover,
+                                              const short modifierKeyState,
+                                              const short delta) noexcept;
 
-        static int s_WindowsButtonToSGREncoding(const unsigned int uiButton,
-                                                const bool fIsHover,
-                                                const short sModifierKeystate,
-                                                const short sWheelDelta);
+        static int s_WindowsButtonToSGREncoding(const unsigned int button,
+                                                const bool isHover,
+                                                const short modifierKeyState,
+                                                const short delta) noexcept;
 
-        static bool s_IsButtonDown(const unsigned int uiButton);
-        static bool s_IsButtonMsg(const unsigned int uiButton);
-        static bool s_IsHoverMsg(const unsigned int uiButton);
-        static COORD s_WinToVTCoord(const COORD coordWinCoordinate);
-        static short s_EncodeDefaultCoordinate(const short sCoordinateValue);
-        static unsigned int s_GetPressedButton();
+        static bool s_IsButtonDown(const unsigned int button) noexcept;
+        static bool s_IsButtonMsg(const unsigned int button) noexcept;
+        static bool s_IsHoverMsg(const unsigned int button) noexcept;
+        static COORD s_WinToVTCoord(const COORD winCoordinate) noexcept;
+        static short s_EncodeDefaultCoordinate(const short value) noexcept;
+        static unsigned int s_GetPressedButton() noexcept;
     };
 }

@@ -66,7 +66,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool enable) override; // ATT610
-        bool SetOriginMode(const bool relativeMode) override; // DECOM
+        bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetTopBottomScrollingMargins(const size_t topMargin,
                                           const size_t bottomMargin) override; // DECSTBM
         bool ReverseLineFeed() override; // RI
@@ -77,11 +77,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool ForwardTab(const size_t numTabs) override; // CHT
         bool BackwardsTab(const size_t numTabs) override; // CBT
         bool TabClear(const size_t clearType) override; // TBC
-        bool DesignateCharset(const wchar_t wchCharset) override; // DesignateCharset
+        bool DesignateCharset(const wchar_t wchCharset) noexcept override; // DesignateCharset
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
-        bool EnableDECCOLMSupport(const bool enabled) override; // ?40
+        bool EnableDECCOLMSupport(const bool enabled) noexcept override; // ?40
         bool EnableVT200MouseMode(const bool enabled) override; // ?1000
         bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005
         bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006
@@ -133,8 +133,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _EraseAll();
         bool _InsertDeleteHelper(const size_t count, const bool isInsert) const;
         bool _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
-        static void s_DisableAllColors(WORD& attr, const bool isForeground);
-        static void s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground);
+        static void s_DisableAllColors(WORD& attr, const bool isForeground) noexcept;
+        static void s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground) noexcept;
 
         bool _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
@@ -176,7 +176,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option);
         bool _SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions option);
 
-        static bool s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt);
+        static bool s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
         static bool s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
         static bool s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
         static bool s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept;
