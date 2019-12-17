@@ -164,14 +164,6 @@ namespace Microsoft::Console::VirtualTerminal
             ResetCursorColor = 112,
         };
 
-        enum class DesignateCharsetTypes
-        {
-            G0,
-            G1,
-            G2,
-            G3
-        };
-
         static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
         bool _GetGraphicsOptions(const std::basic_string_view<size_t> parameters,
                                  std::vector<DispatchTypes::GraphicsOptions>& options) const;
@@ -224,10 +216,6 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr size_t DefaultTabClearType = 0;
         bool _GetTabClearType(const std::basic_string_view<size_t> parameters,
                               size_t& clearType) const noexcept;
-
-        static constexpr DesignateCharsetTypes DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
-        bool _GetDesignateType(const wchar_t intermediate,
-                               DesignateCharsetTypes& designateType) const noexcept;
 
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,

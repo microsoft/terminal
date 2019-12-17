@@ -95,7 +95,7 @@ public:
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
-    virtual bool DesignateCharset(const wchar_t wchCharset) = 0; // SCS
+    virtual bool DesignateCharset(const size_t gsetNumber, const wchar_t charset) = 0; // SCS
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS

@@ -1590,18 +1590,18 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 }
 
 //Routine Description:
-// Designate Charset - Sets the active charset to be the one mapped to wch.
-//     See DispatchTypes::VTCharacterSets for a list of supported charsets.
-//     Also http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Controls-beginning-with-ESC
-//       For a list of all charsets and their codes.
+// Designate Charset - Selects a specific charset into one of the four G-sets.
+//     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+//       for a list of all charsets and their codes.
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
-// - wchCharset - The character indicating the charset we should switch to.
+// - gsetNumber - The G-set into which the charset will be selected.
+// - charset - The character indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
+bool AdaptDispatch::DesignateCharset(const size_t gsetNumber, const wchar_t charset)
 {
-    return _termOutput.DesignateCharset(wchCharset);
+    return _termOutput.DesignateCharset(gsetNumber, charset);
 }
 
 //Routine Description:
@@ -1667,7 +1667,7 @@ bool AdaptDispatch::SoftReset()
     }
     if (success)
     {
-        success = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
+        _termOutput = {}; // Reset all character set designations.
     }
     if (success)
     {

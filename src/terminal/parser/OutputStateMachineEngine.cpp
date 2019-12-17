@@ -229,37 +229,25 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
     }
     else if (intermediates.size() == 1)
     {
-        const auto value = til::at(intermediates, 0);
-        DesignateCharsetTypes designateType = DefaultDesignateCharsetType;
-        success = _GetDesignateType(value, designateType);
-        if (success)
+        switch (til::at(intermediates, 0))
         {
-            switch (designateType)
-            {
-            case DesignateCharsetTypes::G0:
-                success = _dispatch->DesignateCharset(wch);
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
-                break;
-            case DesignateCharsetTypes::G1:
-                success = false;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
-                break;
-            case DesignateCharsetTypes::G2:
-                success = false;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
-                break;
-            case DesignateCharsetTypes::G3:
-                success = false;
-                TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
-                break;
-            default:
-                // If no functions to call, overall dispatch was a failure.
-                success = false;
-                break;
-            }
-        }
-        else if (value == L'#')
-        {
+        case L'(':
+            success = _dispatch->DesignateCharset(0, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
+            break;
+        case L')':
+            success = _dispatch->DesignateCharset(1, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+            break;
+        case L'*':
+            success = _dispatch->DesignateCharset(2, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+            break;
+        case L'+':
+            success = _dispatch->DesignateCharset(3, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+            break;
+        case L'#':
             switch (wch)
             {
             case VTActionCodes::DECALN_ScreenAlignmentPattern:
@@ -271,6 +259,11 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                 success = false;
                 break;
             }
+            break;
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            success = false;
+            break;
         }
     }
 
@@ -320,10 +313,10 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
             success = _dispatch->CursorBackward(1);
             break;
         case Vt52ActionCodes::EnterGraphicsMode:
-            success = _dispatch->DesignateCharset(DispatchTypes::VTCharacterSets::DEC_LineDrawing);
+            success = _dispatch->DesignateCharset(0, DispatchTypes::VTCharacterSets::DEC_LineDrawing);
             break;
         case Vt52ActionCodes::ExitGraphicsMode:
-            success = _dispatch->DesignateCharset(DispatchTypes::VTCharacterSets::USASCII);
+            success = _dispatch->DesignateCharset(0, DispatchTypes::VTCharacterSets::USASCII);
             break;
         case Vt52ActionCodes::CursorToHome:
             success = _dispatch->CursorPosition(1, 1);
@@ -1342,45 +1335,6 @@ bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<siz
         clearType = til::at(parameters, 0);
         success = true;
     }
-    return success;
-}
-
-// Routine Description:
-// - Retrieves a designate charset type from the intermediate we've stored. False otherwise.
-// Arguments:
-// - intermediate - Intermediate character in the sequence
-// - designateType - Receives the designate type.
-// Return Value:
-// - True if we successfully pulled the designate type from the intermediate we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
-                                                 DesignateCharsetTypes& designateType) const noexcept
-{
-    bool success = false;
-    designateType = DefaultDesignateCharsetType;
-
-    switch (intermediate)
-    {
-    case '(':
-        designateType = DesignateCharsetTypes::G0;
-        success = true;
-        break;
-    case ')':
-    case '-':
-        designateType = DesignateCharsetTypes::G1;
-        success = true;
-        break;
-    case '*':
-    case '.':
-        designateType = DesignateCharsetTypes::G2;
-        success = true;
-        break;
-    case '+':
-    case '/':
-        designateType = DesignateCharsetTypes::G3;
-        success = true;
-        break;
-    }
-
     return success;
 }
 

@@ -86,7 +86,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ForwardTab(const size_t numTabs) override; // CHT, HT
         bool BackwardsTab(const size_t numTabs) override; // CBT
         bool TabClear(const size_t clearType) override; // TBC
-        bool DesignateCharset(const wchar_t wchCharset) noexcept override; // SCS
+        bool DesignateCharset(const size_t gsetNumber, const wchar_t charset) override; // SCS
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN

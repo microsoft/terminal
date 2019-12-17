@@ -89,7 +89,7 @@ public:
     bool DeviceAttributes() noexcept override { return false; } // DA1
     bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
-    bool DesignateCharset(const wchar_t /*wchCharset*/) noexcept override { return false; } // SCS
+    bool DesignateCharset(const size_t /*gsetNumber*/, const wchar_t /*charset*/) noexcept override { return false; } // SCS
 
     bool SoftReset() noexcept override { return false; } // DECSTR
     bool HardReset() noexcept override { return false; } // RIS

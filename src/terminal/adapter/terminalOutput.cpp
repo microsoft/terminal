@@ -72,21 +72,18 @@ static constexpr auto BritishNrcs = CharSet{
     { L'\x23', L'\u00a3' }, // Pound Sign
 };
 
-bool TerminalOutput::DesignateCharset(const wchar_t charset) noexcept
+bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
 {
     switch (charset)
     {
     case L'B': // US ASCII
     case L'1': // Alternate Character ROM
-        _translationTable = {};
-        return true;
+        return _SetTranslationTable(gsetNumber, {});
     case L'0': // DEC Special Graphics
     case L'2': // Alternate Character ROM Special Graphics
-        _translationTable = DecSpecialGraphics;
-        return true;
+        return _SetTranslationTable(gsetNumber, DecSpecialGraphics);
     case L'A': // British NRCS
-        _translationTable = BritishNrcs;
-        return true;
+        return _SetTranslationTable(gsetNumber, BritishNrcs);
     default:
         return false;
     }
@@ -111,4 +108,12 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
         wchFound = _translationTable.at(wch - 0x20u);
     }
     return wchFound;
+}
+
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::_SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable)
+{
+    _gsetTranslationTables.at(gsetNumber) = translationTable;
+    _translationTable = _gsetTranslationTables.at(0);
+    return true;
 }

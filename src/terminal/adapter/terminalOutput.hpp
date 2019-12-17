@@ -26,10 +26,13 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalOutput() = default;
 
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
-        bool DesignateCharset(const wchar_t charset) noexcept;
+        bool DesignateCharset(const size_t gsetNumber, const wchar_t charset);
         bool NeedToTranslate() const noexcept;
 
     private:
+        bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
+
+        std::array<std::wstring_view, 4> _gsetTranslationTables = {};
         std::wstring_view _translationTable;
     };
 }
