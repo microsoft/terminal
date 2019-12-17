@@ -55,7 +55,9 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Create()
     {
-        std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"cmd.exe" };
+        std::vector<const wchar_t*> rawCommands{
+            L"wt.exe", L"new-tab", L"cmd.exe", L";", L"split-pane", L"-V", L"-p", L"Ubuntu", L";", L"new-tab"
+        };
         _ParseArgs(static_cast<int>(rawCommands.size()), rawCommands.data());
 
         // Hookup the key bindings
@@ -180,6 +182,8 @@ namespace winrt::TerminalApp::implementation
             if (auto self = weakThis.get())
             {
                 self->_actionDispatch->DoAction(nextAction);
+
+                self->_ProcessNextStartupAction();
             }
         });
     }
@@ -490,6 +494,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
+        const bool isFirstTab = _tabs.size() == 0;
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -552,9 +557,20 @@ namespace winrt::TerminalApp::implementation
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
 
-        // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
-        // Xaml control to the Xaml root.
-        _tabView.SelectedItem(tabViewItem);
+        // // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
+        // // Xaml control to the Xaml root.
+        // _tabView.SelectedItem(tabViewItem);
+
+        if (isFirstTab)
+        {
+            _tabContent.Children().Append(newTab->GetRootElement());
+        }
+        else
+        {
+            // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
+            // Xaml control to the Xaml root.
+            _tabView.SelectedItem(tabViewItem);
+        }
     }
 
     // Method Description:
@@ -867,9 +883,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        term.Initialized([this](auto&&, auto&&) {
-            _ProcessNextStartupAction();
-        });
+        // term.Initialized([this](auto&&, auto&&) {
+        //     _ProcessNextStartupAction();
+        // });
     }
 
     // Method Description:

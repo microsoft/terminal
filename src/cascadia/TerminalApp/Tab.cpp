@@ -239,7 +239,7 @@ bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
 void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
 {
     auto [first, second] = _activePane->Split(splitType, profile, control);
-
+    _activePane = first;
     _AttachEventHandlersToControl(control);
 
     // Add a event handlers to the new panes' GotFocus event. When the pane
