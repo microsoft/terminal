@@ -21,11 +21,11 @@ For now, the Terminal window is put on a default initial position. The program u
 
 Two new properties should be added in the json settings file:
 
-**initialPosition**: string. This set the initial horizontal and vertical position of the top-left corner of the window. This property follows a structure: "X value, Y value" and has following rules:
+**initialPosition**: string. This sets the initial horizontal and vertical position of the top-left corner of the window. This property follows a structure: "X value, Y value" and has following rules:
 
 1. All spaces will be ignored.
 
-2. Both X value and Y value are optional. If anyone of them is missing, or the value is invalid, system default value will be used. Examples:
+2. Both X value and Y values are optional. If anyone of them is missing, or the value is invalid, system default value will be used. Examples:
 
        ", 1000" equals to (default, 1000)
        "1000, " equals to (1000, default)
@@ -65,23 +65,12 @@ Upon successful implementation, the user is able to add new properties to the js
 
 The rest of the UI will be the same of the current Terminal experience, except that the initial position may be different.
 
-## Capabilities
-
 ### Accessibility
 
-This feature will not impact accessibility of Windows Terminal.
-
-### Security
-
-This should not introduce any new security issues.
+Users can only set the initial position and launch mode in the Json file with keyboard. Thus, this will not affect accessibility. 
 
 ### Reliability
-
-This new feature allows the users to set custom initial position of the Terminal App window, which helps them to avoid embarassing window launch situation such as launching outside the screen bounds. Thus, it improves the reliability.
-
-### Compatibility
-
-This feature won't break existing features of Terminal.
+We need to make sure that whatever the initial position is set, the user can access the Terminal window. This is guaranteed because if the top left corner position of the Terminal Window is out of screen, we put it on the top left corner of the screen. 
 
 ### Performance, Power, and Efficiency
 
@@ -89,9 +78,7 @@ More data reading and calculation will be included in Terminal Launch process, w
 
 ## Potential Issues
 
-1. The dpi of the monitor may impact the initial position even if the json profile settings are the same. We need to consider the dpi of the user's monitor and calculate the initial position in the current screen coordinates. Testing with different monitor dpi are also necessary.
-
-2. We need to consider multi-monitor scenario. If the user has multiple monitors, we must guarantee that the Terminal could be iniitalized as expected. More discussions on what should we do in this scenario with the github community is needed. 
+We need to consider multi-monitor scenario. If the user has multiple monitors, we must guarantee that the Terminal could be iniitalized as expected. We can keep an eye on the feedbacks of this feature from the community.
 
 ## Future considerations
 
