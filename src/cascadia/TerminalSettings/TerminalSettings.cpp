@@ -360,4 +360,14 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _scrollbarState = value;
     }
 
+    bool TerminalSettings::RetroTerminalEffect()
+    {
+        return _retroTerminalEffect;
+    }
+
+    void TerminalSettings::RetroTerminalEffect(bool value)
+    {
+        _retroTerminalEffect = value;
+    }
+
 }

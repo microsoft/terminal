@@ -162,7 +162,7 @@ would like to only change the color scheme of the default `cmd` profile to
         }
 ```
 
-Here, we're know we're changing the `cmd` profile, because the `guid`
+Here, we know we're changing the `cmd` profile, because the `guid`
 `"{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"` is `cmd`'s unique GUID. Any profiles
 with that GUID will all be treated as the same object. Any changes in that
 profile will overwrite those from the defaults.

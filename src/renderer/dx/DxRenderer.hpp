@@ -49,6 +49,8 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
+        void SetRetroTerminalEffects(bool enable) noexcept;
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
@@ -101,6 +103,7 @@ namespace Microsoft::Console::Render
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
 
     private:
         enum class SwapChainMode
@@ -171,7 +174,18 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
 
+        // Terminal effects resources.
+        bool _retroTerminalEffects;
+        ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
+        ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
+        ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
+        ::Microsoft::WRL::ComPtr<ID3D11InputLayout> _vertexLayout;
+        ::Microsoft::WRL::ComPtr<ID3D11Buffer> _screenQuadVertexBuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
+
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        HRESULT _SetupTerminalEffects();
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
