@@ -79,7 +79,7 @@ bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptio
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
 bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
-                                           size_t optionsConsumed)
+                                           size_t& optionsConsumed)
 {
     COLORREF color = 0;
     bool isForeground = false;
