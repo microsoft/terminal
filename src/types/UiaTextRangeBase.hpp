@@ -18,8 +18,6 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
-
 #include "inc/viewport.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "IUiaData.h"

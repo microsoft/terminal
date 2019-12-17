@@ -20,8 +20,6 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
-
 #include <wrl/implements.h>
 
 namespace Microsoft::Console::Types
