@@ -911,7 +911,7 @@ namespace winrt::TerminalApp::implementation
     winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
+        auto focusedTab = _tabs.at(focusedTabIndex);
         return focusedTab->GetActiveTerminalControl();
     }
 
