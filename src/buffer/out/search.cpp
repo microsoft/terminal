@@ -97,11 +97,7 @@ bool Search::FindNext()
 // - Takes the found word and selects it in the screen buffer
 void Search::Select() const
 {
-    // Only select if we've found something.
-    if (_coordSelStart != _coordSelEnd)
-    {
-        _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
-    }
+    _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
 }
 
 // Routine Description:
@@ -142,6 +138,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
+    const COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
     if (uiaData.IsSelectionActive())
     {
         auto anchor = uiaData.GetSelectionAnchor();
@@ -152,6 +149,10 @@ COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
         else
         {
             textBuffer.GetSize().DecrementInBoundsCircular(anchor);
+            // If the selection starts at (0, 0), we need to make sure
+            // it does not exceed the text buffer end position
+            anchor.X = std::min(textBufferEndPosition.X, anchor.X);
+            anchor.Y = std::min(textBufferEndPosition.Y, anchor.Y);
         }
         return anchor;
     }
@@ -163,8 +164,7 @@ COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
         }
         else
         {
-            const auto bufferSize = textBuffer.GetSize().Dimensions();
-            return { bufferSize.X - 1, bufferSize.Y - 1 };
+            return textBufferEndPosition;
         }
     }
 }
@@ -292,6 +292,26 @@ void Search::_UpdateNextPosition()
     else
     {
         THROW_HR(E_NOTIMPL);
+    }
+
+    // To reduce wrap-around time, if the next position is larger than
+    // the end position of the written text
+    // We put the next position to:
+    // Forward: (0, 0)
+    // Backward: the position of the end of the text buffer
+    const COORD bufferEndPosition = _uiaData.GetTextBufferEndPosition();
+
+    if (_coordNext.Y > bufferEndPosition.Y ||
+        (_coordNext.Y == bufferEndPosition.Y && _coordNext.X > bufferEndPosition.X))
+    {
+        if (_direction == Direction::Forward)
+        {
+            _coordNext = { 0 };
+        }
+        else
+        {
+            _coordNext = bufferEndPosition;
+        }
     }
 }
 

@@ -10,6 +10,15 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+         Unfortunately for us, we need it to be 3. When the namespace merging
+         depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+         and our WinMD file becomes "Microsoft". Because WinRT is very
+         namespace-driven, this winmd is considered to contain the entire
+         Microsoft namespace. This is, obviously, not great. None of our other
+         projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
 
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -24,6 +33,9 @@
 
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="SearchBoxControl.h">
+      <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
@@ -42,6 +54,9 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="SearchBoxControl.cpp">
+      <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
@@ -57,6 +72,9 @@
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="SearchBoxControl.idl">
+      <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </Midl>
     <Midl Include="TermControl.idl" />
     <Midl Include="TermControlAutomationPeer.idl" />
     <Midl Include="TSFInputControl.idl" />
@@ -83,6 +101,11 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="SearchBoxControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />

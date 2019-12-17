@@ -66,6 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _cursorTimer{},
         _lastMouseClick{},
         _lastMouseClickPos{},
+        _searchBox{ nullptr },
         _tsfInputControl{ nullptr }
     {
         _EnsureStaticInitialization();
@@ -161,6 +162,101 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
+    }
+
+    // Method Description:
+    // - Create the SearchBoxControl object, and attach it
+    //   to the Terminal Control root
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::CreateSearchBoxControl()
+    {
+        if (!_searchBox)
+        {
+            _searchBox = winrt::make_self<SearchBoxControl>();
+            _searchBox->HorizontalAlignment(HorizontalAlignment::Right);
+            _searchBox->VerticalAlignment(VerticalAlignment::Top);
+            // We need to make sure the searchbox does not overlap
+            // with the scroll bar
+            Thickness searchBoxPadding = { 0, 0, _scrollBar.ActualWidth(), 0 };
+            _searchBox->Margin(searchBoxPadding);
+
+            _root.Children().Append(*_searchBox);
+
+            // Event handlers
+            _searchBox->Search({ get_weak(), &TermControl::_Search });
+            _searchBox->Closed({ get_weak(), &TermControl::_CloseSearchBoxControl });
+        }
+
+        _searchBox->SetFocusOnTextbox();
+    }
+
+    // Method Description:
+    // - Search text in text buffer. This is triggered if the user click
+    //   search button or press enter.
+    // Arguments:
+    // - IInspectable: not used
+    // - text: the text to search
+    // Return Value:
+    // - <none>
+    void TermControl::_Search(const winrt::Windows::Foundation::IInspectable&, const winrt::hstring& text)
+    {
+        if (text.size() == 0)
+        {
+            return;
+        }
+
+        const Search::Direction direction = _searchBox->GoForward() ?
+                                                Search::Direction::Forward :
+                                                Search::Direction::Backward;
+
+        const Search::Sensitivity sensitivity = _searchBox->IsCaseSensitive() ?
+                                                    Search::Sensitivity::CaseSensitive :
+                                                    Search::Sensitivity::CaseInsensitive;
+
+        Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        auto lock = _terminal->LockForWriting();
+        if (search.FindNext())
+        {
+            _terminal->SetBoxSelection(false);
+            search.Select();
+            _renderer->TriggerSelection();
+        }
+    }
+
+    // Method Description:
+    // - The handler for the close button in the search box.
+    //   This is a wrapper method that calls _CloseSearchBoxControlHelper().
+    // Arguments:
+    // - IInspectable: not used
+    // - RoutedEventArgs: not used
+    // Return Value:
+    // - <none>
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    {
+        _CloseSearchBoxControlHelper();
+    }
+
+    // Method Description:
+    // - The helper method that removes the SearchBoxControl
+    //   object from the XAML tree, reset smart pointer and
+    //   set focus back to Terminal
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_CloseSearchBoxControlHelper()
+    {
+        unsigned int idx;
+        _root.Children().IndexOf(*_searchBox, idx);
+        _root.Children().RemoveAt(idx);
+
+        _searchBox = nullptr;
+
+        // Set focus back to terminal control
+        this->Focus(FocusState::Programmatic);
     }
 
     // Method Description:
@@ -683,6 +779,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
+        // If Esc is pressed and the search box is opened, we close the search box
+        if (_searchBox && e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        {
+            _CloseSearchBoxControlHelper();
+            return;
+        }
+
+        // If the current focused element is a child element of searchbox,
+        // we do not send this event up to terminal
+        if (_searchBox && _searchBox->ContainsFocus())
+        {
+            return;
+        }
+
         // mark event as handled and do nothing if...
         //   - closing
         //   - key modifier is pressed
