@@ -102,11 +102,9 @@ namespace Microsoft::Console::Types
         struct MoveState
         {
             // screen/column position of _start
-            ScreenInfoRow StartScreenInfoRow;
-            Column StartColumn;
+            COORD start;
             // screen/column position of _end
-            ScreenInfoRow EndScreenInfoRow;
-            Column EndColumn;
+            COORD end
             // last row in the direction being moved
             ScreenInfoRow LimitingRow;
             // first column in the direction being moved
@@ -123,10 +121,8 @@ namespace Microsoft::Console::Types
                       const MovementDirection direction);
 
         private:
-            MoveState(const ScreenInfoRow startScreenInfoRow,
-                      const Column startColumn,
-                      const ScreenInfoRow endScreenInfoRow,
-                      const Column endColumn,
+            MoveState(const COORD start,
+                      const COORD end,
                       const ScreenInfoRow limitingRow,
                       const Column firstColumnInRow,
                       const Column lastColumnInRow,
@@ -169,8 +165,7 @@ namespace Microsoft::Console::Types
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
-        const Endpoint GetStart() const noexcept;
-        const Endpoint GetEnd() const noexcept;
+        const COORD GetEndpoint(TextPatternRangeEndpoint endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start) const noexcept;
         const bool IsDegenerate() const noexcept;
 
         // TODO GitHub #605:
@@ -249,16 +244,9 @@ namespace Microsoft::Console::Types
         // 0 ............... N (text buffer line indices)
         //   ---e     s-----   (_start to _end)
         //
-        Endpoint _start;
-        Endpoint _end;
-
-        // The msdn documentation (and hence this class) talks a bunch about a
-        // degenerate range. A range is degenerate if it contains
-        // no text (both the start and end endpoints are the same). Note that
-        // a degenerate range may have a position in the text. We indicate a
-        // degenerate range internally with a bool. If a range is degenerate
-        // then both endpoints will contain the same value.
-        bool _degenerate;
+        // NOTE: _start is inclusive, but _end is exclusive
+        COORD _start;
+        COORD _end;
 
         RECT _getTerminalRect() const;
 
@@ -270,9 +258,6 @@ namespace Microsoft::Console::Types
 
         static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
         static const unsigned int _getLastScreenInfoRowIndex(gsl::not_null<IUiaData*> pData) noexcept;
-
-        static const Column _getFirstColumnIndex() noexcept;
-        static const Column _getLastColumnIndex(gsl::not_null<IUiaData*> pData);
 
         const unsigned int _rowCountInRange(gsl::not_null<IUiaData*> pData) const;
 
@@ -330,12 +315,6 @@ namespace Microsoft::Console::Types
                                          const ScreenInfoRow screenInfoRow,
                                          _Inout_ std::vector<double>& coords) const;
 
-        static const int _compareScreenCoords(gsl::not_null<IUiaData*> pData,
-                                              const ScreenInfoRow rowA,
-                                              const Column colA,
-                                              const ScreenInfoRow rowB,
-                                              const Column colB);
-
         static std::pair<Endpoint, Endpoint> _moveByCharacter(gsl::not_null<IUiaData*> pData,
                                                               const int moveCount,
                                                               const MoveState moveState,
@@ -379,23 +358,20 @@ namespace Microsoft::Console::Types
                                                              const MoveState moveState,
                                                              _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
-                                     const int moveCount,
+        std::tuple<COORD, COORD>
+        _moveEndpointByUnitCharacter(const int moveCount,
                                      const TextPatternRangeEndpoint endpoint,
                                      const MoveState moveState,
                                      _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> pData,
-                                            const int moveCount,
+        std::tuple<COORD, COORD>
+        _moveEndpointByUnitCharacterForward(const int moveCount,
                                             const TextPatternRangeEndpoint endpoint,
                                             const MoveState moveState,
                                             _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> pData,
-                                             const int moveCount,
+        std::tuple<COORD, COORD>
+        _moveEndpointByUnitCharacterBackward(const int moveCount,
                                              const TextPatternRangeEndpoint endpoint,
                                              const MoveState moveState,
                                              _Out_ gsl::not_null<int*> const pAmountMoved);
