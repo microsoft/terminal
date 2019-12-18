@@ -119,6 +119,7 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         switch (wch)
         {
         case L'\b':
+            // Process Ctrl+Bksp to delete whole words
             actualChar = '\x7f';
             fSuccess = _GenerateKeyFromChar(actualChar, &vkey, nullptr);
             break;

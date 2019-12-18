@@ -355,6 +355,7 @@ void InputEngineTest::C0Test()
         case L'\b': // backspace
             wch = '\x7f';
             expectedWch = '\x7f';
+            break;
         }
 
         short keyscan = VkKeyScanW(expectedWch);
