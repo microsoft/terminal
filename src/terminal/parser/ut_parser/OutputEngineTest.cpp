@@ -689,63 +689,63 @@ public:
         *this = dispatch;
     }
 
-    bool CursorUp(_In_ size_t const uiDistance) override
+    bool CursorUp(_In_ size_t const uiDistance) noexcept override
     {
         _cursorUp = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorDown(_In_ size_t const uiDistance) override
+    bool CursorDown(_In_ size_t const uiDistance) noexcept override
     {
         _cursorDown = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorBackward(_In_ size_t const uiDistance) override
+    bool CursorBackward(_In_ size_t const uiDistance) noexcept override
     {
         _cursorBackward = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorForward(_In_ size_t const uiDistance) override
+    bool CursorForward(_In_ size_t const uiDistance) noexcept override
     {
         _cursorForward = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorNextLine(_In_ size_t const uiDistance) override
+    bool CursorNextLine(_In_ size_t const uiDistance) noexcept override
     {
         _cursorNextLine = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorPrevLine(_In_ size_t const uiDistance) override
+    bool CursorPrevLine(_In_ size_t const uiDistance) noexcept override
     {
         _cursorPreviousLine = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorHorizontalPositionAbsolute(_In_ size_t const uiPosition) override
+    bool CursorHorizontalPositionAbsolute(_In_ size_t const uiPosition) noexcept override
     {
         _cursorHorizontalPositionAbsolute = true;
         _cursorDistance = uiPosition;
         return true;
     }
 
-    bool VerticalLinePositionAbsolute(_In_ size_t const uiPosition) override
+    bool VerticalLinePositionAbsolute(_In_ size_t const uiPosition) noexcept override
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
         return true;
     }
 
-    bool CursorPosition(_In_ size_t const uiLine, _In_ size_t const uiColumn) override
+    bool CursorPosition(_In_ size_t const uiLine, _In_ size_t const uiColumn) noexcept override
     {
         _cursorPosition = true;
         _line = uiLine;
@@ -753,61 +753,69 @@ public:
         return true;
     }
 
-    bool CursorSaveState() override
+    bool CursorSaveState() noexcept override
     {
         _cursorSave = true;
         return true;
     }
 
-    bool CursorRestoreState() override
+    bool CursorRestoreState() noexcept override
     {
         _cursorLoad = true;
         return true;
     }
 
-    bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override
+    bool EraseInDisplay(const DispatchTypes::EraseType eraseType) noexcept override
     {
         _eraseDisplay = true;
         _eraseType = eraseType;
         return true;
     }
 
-    bool EraseInLine(const DispatchTypes::EraseType eraseType) override
+    bool EraseInLine(const DispatchTypes::EraseType eraseType) noexcept override
     {
         _eraseLine = true;
         _eraseType = eraseType;
         return true;
     }
 
-    bool InsertCharacter(_In_ size_t const uiCount) override
+    bool InsertCharacter(_In_ size_t const uiCount) noexcept override
     {
         _insertCharacter = true;
         _cursorDistance = uiCount;
         return true;
     }
 
-    bool DeleteCharacter(_In_ size_t const uiCount) override
+    bool DeleteCharacter(_In_ size_t const uiCount) noexcept override
     {
         _deleteCharacter = true;
         _cursorDistance = uiCount;
         return true;
     }
 
-    bool CursorVisibility(const bool fIsVisible) override
+    bool CursorVisibility(const bool fIsVisible) noexcept override
     {
         _cursorVisible = fIsVisible;
         return true;
     }
 
-    bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override
+    bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept override
     {
-        _options.assign(options.cbegin(), options.cend());
-        _setGraphics = true;
+        try
+        {
+            _options.assign(options.cbegin(), options.cend());
+            _setGraphics = true;
 
-        return true;
+            return true;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            return false;
+        }
     }
 
-    bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override
+    bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) noexcept override
     {
         _deviceStatusReport = true;
         _statusReportType = statusType;
@@ -815,7 +823,7 @@ public:
         return true;
     }
 
-    bool DeviceAttributes() override
+    bool DeviceAttributes() noexcept override
     {
         _deviceAttributes = true;
 
@@ -869,53 +877,53 @@ public:
         return cFailures == 0;
     }
 
-    bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override
+    bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept override
     {
         return _SetResetPrivateModesHelper(params, true);
     }
 
-    bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override
+    bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept override
     {
         return _SetResetPrivateModesHelper(params, false);
     }
 
-    bool SetColumns(_In_ size_t const uiColumns) override
+    bool SetColumns(_In_ size_t const uiColumns) noexcept override
     {
         _windowWidth = uiColumns;
         return true;
     }
 
-    bool SetVirtualTerminalInputMode(const bool fApplicationMode)
+    bool SetVirtualTerminalInputMode(const bool fApplicationMode) noexcept
     {
         _cursorKeysMode = fApplicationMode;
         return true;
     }
 
-    bool EnableCursorBlinking(const bool bEnable) override
+    bool EnableCursorBlinking(const bool bEnable) noexcept override
     {
         _cursorBlinking = bEnable;
         return true;
     }
 
-    bool SetOriginMode(const bool fRelativeMode) override
+    bool SetOriginMode(const bool fRelativeMode) noexcept override
     {
         _isOriginModeRelative = fRelativeMode;
         return true;
     }
 
-    bool EnableDECCOLMSupport(const bool fEnabled) override
+    bool EnableDECCOLMSupport(const bool fEnabled) noexcept override
     {
         _isDECCOLMAllowed = fEnabled;
         return true;
     }
 
-    bool UseAlternateScreenBuffer() override
+    bool UseAlternateScreenBuffer() noexcept override
     {
         _isAltBuffer = true;
         return true;
     }
 
-    bool UseMainScreenBuffer() override
+    bool UseMainScreenBuffer() noexcept override
     {
         _isAltBuffer = false;
         return true;

@@ -287,40 +287,48 @@ void TerminalDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOpt
     }
 }
 
-bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options)
+bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept
 {
     bool success = false;
-    // Run through the graphics options and apply them
-    for (size_t i = 0; i < options.size(); i++)
+    try
     {
-        DispatchTypes::GraphicsOptions opt = options.at(i);
-        if (s_IsDefaultColorOption(opt))
+        // Run through the graphics options and apply them
+        for (size_t i = 0; i < options.size(); i++)
         {
-            success = _SetDefaultColorHelper(opt);
-        }
-        else if (s_IsBoldColorOption(opt))
-        {
-            success = _SetBoldColorHelper(opt);
-        }
-        else if (s_IsRgbColorOption(opt))
-        {
-            size_t optionsConsumed = 0;
-
-            // _SetRgbColorsHelper will call the appropriate ConApi function
-            success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
-
-            i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
-        }
-        else
-        {
-            _SetGraphicsOptionHelper(opt);
-
-            // Make sure we un-bold
-            if (success && opt == DispatchTypes::GraphicsOptions::Off)
+            DispatchTypes::GraphicsOptions opt = options.at(i);
+            if (s_IsDefaultColorOption(opt))
+            {
+                success = _SetDefaultColorHelper(opt);
+            }
+            else if (s_IsBoldColorOption(opt))
             {
                 success = _SetBoldColorHelper(opt);
             }
+            else if (s_IsRgbColorOption(opt))
+            {
+                size_t optionsConsumed = 0;
+
+                // _SetRgbColorsHelper will call the appropriate ConApi function
+                success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
+
+                i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
+            }
+            else
+            {
+                _SetGraphicsOptionHelper(opt);
+
+                // Make sure we un-bold
+                if (success && opt == DispatchTypes::GraphicsOptions::Off)
+                {
+                    success = _SetBoldColorHelper(opt);
+                }
+            }
         }
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        success = false;
     }
     return success;
 }
