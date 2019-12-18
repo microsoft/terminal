@@ -51,6 +51,10 @@ AppHost::AppHost() noexcept :
 
     _useNonClientArea = _logic.GetShowTabsInTitlebar();
 
+    // If there were commandline args to our process, try and process them here.
+    // Do this before AppLogic::Create, otherwise this will have no effect
+    _handleCommandlineArgs();
+
     if (_useNonClientArea)
     {
         _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
@@ -77,6 +81,37 @@ AppHost::~AppHost()
     _window = nullptr;
     _app.Close();
     _app = nullptr;
+}
+
+void AppHost::_handleCommandlineArgs()
+{
+    if (auto commandline{ GetCommandLineW() })
+    {
+        int argc = 0;
+
+        // Get the argv, and turn them into a hstring array to pass to the app.
+        LPWSTR* argv = CommandLineToArgvW(commandline, &argc);
+        if (argc > 0)
+        {
+            std::vector<winrt::hstring> args;
+            for (auto i = 0; i < argc; i++)
+            {
+                args.push_back({ argv[i] });
+            }
+            auto result = _logic.SetStartupCommandline({ args });
+
+            auto message = _logic.EarlyExitMessage();
+            if (!message.empty())
+            {
+                MessageBoxW(nullptr,
+                            message.data(),
+                            GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
+                            MB_OK | MB_ICONERROR);
+
+                ExitProcess(result);
+            }
+        }
+    }
 }
 
 // Method Description:
@@ -112,36 +147,6 @@ void AppHost::Initialize()
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
     _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
-
-    // If there were commandline args to our process, try and process them here.
-    // Do this before AppLogic::Create, otherwise this will have no effect
-    if (auto commandline{ GetCommandLineW() })
-    {
-        int argc = 0;
-
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        LPWSTR* argv = CommandLineToArgvW(commandline, &argc);
-        if (argc > 0)
-        {
-            std::vector<winrt::hstring> args;
-            for (auto i = 0; i < argc; i++)
-            {
-                args.push_back({ argv[i] });
-            }
-            auto result = _logic.SetStartupCommandline({ args });
-
-            auto message = _logic.EarlyExitMessage();
-            if (!message.empty())
-            {
-                MessageBoxW(nullptr,
-                            message.data(),
-                            GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
-                            MB_OK | MB_ICONERROR);
-
-                ExitProcess(result);
-            }
-        }
-    }
 
     _logic.Create();
 

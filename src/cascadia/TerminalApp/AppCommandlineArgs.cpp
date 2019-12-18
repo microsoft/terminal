@@ -96,11 +96,21 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
     return 0;
 }
 
+// Method Description:
+// - Calls App::exit() for the provided command, and collects it's output into
+//   our _exitMessage buffer.
+// Arguments:
+// - command: Either the root App object, or a subcommand for which to call exit() on.
+// - e: the CLI::Error to process as the exit reason for parsing.
+// Return Value:
+// - 0 if the command exited successfully
 int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e)
 {
+    // Create some streams to collect the output that would otherwise go to stdout.
     std::ostringstream out;
     std::ostringstream err;
     const auto result = command.exit(e, out, err);
+    // I believe only CallForHelp will return 0
     if (result == 0)
     {
         _exitMessage = out.str();
@@ -276,8 +286,7 @@ bool AppCommandlineArgs::_NoCommandsProvided()
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
-// - argc: the number of arguments provided in argv
-// - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
+// - args: an array of arguments to parse into Commandlines
 // Return Value:
 // - a list of Commandline objects, where each one represents a single
 //   commandline to parse.
@@ -300,6 +309,18 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
     return commands;
 }
 
+// Function Description:
+// - Builds a list of Commandline objects for the given argc,argv. Each
+//   Commandline represents a single command to parse. These commands can be
+//   seperated by ";", which indicates the start of the next commandline. If the
+//   user would like to provide ';' in the text of the commandline, they can
+//   escape it as "\;".
+// Arguments:
+// - argc: the number of arguments provided in argv
+// - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
+// Return Value:
+// - a list of Commandline objects, where each one represents a single
+//   commandline to parse.
 std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const wchar_t* argv[])
 {
     std::vector<Commandline> commands;
@@ -319,6 +340,21 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const
     return commands;
 }
 
+// Function Description:
+// - Update and append Commandline objects for the given arg to the given list
+//   of commands. Each Commandline represents a single command to parse. These
+//   commands can be seperated by ";", which indicates the start of the next
+//   commandline. If the user would like to provide ';' in the text of the
+//   commandline, they can escape it as "\;".
+// - As we parse arg, if it doesn't contain a delimiter in it, we'll add it to
+//   the last command in commands. Otherwise, we'll generate a new Commandline
+//   object for each command in arg.
+// Arguments:
+// - commands: a list of Commandline objects to modify and append to
+// - arg: a single argument that should be parsed into args to append to the
+//   current command, or create more Commandlines
+// Return Value:
+// <none>
 void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, std::wstring_view arg)
 {
     std::wstring remaining{ arg };
@@ -362,11 +398,27 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
     } while (remaining.size() > 0);
 }
 
+// Method Description:
+// - Returns the deque of actions we've buffered as a result of parsing commands.
+// Arguments:
+// - <none>
+// Return Value:
+// - the deque of actions we've buffered as a result of parsing commands.
 std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 {
     return _startupActions;
 }
 
+// Method Description:
+// - Get the string of text that should be displayed to the user on exit. This
+//   is usually helpful for cases where the user entered some sort of invalid
+//   commandline. It's additionally also used when the user has requested the
+//   help text.
+// Arguments:
+// - <none>
+// Return Value:
+// - The help text, or an error message, generated from parsing the input
+//   provided by the user.
 const std::string& AppCommandlineArgs::GetExitMessage()
 {
     return _exitMessage;

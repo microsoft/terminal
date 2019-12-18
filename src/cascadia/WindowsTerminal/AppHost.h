@@ -25,6 +25,8 @@ private:
     winrt::TerminalApp::App _app;
     winrt::TerminalApp::AppLogic _logic;
 
+    void _handleCommandlineArgs();
+
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
