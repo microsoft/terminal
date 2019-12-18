@@ -146,7 +146,7 @@
     <CodeAnalysisRuleSet>$(SolutionDir)\src\StaticAnalysis.ruleset</CodeAnalysisRuleSet>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <CAExcludePath>$(SolutionDir)\dep</CAExcludePath>
+    <CAExcludePath>$(CAExcludePath);$(SolutionDir)\dep</CAExcludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>

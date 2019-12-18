@@ -10,7 +10,7 @@ using namespace ::Microsoft::Console::VirtualTerminal;
 // Functions related to Set Graphics Renditions (SGR) are in
 //      TerminalDispatchGraphics.cpp, not this file
 
-TerminalDispatch::TerminalDispatch(ITerminalApi& terminalApi) :
+TerminalDispatch::TerminalDispatch(ITerminalApi& terminalApi) noexcept :
     _terminalApi{ terminalApi }
 {
 }
@@ -32,43 +32,91 @@ void TerminalDispatch::PrintString(const std::wstring_view string)
 
 bool TerminalDispatch::CursorPosition(const size_t line,
                                       const size_t column) noexcept
+try
 {
-    const auto columnInBufferSpace = column - 1;
-    const auto lineInBufferSpace = line - 1;
-    short x = static_cast<short>(column - 1);
-    short y = static_cast<short>(line - 1);
-    return _terminalApi.SetCursorPosition(x, y);
+        SHORT x{ 0 };
+        SHORT y{ 0 };
+
+        if (FAILED(SizeTToShort(column, &x)) ||
+            FAILED(SizeTToShort(line, &y)))
+        {
+            return false;
+        }
+
+        if (FAILED(ShortSub(x, 1, &x)) ||
+            FAILED(ShortSub(y, 1, &y)))
+        {
+            return false;
+        }
+
+        return _terminalApi.SetCursorPosition(x, y);
+    
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 bool TerminalDispatch::CursorForward(const size_t distance) noexcept
+try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
     const COORD newCursorPos{ cursorPos.X + gsl::narrow<short>(distance), cursorPos.Y };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
 
 bool TerminalDispatch::CursorBackward(const size_t distance) noexcept
+try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
     const COORD newCursorPos{ cursorPos.X - gsl::narrow<short>(distance), cursorPos.Y };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
 
 bool TerminalDispatch::CursorUp(const size_t distance) noexcept
+try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
     const COORD newCursorPos{ cursorPos.X, cursorPos.Y + gsl::narrow<short>(distance) };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
 
 bool TerminalDispatch::EraseCharacters(const size_t numChars) noexcept
+try
 {
     return _terminalApi.EraseCharacters(numChars);
 }
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
 
 bool TerminalDispatch::SetWindowTitle(std::wstring_view title) noexcept
+try
 {
     return _terminalApi.SetWindowTitle(title);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -80,13 +128,25 @@ bool TerminalDispatch::SetWindowTitle(std::wstring_view title) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::SetColorTableEntry(const size_t tableIndex,
                                           const DWORD color) noexcept
+try
 {
     return _terminalApi.SetColorTableEntry(tableIndex, color);
 }
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
 
 bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noexcept
+try
 {
     return _terminalApi.SetCursorStyle(cursorStyle);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -96,8 +156,14 @@ bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorSty
 // Return Value:
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::SetDefaultForeground(const DWORD color) noexcept
+try
 {
     return _terminalApi.SetDefaultForeground(color);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -107,8 +173,14 @@ bool TerminalDispatch::SetDefaultForeground(const DWORD color) noexcept
 // Return Value:
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::SetDefaultBackground(const DWORD color) noexcept
+try
 {
     return _terminalApi.SetDefaultBackground(color);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -118,8 +190,14 @@ bool TerminalDispatch::SetDefaultBackground(const DWORD color) noexcept
 // Return Value:
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EraseInLine(const DispatchTypes::EraseType eraseType) noexcept
+try
 {
     return _terminalApi.EraseInLine(eraseType);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -129,8 +207,14 @@ bool TerminalDispatch::EraseInLine(const DispatchTypes::EraseType eraseType) noe
 // Return Value:
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::DeleteCharacter(const size_t count) noexcept
+try
 {
     return _terminalApi.DeleteCharacter(count);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -140,8 +224,14 @@ bool TerminalDispatch::DeleteCharacter(const size_t count) noexcept
 // Return Value:
 // True if handled successfully, false otherwise
 bool TerminalDispatch::InsertCharacter(const size_t count) noexcept
+try
 {
     return _terminalApi.InsertCharacter(count);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }
 
 // Method Description:
@@ -151,6 +241,12 @@ bool TerminalDispatch::InsertCharacter(const size_t count) noexcept
 // Return Value:
 // True if handled successfully. False otherwise
 bool TerminalDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType) noexcept
+try
 {
     return _terminalApi.EraseInDisplay(eraseType);
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
 }

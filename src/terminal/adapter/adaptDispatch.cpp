@@ -9,6 +9,8 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
 
+#include <safeint.h>
+
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 

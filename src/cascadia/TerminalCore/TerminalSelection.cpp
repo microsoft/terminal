@@ -240,6 +240,7 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::DoubleClickSelection(const COORD position)
 {
+#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = _ConvertToBufferCell(position);
 
     // scan leftwards until delimiter is found and
@@ -364,6 +365,7 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
     // force position to be within bounds
+#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = position;
     _buffer->GetSize().Clamp(positionWithOffsets);
 
@@ -380,6 +382,7 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
     // force position to be within bounds
+#pragma warning(suppress:26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = position;
     _buffer->GetSize().Clamp(positionWithOffsets);
 

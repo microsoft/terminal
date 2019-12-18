@@ -34,7 +34,7 @@ const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool TerminalDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+constexpr bool TerminalDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::ForegroundExtended ||
            opt == DispatchTypes::GraphicsOptions::BackgroundExtended;
@@ -45,7 +45,7 @@ bool TerminalDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions o
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool TerminalDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+constexpr bool TerminalDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::BoldBright ||
            opt == DispatchTypes::GraphicsOptions::UnBold;
@@ -56,7 +56,7 @@ bool TerminalDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions 
 //the default attributes.
 // Return Value:
 // - true if the opt sets either/or attribute to the defaults, false otherwise.
-bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+constexpr bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::Off ||
            opt == DispatchTypes::GraphicsOptions::ForegroundDefault ||
@@ -79,7 +79,7 @@ bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptio
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
 bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
-                                           size_t optionsConsumed)
+                                           size_t& optionsConsumed)
 {
     COLORREF color = 0;
     bool isForeground = false;
@@ -89,8 +89,8 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
     if (options.size() >= 2 && s_IsRgbColorOption(options.front()))
     {
         optionsConsumed = 2;
-        DispatchTypes::GraphicsOptions extendedOpt = options.at(0);
-        DispatchTypes::GraphicsOptions typeOpt = options.at(1);
+        const auto extendedOpt = options.at(0);
+        const auto typeOpt = options.at(1);
 
         if (extendedOpt == DispatchTypes::GraphicsOptions::ForegroundExtended)
         {
@@ -105,7 +105,7 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
         {
             optionsConsumed = 5;
             // ensure that each value fits in a byte
-            const auto limit = (DispatchTypes::GraphicsOptions)255;
+            const auto limit = static_cast<DispatchTypes::GraphicsOptions>(255);
             const auto red = std::min(options.at(2), limit);
             const auto green = std::min(options.at(3), limit);
             const auto blue = std::min(options.at(4), limit);
@@ -119,10 +119,10 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
             optionsConsumed = 3;
             if (options.at(2) <= 255) // ensure that the provided index is on the table
             {
-                unsigned int tableIndex = options.at(2);
+                const auto tableIndex = options.at(2);
                 success = isForeground ?
-                              _terminalApi.SetTextForegroundIndex((BYTE)tableIndex) :
-                              _terminalApi.SetTextBackgroundIndex((BYTE)tableIndex);
+                              _terminalApi.SetTextForegroundIndex(gsl::narrow_cast<BYTE>(tableIndex)) :
+                              _terminalApi.SetTextBackgroundIndex(gsl::narrow_cast<BYTE>(tableIndex));
             }
         }
     }
@@ -295,7 +295,7 @@ bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<Dispatc
         // Run through the graphics options and apply them
         for (size_t i = 0; i < options.size(); i++)
         {
-            DispatchTypes::GraphicsOptions opt = options.at(i);
+            const auto opt = options.at(i);
             if (s_IsDefaultColorOption(opt))
             {
                 success = _SetDefaultColorHelper(opt);
