@@ -7,6 +7,7 @@
 #include "../TerminalApp/AppCommandlineArgs.h"
 
 using namespace WEX::Logging;
+using namespace WEX::Common;
 using namespace WEX::TestExecution;
 
 using namespace winrt::TerminalApp;
@@ -31,9 +32,13 @@ namespace TerminalAppLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
+
         TEST_METHOD(ParseSimpleCommandline);
         TEST_METHOD(ParseTrickyCommandlines);
         TEST_METHOD(TestEscapeDelimiters);
+
+        TEST_METHOD(ParseSimpleHelp);
+        TEST_METHOD(ParseSubcommandHelp);
 
         TEST_METHOD(ParseBasicCommandlineIntoArgs);
         TEST_METHOD(ParseNewTabCommand);
@@ -128,6 +133,67 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(1).Wargs().at(0));
             VERIFY_ARE_EQUAL(1u, commandlines.at(2).Argc());
             VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(2).Wargs().at(0));
+        }
+    }
+
+    void CommandlineTest::ParseSimpleHelp()
+    {
+        static std::vector<std::vector<const wchar_t*>> commandsToTest{
+            { L"wt.exe", L"/?" },
+            { L"wt.exe", L"-?" },
+            { L"wt.exe", L"-h" },
+            { L"wt.exe", L"--help" }
+        };
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:testPass", L"{0, 1, 2, 3}")
+        END_TEST_METHOD_PROPERTIES();
+        int testPass;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
+
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+
+            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(1u, commandlines.size());
+            VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+            // VERIFY_ARE_EQUAL(L"/?", commandlines.at(0).Wargs().at(1));
+
+            for (auto& cmdBlob : commandlines)
+            {
+                cmdBlob.BuildArgv();
+                const auto result = appArgs.ParseCommand(cmdBlob);
+                VERIFY_ARE_EQUAL(0, result);
+                Log::Comment(NoThrowString().Format(
+                    L"Exit Message:\n%hs\n",
+                    appArgs._exitMessage.c_str()));
+                VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            }
+        }
+    }
+
+    void CommandlineTest::ParseSubcommandHelp()
+    {
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"/?" };
+            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(1u, commandlines.size());
+            VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+            VERIFY_ARE_EQUAL(L"/?", commandlines.at(0).Wargs().at(1));
+
+            for (auto& cmdBlob : commandlines)
+            {
+                cmdBlob.BuildArgv();
+                const auto result = appArgs.ParseCommand(cmdBlob);
+                VERIFY_ARE_EQUAL(0, result);
+                Log::Comment(NoThrowString().Format(
+                    L"Exit Message:\n%hs\n",
+                    appArgs._exitMessage.c_str()));
+                VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            }
         }
     }
 

@@ -70,10 +70,12 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
     }
     catch (const CLI::CallForHelp& e)
     {
-        return _app.exit(e);
+        return _handleExit(_app, e);
     }
     catch (const CLI::ParseError& e)
     {
+        // If we parsed the commandline, and _no_ subcommands were provided, try
+        // parsing again as a "new-tab" command.
         if (_NoCommandsProvided())
         {
             try
@@ -83,15 +85,31 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
             }
             catch (const CLI::ParseError& e)
             {
-                return _newTabCommand->exit(e);
+                return _handleExit(*_newTabCommand, e);
             }
         }
         else
         {
-            return _app.exit(e);
+            return _handleExit(_app, e);
         }
     }
     return 0;
+}
+
+int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e)
+{
+    std::ostringstream out;
+    std::ostringstream err;
+    const auto result = command.exit(e, out, err);
+    if (result == 0)
+    {
+        _exitMessage = out.str();
+    }
+    else
+    {
+        _exitMessage = err.str();
+    }
+    return result;
 }
 
 // Method Description:
