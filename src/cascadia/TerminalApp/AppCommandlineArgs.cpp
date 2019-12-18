@@ -198,7 +198,7 @@ void AppCommandlineArgs::_AddNewTerminalArgs(CLI::App* subcommand)
 {
     subcommand->add_option("-p,--profile",
                            _profileName,
-                           "Open with the give profile");
+                           "Open with the given profile. Accepts either the name or guid of a profile");
     subcommand->add_option("-d,--startingDirectory",
                            _startingDirectory,
                            "Open in the given directory instead of the profile's set startingDirectory");

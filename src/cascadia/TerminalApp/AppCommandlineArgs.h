@@ -61,7 +61,6 @@ private:
     int _handleExit(const CLI::App& command, const CLI::Error& e);
 
     std::string _exitMessage;
-    // std::string _exitErrorMessage;
 
     static void _addCommandsForArg(std::vector<Commandline>& commands, std::wstring_view arg);
 
