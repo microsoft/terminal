@@ -30,6 +30,7 @@ public:
     static std::vector<Commandline> BuildCommands(const int argc, const wchar_t* argv[]);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
+    void ValidateStartupCommands();
     std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
     const std::string& GetExitMessage();
 

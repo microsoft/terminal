@@ -142,6 +142,8 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
+            _appArgs.ValidateStartupCommands();
+
             // This will kick off a chain of events to perform each startup
             // action. As each startup action is completed, the next will be
             // fired.

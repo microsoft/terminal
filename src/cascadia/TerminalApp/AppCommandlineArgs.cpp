@@ -478,3 +478,21 @@ const std::string& AppCommandlineArgs::GetExitMessage()
 {
     return _exitMessage;
 }
+
+void AppCommandlineArgs::ValidateStartupCommands()
+{
+    // If we parsed no commands, or the first command we've parsed is not a new
+    // tab action, prepend a new-tab command to the front of the list.
+    if (_startupActions.size() == 0 ||
+        _startupActions.front().Action() != ShortcutAction::NewTab)
+    {
+        // Buld the NewTab action from the values we've parsed on the commandline.
+        auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
+        newTabAction->Action(ShortcutAction::NewTab);
+        auto args = winrt::make_self<implementation::NewTabArgs>();
+        auto newTerminalArgs = winrt::make_self<implementation::NewTerminalArgs>();
+        args->TerminalArgs(*newTerminalArgs);
+        newTabAction->Args(*args);
+        _startupActions.push_front(*newTabAction);
+    }
+}
