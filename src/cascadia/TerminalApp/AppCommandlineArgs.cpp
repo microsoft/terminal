@@ -18,15 +18,6 @@ AppCommandlineArgs::AppCommandlineArgs()
     _resetStateToDefault();
 }
 
-void AppCommandlineArgs::_resetStateToDefault()
-{
-    _profileName = "";
-    _startingDirectory = "";
-    _commandline.clear();
-    _splitVertical = false;
-    _splitHorizontal = false;
-}
-
 // Method Description:
 // - Attempt to parse a given command as a single commandline. If the command
 //   doesn't have a subcommand, we'll try parsing the commandline again, as a
@@ -132,6 +123,7 @@ void AppCommandlineArgs::_buildParser()
 {
     _buildNewTabParser();
     _buildSplitPaneParser();
+    _buildFocusTabParser();
 
     // TODO:GH#607 implement `help`, `list-profiles` subcommands
     _listProfilesCommand = _app.add_subcommand("list-profiles", "List all the available profiles");
@@ -194,6 +186,46 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 
         splitPaneActionAndArgs->Args(*args);
         _startupActions.push_back(*splitPaneActionAndArgs);
+    });
+}
+
+// Method Description:
+// - Adds the `new-tab` subcommand and related options to the commandline parser.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildFocusTabParser()
+{
+    _focusTabCommand = _app.add_subcommand("focus-tab", "Move focus to another tab");
+    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, "Move focus the tab at the given index");
+    auto* nextOpt = _focusTabCommand->add_flag("-n,--next",
+                                               _focusNextTab,
+                                               "Move focus to the next tab");
+    auto* prevOpt = _focusTabCommand->add_flag("-p,--previous",
+                                               _focusPrevTab,
+                                               "Move focus to the previous tab");
+    nextOpt->excludes(prevOpt);
+    indexOpt->excludes(prevOpt);
+    indexOpt->excludes(nextOpt);
+
+    _focusTabCommand->callback([&, this]() {
+        // Buld the action from the values we've parsed on the commandline.
+        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+
+        if (_focusTabIndex >= 0)
+        {
+            focusTabAction->Action(ShortcutAction::SwitchToTab);
+            auto args = winrt::make_self<implementation::SwitchToTabArgs>();
+            args->TabIndex(_focusTabIndex);
+            focusTabAction->Args(*args);
+            _startupActions.push_back(*focusTabAction);
+        }
+        else if (_focusNextTab || _focusPrevTab)
+        {
+            focusTabAction->Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+            _startupActions.push_back(*focusTabAction);
+        }
     });
 }
 
@@ -276,7 +308,30 @@ bool AppCommandlineArgs::_noCommandsProvided()
 {
     return !(*_listProfilesCommand ||
              *_newTabCommand ||
+             *_focusTabCommand ||
              *_newPaneCommand);
+}
+
+// Method Description:
+// - Reset any state we might have accumulated back to its default values. Since
+//   we'll be re-using these members across the parsing of many commandlines, we
+//   need to make sure the state from one run doesn't pollute the following one.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_resetStateToDefault()
+{
+    _profileName = "";
+    _startingDirectory = "";
+    _commandline.clear();
+
+    _splitVertical = false;
+    _splitHorizontal = false;
+
+    _focusTabIndex = -1;
+    _focusNextTab = false;
+    _focusPrevTab = false;
 }
 
 // Function Description:

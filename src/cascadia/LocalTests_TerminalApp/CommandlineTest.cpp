@@ -45,6 +45,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ParseNewTabCommand);
         TEST_METHOD(ParseSplitPaneIntoArgs);
         TEST_METHOD(ParseComboCommandlineIntoArgs);
+        TEST_METHOD(ParseFocusTabArgs);
 
         TEST_METHOD(ParseNoCommandIsNewTab);
 
@@ -685,6 +686,76 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myArgs.TerminalArgs().Commandline());
+        }
+    }
+
+    void CommandlineTest::ParseFocusTabArgs()
+    {
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(0, appArgs._startupActions.size());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-n" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NextTab, actionAndArgs.Action());
+            VERIFY_IS_NULL(actionAndArgs.Args());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-p" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::PrevTab, actionAndArgs.Action());
+            VERIFY_IS_NULL(actionAndArgs.Args());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-t", L"2" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::SwitchToTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SwitchToTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_EQUAL(2, myArgs.TabIndex());
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Attempt an invalid combination of flags"));
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-p", L"-n" };
+
+            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            VERIFY_ARE_EQUAL(1u, commandlines.size());
+            VERIFY_ARE_EQUAL(4u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL(L"wt.exe", commandlines.at(0).Wargs().at(0));
+
+            for (auto& cmdBlob : commandlines)
+            {
+                cmdBlob.BuildArgv();
+                const auto result = appArgs.ParseCommand(cmdBlob);
+                Log::Comment(NoThrowString().Format(
+                    L"Exit Message:\n%hs",
+                    appArgs._exitMessage.c_str()));
+                VERIFY_ARE_NOT_EQUAL(0, result);
+                VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            }
         }
     }
 

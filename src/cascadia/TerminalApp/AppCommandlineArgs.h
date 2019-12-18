@@ -40,14 +40,20 @@ private:
     // --- Subcommands ---
     CLI::App* _newTabCommand;
     CLI::App* _newPaneCommand;
+    CLI::App* _focusTabCommand;
     CLI::App* _listProfilesCommand;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
     std::string _profileName;
     std::string _startingDirectory;
     std::vector<std::string> _commandline;
+
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
+
+    int _focusTabIndex{ -1 };
+    bool _focusNextTab{ false };
+    bool _focusPrevTab{ false };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
@@ -58,6 +64,7 @@ private:
     void _buildParser();
     void _buildNewTabParser();
     void _buildSplitPaneParser();
+    void _buildFocusTabParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();
     int _handleExit(const CLI::App& command, const CLI::Error& e);
