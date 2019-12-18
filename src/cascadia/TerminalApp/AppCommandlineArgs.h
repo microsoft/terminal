@@ -41,27 +41,26 @@ private:
     CLI::App* _newTabCommand;
     CLI::App* _newPaneCommand;
     CLI::App* _listProfilesCommand;
-    // Are you adding a new sub-command? Make sure to update _NoCommandsProvided!
+    // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
     std::string _profileName;
     std::string _startingDirectory;
     std::vector<std::string> _commandline;
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
-    // Are you adding more args here? Make sure to reset them in _ResetStateToDefault
+    // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
-
-    winrt::TerminalApp::NewTerminalArgs _GetNewTerminalArgs();
-    void _AddNewTerminalArgs(CLI::App* subcommand);
-    void _BuildParser();
-    void _BuildNewTabParser();
-    void _BuildSplitPaneParser();
-    bool _NoCommandsProvided();
-    void _ResetStateToDefault();
-    int _handleExit(const CLI::App& command, const CLI::Error& e);
-
     std::string _exitMessage;
+
+    winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs();
+    void _addNewTerminalArgs(CLI::App* subcommand);
+    void _buildParser();
+    void _buildNewTabParser();
+    void _buildSplitPaneParser();
+    bool _noCommandsProvided();
+    void _resetStateToDefault();
+    int _handleExit(const CLI::App& command, const CLI::Error& e);
 
     static void _addCommandsForArg(std::vector<Commandline>& commands, std::wstring_view arg);
 

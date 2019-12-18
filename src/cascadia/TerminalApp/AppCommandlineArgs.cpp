@@ -14,11 +14,11 @@ const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ L"^;|[^\\\\];" };
 
 AppCommandlineArgs::AppCommandlineArgs()
 {
-    _BuildParser();
-    _ResetStateToDefault();
+    _buildParser();
+    _resetStateToDefault();
 }
 
-void AppCommandlineArgs::_ResetStateToDefault()
+void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName = "";
     _startingDirectory = "";
@@ -45,7 +45,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
     // multiple times during the parsing of a single commandline (once for each
     // sub-command), we don't want the leftover state from previous calls to
     // pollute this run's state.
-    _ResetStateToDefault();
+    _resetStateToDefault();
 
     try
     {
@@ -62,7 +62,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 
         // If we parsed the commandline, and _no_ subcommands were provided, try
         // parsing again as a "new-tab" command.
-        if (_NoCommandsProvided())
+        if (_noCommandsProvided())
         {
             _newTabCommand->clear();
             _newTabCommand->parse(argc, argv);
@@ -76,7 +76,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
     {
         // If we parsed the commandline, and _no_ subcommands were provided, try
         // parsing again as a "new-tab" command.
-        if (_NoCommandsProvided())
+        if (_noCommandsProvided())
         {
             try
             {
@@ -128,10 +128,10 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_BuildParser()
+void AppCommandlineArgs::_buildParser()
 {
-    _BuildNewTabParser();
-    _BuildSplitPaneParser();
+    _buildNewTabParser();
+    _buildSplitPaneParser();
 
     // TODO:GH#607 implement `help`, `list-profiles` subcommands
     _listProfilesCommand = _app.add_subcommand("list-profiles", "List all the available profiles");
@@ -143,16 +143,16 @@ void AppCommandlineArgs::_BuildParser()
 // - <none>
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_BuildNewTabParser()
+void AppCommandlineArgs::_buildNewTabParser()
 {
     _newTabCommand = _app.add_subcommand("new-tab", "Create a new tab");
-    _AddNewTerminalArgs(_newTabCommand);
+    _addNewTerminalArgs(_newTabCommand);
     _newTabCommand->callback([&, this]() {
         // Buld the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
         newTabAction->Action(ShortcutAction::NewTab);
         auto args = winrt::make_self<implementation::NewTabArgs>();
-        args->TerminalArgs(_GetNewTerminalArgs());
+        args->TerminalArgs(_getNewTerminalArgs());
         newTabAction->Args(*args);
         _startupActions.push_back(*newTabAction);
     });
@@ -164,10 +164,10 @@ void AppCommandlineArgs::_BuildNewTabParser()
 // - <none>
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_BuildSplitPaneParser()
+void AppCommandlineArgs::_buildSplitPaneParser()
 {
     _newPaneCommand = _app.add_subcommand("split-pane", "Create a new pane");
-    _AddNewTerminalArgs(_newPaneCommand);
+    _addNewTerminalArgs(_newPaneCommand);
     auto* horizontalOpt = _newPaneCommand->add_flag("-H,--horizontal",
                                                     _splitHorizontal,
                                                     "Create the new pane as a horizontal split (think [-])");
@@ -181,7 +181,7 @@ void AppCommandlineArgs::_BuildSplitPaneParser()
         auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
         splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
         auto args = winrt::make_self<implementation::SplitPaneArgs>();
-        args->TerminalArgs(_GetNewTerminalArgs());
+        args->TerminalArgs(_getNewTerminalArgs());
 
         if (_splitHorizontal)
         {
@@ -204,7 +204,7 @@ void AppCommandlineArgs::_BuildSplitPaneParser()
 // - subcommand: the command to add the args to.
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_AddNewTerminalArgs(CLI::App* subcommand)
+void AppCommandlineArgs::_addNewTerminalArgs(CLI::App* subcommand)
 {
     subcommand->add_option("-p,--profile",
                            _profileName,
@@ -223,7 +223,7 @@ void AppCommandlineArgs::_AddNewTerminalArgs(CLI::App* subcommand)
 // - <none>
 // Return Value:
 // - A fully initialized NewTerminalArgs corresponding to values we've currently parsed.
-NewTerminalArgs AppCommandlineArgs::_GetNewTerminalArgs()
+NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs()
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
     if (!_profileName.empty())
@@ -272,7 +272,7 @@ NewTerminalArgs AppCommandlineArgs::_GetNewTerminalArgs()
 // - <none>
 // Return Value:
 // - true if no sub commands were parsed.
-bool AppCommandlineArgs::_NoCommandsProvided()
+bool AppCommandlineArgs::_noCommandsProvided()
 {
     return !(*_listProfilesCommand ||
              *_newTabCommand ||
