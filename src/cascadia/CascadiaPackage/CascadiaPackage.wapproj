@@ -45,6 +45,10 @@
          so it's not in the common resource items. -->
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <!-- This is picked up by CascadiaResources.build.items. -->
+    <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>
