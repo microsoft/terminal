@@ -13,6 +13,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         TYPED_EVENT(StateChanged, ITerminalConnection, winrt::Windows::Foundation::IInspectable);
 
     protected:
+
+#pragma warning(push)
+#pragma warning(disable:26447) // Analyzer is still upset about noexcepts throwing even with function level try.
         // Method Description:
         // - Attempt to transition to and signal the specified connection state.
         //   The transition will only be effected if the state is "beyond" the current state.
@@ -21,6 +24,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Return Value:
         //   Whether we've successfully transitioned to the new state.
         bool _transitionToState(const ConnectionState state) noexcept
+        try
         {
             {
                 std::lock_guard<std::mutex> stateLock{ _stateMutex };
@@ -32,9 +36,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _connectionState = state;
             }
             // Dispatch the event outside of lock.
+#pragma warning(suppress : 26491) // We can't avoid static_cast downcast because this is template magic.
             _StateChangedHandlers(*static_cast<T*>(this), nullptr);
             return true;
         }
+        CATCH_FAIL_FAST()
 
         // Method Description:
         // - Returns whether the state is one of the N specified states.
@@ -43,7 +49,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Return Value:
         //   Whether we're in one of the states.
         template<typename... Args>
-        bool _isStateOneOf(Args&&... args) const noexcept
+        bool _isStateOneOf(const Args&&... args) const noexcept
+        try
         {
             // Dark magic! This function uses C++17 fold expressions. These fold expressions roughly expand as follows:
             // (... OP (expression_using_args))
@@ -56,6 +63,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::lock_guard<std::mutex> stateLock{ _stateMutex };
             return (... || (_connectionState == args));
         }
+        CATCH_FAIL_FAST()
 
         // Method Description:
         // - Returns whether the state has reached or surpassed the specified state.
@@ -64,10 +72,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Return Value:
         //   Whether we're at or beyond the specified state
         bool _isStateAtOrBeyond(const ConnectionState state) const noexcept
+        try
         {
             std::lock_guard<std::mutex> stateLock{ _stateMutex };
             return _connectionState >= state;
         }
+        CATCH_FAIL_FAST()
+#pragma warning(pop)
 
         // Method Description:
         // - (Convenience:) Returns whether we're "connected".

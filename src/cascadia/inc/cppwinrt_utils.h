@@ -66,7 +66,7 @@ private:                                                                        
 #define TYPED_EVENT(name, sender, args)                                                                                                            \
 public:                                                                                                                                            \
     winrt::event_token name(winrt::Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
-    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); }                                                       \
+    void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }                                                       \
                                                                                                                                                    \
 private:                                                                                                                                           \
     winrt::event<winrt::Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
@@ -80,7 +80,7 @@ private:                                                                        
 #define WINRT_CALLBACK(name, args)                                                           \
 public:                                                                                      \
     winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); }  \
-    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); } \
+    void name(winrt::event_token const& token) { _##name##Handlers.remove(token); } \
                                                                                              \
 private:                                                                                     \
     winrt::event<args> _##name##Handlers;
