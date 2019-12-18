@@ -125,7 +125,17 @@
          so it's not in the common resource items. -->
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- This is picked up by CascadiaResources.build.items. -->
+    <WindowsTerminalAssetSuffix>-Universal</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <!-- This is picked up by CascadiaResources.build.items. -->
+    <WindowsTerminalAssetSuffix>$(WindowsTerminalAssetSuffix)Dev</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
+
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">

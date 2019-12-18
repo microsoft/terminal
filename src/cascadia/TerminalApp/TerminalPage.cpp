@@ -630,7 +630,6 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-
         _actionDispatch->OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
         _actionDispatch->DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
         _actionDispatch->CloseTab({ this, &TerminalPage::_HandleCloseTab });
@@ -651,6 +650,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         _actionDispatch->CopyText({ this, &TerminalPage::_HandleCopyText });
         _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
@@ -1423,6 +1423,20 @@ namespace winrt::TerminalApp::implementation
         {
             _newTabButton.Flyout().Hide();
         }
+    }
+
+    // Method Description:
+    // - Called when the user tries to do a search using keybindings.
+    //   This will tell the current focused terminal control to create
+    //   a search box and enable find process.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_Find()
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.CreateSearchBoxControl();
     }
 
     // Method Description:

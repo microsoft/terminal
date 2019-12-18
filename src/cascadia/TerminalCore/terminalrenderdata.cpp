@@ -13,6 +13,15 @@ Viewport Terminal::GetViewport() noexcept
     return _GetVisibleViewport();
 }
 
+COORD Terminal::GetTextBufferEndPosition() const noexcept
+{
+    // We use the end line of mutableViewport as the end
+    // of the text buffer, it always moves with the written
+    // text
+    COORD endPosition{ _GetMutableViewport().Width() - 1, gsl::narrow<short>(ViewEndIndex()) };
+    return endPosition;
+}
+
 const TextBuffer& Terminal::GetTextBuffer() noexcept
 {
     return *_buffer;
@@ -119,8 +128,37 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
 
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
-    SetSelectionAnchor(coordStart);
-    SetEndSelectionPosition(coordEnd);
+    COORD realCoordStart = coordStart;
+    COORD realCoordEnd = coordEnd;
+
+    bool notifyScrollChange = false;
+    if (coordStart.Y < _VisibleStartIndex())
+    {
+        // recalculate the scrollOffset
+        _scrollOffset = ViewStartIndex() - coordStart.Y;
+        notifyScrollChange = true;
+    }
+    else if (coordEnd.Y > _VisibleEndIndex())
+    {
+        // recalculate the scrollOffset, note that if the found text is
+        // beneath the current visible viewport, it may be within the
+        // current mutableViewport and the scrollOffset will be smaller
+        // than 0
+        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.Y);
+        notifyScrollChange = true;
+    }
+
+    if (notifyScrollChange)
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _NotifyScrollEvent();
+    }
+
+    realCoordStart.Y -= gsl::narrow<short>(_VisibleStartIndex());
+    realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
+
+    SetSelectionAnchor(realCoordStart);
+    SetEndSelectionPosition(realCoordEnd);
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept

@@ -220,7 +220,7 @@ bool Pane::_NavigateFocus(const Direction& direction)
 
     // If the child we want to move focus to is _already_ focused, return false,
     // to try and let our parent figure it out.
-    if (newlyFocusedChild->WasLastFocused())
+    if (newlyFocusedChild->_HasFocusedChild())
     {
         return false;
     }

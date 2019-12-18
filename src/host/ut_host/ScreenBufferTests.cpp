@@ -117,6 +117,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtNewlinePastViewport);
     TEST_METHOD(VtNewlinePastEndOfBuffer);
+    TEST_METHOD(VtNewlineOutsideMargins);
 
     TEST_METHOD(VtSetColorTable);
 
@@ -199,6 +200,8 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownExactlyAtMargins);
 
     TEST_METHOD(CursorSaveRestore);
+
+    TEST_METHOD(ScreenAlignmentPattern);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1473,6 +1476,37 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
         const auto& attr = attrs[x];
         VERIFY_ARE_EQUAL(expectedFillAttr, attr);
     }
+}
+
+void ScreenBufferTests::VtNewlineOutsideMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    const auto viewportTop = si.GetViewport().Top();
+    const auto viewportBottom = si.GetViewport().BottomInclusive();
+    // Make sure the bottom margin will fit inside the viewport.
+    VERIFY_IS_TRUE(si.GetViewport().Height() > 5);
+
+    Log::Comment(L"LF at bottom of viewport scrolls the viewport");
+    cursor.SetPosition({ 0, viewportBottom });
+    stateMachine.ProcessString(L"\n");
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportBottom + 1 }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportTop + 1 }), si.GetViewport().Origin());
+
+    Log::Comment(L"Reset viewport and apply DECSTBM margins");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, viewportTop }), true));
+    stateMachine.ProcessString(L"\x1b[1;5r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+    Log::Comment(L"LF no longer scrolls the viewport when below bottom margin");
+    cursor.SetPosition({ 0, viewportBottom });
+    stateMachine.ProcessString(L"\n");
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportBottom }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(COORD({ 0, viewportTop }), si.GetViewport().Origin());
 }
 
 void ScreenBufferTests::VtSetColorTable()
@@ -5486,4 +5520,63 @@ void ScreenBufferTests::CursorSaveRestore()
     // Reset origin mode and margins.
     stateMachine.ProcessString(resetDECOM);
     stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::ScreenAlignmentPattern()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = si.GetTextBuffer().GetCursor();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    Log::Comment(L"Set the initial buffer state.");
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Move the viewport down a few lines, and only cover part of the buffer width.
+    si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 30 }), true);
+    const auto viewportStart = si.GetViewport().Top();
+    const auto viewportEnd = si.GetViewport().BottomExclusive();
+
+    // Fill the entire buffer with Zs. Blue on Green.
+    const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    _FillLines(0, bufferHeight, L'Z', bufferAttr);
+
+    // Set the initial attributes.
+    auto initialAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    initialAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    si.SetAttributes(initialAttr);
+
+    // Set some margins.
+    stateMachine.ProcessString(L"\x1b[10;20r");
+    VERIFY_IS_TRUE(si.AreMarginsSet());
+
+    // Place the cursor in the center.
+    auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+
+    Log::Comment(L"Execute the DECALN escape sequence.");
+    stateMachine.ProcessString(L"\x1b#8");
+
+    Log::Comment(L"Lines within view should be filled with Es, with default attributes.");
+    auto defaultAttr = TextAttribute{};
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportStart, viewportEnd, L'E', defaultAttr));
+
+    Log::Comment(L"Field of Zs outside viewport should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, viewportStart, L'Z', bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportEnd, bufferHeight, L'Z', bufferAttr));
+
+    Log::Comment(L"Margins should not be set.");
+    VERIFY_IS_FALSE(si.AreMarginsSet());
+
+    Log::Comment(L"Cursor position shold be moved to home.");
+    auto homePosition = COORD{ 0, viewportStart };
+    VERIFY_ARE_EQUAL(homePosition, cursor.GetPosition());
+
+    Log::Comment(L"Meta/rendition attributes should be reset.");
+    auto expectedAttr = initialAttr;
+    expectedAttr.SetMetaAttributes(0);
+    VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 }
