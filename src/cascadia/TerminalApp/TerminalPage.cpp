@@ -1571,6 +1571,11 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabView();
     }
 
+    winrt::hstring TerminalPage::EarlyExitMessage()
+    {
+        return winrt::to_hstring(_appArgs.GetExitMessage());
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

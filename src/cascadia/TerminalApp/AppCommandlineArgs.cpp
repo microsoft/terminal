@@ -366,3 +366,8 @@ std::deque<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupAct
 {
     return _startupActions;
 }
+
+const std::string& AppCommandlineArgs::GetExitMessage()
+{
+    return _exitMessage;
+}

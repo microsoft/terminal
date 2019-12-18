@@ -31,6 +31,7 @@ public:
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
+    const std::string& GetExitMessage();
 
 private:
     static const std::wregex _commandDelimiterRegex;

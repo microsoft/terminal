@@ -6,6 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 
+#include "resource.h"
 #include <shellapi.h>
 #include <processenv.h>
 
@@ -16,6 +17,30 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
+
+// Routine Description:
+// - Retrieves the string resource from the current module with the given ID
+//   from the resources files. See resource.h and the .rc definitions for valid IDs.
+// Arguments:
+// - id - Resource ID
+// Return Value:
+// - String resource retrieved from that ID.
+static std::wstring GetStringResource(const UINT id)
+{
+    // Calling LoadStringW with a pointer-sized storage and no length will return a read-only pointer
+    // directly to the resource data instead of copying it immediately into a buffer.
+    LPWSTR readOnlyResource = nullptr;
+    const auto length = LoadStringW(wil::GetModuleInstanceHandle(),
+                                    id,
+                                    reinterpret_cast<LPWSTR>(&readOnlyResource),
+                                    0);
+
+    // However, the pointer and length given are NOT guaranteed to be zero-terminated
+    // and most uses of this data will probably want a zero-terminated string.
+    // So we're going to construct and return a std::wstring copy from the pointer/length
+    // since those are certainly zero-terminated.
+    return { readOnlyResource, gsl::narrow<size_t>(length) };
+}
 
 AppHost::AppHost() noexcept :
     _app{},
@@ -103,7 +128,18 @@ void AppHost::Initialize()
             {
                 args.push_back({ argv[i] });
             }
-            _logic.SetStartupCommandline({ args });
+            auto result = _logic.SetStartupCommandline({ args });
+
+            auto message = _logic.EarlyExitMessage();
+            if (!message.empty())
+            {
+                MessageBoxW(nullptr,
+                            message.data(),
+                            GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
+                            MB_OK | MB_ICONERROR);
+
+                ExitProcess(result);
+            }
         }
     }
 
