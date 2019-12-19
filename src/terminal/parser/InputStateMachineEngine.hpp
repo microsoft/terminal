@@ -40,10 +40,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionPassThroughString(const std::wstring_view string) override;
 
         bool ActionEscDispatch(const wchar_t wch,
-                               const std::optional<wchar_t> intermediate) override;
+                               const std::basic_string_view<wchar_t> intermediates) override;
 
         bool ActionCsiDispatch(const wchar_t wch,
-                               const std::optional<wchar_t> intermediate,
+                               const std::basic_string_view<wchar_t> intermediates,
                                const std::basic_string_view<size_t> parameters) override;
 
         bool ActionClear() override;

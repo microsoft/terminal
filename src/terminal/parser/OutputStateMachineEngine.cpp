@@ -158,16 +158,16 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 //      and a simple letter. No complicated parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - intermediate - Intermediate character in the sequence, if there was one.
+// - intermediates - Intermediate characters in the sequence
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                 const std::optional<wchar_t> intermediate)
+                                                 const std::basic_string_view<wchar_t> intermediates)
 {
     bool success = false;
 
     // no intermediates.
-    if (!intermediate.has_value())
+    if (intermediates.empty())
     {
         switch (wch)
         {
@@ -221,9 +221,9 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             break;
         }
     }
-    else
+    else if (intermediates.size() == 1)
     {
-        const auto value = intermediate.value();
+        const auto value = intermediates[0];
         DesignateCharsetTypes designateType = DefaultDesignateCharsetType;
         success = _GetDesignateType(value, designateType);
         if (success)
@@ -279,12 +279,12 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - intermediate - Intermediate character in the sequence, if there was one.
+// - intermediates - Intermediate characters in the sequence
 // - parameters - set of numeric parameters collected while pasring the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                 const std::optional<wchar_t> intermediate,
+                                                 const std::basic_string_view<wchar_t> intermediates,
                                                  std::basic_string_view<size_t> parameters)
 {
     bool success = false;
@@ -303,7 +303,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingParams = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
 
-    if (!intermediate.has_value())
+    if (intermediates.empty())
     {
         // fill params
         switch (wch)
@@ -514,9 +514,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             }
         }
     }
-    else
+    else if (intermediates.size() == 1)
     {
-        const auto value = intermediate.value();
+        const auto value = intermediates[0];
         switch (value)
         {
         case L'?':
