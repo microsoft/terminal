@@ -855,7 +855,7 @@ bool OutputStateMachineEngine::_GetEraseOperation(const std::basic_string_view<s
     else if (parameters.size() == 1)
     {
         // If there's one parameter, attempt to match it to the values we accept.
-        const auto param = static_cast<DispatchTypes::EraseType>(parameters.front());
+        const auto param = static_cast<DispatchTypes::EraseType>(parameters[0]);
 
         switch (param)
         {
@@ -893,7 +893,7 @@ bool OutputStateMachineEngine::_GetCursorDistance(const std::basic_string_view<s
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        distance = parameters.front();
+        distance = parameters[0];
         success = true;
     }
 
@@ -927,7 +927,7 @@ bool OutputStateMachineEngine::_GetScrollDistance(const std::basic_string_view<s
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        distance = parameters.front();
+        distance = parameters[0];
         success = true;
     }
 
@@ -961,7 +961,7 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const std::basic_string_view<siz
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        consoleWidth = parameters.front();
+        consoleWidth = parameters[0];
         success = true;
     }
 
@@ -998,14 +998,14 @@ bool OutputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_
     else if (parameters.size() == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
-        line = parameters.front();
+        line = parameters[0];
         success = true;
     }
     else if (parameters.size() == 2)
     {
         // If there are exactly two parameters, use them.
-        line = parameters.front();
-        column = parameters.back();
+        line = parameters[0];
+        column = parameters[1];
         success = true;
     }
 
@@ -1052,14 +1052,14 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(const std::basic_string_view
     }
     else if (parameters.size() == 1)
     {
-        topMargin = parameters.front();
+        topMargin = parameters[0];
         success = true;
     }
     else if (parameters.size() == 2)
     {
         // If there are exactly two parameters, use them.
-        topMargin = parameters.front();
-        bottomMargin = parameters.back();
+        topMargin = parameters[0];
+        bottomMargin = parameters[1];
         success = true;
     }
 
@@ -1085,7 +1085,7 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(const std::basic_string
     if (parameters.size() == 1)
     {
         // If there's one parameter, attempt to match it to the values we accept.
-        const auto param = parameters.front();
+        const auto param = parameters[0];
 
         switch (param)
         {
@@ -1116,7 +1116,6 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const std::basic_string_vie
     {
         for (const auto& p : parameters)
         {
-            // No memcpy. The parameters are shorts. The graphics options are unsigned ints.
             privateModes.push_back((DispatchTypes::PrivateModeParams)p);
         }
         success = true;
@@ -1151,7 +1150,7 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const std::basic_st
     }
     else if (parameters.size() == 1)
     {
-        if (parameters.front() == 0)
+        if (parameters[0] == 0)
         {
             success = true;
         }
@@ -1196,7 +1195,7 @@ bool OutputStateMachineEngine::_GetTabDistance(const std::basic_string_view<size
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        distance = parameters.front();
+        distance = parameters[0];
         success = true;
     }
 
@@ -1230,7 +1229,7 @@ bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<siz
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        clearType = parameters.front();
+        clearType = parameters[0];
         success = true;
     }
     return success;
@@ -1598,7 +1597,7 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(const std::basic_strin
 
     if (parameters.size() > 0)
     {
-        switch (parameters.front())
+        switch (parameters[0])
         {
         case DispatchTypes::WindowManipulationType::RefreshWindow:
             function = DispatchTypes::WindowManipulationType::RefreshWindow;
@@ -1638,7 +1637,7 @@ bool OutputStateMachineEngine::_GetCursorStyle(const std::basic_string_view<size
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        cursorStyle = (DispatchTypes::CursorStyle)parameters.front();
+        cursorStyle = (DispatchTypes::CursorStyle)parameters[0];
         success = true;
     }
 
@@ -1687,7 +1686,7 @@ bool OutputStateMachineEngine::_GetRepeatCount(std::basic_string_view<size_t> pa
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        repeatCount = parameters.front();
+        repeatCount = parameters[0];
         success = true;
     }
 
