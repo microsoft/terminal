@@ -936,6 +936,31 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
 }
 
 // Method Description:
+// - Converts an "automatic" split type into either Vertical or Horizontal,
+//   based upon the current dimensions of the Pane.
+// - If any of the other SplitState values are passed in, they're returned
+//   unmodified.
+// Arguments:
+// - splitType: The SplitState to attempt to convert
+// Return Value:
+// - None if splitType was None, otherwise one of Horizontal or Vertical
+SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
+{
+    // Careful here! If the pane doesn't yet have a size, these dimensions will
+    // be 0, and we'll always return Vertical.
+
+    if (splitType == SplitState::Automatic)
+    {
+        // If the requested split type was "auto", determine which direction to
+        // split based on our current dimensions
+        const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                               gsl::narrow_cast<float>(_root.ActualHeight()) };
+        return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+    }
+    return splitType;
+}
+
+// Method Description:
 // - Determines whether the pane can be split.
 // Arguments:
 // - splitType: what type of split we want to create.
@@ -948,14 +973,7 @@ bool Pane::_CanSplit(SplitState splitType)
 
     const Size minSize = _GetMinSize();
 
-    auto actualSplitType = splitType;
-
-    // If the requested split type was "auto", determine which direction to
-    // split based on our current dimensions
-    if (actualSplitType == SplitState::Automatic)
-    {
-        actualSplitType = actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
-    }
+    auto actualSplitType = _convertAutomaticSplitState(splitType);
 
     if (actualSplitType == SplitState::None)
     {
@@ -992,19 +1010,12 @@ bool Pane::_CanSplit(SplitState splitType)
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
-    auto actualSplitType = splitType;
     if (splitType == SplitState::None)
     {
         return { nullptr, nullptr };
     }
-    else if (splitType == SplitState::Automatic)
-    {
-        // If the requested split type was "auto", determine which direction to
-        // split based on our current dimensions
-        const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                               gsl::narrow_cast<float>(_root.ActualHeight()) };
-        actualSplitType = actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
-    }
+
+    auto actualSplitType = _convertAutomaticSplitState(splitType);
 
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
