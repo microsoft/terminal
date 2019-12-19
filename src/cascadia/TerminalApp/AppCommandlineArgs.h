@@ -42,7 +42,6 @@ private:
     CLI::App* _newTabCommand;
     CLI::App* _newPaneCommand;
     CLI::App* _focusTabCommand;
-    CLI::App* _listProfilesCommand;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
     std::string _profileName;

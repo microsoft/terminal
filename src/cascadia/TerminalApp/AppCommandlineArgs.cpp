@@ -124,9 +124,6 @@ void AppCommandlineArgs::_buildParser()
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
-
-    // TODO:GH#607 implement `help`, `list-profiles` subcommands
-    _listProfilesCommand = _app.add_subcommand("list-profiles", "List all the available profiles");
 }
 
 // Method Description:
@@ -306,8 +303,7 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs()
 // - true if no sub commands were parsed.
 bool AppCommandlineArgs::_noCommandsProvided()
 {
-    return !(*_listProfilesCommand ||
-             *_newTabCommand ||
+    return !(*_newTabCommand ||
              *_focusTabCommand ||
              *_newPaneCommand);
 }

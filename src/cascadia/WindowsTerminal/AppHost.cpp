@@ -18,6 +18,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+// TODO: Before finishing PR, move this to a shared place (with main.cpp), and
+// polish the dialog a bit
 // Routine Description:
 // - Retrieves the string resource from the current module with the given ID
 //   from the resources files. See resource.h and the .rc definitions for valid IDs.
@@ -83,6 +85,19 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
+// Method Description:
+// - Retrieve any commandline args passed on the commandline, and pass them to
+//   the app logic for processing.
+// - If the logic determined there's an error while processing that commandline,
+//   display a message box to the user with the text of the error, and exit.
+//    * We display a message box because we're a Win32 application (not a
+//      console app), and the shell has undoubtedly returned to the foreground
+//      of the console. Text emitted here might mix unexpectedly with output
+//      from the shell process.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void AppHost::_handleCommandlineArgs()
 {
     if (auto commandline{ GetCommandLineW() })
@@ -103,6 +118,7 @@ void AppHost::_handleCommandlineArgs()
             auto message = _logic.EarlyExitMessage();
             if (!message.empty())
             {
+                // TODO:GH#TODO: polish this dialog more, to make the text more like msiexec /?
                 MessageBoxW(nullptr,
                             message.data(),
                             GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
