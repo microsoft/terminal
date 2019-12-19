@@ -98,13 +98,13 @@ DeviceHandle::_CreateHandle(
     }
 
     UNICODE_STRING Name;
-#pragma warning(suppress:26492) // const_cast is prohibited, but we can't avoid it for filling UNICODE_STRING.
+#pragma warning(suppress : 26492) // const_cast is prohibited, but we can't avoid it for filling UNICODE_STRING.
     Name.Buffer = const_cast<wchar_t*>(DeviceName);
     Name.Length = gsl::narrow_cast<USHORT>((wcslen(DeviceName) * sizeof(wchar_t)));
     Name.MaximumLength = Name.Length + sizeof(wchar_t);
 
     OBJECT_ATTRIBUTES ObjectAttributes;
-#pragma warning(suppress:26477) // The QOS part of this macro in the define is 0. Can't fix that.
+#pragma warning(suppress : 26477) // The QOS part of this macro in the define is 0. Can't fix that.
     InitializeObjectAttributes(&ObjectAttributes,
                                &Name,
                                Flags,

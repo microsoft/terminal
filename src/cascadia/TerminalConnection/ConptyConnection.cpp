@@ -72,9 +72,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         size_t size{};
         // This call will return an error (by design); we are ignoring it.
         InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
-#pragma warning(suppress:26414) // We don't move/touch this smart pointer, but we have to allocate strangely for the adjustable size list.
+#pragma warning(suppress : 26414) // We don't move/touch this smart pointer, but we have to allocate strangely for the adjustable size list.
         auto attrList{ std::make_unique<std::byte[]>(size) };
-#pragma warning(suppress:26490) // We have to use reinterpret_cast because we allocated a byte array as a proxy for the adjustable size list.
+#pragma warning(suppress : 26490) // We have to use reinterpret_cast because we allocated a byte array as a proxy for the adjustable size list.
         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList.get());
         RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
 

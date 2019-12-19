@@ -293,7 +293,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
     // Store the relative cursor position so we can restore it later after we move the viewport
     const auto cursorPos = _buffer->GetCursor().GetPosition();
-#pragma warning(suppress:26496) // This is written by ConvertToOrigin, cpp core checks is wrong saying it should be const.
+#pragma warning(suppress : 26496) // This is written by ConvertToOrigin, cpp core checks is wrong saying it should be const.
     auto relativeCursor = cursorPos;
     _mutableViewport.ConvertToOrigin(&relativeCursor);
 

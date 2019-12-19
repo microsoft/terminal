@@ -76,21 +76,21 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _SendInputSequence(const std::wstring_view sequence) const noexcept;
         std::wstring _GenerateDefaultSequence(const COORD position,
-                                      const unsigned int button,
-                                      const bool isHover,
-                                      const short modifierKeyState,
-                                      const short delta) const;
+                                              const unsigned int button,
+                                              const bool isHover,
+                                              const short modifierKeyState,
+                                              const short delta) const;
         std::wstring _GenerateUtf8Sequence(const COORD position,
-                                   const unsigned int button,
-                                   const bool isHover,
-                                   const short modifierKeyState,
-                                   const short delta) const;
+                                           const unsigned int button,
+                                           const bool isHover,
+                                           const short modifierKeyState,
+                                           const short delta) const;
         std::wstring _GenerateSGRSequence(const COORD position,
-                                  const unsigned int button,
-                                  const bool isDown,
-                                  const bool isHover,
-                                  const short modifierKeyState,
-                                  const short delta) const;
+                                          const unsigned int button,
+                                          const bool isDown,
+                                          const bool isHover,
+                                          const short modifierKeyState,
+                                          const short delta) const;
 
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;

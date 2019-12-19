@@ -34,23 +34,22 @@ bool TerminalDispatch::CursorPosition(const size_t line,
                                       const size_t column) noexcept
 try
 {
-        SHORT x{ 0 };
-        SHORT y{ 0 };
+    SHORT x{ 0 };
+    SHORT y{ 0 };
 
-        if (FAILED(SizeTToShort(column, &x)) ||
-            FAILED(SizeTToShort(line, &y)))
-        {
-            return false;
-        }
+    if (FAILED(SizeTToShort(column, &x)) ||
+        FAILED(SizeTToShort(line, &y)))
+    {
+        return false;
+    }
 
-        if (FAILED(ShortSub(x, 1, &x)) ||
-            FAILED(ShortSub(y, 1, &y)))
-        {
-            return false;
-        }
+    if (FAILED(ShortSub(x, 1, &x)) ||
+        FAILED(ShortSub(y, 1, &y)))
+    {
+        return false;
+    }
 
-        return _terminalApi.SetCursorPosition(x, y);
-    
+    return _terminalApi.SetCursorPosition(x, y);
 }
 catch (...)
 {

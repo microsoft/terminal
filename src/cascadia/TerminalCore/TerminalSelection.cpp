@@ -382,7 +382,7 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
     // force position to be within bounds
-#pragma warning(suppress:26496) // cpp core checks wants this const but .Clamp() can write it.
+#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = position;
     _buffer->GetSize().Clamp(positionWithOffsets);
 

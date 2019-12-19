@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     // Disable "default constructor may not throw."
     // We put default values into the hstrings here, which allocates and could throw.
     // Working around that situation is more headache than it's worth at the moment.
-#pragma warning(suppress : 26455) 
+#pragma warning(suppress : 26455)
     TerminalSettings::TerminalSettings() :
         _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
         _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },

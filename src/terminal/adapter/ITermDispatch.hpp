@@ -23,7 +23,7 @@ class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
 #pragma warning(push)
-#pragma warning(disable:26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
+#pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
 
     virtual void Execute(const wchar_t wchControl) = 0;

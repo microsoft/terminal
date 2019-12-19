@@ -245,7 +245,7 @@ const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent
 // Return Value:
 // - Has value if there was a match to a key translation.
 std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
-                                                   std::basic_string_view<TermKeyMap> keyMapping) noexcept
+                                                  std::basic_string_view<TermKeyMap> keyMapping) noexcept
 {
     bool keyTranslated = false;
     for (auto& map : keyMapping)

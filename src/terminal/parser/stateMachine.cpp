@@ -45,7 +45,7 @@ bool StateMachine::s_IsActionableFromGround(const wchar_t wch) noexcept
 }
 
 #pragma warning(push)
-#pragma warning(disable: 26497) // We don't use any of these "constexprable" functions in that fashion
+#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
 
 // Routine Description:
 // - Determines if a character belongs to the C0 escape range.

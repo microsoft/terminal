@@ -26,8 +26,8 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
 
     // We should do nothing if 0 is passed in for a size.
     bool success = SUCCEEDED(SizeTToShort(width, &sColumns)) &&
-                    SUCCEEDED(SizeTToShort(height, &sRows)) &&
-                    (width > 0 && height > 0);
+                   SUCCEEDED(SizeTToShort(height, &sRows)) &&
+                   (width > 0 && height > 0);
 
     if (success)
     {

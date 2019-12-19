@@ -13,9 +13,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         TYPED_EVENT(StateChanged, ITerminalConnection, winrt::Windows::Foundation::IInspectable);
 
     protected:
-
 #pragma warning(push)
-#pragma warning(disable:26447) // Analyzer is still upset about noexcepts throwing even with function level try.
+#pragma warning(disable : 26447) // Analyzer is still upset about noexcepts throwing even with function level try.
         // Method Description:
         // - Attempt to transition to and signal the specified connection state.
         //   The transition will only be effected if the state is "beyond" the current state.

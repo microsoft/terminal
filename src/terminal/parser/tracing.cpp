@@ -11,7 +11,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 #pragma warning(disable : 26477) // Use nullptr instead of NULL or 0 from TraceLoggingWrite
 #pragma warning(disable : 26485) // _Tlgdata, no array to pointer decay from TraceLoggingWrite
 #pragma warning(disable : 26446) // Prefer gsl::at over unchecked subscript from TraceLoggingLevel
-#pragma warning(disable: 26482) // Only index to arrays with constant expressions from TraceLoggingLevel
+#pragma warning(disable : 26482) // Only index to arrays with constant expressions from TraceLoggingLevel
 
 ParserTracing::ParserTracing() noexcept
 {
