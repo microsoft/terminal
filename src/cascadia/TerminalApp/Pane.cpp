@@ -948,7 +948,21 @@ bool Pane::_CanSplit(SplitState splitType)
 
     const Size minSize = _GetMinSize();
 
-    if (splitType == SplitState::Vertical)
+    auto actualSplitType = splitType;
+
+    // If the requested split type was "auto", determine which direction to
+    // split based on our current dimensions
+    if (actualSplitType == SplitState::Automatic)
+    {
+        actualSplitType = actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+    }
+
+    if (actualSplitType == SplitState::None)
+    {
+        return false;
+    }
+
+    if (actualSplitType == SplitState::Vertical)
     {
         const auto widthMinusSeparator = actualSize.Width - CombinedPaneBorderSize;
         const auto newWidth = widthMinusSeparator * Half;
@@ -956,7 +970,7 @@ bool Pane::_CanSplit(SplitState splitType)
         return newWidth > minSize.Width;
     }
 
-    if (splitType == SplitState::Horizontal)
+    if (actualSplitType == SplitState::Horizontal)
     {
         const auto heightMinusSeparator = actualSize.Height - CombinedPaneBorderSize;
         const auto newHeight = heightMinusSeparator * Half;
@@ -978,6 +992,20 @@ bool Pane::_CanSplit(SplitState splitType)
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
+    auto actualSplitType = splitType;
+    if (splitType == SplitState::None)
+    {
+        return { nullptr, nullptr };
+    }
+    else if (splitType == SplitState::Automatic)
+    {
+        // If the requested split type was "auto", determine which direction to
+        // split based on our current dimensions
+        const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                               gsl::narrow_cast<float>(_root.ActualHeight()) };
+        actualSplitType = actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+    }
+
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
@@ -991,7 +1019,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // parent.
     _gotFocusRevoker.revoke();
 
-    _splitState = splitType;
+    _splitState = actualSplitType;
 
     _firstPercent = { Half };
     _secondPercent = { Half };
