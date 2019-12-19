@@ -125,7 +125,6 @@
          so it's not in the common resource items. -->
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
-
   <PropertyGroup>
     <!-- This is picked up by CascadiaResources.build.items. -->
     <WindowsTerminalAssetSuffix>-Universal</WindowsTerminalAssetSuffix>
@@ -135,7 +134,6 @@
     <WindowsTerminalAssetSuffix>$(WindowsTerminalAssetSuffix)Dev</WindowsTerminalAssetSuffix>
   </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
-
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
@@ -150,6 +148,9 @@
     <ProjectReference Include="..\TerminalApp\TerminalApp.vcxproj">
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="internal-background.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
