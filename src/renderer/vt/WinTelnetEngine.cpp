@@ -109,7 +109,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring_view wstr) noexcept
 {
     return VtEngine::_WriteTerminalAscii(wstr);
 }

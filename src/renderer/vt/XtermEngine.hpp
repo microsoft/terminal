@@ -53,7 +53,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
 
-        [[nodiscard]] HRESULT WriteTerminalW(_In_ const std::wstring& str) noexcept override;
+        [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
     protected:
         const COLORREF* const _ColorTable;
