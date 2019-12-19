@@ -352,8 +352,8 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
     _trace.TraceOnAction(L"CsiDispatch");
 
     bool success = _engine->ActionCsiDispatch(wch,
-                                               { _intermediates.data(), _intermediates.size() },
-                                               { _parameters.data(), _parameters.size() });
+                                              { _intermediates.data(), _intermediates.size() },
+                                              { _parameters.data(), _parameters.size() });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
