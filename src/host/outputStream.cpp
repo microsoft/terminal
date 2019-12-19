@@ -257,7 +257,7 @@ bool ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes&
 // - extendedAttrs: The new ExtendedAttributes to use
 // Return Value:
 // - true if successful (see DoSrvPrivateSetExtendedTextAttributes). false otherwise.
-bool ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes& attrs)
+bool ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs)
 {
     DoSrvPrivateSetExtendedTextAttributes(_io.GetActiveOutputBuffer(), attrs);
     return true;
