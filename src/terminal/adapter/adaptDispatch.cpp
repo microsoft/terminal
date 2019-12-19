@@ -1957,7 +1957,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         if (parameters.size() == 2)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters[1], parameters.front[0]);
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters[1], parameters[0]);
         }
         break;
     default:
