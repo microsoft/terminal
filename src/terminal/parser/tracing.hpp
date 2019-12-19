@@ -24,22 +24,19 @@ namespace Microsoft::Console::VirtualTerminal
         ParserTracing();
         ~ParserTracing();
 
-        void TraceStateChange(_In_ PCWSTR const pwszName) const;
-        void TraceOnAction(_In_ PCWSTR const pwszName) const;
+        void TraceStateChange(const std::wstring_view name) const;
+        void TraceOnAction(const std::wstring_view name) const;
         void TraceOnExecute(const wchar_t wch) const;
         void TraceOnExecuteFromEscape(const wchar_t wch) const;
-        void TraceOnEvent(_In_ PCWSTR const pwszName) const;
+        void TraceOnEvent(const std::wstring_view name) const;
         void TraceCharInput(const wchar_t wch);
 
         void AddSequenceTrace(const wchar_t wch);
         void DispatchSequenceTrace(const bool fSuccess);
         void ClearSequenceTrace();
-        void DispatchPrintRunTrace(const wchar_t* const pwsString, const size_t cchString) const;
+        void DispatchPrintRunTrace(const std::wstring_view string) const;
 
     private:
-        static const size_t s_cMaxSequenceTrace = 32;
-
-        wchar_t _rgwchSequenceTrace[s_cMaxSequenceTrace];
-        size_t _cchSequenceTrace;
+        std::wstring _sequenceTrace;
     };
 }
