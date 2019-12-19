@@ -346,12 +346,4 @@ namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
     BASIC_FACTORY(NewTerminalArgs);
-
-    BASIC_FACTORY(CopyTextArgs);
-    BASIC_FACTORY(NewTabArgs);
-    BASIC_FACTORY(SwitchToTabArgs);
-    BASIC_FACTORY(ResizePaneArgs);
-    BASIC_FACTORY(MoveFocusArgs);
-    BASIC_FACTORY(AdjustFontSizeArgs);
-    BASIC_FACTORY(SplitPaneArgs);
 }

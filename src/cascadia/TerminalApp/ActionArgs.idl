@@ -49,43 +49,36 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
-        CopyTextArgs();
         Boolean TrimWhitespace { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
-        NewTabArgs();
         NewTerminalArgs TerminalArgs { get; };
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
-        SwitchToTabArgs();
         Int32 TabIndex { get; };
     };
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
     {
-        ResizePaneArgs();
         Direction Direction { get; };
     };
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
-        MoveFocusArgs();
         Direction Direction { get; };
     };
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
-        AdjustFontSizeArgs();
         Int32 Delta { get; };
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs();
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
     };

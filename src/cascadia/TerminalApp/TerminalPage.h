@@ -66,8 +66,8 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
-        void _ProcessNextStartupAction();
+        int _parseArgs(winrt::array_view<const hstring>& args);
+        void _processNextStartupAction();
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();

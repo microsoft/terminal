@@ -55,11 +55,6 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Create()
     {
-        // std::vector<const wchar_t*> rawCommands{
-        //     L"wt.exe", L"new-tab", L"cmd.exe", L";", L"split-pane", L"-V", L"-p", L"Ubuntu", L";", L"new-tab"
-        // };
-        // _ParseArgs(static_cast<int>(rawCommands.size()), rawCommands.data());
-
         // Hookup the key bindings
         _HookupKeyBindings(_settings->GetKeybindings());
 
@@ -147,7 +142,7 @@ namespace winrt::TerminalApp::implementation
             // This will kick off a chain of events to perform each startup
             // action. As each startup action is completed, the next will be
             // fired.
-            _ProcessNextStartupAction();
+            _processNextStartupAction();
         }
     }
 
@@ -158,7 +153,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ProcessNextStartupAction()
+    void TerminalPage::_processNextStartupAction()
     {
         // If there are no actions left, do nothing.
         if (_appArgs.GetStartupActions().size() == 0)
@@ -177,7 +172,7 @@ namespace winrt::TerminalApp::implementation
                 page->_actionDispatch->DoAction(nextAction);
 
                 // Kick off the next action to be handled (if necessary)
-                page->_ProcessNextStartupAction();
+                page->_processNextStartupAction();
             }
         });
     }
@@ -1473,10 +1468,10 @@ namespace winrt::TerminalApp::implementation
     // - args: an array of strings to process as a commandline. These args can contain spaces
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
-    //   or 0. (see TerminalPage::_ParseArgs)
+    //   or 0. (see TerminalPage::_parseArgs)
     int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
     {
-        return _ParseArgs(args);
+        return _parseArgs(args);
     }
 
     // Method Description:
@@ -1491,7 +1486,7 @@ namespace winrt::TerminalApp::implementation
     // - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
     // Return Value:
     // - 0 if the commandline was successfully parsed
-    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
+    int TerminalPage::_parseArgs(winrt::array_view<const hstring>& args)
     {
         auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 

@@ -475,6 +475,18 @@ const std::string& AppCommandlineArgs::GetExitMessage()
     return _exitMessage;
 }
 
+// Method Description:
+// - Ensure that the first command in our list of actions is a NewTab action.
+//   This makes sure that if the user passes a commandline like "wt split-pane
+//   -H", we _first_ create a new tab, so there's always at least one tab.
+// - If the first command in our queue of actions is a NewTab action, this does
+//   nothing.
+// - This should only be called once - if the first NewTab action is popped from
+//   our _startupActions, calling this again will add another.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void AppCommandlineArgs::ValidateStartupCommands()
 {
     // If we parsed no commands, or the first command we've parsed is not a new

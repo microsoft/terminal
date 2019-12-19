@@ -6,6 +6,11 @@
 
 using namespace TerminalApp;
 
+Commandline::~Commandline()
+{
+    _resetArgv();
+}
+
 size_t Commandline::Argc() const
 {
     return _wargs.size();
@@ -65,6 +70,14 @@ char** Commandline::BuildArgv()
     return _argv;
 }
 
+// Method Description:
+// - Add the given arg to the list of args for this commandline. If the arg has
+//   an escaped delimiter ('\;') in it, we'll de-escape it, so the processed
+//   Commandline will have it as just a ';'.
+// Arguments:
+// - nextArg: The string to add as an arg to the commandline. This string may contain spaces.
+// Return Value:
+// - <none>
 void Commandline::AddArg(const std::wstring& nextArg)
 {
     if (_argv)
@@ -84,11 +97,21 @@ void Commandline::AddArg(const std::wstring& nextArg)
     _wargs.emplace_back(modifiedArg);
 }
 
+// Method Description:
+// - Delete our previously constructed _argv array
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void Commandline::_resetArgv()
 {
-    for (int i = 0; i < Argc(); i++)
+    if (_argv)
     {
-        delete[] _argv[i];
+        for (int i = 0; i < Argc(); i++)
+        {
+            delete[] _argv[i];
+        }
+        delete[] _argv;
+        _argv = 0;
     }
-    delete[] _argv;
 }
