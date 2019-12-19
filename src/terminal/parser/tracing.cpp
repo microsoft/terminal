@@ -106,7 +106,7 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
 {
     if (string.size() == 1)
     {
-        wchar_t wch = *string.cbegin();
+        wchar_t wch = string.front();
         INT16 sch = (INT16)wch;
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",
