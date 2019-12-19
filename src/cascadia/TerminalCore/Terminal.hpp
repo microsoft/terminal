@@ -75,16 +75,16 @@ public:
     bool ReverseText(bool reversed) override;
     bool SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
-    bool DeleteCharacter(const unsigned int uiCount) override;
-    bool InsertCharacter(const unsigned int uiCount) override;
-    bool EraseCharacters(const unsigned int numChars) override;
+    bool DeleteCharacter(const size_t count) override;
+    bool InsertCharacter(const size_t count) override;
+    bool EraseCharacters(const size_t numChars) override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool SetWindowTitle(std::wstring_view title) override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor) override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
-    bool SetDefaultForeground(const COLORREF dwColor) override;
-    bool SetDefaultBackground(const COLORREF dwColor) override;
+    bool SetDefaultForeground(const COLORREF color) override;
+    bool SetDefaultBackground(const COLORREF color) override;
 #pragma endregion
 
 #pragma region ITerminalInput

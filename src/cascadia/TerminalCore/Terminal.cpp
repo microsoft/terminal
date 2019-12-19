@@ -50,7 +50,10 @@ Terminal::Terminal() :
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
 {
-    _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
+    auto dispatch = std::make_unique<TerminalDispatch>(*this);
+    auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+
+    _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
@@ -199,7 +202,7 @@ void Terminal::Write(std::wstring_view stringView)
 {
     auto lock = LockForWriting();
 
-    _stateMachine->ProcessString(stringView.data(), stringView.size());
+    _stateMachine->ProcessString(stringView);
 }
 
 // Method Description:
