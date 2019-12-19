@@ -340,12 +340,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
-    const auto viewport = _getViewport();
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    const int totalLines = screenBufferCoords.Y;
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto viewport = bufferSize.ConvertToOrigin(_getViewport());
 
     // make a safe array
-    const size_t rowCount = viewport.Height();
+    const auto rowCount = viewport.Height();
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(rowCount));
     if (*ppRetVal == nullptr)
     {
@@ -353,19 +352,17 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     }
 
     // stuff each visible line in the safearray
-    for (size_t i = 0; i < rowCount; ++i)
+    for (SHORT i = 0; i < rowCount; ++i)
     {
-        const int lineNumber = (viewport.Top() + i) % totalLines;
-        const int start = lineNumber * screenBufferCoords.X;
-        // - 1 to get the last column in the row
-        const int end = start + screenBufferCoords.X - 1;
+        // end is exclusive so add 1
+        const COORD start = { viewport.Left(), viewport.Top() + i };
+        const COORD end = { viewport.Left(), viewport.Top() + i + 1 };
 
         HRESULT hr = S_OK;
         WRL::ComPtr<UiaTextRangeBase> range;
         hr = CreateTextRange(this,
                              start,
                              end,
-                             false,
                              _wordDelimiters,
                              &range);
         if (FAILED(hr))

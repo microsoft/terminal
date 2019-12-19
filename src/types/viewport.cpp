@@ -138,6 +138,17 @@ COORD Viewport::Origin() const noexcept
 }
 
 // Method Description:
+// - Get a coord representing the end of this viewport in inclusive terms.
+// Arguments:
+// - <none>
+// Return Value:
+// - the coordinates of this viewport's end.
+COORD Viewport::EndInclusive() const noexcept
+{
+    return { RightInclusive(), BottomInclusive() };
+}
+
+// Method Description:
 // - Get a coord representing the dimensions of this viewport.
 // Arguments:
 // - <none>

@@ -28,12 +28,11 @@ HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         // create a range for each row
         for (const auto& rect : rectangles)
         {
-            ScreenInfoRow currentRow = rect.Top();
-            Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
-            Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
+            const auto start = rect.Origin();
+            const auto end = rect.EndInclusive();
 
             ComPtr<UiaTextRange> range;
-            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false, wordDelimiters));
+            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, wordDelimiters));
             temporaryResult.emplace_back(std::move(range));
         }
         std::swap(temporaryResult, ranges);
@@ -60,12 +59,11 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 // specific endpoint range
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
-                                             const Endpoint start,
-                                             const Endpoint end,
-                                             const bool degenerate,
+                                             const COORD start,
+                                             const COORD end,
                                              const std::wstring_view wordDelimiters)
 {
-    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, degenerate, wordDelimiters);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, wordDelimiters);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
@@ -122,7 +120,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
         const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
 
         auto searchDirection = Search::Direction::Forward;
-        Endpoint searchAnchor = _start;
+        auto searchAnchor = _start;
         if (searchBackward)
         {
             searchDirection = Search::Direction::Backward;
@@ -131,17 +129,19 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
-        Search searcher{ gci.renderData, wstr, searchDirection, sensitivity, _endpointToCoord(_pData, searchAnchor) };
+        Search searcher{ gci.renderData, wstr, searchDirection, sensitivity, searchAnchor };
 
         HRESULT hr = S_OK;
         if (searcher.FindNext())
         {
             const auto foundLocation = searcher.GetFoundLocation();
-            const Endpoint start = _coordToEndpoint(_pData, foundLocation.first);
-            const Endpoint end = _coordToEndpoint(_pData, foundLocation.second);
+            const auto start = foundLocation.first;
+            const auto end = foundLocation.second;
+            const auto bufferSize = _pData->GetTextBuffer().GetSize();
+            
             // make sure what was found is within the bounds of the current range
-            if ((searchDirection == Search::Direction::Forward && end < _end) ||
-                (searchDirection == Search::Direction::Backward && start > _start))
+            if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end) < 0) ||
+                (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
             {
                 hr = Clone(ppRetVal);
                 if (SUCCEEDED(hr))
@@ -149,7 +149,6 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
                     UiaTextRange& range = static_cast<UiaTextRange&>(**ppRetVal);
                     range._start = start;
                     range._end = end;
-                    range._degenerate = false;
                 }
             }
         }

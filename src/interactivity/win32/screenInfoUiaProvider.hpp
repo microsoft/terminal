@@ -56,9 +56,8 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // specific endpoint range
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                const Endpoint start,
-                                const Endpoint end,
-                                const bool degenerate,
+                                const COORD start,
+                                const COORD end,
                                 const std::wstring_view wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 

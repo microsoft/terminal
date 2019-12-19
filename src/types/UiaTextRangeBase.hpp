@@ -67,10 +67,6 @@ typedef unsigned long long IdType;
 // endpoint is equivalent to. It is 0-indexed.
 typedef unsigned int Column;
 
-// an endpoint is a char location in the text buffer. endpoint 0 is
-// the first char of the 0th row in the text buffer row array.
-typedef unsigned int Endpoint;
-
 constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Types
@@ -89,14 +85,6 @@ namespace Microsoft::Console::Types
             Backward
         };
 
-        // valid increment amounts for forward and
-        // backward movement
-        enum class MovementIncrement
-        {
-            Forward = 1,
-            Backward = -1
-        };
-
         // common information used by the variety of
         // movement operations
         struct MoveState
@@ -104,29 +92,16 @@ namespace Microsoft::Console::Types
             // screen/column position of _start
             COORD start;
             // screen/column position of _end
-            COORD end
-            // last row in the direction being moved
-            ScreenInfoRow LimitingRow;
-            // first column in the direction being moved
-            Column FirstColumnInRow;
-            // last column in the direction being moved
-            Column LastColumnInRow;
-            // increment amount
-            MovementIncrement Increment;
+            COORD end;
             // direction moving
             MovementDirection Direction;
 
-            MoveState(IUiaData* pData,
-                      const UiaTextRangeBase& range,
+            MoveState(const UiaTextRangeBase& range,
                       const MovementDirection direction);
 
         private:
             MoveState(const COORD start,
                       const COORD end,
-                      const ScreenInfoRow limitingRow,
-                      const Column firstColumnInRow,
-                      const Column lastColumnInRow,
-                      const MovementIncrement increment,
                       const MovementDirection direction) noexcept;
 
 #ifdef UNIT_TESTING
@@ -146,15 +121,14 @@ namespace Microsoft::Console::Types
         // degenerate range at cursor position
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Cursor& cursor,
+                                       _In_ const Cursor& cursor,
                                        _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Endpoint start,
-                                       const Endpoint end,
-                                       const bool degenerate,
+                                       _In_ const COORD start,
+                                       _In_ const COORD end,
                                        _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
@@ -166,11 +140,10 @@ namespace Microsoft::Console::Types
 
         const IdType GetId() const noexcept;
         const COORD GetEndpoint(TextPatternRangeEndpoint endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start) const noexcept;
+        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
 
-        // TODO GitHub #605:
-        // only used for UiaData::FindText. Remove after Search added properly
-        void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate) noexcept;
+        void SetEndpoints(const COORD start, const COORD end) noexcept;
 
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
@@ -250,168 +223,34 @@ namespace Microsoft::Console::Types
 
         RECT _getTerminalRect() const;
 
-        static const COORD _getScreenBufferCoords(gsl::not_null<IUiaData*> pData);
         virtual const COORD _getScreenFontSize() const;
+        const unsigned int _getViewportHeight(const SMALL_RECT viewport) noexcept;
 
-        static const unsigned int _getTotalRows(gsl::not_null<IUiaData*> pData) noexcept;
-        static const unsigned int _getRowWidth(gsl::not_null<IUiaData*> pData);
+        void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
 
-        static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
-        static const unsigned int _getLastScreenInfoRowIndex(gsl::not_null<IUiaData*> pData) noexcept;
-
-        const unsigned int _rowCountInRange(gsl::not_null<IUiaData*> pData) const;
-
-        static const TextBufferRow _endpointToTextBufferRow(gsl::not_null<IUiaData*> pData,
-                                                            const Endpoint endpoint);
-        static const ScreenInfoRow _textBufferRowToScreenInfoRow(gsl::not_null<IUiaData*> pData,
-                                                                 const TextBufferRow row) noexcept;
-
-        static const TextBufferRow _screenInfoRowToTextBufferRow(gsl::not_null<IUiaData*> pData,
-                                                                 const ScreenInfoRow row) noexcept;
-        static const Endpoint _textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row);
-
-        static const Endpoint _wordBeginEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters);
-        static const Endpoint _wordEndEndpoint(gsl::not_null<IUiaData*> pData, Endpoint target, const std::wstring_view wordDelimiters);
-
-        static const ScreenInfoRow _endpointToScreenInfoRow(gsl::not_null<IUiaData*> pData,
-                                                            const Endpoint endpoint);
-        static const Endpoint _screenInfoRowToEndpoint(gsl::not_null<IUiaData*> pData,
-                                                       const ScreenInfoRow row);
-
-        static COORD _endpointToCoord(gsl::not_null<IUiaData*> pData,
-                                      const Endpoint endpoint);
-        static Endpoint _coordToEndpoint(gsl::not_null<IUiaData*> pData,
-                                         const COORD coord);
-
-        static const Column _endpointToColumn(gsl::not_null<IUiaData*> pData,
-                                              const Endpoint endpoint);
-
-        static const Row _normalizeRow(gsl::not_null<IUiaData*> pData, const Row row) noexcept;
-
-        static const ViewportRow _screenInfoRowToViewportRow(gsl::not_null<IUiaData*> pData,
-                                                             const ScreenInfoRow row) noexcept;
-        // Routine Description:
-        // - Converts a ScreenInfoRow to a ViewportRow.
-        // Arguments:
-        // - row - the ScreenInfoRow to convert
-        // - viewport - the viewport to use for the conversion
-        // Return Value:
-        // - the equivalent ViewportRow.
-        static constexpr const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                                       const SMALL_RECT viewport) noexcept
-        {
-            return row - viewport.Top;
-        }
-
-        static const bool _isScreenInfoRowInViewport(gsl::not_null<IUiaData*> pData,
-                                                     const ScreenInfoRow row) noexcept;
-        static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                     const SMALL_RECT viewport) noexcept;
-
-        static const unsigned int _getViewportHeight(const SMALL_RECT viewport) noexcept;
-        static const unsigned int _getViewportWidth(const SMALL_RECT viewport) noexcept;
-
-        void _addScreenInfoRowBoundaries(gsl::not_null<IUiaData*> pData,
-                                         const ScreenInfoRow screenInfoRow,
-                                         _Inout_ std::vector<double>& coords) const;
-
-        static std::pair<Endpoint, Endpoint> _moveByCharacter(gsl::not_null<IUiaData*> pData,
-                                                              const int moveCount,
-                                                              const MoveState moveState,
-                                                              _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(gsl::not_null<IUiaData*> pData,
-                                                                     const int moveCount,
-                                                                     const MoveState moveState,
-                                                                     _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(gsl::not_null<IUiaData*> pData,
-                                                                      const int moveCount,
-                                                                      const MoveState moveState,
-                                                                      _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByWord(gsl::not_null<IUiaData*> pData,
-                                                         const int moveCount,
-                                                         const MoveState moveState,
-                                                         const std::wstring_view wordDelimiters,
-                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByWordForward(gsl::not_null<IUiaData*> pData,
-                                                                const int moveCount,
-                                                                const MoveState moveState,
-                                                                const std::wstring_view wordDelimiters,
-                                                                _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByWordBackward(gsl::not_null<IUiaData*> pData,
-                                                                 const int moveCount,
-                                                                 const MoveState moveState,
-                                                                 const std::wstring_view wordDelimiters,
-                                                                 _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,
-                                                         const int moveCount,
-                                                         const MoveState moveState,
-                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::pair<Endpoint, Endpoint> _moveByDocument(gsl::not_null<IUiaData*> pData,
-                                                             const int moveCount,
-                                                             const MoveState moveState,
-                                                             _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        std::tuple<COORD, COORD>
-        _moveEndpointByUnitCharacter(const int moveCount,
-                                     const TextPatternRangeEndpoint endpoint,
-                                     const MoveState moveState,
+        void
+        _moveEndpointByUnitCharacter(_In_ const int moveCount,
+                                     _In_ const TextPatternRangeEndpoint endpoint,
+                                     _In_ const MoveState moveState,
                                      _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        std::tuple<COORD, COORD>
-        _moveEndpointByUnitCharacterForward(const int moveCount,
-                                            const TextPatternRangeEndpoint endpoint,
-                                            const MoveState moveState,
-                                            _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        std::tuple<COORD, COORD>
-        _moveEndpointByUnitCharacterBackward(const int moveCount,
-                                             const TextPatternRangeEndpoint endpoint,
-                                             const MoveState moveState,
-                                             _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitWord(gsl::not_null<IUiaData*> pData,
-                                const int moveCount,
-                                const TextPatternRangeEndpoint endpoint,
-                                const MoveState moveState,
-                                const std::wstring_view wordDelimiters,
+        void
+        _moveEndpointByUnitWord(_In_ const int moveCount,
+                                _In_ const TextPatternRangeEndpoint endpoint,
+                                _In_ const MoveState moveState,
+                                _In_ const std::wstring_view wordDelimiters,
                                 _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
-                                       const int moveCount,
-                                       const TextPatternRangeEndpoint endpoint,
-                                       const MoveState moveState,
-                                       const std::wstring_view wordDelimiters,
-                                       _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData,
-                                        const int moveCount,
-                                        const TextPatternRangeEndpoint endpoint,
-                                        const MoveState moveState,
-                                        const std::wstring_view wordDelimiters,
-                                        _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitLine(gsl::not_null<IUiaData*> pData,
-                                const int moveCount,
-                                const TextPatternRangeEndpoint endpoint,
-                                const MoveState moveState,
+        void
+        _moveEndpointByUnitLine(_In_ const int moveCount,
+                                _In_ const TextPatternRangeEndpoint endpoint,
+                                _In_ const MoveState moveState,
                                 _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
-                                    const int moveCount,
-                                    const TextPatternRangeEndpoint endpoint,
-                                    const MoveState moveState,
+        void
+        _moveEndpointByUnitDocument(_In_ const int moveCount,
+                                    _In_ const TextPatternRangeEndpoint endpoint,
+                                    _In_ const MoveState moveState,
                                     _Out_ gsl::not_null<int*> const pAmountMoved);
 
 #ifdef UNIT_TESTING
@@ -475,8 +314,8 @@ namespace Microsoft::Console::Types
         struct ApiMsgExpandToEnclosingUnit : public IApiMsg
         {
             TextUnit Unit;
-            Endpoint OriginalStart;
-            Endpoint OriginalEnd;
+            COORD OriginalStart;
+            COORD OriginalEnd;
         };
 
         struct ApiMsgGetText : IApiMsg
@@ -486,8 +325,8 @@ namespace Microsoft::Console::Types
 
         struct ApiMsgMove : IApiMsg
         {
-            Endpoint OriginalStart;
-            Endpoint OriginalEnd;
+            COORD OriginalStart;
+            COORD OriginalEnd;
             TextUnit Unit;
             int RequestedCount;
             int MovedCount;
@@ -495,8 +334,8 @@ namespace Microsoft::Console::Types
 
         struct ApiMsgMoveEndpointByUnit : IApiMsg
         {
-            Endpoint OriginalStart;
-            Endpoint OriginalEnd;
+            COORD OriginalStart;
+            COORD OriginalEnd;
             TextPatternRangeEndpoint Endpoint;
             TextUnit Unit;
             int RequestedCount;
@@ -505,8 +344,8 @@ namespace Microsoft::Console::Types
 
         struct ApiMsgMoveEndpointByRange : IApiMsg
         {
-            Endpoint OriginalStart;
-            Endpoint OriginalEnd;
+            COORD OriginalStart;
+            COORD OriginalEnd;
             TextPatternRangeEndpoint Endpoint;
             TextPatternRangeEndpoint TargetEndpoint;
             IdType OtherId;

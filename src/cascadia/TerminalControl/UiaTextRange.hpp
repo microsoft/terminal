@@ -44,9 +44,8 @@ namespace Microsoft::Terminal
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Endpoint start,
-                                       const Endpoint end,
-                                       const bool degenerate,
+                                       const COORD start,
+                                       const COORD end,
                                        const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // range from a UiaPoint

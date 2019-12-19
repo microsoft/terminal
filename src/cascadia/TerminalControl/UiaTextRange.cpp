@@ -24,12 +24,11 @@ HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         // create a range for each row
         for (const auto& rect : rectangles)
         {
-            ScreenInfoRow currentRow = rect.Top();
-            Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
-            Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
+            const auto start = rect.Origin();
+            const auto end = rect.EndInclusive();
 
             ComPtr<UiaTextRange> range;
-            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, false, wordDelimiters));
+            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, wordDelimiters));
             temporaryResult.emplace_back(std::move(range));
         }
         std::swap(temporaryResult, ranges);
@@ -54,12 +53,11 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
-                                             const Endpoint start,
-                                             const Endpoint end,
-                                             const bool degenerate,
+                                             const COORD start,
+                                             const COORD end,
                                              const std::wstring_view wordDelimiters)
 {
-    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, degenerate, wordDelimiters);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, wordDelimiters);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
