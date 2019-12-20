@@ -17,11 +17,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         InitializeComponent();
 
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
+        this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
 
-        _textBox = TextBox();
-
-        if (_textBox)
-            _focusableElements.insert(_textBox);
+        
+        _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
         _focusableElements.insert(CaseSensitivityButton());
         _focusableElements.insert(GoForwardButton());
@@ -67,13 +66,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                _SearchHandlers(_textBox.Text(), !_GoForward(), _CaseSensitive());
+                _SearchHandlers(TextBox().Text(), !_GoForward(), _CaseSensitive());
             }
             else
             {
-                _SearchHandlers(_textBox.Text(), _GoForward(), _CaseSensitive());
+                _SearchHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
             }
             e.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Handler for pressing "Esc" when focusing
+    //   on the search dialog, this triggers close
+    //   event of the Search dialog
+    // Arguments:
+    // - sender: not used
+    // - e: event data
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                           Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        {
+            _ClosedHandlers(*this, e);
         }
     }
 
@@ -86,10 +103,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void SearchBoxControl::SetFocusOnTextbox()
     {
-        if (_textBox)
+        if (TextBox())
         {
-            Input::FocusManager::TryFocusAsync(_textBox, FocusState::Keyboard);
-            _textBox.SelectAll();
+            Input::FocusManager::TryFocusAsync(TextBox(), FocusState::Keyboard);
+            TextBox().SelectAll();
         }
     }
 
@@ -129,7 +146,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // kick off search
-        _SearchHandlers(_textBox.Text(), _GoForward(), _CaseSensitive());
+        _SearchHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
@@ -150,7 +167,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // kick off search
-        _SearchHandlers(_textBox.Text(), _GoForward(), _CaseSensitive());
+        _SearchHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:

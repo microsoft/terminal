@@ -39,12 +39,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(Closed, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:
-        winrt::Windows::UI::Xaml::Controls::TextBox _textBox;
-
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
 
         bool _GoForward();
         bool _CaseSensitive();
+        void _KeyDownHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
     };
 }

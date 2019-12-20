@@ -210,12 +210,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const Search::Direction direction = goForward ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
+                                            Search::Direction::Forward :
+                                            Search::Direction::Backward;
 
         const Search::Sensitivity sensitivity = caseSensitive ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
+                                                Search::Sensitivity::CaseSensitive :
+                                                Search::Sensitivity::CaseInsensitive;
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
@@ -228,27 +228,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - The handler for the close button in the search box.
-    //   This is a wrapper method that calls _CloseSearchBoxControlHelper().
+    // - The handler for the close button or pressing "Esc" when focusing on the
+    //   search dialog.
+    //   This removes the SearchBoxControl object from the XAML tree,
+    //   reset smart pointer and set focus back to Terminal
     // Arguments:
     // - IInspectable: not used
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
     void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
-    {
-        _CloseSearchBoxControlHelper();
-    }
-
-    // Method Description:
-    // - The helper method that removes the SearchBoxControl
-    //   object from the XAML tree, reset smart pointer and
-    //   set focus back to Terminal
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControl::_CloseSearchBoxControlHelper()
     {
         unsigned int idx;
         _root.Children().IndexOf(*_searchBox, idx);
@@ -780,20 +769,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
-        // If Esc is pressed and the search box is opened, we close the search box
-        if (_searchBox && e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
-        {
-            _CloseSearchBoxControlHelper();
-            return;
-        }
-
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
         if (_searchBox && _searchBox->ContainsFocus())
         {
             return;
         }
-
+        
         // mark event as handled and do nothing if...
         //   - closing
         //   - key modifier is pressed
