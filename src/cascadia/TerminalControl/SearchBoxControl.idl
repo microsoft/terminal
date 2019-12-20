@@ -5,7 +5,7 @@ namespace Microsoft.Terminal.TerminalControl
 {
     delegate void SearchHandler(String query, Boolean goFarward, Boolean isCaseSensitive);
 
-	[default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
     {
         SearchBoxControl();
         void SetFocusOnTextbox();
