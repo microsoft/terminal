@@ -158,6 +158,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a) noex
     _start = a._start;
     _end = a._end;
     _pData = a._pData;
+    _wordDelimiters = a._wordDelimiters.c_str();
 
     _id = id;
     ++id;
@@ -202,14 +203,14 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     {
     case TextPatternRangeEndpoint::TextPatternRangeEndpoint_End:
         _end = val;
-        if (bufferSize.CompareInBounds(_end, _start) < 0)
+        if (bufferSize.CompareInBounds(_end, _start, true) < 0)
         {
             _start = _end;
         }
         break;
     case TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start:
         _start = val;
-        if (bufferSize.CompareInBounds(_start, _end) > 0)
+        if (bufferSize.CompareInBounds(_start, _end, true) > 0)
         {
             _end = _start;
         }
@@ -287,7 +288,7 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
     const auto mine = GetEndpoint(endpoint);
 
     // compare them
-    *pRetVal = _pData->GetTextBuffer().GetSize().CompareInBounds(mine, other);
+    *pRetVal = _pData->GetTextBuffer().GetSize().CompareInBounds(mine, other, true);
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
@@ -326,9 +327,9 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         else if (unit <= TextUnit::TextUnit_Word)
         {
             // expand to word
-            // TODO CARLOS: verify that the end is properly exclusive here
             _start = buffer.GetWordStart(_start, _wordDelimiters, true);
             _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
+            bufferSize.IncrementInBounds(_end);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
@@ -341,12 +342,11 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         {
             // expand to document
             _start = bufferSize.Origin();
-            _end = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+            _end = { bufferSize.RightExclusive(), bufferSize.BottomInclusive() };
         }
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //Tracing::s_TraceUia(this, ApiCall::ExpandToEnclosingUnit, &apiMsg);
-        FAIL_FAST_IF(bufferSize.CompareInBounds(_start, _end) > 0);
         return S_OK;
     }
     CATCH_RETURN();
@@ -410,7 +410,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // startAnchor: the earliest COORD we will get a bounding rect for
         auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
-        if (bufferSize.CompareInBounds(startAnchor, viewportOrigin) < 0)
+        if (bufferSize.CompareInBounds(startAnchor, viewportOrigin, true) < 0)
         {
             // earliest we can be is the origin
             startAnchor = viewportOrigin;
@@ -418,7 +418,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // endAnchor: the latest COORD we will get a bounding rect for
         auto endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
-        if (bufferSize.CompareInBounds(endAnchor, viewportEnd) > 0)
+        if (bufferSize.CompareInBounds(endAnchor, viewportEnd, true) > 0)
         {
             // latest we can be is the viewport end
             endAnchor = viewportEnd;
@@ -426,19 +426,26 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         else
         {
             // this is exclusive, let's be inclusive so we don't have to think about it anymore for bounding rects
-            bufferSize.DecrementInBounds(endAnchor);
+            if (endAnchor.Y == viewportEnd.Y + 1)
+            {
+                endAnchor.Y = viewportEnd.Y;
+            }
+            else
+            {
+                bufferSize.DecrementInBounds(endAnchor);
+            }
         }
 
-        // Remember, start cannot be past end
-        FAIL_FAST_IF(bufferSize.CompareInBounds(_start, _end) > 0);
         if (IsDegenerate())
         {
             _getBoundingRect(_start, _start, coords);
         }
-        else if (bufferSize.CompareInBounds(_start, viewportEnd) > 0 || bufferSize.CompareInBounds(_end, viewportOrigin) < 0)
+        else if (bufferSize.CompareInBounds(_start, viewportEnd, true) > 0 || bufferSize.CompareInBounds(_end, viewportOrigin, true) < 0)
         {
-            // start is past the viewport end, or end is past the viewport origin...
-            // so draw nothing
+            // Remember, start cannot be past end, so
+            //   if start is past the viewport end,
+            //   or end is past the viewport origin
+            //   draw nothing
         }
         else
         {
@@ -997,6 +1004,9 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 {
     *pAmountMoved = 0;
 
+    // _end can be the out of bounds
+    bool allowBottomExclusive = (endpoint == TextPatternRangeEndpoint_End);
+
     if (moveCount == 0)
     {
         return;
@@ -1004,33 +1014,27 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     auto target = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && bufferSize.IsInBounds(target))
+    bool fSuccess = true;
+    while (abs(*pAmountMoved) < abs(moveCount) && fSuccess)
     {
         switch (moveState.Direction)
         {
         case MovementDirection::Forward:
-            bufferSize.IncrementInBounds(target);
-            *pAmountMoved += 1;
+            fSuccess = bufferSize.IncrementInBounds(target, allowBottomExclusive);
+            if (fSuccess)
+            {
+                *pAmountMoved += 1;
+            }
             break;
         case MovementDirection::Backward:
-            bufferSize.DecrementInBounds(target);
-            *pAmountMoved -= 1;
+            fSuccess = bufferSize.DecrementInBounds(target, allowBottomExclusive);
+            if (fSuccess)
+            {
+                *pAmountMoved -= 1;
+            }
             break;
         default:
             break;
-        }
-    }
-
-    // if we went out of bounds, be at the corner of the buffer
-    if (!bufferSize.IsInBounds(target))
-    {
-        if (moveState.Direction == MovementDirection::Forward)
-        {
-            target = bufferSize.EndInclusive();
-        }
-        else
-        {
-            target = bufferSize.Origin();
         }
     }
 
@@ -1071,30 +1075,17 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         case MovementDirection::Forward:
             // Get the end of the word (including the delimiter run),
             // but move one more forward to be on the next word's character
-            buffer.GetWordEnd(target, wordDelimiters, /*includeDelimiterRun*/ true);
+            target = buffer.GetWordEnd(target, wordDelimiters, /*includeDelimiterRun*/ true);
             bufferSize.IncrementInBounds(target);
             *pAmountMoved += 1;
             break;
         case MovementDirection::Backward:
-            buffer.GetWordStart(target, wordDelimiters, /*includeCharacterRun*/ true);
+            target = buffer.GetWordStart(target, wordDelimiters, /*includeCharacterRun*/ true);
             // NOTE: no need for bufferSize.DecrementInBounds(target) here, because we're already on the word
             *pAmountMoved -= 1;
             break;
         default:
             break;
-        }
-    }
-
-    // if we went out of bounds, be at the corner of the buffer
-    if (!bufferSize.IsInBounds(target))
-    {
-        if (moveState.Direction == MovementDirection::Forward)
-        {
-            target = bufferSize.EndInclusive();
-        }
-        else
-        {
-            target = bufferSize.Origin();
         }
     }
 
@@ -1119,6 +1110,9 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 {
     *pAmountMoved = 0;
 
+    // _end can be the out of bounds
+    bool allowBottomExclusive = (endpoint == TextPatternRangeEndpoint_End);
+
     if (moveCount == 0)
     {
         return;
@@ -1126,37 +1120,33 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     auto target = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && bufferSize.IsInBounds(target))
+    bool fSuccess = true;
+    while (abs(*pAmountMoved) < abs(moveCount) && fSuccess)
     {
         switch (moveState.Direction)
         {
         case MovementDirection::Forward:
         {
-            target.Y += 1;
-            *pAmountMoved += 1;
+            target.X = bufferSize.RightInclusive();
+            fSuccess = bufferSize.IncrementInBounds(target, allowBottomExclusive);
+            if (fSuccess)
+            {
+                *pAmountMoved += 1;
+            }
             break;
         }
         case MovementDirection::Backward:
         {
-            target.Y -= 1;
-            *pAmountMoved -= 1;
+            target.X = bufferSize.Left();
+            fSuccess = bufferSize.DecrementInBounds(target, allowBottomExclusive);
+            if (fSuccess)
+            {
+                *pAmountMoved -= 1;
+            }
             break;
         }
         default:
             break;
-        }
-    }
-
-    // if we went out of bounds, be at the corner of the buffer
-    if (!bufferSize.IsInBounds(target))
-    {
-        if (moveState.Direction == MovementDirection::Forward)
-        {
-            target = bufferSize.EndInclusive();
-        }
-        else
-        {
-            target = bufferSize.Origin();
         }
     }
 
@@ -1187,20 +1177,35 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     }
 
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    auto target = GetEndpoint(endpoint);
     switch (moveState.Direction)
     {
     case MovementDirection::Forward:
     {
-        const COORD documentEnd = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
-        SetEndpoint(endpoint, documentEnd);
-        *pAmountMoved += 1;
+        const auto documentEnd = bufferSize.EndInclusive();
+        if (target == documentEnd)
+        {
+            return;
+        }
+        else
+        {
+            SetEndpoint(endpoint, documentEnd);
+            *pAmountMoved += 1;
+        }
         break;
     }
     case MovementDirection::Backward:
     {
-        const COORD documentBegin = bufferSize.Origin();
-        SetEndpoint(endpoint, documentBegin);
-        *pAmountMoved -= 1;
+        const auto documentBegin = bufferSize.Origin();
+        if (target == documentBegin)
+        {
+            return;
+        }
+        else
+        {
+            SetEndpoint(endpoint, documentBegin);
+            *pAmountMoved -= 1;
+        }
         break;
     }
     default:

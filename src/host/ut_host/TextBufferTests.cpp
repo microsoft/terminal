@@ -145,6 +145,9 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
     TEST_METHOD(TestBurrito);
+
+    TEST_METHOD(GetWordStart);
+    TEST_METHOD(GetWordEnd);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2013,4 +2016,155 @@ void TextBufferTests::TestBurrito()
     _buffer->IncrementCursor();
     _buffer->IncrementCursor();
     VERIFY_IS_FALSE(afterBurritoIter);
+}
+
+void TextBufferTests::GetWordStart()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::array<std::wstring, 2> text = { L"word other",
+                                               L"  more   words" };
+    for (size_t row = 0; row < text.size(); ++row)
+    {
+        auto line = text[row];
+        OutputCellIterator iter{ line };
+        _buffer->WriteLine(iter, { 0, gsl::narrow<SHORT>(row) });
+    }
+
+    // Test Data:
+    // - COORD - starting position
+    // - COORD - expected result (accessibilityMode = false)
+    // - COORD - expected result (accessibilityMode = true)
+    struct ExpectedResult
+    {
+        COORD accessibilityModeDisabled;
+        COORD accessibilityModeEnabled;
+    };
+
+    struct Test
+    {
+        COORD startPos;
+        ExpectedResult expected;
+    };
+
+    // clang-format off
+    std::vector<Test> testData = {
+        // tests for first line of text
+        { {  0, 0 },    {{  0, 0 },      { 0, 0 }} },
+        { {  1, 0 },    {{  0, 0 },      { 0, 0 }} },
+        { {  3, 0 },    {{  0, 0 },      { 0, 0 }} },
+        { {  4, 0 },    {{  4, 0 },      { 0, 0 }} },
+        { {  5, 0 },    {{  5, 0 },      { 5, 0 }} },
+        { {  6, 0 },    {{  5, 0 },      { 5, 0 }} },
+        { { 20, 0 },    {{ 10, 0 },      { 5, 0 }} },
+        { { 79, 0 },    {{ 10, 0 },      { 5, 0 }} },
+
+        // tests for second line of text
+        { {  0, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  1, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
+        { {  3, 1 },     {{ 2, 1 },       { 2, 1 }} },
+        { {  5, 1 },     {{ 2, 1 },       { 2, 1 }} },
+        { {  6, 1 },     {{ 6, 1 },       { 2, 1 }} },
+        { {  7, 1 },     {{ 6, 1 },       { 2, 1 }} },
+        { {  9, 1 },     {{ 9, 1 },       { 9, 1 }} },
+        { { 10, 1 },     {{ 9, 1 },       { 9, 1 }} },
+        { { 20, 1 },     {{14, 1 },       { 9, 1 }} },
+        { { 79, 1 },     {{14, 1 },       { 9, 1 }} },
+    };
+    // clang-format off
+
+    const std::wstring_view delimiters = L" ";
+    for (auto test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        COORD result;
+
+        // Test with accessibilityMode = false
+        //result = _buffer->GetWordStart(test.startPos, delimiters, false);
+        //VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
+
+        // Test with accessibilityMode = true
+        result = _buffer->GetWordStart(test.startPos, delimiters, true);
+        VERIFY_ARE_EQUAL(test.expected.accessibilityModeEnabled, result);
+    }
+}
+
+void TextBufferTests::GetWordEnd()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::array<std::wstring,2> text = { L"word other",
+                                  L"  more   words" };
+    for (auto row = 0; row < text.size(); ++row)
+    {
+        auto line = text[row];
+        OutputCellIterator iter{ line };
+        _buffer->WriteLine(iter, { 0, gsl::narrow<SHORT>(row) });
+    }
+
+    // Test Data:
+    // - COORD - starting position
+    // - COORD - expected result (accessibilityMode = false)
+    // - COORD - expected result (accessibilityMode = true)
+    struct ExpectedResult
+    {
+        COORD accessibilityModeDisabled;
+        COORD accessibilityModeEnabled;
+    };
+
+    struct Test
+    {
+        COORD startPos;
+        ExpectedResult expected;
+    };
+
+    std::vector<Test> testData = {
+        // tests for first line of text
+        { { 0,   0 },   {{  3, 0 },       {  5, 0 }} },
+        { { 1,   0 },   {{  3, 0 },       {  5, 0 }} },
+        { { 3,   0 },   {{  3, 0 },       {  5, 0 }} },
+        { { 4,   0 },   {{  4, 0 },       {  5, 0 }} },
+        { { 5,   0 },   {{  9, 0 },       {  0, 1 }} },
+        { { 6,   0 },   {{  9, 0 },       {  0, 1 }} },
+        { {20,   0 },   {{ 79, 0 },       {  0, 1 }} },
+        { {79,   0 },   {{ 79, 0 },       {  0, 1 }} },
+
+        // tests for second line of text
+        { {  0, 1 },     {{ 1, 1 },       {  2, 1 }} },
+        { {  1, 1 },     {{ 1, 1 },       {  2, 1 }} },
+        { {  2, 1 },     {{ 5, 1 },       {  9, 1 }} },
+        { {  3, 1 },     {{ 5, 1 },       {  9, 1 }} },
+        { {  5, 1 },     {{ 5, 1 },       {  9, 1 }} },
+        { {  6, 1 },     {{ 8, 1 },       {  9, 1 }} },
+        { {  7, 1 },     {{ 8, 1 },       {  9, 1 }} },
+        { {  9, 1 },     {{13, 1 },       {  0, 2 }} },
+        { { 10, 1 },     {{13, 1 },       {  0, 2 }} },
+        { { 20, 1 },     {{79, 1 },       {  0, 2 }} },
+        { { 79, 1 },     {{79, 1 },       {  0, 2 }} },
+    };
+    // clang-format off
+
+    const std::wstring_view delimiters = L" ";
+    for (auto test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        COORD result;
+
+        // Test with accessibilityMode = false
+        //result = _buffer->GetWordEnd(test.startPos, delimiters, false);
+        //VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
+
+        // Test with accessibilityMode = true
+        result = _buffer->GetWordEnd(test.startPos, delimiters, true);
+        VERIFY_ARE_EQUAL(test.expected.accessibilityModeEnabled, result);
+    }
 }

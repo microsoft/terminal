@@ -159,6 +159,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 
     SetSelectionAnchor(realCoordStart);
     SetEndSelectionPosition(realCoordEnd);
+    _buffer->GetRenderTarget().TriggerSelection();
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept

@@ -45,8 +45,8 @@ namespace Microsoft::Console::Interactivity::Win32
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const COORD start,
-                                       const COORD end,
+                                       _In_ const COORD start,
+                                       _In_ const COORD end,
                                        _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // range from a UiaPoint

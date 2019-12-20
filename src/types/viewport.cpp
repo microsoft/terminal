@@ -138,14 +138,14 @@ COORD Viewport::Origin() const noexcept
 }
 
 // Method Description:
-// - Get a coord representing the end of this viewport in inclusive terms.
+// - For Accessibility, get a coord representing the end of this viewport in inclusive terms.
 // Arguments:
 // - <none>
 // Return Value:
 // - the coordinates of this viewport's end.
 COORD Viewport::EndInclusive() const noexcept
 {
-    return { RightInclusive(), BottomInclusive() };
+    return { RightExclusive(), BottomInclusive() };
 }
 
 // Method Description:
@@ -177,10 +177,16 @@ bool Viewport::IsInBounds(const Viewport& other) const noexcept
 // - Determines if the given coordinate position lies within this viewport.
 // Arguments:
 // - pos - Coordinate position
+// - allowBottomExclusive - if true, allow the X position to be on the BottomExclusive boundary
 // Return Value:
 // - True if it lies inside the viewport. False otherwise.
-bool Viewport::IsInBounds(const COORD& pos) const noexcept
+bool Viewport::IsInBounds(const COORD& pos, bool allowBottomExclusive) const noexcept
 {
+    if (allowBottomExclusive && pos.X == Left() && pos.Y == BottomExclusive())
+    {
+        return true;
+    }
+
     return pos.X >= Left() && pos.X < RightExclusive() &&
            pos.Y >= Top() && pos.Y < BottomExclusive();
 }
@@ -266,11 +272,12 @@ bool Viewport::MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept
 // - Increments the given coordinate within the bounds of this viewport.
 // Arguments:
 // - pos - Coordinate position that will be incremented, if it can be.
+// - allowBottomExclusive - if true, allow the X position to be on the BottomExclusive boundary
 // Return Value:
 // - True if it could be incremented. False if it would move outside.
-bool Viewport::IncrementInBounds(COORD& pos) const noexcept
+bool Viewport::IncrementInBounds(COORD& pos, bool allowBottomExclusive) const noexcept
 {
-    return WalkInBounds(pos, { XWalk::LeftToRight, YWalk::TopToBottom });
+    return WalkInBounds(pos, { XWalk::LeftToRight, YWalk::TopToBottom }, allowBottomExclusive);
 }
 
 // Method Description:
@@ -290,11 +297,12 @@ bool Viewport::IncrementInBoundsCircular(COORD& pos) const noexcept
 // - Decrements the given coordinate within the bounds of this viewport.
 // Arguments:
 // - pos - Coordinate position that will be incremented, if it can be.
+// - allowBottomExclusive - if true, allow the X position to be on the BottomExclusive boundary
 // Return Value:
 // - True if it could be incremented. False if it would move outside.
-bool Viewport::DecrementInBounds(COORD& pos) const noexcept
+bool Viewport::DecrementInBounds(COORD& pos, bool allowBottomExclusive) const noexcept
 {
-    return WalkInBounds(pos, { XWalk::RightToLeft, YWalk::BottomToTop });
+    return WalkInBounds(pos, { XWalk::RightToLeft, YWalk::BottomToTop }, allowBottomExclusive);
 }
 
 // Method Description:
@@ -315,6 +323,7 @@ bool Viewport::DecrementInBoundsCircular(COORD& pos) const noexcept
 // Arguments:
 // - first- The first coordinate position
 // - second - The second coordinate position
+// - allowBottomExclusive - if true, allow the COORD's Y value to be BottomExclusive when X = Left
 // Return Value:
 // -  Negative if First is to the left of the Second.
 // -  0 if First and Second are the same coordinate.
@@ -322,11 +331,11 @@ bool Viewport::DecrementInBoundsCircular(COORD& pos) const noexcept
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Viewport::CompareInBounds(const COORD& first, const COORD& second) const noexcept
+int Viewport::CompareInBounds(const COORD& first, const COORD& second, bool allowBottomExclusive) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
-    FAIL_FAST_IF(!IsInBounds(first));
-    FAIL_FAST_IF(!IsInBounds(second));
+    FAIL_FAST_IF(!IsInBounds(first, allowBottomExclusive));
+    FAIL_FAST_IF(!IsInBounds(second, allowBottomExclusive));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -353,12 +362,13 @@ int Viewport::CompareInBounds(const COORD& first, const COORD& second) const noe
 // Arguments:
 // - pos - Coordinate position that will be adjusted, if it can be.
 // - dir - Walking direction specifying which direction to go when reaching the end of a row/column
+// - allowBottomExclusive - if true, allow the X position to be on the BottomExclusive boundary
 // Return Value:
 // - True if it could be adjusted as specified and remain in bounds. False if it would move outside.
-bool Viewport::WalkInBounds(COORD& pos, const WalkDir dir) const noexcept
+bool Viewport::WalkInBounds(COORD& pos, const WalkDir dir, bool allowBottomExclusive) const noexcept
 {
     auto copy = pos;
-    if (WalkInBoundsCircular(copy, dir))
+    if (WalkInBoundsCircular(copy, dir, allowBottomExclusive))
     {
         pos = copy;
         return true;
@@ -376,14 +386,15 @@ bool Viewport::WalkInBounds(COORD& pos, const WalkDir dir) const noexcept
 // Arguments:
 // - pos - Coordinate position that will be adjusted.
 // - dir - Walking direction specifying which direction to go when reaching the end of a row/column
+// - allowBottomExclusive - if true, allow the X position to be on the BottomExclusive boundary
 // Return Value:
 // - True if it could be adjusted inside the viewport.
 // - False if it rolled over from the final corner back to the initial corner
 //   for the specified walk direction.
-bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcept
+bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir, bool allowBottomExclusive) const noexcept
 {
     // Assert that the position given fits inside this viewport.
-    FAIL_FAST_IF(!IsInBounds(pos));
+    FAIL_FAST_IF(!IsInBounds(pos, allowBottomExclusive));
 
     if (dir.x == XWalk::LeftToRight)
     {
@@ -394,7 +405,11 @@ bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcep
             if (dir.y == YWalk::TopToBottom)
             {
                 pos.Y++;
-                if (pos.Y > BottomInclusive())
+                if (allowBottomExclusive && pos.Y == BottomExclusive())
+                {
+                    return true;
+                }
+                else if (pos.Y > BottomInclusive())
                 {
                     pos.Y = Top();
                     return false;
