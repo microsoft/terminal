@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-11-08
-last updated: 2019-12-09
+last updated: 2019-12-20
 issue id: #607
 ---
 
@@ -260,7 +260,8 @@ Display version info for the Windows Terminal
 
 `open-settings [--defaults,-d]`
 
-Open the settings file.
+Open the settings file. If this command is provided alone, it does not open the
+terminal window.
 
 **Parameters**:
 * `--defaults,-d`: Open the `defaults.json` file instead of the `profiles.json`
@@ -402,77 +403,6 @@ like `guid` and `name`, as well as high priority properties to add as arguments.
   the need to parse and escape arguments to the client commandline.
 * `startingDirectory` is a _highly_ requested commandline argument, so that's
   been given priority in this spec.
-
-### Graceful Upgrading
-
-The entire power of these commandline args is not feasible to accomplish within
-the scope of v1.0 of the Windows Terminal. Core to this design is the idea of a
-_graceful upgrade_ from 1.0 to some future version, where the full power of
-these arguments can be expressed. For the sake of brevity, we'll assume that
-future version is 2.0 for the remainder of the spec.
-
-For 1.0, we're focused on primarily [user stories](#User-stories) 1-10, with
-8-10 being a lower priority. During 1.0, we won't be focused on supporting
-opening multiple tabs or panes straight from the commandline. We'll be focused
-on a much simpler grammar of arguments, with the intention that commandlines
-from 1.0 will work _without modification_ as 2.0.
-
-For 1.0, we'll restrict ourselves in the following ways:
-* We'll only support one command per commandline. This will be one of the
-  following list:
-  - `help`
-  - `version`
-  - `new-tab`
-  - `open-settings`
-* We'll need to make sure that we process commandlines with escaped semicolons
-  in them the same as we will in 2.0. Users will need to escape `;` as `\;` in
-  1.0, even if we don't support multiple commands in 1.0.
-* If users don't provide a command, we'll assume the command was `new-tab`. This
-  will be in-line with what the behavior will be in 2.0.
-
-
-#### Sample 1.0 Commandlines
-
-```sh
-# display the help message
-wt help
-wt --help
-wt -h
-wt -?
-wt /?
-
-# Display version info for the Windows Terminal
-wt version
-wt --version
-wt -v
-
-# Runs the user's default profile in a new tab, running cmd.exe
-wt cmd.exe
-
-# Runs the user's "Windows Powershell" profile in a new tab
-wt new-tab --profile "Windows Powershell"
-wt --profile "Windows Powershell"
-
-# run "my-commandline.exe with some args" in a new tab
-wt new-tab my-commandline.exe with some args
-wt my-commandline.exe with some args
-
-# run "my-commandline.exe with some args and a ; literal semicolon" in a new
-#  tab, and in another tab, run "another.exe running in a second tab"
-wt my-commandline.exe with some args and a \; literal semicolon
-
-# Start the default profile in directory "c:/Users/Foo/dev/MyProject" (user story 8)
-wt new-tab --startingDirectory "c:/Users/Foo/dev/MyProject"
-wt --startingDirectory "c:/Users/Foo/dev/MyProject"
-wt -d "c:/Users/Foo/dev/MyProject"
-
-# Runs the user's "Windows Powershell" profile in a new tab in directory
-#  "c:/Users/Foo/dev/MyProject" (user story 2, 8)
-wt new-tab --profile "Windows Powershell" --startingDirectory "c:/Users/Foo/dev/MyProject"
-wt --profile "Windows Powershell" --startingDirectory "c:/Users/Foo/dev/MyProject"
-wt -p "Windows Powershell" -d "c:/Users/Foo/dev/MyProject"
-
-```
 
 ## Implementation Details
 
@@ -685,7 +615,7 @@ environment, it's also the least bad option available to us.
 
 ### What happens if `new-tab` isn't the first command?
 
-TODO: What should we do if we encounter the following?
+**TODO**: What should we do if we encounter the following?
 
 ```sh
 wt.exe split-pane -v ; new-tab
@@ -710,7 +640,14 @@ correct behavior here. Instead we should either:
 * Immediately display an error that the commandline is invalid, and that a
   commandline should start with a `new-tab ; `?
 
-TODO: This ^ is left for discussion.
+**TODO**: This ^ is left for discussion. In my initial implementation, I
+resolved this by assuming there was an implicit `new-tab` command, and that felt
+right.
+
+We should also make sure that when we add support for the `open-settings`
+command, that command by itself should not imply a `new-tab`. `wt open-settings`
+should simply open the settings in the user's chosen `.json` editor, without
+needing to open a terminal window.
 
 ## Future considerations
 
