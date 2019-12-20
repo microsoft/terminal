@@ -940,6 +940,31 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
 }
 
 // Method Description:
+// - Converts an "automatic" split type into either Vertical or Horizontal,
+//   based upon the current dimensions of the Pane.
+// - If any of the other SplitState values are passed in, they're returned
+//   unmodified.
+// Arguments:
+// - splitType: The SplitState to attempt to convert
+// Return Value:
+// - None if splitType was None, otherwise one of Horizontal or Vertical
+SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
+{
+    // Careful here! If the pane doesn't yet have a size, these dimensions will
+    // be 0, and we'll always return Vertical.
+
+    if (splitType == SplitState::Automatic)
+    {
+        // If the requested split type was "auto", determine which direction to
+        // split based on our current dimensions
+        const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                               gsl::narrow_cast<float>(_root.ActualHeight()) };
+        return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+    }
+    return splitType;
+}
+
+// Method Description:
 // - Determines whether the pane can be split.
 // Arguments:
 // - splitType: what type of split we want to create.
@@ -952,7 +977,14 @@ bool Pane::_CanSplit(SplitState splitType)
 
     const Size minSize = _GetMinSize();
 
-    if (splitType == SplitState::Vertical)
+    auto actualSplitType = _convertAutomaticSplitState(splitType);
+
+    if (actualSplitType == SplitState::None)
+    {
+        return false;
+    }
+
+    if (actualSplitType == SplitState::Vertical)
     {
         const auto widthMinusSeparator = actualSize.Width - CombinedPaneBorderSize;
         const auto newWidth = widthMinusSeparator * Half;
@@ -960,7 +992,7 @@ bool Pane::_CanSplit(SplitState splitType)
         return newWidth > minSize.Width;
     }
 
-    if (splitType == SplitState::Horizontal)
+    if (actualSplitType == SplitState::Horizontal)
     {
         const auto heightMinusSeparator = actualSize.Height - CombinedPaneBorderSize;
         const auto newHeight = heightMinusSeparator * Half;
@@ -982,6 +1014,13 @@ bool Pane::_CanSplit(SplitState splitType)
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
+    if (splitType == SplitState::None)
+    {
+        return { nullptr, nullptr };
+    }
+
+    auto actualSplitType = _convertAutomaticSplitState(splitType);
+
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
@@ -995,7 +1034,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // parent.
     _gotFocusRevoker.revoke();
 
-    _splitState = splitType;
+    _splitState = actualSplitType;
     _desiredSplitPosition = Half;
 
     // Remove any children we currently have. We can't add the existing

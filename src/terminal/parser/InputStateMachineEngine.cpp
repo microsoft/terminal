@@ -38,52 +38,139 @@ const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 // CAPSLOCK_ON         0x0080
 // ENHANCED_KEY        0x0100
 
-const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]{
-    { CsiActionCodes::ArrowUp, VK_UP },
-    { CsiActionCodes::ArrowDown, VK_DOWN },
-    { CsiActionCodes::ArrowRight, VK_RIGHT },
-    { CsiActionCodes::ArrowLeft, VK_LEFT },
-    { CsiActionCodes::Home, VK_HOME },
-    { CsiActionCodes::End, VK_END },
-    { CsiActionCodes::CSI_F1, VK_F1 },
-    { CsiActionCodes::CSI_F2, VK_F2 },
-    { CsiActionCodes::CSI_F3, VK_F3 },
-    { CsiActionCodes::CSI_F4, VK_F4 },
+enum class CsiActionCodes : wchar_t
+{
+    ArrowUp = L'A',
+    ArrowDown = L'B',
+    ArrowRight = L'C',
+    ArrowLeft = L'D',
+    Home = L'H',
+    End = L'F',
+    Generic = L'~', // Used for a whole bunch of possible keys
+    CSI_F1 = L'P',
+    CSI_F2 = L'Q',
+    CSI_F3 = L'R', // Both F3 and DSR are on R.
+    // DSR_DeviceStatusReportResponse = L'R',
+    CSI_F4 = L'S',
+    DTTERM_WindowManipulation = L't',
+    CursorBackTab = L'Z',
 };
 
-const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]{
-    { GenericKeyIdentifiers::GenericHome, VK_HOME },
-    { GenericKeyIdentifiers::Insert, VK_INSERT },
-    { GenericKeyIdentifiers::Delete, VK_DELETE },
-    { GenericKeyIdentifiers::GenericEnd, VK_END },
-    { GenericKeyIdentifiers::Prior, VK_PRIOR },
-    { GenericKeyIdentifiers::Next, VK_NEXT },
-    { GenericKeyIdentifiers::F5, VK_F5 },
-    { GenericKeyIdentifiers::F6, VK_F6 },
-    { GenericKeyIdentifiers::F7, VK_F7 },
-    { GenericKeyIdentifiers::F8, VK_F8 },
-    { GenericKeyIdentifiers::F9, VK_F9 },
-    { GenericKeyIdentifiers::F10, VK_F10 },
-    { GenericKeyIdentifiers::F11, VK_F11 },
-    { GenericKeyIdentifiers::F12, VK_F12 },
+struct CsiToVkey
+{
+    CsiActionCodes action;
+    short vkey;
 };
 
-const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]{
-    { Ss3ActionCodes::SS3_F1, VK_F1 },
-    { Ss3ActionCodes::SS3_F2, VK_F2 },
-    { Ss3ActionCodes::SS3_F3, VK_F3 },
-    { Ss3ActionCodes::SS3_F4, VK_F4 },
+static constexpr std::array<CsiToVkey, 10> s_csiMap = {
+    CsiToVkey{ CsiActionCodes::ArrowUp, VK_UP },
+    CsiToVkey{ CsiActionCodes::ArrowDown, VK_DOWN },
+    CsiToVkey{ CsiActionCodes::ArrowRight, VK_RIGHT },
+    CsiToVkey{ CsiActionCodes::ArrowLeft, VK_LEFT },
+    CsiToVkey{ CsiActionCodes::Home, VK_HOME },
+    CsiToVkey{ CsiActionCodes::End, VK_END },
+    CsiToVkey{ CsiActionCodes::CSI_F1, VK_F1 },
+    CsiToVkey{ CsiActionCodes::CSI_F2, VK_F2 },
+    CsiToVkey{ CsiActionCodes::CSI_F3, VK_F3 },
+    CsiToVkey{ CsiActionCodes::CSI_F4, VK_F4 }
 };
 
-InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch) :
-    InputStateMachineEngine(pDispatch, false)
+static bool operator==(const CsiToVkey& pair, const CsiActionCodes code) noexcept
+{
+    return pair.action == code;
+}
+
+// Sequences ending in '~' use these numbers as identifiers.
+enum class GenericKeyIdentifiers : unsigned short
+{
+    GenericHome = 1,
+    Insert = 2,
+    Delete = 3,
+    GenericEnd = 4,
+    Prior = 5, //PgUp
+    Next = 6, //PgDn
+    F5 = 15,
+    F6 = 17,
+    F7 = 18,
+    F8 = 19,
+    F9 = 20,
+    F10 = 21,
+    F11 = 23,
+    F12 = 24,
+};
+
+struct GenericToVkey
+{
+    GenericKeyIdentifiers identifier;
+    short vkey;
+};
+
+static constexpr std::array<GenericToVkey, 14> s_genericMap = {
+    GenericToVkey{ GenericKeyIdentifiers::GenericHome, VK_HOME },
+    GenericToVkey{ GenericKeyIdentifiers::Insert, VK_INSERT },
+    GenericToVkey{ GenericKeyIdentifiers::Delete, VK_DELETE },
+    GenericToVkey{ GenericKeyIdentifiers::GenericEnd, VK_END },
+    GenericToVkey{ GenericKeyIdentifiers::Prior, VK_PRIOR },
+    GenericToVkey{ GenericKeyIdentifiers::Next, VK_NEXT },
+    GenericToVkey{ GenericKeyIdentifiers::F5, VK_F5 },
+    GenericToVkey{ GenericKeyIdentifiers::F6, VK_F6 },
+    GenericToVkey{ GenericKeyIdentifiers::F7, VK_F7 },
+    GenericToVkey{ GenericKeyIdentifiers::F8, VK_F8 },
+    GenericToVkey{ GenericKeyIdentifiers::F9, VK_F9 },
+    GenericToVkey{ GenericKeyIdentifiers::F10, VK_F10 },
+    GenericToVkey{ GenericKeyIdentifiers::F11, VK_F11 },
+    GenericToVkey{ GenericKeyIdentifiers::F12, VK_F12 },
+};
+
+static bool operator==(const GenericToVkey& pair, const GenericKeyIdentifiers identifier) noexcept
+{
+    return pair.identifier == identifier;
+}
+
+enum class Ss3ActionCodes : wchar_t
+{
+    // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
+    //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
+    // ArrowUp = L'A',
+    // ArrowDown = L'B',
+    // ArrowRight = L'C',
+    // ArrowLeft = L'D',
+    // Home = L'H',
+    // End = L'F',
+    SS3_F1 = L'P',
+    SS3_F2 = L'Q',
+    SS3_F3 = L'R',
+    SS3_F4 = L'S',
+};
+
+struct Ss3ToVkey
+{
+    Ss3ActionCodes action;
+    short vkey;
+};
+
+static constexpr std::array<Ss3ToVkey, 4> s_ss3Map = {
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F1, VK_F1 },
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F2, VK_F2 },
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F3, VK_F3 },
+    Ss3ToVkey{ Ss3ActionCodes::SS3_F4, VK_F4 },
+};
+
+static bool operator==(const Ss3ToVkey& pair, const Ss3ActionCodes code) noexcept
+{
+    return pair.action == code;
+}
+
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch) :
+    InputStateMachineEngine(std::move(pDispatch), false)
 {
 }
 
-InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch, const bool lookingForDSR) :
-    _pDispatch(THROW_IF_NULL_ALLOC(pDispatch)),
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
+    _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR)
 {
+    THROW_IF_NULL_ALLOC(_pDispatch.get());
 }
 
 // Method Description:
@@ -98,13 +185,20 @@ bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
     return _DoControlCharacter(wch, false);
 }
 
+// Routine Description:
+// - Writes a control character into the buffer. Think characters like tab, backspace, etc.
+// Arguments:
+// - wch - The character to write
+// - writeAlt - Pass in the alt-state information here as it's not embedded
+// Return Value:
+// - True if successfully generated and written. False otherwise.
 bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool writeAlt)
 {
-    bool fSuccess = false;
+    bool success = false;
     if (wch == UNICODE_ETX && !writeAlt)
     {
         // This is Ctrl+C, which is handled specially by the host.
-        fSuccess = _pDispatch->WriteCtrlC();
+        success = _pDispatch->WriteCtrlC();
     }
     else if (wch >= '\x0' && wch < '\x20')
     {
@@ -114,16 +208,18 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         bool writeCtrl = true;
 
         short vkey = 0;
-        DWORD dwModifierState = 0;
+        DWORD modifierState = 0;
 
         switch (wch)
         {
         case L'\b':
-            fSuccess = _GenerateKeyFromChar(wch + 0x40, &vkey, nullptr);
+            success = _GenerateKeyFromChar(wch + 0x40, vkey, modifierState);
+            modifierState = 0;
             break;
         case L'\r':
             writeCtrl = false;
-            fSuccess = _GenerateKeyFromChar(wch, &vkey, nullptr);
+            success = _GenerateKeyFromChar(wch, vkey, modifierState);
+            modifierState = 0;
             break;
         case L'\x1b':
             // Translate escape as the ESC key, NOT C-[.
@@ -131,29 +227,29 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
             //      which isn't the worst tradeoff.
             vkey = VK_ESCAPE;
             writeCtrl = false;
-            fSuccess = true;
+            success = true;
             break;
         case L'\t':
             writeCtrl = false;
-            fSuccess = _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
+            success = _GenerateKeyFromChar(actualChar, vkey, modifierState);
             break;
         default:
-            fSuccess = _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
+            success = _GenerateKeyFromChar(actualChar, vkey, modifierState);
             break;
         }
 
-        if (fSuccess)
+        if (success)
         {
             if (writeCtrl)
             {
-                WI_SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
+                WI_SetFlag(modifierState, LEFT_CTRL_PRESSED);
             }
             if (writeAlt)
             {
-                WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
+                WI_SetFlag(modifierState, LEFT_ALT_PRESSED);
             }
 
-            fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState);
+            success = _WriteSingleKey(actualChar, vkey, modifierState);
         }
     }
     else if (wch == '\x7f')
@@ -165,13 +261,13 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         //      "delete" any input at all, only backspace.
         //  Because of this, we're treating x7f as backspace, like most
         //      terminals do.
-        fSuccess = _WriteSingleKey('\x8', VK_BACK, writeAlt ? LEFT_ALT_PRESSED : 0);
+        success = _WriteSingleKey('\x8', VK_BACK, writeAlt ? LEFT_ALT_PRESSED : 0);
     }
     else
     {
-        fSuccess = ActionPrint(wch);
+        success = ActionPrint(wch);
     }
-    return fSuccess;
+    return success;
 }
 
 // Routine Description:
@@ -200,45 +296,41 @@ bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     short vkey = 0;
-    DWORD dwModifierState = 0;
-    bool fSuccess = _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
-    if (fSuccess)
+    DWORD modifierState = 0;
+    bool success = _GenerateKeyFromChar(wch, vkey, modifierState);
+    if (success)
     {
-        fSuccess = _WriteSingleKey(wch, vkey, dwModifierState);
+        success = _WriteSingleKey(wch, vkey, modifierState);
     }
-    return fSuccess;
+    return success;
 }
 
 // Method Description:
 // - Triggers the Print action to indicate that the listener should render the
 //      string of characters given.
 // Arguments:
-// - rgwch - string to dispatch.
-// - cch - length of rgwch
+// - string - string to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch,
-                                                const size_t cch)
+bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 {
-    if (cch == 0)
+    if (string.empty())
     {
         return true;
     }
-    return _pDispatch->WriteString(rgwch, cch);
+    return _pDispatch->WriteString(string);
 }
 
 // Method Description:
 // - Triggers the Print action to indicate that the listener should render the
 //      string of characters given.
 // Arguments:
-// - rgwch - string to dispatch.
-// - cch - length of rgwch
+// - string - string to dispatch.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPassThroughString(const wchar_t* const rgwch,
-                                                      _In_ size_t const cch)
+bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    return ActionPrintString(rgwch, cch);
+    return ActionPrintString(string);
 }
 
 // Method Description:
@@ -247,36 +339,34 @@ bool InputStateMachineEngine::ActionPassThroughString(const wchar_t* const rgwch
 //      and a simple letter. No complicated parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
-// - wchIntermediate - Intermediate character in the sequence, if there was one.
+// - intermediates - Intermediate characters in the sequence
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
-                                                const unsigned short /*cIntermediate*/,
-                                                const wchar_t /*wchIntermediate*/)
+                                                const std::basic_string_view<wchar_t> /*intermediates*/)
 {
-    bool fSuccess = false;
+    bool success = false;
 
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
     if (wch == 0x7f)
     {
-        fSuccess = _DoControlCharacter(wch, true);
+        success = _DoControlCharacter(wch, true);
     }
     else
     {
-        DWORD dwModifierState = 0;
+        DWORD modifierState = 0;
         short vk = 0;
-        fSuccess = _GenerateKeyFromChar(wch, &vk, &dwModifierState);
-        if (fSuccess)
+        success = _GenerateKeyFromChar(wch, vk, modifierState);
+        if (success)
         {
             // Alt is definitely pressed in the esc+key case.
-            dwModifierState = WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
+            modifierState = WI_SetFlag(modifierState, LEFT_ALT_PRESSED);
 
-            fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
+            success = _WriteSingleKey(wch, vk, modifierState);
         }
     }
 
-    return fSuccess;
+    return success;
 }
 
 // Method Description:
@@ -285,34 +375,29 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
-// - wchIntermediate - Intermediate character in the sequence, if there was one.
-// - rgusParams - set of numeric parameters collected while pasring the sequence.
-// - cParams - number of parameters found.
+// - intermediates - Intermediate characters in the sequence
+// - parameters - set of numeric parameters collected while pasring the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
-                                                const unsigned short /*cIntermediate*/,
-                                                const wchar_t /*wchIntermediate*/,
-                                                _In_reads_(cParams) const unsigned short* const rgusParams,
-                                                const unsigned short cParams)
+                                                const std::basic_string_view<wchar_t> /*intermediates*/,
+                                                const std::basic_string_view<size_t> parameters)
 {
-    DWORD dwModifierState = 0;
+    DWORD modifierState = 0;
     short vkey = 0;
-    unsigned int uiFunction = 0;
-    unsigned int col = 0;
-    unsigned int row = 0;
+    unsigned int function = 0;
+    size_t col = 0;
+    size_t row = 0;
 
     // This is all the args after the first arg, and the count of args not including the first one.
-    const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
-    const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
+    const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
 
-    bool fSuccess = false;
-    switch (wch)
+    bool success = false;
+    switch ((CsiActionCodes)wch)
     {
     case CsiActionCodes::Generic:
-        dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
-        fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
+        modifierState = _GetGenericKeysModifierState(parameters);
+        success = _GetGenericVkey(parameters, vkey);
         break;
     // case CsiActionCodes::DSR_DeviceStatusReportResponse:
     case CsiActionCodes::CSI_F3:
@@ -321,8 +406,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         // Else, fall though to the _GetCursorKeysModifierState handler.
         if (_lookingForDSR)
         {
-            fSuccess = true;
-            fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
+            success = true;
+            success = _GetXYPosition(parameters, row, col);
             break;
         }
     case CsiActionCodes::ArrowUp:
@@ -334,27 +419,25 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     case CsiActionCodes::CSI_F1:
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
-        dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
-        fSuccess = _GetCursorKeysVkey(wch, &vkey);
+        modifierState = _GetCursorKeysModifierState(parameters);
+        success = _GetCursorKeysVkey(wch, vkey);
         break;
     case CsiActionCodes::CursorBackTab:
-        dwModifierState = SHIFT_PRESSED;
+        modifierState = SHIFT_PRESSED;
         vkey = VK_TAB;
-        fSuccess = true;
+        success = true;
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        fSuccess = _GetWindowManipulationType(rgusParams,
-                                              cParams,
-                                              &uiFunction);
+        success = _GetWindowManipulationType(parameters, function);
         break;
     default:
-        fSuccess = false;
+        success = false;
         break;
     }
 
-    if (fSuccess)
+    if (success)
     {
-        switch (wch)
+        switch ((CsiActionCodes)wch)
         {
         // case CsiActionCodes::DSR_DeviceStatusReportResponse:
         case CsiActionCodes::CSI_F3:
@@ -363,7 +446,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             // Else, fall though to the _GetCursorKeysModifierState handler.
             if (_lookingForDSR)
             {
-                fSuccess = _pDispatch->MoveCursor(row, col);
+                success = _pDispatch->MoveCursor(row, col);
                 // Right now we're only looking for on initial cursor
                 //      position response. After that, only look for F3.
                 _lookingForDSR = false;
@@ -381,20 +464,19 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case CsiActionCodes::CSI_F2:
         case CsiActionCodes::CSI_F4:
         case CsiActionCodes::CursorBackTab:
-            fSuccess = _WriteSingleKey(vkey, dwModifierState);
+            success = _WriteSingleKey(vkey, modifierState);
             break;
         case CsiActionCodes::DTTERM_WindowManipulation:
-            fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(uiFunction),
-                                                      rgusRemainingArgs,
-                                                      cRemainingArgs);
+            success = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
+                                                     remainingArgs);
             break;
         default:
-            fSuccess = false;
+            success = false;
             break;
         }
     }
 
-    return fSuccess;
+    return success;
 }
 
 // Routine Description:
@@ -403,27 +485,25 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - rgusParams - set of numeric parameters collected while pasring the sequence.
-// - cParams - number of parameters found.
+// - parameters - set of numeric parameters collected while pasring the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
-                                                _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
-                                                const unsigned short /*cParams*/)
+                                                const std::basic_string_view<size_t> /*parameters*/)
 {
     // Ss3 sequence keys aren't modified.
     // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
     DWORD dwModifierState = 0;
     short vkey = 0;
 
-    bool fSuccess = _GetSs3KeysVkey(wch, &vkey);
+    bool success = _GetSs3KeysVkey(wch, vkey);
 
-    if (fSuccess)
+    if (success)
     {
-        fSuccess = _WriteSingleKey(vkey, dwModifierState);
+        success = _WriteSingleKey(vkey, dwModifierState);
     }
 
-    return fSuccess;
+    return success;
 }
 
 // Method Description:
@@ -455,15 +535,13 @@ bool InputStateMachineEngine::ActionIgnore()
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch. This will be a BEL or ST char.
-// - sOscParam - identifier of the OSC action to perform
-// - pwchOscStringBuffer - OSC string we've collected. NOT null terminated.
-// - cchOscString - length of pwchOscStringBuffer
+// - parameter - identifier of the OSC action to perform
+// - string - OSC string we've collected. NOT null terminated.
 // Return Value:
 // - true if we handled the dsipatch.
 bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
-                                                const unsigned short /*sOscParam*/,
-                                                _Inout_updates_(_Param_(4)) wchar_t* const /*pwchOscStringBuffer*/,
-                                                const unsigned short /*cchOscString*/)
+                                                const size_t /*parameter*/,
+                                                const std::wstring_view /*string*/)
 {
     return false;
 }
@@ -477,127 +555,105 @@ bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 // Arguments:
 // - wch - the character to write to the input callback.
 // - vkey - the VKEY of the key to write to the input callback.
-// - dwModifierState - the modifier state to write with the key.
-// - rgInput - the buffer of characters to write the keypresses to. Can write
+// - modifierState - the modifier state to write with the key.
+// - input - the buffer of characters to write the keypresses to. Can write
 //      up to 8 records to this buffer.
-// - cInput - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
 // Return Value:
 // - the number of records written, or 0 if the buffer wasn't big enough.
-size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
-                                                         const short vkey,
-                                                         const DWORD dwModifierState,
-                                                         _Inout_updates_(cInput) INPUT_RECORD* rgInput,
-                                                         const size_t cInput)
+void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
+                                                       const short vkey,
+                                                       const DWORD modifierState,
+                                                       std::vector<INPUT_RECORD>& input)
 {
+    input.reserve(input.size() + 8);
+
     // TODO: Reuse the clipboard functions for generating input for characters
     //       that aren't on the current keyboard.
     // MSFT:13994942
-    if (cInput < WRAPPED_SEQUENCE_MAX_LENGTH)
+
+    const bool shift = WI_IsFlagSet(modifierState, SHIFT_PRESSED);
+    const bool ctrl = WI_IsFlagSet(modifierState, LEFT_CTRL_PRESSED);
+    const bool alt = WI_IsFlagSet(modifierState, LEFT_ALT_PRESSED);
+
+    INPUT_RECORD next;
+
+    DWORD currentModifiers = 0;
+
+    if (shift)
     {
-        return 0;
+        WI_SetFlag(currentModifiers, SHIFT_PRESSED);
+        next.EventType = KEY_EVENT;
+        next.Event.KeyEvent.bKeyDown = TRUE;
+        next.Event.KeyEvent.dwControlKeyState = currentModifiers;
+        next.Event.KeyEvent.wRepeatCount = 1;
+        next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
+        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        input.push_back(next);
+    }
+    if (alt)
+    {
+        WI_SetFlag(currentModifiers, LEFT_ALT_PRESSED);
+        next.EventType = KEY_EVENT;
+        next.Event.KeyEvent.bKeyDown = TRUE;
+        next.Event.KeyEvent.dwControlKeyState = currentModifiers;
+        next.Event.KeyEvent.wRepeatCount = 1;
+        next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
+        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        input.push_back(next);
+    }
+    if (ctrl)
+    {
+        WI_SetFlag(currentModifiers, LEFT_CTRL_PRESSED);
+        next.EventType = KEY_EVENT;
+        next.Event.KeyEvent.bKeyDown = TRUE;
+        next.Event.KeyEvent.dwControlKeyState = currentModifiers;
+        next.Event.KeyEvent.wRepeatCount = 1;
+        next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
+        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        input.push_back(next);
     }
 
-    const bool fShift = WI_IsFlagSet(dwModifierState, SHIFT_PRESSED);
-    const bool fCtrl = WI_IsFlagSet(dwModifierState, LEFT_CTRL_PRESSED);
-    const bool fAlt = WI_IsFlagSet(dwModifierState, LEFT_ALT_PRESSED);
+    _GetSingleKeypress(wch, vkey, currentModifiers, input);
 
-    size_t index = 0;
-    INPUT_RECORD* next = &rgInput[0];
-
-    DWORD dwCurrentModifiers = 0;
-
-    if (fShift)
+    if (ctrl)
     {
-        WI_SetFlag(dwCurrentModifiers, SHIFT_PRESSED);
-        next->EventType = KEY_EVENT;
-        next->Event.KeyEvent.bKeyDown = TRUE;
-        next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
-        next->Event.KeyEvent.wRepeatCount = 1;
-        next->Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
-        next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
-        next++;
-        index++;
+        WI_ClearFlag(currentModifiers, LEFT_CTRL_PRESSED);
+        next.EventType = KEY_EVENT;
+        next.Event.KeyEvent.bKeyDown = FALSE;
+        next.Event.KeyEvent.dwControlKeyState = currentModifiers;
+        next.Event.KeyEvent.wRepeatCount = 1;
+        next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
+        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        input.push_back(next);
     }
-    if (fAlt)
+    if (alt)
     {
-        WI_SetFlag(dwCurrentModifiers, LEFT_ALT_PRESSED);
-        next->EventType = KEY_EVENT;
-        next->Event.KeyEvent.bKeyDown = TRUE;
-        next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
-        next->Event.KeyEvent.wRepeatCount = 1;
-        next->Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
-        next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
-        next++;
-        index++;
+        WI_ClearFlag(currentModifiers, LEFT_ALT_PRESSED);
+        next.EventType = KEY_EVENT;
+        next.Event.KeyEvent.bKeyDown = FALSE;
+        next.Event.KeyEvent.dwControlKeyState = currentModifiers;
+        next.Event.KeyEvent.wRepeatCount = 1;
+        next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
+        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        input.push_back(next);
     }
-    if (fCtrl)
+    if (shift)
     {
-        WI_SetFlag(dwCurrentModifiers, LEFT_CTRL_PRESSED);
-        next->EventType = KEY_EVENT;
-        next->Event.KeyEvent.bKeyDown = TRUE;
-        next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
-        next->Event.KeyEvent.wRepeatCount = 1;
-        next->Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
-        next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
-        next++;
-        index++;
+        WI_ClearFlag(currentModifiers, SHIFT_PRESSED);
+        next.EventType = KEY_EVENT;
+        next.Event.KeyEvent.bKeyDown = FALSE;
+        next.Event.KeyEvent.dwControlKeyState = currentModifiers;
+        next.Event.KeyEvent.wRepeatCount = 1;
+        next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
+        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        input.push_back(next);
     }
-
-    size_t added = _GetSingleKeypress(wch, vkey, dwCurrentModifiers, next, cInput - index);
-
-    // if _GetSingleKeypress added more than two events we might overflow the buffer
-    if (added > 2)
-    {
-        return index;
-    }
-
-    next += added;
-    index += added;
-
-    if (fCtrl)
-    {
-        WI_ClearFlag(dwCurrentModifiers, LEFT_CTRL_PRESSED);
-        next->EventType = KEY_EVENT;
-        next->Event.KeyEvent.bKeyDown = FALSE;
-        next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
-        next->Event.KeyEvent.wRepeatCount = 1;
-        next->Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
-        next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
-        next++;
-        index++;
-    }
-    if (fAlt)
-    {
-        WI_ClearFlag(dwCurrentModifiers, LEFT_ALT_PRESSED);
-        next->EventType = KEY_EVENT;
-        next->Event.KeyEvent.bKeyDown = FALSE;
-        next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
-        next->Event.KeyEvent.wRepeatCount = 1;
-        next->Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
-        next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
-        next++;
-        index++;
-    }
-    if (fShift)
-    {
-        WI_ClearFlag(dwCurrentModifiers, SHIFT_PRESSED);
-        next->EventType = KEY_EVENT;
-        next->Event.KeyEvent.bKeyDown = FALSE;
-        next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
-        next->Event.KeyEvent.wRepeatCount = 1;
-        next->Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
-        next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
-        next++;
-        index++;
-    }
-
-    return index;
 }
 
 // Method Description:
@@ -606,36 +662,31 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
 // Arguments:
 // - wch - the character to write to the buffer.
 // - vkey - the VKEY of the key to write to the buffer.
-// - dwModifierState - the modifier state to write with the key.
-// - rgInput - the buffer of characters to write the keypress to. Will always
+// - modifierState - the modifier state to write with the key.
+// - input - the buffer of characters to write the keypress to. Will always
 //      write to the first two positions in the buffer.
-// - cRecords - the size of rgInput
 // Return Value:
 // - the number of input records written.
-size_t InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
-                                                   const short vkey,
-                                                   const DWORD dwModifierState,
-                                                   _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
-                                                   const size_t cRecords)
+void InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
+                                                 const short vkey,
+                                                 const DWORD modifierState,
+                                                 std::vector<INPUT_RECORD>& input)
 {
-    FAIL_FAST_IF(!(cRecords >= 2));
-    if (cRecords < 2)
-    {
-        return 0;
-    }
+    input.reserve(input.size() + 2);
 
-    rgInput[0].EventType = KEY_EVENT;
-    rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-    rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
-    rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-    rgInput[0].Event.KeyEvent.wVirtualKeyCode = vkey;
-    rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-    rgInput[0].Event.KeyEvent.uChar.UnicodeChar = wch;
+    INPUT_RECORD rec;
 
-    rgInput[1] = rgInput[0];
-    rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
+    rec.EventType = KEY_EVENT;
+    rec.Event.KeyEvent.bKeyDown = TRUE;
+    rec.Event.KeyEvent.dwControlKeyState = modifierState;
+    rec.Event.KeyEvent.wRepeatCount = 1;
+    rec.Event.KeyEvent.wVirtualKeyCode = vkey;
+    rec.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+    rec.Event.KeyEvent.uChar.UnicodeChar = wch;
+    input.push_back(rec);
 
-    return 2;
+    rec.Event.KeyEvent.bKeyDown = FALSE;
+    input.push_back(rec);
 }
 
 // Method Description:
@@ -646,16 +697,15 @@ size_t InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
 // Arguments:
 // - wch - the character to write to the input callback.
 // - vkey - the VKEY of the key to write to the input callback.
-// - dwModifierState - the modifier state to write with the key.
+// - modifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vkey, const DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState)
 {
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
-    INPUT_RECORD rgInput[WRAPPED_SEQUENCE_MAX_LENGTH];
-    size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, WRAPPED_SEQUENCE_MAX_LENGTH);
-
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(rgInput, cInput));
+    std::vector<INPUT_RECORD> input;
+    _GenerateWrappedSequence(wch, vkey, modifierState, input);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(input));
 
     return _pDispatch->WriteInput(inputEvents);
 }
@@ -682,10 +732,10 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwMo
 // - cParams - the number of elements in rgusParams
 // Return Value:
 // - the INPUT_RECORD comaptible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters)
 {
     // Both Cursor keys and generic keys keep their modifiers in the same index.
-    return _GetGenericKeysModifierState(rgusParams, cParams);
+    return _GetGenericKeysModifierState(parameters);
 }
 
 // Method Description:
@@ -696,28 +746,28 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) c
 // - cParams - the number of elements in rgusParams
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
+DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters)
 {
-    DWORD dwModifiers = 0;
-    if (_IsModified(cParams) && cParams >= 2)
+    DWORD modifiers = 0;
+    if (_IsModified(parameters.size()) && parameters.size() >= 2)
     {
-        dwModifiers = _GetModifier(rgusParams[1]);
+        modifiers = _GetModifier(parameters.at(1));
     }
-    return dwModifiers;
+    return modifiers;
 }
 
 // Method Description:
 // - Determines if a set of parameters indicates a modified keypress
 // Arguments:
-// - cParams - the nummber of parameters we've collected in this sequence
+// - paramCount - the nummber of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
-bool InputStateMachineEngine::_IsModified(const unsigned short cParams)
+bool InputStateMachineEngine::_IsModified(const size_t paramCount)
 {
     // modified input either looks like
     // \x1b[1;mA or \x1b[17;m~
     // Both have two parameters
-    return cParams == 2;
+    return paramCount == 2;
 }
 
 // Method Description:
@@ -726,46 +776,44 @@ bool InputStateMachineEngine::_IsModified(const unsigned short cParams)
 // - modifierParam - the VT modifier value to convert
 // Return Value:
 // - The equivalent INPUT_RECORD modifier value.
-DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam)
+DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam)
 {
     // VT Modifiers are 1+(modifier flags)
-    unsigned short vtParam = modifierParam - 1;
-    DWORD modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
-
-    bool fShift = WI_IsFlagSet(vtParam, VT_SHIFT);
-    bool fAlt = WI_IsFlagSet(vtParam, VT_ALT);
-    bool fCtrl = WI_IsFlagSet(vtParam, VT_CTRL);
-    return modifierState | (fShift ? SHIFT_PRESSED : 0) | (fAlt ? LEFT_ALT_PRESSED : 0) | (fCtrl ? LEFT_CTRL_PRESSED : 0);
+    const auto vtParam = modifierParam - 1;
+    DWORD modifierState = 0;
+    WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
+    WI_SetFlagIf(modifierState, SHIFT_PRESSED, WI_IsFlagSet(vtParam, VT_SHIFT));
+    WI_SetFlagIf(modifierState, LEFT_ALT_PRESSED, WI_IsFlagSet(vtParam, VT_ALT));
+    WI_SetFlagIf(modifierState, LEFT_CTRL_PRESSED, WI_IsFlagSet(vtParam, VT_CTRL));
+    return modifierState;
 }
 
 // Method Description:
 // - Gets the Vkey form the generic keys table associated with a particular
 //   identifier code. The identifier code will be the first param in rgusParams.
 // Arguments:
-// - rgusParams: an array of shorts where the first is the identifier of the key
+// - parameters: an array of shorts where the first is the identifier of the key
 //      we're looking for.
-// - cParams: number of params in rgusParams
-// - pVkey: Recieves the vkey
+// - vkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_t> parameters, short& vkey) const
 {
-    *pVkey = 0;
-    if (cParams < 1)
+    vkey = 0;
+    if (parameters.empty())
     {
         return false;
     }
 
-    const unsigned short identifier = rgusParams[0];
-    for (int i = 0; i < ARRAYSIZE(s_rgGenericMap); i++)
+    const auto identifier = (GenericKeyIdentifiers)parameters[0];
+
+    const auto mapping = std::find(s_genericMap.cbegin(), s_genericMap.cend(), identifier);
+    if (mapping != s_genericMap.end())
     {
-        GENERIC_TO_VKEY mapping = s_rgGenericMap[i];
-        if (mapping.Identifier == identifier)
-        {
-            *pVkey = mapping.vkey;
-            return true;
-        }
+        vkey = mapping->vkey;
+        return true;
     }
+
     return false;
 }
 
@@ -773,20 +821,18 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned
 // - Gets the Vkey from the CSI codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - pVkey: Recieves the vkey
+// - vkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey) const
 {
-    *pVkey = 0;
-    for (int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
+    vkey = 0;
+
+    const auto mapping = std::find(s_csiMap.cbegin(), s_csiMap.cend(), (CsiActionCodes)wch);
+    if (mapping != s_csiMap.end())
     {
-        CSI_TO_VKEY mapping = s_rgCsiMap[i];
-        if (mapping.Action == wch)
-        {
-            *pVkey = mapping.vkey;
-            return true;
-        }
+        vkey = mapping->vkey;
+        return true;
     }
 
     return false;
@@ -799,17 +845,15 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, _Out_ short*
 // - pVkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) const
 {
-    *pVkey = 0;
-    for (int i = 0; i < ARRAYSIZE(s_rgSs3Map); i++)
+    vkey = 0;
+
+    const auto mapping = std::find(s_ss3Map.cbegin(), s_ss3Map.cend(), (Ss3ActionCodes)wch);
+    if (mapping != s_ss3Map.end())
     {
-        SS3_TO_VKEY mapping = s_rgSs3Map[i];
-        if (mapping.Action == wch)
-        {
-            *pVkey = mapping.vkey;
-            return true;
-        }
+        vkey = mapping->vkey;
+        return true;
     }
 
     return false;
@@ -819,40 +863,35 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, _Out_ short* co
 // - Gets the Vkey and modifier state that's associated with a particular char.
 // Arguments:
 // - wch: the wchar_t to get the vkey and modifier state of.
-// - pVkey: Recieves the vkey
-// - pdwModifierState: Recieves the modifier state
+// - vkey: Recieves the vkey
+// - modifierState: Recieves the modifier state
 // Return Value:
 // <none>
 bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
-                                                   _Out_ short* const pVkey,
-                                                   _Out_ DWORD* const pdwModifierState)
+                                                   short& vkey,
+                                                   DWORD& modifierState)
 {
     // Low order byte is key, high order is modifiers
     short keyscan = VkKeyScanW(wch);
 
-    short vkey = LOBYTE(keyscan);
+    short key = LOBYTE(keyscan);
 
     short keyscanModifiers = HIBYTE(keyscan);
 
-    if (vkey == -1 && keyscanModifiers == -1)
+    if (key == -1 && keyscanModifiers == -1)
     {
         return false;
     }
 
     // Because of course, these are not the same flags.
-    short dwModifierState = 0 |
-                            (WI_IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
-                            (WI_IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
-                            (WI_IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
+    short modifierFlags = 0 |
+                          (WI_IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
+                          (WI_IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
+                          (WI_IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
 
-    if (pVkey != nullptr)
-    {
-        *pVkey = vkey;
-    }
-    if (pdwModifierState != nullptr)
-    {
-        *pdwModifierState = dwModifierState;
-    }
+    vkey = key;
+    modifierState = modifierFlags;
+
     return true;
 }
 
@@ -902,84 +941,82 @@ bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const
 //  This is kept seperate from the output version, as there may be
 //      codes that are supported in one direction but not the other.
 // Arguments:
-// - rgusParams - Array of parameters collected
-// - cParams - Number of parameters we've collected
-// - puiFunction - Memory location to receive the function type
+// - parameters - Array of parameters collected
+// - function - Receives the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                                         const unsigned short cParams,
-                                                         _Out_ unsigned int* const puiFunction) const
+bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+                                                         unsigned int& function) const
 {
-    bool fSuccess = false;
-    *puiFunction = DispatchTypes::WindowManipulationType::Invalid;
+    bool success = false;
+    function = DispatchTypes::WindowManipulationType::Invalid;
 
-    if (cParams > 0)
+    if (!parameters.empty())
     {
-        switch (rgusParams[0])
+        switch (parameters[0])
         {
         case DispatchTypes::WindowManipulationType::RefreshWindow:
-            *puiFunction = DispatchTypes::WindowManipulationType::RefreshWindow;
-            fSuccess = true;
+            function = DispatchTypes::WindowManipulationType::RefreshWindow;
+            success = true;
             break;
         case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-            *puiFunction = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
-            fSuccess = true;
+            function = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
+            success = true;
             break;
         default:
-            fSuccess = false;
+            success = false;
         }
     }
 
-    return fSuccess;
+    return success;
 }
 
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
 // Arguments:
-// - puiLine - Memory location to receive the Y/Line/Row position
-// - puiColumn - Memory location to receive the X/Column position
+// - parameters - set of numeric parameters collected while pasring the sequence.
+// - line - Receives the Y/Line/Row position
+// - column - Receives the X/Column position
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-_Success_(return ) bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                                                const unsigned short cParams,
-                                                                _Out_ unsigned int* const puiLine,
-                                                                _Out_ unsigned int* const puiColumn) const
+bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t> parameters,
+                                             size_t& line,
+                                             size_t& column) const
 {
-    bool fSuccess = true;
-    *puiLine = s_uiDefaultLine;
-    *puiColumn = s_uiDefaultColumn;
+    bool success = true;
+    line = DefaultLine;
+    column = DefaultColumn;
 
-    if (cParams == 0)
+    if (parameters.empty())
     {
         // Empty parameter sequences should use the default
     }
-    else if (cParams == 1)
+    else if (parameters.size() == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
-        *puiLine = rgusParams[0];
+        line = parameters[0];
     }
-    else if (cParams == 2)
+    else if (parameters.size() == 2)
     {
         // If there are exactly two parameters, use them.
-        *puiLine = rgusParams[0];
-        *puiColumn = rgusParams[1];
+        line = parameters[0];
+        column = parameters[1];
     }
     else
     {
-        fSuccess = false;
+        success = false;
     }
 
     // Distances of 0 should be changed to 1.
-    if (*puiLine == 0)
+    if (line == 0)
     {
-        *puiLine = s_uiDefaultLine;
+        line = DefaultLine;
     }
 
-    if (*puiColumn == 0)
+    if (column == 0)
     {
-        *puiColumn = s_uiDefaultColumn;
+        column = DefaultColumn;
     }
 
-    return fSuccess;
+    return success;
 }

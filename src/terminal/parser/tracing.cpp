@@ -15,19 +15,19 @@ ParserTracing::~ParserTracing()
 {
 }
 
-void ParserTracing::TraceStateChange(_In_ PCWSTR const pwszName) const
+void ParserTracing::TraceStateChange(const std::wstring_view name) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_EnterState",
-                      TraceLoggingWideString(pwszName),
+                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
-void ParserTracing::TraceOnAction(_In_ PCWSTR const pwszName) const
+void ParserTracing::TraceOnAction(const std::wstring_view name) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Action",
-                      TraceLoggingWideString(pwszName),
+                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
@@ -51,11 +51,11 @@ void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
-void ParserTracing::TraceOnEvent(_In_ PCWSTR const pwszName) const
+void ParserTracing::TraceOnEvent(const std::wstring_view name) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Event",
-                      TraceLoggingWideString(pwszName),
+                      TraceLoggingCountedWideString(name.data(), gsl::narrow_cast<ULONG>(name.size())),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
@@ -73,12 +73,7 @@ void ParserTracing::TraceCharInput(const wchar_t wch)
 
 void ParserTracing::AddSequenceTrace(const wchar_t wch)
 {
-    // -1 to always leave the last character as null/0.
-    if (_cchSequenceTrace < s_cMaxSequenceTrace - 1)
-    {
-        _rgwchSequenceTrace[_cchSequenceTrace] = wch;
-        _cchSequenceTrace++;
-    }
+    _sequenceTrace.push_back(wch);
 }
 
 void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
@@ -87,14 +82,14 @@ void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
     {
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_Sequence_OK",
-                          TraceLoggingWideString(_rgwchSequenceTrace),
+                          TraceLoggingWideString(_sequenceTrace.c_str()),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
     else
     {
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_Sequence_FAIL",
-                          TraceLoggingWideString(_rgwchSequenceTrace),
+                          TraceLoggingWideString(_sequenceTrace.c_str()),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
@@ -103,19 +98,15 @@ void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
 
 void ParserTracing::ClearSequenceTrace()
 {
-    ZeroMemory(_rgwchSequenceTrace, sizeof(_rgwchSequenceTrace));
-    _cchSequenceTrace = 0;
+    _sequenceTrace.clear();
 }
 
 // NOTE: I'm expecting this to not be null terminated
-void ParserTracing::DispatchPrintRunTrace(const wchar_t* const pwsString, const size_t cchString) const
+void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
 {
-    size_t charsRemaining = cchString;
-    wchar_t str[BYTE_MAX + 4 + sizeof(wchar_t) + sizeof('\0')];
-
-    if (cchString == 1)
+    if (string.size() == 1)
     {
-        wchar_t wch = *pwsString;
+        wchar_t wch = string.front();
         INT16 sch = (INT16)wch;
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",
@@ -125,27 +116,12 @@ void ParserTracing::DispatchPrintRunTrace(const wchar_t* const pwsString, const 
     }
     else
     {
-        while (charsRemaining > 0)
-        {
-            size_t strLen = 0;
-            if (charsRemaining > ARRAYSIZE(str) - 1)
-            {
-                strLen = ARRAYSIZE(str) - 1;
-            }
-            else
-            {
-                strLen = charsRemaining;
-            }
-            charsRemaining -= strLen;
+        const auto length = gsl::narrow_cast<ULONG>(string.size());
 
-            memcpy(str, pwsString, sizeof(wchar_t) * strLen);
-            str[strLen] = '\0';
-
-            TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
-                              "StateMachine_PrintRun",
-                              TraceLoggingWideString(str),
-                              TraceLoggingValue(strLen),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-        }
+        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                          "StateMachine_PrintRun",
+                          TraceLoggingCountedWideString(string.data(), length),
+                          TraceLoggingValue(length),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 }
