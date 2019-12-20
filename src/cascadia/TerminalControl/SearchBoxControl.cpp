@@ -19,7 +19,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
 
-        
         _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
         _focusableElements.insert(CaseSensitivityButton());
