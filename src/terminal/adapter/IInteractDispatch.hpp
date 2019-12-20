@@ -25,17 +25,16 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         virtual ~IInteractDispatch() = default;
 
-        virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
+        virtual bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
 
         virtual bool WriteCtrlC() = 0;
 
-        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) = 0;
+        virtual bool WriteString(const std::wstring_view string) = 0;
 
-        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const size_t cParams) = 0;
+        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                        const std::basic_string_view<size_t> parameters) = 0;
 
-        virtual bool MoveCursor(const unsigned int row,
-                                const unsigned int col) = 0;
+        virtual bool MoveCursor(const size_t row,
+                                const size_t col) = 0;
     };
 }

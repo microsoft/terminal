@@ -968,7 +968,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 StateMachine& machine = screenInfo.GetStateMachine();
                 size_t const cch = BufferSize / sizeof(WCHAR);
 
-                machine.ProcessString(pwchRealUnicode, cch);
+                machine.ProcessString({ pwchRealUnicode, cch });
                 *pcb += BufferSize;
             }
         }

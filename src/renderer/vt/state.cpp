@@ -125,7 +125,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
-[[nodiscard]] HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
+[[nodiscard]] HRESULT VtEngine::WriteTerminalUtf8(const std::string_view str) noexcept
 {
     return _Write(str);
 }
@@ -137,7 +137,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring_view wstr) noexcept
 {
     try
     {
@@ -156,7 +156,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalAscii(const std::wstring_view wstr) noexcept
 {
     const size_t cchActual = wstr.length();
 

@@ -13,27 +13,27 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Resizes the window to the specified dimensions, in characters.
 // Arguments:
 // - conApi: The ConGetSet implementation to call back into.
-// - usWidth: The new width of the window, in columns
-// - usHeight: The new height of the window, in rows
+// - width: The new width of the window, in columns
+// - height: The new height of the window, in rows
 // Return Value:
 // True if handled successfully. False othewise.
 bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
-                                    const unsigned short usWidth,
-                                    const unsigned short usHeight)
+                                    const size_t width,
+                                    const size_t height)
 {
     SHORT sColumns = 0;
     SHORT sRows = 0;
 
     // We should do nothing if 0 is passed in for a size.
-    bool fSuccess = SUCCEEDED(UShortToShort(usWidth, &sColumns)) &&
-                    SUCCEEDED(UShortToShort(usHeight, &sRows)) &&
-                    (usWidth > 0 && usHeight > 0);
+    bool fSuccess = SUCCEEDED(SizeTToShort(width, &sColumns)) &&
+                    SUCCEEDED(SizeTToShort(height, &sRows)) &&
+                    (width > 0 && height > 0);
 
     if (fSuccess)
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!conApi.GetConsoleScreenBufferInfoEx(&csbiex);
+        fSuccess = !!conApi.GetConsoleScreenBufferInfoEx(csbiex);
 
         if (fSuccess)
         {
@@ -57,10 +57,10 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
             SMALL_RECT sre = newViewport.ToExclusive();
             csbiex.srWindow = sre;
 
-            fSuccess = !!conApi.SetConsoleScreenBufferInfoEx(&csbiex);
+            fSuccess = conApi.SetConsoleScreenBufferInfoEx(csbiex);
             if (fSuccess)
             {
-                fSuccess = !!conApi.SetConsoleWindowInfo(true, &sri);
+                fSuccess = conApi.SetConsoleWindowInfo(true, sri);
             }
         }
     }
@@ -75,7 +75,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
 // True if handled successfully. False othewise.
 bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 {
-    return !!conApi.PrivateRefreshWindow();
+    return conApi.PrivateRefreshWindow();
 }
 
 // Routine Description:
@@ -89,5 +89,5 @@ bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 // True if handled successfully. False othewise.
 bool DispatchCommon::s_SuppressResizeRepaint(ConGetSet& conApi)
 {
-    return !!conApi.PrivateSuppressResizeRepaint();
+    return conApi.PrivateSuppressResizeRepaint();
 }

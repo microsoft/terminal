@@ -275,15 +275,14 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 {
     try
     {
-        auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ *this },
-                                                       new WriteBuffer{ *this });
-        THROW_IF_NULL_ALLOC(adapter.get());
-
+        auto getset = std::make_unique<ConhostInternalGetSet>(*this);
+        auto defaults = std::make_unique<WriteBuffer>(*this);
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), std::move(defaults));
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
-        _stateMachine = std::make_shared<StateMachine>(new OutputStateMachineEngine(adapter.release()));
-        THROW_IF_NULL_ALLOC(_stateMachine.get());
+        _stateMachine = std::make_shared<StateMachine>(std::move(engine));
     }
     catch (...)
     {
@@ -2508,7 +2507,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 
 // Method Description:
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
-//      understand will be written to tthe pTtyConnection passed in here.
+//      understand will be written to the pTtyConnection passed in here.
 // Arguments:
 // - pTtyConnection: This is a TerminaOutputConnection that we can write the
 //      sequence we didn't understand to.
