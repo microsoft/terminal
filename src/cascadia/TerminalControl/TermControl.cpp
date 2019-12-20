@@ -197,24 +197,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
     // Arguments:
-    // - IInspectable: not used
     // - text: the text to search
+    // - goForward: boolean that represents if the current search direction is forward
+    // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::Windows::Foundation::IInspectable&, const winrt::hstring& text)
+    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
         if (text.size() == 0)
         {
             return;
         }
 
-        const Search::Direction direction = _searchBox->GoForward() ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
+        const Search::Direction direction = goForward ?
+                                            Search::Direction::Forward :
+                                            Search::Direction::Backward;
 
-        const Search::Sensitivity sensitivity = _searchBox->IsCaseSensitive() ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
+        const Search::Sensitivity sensitivity = caseSensitive ?
+                                                Search::Sensitivity::CaseSensitive :
+                                                Search::Sensitivity::CaseInsensitive;
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();

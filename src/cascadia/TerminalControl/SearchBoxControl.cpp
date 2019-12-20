@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "SearchBoxControl.h"
 #include "SearchBoxControl.g.cpp"
+#include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -12,8 +13,7 @@ using namespace winrt::Windows::UI::Core;
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Constructor
-    SearchBoxControl::SearchBoxControl() :
-        _goForward(false)
+    SearchBoxControl::SearchBoxControl()
     {
         InitializeComponent();
 
@@ -30,26 +30,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Getter for _goForward
+    // - Check if the current search direction is forward
     // Arguments:
     // - <none>
     // Return Value:
-    // - bool: the value of _goForward
-    bool SearchBoxControl::GoForward()
+    // - bool: the current search direction, determined by the
+    //         states of the two direction buttons
+    bool SearchBoxControl::_GoForward()
     {
-        return _goForward;
+        if (GoForwardButton().IsChecked().GetBoolean())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     // Method Description:
-    // - Get the current state of the case button
+    // - Check if the current search is case sensitive
     // Arguments:
     // - <none>
     // Return Value:
-    // - bool: whether the case button is checked (sensitive)
+    // - bool: whether the current search is case sensitive (case button is checked )
     //   or not
-    bool SearchBoxControl::IsCaseSensitive()
+    bool SearchBoxControl::_CaseSensitive()
     {
-        return _caseButton.IsChecked().GetBoolean();
+        return CaseSensitivityButton().IsChecked().GetBoolean();
     }
 
     // Method Description:
@@ -67,14 +75,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                // We do not want the direction flag to change permanately
-                _goForward = !_goForward;
-                _SearchHandlers(*this, _textBox.Text());
-                _goForward = !_goForward;
+                _SearchHandlers(_textBox.Text(), !_GoForward(), _CaseSensitive());
             }
             else
             {
-                _SearchHandlers(*this, _textBox.Text());
+                _SearchHandlers(_textBox.Text(), _GoForward(), _CaseSensitive());
             }
             e.Handled(true);
         }
@@ -125,7 +130,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void SearchBoxControl::GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        _goForward = false;
         GoBackwardButton().IsChecked(true);
         if (GoForwardButton().IsChecked())
         {
@@ -133,7 +137,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // kick off search
-        _SearchHandlers(*this, _textBox.Text());
+        _SearchHandlers(_textBox.Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
@@ -147,7 +151,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void SearchBoxControl::GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        _goForward = true;
         GoForwardButton().IsChecked(true);
         if (GoBackwardButton().IsChecked())
         {
@@ -155,7 +158,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // kick off search
-        _SearchHandlers(*this, _textBox.Text());
+        _SearchHandlers(_textBox.Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
