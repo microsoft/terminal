@@ -2085,8 +2085,8 @@ void TextBufferTests::GetWordStart()
         COORD result;
 
         // Test with accessibilityMode = false
-        //result = _buffer->GetWordStart(test.startPos, delimiters, false);
-        //VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
+        result = _buffer->GetWordStart(test.startPos, delimiters, false);
+        VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
 
         // Test with accessibilityMode = true
         result = _buffer->GetWordStart(test.startPos, delimiters, true);
@@ -2160,8 +2160,8 @@ void TextBufferTests::GetWordEnd()
         COORD result;
 
         // Test with accessibilityMode = false
-        //result = _buffer->GetWordEnd(test.startPos, delimiters, false);
-        //VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
+        result = _buffer->GetWordEnd(test.startPos, delimiters, false);
+        VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
 
         // Test with accessibilityMode = true
         result = _buffer->GetWordEnd(test.startPos, delimiters, true);

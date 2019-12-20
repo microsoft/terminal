@@ -85,30 +85,6 @@ namespace Microsoft::Console::Types
             Backward
         };
 
-        // common information used by the variety of
-        // movement operations
-        struct MoveState
-        {
-            // screen/column position of _start
-            COORD start;
-            // screen/column position of _end
-            COORD end;
-            // direction moving
-            MovementDirection Direction;
-
-            MoveState(const UiaTextRangeBase& range,
-                      const MovementDirection direction);
-
-        private:
-            MoveState(const COORD start,
-                      const COORD end,
-                      const MovementDirection direction) noexcept;
-
-#ifdef UNIT_TESTING
-            friend class ::UiaTextRangeTests;
-#endif
-        };
-
     public:
         // The default word delimiter for UiaTextRanges
         static constexpr std::wstring_view DefaultWordDelimiter{ &UNICODE_SPACE, 1 };
@@ -186,7 +162,6 @@ namespace Microsoft::Console::Types
     protected:
         UiaTextRangeBase() = default;
 #if _DEBUG
-        void _outputRowConversions(IUiaData* pData);
         void _outputObjectState();
 #endif
         IUiaData* _pData;
@@ -231,27 +206,27 @@ namespace Microsoft::Console::Types
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
-                                     _In_ const MoveState moveState,
-                                     _Out_ gsl::not_null<int*> const pAmountMoved);
+                                     _Out_ gsl::not_null<int*> const pAmountMoved,
+                                     _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _In_ const MoveState moveState,
                                 _In_ const std::wstring_view wordDelimiters,
-                                _Out_ gsl::not_null<int*> const pAmountMoved);
+                                _Out_ gsl::not_null<int*> const pAmountMoved,
+                                _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _In_ const MoveState moveState,
-                                _Out_ gsl::not_null<int*> const pAmountMoved);
+                                _Out_ gsl::not_null<int*> const pAmountMoved,
+                                _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
-                                    _In_ const MoveState moveState,
-                                    _Out_ gsl::not_null<int*> const pAmountMoved);
+                                    _Out_ gsl::not_null<int*> const pAmountMoved,
+                                    _In_ const bool preventBufferEnd = false);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;

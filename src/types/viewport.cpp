@@ -145,7 +145,7 @@ COORD Viewport::Origin() const noexcept
 // - the coordinates of this viewport's end.
 COORD Viewport::EndInclusive() const noexcept
 {
-    return { RightExclusive(), BottomInclusive() };
+    return { Left(), BottomExclusive() };
 }
 
 // Method Description:
@@ -398,7 +398,12 @@ bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir, bool allowBot
 
     if (dir.x == XWalk::LeftToRight)
     {
-        if (pos.X == RightInclusive())
+        if (allowBottomExclusive && pos.X == Left() && pos.Y == BottomExclusive())
+        {
+            pos.Y = Top();
+            return false;
+        }
+        else if (pos.X == RightInclusive())
         {
             pos.X = Left();
 
