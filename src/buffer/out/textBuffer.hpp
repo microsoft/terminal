@@ -132,6 +132,9 @@ public:
 
     const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
     const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    bool MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) const;
+    bool MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const;
+    const bool IsCharacterAtOrigin() const;
 
     class TextAndColor
     {

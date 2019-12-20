@@ -9,9 +9,9 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::UiaTextRangeBaseTracing;
 
 // toggle these for additional logging in a debug build
-//#define _DEBUG 1
-//#define UIATEXTRANGE_DEBUG_MSGS 1
-#undef UIATEXTRANGE_DEBUG_MSGS
+#define _DEBUG 1
+#define UIATEXTRANGE_DEBUG_MSGS 1
+//#undef UIATEXTRANGE_DEBUG_MSGS
 
 IdType UiaTextRangeBase::id = 1;
 
@@ -523,7 +523,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
             {
                 currentScreenInfoRow = _start.Y + i;
                 const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-                if (row.GetCharRow().ContainsText())
+                if (1)//row.GetCharRow().ContainsText())
                 {
                     const size_t rowRight = row.GetCharRow().MeasureRight();
                     size_t startIndex = 0;
@@ -536,7 +536,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
                     if (currentScreenInfoRow == static_cast<ScreenInfoRow>(_end.Y))
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = std::min(gsl::narrow_cast<size_t>(_end.X) - 1, rowRight);
+                        endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
                     }
 
                     // if startIndex >= endIndex then _start is
@@ -1075,10 +1075,16 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
+            // manual wrap to next line
+            if (nextPos.X == bufferSize.RightInclusive())
+            {
+                bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
+            }
+
             nextPos = buffer.GetWordEnd(nextPos, wordDelimiters, allowBottomExclusive);
 
             // manually check if we successfully moved
-            if (resultPos == nextPos || nextPos == bufferSize.EndInclusive())
+            if (resultPos == nextPos || (preventBufferEnd && nextPos == bufferSize.EndInclusive()))
             {
                 fSuccess = false;
             }
@@ -1101,7 +1107,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
                 nextPos = buffer.GetWordStart(nextPos, wordDelimiters, allowBottomExclusive);
 
                 // manually check if we successfully moved
-                if (resultPos == nextPos || nextPos == bufferSize.Origin())
+                if (resultPos == nextPos || (preventBufferEnd && nextPos == bufferSize.Origin() && !buffer.IsCharacterAtOrigin()))
                 {
                     fSuccess = false;
                 }

@@ -1067,6 +1067,40 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
     return result;
 }
 
+const bool TextBuffer::IsCharacterAtOrigin() const
+{
+    auto data = GetTextDataAt(GetSize().Origin());
+    return _GetDelimiterClass(*data, L" ") == DelimiterClass::RegularChar;
+}
+
+bool TextBuffer::MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) const
+{
+    auto copy = pos;
+    auto bufferSize = GetSize();
+
+    auto text = GetTextDataAt(copy)->data();
+    while (_GetDelimiterClass(text, wordDelimiters) != DelimiterClass::RegularChar)
+    {
+
+
+        text = GetTextDataAt(copy)->data();
+    }
+    bufferSize.IncrementInBounds(copy);
+
+    // successful move, copy result out
+    pos = copy;
+    return true;
+}
+
+bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const
+{
+    auto copy = pos;
+
+    // successful move, copy result out
+    pos = copy;
+    return true;
+}
+
 // Method Description:
 // - get delimiter class for buffer cell data
 // - used for double click selection and uia word navigation

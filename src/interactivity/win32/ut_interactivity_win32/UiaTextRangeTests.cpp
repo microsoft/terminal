@@ -101,7 +101,7 @@ class UiaTextRangeTests
             auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
-                cell.Char() = L'a';
+                cell.Char() = L' ';
             }
         }
 
@@ -325,8 +325,8 @@ class UiaTextRangeTests
                 5,
                 {
                     5,
-                    {0, 5},
-                    {0, 6}
+                    {0, 4},
+                    {0, 5}
                 }
             },
 
@@ -674,8 +674,8 @@ class UiaTextRangeTests
                 5,
                 TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
                 {
-                    4,
-                    {lastColumnIndex, bottomRow},
+                    5,
+                    {0, bottomRow+1},
                     {0, bottomRow+1},
                 }
             },
