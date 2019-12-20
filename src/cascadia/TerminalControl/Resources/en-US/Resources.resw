@@ -117,7 +117,23 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="TextBoxPlaceholderText.PlaceholderText" xml:space="preserve">
+  <data name="CaseSensitivityButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Match Case</value>
+    <comment>The tooltip text for CaseSensitivityButton</comment>
+  </data>
+  <data name="CloseButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+    <comment>The tooltip text for CloseButton</comment>
+  </data>
+  <data name="GoBackwardButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Find Up</value>
+    <comment>The tooltip text for GoBackward Button</comment>
+  </data>
+  <data name="GoForwardButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Find Down</value>
+    <comment>The tooltip text for GoForward Button</comment>
+  </data>
+  <data name="TextBoxLocalizedText.PlaceholderText" xml:space="preserve">
     <value>Find...</value>
     <comment>The placeholder text in the search dialog TextBox</comment>
   </data>

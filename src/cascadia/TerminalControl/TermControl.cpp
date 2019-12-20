@@ -210,12 +210,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const Search::Direction direction = goForward ?
-                                            Search::Direction::Forward :
-                                            Search::Direction::Backward;
+                                                Search::Direction::Forward :
+                                                Search::Direction::Backward;
 
         const Search::Sensitivity sensitivity = caseSensitive ?
-                                                Search::Sensitivity::CaseSensitive :
-                                                Search::Sensitivity::CaseInsensitive;
+                                                    Search::Sensitivity::CaseSensitive :
+                                                    Search::Sensitivity::CaseInsensitive;
 
         Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();

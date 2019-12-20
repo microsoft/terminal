@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "SearchBoxControl.h"
 #include "SearchBoxControl.g.cpp"
-#include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -38,14 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //         states of the two direction buttons
     bool SearchBoxControl::_GoForward()
     {
-        if (GoForwardButton().IsChecked().GetBoolean())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return GoForwardButton().IsChecked().GetBoolean();
     }
 
     // Method Description:
