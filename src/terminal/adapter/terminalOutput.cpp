@@ -89,6 +89,14 @@ bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
     }
 }
 
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::LockingShift(const size_t gsetNumber)
+{
+    _glSetNumber = gsetNumber;
+    _glTranslationTable = _gsetTranslationTables.at(_glSetNumber);
+    return true;
+}
+
 // Routine Description:
 // - Returns true if the current charset isn't USASCII, indicating that text has to come through here
 // Arguments:
@@ -97,23 +105,22 @@ bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
 // - True if the current charset is not USASCII
 bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return !_translationTable.empty();
+    return !_glTranslationTable.empty();
 }
 
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     wchar_t wchFound = wch;
-    if (wch - 0x20u < _translationTable.size())
+    if (wch - 0x20u < _glTranslationTable.size())
     {
-        wchFound = _translationTable.at(wch - 0x20u);
+        wchFound = _glTranslationTable.at(wch - 0x20u);
     }
     return wchFound;
 }
 
-#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
 bool TerminalOutput::_SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable)
 {
     _gsetTranslationTables.at(gsetNumber) = translationTable;
-    _translationTable = _gsetTranslationTables.at(0);
-    return true;
+    // We need to reapply the locking shift in case the underlying G-set has changed.
+    return LockingShift(_glSetNumber);
 }

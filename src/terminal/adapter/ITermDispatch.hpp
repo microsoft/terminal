@@ -96,6 +96,7 @@ public:
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
     virtual bool DesignateCharset(const size_t gsetNumber, const wchar_t charset) = 0; // SCS
+    virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS

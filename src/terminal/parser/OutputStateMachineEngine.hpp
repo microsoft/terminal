@@ -127,6 +127,8 @@ namespace Microsoft::Console::VirtualTerminal
             DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
             DTTERM_WindowManipulation = L't',
             REP_RepeatCharacter = L'b',
+            LS2_LockingShift = L'n',
+            LS3_LockingShift = L'o',
             DECALN_ScreenAlignmentPattern = L'8'
         };
 

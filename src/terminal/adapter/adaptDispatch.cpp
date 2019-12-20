@@ -1605,6 +1605,17 @@ bool AdaptDispatch::DesignateCharset(const size_t gsetNumber, const wchar_t char
 }
 
 //Routine Description:
+// Locking Shift - Invoke one of the G-sets into the left half of the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::LockingShift(const size_t gsetNumber)
+{
+    return _termOutput.LockingShift(gsetNumber);
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,

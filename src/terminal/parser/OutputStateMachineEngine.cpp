@@ -70,6 +70,12 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
         // LF, FF, and VT are identical in function.
         _dispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode);
         break;
+    case AsciiChars::SI:
+        _dispatch->LockingShift(0);
+        break;
+    case AsciiChars::SO:
+        _dispatch->LockingShift(1);
+        break;
     default:
         _dispatch->Execute(wch);
         break;
@@ -220,6 +226,14 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
         case VTActionCodes::RIS_ResetToInitialState:
             success = _dispatch->HardReset();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
+            break;
+        case VTActionCodes::LS2_LockingShift:
+            success = _dispatch->LockingShift(2);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2);
+            break;
+        case VTActionCodes::LS3_LockingShift:
+            success = _dispatch->LockingShift(3);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
