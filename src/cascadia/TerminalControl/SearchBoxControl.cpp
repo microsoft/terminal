@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
             _ClosedHandlers(*this, e);
+            e.Handled(true);
         }
     }
 
