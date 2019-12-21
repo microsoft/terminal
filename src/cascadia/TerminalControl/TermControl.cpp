@@ -1342,6 +1342,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (_cursorTimer.has_value())
         {
+            // When the terminal focuses, show the cursor immediately
+            _terminal->SetCursorVisible(true);
             _cursorTimer.value().Start();
         }
     }
