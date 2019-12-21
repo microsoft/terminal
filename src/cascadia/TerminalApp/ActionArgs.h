@@ -311,13 +311,13 @@ namespace winrt::TerminalApp::implementation
             return TerminalApp::SplitState::Automatic;
         }
         // default behavior for invalid data
-        return TerminalApp::SplitState::None;
+        return TerminalApp::SplitState::Vertical;
     };
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::None);
+        GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::Vertical);
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
 
         static constexpr std::string_view SplitKey{ "split" };

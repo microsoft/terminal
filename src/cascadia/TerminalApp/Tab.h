@@ -8,9 +8,10 @@ class Tab : public std::enable_shared_from_this<Tab>
 {
 public:
     Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    ~Tab();
 
     // Called after construction to setup events with weak_ptr
-    void BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
+    void BindEventHandlers() noexcept;
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
@@ -41,18 +42,23 @@ public:
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+    DECLARE_EVENT(RootPaneChanged, _RootPaneChangedHandlers, winrt::delegate<>);
 
 private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
-    std::shared_ptr<Pane> _activePane{ nullptr };
     winrt::hstring _lastIconPath{};
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
+    winrt::event_token _rootPaneClosedToken{ 0 };
+    winrt::event_token _rootPaneTypeChangedToken{ 0 };
+
     void _MakeTabViewItem();
+    void _SetupRootPaneEventHandlers();
+    void _RemoveAllRootPaneEventHandlers();
     void _Focus();
 
     void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
+    void _AttachEventHandlersToPane(std::shared_ptr<LeafPane> pane);
 };

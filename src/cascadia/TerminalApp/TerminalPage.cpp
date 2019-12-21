@@ -970,12 +970,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
                                   const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        // Do nothing if we're requesting no split.
-        if (splitType == TerminalApp::SplitState::None)
-        {
-            return;
-        }
-
         const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
