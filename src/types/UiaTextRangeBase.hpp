@@ -212,7 +212,6 @@ namespace Microsoft::Console::Types
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _In_ const std::wstring_view wordDelimiters,
                                 _Out_ gsl::not_null<int*> const pAmountMoved,
                                 _In_ const bool preventBufferEnd = false);
 

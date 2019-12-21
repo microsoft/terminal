@@ -1067,25 +1067,34 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
     return result;
 }
 
-const bool TextBuffer::IsCharacterAtOrigin() const
-{
-    auto data = GetTextDataAt(GetSize().Origin());
-    return _GetDelimiterClass(*data, L" ") == DelimiterClass::RegularChar;
-}
-
 bool TextBuffer::MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) const
 {
     auto copy = pos;
     auto bufferSize = GetSize();
 
     auto text = GetTextDataAt(copy)->data();
-    while (_GetDelimiterClass(text, wordDelimiters) != DelimiterClass::RegularChar)
+    auto delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+    // started on a word, continue until the end of the word
+    while (delimiterClass == DelimiterClass::RegularChar)
     {
-
-
+        if (!bufferSize.IncrementInBounds(copy))
+        {
+            return false;
+        }
         text = GetTextDataAt(copy)->data();
+        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
     }
-    bufferSize.IncrementInBounds(copy);
+
+    // on whitespace, continue until the beginning of the next word
+    while (delimiterClass != DelimiterClass::RegularChar)
+    {
+        if (!bufferSize.IncrementInBounds(copy))
+        {
+            return false;
+        }
+        text = GetTextDataAt(copy)->data();
+        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+    }
 
     // successful move, copy result out
     pos = copy;
@@ -1095,6 +1104,31 @@ bool TextBuffer::MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) co
 bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const
 {
     auto copy = pos;
+    auto bufferSize = GetSize();
+
+    auto text = GetTextDataAt(copy)->data();
+    auto delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+    // started on a word, continue until the beginning of the word
+    while (delimiterClass == DelimiterClass::RegularChar)
+    {
+        if (!bufferSize.DecrementInBounds(copy))
+        {
+            return false;
+        }
+        text = GetTextDataAt(copy)->data();
+        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+    }
+
+    // on whitespace, continue until the end of the previous word
+    while (delimiterClass != DelimiterClass::RegularChar)
+    {
+        if (!bufferSize.DecrementInBounds(copy))
+        {
+            return false;
+        }
+        text = GetTextDataAt(copy)->data();
+        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+    }
 
     // successful move, copy result out
     pos = copy;

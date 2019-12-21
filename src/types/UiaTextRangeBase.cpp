@@ -523,7 +523,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
             {
                 currentScreenInfoRow = _start.Y + i;
                 const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-                if (1)//row.GetCharRow().ContainsText())
+                if (1) //row.GetCharRow().ContainsText())
                 {
                     const size_t rowRight = row.GetCharRow().MeasureRight();
                     size_t startIndex = 0;
@@ -625,7 +625,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
         }
         else if (unit <= TextUnit::TextUnit_Word)
         {
-            _moveEndpointByUnitWord(count, endpoint, _wordDelimiters, pRetVal, preventBufferEnd);
+            _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBufferEnd);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
@@ -696,7 +696,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
         }
         else if (unit <= TextUnit::TextUnit_Word)
         {
-            _moveEndpointByUnitWord(count, endpoint, _wordDelimiters, pRetVal);
+            _moveEndpointByUnitWord(count, endpoint, pRetVal);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
@@ -1049,7 +1049,6 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
-                                               _In_ const std::wstring_view wordDelimiters,
                                                _Out_ gsl::not_null<int*> const pAmountMoved,
                                                _In_ const bool preventBufferEnd)
 {
@@ -1064,6 +1063,8 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto& buffer = _pData->GetTextBuffer();
     const auto bufferSize = buffer.GetSize();
+    const auto bufferOrigin = bufferSize.Origin();
+    const auto bufferEnd = bufferSize.EndInclusive();
 
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
@@ -1071,51 +1072,40 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     bool fSuccess = true;
     while (abs(*pAmountMoved) < abs(moveCount) && fSuccess)
     {
+        nextPos = resultPos;
         switch (moveDirection)
         {
-        case MovementDirection::Forward:
-        {
-            // manual wrap to next line
-            if (nextPos.X == bufferSize.RightInclusive())
-            {
-                bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
-            }
-
-            nextPos = buffer.GetWordEnd(nextPos, wordDelimiters, allowBottomExclusive);
-
-            // manually check if we successfully moved
-            if (resultPos == nextPos || (preventBufferEnd && nextPos == bufferSize.EndInclusive()))
+        case MovementDirection::Forward: {
+            if (nextPos == bufferEnd)
             {
                 fSuccess = false;
             }
-            else
+            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters))
             {
                 resultPos = nextPos;
                 *pAmountMoved += 1;
             }
+            else if (allowBottomExclusive)
+            {
+                resultPos = bufferEnd;
+                *pAmountMoved += 1;
+            }
             break;
         }
-        case MovementDirection::Backward:
-        {
-            nextPos = resultPos;
-
-            // first, get off of word
-            fSuccess = bufferSize.DecrementInBounds(nextPos);
-            if (fSuccess)
+        case MovementDirection::Backward: {
+            if (nextPos == bufferOrigin)
             {
-                // then, expand left
-                nextPos = buffer.GetWordStart(nextPos, wordDelimiters, allowBottomExclusive);
-
-                // manually check if we successfully moved
-                if (resultPos == nextPos || (preventBufferEnd && nextPos == bufferSize.Origin() && !buffer.IsCharacterAtOrigin()))
-                {
-                    fSuccess = false;
-                }
-                else
-                {
-                    resultPos = nextPos;
-                    *pAmountMoved -= 1;
-                }
+                fSuccess = false;
+            }
+            else if (buffer.MoveToPreviousWord(nextPos, _wordDelimiters))
+            {
+                resultPos = nextPos;
+                *pAmountMoved -= 1;
+            }
+            else
+            {
+                resultPos = bufferOrigin;
+                *pAmountMoved -= 1;
             }
             break;
         }
@@ -1162,8 +1152,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         auto nextPos = resultPos;
         switch (moveDirection)
         {
-        case MovementDirection::Forward:
-        {
+        case MovementDirection::Forward: {
             // can't move past end
             if (nextPos.Y >= bufferSize.BottomInclusive())
             {
@@ -1183,8 +1172,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             }
             break;
         }
-        case MovementDirection::Backward:
-        {
+        case MovementDirection::Backward: {
             // can't move past top
             if (!allowBottomExclusive && nextPos.Y == bufferSize.Top())
             {
@@ -1241,8 +1229,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     auto target = GetEndpoint(endpoint);
     switch (moveDirection)
     {
-    case MovementDirection::Forward:
-    {
+    case MovementDirection::Forward: {
         const auto documentEnd = bufferSize.EndInclusive();
         if (preventBufferEnd || target == documentEnd)
         {
@@ -1255,8 +1242,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         }
         break;
     }
-    case MovementDirection::Backward:
-    {
+    case MovementDirection::Backward: {
         const auto documentBegin = bufferSize.Origin();
         if (target == documentBegin)
         {
