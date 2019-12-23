@@ -3,6 +3,8 @@
 
 #pragma once
 #include "Pane.h"
+#include "LeafPane.h"
+#include "ParentPane.h"
 
 class Tab : public std::enable_shared_from_this<Tab>
 {

@@ -994,7 +994,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Attempt to move a separator between panes, as to resize each child on
-    //   either size of the separator. See Pane::ResizePane for details.
+    //   either size of the separator. See Pane::ResizeChild for details.
     // - Moves a separator on the currently focused tab.
     // Arguments:
     // - direction: The direction to move the separator in.

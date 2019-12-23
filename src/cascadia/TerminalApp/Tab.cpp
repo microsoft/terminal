@@ -318,7 +318,7 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 
 // Method Description:
 // - Attempt to move a separator between panes, as to resize each child on
-//   either size of the separator. See Pane::ResizePane for details.
+//   either size of the separator. See Pane::ResizeChild for details.
 // Arguments:
 // - direction: The direction to move the separator in.
 // Return Value:
@@ -328,10 +328,9 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
 
-    //_rootPane->ResizePane(direction);
     if (auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
     {
-        rootPaneAsParent->ResizePane(direction);
+        rootPaneAsParent->ResizeChild(direction);
     }
 }
 
@@ -347,7 +346,6 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
 
-    //_rootPane->NavigateFocus(direction);
     if (auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
     {
         rootPaneAsParent->NavigateFocus(direction);
@@ -425,7 +423,10 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<LeafPane> pane)
         if (tab && sender != tab->_rootPane->FindActivePane())
         {
             // Clear the active state of the entire tree, and mark only the sender as active.
-            tab->_rootPane->ClearActive();
+            tab->_rootPane->PropagateToLeaves([](LeafPane& pane) {
+                pane.ClearActive();
+            });
+
             sender->SetActive();
 
             // Update our own title text to match the newly-active pane.

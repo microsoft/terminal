@@ -56,14 +56,49 @@ LeafPane::~LeafPane()
     OutputDebugString(L"~LeafPane()\n");
 }
 
-// Method Description:
-// - Recalculates and reapplies sizes of all descendant panes.
+// Function Description:
+// - Attempts to load some XAML resources that the Pane will need. This includes:
+//   * The Color we'll use for active Panes's borders - SystemAccentColor
+//   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
+//     color of the titlebar)
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void LeafPane::Relayout()
+void LeafPane::_SetupResources()
 {
+    const auto res = Application::Current().Resources();
+    const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+    if (res.HasKey(accentColorKey))
+    {
+        const auto colorFromResources = res.Lookup(accentColorKey);
+        // If SystemAccentColor is _not_ a Color for some reason, use
+        // Transparent as the color, so we don't do this process again on
+        // the next pane (by leaving s_focusedBorderBrush nullptr)
+        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+        s_focusedBorderBrush = SolidColorBrush(actualColor);
+    }
+    else
+    {
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
+
+    const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+    if (res.HasKey(tabViewBackgroundKey))
+    {
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
+        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+    }
+    else
+    {
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
 }
 
 std::shared_ptr<LeafPane> LeafPane::FindActivePane()
@@ -71,10 +106,19 @@ std::shared_ptr<LeafPane> LeafPane::FindActivePane()
     return _lastActive ? shared_from_this() : nullptr;
 }
 
-void LeafPane::ClearActive()
+std::shared_ptr<LeafPane> LeafPane::_FindFirstLeaf()
 {
-    _lastActive = false;
-    _UpdateVisuals();
+    return shared_from_this();
+}
+
+void LeafPane::PropagateToLeaves(std::function<void(LeafPane&)> action)
+{
+    action(*this);
+}
+
+void LeafPane::PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& /* edge */, std::function<void(LeafPane&)> action)
+{
+    action(*this);
 }
 
 void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
@@ -83,6 +127,22 @@ void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& prof
     {
         _control.UpdateSettings(settings);
     }
+}
+
+// Method Description:
+// - Gets the TermControl of this pane. If this Pane is not a leaf, this will return nullptr.
+// Arguments:
+// - <none>
+// Return Value:
+// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
+TermControl LeafPane::GetTerminalControl()
+{
+    return _control;
+}
+
+GUID LeafPane::GetProfile()
+{
+    return _profile;
 }
 
 // Method Description:
@@ -118,8 +178,8 @@ bool LeafPane::CanSplit(SplitState splitType)
 }
 
 LeafPane::SplitResult LeafPane::Split(winrt::TerminalApp::SplitState splitType,
-                                            const GUID& profile,
-                                            const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
+                                      const GUID& profile,
+                                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
 {
     const auto secondLeaf = std::make_shared<LeafPane>(profile, control);
 
@@ -148,6 +208,142 @@ LeafPane::SplitResult LeafPane::Split(winrt::TerminalApp::SplitState splitType,
     newParent->InitializeChildren();
 
     return { newParent, shared_from_this(), secondLeaf };
+}
+
+// Method Description:
+// - Sets the "Active" state on this Pane. Only one Pane in a tree of Panes
+//   should be "active", and that pane should be a leaf.
+// - Updates our visuals to match our new state, including highlighting our borders.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void LeafPane::SetActive()
+{
+    _lastActive = true;
+    _control.Focus(FocusState::Programmatic);
+    _UpdateVisuals();
+}
+
+void LeafPane::ClearActive()
+{
+    _lastActive = false;
+    _UpdateVisuals();
+}
+
+// Method Description:
+// - Returns true if this pane was the last pane to be focused in a tree of panes.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we were the last pane focused in this tree of panes.
+bool LeafPane::WasLastActive() const noexcept
+{
+    return _lastActive;
+}
+
+// Method Description:
+// - Update the focus state of this pane. We'll make sure to colorize our
+//   borders depending on if we are the active pane or not.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void LeafPane::_UpdateVisuals()
+{
+    _border.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+}
+
+// Method Description:
+// - Sets the thickness of each side of our borders to match our _borders state.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void LeafPane::_UpdateBorders()
+{
+    double top = 0, bottom = 0, left = 0, right = 0;
+
+    Thickness newBorders{ 0 };
+    if (WI_IsFlagSet(_borders, Borders::Top))
+    {
+        top = PaneBorderSize;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Bottom))
+    {
+        bottom = PaneBorderSize;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Left))
+    {
+        left = PaneBorderSize;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Right))
+    {
+        right = PaneBorderSize;
+    }
+    _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
+}
+
+void LeafPane::UpdateBorderWithClosedNeightbour(std::shared_ptr<LeafPane> closedNeightbour, const winrt::TerminalApp::Direction& neightbourDirection)
+{
+    const auto borderMask = static_cast<Borders>(1 << (static_cast<int>(neightbourDirection) - 1));
+    WI_UpdateFlagsInMask(_borders, borderMask, closedNeightbour->_borders);
+    _UpdateBorders();
+}
+
+void LeafPane::Close()
+{
+    // Fire our Closed event to tell our parent that we should be removed.
+    _ClosedHandlers(nullptr, nullptr);
+}
+
+// Method Description:
+// - Called when our attached control is closed. Triggers listeners to our close
+//   event, if we're a leaf pane.
+// - If this was called, and we became a parent pane (due to work on another
+//   thread), this function will do nothing (allowing the control's new parent
+//   to handle the event instead).
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+winrt::fire_and_forget LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    const auto newConnectionState = _control.ConnectionState();
+
+    co_await winrt::resume_foreground(_root.Dispatcher());
+
+    if (newConnectionState < ConnectionState::Closed)
+    {
+        // Pane doesn't care if the connection isn't entering a terminal state.
+        co_return;
+    }
+
+    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+    auto paneProfile = settings.FindProfile(_profile);
+    if (paneProfile)
+    {
+        auto mode = paneProfile->GetCloseOnExitMode();
+        if ((mode == CloseOnExitMode::Always) ||
+            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        {
+            Close();
+        }
+    }
+}
+
+// Event Description:
+// - Called when our control gains focus. We'll use this to trigger our GotFocus
+//   callback. The tab that's hosting us should have registered a callback which
+//   can be used to mark us as active.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+                                       RoutedEventArgs const& /* args */)
+{
+    _GotFocusHandlers(shared_from_this());
 }
 
 Pane::SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
@@ -226,223 +422,5 @@ Size LeafPane::_GetMinSize() const
     return { newWidth, newHeight };
 }
 
-// Method Description:
-// - Gets the TermControl of this pane. If this Pane is not a leaf, this will return nullptr.
-// Arguments:
-// - <none>
-// Return Value:
-// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
-TermControl LeafPane::GetTerminalControl()
-{
-    return _control;
-}
-
-// Method Description:
-// - Returns true if this pane was the last pane to be focused in a tree of panes.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff we were the last pane focused in this tree of panes.
-bool LeafPane::WasLastActive() const noexcept
-{
-    return _lastActive;
-}
-
-// Method Description:
-// - Update the focus state of this pane. We'll make sure to colorize our
-//   borders depending on if we are the active pane or not.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void LeafPane::_UpdateVisuals()
-{
-    _border.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
-}
-
-// Method Description:
-// - Sets the "Active" state on this Pane. Only one Pane in a tree of Panes
-//   should be "active", and that pane should be a leaf.
-// - Updates our visuals to match our new state, including highlighting our borders.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void LeafPane::SetActive()
-{
-    _lastActive = true;
-    _control.Focus(FocusState::Programmatic);
-    _UpdateVisuals();
-}
-
-// Method Description:
-// - Sets the thickness of each side of our borders to match our _borders state.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void LeafPane::_UpdateBorders()
-{
-    double top = 0, bottom = 0, left = 0, right = 0;
-
-    Thickness newBorders{ 0 };
-    if (WI_IsFlagSet(_borders, Borders::Top))
-    {
-        top = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Bottom))
-    {
-        bottom = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Left))
-    {
-        left = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Right))
-    {
-        right = PaneBorderSize;
-    }
-    _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
-}
-
-// Method Description:
-// - Called when our attached control is closed. Triggers listeners to our close
-//   event, if we're a leaf pane.
-// - If this was called, and we became a parent pane (due to work on another
-//   thread), this function will do nothing (allowing the control's new parent
-//   to handle the event instead).
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-winrt::fire_and_forget LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    const auto newConnectionState = _control.ConnectionState();
-
-    co_await winrt::resume_foreground(_root.Dispatcher());
-
-    if (newConnectionState < ConnectionState::Closed)
-    {
-        // Pane doesn't care if the connection isn't entering a terminal state.
-        co_return;
-    }
-
-    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
-    auto paneProfile = settings.FindProfile(_profile);
-    if (paneProfile)
-    {
-        auto mode = paneProfile->GetCloseOnExitMode();
-        if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
-        {
-            _ClosedHandlers(nullptr, nullptr);
-        }
-    }
-}
-
-// Event Description:
-// - Called when our control gains focus. We'll use this to trigger our GotFocus
-//   callback. The tab that's hosting us should have registered a callback which
-//   can be used to mark us as active.
-// Arguments:
-// - <unused>
-// Return Value:
-// - <none>
-void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
-                                       RoutedEventArgs const& /* args */)
-{
-    _GotFocusHandlers(shared_from_this());
-}
-
-// Function Description:
-// - Attempts to load some XAML resources that the Pane will need. This includes:
-//   * The Color we'll use for active Panes's borders - SystemAccentColor
-//   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
-//     color of the titlebar)
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void LeafPane::_SetupResources()
-{
-    const auto res = Application::Current().Resources();
-    const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
-    if (res.HasKey(accentColorKey))
-    {
-        const auto colorFromResources = res.Lookup(accentColorKey);
-        // If SystemAccentColor is _not_ a Color for some reason, use
-        // Transparent as the color, so we don't do this process again on
-        // the next pane (by leaving s_focusedBorderBrush nullptr)
-        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-        s_focusedBorderBrush = SolidColorBrush(actualColor);
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
-    }
-
-    const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(tabViewBackgroundKey))
-    {
-        winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
-        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
-    }
-}
-
-std::shared_ptr<LeafPane> LeafPane::_FindFirstLeaf()
-{
-    return shared_from_this();
-    //_control.Focus(FocusState::Programmatic);
-}
-
-void LeafPane::ResizeContent(const winrt::Windows::Foundation::Size& /* newSize */)
-{
-}
-
-void LeafPane::OnNeightbourClosed(std::shared_ptr<LeafPane> closedNeightbour)
-{
-    _borders = _borders & closedNeightbour->_borders;
-    _lastActive = _lastActive || closedNeightbour->_lastActive;
-
-    // If we're inheriting the "last active" state from one of our children,
-    // focus our control now. This should trigger our own GotFocus event.
-    if (_lastActive)
-    {
-        _control.Focus(FocusState::Programmatic);
-    }
-
-    _UpdateBorders();
-}
-
-GUID LeafPane::GetProfile()
-{
-    return _profile;
-}
-
-void LeafPane::Close()
-{
-    // Fire our Closed event to tell our parent that we should be removed.
-    _ClosedHandlers(nullptr, nullptr);
-}
-
-//DEFINE_EVENT(LeafPane, Splitted, _SplittedHandlers, winrt::delegate<std::shared_ptr<ParentPane>>);
+DEFINE_EVENT(LeafPane, Splitted, _SplittedHandlers, winrt::delegate<std::shared_ptr<ParentPane>>);
 DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<LeafPane>>);
-
-winrt::event_token LeafPane::Splitted(winrt::delegate<std::shared_ptr<ParentPane>> const& handler)
-{
-    return _SplittedHandlers.add(handler);
-}
-void LeafPane::Splitted(winrt::event_token const& token) noexcept
-{
-    _SplittedHandlers.remove(token);
-}

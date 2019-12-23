@@ -1,5 +1,6 @@
 #pragma once
 #include "Pane.h"
+#include "LeafPane.h"
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -13,15 +14,19 @@ public:
                 winrt::Windows::Foundation::Size currentSize);
     ~ParentPane() override;
 
+    void InitializeChildren();
+
     std::shared_ptr<LeafPane> FindActivePane() override;
-    void Relayout() override;
-    void ClearActive() override;
+    void PropagateToLeaves(std::function<void(LeafPane&)> action) override;
+    void PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& edge,
+                                std::function<void(LeafPane&)> action) override;
+
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
                                 const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize) override;
+    void Relayout() override;
 
-    void InitializeChildren();
-    bool ResizePane(const winrt::TerminalApp::Direction& direction);
+    bool ResizeChild(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -40,13 +45,19 @@ private:
     void _SetupChildEventHandlers(bool firstChild);
     void _RemoveAllChildEventHandlers(bool firstChild);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
+    std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const;
 
-    bool _Resize(const winrt::TerminalApp::Direction& direction);
+    std::shared_ptr<LeafPane> _FindFirstLeaf() override;
+    bool _ResizeChild(const winrt::TerminalApp::Direction& direction);
     bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
     void _CloseChild(const bool closeFirst);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
+    SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const override;
+    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const override;
+    winrt::Windows::Foundation::Size _GetMinSize() const override;
+    LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const override;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     // Function Description:
@@ -78,10 +89,4 @@ private:
         }
         return false;
     }
-
-    std::shared_ptr<LeafPane> _FindFirstLeaf() override;
-    SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const override;
-    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const override;
-    winrt::Windows::Foundation::Size _GetMinSize() const override;
-    LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const override;
 };

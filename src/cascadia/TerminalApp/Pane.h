@@ -5,7 +5,7 @@
 // - Pane.h
 //
 // Abstract:
-// - Panes are an abstraction by which the terminal can dislay multiple terminal
+// - Panes are an abstraction by which the terminal can display multiple terminal
 //   instances simultaneously in a single terminal window. While tabs allow for
 //   a single terminal window to have many terminal sessions running
 //   simultaneously within a single window, only one tab can be visible at a
@@ -19,6 +19,7 @@
 // - Mike Griese (zadjii-msft) 16-May-2019
 
 #pragma once
+#include <functional>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -31,30 +32,37 @@ public:
     virtual ~Pane() = default;
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
-    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
     virtual std::shared_ptr<LeafPane> FindActivePane() = 0;
-    virtual void Relayout() = 0;
-    virtual void ClearActive() = 0;
+    virtual void PropagateToLeaves(std::function<void(LeafPane&)> action) = 0;
+    virtual void PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& edge,
+        std::function<void(LeafPane&)> action) = 0;
+
     virtual void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
-                                const GUID& profile) = 0;
+        const GUID& profile) = 0;
     virtual void ResizeContent(const winrt::Windows::Foundation::Size& newSize) = 0;
+    virtual void Relayout() = 0;
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
 protected:
     struct SnapSizeResult;
     struct SnapChildrenSizeResult;
     struct LayoutSizeNode;
 
-    Pane();
-
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
 
+    Pane();
+
     virtual std::shared_ptr<LeafPane> _FindFirstLeaf() = 0;
-    virtual SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const = 0;
-    virtual void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const = 0;
+
     virtual winrt::Windows::Foundation::Size _GetMinSize() const = 0;
     virtual LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
+    virtual SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const = 0;
+    virtual void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const = 0;
 
+    // Make derived classes friends, so they can access protected members of Pane. C++ for some 
+    // reason doesn't allow that by default - e.g. LeafPane can access LeafPane::_ProtectedMember,
+    // but not Pane::_ProtectedMember.
     friend class LeafPane;
     friend class ParentPane;
 
@@ -95,6 +103,3 @@ protected:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 };
-
-#include "LeafPane.h"
-#include "ParentPane.h"
