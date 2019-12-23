@@ -622,7 +622,8 @@
           "description": "The default settings that apply to every profile.",
           "$ref": "#/definitions/Profile"
         }
-      }
+      },
+      "type": "object"
     },
     "SchemeList": {
       "description": "Properties are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.",
