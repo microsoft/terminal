@@ -31,15 +31,15 @@ class Pane
 public:
     virtual ~Pane() = default;
 
-    winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
+    winrt::Windows::UI::Xaml::Controls::Grid GetRootElement() const;
 
     virtual std::shared_ptr<LeafPane> FindActivePane() = 0;
     virtual void PropagateToLeaves(std::function<void(LeafPane&)> action) = 0;
     virtual void PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& edge,
-        std::function<void(LeafPane&)> action) = 0;
+                                         std::function<void(LeafPane&)> action) = 0;
 
     virtual void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
-        const GUID& profile) = 0;
+                                const GUID& profile) = 0;
     virtual void ResizeContent(const winrt::Windows::Foundation::Size& newSize) = 0;
     virtual void Relayout() = 0;
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
@@ -60,7 +60,7 @@ protected:
     virtual SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const = 0;
     virtual void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const = 0;
 
-    // Make derived classes friends, so they can access protected members of Pane. C++ for some 
+    // Make derived classes friends, so they can access protected members of Pane. C++ for some
     // reason doesn't allow that by default - e.g. LeafPane can access LeafPane::_ProtectedMember,
     // but not Pane::_ProtectedMember.
     friend class LeafPane;

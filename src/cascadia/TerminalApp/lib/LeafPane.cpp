@@ -135,12 +135,12 @@ void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& prof
 // - <none>
 // Return Value:
 // - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
-TermControl LeafPane::GetTerminalControl()
+TermControl LeafPane::GetTerminalControl() const noexcept
 {
     return _control;
 }
 
-GUID LeafPane::GetProfile()
+GUID LeafPane::GetProfile() const noexcept
 {
     return _profile;
 }
@@ -202,7 +202,7 @@ LeafPane::SplitResult LeafPane::Split(winrt::TerminalApp::SplitState splitType,
 
     Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                      gsl::narrow_cast<float>(_root.ActualHeight()) };
-    const auto newParent = std::make_shared<ParentPane>(shared_from_this(), secondLeaf, splitType, actualSize);
+    const auto newParent = std::make_shared<ParentPane>(shared_from_this(), secondLeaf, splitType, Half, actualSize);
 
     _SplittedHandlers(newParent);
     newParent->InitializeChildren();

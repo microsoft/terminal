@@ -5,13 +5,10 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
-
 class ParentPane : public Pane, public std::enable_shared_from_this<ParentPane>
 {
 public:
-    ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<LeafPane> secondChild,
-                winrt::TerminalApp::SplitState splitState,
-                winrt::Windows::Foundation::Size currentSize);
+    ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<LeafPane> secondChild, winrt::TerminalApp::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
     ~ParentPane() override;
 
     void InitializeChildren();
@@ -19,10 +16,10 @@ public:
     std::shared_ptr<LeafPane> FindActivePane() override;
     void PropagateToLeaves(std::function<void(LeafPane&)> action) override;
     void PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& edge,
-                                std::function<void(LeafPane&)> action) override;
+                                 std::function<void(LeafPane&)> action) override;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
-                                const GUID& profile);
+                        const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize) override;
     void Relayout() override;
 
@@ -45,7 +42,7 @@ private:
     void _SetupChildEventHandlers(bool firstChild);
     void _RemoveAllChildEventHandlers(bool firstChild);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
-    std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const;
+    std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const noexcept;
 
     std::shared_ptr<LeafPane> _FindFirstLeaf() override;
     bool _ResizeChild(const winrt::TerminalApp::Direction& direction);

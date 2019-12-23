@@ -14,13 +14,11 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
-static const float Half = 0.50f;
-
-ParentPane::ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<LeafPane> secondChild, SplitState splitState, Size currentSize) :
+ParentPane::ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<LeafPane> secondChild, SplitState splitState, float splitPosition, Size currentSize) :
     _firstChild(std::static_pointer_cast<Pane>(firstChild)),
     _secondChild(std::static_pointer_cast<Pane>(secondChild)),
     _splitState(splitState),
-    _desiredSplitPosition(Half)
+    _desiredSplitPosition(splitPosition)
 
 {
     _CreateRowColDefinitions(currentSize);
@@ -145,7 +143,7 @@ void ParentPane::_RemoveAllChildEventHandlers(bool firstChild)
     }
 }
 
-std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const
+std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const noexcept
 {
     if (_splitState == SplitState::Vertical)
     {
@@ -184,7 +182,8 @@ void ParentPane::PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& ed
     {
         const auto adjacentChild = (_splitState == SplitState::Vertical && edge == Direction::Left ||
                                     _splitState == SplitState::Horizontal && edge == Direction::Up) ?
-                                    _firstChild : _secondChild;
+                                       _firstChild :
+                                       _secondChild;
         adjacentChild->PropagateToLeavesOnEdge(edge, action);
     }
     else
@@ -416,10 +415,12 @@ bool ParentPane::_NavigateFocus(const Direction& direction)
     }
 
     const bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
-
     const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
+
     const auto notFocusedChild = focusSecond ? _firstChild : _secondChild;
-    notFocusedChild->ClearActive();
+    notFocusedChild->PropagateToLeaves([](LeafPane& pane) {
+        pane.ClearActive();
+    });
 
     // If the child we want to move focus to is _already_ focused, return false,
     // to try and let our parent figure it out.
@@ -453,8 +454,8 @@ void ParentPane::_CloseChild(const bool closeFirst)
     _root.Children().Clear();
 
     const auto closedChildDir = (_splitState == SplitState::Vertical) ?
-                               (closeFirst ? Direction::Left : Direction::Right) :
-                               (closeFirst ? Direction::Up : Direction::Down);
+                                    (closeFirst ? Direction::Left : Direction::Right) :
+                                    (closeFirst ? Direction::Up : Direction::Down);
 
     remainingChild->PropagateToLeavesOnEdge(closedChildDir, [=](LeafPane& paneOnEdge) {
         paneOnEdge.UpdateBorderWithClosedNeightbour(closedChild, closedChildDir);

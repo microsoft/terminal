@@ -28,19 +28,19 @@ public:
     std::shared_ptr<LeafPane> FindActivePane() override;
     void PropagateToLeaves(std::function<void(LeafPane&)> action) override;
     void PropagateToLeavesOnEdge(const winrt::TerminalApp::Direction& edge,
-                                    std::function<void(LeafPane&)> action) override;
+                                 std::function<void(LeafPane&)> action) override;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& /* newSize */) override{};
     void Relayout() override{};
 
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
-    GUID GetProfile();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl() const noexcept;
+    GUID GetProfile() const noexcept;
     bool CanSplit(winrt::TerminalApp::SplitState splitType);
     SplitResult Split(winrt::TerminalApp::SplitState splitType,
-                                      const GUID& profile,
-                                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+                      const GUID& profile,
+                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void SetActive();
     void ClearActive();
@@ -59,6 +59,7 @@ public:
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(Splitted, _SplittedHandlers, winrt::delegate<std::shared_ptr<ParentPane>>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<LeafPane>>);
+
 private:
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
@@ -85,6 +86,6 @@ private:
     SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const override;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const override;
     winrt::Windows::Foundation::Size _GetMinSize() const override;
-    
+
     static void _SetupResources();
 };
