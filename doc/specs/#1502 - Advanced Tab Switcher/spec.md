@@ -134,17 +134,18 @@ The following are ways a user can dismiss the UI, _whether or not_ the `Anchor` 
 
 If the `anchor` key is provided, then in addition to the above methods, the UI will dismiss upon the release of the `anchor` key.
 
-Pressing the `openTabSwitcher` keychord again will _not_ close the Switcher.
+Pressing the `openTabSwitcher` keychord again will not close the switcher, it'll do nothing.
 
 ### Most Recently Used Order
 
 We'll provide a setting that will allow the list of tabs to be presented in either _in-order_ (how the tabs are ordered on the tab bar), or _Most Recently Used Order_ (MRU). MRU means that the tab that the terminal most recently visited will be on the top of the list, and the tab that the terminal has not visited for the longest time will be on the bottom.
 
-There will be an argument for the `openTabSwitcher` action called ``displayOrder`. This can be either `inOrder` or `mruOrder`. Making the setting an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
+There will be an argument for the `openTabSwitcher` action called `displayOrder`. This can be either `inOrder` or `mruOrder`. Making the setting an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
 ```
   {"keys": ["ctrl+tab"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"mruOrder"}}
   {"keys": ["ctrl+shift+p"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"inOrder"}}
 ```
+By default (when the arg isn't specified), `displayOrder` will be "mruOrder".
 
 ### Numbered Tabs
 
@@ -200,9 +201,7 @@ Terminal can't really replicate Visual Studio's version of the tab switcher in t
 
 Tmux allows the user to navigate directly to a pane and even give a preview of the pane. This would be extremely useful since it would allow the user to see a tree of their open tabs and panes. Currently there's no way to see what panes are open in each tab, so if you're looking for a particular pane, you'd need to cycle through your tabs to find it. If something like pane profile names (not sure what information to present in the switcher for panes) were presented in the TabSwitcher, the user could see all the panes in one box.
 
-To support pane navigation, the tab switcher can simply have another column to the right of the tab list to show a list of panes inside the selected tab. As the user iterates through the tab list, they can simply hit right to dig deeper into the tab's panes, and hit left to come back to the tab list.
-
-Question: Does MRU make sense for panes?
+To support pane navigation, the tab switcher can simply have another column to the right of the tab list to show a list of panes inside the selected tab. As the user iterates through the tab list, they can simply hit right to dig deeper into the tab's panes, and hit left to come back to the tab list. Each tab's list of panes will be MRU or in-order, depending on which `displayOrder` arg was provided to the `openTabSwitcher` keybinding.
 
 Pane navigation is a clear next step to build on top of the tab switcher, but this spec will specifically deal with just tab navigation in order to keep the scope tight. The tab swticher implementation just needs to allow for pane navigation to be added in later.
 
