@@ -1130,7 +1130,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
-                                               const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
+                                                                 const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
     {
         co_await winrt::resume_foreground(Dispatcher());
 
@@ -1169,7 +1169,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
     winrt::fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
-                                                  const PasteFromClipboardEventArgs eventArgs)
+                                                                    const PasteFromClipboardEventArgs eventArgs)
     {
         co_await winrt::resume_foreground(Dispatcher());
 

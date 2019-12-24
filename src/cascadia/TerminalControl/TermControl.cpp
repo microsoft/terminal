@@ -652,7 +652,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
-        
+
         _SwapChainRoutine();
 
         // Set up the height of the ScrollViewer and the grid we're using to fake our scrolling height
@@ -1613,8 +1613,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
     winrt::fire_and_forget TermControl::_TerminalScrollPositionChanged(const int viewTop,
-                                                     const int viewHeight,
-                                                     const int bufferSize)
+                                                                       const int viewHeight,
+                                                                       const int bufferSize)
     {
         // Since this callback fires from non-UI thread, we might be already
         // closed/closing.
