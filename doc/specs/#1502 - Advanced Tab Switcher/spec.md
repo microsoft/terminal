@@ -33,13 +33,13 @@ In terms of navigating the switcher, both VSCode and Visual Studio behave very s
 
 ## Solution Design
 
-In addition to the current in-order tab list, namely `vector<shared_ptr<Tab>> _tabs`, we'll add `vector<weak_ptr<Tab>> _mruTabs` to represent the tabs in Most Recently Used order. `_mruTabs` will use `weak_ptr` because the tab switcher doesn't actually own the tabs, the `_tabs` vector does.
+In addition to the current in-order tab list, namely `IObservableVector<(TODO)> _tabs`, we'll add `IObservableVector<(TODO)> _mruTabs` to represent the tabs in Most Recently Used order. (I'm currently working on converting Tab to WinRT so I'll come back to what the type will be.)
 
-We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with a `vector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the correct vector.
+We'll create a new class `TabSwitcherControl` inside of TerminalPage, which will be initialized with an `IObservableVector<>&`. This is because it'll take in either `_tabs` or `_mruTabs` depending on what order the user would like the tabs to be displayed. Whenever the user changes the setting that controls the tab order, it'll update to get a reference to the correct vector.
 
 This vector of tabs will be used to create a ListView, so that the UI would diplay a vertical list of tabs, represented by their tab titles. Each element in the ListView would be associated with a Tab, and the action associated with selecting a tab would be to Focus on that tab. There would also be another column to the left/right of the tab title column that holds the numbers 1-9. This is to represent what number is bound to each tab to allow for quick switching. This ListView would be hidden until the user presses a keybinding to show the ListView.
 
-The `TabSwitcherControl` will be able to call any tab's `SetFocused` function to bring the tab into focus. The TabView's `SelectionChanged` handler listens for events where a new terminal control comes into focus, in which case `TerminalPage::_OnTabSelectionChanged` will be called. By updating the MRU here, we can be sure that changing tabs from the TabSwitcher, clicking on a tab, or nextTab/prevTab-ing will keep the MRU up-to-date. Adding or closing tabs are handled in `_OpenNewTab` and `_CloseFocusedTab`, which will need to be modified to update both `_tabs` and `_mruTabs`.
+The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to dispatch a `SwitchToTab` `ShortcutAction`. This will eventually cause `TerminalPage::_OnTabSelectionChanged` to be called. We can update the MRU in this function to be sure that changing tabs from the TabSwitcher, clicking on a tab, or nextTab/prevTab-ing will keep the MRU up-to-date. Adding or closing tabs are handled in `_OpenNewTab` and `_CloseFocusedTab`, which will need to be modified to update both `_tabs` and `_mruTabs`.
 
 ## UI/UX Design
 
@@ -140,7 +140,7 @@ Pressing the `openTabSwitcher` keychord again will _not_ close the Switcher.
 
 We'll provide a setting that will allow the list of tabs to be presented in either _in-order_ (how the tabs are ordered on the tab bar), or _Most Recently Used Order_ (MRU). MRU means that the tab that the terminal most recently visited will be on the top of the list, and the tab that the terminal has not visited for the longest time will be on the bottom.
 
-There will be an argument for the `openTabSwitcher` action called `displayOrder`. This can be either `inOrder` or `mruOrder`. Making the setting an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
+There will be an argument for the `openTabSwitcher` action called ``displayOrder`. This can be either `inOrder` or `mruOrder`. Making the setting an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
 ```
   {"keys": ["ctrl+tab"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"mruOrder"}}
   {"keys": ["ctrl+shift+p"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"inOrder"}}
