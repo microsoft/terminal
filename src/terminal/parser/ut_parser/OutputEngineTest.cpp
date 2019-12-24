@@ -966,30 +966,6 @@ class StateMachineExternalTest final
         return true;
     }
 
-    void TestEscCursorMovement(wchar_t const wchCommand,
-                               const bool* const pfFlag,
-                               StateMachine& mach,
-                               StatefulDispatch& dispatch)
-    {
-        mach.ProcessCharacter(AsciiChars::ESC);
-        mach.ProcessCharacter(wchCommand);
-
-        VERIFY_IS_TRUE(*pfFlag);
-        VERIFY_ARE_EQUAL(dispatch._cursorDistance, 1u);
-    }
-
-    TEST_METHOD(TestEscCursorMovement)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-        TestEscCursorMovement(L'A', &pDispatch->_cursorUp, mach, *pDispatch);
-        TestEscCursorMovement(L'B', &pDispatch->_cursorDown, mach, *pDispatch);
-        TestEscCursorMovement(L'C', &pDispatch->_cursorForward, mach, *pDispatch);
-        TestEscCursorMovement(L'D', &pDispatch->_cursorBackward, mach, *pDispatch);
-    }
-
     void InsertNumberToMachine(StateMachine* const pMachine, size_t number)
     {
         static const size_t cchBufferMax = 20;
