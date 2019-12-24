@@ -146,7 +146,7 @@ void Tab::_Focus()
     }
 }
 
-void Tab::UpdateIcon(const winrt::hstring iconPath)
+winrt::fire_and_forget Tab::UpdateIcon(const winrt::hstring iconPath)
 {
     // Don't reload our icon if it hasn't changed.
     if (iconPath == _lastIconPath)
@@ -158,12 +158,12 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-        if (auto tab{ weakThis.lock() })
-        {
-            tab->_tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(tab->_lastIconPath));
-        }
-    });
+    co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+
+    if (auto tab{ weakThis.lock() })
+    {
+        tab->_tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(tab->_lastIconPath));
+    }
 }
 
 // Method Description:
@@ -185,18 +185,18 @@ winrt::hstring Tab::GetActiveTitle() const
 // - text: The new text string to use as the Header for our TabViewItem
 // Return Value:
 // - <none>
-void Tab::SetTabText(const winrt::hstring& text)
+winrt::fire_and_forget Tab::SetTabText(const winrt::hstring text)
 {
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), weakThis]() {
-        if (auto tab{ weakThis.lock() })
-        {
-            tab->_tabViewItem.Header(winrt::box_value(text));
-        }
-    });
+    co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+
+    if (auto tab{ weakThis.lock() })
+    {
+        tab->_tabViewItem.Header(winrt::box_value(text));
+    }
 }
 
 // Method Description:
@@ -207,13 +207,14 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - delta: a number of lines to move the viewport relative to the current viewport.
 // Return Value:
 // - <none>
-void Tab::Scroll(const int delta)
+winrt::fire_and_forget Tab::Scroll(const int delta)
 {
     auto control = GetActiveTerminalControl();
-    control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
-        const auto currentOffset = control.GetScrollOffset();
-        control.KeyboardScrollViewport(currentOffset + delta);
-    });
+
+    co_await winrt::resume_foreground(control.Dispatcher());
+
+    const auto currentOffset = control.GetScrollOffset();
+    control.KeyboardScrollViewport(currentOffset + delta);
 }
 
 // Method Description:

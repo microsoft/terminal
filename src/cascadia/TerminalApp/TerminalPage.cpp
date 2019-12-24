@@ -431,6 +431,13 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
+    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
+    {
+        co_await winrt::resume_foreground(page->_tabView.Dispatcher());
+
+        page->_RemoveTabViewItem(tabViewItem);
+    }
+
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
@@ -488,12 +495,7 @@ namespace winrt::TerminalApp::implementation
         newTab->Closed([tabViewItem, weakThis](auto&& /*s*/, auto&& /*e*/) {
             if (auto page{ weakThis.get() })
             {
-                page->_tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, weakThis]() {
-                    if (auto page{ weakThis.get() })
-                    {
-                        page->_RemoveTabViewItem(tabViewItem);
-                    }
-                });
+                page->_RemoveOnCloseRoutine(tabViewItem, page);
             }
         });
 
@@ -882,18 +884,19 @@ namespace winrt::TerminalApp::implementation
         return -1;
     }
 
-    void TerminalPage::_SetFocusedTabIndex(int tabIndex)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(int tabIndex)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
         auto tab = _tabs.at(tabIndex);
         auto weakThis{ get_weak() };
-        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, weakThis]() {
-            if (auto page{ weakThis.get() })
-            {
-                page->_tabView.SelectedItem(tab->GetTabViewItem());
-            }
-        });
+
+        co_await winrt::resume_foreground(_tabView.Dispatcher());
+
+        if (auto page{ weakThis.get() })
+        {
+            page->_tabView.SelectedItem(tab->GetTabViewItem());
+        }
     }
 
     // Method Description:
@@ -1126,37 +1129,37 @@ namespace winrt::TerminalApp::implementation
     //   terminal control raises it's CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
-    void TerminalPage::_CopyToClipboardHandler(const IInspectable& /*sender*/,
-                                               const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData)
+    winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
+                                               const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
     {
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
-            DataPackage dataPack = DataPackage();
-            dataPack.RequestedOperation(DataPackageOperation::Copy);
+        co_await winrt::resume_foreground(Dispatcher());
 
-            // copy text to dataPack
-            dataPack.SetText(copiedData.Text());
+        DataPackage dataPack = DataPackage();
+        dataPack.RequestedOperation(DataPackageOperation::Copy);
 
-            // copy html to dataPack
-            const auto htmlData = copiedData.Html();
-            if (!htmlData.empty())
-            {
-                dataPack.SetHtmlFormat(htmlData);
-            }
+        // copy text to dataPack
+        dataPack.SetText(copiedData.Text());
 
-            // copy rtf data to dataPack
-            const auto rtfData = copiedData.Rtf();
-            if (!rtfData.empty())
-            {
-                dataPack.SetRtf(rtfData);
-            }
+        // copy html to dataPack
+        const auto htmlData = copiedData.Html();
+        if (!htmlData.empty())
+        {
+            dataPack.SetHtmlFormat(htmlData);
+        }
 
-            try
-            {
-                Clipboard::SetContent(dataPack);
-                Clipboard::Flush();
-            }
-            CATCH_LOG();
-        });
+        // copy rtf data to dataPack
+        const auto rtfData = copiedData.Rtf();
+        if (!rtfData.empty())
+        {
+            dataPack.SetRtf(rtfData);
+        }
+
+        try
+        {
+            Clipboard::SetContent(dataPack);
+            Clipboard::Flush();
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1165,12 +1168,12 @@ namespace winrt::TerminalApp::implementation
     //   data with it's PasteFromClipboard event.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    void TerminalPage::_PasteFromClipboardHandler(const IInspectable& /*sender*/,
-                                                  const PasteFromClipboardEventArgs& eventArgs)
+    winrt::fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
+                                                  const PasteFromClipboardEventArgs eventArgs)
     {
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
-            TerminalPage::PasteFromClipboard(eventArgs);
-        });
+        co_await winrt::resume_foreground(Dispatcher());
+
+        TerminalPage::PasteFromClipboard(eventArgs);
     }
 
     // Function Description:
@@ -1364,7 +1367,7 @@ namespace winrt::TerminalApp::implementation
     //   This includes update the settings of all the tabs according
     //   to their profiles, update the title and icon of each tab, and
     //   finally create the tab flyout
-    void TerminalPage::_RefreshUIForSettingsReload()
+    winrt::fire_and_forget TerminalPage::_RefreshUIForSettingsReload()
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
@@ -1392,14 +1395,15 @@ namespace winrt::TerminalApp::implementation
         }
 
         auto weakThis{ get_weak() };
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-            // repopulate the new tab button's flyout with entries for each
-            // profile, which might have changed
-            if (auto page{ weakThis.get() })
-            {
-                page->_CreateNewTabFlyout();
-            }
-        });
+
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // repopulate the new tab button's flyout with entries for each
+        // profile, which might have changed
+        if (auto page{ weakThis.get() })
+        {
+            page->_CreateNewTabFlyout();
+        }
     }
 
     // Method Description:

@@ -110,6 +110,7 @@ private:
     bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
+    winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);

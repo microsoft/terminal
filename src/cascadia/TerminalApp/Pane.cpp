@@ -730,6 +730,13 @@ void Pane::_CloseChild(const bool closeFirst)
     }
 }
 
+winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
+{
+    co_await winrt::resume_foreground(_root.Dispatcher());
+
+    _CloseChild(closeFirst);
+}
+
 // Method Description:
 // - Adds event handlers to our children to handle their close events.
 // Arguments:
@@ -739,15 +746,11 @@ void Pane::_CloseChild(const bool closeFirst)
 void Pane::_SetupChildCloseHandlers()
 {
     _firstClosedToken = _firstChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-            _CloseChild(true);
-        });
+        _CloseChildRoutine(true);
     });
 
     _secondClosedToken = _secondChild->Closed([this](auto&& /*s*/, auto&& /*e*/) {
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-            _CloseChild(false);
-        });
+        _CloseChildRoutine(false);
     });
 }
 
