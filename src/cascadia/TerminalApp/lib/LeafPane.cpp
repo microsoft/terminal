@@ -31,7 +31,7 @@ LeafPane::LeafPane(const GUID& profile, const TermControl& control, const bool l
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &LeafPane::_ControlConnectionStateChangedHandler });
 
     // On the first Pane's creation, lookup resources we'll use to theme the
-    // Pane, including the brushed to use for the focused/unfocused border
+    // LeafPane, including the brushed to use for the focused/unfocused border
     // color.
     if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
     {
@@ -57,9 +57,9 @@ LeafPane::~LeafPane()
 }
 
 // Function Description:
-// - Attempts to load some XAML resources that the Pane will need. This includes:
-//   * The Color we'll use for active Panes's borders - SystemAccentColor
-//   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
+// - Attempts to load some XAML resources that the pane will need. This includes:
+//   * The Color we'll use for active panes's borders - SystemAccentColor
+//   * The Brush we'll use for inactive panes - TabViewBackground (to match the
 //     color of the titlebar)
 // Arguments:
 // - <none>
@@ -129,12 +129,6 @@ void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& prof
     }
 }
 
-// Method Description:
-// - Gets the TermControl of this pane. If this Pane is not a leaf, this will return nullptr.
-// Arguments:
-// - <none>
-// Return Value:
-// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
 TermControl LeafPane::GetTerminalControl() const noexcept
 {
     return _control;
@@ -177,42 +171,63 @@ bool LeafPane::CanSplit(SplitState splitType)
     return false;
 }
 
-LeafPane::SplitResult LeafPane::Split(winrt::TerminalApp::SplitState splitType,
-                                      const GUID& profile,
-                                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
+// Method Description:
+// - Splits this pane, which results in creating a new LeafPane, that is our new
+//   sibling and a new ParentPane, which contains both us and the new leaf. W
+//   Invokes Splitted handler, in which, whoever owns us should, replace us with
+//   this newly created ParentPane.
+// Arguments:
+// - splitType: what type of split we want to create.
+// - profile: The profile GUID to associate with the newly created LeafPane.
+// - control: A TermControl that will be placed into the new LeafPane.
+// Return Value:
+// - The newly created LeafPane, that is now our the neighbour.
+std::shared_ptr<LeafPane> LeafPane::Split(winrt::TerminalApp::SplitState splitType,
+                                          const GUID& profile,
+                                          const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
 {
-    const auto secondLeaf = std::make_shared<LeafPane>(profile, control);
+    const auto newNeighbour = std::make_shared<LeafPane>(profile, control);
 
+    // Update the border of this pane and set appropriate border for the new leaf pane.
     if (splitType == SplitState::Vertical)
     {
-        secondLeaf->_borders = _borders | Borders::Left;
+        newNeighbour->_borders = _borders | Borders::Left;
         _borders = _borders | Borders::Right;
     }
     else
     {
-        secondLeaf->_borders = _borders | Borders::Top;
+        newNeighbour->_borders = _borders | Borders::Top;
         _borders = _borders | Borders::Bottom;
     }
 
     _UpdateBorders();
-    secondLeaf->_UpdateBorders();
+    newNeighbour->_UpdateBorders();
 
-    ClearActive();
-    secondLeaf->SetActive();
+    // If we were active (and usually we were since it's the active pane that is chosen to split),
+    // then move the focus to the new pane.
+    if (WasLastActive())
+    {
+        ClearActive();
+        newNeighbour->SetActive();
+    }
 
+    // Parent pane has to know it's size when creating, which will just be the size of ours.
     Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                      gsl::narrow_cast<float>(_root.ActualHeight()) };
-    const auto newParent = std::make_shared<ParentPane>(shared_from_this(), secondLeaf, splitType, Half, actualSize);
+    const auto newParent = std::make_shared<ParentPane>(shared_from_this(), newNeighbour, splitType, Half, actualSize);
 
     _SplittedHandlers(newParent);
+
+    // Call InitializeChildren after invoking Splitted handlers, because that is were the we are detached and
+    // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
     newParent->InitializeChildren();
 
-    return { newParent, shared_from_this(), secondLeaf };
+    return newNeighbour;
 }
 
 // Method Description:
-// - Sets the "Active" state on this Pane. Only one Pane in a tree of Panes
-//   should be "active", and that pane should be a leaf.
+// - Sets the "Active" state on this pane. Only one pane in a tree of panes
+//   should be "active".
 // - Updates our visuals to match our new state, including highlighting our borders.
 // Arguments:
 // - <none>
@@ -225,6 +240,13 @@ void LeafPane::SetActive()
     _UpdateVisuals();
 }
 
+// Method Description:
+// - Remove the "Active" state from this pane.
+// - Updates our visuals to match our new state, including highlighting our borders.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void LeafPane::ClearActive()
 {
     _lastActive = false;
@@ -284,13 +306,31 @@ void LeafPane::_UpdateBorders()
     _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
 
+// Method Description:
+// - Called when we were children of a parent pane and our neighbour pane was closed. This
+//   will update border on the side that was touching that neighbour.
+// Arguments:
+// - closedNeightbour - The sibling leaf pane that was just closed.
+// - neightbourDirection - The side at which we were touching that sibling.
+// Return Value:
+// - <none>
 void LeafPane::UpdateBorderWithClosedNeightbour(std::shared_ptr<LeafPane> closedNeightbour, const winrt::TerminalApp::Direction& neightbourDirection)
 {
+    // Prepare a mask that includes the only the border which was touching our neighbour.
     const auto borderMask = static_cast<Borders>(1 << (static_cast<int>(neightbourDirection) - 1));
+
+    // Set the border on this side to the state that the neighbour had.
     WI_UpdateFlagsInMask(_borders, borderMask, closedNeightbour->_borders);
+
     _UpdateBorders();
 }
 
+// Method Description:
+// - Fire our Closed event to tell our parent that we should be removed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void LeafPane::Close()
 {
     // Fire our Closed event to tell our parent that we should be removed.
@@ -298,11 +338,7 @@ void LeafPane::Close()
 }
 
 // Method Description:
-// - Called when our attached control is closed. Triggers listeners to our close
-//   event, if we're a leaf pane.
-// - If this was called, and we became a parent pane (due to work on another
-//   thread), this function will do nothing (allowing the control's new parent
-//   to handle the event instead).
+// - Called when our attached control is closed. Triggers listeners to our close event.
 // Arguments:
 // - <none>
 // Return Value:
@@ -312,6 +348,8 @@ winrt::fire_and_forget LeafPane::_ControlConnectionStateChangedHandler(const Ter
     const auto newConnectionState = _control.ConnectionState();
 
     co_await winrt::resume_foreground(_root.Dispatcher());
+
+    //TODO: Check if we still listen to this event (but how?).
 
     if (newConnectionState < ConnectionState::Closed)
     {
@@ -348,7 +386,7 @@ void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable 
 
 Pane::SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
-    // If we're a leaf pane, align to the grid of controlling terminal
+    // We're a leaf pane, so just align to the grid of controlling terminal.
 
     const auto minSize = _GetMinSize();
     const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;

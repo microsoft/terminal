@@ -62,5 +62,5 @@ private:
     void _Focus();
 
     void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    void _AttachEventHandlersToPane(std::shared_ptr<LeafPane> pane);
+    void _AttachEventHandlersToLeafPane(std::shared_ptr<LeafPane> pane);
 };

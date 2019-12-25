@@ -28,49 +28,6 @@ Tab::~Tab()
     OutputDebugString(L"~Tab()\n");
 }
 
-void Tab::_SetupRootPaneEventHandlers()
-{
-    if (const auto rootAsLeaf = std::dynamic_pointer_cast<LeafPane>(_rootPane))
-    {
-        _rootPaneClosedToken = rootAsLeaf->Closed([=](auto&& /*s*/, auto&& /*e*/) {
-            _RemoveAllRootPaneEventHandlers();
-
-            _ClosedHandlers(nullptr, nullptr);
-        });
-
-        _rootPaneTypeChangedToken = rootAsLeaf->Splitted([=](std::shared_ptr<ParentPane> splittedPane) {
-            _RemoveAllRootPaneEventHandlers();
-
-            _rootPane = splittedPane;
-            _SetupRootPaneEventHandlers();
-            _RootPaneChangedHandlers();
-        });
-    }
-    else if (const auto rootAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
-    {
-        _rootPaneTypeChangedToken = rootAsParent->ChildClosed([=](std::shared_ptr<Pane> collapsedPane) {
-            _RemoveAllRootPaneEventHandlers();
-
-            _rootPane = collapsedPane;
-            _SetupRootPaneEventHandlers();
-            _RootPaneChangedHandlers();
-        });
-    }
-}
-
-void Tab::_RemoveAllRootPaneEventHandlers()
-{
-    if (const auto rootAsLeaf = std::dynamic_pointer_cast<LeafPane>(_rootPane))
-    {
-        rootAsLeaf->Closed(_rootPaneClosedToken);
-        rootAsLeaf->Splitted(_rootPaneTypeChangedToken);
-    }
-    else if (const auto rootAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
-    {
-        rootAsParent->ChildClosed(_rootPaneTypeChangedToken);
-    }
-}
-
 void Tab::_MakeTabViewItem()
 {
     _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
@@ -160,8 +117,6 @@ void Tab::BindEventHandlers() noexcept
     THROW_HR_IF_NULL(E_FAIL, rootPaneAsLeaf);
 
     _SetupRootPaneEventHandlers();
-    _AttachEventHandlersToPane(rootPaneAsLeaf);
-    _AttachEventHandlersToControl(rootPaneAsLeaf->GetTerminalControl());
 }
 
 // Method Description:
@@ -286,13 +241,13 @@ bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
 // - <none>
 void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    const auto result = _rootPane->FindActivePane()->Split(splitType, profile, control);
+    const auto newLeafPane = _rootPane->FindActivePane()->Split(splitType, profile, control);
 
     _AttachEventHandlersToControl(control);
 
     // Add a event handlers to the new pane's GotFocus event. When the pane
     // gains focus, we'll mark it as the new active pane.
-    _AttachEventHandlersToPane(result.secondChild);
+    _AttachEventHandlersToLeafPane(newLeafPane);
 }
 
 // Method Description:
@@ -328,7 +283,7 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
 
-    if (auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
+    if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
     {
         rootPaneAsParent->ResizeChild(direction);
     }
@@ -346,7 +301,7 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
 
-    if (auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
+    if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
     {
         rootPaneAsParent->NavigateFocus(direction);
     }
@@ -363,6 +318,78 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 void Tab::ClosePane()
 {
     _rootPane->FindActivePane()->Close();
+}
+
+// Method Description:
+// - Setups all the event handlers we care about for a root pane. These are superset of
+//   the events that we register for every other pane in the tree, however, this method
+//   also calls _AttachEventHandlersToLeafPane and _AttachEventHandlersToControl, so there
+//   is no need to also call these on the root pane.
+// - It is called on initialization, and when the root pane changes (this is, it gets 
+//   splitted or collapsed after split).
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Tab::_SetupRootPaneEventHandlers()
+{
+    if (const auto rootPaneAsLeaf = std::dynamic_pointer_cast<LeafPane>(_rootPane))
+    {
+        // Root pane also belongs to the pane tree, so attach the usual events, as for
+        // every other pane.
+        _AttachEventHandlersToLeafPane(rootPaneAsLeaf);
+        _AttachEventHandlersToControl(rootPaneAsLeaf->GetTerminalControl());
+
+        // When root pane closes, the tab also closes.
+        _rootPaneClosedToken = rootPaneAsLeaf->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+            _RemoveAllRootPaneEventHandlers();
+
+            _ClosedHandlers(nullptr, nullptr);
+        });
+
+        // When root pane is a leaf and got splitted, it produces the new parent pane that contains
+        // both him and the new leaf near him. We then replace that child with the new parent pane.
+        _rootPaneTypeChangedToken = rootPaneAsLeaf->Splitted([=](std::shared_ptr<ParentPane> splittedPane) {
+            _RemoveAllRootPaneEventHandlers();
+
+            _rootPane = splittedPane;
+            _SetupRootPaneEventHandlers();
+            _RootPaneChangedHandlers();
+        });
+    }
+    else if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
+    {
+        // When root pane is a parent and one of its children got closed (and so the parent collapses),
+        // we take in its remaining, orphaned child as our own.
+        _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([=](std::shared_ptr<Pane> collapsedPane) {
+            _RemoveAllRootPaneEventHandlers();
+
+            _rootPane = collapsedPane;
+            _SetupRootPaneEventHandlers();
+            _RootPaneChangedHandlers();
+        });
+    }
+}
+
+// Method Description:
+// - Unsubscribes from all the events of the root pane that we're subscribed to.
+// - Called when the root pane gets splitted/collapsed (because it is now the root 
+//   pane then), when the root pane closes and in dtor.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Tab::_RemoveAllRootPaneEventHandlers()
+{
+    if (const auto rootAsLeaf = std::dynamic_pointer_cast<LeafPane>(_rootPane))
+    {
+        rootAsLeaf->Closed(_rootPaneClosedToken);
+        rootAsLeaf->Splitted(_rootPaneTypeChangedToken);
+    }
+    else if (const auto rootAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
+    {
+        rootAsParent->ChildClosed(_rootPaneTypeChangedToken);
+    }
 }
 
 // Method Description:
@@ -408,12 +435,13 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
 // - Add an event handler to this pane's GotFocus event. When that pane gains
 //   focus, we'll mark it as the new active pane. We'll also query the title of
 //   that pane when it's focused to set our own text, and finally, we'll trigger
-//   our own ActivePaneChanged event.
+//   our own ActivePaneChanged event. This is to be called on every leaf pane in
+//   the tree of panes in this tab.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void Tab::_AttachEventHandlersToPane(std::shared_ptr<LeafPane> pane)
+void Tab::_AttachEventHandlersToLeafPane(std::shared_ptr<LeafPane> pane)
 {
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 

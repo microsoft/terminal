@@ -33,12 +33,10 @@ ParentPane::~ParentPane()
 }
 
 // Method Description:
-// - Sets up row/column definitions for this pane. There are three total
-//   row/cols. The middle one is for the separator. The first and third are for
-//   each of the child panes, and are given a size in pixels, based off the
-//   availiable space, and the percent of the space they respectively consume,
+// - Sets up row/column definitions for this pane. There are two total row/cols, 
+//   one for each children and are given a size in pixels, based off the
+//   available space, and the percent of the space they respectively consume,
 //   which is stored in _desiredSplitPosition
-// - Does nothing if our split state is currently set to SplitState::None
 // Arguments:
 // - rootSize: The dimensions in pixels that this pane (and its children should consume.)
 // Return Value:
@@ -79,6 +77,14 @@ void ParentPane::_CreateRowColDefinitions(const Size& rootSize)
     }
 }
 
+// Method Description:
+// - Called after ctor to start listening to our children and append their xaml 
+//   elements. Call this only when both children can be attached (ep. they are not 
+//   already attached somewhere).
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void ParentPane::InitializeChildren()
 {
     _root.Children().Append(_firstChild->GetRootElement());
@@ -87,6 +93,14 @@ void ParentPane::InitializeChildren()
     _SetupChildEventHandlers(false);
 }
 
+// Method Description:
+// - Setups all the event handlers we care about for a given child.
+// - It is called on initialization, for both children, and when one of our children
+//   changes (this is, it gets splitted or collapsed after split).
+// Arguments:
+// - firstChild - true to deal with first child, false for second child
+// Return Value:
+// - <none>
 void ParentPane::_SetupChildEventHandlers(bool firstChild)
 {
     auto& child = firstChild ? _firstChild : _secondChild;
@@ -95,37 +109,58 @@ void ParentPane::_SetupChildEventHandlers(bool firstChild)
 
     if (const auto childAsLeaf = std::dynamic_pointer_cast<LeafPane>(child))
     {
+        // When our child is a leaf and got closed, we, well, just close him.
         closedToken = childAsLeaf->Closed([=, &child](auto&& /*s*/, auto&& /*e*/) {
+            // Unsubscribe from events of both our children, as we ourself will also
+            // get closed when our child does.
             _RemoveAllChildEventHandlers(true);
             _RemoveAllChildEventHandlers(false);
 
             _CloseChild(firstChild);
         });
 
+        // When our child is a leaf and got splitted, it produces the new parent pane that contains 
+        // both him and the new leaf near him. We then replace that child with the new parent pane.
         typeChangedToken = childAsLeaf->Splitted([=, &child](std::shared_ptr<ParentPane> splittedChild) {
+            // Unsub form all the events of the child. It will now have a new parent and we
+            // don't care about him anymore.
             _RemoveAllChildEventHandlers(firstChild);
 
             child = splittedChild;
             _root.Children().SetAt(firstChild ? 0 : 1, child->GetRootElement());
             _GetGridSetColOrRowFunc()(child->GetRootElement(), firstChild ? 0 : 1);
 
+            // The child is now a ParentPane. Setup events appropriate for him.
             _SetupChildEventHandlers(firstChild);
         });
     }
     else if (const auto childAsParent = std::dynamic_pointer_cast<ParentPane>(child))
     {
+        // When our child is a parent and one of its children got closed (and so the parent collapses),
+        // we take in its remaining, orphaned child as our own.
         typeChangedToken = childAsParent->ChildClosed([=, &child](std::shared_ptr<Pane> collapsedChild) {
+            // Unsub form all the events of the parent child. It will get destroyed, so don't
+            // leak its ref count.
             _RemoveAllChildEventHandlers(firstChild);
 
             child = collapsedChild;
             _root.Children().SetAt(firstChild ? 0 : 1, child->GetRootElement());
             _GetGridSetColOrRowFunc()(child->GetRootElement(), firstChild ? 0 : 1);
 
+            // The child is now a LeafPane. Setup events appropriate for him.
             _SetupChildEventHandlers(firstChild);
         });
     }
 }
 
+// Method Description:
+// - Unsubscribes from all the events of a given child that we're subscribed to.
+// - Called when the child gets splitted/collapsed (because it is now our child then),
+//   when a child closes and in dtor.
+// Arguments:
+// - firstChild - true to deal with first child, false for second child
+// Return Value:
+// - <none>
 void ParentPane::_RemoveAllChildEventHandlers(bool firstChild)
 {
     const auto child = firstChild ? _firstChild : _secondChild;
@@ -143,6 +178,13 @@ void ParentPane::_RemoveAllChildEventHandlers(bool firstChild)
     }
 }
 
+// Method Description:
+// - Returns an appropriate function to set a row or column on grid, depending on _splitState.
+// Arguments:
+// - <none>
+// Return Value:
+// - Controls::Grid::SetColumn when _splitState is Vertical
+// - Controls::Grid::SetRow when _splitState is Horizontal
 std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> ParentPane::_GetGridSetColOrRowFunc() const noexcept
 {
     if (_splitState == SplitState::Vertical)
@@ -248,14 +290,12 @@ void ParentPane::Relayout()
 }
 
 // Method Description:
-// - Moves the separator between panes, as to resize each child on either size
-//   of the separator. Tries to move a separator in the given direction. The
-//   separator moved is the separator that's closest depth-wise to the
-//   currently focused pane, that's also in the correct direction to be moved.
-//   If there isn't such a separator, then this method returns false, as we
-//   couldn't handle the resize.
+// - Changes the relative sizes of our children, so that the separation point moves
+//   in given direction. Chooses ParentPane that's closest depth-wise to the currently 
+//   focused LeafPane, that's also in the correct direction to be moved. If it didn't
+//   find one in the tree, then this method returns false, as we couldn't handle the resize.
 // Arguments:
-// - direction: The direction to move the separator in.
+// - direction: The direction to move the separation point in.
 // Return Value:
 // - true if we or a child handled this resize request.
 bool ParentPane::ResizeChild(const Direction& direction)
@@ -305,7 +345,6 @@ bool ParentPane::ResizeChild(const Direction& direction)
 // - Adjust our child percentages to increase the size of one of our children
 //   and decrease the size of the other.
 // - Adjusts the separation amount by 5%
-// - Does nothing if the direction doesn't match our current split direction
 // Arguments:
 // - direction: the direction to move our separator. If it's down or right,
 //   we'll be increasing the size of the first of our children. Else, we'll be
@@ -320,12 +359,11 @@ bool ParentPane::_ResizeChild(const Direction& direction)
     }
 
     float amount = .05f;
-    if (direction == Direction::Right || direction == Direction::Down)
+    if (direction == Direction::Left || direction == Direction::Up)
     {
         amount = -amount;
     }
 
-    // Make sure we're not making a pane explode here by resizing it to 0 characters.
     const bool changeWidth = _splitState == SplitState::Vertical;
 
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
@@ -334,7 +372,8 @@ bool ParentPane::_ResizeChild(const Direction& direction)
     // resizing.
     const auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
 
-    _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
+    // Make sure we're not making a pane explode here by resizing it to 0 characters.
+    _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition + amount, actualDimension);
 
     // Resize our columns to match the new percentages.
     Relayout();
@@ -417,11 +456,6 @@ bool ParentPane::_NavigateFocus(const Direction& direction)
     const bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
     const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
 
-    const auto notFocusedChild = focusSecond ? _firstChild : _secondChild;
-    notFocusedChild->PropagateToLeaves([](LeafPane& pane) {
-        pane.ClearActive();
-    });
-
     // If the child we want to move focus to is _already_ focused, return false,
     // to try and let our parent figure it out.
     if (newlyFocusedChild->FindActivePane())
@@ -429,15 +463,23 @@ bool ParentPane::_NavigateFocus(const Direction& direction)
         return false;
     }
 
-    // Transfer focus to our child, and update the focus of our tree.
+    // Make sure to clear the focus from all the children that aren't going
+    // to be focused.
+    const auto notFocusedChild = focusSecond ? _firstChild : _secondChild;
+    notFocusedChild->PropagateToLeaves([](LeafPane& pane) {
+        pane.ClearActive();
+    });
+
+    // Transfer focus to our child.
     newlyFocusedChild->_FindFirstLeaf()->SetActive();
 
     return true;
 }
 
 // Method Description:
-// - Closes one of our children. In doing so, takes the control from the other
-//   child, and makes this pane a leaf node again.
+// - Closes one of our children. After that, this parent pare is useless as
+//   it only has one child, so it should be replaced by the remaining child
+//   in the ChildClosed event, which this function rises.
 // Arguments:
 // - closeFirst: if true, the first child should be closed, and the second
 //   should be preserved, and vice-versa for false.
@@ -445,25 +487,35 @@ bool ParentPane::_NavigateFocus(const Direction& direction)
 // - <none>
 void ParentPane::_CloseChild(const bool closeFirst)
 {
-    // The closed child must always be leaf
+    // The closed child must always be a leaf.
     const auto closedChild = std::dynamic_pointer_cast<LeafPane>(closeFirst ? _firstChild : _secondChild);
     THROW_HR_IF_NULL(E_FAIL, closedChild);
 
     const auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
+    // Detach all the controls form our grid, so they can be attached later.
     _root.Children().Clear();
 
     const auto closedChildDir = (_splitState == SplitState::Vertical) ?
                                     (closeFirst ? Direction::Left : Direction::Right) :
                                     (closeFirst ? Direction::Up : Direction::Down);
 
+    // On all the leaf descendants that were adjacent to the closed child, update its
+    // border, so that it matches the border of the closed child.
     remainingChild->PropagateToLeavesOnEdge(closedChildDir, [=](LeafPane& paneOnEdge) {
         paneOnEdge.UpdateBorderWithClosedNeightbour(closedChild, closedChildDir);
     });
 
+    // When we invoke the ChildClosed event, our reference count might (and should) drop
+    // to 0 and we'd become freed, so to prevent that we capture one more ref for the 
+    // duration of this function.
     const auto lifeSaver = shared_from_this();
+
     _ChildClosedHandlers(remainingChild);
 
+    // If any children of closed pane was previously active, we move the focus to the remaining
+    // child. We do that after we invoke the ChildClosed event, because it attaches that child's
+    // control to xaml tree and only then can it properly gain focus.
     if (closedChild->FindActivePane())
     {
         remainingChild->_FindFirstLeaf()->SetActive();
@@ -478,7 +530,7 @@ void ParentPane::_CloseChild(const bool closeFirst)
 //   but not the second.
 // Arguments:
 // - fullSize: the amount of space in pixels that should be filled by our
-//   children and their separators. Can be arbitrarily low.
+//   children. Can be arbitrarily low.
 // Return Value:
 // - a pair with the size of our first child and the size of our second child,
 //   respectively.
@@ -498,8 +550,8 @@ std::pair<float, float> ParentPane::_CalcChildrenSizes(const float fullSize) con
 // - Gets the size in pixels of each of our children, given the full size they should
 //   fill. Each child is snapped to char grid as close as possible. If called multiple
 //   times with fullSize argument growing, then both returned sizes are guaranteed to be
-//   non-decreasing (it's a monotonically increasing function). This is important so that
-//   user doesn't get any pane shrank when they actually expand the window or parent pane.
+//   non-decreasing (it's a monotonically increasing function). This is important, so that
+//   user doesn't get any pane shrank when they actually expand the window or a parent pane.
 //   That is also required by the layout algorithm.
 // Arguments:
 // - widthOrHeight: if true, operates on width, otherwise on height.
@@ -690,8 +742,12 @@ Size ParentPane::_GetMinSize() const
 Pane::LayoutSizeNode ParentPane::_CreateMinSizeTree(const bool widthOrHeight) const
 {
     LayoutSizeNode node = Pane::_CreateMinSizeTree(widthOrHeight);
+
+    // Pane::_CreateMinSizeTree only sets the size of this node, but since we are parent,
+    // we have children, so include them in the size node.
     node.firstChild = std::make_unique<LayoutSizeNode>(_firstChild->_CreateMinSizeTree(widthOrHeight));
     node.secondChild = std::make_unique<LayoutSizeNode>(_secondChild->_CreateMinSizeTree(widthOrHeight));
+
     return node;
 }
 
