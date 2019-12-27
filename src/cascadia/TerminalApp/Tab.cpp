@@ -318,13 +318,13 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
 {
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 
-    control.TitleChanged([weakThis](auto newTitle) {
+    control.TitleChanged([weakThis, this](auto newTitle) {
         // Check if Tab's lifetime has expired
         if (auto tab{ weakThis.lock() })
         {
             // The title of the control changed, but not necessarily the title of the tab.
             // Set the tab's text to the active panes' text.
-            tab->SetTabText(tab->GetActiveTitle());
+            SetTabText(GetActiveTitle());
         }
     });
 }
@@ -342,21 +342,22 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 {
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 
-    pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
+    pane->GotFocus([weakThis, this](std::shared_ptr<Pane> sender) {
         // Do nothing if the Tab's lifetime is expired or pane isn't new.
         auto tab{ weakThis.lock() };
-        if (tab && sender != tab->_activePane)
+
+        if (tab && sender != _activePane)
         {
             // Clear the active state of the entire tree, and mark only the sender as active.
-            tab->_rootPane->ClearActive();
-            tab->_activePane = sender;
-            tab->_activePane->SetActive();
+            _rootPane->ClearActive();
+            _activePane = sender;
+            _activePane->SetActive();
 
             // Update our own title text to match the newly-active pane.
-            tab->SetTabText(tab->GetActiveTitle());
+            SetTabText(GetActiveTitle());
 
             // Raise our own ActivePaneChanged event.
-            tab->_ActivePaneChangedHandlers();
+            _ActivePaneChangedHandlers();
         }
     });
 }

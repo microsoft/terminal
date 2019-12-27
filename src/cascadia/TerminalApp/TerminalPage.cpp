@@ -63,33 +63,30 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // weak_ptr to this TerminalPage object lambda capturing
-        auto weakThis{ get_weak() };
-
-        _tabView.TabDragStarting([weakThis](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragStarting([weakThis{ get_weak() }, this](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
-                page->_rearranging = true;
-                page->_rearrangeFrom = std::nullopt;
-                page->_rearrangeTo = std::nullopt;
+                _rearranging = true;
+                _rearrangeFrom = std::nullopt;
+                _rearrangeTo = std::nullopt;
             }
         });
 
-        _tabView.TabDragCompleted([weakThis](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragCompleted([weakThis{ get_weak() }, this](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
-                auto& from{ page->_rearrangeFrom };
-                auto& to{ page->_rearrangeTo };
+                auto& from{ _rearrangeFrom };
+                auto& to{ _rearrangeTo };
 
                 if (from.has_value() && to.has_value() && to != from)
                 {
-                    auto& tabs{ page->_tabs };
+                    auto& tabs{ _tabs };
                     auto tab = tabs.at(from.value());
                     tabs.erase(tabs.begin() + from.value());
                     tabs.insert(tabs.begin() + to.value(), tab);
                 }
 
-                page->_rearranging = false;
+                _rearranging = false;
                 from = std::nullopt;
                 to = std::nullopt;
             }
@@ -116,10 +113,10 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         //Event Bindings (Early)
-        _newTabButton.Click([weakThis](auto&&, auto&&) {
+        _newTabButton.Click([weakThis{ get_weak() }, this](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTab(nullptr);
+                _OpenNewTab(nullptr);
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
@@ -322,14 +319,12 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            auto weakThis{ get_weak() };
-
-            profileMenuItem.Click([profileIndex, weakThis](auto&&, auto&&) {
+            profileMenuItem.Click([profileIndex, weakThis{ get_weak() }, this](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
                     auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
                     newTerminalArgs->ProfileIndex(profileIndex);
-                    page->_OpenNewTab(*newTerminalArgs);
+                    _OpenNewTab(*newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -461,21 +456,20 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = newTab;
-        auto weakThis{ get_weak() };
 
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        newTab->ActivePaneChanged([weakTabPtr, weakThis]() {
+        newTab->ActivePaneChanged([weakTabPtr, weakThis{ get_weak() }, this]() {
             auto page{ weakThis.get() };
             auto tab{ weakTabPtr.lock() };
 
             if (page && tab)
             {
                 // Possibly update the icon of the tab.
-                page->_UpdateTabIcon(tab);
+                _UpdateTabIcon(tab);
                 // Possibly update the title of the tab, window to match the newly
                 // focused pane.
-                page->_UpdateTitle(tab);
+                _UpdateTitle(tab);
             }
         });
 
@@ -492,10 +486,10 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, weakThis](auto&& /*s*/, auto&& /*e*/) {
+        newTab->Closed([tabViewItem, weakThis{ get_weak() }, this](auto&& /*s*/, auto&& /*e*/) {
             if (auto page{ weakThis.get() })
             {
-                page->_RemoveOnCloseRoutine(tabViewItem, page);
+                _RemoveOnCloseRoutine(tabViewItem, page);
             }
         });
 
@@ -802,9 +796,8 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        auto weakThis{ get_weak() };
 
-        term.TitleChanged([weakTabPtr, weakThis](auto newTitle) {
+        term.TitleChanged([weakTabPtr, weakThis{ get_weak() }, this](auto newTitle) {
             auto page{ weakThis.get() };
             auto tab{ weakTabPtr.lock() };
 
@@ -813,7 +806,7 @@ namespace winrt::TerminalApp::implementation
                 // The title of the control changed, but not necessarily the title
                 // of the tab. Get the title of the focused pane of the tab, and set
                 // the tab's text to the focused panes' text.
-                page->_UpdateTitle(tab);
+                _UpdateTitle(tab);
             }
         });
     }
@@ -895,7 +888,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            page->_tabView.SelectedItem(tab->GetTabViewItem());
+            _tabView.SelectedItem(tab->GetTabViewItem());
         }
     }
 
@@ -1402,7 +1395,7 @@ namespace winrt::TerminalApp::implementation
         // profile, which might have changed
         if (auto page{ weakThis.get() })
         {
-            page->_CreateNewTabFlyout();
+            _CreateNewTabFlyout();
         }
     }
 
