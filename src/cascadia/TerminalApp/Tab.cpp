@@ -162,7 +162,7 @@ winrt::fire_and_forget Tab::UpdateIcon(const winrt::hstring iconPath)
 
     if (auto tab{ weakThis.lock() })
     {
-        tab->_tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(tab->_lastIconPath));
+        _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
     }
 }
 
@@ -195,7 +195,7 @@ winrt::fire_and_forget Tab::SetTabText(const winrt::hstring text)
 
     if (auto tab{ weakThis.lock() })
     {
-        tab->_tabViewItem.Header(winrt::box_value(text));
+        _tabViewItem.Header(winrt::box_value(text));
     }
 }
 
