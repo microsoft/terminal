@@ -405,7 +405,20 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             auto& offset = _glyphOffsets.at(i);
 
             // Get how many columns we expected the glyph to have and mutiply into pixels.
-            const auto columns = _textClusterColumns.at(i);
+            UINT16 columns = 0;
+            {
+                const auto runStartIterator = _glyphClusters.begin() + run.textStart;
+                const auto runEndIterator = _glyphClusters.begin() + run.textStart + run.textLength;
+
+                const auto firstIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart);
+                const auto lastIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart + 1);
+
+                for (auto j = firstIterator; j < lastIterator; j++)
+                {
+                    const auto charIndex = std::distance(_glyphClusters.begin(), j);
+                    columns += _textClusterColumns.at(charIndex);
+                }
+            }
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
