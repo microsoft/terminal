@@ -15,7 +15,7 @@
 
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/Environment.hpp"
-#include "../../types/inc/UTF8OutPipeReader.hpp"
+#include "../../types/inc/Utf8Utf16Convert.hpp"
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
@@ -344,14 +344,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
-        UTF8OutPipeReader pipeReader{ _outPipe.get() };
-        std::string_view strView{};
+        std::array<char, 4096> buffer{}; // buffer for the chunk read.
+        UTF8ChunkToUTF16Converter convertUTF8ChunkToUTF16{};
+        std::wstring_view u16Sv{};
 
         // process the data of the output pipe in a loop
         while (true)
         {
-            const HRESULT result = pipeReader.Read(strView);
-            if (FAILED(result) || result == S_FALSE)
+            DWORD read{};
+
+            const auto readFail{ !ReadFile(_outPipe.get(), &buffer.at(0), gsl::narrow<DWORD>(buffer.size()), &read, nullptr) };
+            if (readFail) // reading failed (we must check this first, because read will also be 0.)
+            {
+                const auto lastError = GetLastError();
+                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                {
+                    // EXIT POINT
+                    _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
+                    _transitionToState(ConnectionState::Failed);
+                    return (DWORD)-1;
+                }
+                // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
+            }
+
+            const HRESULT result{ convertUTF8ChunkToUTF16({ &buffer.at(0), read }, u16Sv) };
+
+            if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
                 {
@@ -365,7 +383,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 return gsl::narrow_cast<DWORD>(-1);
             }
 
-            if (strView.empty())
+            if (u16Sv.empty())
             {
                 return 0;
             }
@@ -386,11 +404,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _recievedFirstByte = true;
             }
 
-            // Convert buffer to hstring
-            auto hstr{ winrt::to_hstring(strView) };
-
             // Pass the output to our registered event handlers
-            _TerminalOutputHandlers(hstr);
+            _TerminalOutputHandlers(u16Sv);
         }
 
         return 0;

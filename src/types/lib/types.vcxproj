@@ -24,7 +24,7 @@
     <ClCompile Include="..\ThemeUtils.cpp" />
     <ClCompile Include="..\UiaTextRangeBase.cpp" />
     <ClCompile Include="..\Utf16Parser.cpp" />
-    <ClCompile Include="..\UTF8OutPipeReader.cpp" />
+    <ClCompile Include="..\Utf8Utf16Convert.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -42,7 +42,7 @@
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\ThemeUtils.h" />
-    <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
+    <ClInclude Include="..\inc\Utf8Utf16Convert.hpp" />
     <ClInclude Include="..\inc\utils.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />

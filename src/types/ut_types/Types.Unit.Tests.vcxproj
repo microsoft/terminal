@@ -10,7 +10,7 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
-    <ClCompile Include="UTF8OutPipeReaderTests.cpp" />
+    <ClCompile Include="Utf8Utf16ConvertTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="UuidTests.cpp" />
     <ClCompile Include="..\precomp.cpp">

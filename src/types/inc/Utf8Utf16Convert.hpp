@@ -3,32 +3,28 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- UTF8OutPipeReader.hpp
+- Utf8Utf16Convert.hpp
 
 Abstract:
-- This reads a UTF-8 stream and gives back a buffer that contains complete code points only
-- Partial UTF-8 code points at the end of the buffer read are cached and prepended to the next chunk read
+- Defines functions for converting between UTF-8 and UTF-16 strings.
+- Defines classes to complement partial code points at the begin of a string and cache partials from the end of a string.
+- Defines classes to do both the complement/cache task and the conversion task at once.
 
 Author(s):
-- Steffen Illhardt (german-one) 12-July-2019
+- Steffen Illhardt (german-one) 2019
 --*/
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
+[[nodiscard]] HRESULT U8ToU16(_In_ const std::string_view u8Str, _Out_ std::wstring& u16Str, bool discardInvalids = false) noexcept;
 
-#include <windows.h>
-#include <wil\common.h>
-#include <wil\resource.h>
-#include <string_view>
+[[nodiscard]] HRESULT U16ToU8(_In_ const std::wstring_view u16Str, _Out_ std::string& u8Str, bool discardInvalids = false) noexcept;
 
-class UTF8OutPipeReader final
+class UTF8PartialHandler final
 {
 public:
-    UTF8OutPipeReader(HANDLE outPipe) noexcept;
-    [[nodiscard]] HRESULT Read(_Out_ std::string_view& strView);
+    UTF8PartialHandler() noexcept;
+    [[nodiscard]] HRESULT operator()(_Inout_ std::string_view& u8Str) noexcept;
 
 private:
     enum _Utf8BitMasks : BYTE
@@ -61,8 +57,41 @@ private:
         _Utf8BitMasks::IsLeadByteThreeByteSequence,
     };
 
-    HANDLE _outPipe; // non-owning reference to a pipe.
-    std::array<char, 4096> _buffer; // buffer for the chunk read.
+    std::string _buffer;
     std::array<char, 4> _utf8Partials; // buffer for code units of a partial UTF-8 code point that have to be cached
-    DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
+    size_t _partialsLen{}; // number of cached UTF-8 code units
+};
+
+class UTF16PartialHandler final
+{
+public:
+    UTF16PartialHandler() noexcept;
+    [[nodiscard]] HRESULT operator()(_Inout_ std::wstring_view& u16Str) noexcept;
+
+private:
+    std::wstring _buffer;
+    wchar_t _highSurrogate{}; // UTF-16 high surrogate that has to be cached
+    size_t _cached{}; // 1 if a high surrogate has been cached, 0 otherwise
+};
+
+class UTF8ChunkToUTF16Converter final
+{
+public:
+    UTF8ChunkToUTF16Converter() noexcept;
+    [[nodiscard]] HRESULT operator()(_In_ std::string_view u8Str, _Out_ std::wstring_view& u16Str, bool discardInvalids = false) noexcept;
+
+private:
+    UTF8PartialHandler _handleU8Partials;
+    std::wstring _buffer;
+};
+
+class UTF16ChunkToUTF8Converter final
+{
+public:
+    UTF16ChunkToUTF8Converter() noexcept;
+    [[nodiscard]] HRESULT operator()(_In_ std::wstring_view u16Str, _Out_ std::string_view& u8Str, bool discardInvalids = false) noexcept;
+
+private:
+    UTF16PartialHandler _handleU16Partials;
+    std::string _buffer;
 };
