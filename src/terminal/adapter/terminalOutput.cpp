@@ -97,23 +97,41 @@ bool TerminalOutput::LockingShift(const size_t gsetNumber)
     return true;
 }
 
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::SingleShift(const size_t gsetNumber)
+{
+    _ssTranslationTable = _gsetTranslationTables.at(gsetNumber);
+    return true;
+}
+
 // Routine Description:
-// - Returns true if the current charset isn't USASCII, indicating that text has to come through here
+// - Returns true if there is an active translation table, indicating that text has to come through here
 // Arguments:
 // - <none>
 // Return Value:
-// - True if the current charset is not USASCII
+// - True if translation is required.
 bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return !_glTranslationTable.empty();
+    return !_glTranslationTable.empty() || !_ssTranslationTable.empty();
 }
 
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     wchar_t wchFound = wch;
-    if (wch - 0x20u < _glTranslationTable.size())
+    if (!_ssTranslationTable.empty())
     {
-        wchFound = _glTranslationTable.at(wch - 0x20u);
+        if (wch - 0x20u < _ssTranslationTable.size())
+        {
+            wchFound = _ssTranslationTable.at(wch - 0x20u);
+        }
+        _ssTranslationTable = {};
+    }
+    else
+    {
+        if (wch - 0x20u < _glTranslationTable.size())
+        {
+            wchFound = _glTranslationTable.at(wch - 0x20u);
+        }
     }
     return wchFound;
 }

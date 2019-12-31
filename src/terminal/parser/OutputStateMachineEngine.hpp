@@ -55,6 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionSs3Dispatch(const wchar_t wch,
                                const std::basic_string_view<size_t> parameters) noexcept override;
 
+        bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
@@ -127,6 +128,8 @@ namespace Microsoft::Console::VirtualTerminal
             DECSCUSR_SetCursorStyle = L'q', // I believe we'll only ever implement DECSCUSR
             DTTERM_WindowManipulation = L't',
             REP_RepeatCharacter = L'b',
+            SS2_SingleShift = L'N',
+            SS3_SingleShift = L'O',
             LS2_LockingShift = L'n',
             LS3_LockingShift = L'o',
             DECALN_ScreenAlignmentPattern = L'8'

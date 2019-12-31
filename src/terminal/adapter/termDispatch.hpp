@@ -91,6 +91,7 @@ public:
 
     bool DesignateCharset(const size_t /*gsetNumber*/, const wchar_t /*charset*/) noexcept override { return false; } // SCS
     bool LockingShift(const size_t /*gsetNumber*/) noexcept override { return false; } // LS0, LS1, LS2, LS3
+    bool SingleShift(const size_t /*gsetNumber*/) noexcept override { return false; } // SS2, SS3
 
     bool SoftReset() noexcept override { return false; } // DECSTR
     bool HardReset() noexcept override { return false; } // RIS

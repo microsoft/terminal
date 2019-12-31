@@ -79,6 +79,8 @@ namespace Microsoft::Console::VirtualTerminal
             DesignateG3,
             LS2,
             LS3,
+            SS2,
+            SS3,
             HVP,
             DECSTR,
             RIS,

@@ -1100,6 +1100,18 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 }
 
 // Method Description:
+// - Returns true if the engine should attempt to parse a control sequence
+//      following an SS3 escape prefix.
+//   If this is false, an SS3 escape sequence should be dispatched as soon
+//      as it is encountered.
+// Return Value:
+// - True iff we should parse a control sequence following an SS3.
+bool InputStateMachineEngine::ParseControlSequenceAfterSs3() const noexcept
+{
+    return true;
+}
+
+// Method Description:
 // - Returns true if the engine should dispatch on the last character of a string
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist its state across calls to

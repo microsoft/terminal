@@ -1616,6 +1616,17 @@ bool AdaptDispatch::LockingShift(const size_t gsetNumber)
 }
 
 //Routine Description:
+// Single Shift - Temporarily invoke one of the G-sets into the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::SingleShift(const size_t gsetNumber)
+{
+    return _termOutput.SingleShift(gsetNumber);
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,

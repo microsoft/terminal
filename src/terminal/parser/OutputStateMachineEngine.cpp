@@ -227,6 +227,14 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->HardReset();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
             break;
+        case VTActionCodes::SS2_SingleShift:
+            success = _dispatch->SingleShift(2);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SS2);
+            break;
+        case VTActionCodes::SS3_SingleShift:
+            success = _dispatch->SingleShift(3);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::SS3);
+            break;
         case VTActionCodes::LS2_LockingShift:
             success = _dispatch->LockingShift(2);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2);
@@ -1350,6 +1358,18 @@ bool OutputStateMachineEngine::_GetTabClearType(const std::basic_string_view<siz
         success = true;
     }
     return success;
+}
+
+// Method Description:
+// - Returns true if the engine should attempt to parse a control sequence
+//      following an SS3 escape prefix.
+//   If this is false, an SS3 escape sequence should be dispatched as soon
+//      as it is encountered.
+// Return Value:
+// - True iff we should parse a control sequence following an SS3.
+bool OutputStateMachineEngine::ParseControlSequenceAfterSs3() const noexcept
+{
+    return false;
 }
 
 // Routine Description:
