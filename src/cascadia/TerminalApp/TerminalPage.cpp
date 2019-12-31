@@ -960,7 +960,6 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
-    // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
     // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.

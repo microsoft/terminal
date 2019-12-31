@@ -82,6 +82,8 @@
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="../TelnetGenerator.h" />
+    <ClInclude Include="../LeafPane.h" />
+    <ClInclude Include="../ParentPane.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ShortcutActionDispatch.h">
       <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
@@ -134,6 +136,8 @@
     <ClCompile Include="../WslDistroGenerator.cpp" />
     <ClCompile Include="../AzureCloudShellGenerator.cpp" />
     <ClCompile Include="../Pane.LayoutSizeNode.cpp" />
+    <ClCompile Include="../LeafPane.cpp" />
+    <ClCompile Include="../ParentPane.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -256,6 +260,7 @@
       <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>

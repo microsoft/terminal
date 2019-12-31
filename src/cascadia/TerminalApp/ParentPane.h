@@ -69,8 +69,7 @@ private:
     // - direction: The Direction to compare
     // - splitType: The winrt::TerminalApp::SplitState to compare
     // Return Value:
-    // - true iff the direction is perpendicular to the splitType. False for
-    //   winrt::TerminalApp::SplitState::None.
+    // - true iff the direction is perpendicular to the splitType.
     static constexpr bool DirectionMatchesSplit(const winrt::TerminalApp::Direction& direction,
                                                 const winrt::TerminalApp::SplitState& splitType)
     {

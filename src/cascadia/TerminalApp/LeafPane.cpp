@@ -346,16 +346,14 @@ void LeafPane::Close()
 winrt::fire_and_forget LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     const auto newConnectionState = _control.ConnectionState();
-
-    co_await winrt::resume_foreground(_root.Dispatcher());
-
-    //TODO: Check if we still listen to this event (but how?).
-
     if (newConnectionState < ConnectionState::Closed)
     {
         // Pane doesn't care if the connection isn't entering a terminal state.
         co_return;
     }
+
+    co_await winrt::resume_foreground(_root.Dispatcher());
+    //TODO: Check if we still listen to this event (but how?).
 
     const auto& settings = CascadiaSettings::GetCurrentAppSettings();
     auto paneProfile = settings.FindProfile(_profile);

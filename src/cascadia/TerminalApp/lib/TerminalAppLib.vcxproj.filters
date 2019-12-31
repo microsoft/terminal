@@ -59,6 +59,12 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
     </ClCompile>
+    <ClCompile Include="../ParentPane.cpp">
+      <Filter>pane</Filter>
+    </ClCompile>
+    <ClCompile Include="../LeafPane.cpp">
+      <Filter>pane</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../Utils.h" />
@@ -107,6 +113,12 @@
       <Filter>tab</Filter>
     </ClInclude>
     <ClInclude Include="../TelnetGenerator.h" />
+    <ClInclude Include="../ParentPane.h">
+      <Filter>pane</Filter>
+    </ClInclude>
+    <ClInclude Include="../LeafPane.h">
+      <Filter>pane</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="../AppLogic.idl">
