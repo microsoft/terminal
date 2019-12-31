@@ -80,7 +80,7 @@ public:
 
     bool PrivateBoldText(const bool bolded) override;
     bool PrivateGetExtendedTextAttributes(ExtendedAttributes& attrs) override;
-    bool PrivateSetExtendedTextAttributes(const ExtendedAttributes& attrs) override;
+    bool PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs) override;
     bool PrivateGetTextAttributes(TextAttribute& attrs) const override;
     bool PrivateSetTextAttributes(const TextAttribute& attrs) override;
 

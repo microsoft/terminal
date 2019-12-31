@@ -79,7 +79,7 @@ bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptio
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
 bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
-                                           size_t optionsConsumed)
+                                           size_t& optionsConsumed)
 {
     COLORREF color = 0;
     bool isForeground = false;
@@ -290,45 +290,37 @@ void TerminalDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOpt
 bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept
 {
     bool success = false;
-    try
+    // Run through the graphics options and apply them
+    for (size_t i = 0; i < options.size(); i++)
     {
-        // Run through the graphics options and apply them
-        for (size_t i = 0; i < options.size(); i++)
+        DispatchTypes::GraphicsOptions opt = options.at(i);
+        if (s_IsDefaultColorOption(opt))
         {
-            DispatchTypes::GraphicsOptions opt = options.at(i);
-            if (s_IsDefaultColorOption(opt))
-            {
-                success = _SetDefaultColorHelper(opt);
-            }
-            else if (s_IsBoldColorOption(opt))
+            success = _SetDefaultColorHelper(opt);
+        }
+        else if (s_IsBoldColorOption(opt))
+        {
+            success = _SetBoldColorHelper(opt);
+        }
+        else if (s_IsRgbColorOption(opt))
+        {
+            size_t optionsConsumed = 0;
+
+            // _SetRgbColorsHelper will call the appropriate ConApi function
+            success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
+
+            i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
+        }
+        else
+        {
+            _SetGraphicsOptionHelper(opt);
+
+            // Make sure we un-bold
+            if (success && opt == DispatchTypes::GraphicsOptions::Off)
             {
                 success = _SetBoldColorHelper(opt);
             }
-            else if (s_IsRgbColorOption(opt))
-            {
-                size_t optionsConsumed = 0;
-
-                // _SetRgbColorsHelper will call the appropriate ConApi function
-                success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
-
-                i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
-            }
-            else
-            {
-                _SetGraphicsOptionHelper(opt);
-
-                // Make sure we un-bold
-                if (success && opt == DispatchTypes::GraphicsOptions::Off)
-                {
-                    success = _SetBoldColorHelper(opt);
-                }
-            }
         }
-    }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        success = false;
     }
     return success;
 }

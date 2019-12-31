@@ -357,8 +357,8 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
     if (options.size() >= 2 && s_IsRgbColorOption(options.at(0)))
     {
         optionsConsumed = 2;
-        const auto extendedOpt = options.at(0);
-        const auto typeOpt = options.at(1);
+        const auto extendedOpt = options[0];
+        const auto typeOpt = options[1];
 
         if (extendedOpt == DispatchTypes::GraphicsOptions::ForegroundExtended)
         {
@@ -373,9 +373,9 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
         {
             optionsConsumed = 5;
             // ensure that each value fits in a byte
-            unsigned int red = std::min(static_cast<unsigned int>(options.at(2)), 255u);
-            unsigned int green = std::min(static_cast<unsigned int>(options.at(3)), 255u);
-            unsigned int blue = std::min(static_cast<unsigned int>(options.at(4)), 255u);
+            unsigned int red = std::min(static_cast<unsigned int>(options[2]), 255u);
+            unsigned int green = std::min(static_cast<unsigned int>(options[3]), 255u);
+            unsigned int blue = std::min(static_cast<unsigned int>(options[4]), 255u);
 
             rgbColor = RGB(red, green, blue);
 
@@ -384,9 +384,9 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
         else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && options.size() >= 3)
         {
             optionsConsumed = 3;
-            if (options.at(2) <= 255) // ensure that the provided index is on the table
+            if (options[2] <= 255) // ensure that the provided index is on the table
             {
-                const auto tableIndex = options.at(2);
+                const auto tableIndex = options[2];
 
                 success = _pConApi->SetConsoleXtermTextAttribute(tableIndex, isForeground);
             }
@@ -433,10 +433,7 @@ bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::Graphic
 {
     ExtendedAttributes attrs{ ExtendedAttributes::Normal };
 
-    if (!_pConApi->PrivateGetExtendedTextAttributes(attrs))
-    {
-        return false;
-    }
+    RETURN_BOOL_IF_FALSE(_pConApi->PrivateGetExtendedTextAttributes(attrs));
 
     switch (opt)
     {
@@ -500,7 +497,7 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
         // Run through the graphics options and apply them
         for (size_t i = 0; i < options.size(); i++)
         {
-            const auto opt = options.at(i);
+            const auto opt = options[i];
             if (s_IsDefaultColorOption(opt))
             {
                 success = _SetDefaultColorHelper(opt);

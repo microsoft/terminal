@@ -117,7 +117,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
         if (success)
         {
             // Prepare our variables for math. All operations are some variation on these two parameters
-            SHORT& modify = cursor.X; // The coordinate X or Y gets modified
+            SHORT* pModify = nullptr; // The coordinate X or Y gets modified
             SHORT boundary = 0; // There is a particular edge of the viewport that is our boundary condition as we approach it.
 
             // Up and Down modify the Y coordinate. Left and Right modify the X.
@@ -127,11 +127,11 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
             case CursorDirection::Down:
             case CursorDirection::NextLine:
             case CursorDirection::PrevLine:
-                modify = cursor.Y;
+                pModify = &cursor.Y;
                 break;
             case CursorDirection::Left:
             case CursorDirection::Right:
-                modify = cursor.X;
+                pModify = &cursor.X;
                 break;
             default:
                 success = false;
@@ -169,12 +169,12 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                 case CursorDirection::Up:
                 case CursorDirection::Left:
                 case CursorDirection::PrevLine:
-                    success = SUCCEEDED(ShortSub(modify, delta, &modify));
+                    success = SUCCEEDED(ShortSub(*pModify, delta, pModify));
                     break;
                 case CursorDirection::Down:
                 case CursorDirection::Right:
                 case CursorDirection::NextLine:
-                    success = SUCCEEDED(ShortAdd(modify, delta, &modify));
+                    success = SUCCEEDED(ShortAdd(*pModify, delta, pModify));
                     break;
                 }
 
@@ -186,13 +186,13 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                     case CursorDirection::Up:
                     case CursorDirection::Left:
                     case CursorDirection::PrevLine:
-                        modify = std::max(modify, boundary);
+                        *pModify = std::max(*pModify, boundary);
                         break;
                     case CursorDirection::Down:
                     case CursorDirection::Right:
                     case CursorDirection::NextLine:
                         // For the bottom and right edges, the viewport value is stated to be one outside the rectangle.
-                        modify = std::min(modify, gsl::narrow<SHORT>(boundary - 1));
+                        *pModify = std::min(*pModify, gsl::narrow<SHORT>(boundary - 1));
                         break;
                     default:
                         success = false;
@@ -346,13 +346,7 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         }
         else
         {
-            // remember, in VT speak, this is relative to the viewport. not absolute.
-            SHORT diff;
-            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.Y, csbiex.srWindow.Top, &diff));
-            if (success)
-            {
-                success = SUCCEEDED(ShortToSizeT(diff, &rowActual));
-            }
+            rowActual = csbiex.dwCursorPosition.Y - csbiex.srWindow.Top; // remember, in VT speak, this is relative to the viewport. not absolute.
         }
 
         if (column)
@@ -368,13 +362,7 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         }
         else
         {
-            // remember, in VT speak, this is relative to the viewport. not absolute.
-            SHORT diff;
-            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.X, csbiex.srWindow.Left, &diff));
-            if (success)
-            {
-                success = SUCCEEDED(ShortToSizeT(diff, &columnActual));
-            }
+            columnActual = csbiex.dwCursorPosition.X - csbiex.srWindow.Left; // remember, in VT speak, this is relative to the viewport. not absolute.
         }
 
         if (success)
@@ -544,24 +532,15 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT distance;
-    if (FAILED(SizeTToShort(count, &distance)))
-    {
-        return false;
-    }
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(SizeTToShort(count, &distance)));
 
     // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    if (!_pConApi->MoveToBottom())
-    {
-        return false;
-    }
-    if (!_pConApi->GetConsoleScreenBufferInfoEx(csbiex))
-    {
-        return false;
-    }
+    RETURN_BOOL_IF_FALSE(_pConApi->MoveToBottom());
+    RETURN_BOOL_IF_FALSE(_pConApi->GetConsoleScreenBufferInfoEx(csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
@@ -694,22 +673,13 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
     {
         const COORD startPosition = csbiex.dwCursorPosition;
 
-        SHORT result{ 0 };
-        success = SUCCEEDED(ShortSub(csbiex.dwSize.X, startPosition.X, &result));
-        if (success)
-        {
-            size_t remainingSpaces{ 0 };
-            success = SUCCEEDED(ShortToSizeT(result, &remainingSpaces));
-            if (success)
-            {
-                const auto actualRemaining = (remainingSpaces < 0) ? 0 : remainingSpaces;
-                // erase at max the number of characters remaining in the line from the current position.
-                const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
+        const size_t remainingSpaces = csbiex.dwSize.X - startPosition.X;
+        const auto actualRemaining = (remainingSpaces < 0) ? 0 : remainingSpaces;
+        // erase at max the number of characters remaining in the line from the current position.
+        const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
 
-                // Note that the region is filled with the standard erase attributes.
-                success = _pConApi->PrivateFillRegion(startPosition, eraseLength, UNICODE_SPACE, true);
-            }
-        }
+        // Note that the region is filled with the standard erase attributes.
+        success = _pConApi->PrivateFillRegion(startPosition, eraseLength, L' ', true);
     }
     return success;
 }
@@ -1988,7 +1958,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         if (parameters.size() == 2)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters.back(), parameters.front());
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters[1], parameters[0]);
         }
         break;
     default:

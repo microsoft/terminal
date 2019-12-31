@@ -14,7 +14,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
-    _intermediate{},
+    _intermediates{},
     _parameters{},
     _oscString{},
     _processingIndividually(false)
@@ -333,7 +333,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    const bool success = _engine->ActionEscDispatch(wch, _intermediate);
+    const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
@@ -356,7 +356,9 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
 
-    const bool success = _engine->ActionCsiDispatch(wch, _intermediate, { _parameters.data(), _parameters.size() });
+    const bool success = _engine->ActionCsiDispatch(wch,
+                                              { _intermediates.data(), _intermediates.size() },
+                                              { _parameters.data(), _parameters.size() });
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
@@ -379,10 +381,7 @@ void StateMachine::_ActionCollect(const wchar_t wch)
     _trace.TraceOnAction(L"Collect");
 
     // store collect data
-    if (!_intermediate)
-    {
-        _intermediate.emplace(wch);
-    }
+    _intermediates.push_back(wch);
 }
 
 // Routine Description:
@@ -397,7 +396,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
     _trace.TraceOnAction(L"Param");
 
     // If we have no parameters and we're about to add one, get the 0 value ready here.
-    if (!_parameters.size())
+    if (_parameters.empty())
     {
         _parameters.push_back(0);
     }
@@ -428,7 +427,7 @@ void StateMachine::_ActionClear()
     _trace.TraceOnAction(L"Clear");
 
     // clear all internal stored state.
-    _intermediate.reset();
+    _intermediates.clear();
 
     _parameters.clear();
 
@@ -1368,12 +1367,21 @@ void StateMachine::ResetState() noexcept
 }
 
 // Routine Description:
+// - Takes the given printable character and accumulates it as the new ones digit
+//   into the given size_t. All existing value is moved up by 10.
+// - For example, if your value had 437 and you put in the printable number 2,
+//   this function will update value to 4372.
+// - Clamps to size_t max if it gets too big.
 // Arguments:
+// - wch - Printable character to accumulate into the value (after conversion to number, of course)
+// - value - The value to update with the printable character. See example above.
 // Return Value:
+// - <none> - But really it's the update to the given value parameter.
 void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value)
 {
     const size_t digit = wch - L'0';
 
+    // If we overflow while multiplying and adding, the value is just size_t max.
     if (FAILED(SizeTMult(value, 10, &value)) ||
         FAILED(SizeTAdd(value, digit, &value)))
     {

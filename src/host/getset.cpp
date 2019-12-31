@@ -504,18 +504,18 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
 
+        // microsoft/terminal#3907 - We shouldn't resize the buffer to be
+        // smaller than the viewport. This was previously erroneously checked
+        // when the host was not in conpty mode.
+        RETURN_HR_IF(E_INVALIDARG, (size.X < screenInfo.GetViewport().Width() || size.Y < screenInfo.GetViewport().Height()));
+
         // see MSFT:17415266
         // We only really care about the minimum window size if we have a head.
         if (!ServiceLocator::LocateGlobals().IsHeadless())
         {
             COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
-            // clang-format off
             // Make sure requested screen buffer size isn't smaller than the window.
-            RETURN_HR_IF(E_INVALIDARG, (size.X < screenInfo.GetViewport().Width() ||
-                                        size.Y < screenInfo.GetViewport().Height() ||
-                                        size.Y < coordMin.Y ||
-                                        size.X < coordMin.X));
-            // clang-format on
+            RETURN_HR_IF(E_INVALIDARG, (size.Y < coordMin.Y || size.X < coordMin.X));
         }
 
         // Ensure the requested size isn't larger than we can handle in our data type.

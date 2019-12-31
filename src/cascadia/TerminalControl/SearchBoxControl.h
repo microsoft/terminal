@@ -28,9 +28,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void TextBoxKeyDown(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
-        bool GoForward();
-        bool IsCaseSensitive();
-
         void SetFocusOnTextbox();
         bool ContainsFocus();
 
@@ -38,19 +35,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        TYPED_EVENT(Search, TerminalControl::SearchBoxControl, winrt::hstring);
+        WINRT_CALLBACK(Search, SearchHandler);
         TYPED_EVENT(Closed, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:
-        bool _goForward; // The direction of the search, controlled by the buttons with arrows
-
-        winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _goForwardButton;
-        winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _goBackwardButton;
-        winrt::Windows::UI::Xaml::Controls::Primitives::ToggleButton _caseButton;
-        winrt::Windows::UI::Xaml::Controls::TextBox _textBox;
-
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
 
+        bool _GoForward();
+        bool _CaseSensitive();
+        void _KeyDownHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
     };
 }

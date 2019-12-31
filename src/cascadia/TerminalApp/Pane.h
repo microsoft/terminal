@@ -120,6 +120,7 @@ private:
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
+    winrt::TerminalApp::SplitState _convertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.

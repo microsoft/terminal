@@ -45,7 +45,7 @@
         <EventProvider Id="EventProvider-Microsoft.Windows.Console.Render.VtEngine" Name="c9ba2a95-d3ca-5e19-2bd6-776a0910cb9d"/>
         <!-- Now define some profiles. We'll call them by ID when collecting. Also, the Base is where it is inheriting from and is a .wprpi file built... -->
         <!-- ... into WPR automatically. Go look in the WPR install directory or in the documentation to find it. -->
-        <Profile Id="ConsolePerf.Verbose.File" Base="GeneralProfile.Light.File" LoggingMode="File" Name="ConsolePerfProfile" DetailLevel="Verbose" Description="Console Performance default profile">
+        <Profile Id="ConsolePerfProfile.Verbose.File" Base="GeneralProfile.Light.File" LoggingMode="File" Name="ConsolePerfProfile" DetailLevel="Verbose" Description="Console Performance default profile">
             <Collectors Operation="Add">
                 <SystemCollectorId Value="SystemCollector_ConsolePerfSystemCollectorInFileLarge">
                     <!-- You don't have to change anything here when system keywords are added above. -->

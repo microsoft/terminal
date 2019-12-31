@@ -36,7 +36,7 @@ public:
     bool ActionPassThroughString(const std::wstring_view /* string */) override { return true; };
 
     bool ActionEscDispatch(const wchar_t /* wch */,
-                           const std::optional<wchar_t> /* intermediate */) override { return true; };
+                           const std::basic_string_view<wchar_t> /* intermediates */) override { return true; };
 
     bool ActionClear() override { return true; };
 
@@ -55,7 +55,7 @@ public:
 
     // ActionCsiDispatch is the only method that's actually implemented.
     bool ActionCsiDispatch(const wchar_t /*wch*/,
-                           const std::optional<wchar_t> /*intermediate*/,
+                           const std::basic_string_view<wchar_t> /*intermediates*/,
                            const std::basic_string_view<size_t> parameters) override
     {
         csiParams.emplace(parameters.cbegin(), parameters.cend());
