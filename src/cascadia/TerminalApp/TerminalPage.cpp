@@ -1125,7 +1125,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
                                                                  const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
     {
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
 
         DataPackage dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
@@ -1164,7 +1164,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
                                                                     const PasteFromClipboardEventArgs eventArgs)
     {
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
 
         TerminalPage::PasteFromClipboard(eventArgs);
     }
