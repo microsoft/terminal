@@ -385,6 +385,17 @@ UTF8PartialHandler::UTF8PartialHandler() noexcept :
     }
 }
 
+// Method Description:
+// - Discard cached partials.
+// Arguments:
+// - none
+// Return Value:
+// - void
+void UTF8PartialHandler::Reset() noexcept
+{
+    _partialsLen = 0u;
+}
+
 UTF16PartialHandler::UTF16PartialHandler() noexcept :
     _buffer{}
 {
@@ -464,6 +475,17 @@ UTF16PartialHandler::UTF16PartialHandler() noexcept :
     }
 }
 
+// Method Description:
+// - Discard cached partials.
+// Arguments:
+// - none
+// Return Value:
+// - void
+void UTF16PartialHandler::Reset() noexcept
+{
+    _cached = 0u;
+}
+
 UTF8ChunkToUTF16Converter::UTF8ChunkToUTF16Converter() noexcept :
     _handleU8Partials{},
     _buffer{}
@@ -511,6 +533,17 @@ UTF8ChunkToUTF16Converter::UTF8ChunkToUTF16Converter() noexcept :
     }
 }
 
+// Method Description:
+// - Discard cached partials.
+// Arguments:
+// - none
+// Return Value:
+// - void
+void UTF8ChunkToUTF16Converter::Reset() noexcept
+{
+    _handleU8Partials.Reset();
+}
+
 UTF16ChunkToUTF8Converter::UTF16ChunkToUTF8Converter() noexcept :
     _handleU16Partials{},
     _buffer{}
@@ -556,4 +589,15 @@ UTF16ChunkToUTF8Converter::UTF16ChunkToUTF8Converter() noexcept :
     {
         return E_UNEXPECTED;
     }
+}
+
+// Method Description:
+// - Discard cached partials.
+// Arguments:
+// - none
+// Return Value:
+// - void
+void UTF16ChunkToUTF8Converter::Reset() noexcept
+{
+    _handleU16Partials.Reset();
 }

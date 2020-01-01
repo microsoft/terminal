@@ -25,6 +25,7 @@ class UTF8PartialHandler final
 public:
     UTF8PartialHandler() noexcept;
     [[nodiscard]] HRESULT operator()(_Inout_ std::string_view& u8Str) noexcept;
+    void Reset() noexcept;
 
 private:
     enum _Utf8BitMasks : BYTE
@@ -67,6 +68,7 @@ class UTF16PartialHandler final
 public:
     UTF16PartialHandler() noexcept;
     [[nodiscard]] HRESULT operator()(_Inout_ std::wstring_view& u16Str) noexcept;
+    void Reset() noexcept;
 
 private:
     std::wstring _buffer;
@@ -79,6 +81,7 @@ class UTF8ChunkToUTF16Converter final
 public:
     UTF8ChunkToUTF16Converter() noexcept;
     [[nodiscard]] HRESULT operator()(_In_ std::string_view u8Str, _Out_ std::wstring_view& u16Str, bool discardInvalids = false) noexcept;
+    void Reset() noexcept;
 
 private:
     UTF8PartialHandler _handleU8Partials;
@@ -90,6 +93,7 @@ class UTF16ChunkToUTF8Converter final
 public:
     UTF16ChunkToUTF8Converter() noexcept;
     [[nodiscard]] HRESULT operator()(_In_ std::wstring_view u16Str, _Out_ std::string_view& u8Str, bool discardInvalids = false) noexcept;
+    void Reset() noexcept;
 
 private:
     UTF16PartialHandler _handleU16Partials;
