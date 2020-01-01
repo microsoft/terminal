@@ -19,7 +19,10 @@ class Utf8Utf16ConvertTests
     TEST_CLASS(Utf8Utf16ConvertTests);
 
     TEST_METHOD(TestU8ToU16);
+    TEST_METHOD(TestU8ToU16NonMinimals);
+    TEST_METHOD(TestU8ToU16Invalids);
     TEST_METHOD(TestU16ToU8);
+    TEST_METHOD(TestU16ToU8Invalids);
     TEST_METHOD(TestUTF8PartialHandler);
     TEST_METHOD(TestUTF16PartialHandler);
     TEST_METHOD(TestUTF8ChunkToUTF16Converter);
@@ -55,6 +58,70 @@ void Utf8Utf16ConvertTests::TestU8ToU16()
     VERIFY_ARE_EQUAL(u16StringComp, u16Out);
 }
 
+void Utf8Utf16ConvertTests::TestU8ToU16NonMinimals()
+{
+    const std::string u8String{
+        'a',
+        '\xC0', // 2 bytes
+        '\xB0',
+        'b',
+        '\xE0', // 3 bytes
+        '\x80',
+        '\x80',
+        'c',
+        '\xF0', // 4 bytes
+        '\x80',
+        '\xB0',
+        '\x80',
+        'd'
+    };
+
+    const std::wstring u16StringComp{
+        L'a',
+        L'b',
+        L'c',
+        L'd'
+    };
+
+    std::wstring u16Out{};
+    const HRESULT hRes{ U8ToU16(u8String, u16Out, true) }; // third parameter: invalid characters are discarded
+    VERIFY_ARE_EQUAL(S_FALSE, hRes);
+    VERIFY_ARE_EQUAL(u16StringComp, u16Out);
+}
+
+void Utf8Utf16ConvertTests::TestU8ToU16Invalids()
+{
+    const std::string u8String{
+        'a',
+        '\xC2', // missing continuation byte
+        'b',
+        '\x80', // missing lead byte
+        'c',
+        '\xED', // surrogate
+        '\xA0',
+        '\x80',
+        'd',
+        '\xF4', // out of Unicode range
+        '\x90',
+        '\x80',
+        '\x80',
+        'e'
+    };
+
+    const std::wstring u16StringComp{
+        L'a',
+        L'b',
+        L'c',
+        L'd',
+        L'e'
+    };
+
+    std::wstring u16Out{};
+    const HRESULT hRes{ U8ToU16(u8String, u16Out, true) }; // third parameter: invalid characters are discarded
+    VERIFY_ARE_EQUAL(S_FALSE, hRes);
+    VERIFY_ARE_EQUAL(u16StringComp, u16Out);
+}
+
 void Utf8Utf16ConvertTests::TestU16ToU8()
 {
     const std::wstring u16String{
@@ -81,6 +148,28 @@ void Utf8Utf16ConvertTests::TestU16ToU8()
     std::string u8Out{};
     const HRESULT hRes{ U16ToU8(u16String, u8Out) };
     VERIFY_ARE_EQUAL(S_OK, hRes);
+    VERIFY_ARE_EQUAL(u8StringComp, u8Out);
+}
+
+void Utf8Utf16ConvertTests::TestU16ToU8Invalids()
+{
+    const std::wstring u16String{
+        L'a',
+        gsl::narrow_cast<wchar_t>(0xD800u), // missing low surrogate
+        L'b',
+        gsl::narrow_cast<wchar_t>(0xDC00u), // missing high surrogate
+        L'c'
+    };
+
+    const std::string u8StringComp{
+        'a',
+        'b',
+        'c'
+    };
+
+    std::string u8Out{};
+    const HRESULT hRes{ U16ToU8(u16String, u8Out, true) }; // third parameter: invalid characters are discarded
+    VERIFY_ARE_EQUAL(S_FALSE, hRes);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out);
 }
 
