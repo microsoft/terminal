@@ -1332,10 +1332,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& outputMode = gci.GetActiveOutputBuffer().GetActiveBuffer().OutputMode;
-    if (wrapAtEOL)
-        WI_SetFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-    else
-        WI_ClearFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
     return STATUS_SUCCESS;
 }
 
