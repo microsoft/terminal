@@ -290,7 +290,8 @@
 }
 
 UTF8PartialHandler::UTF8PartialHandler() noexcept :
-    _buffer{}, _utf8Partials{ 0 }
+    _buffer{},
+    _utf8Partials{ 0 }
 {
 }
 
@@ -464,7 +465,8 @@ UTF16PartialHandler::UTF16PartialHandler() noexcept :
 }
 
 UTF8ChunkToUTF16Converter::UTF8ChunkToUTF16Converter() noexcept :
-    _handleU8Partials{}, _buffer{}
+    _handleU8Partials{},
+    _buffer{}
 {
 }
 
@@ -510,7 +512,8 @@ UTF8ChunkToUTF16Converter::UTF8ChunkToUTF16Converter() noexcept :
 }
 
 UTF16ChunkToUTF8Converter::UTF16ChunkToUTF8Converter() noexcept :
-    _handleU16Partials{}, _buffer{}
+    _handleU16Partials{},
+    _buffer{}
 {
 }
 
