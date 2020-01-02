@@ -680,8 +680,8 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
     {
         const COORD startPosition = csbiex.dwCursorPosition;
 
-        const auto remainingSpaces = csbiex.dwSize.X - startPosition.X;
-        const auto actualRemaining = (remainingSpaces < 0) ? 0 : remainingSpaces;
+        const SHORT remainingSpaces = csbiex.dwSize.X - startPosition.X;
+        const size_t actualRemaining = gsl::narrow_cast<size_t>((remainingSpaces < 0) ? 0 : remainingSpaces);
         // erase at max the number of characters remaining in the line from the current position.
         const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
 
