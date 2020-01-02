@@ -208,8 +208,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         static bool s_HexToUint(const wchar_t wch,
                                 unsigned int& value) noexcept;
-        static bool s_IsNumber(const wchar_t wch) noexcept;
-        static bool s_IsHexNumber(const wchar_t wch) noexcept;
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   size_t& tableIndex,
                                   DWORD& rgb) const noexcept;

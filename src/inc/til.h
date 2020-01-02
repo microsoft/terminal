@@ -36,10 +36,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     } while (0, 0)
 
 // Due to a bug (DevDiv 441931), Warning 4297 (function marked noexcept throws exception) is detected even when the throwing code is unreachable, such as the end of scope after a return, in function-level catch.
-#define CATCH_LOG_RETURN_FALSE()                   \
-    catch (...)                                    \
-    {                                              \
-        __pragma(warning(suppress : 4297));        \
-        LOG_CAUGHT_EXCEPTION();                    \
-        return false;                              \
+#define CATCH_LOG_RETURN_FALSE()            \
+    catch (...)                             \
+    {                                       \
+        __pragma(warning(suppress : 4297)); \
+        LOG_CAUGHT_EXCEPTION();             \
+        return false;                       \
     }

@@ -1324,16 +1324,13 @@ bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
     return success;
 }
 
-#pragma warning(push)
-#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
-
 // Routine Description:
 // - Determines if a character is a valid number character, 0-9.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool OutputStateMachineEngine::s_IsNumber(const wchar_t wch) noexcept
+static constexpr bool _isNumber(const wchar_t wch) noexcept
 {
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
@@ -1344,14 +1341,12 @@ bool OutputStateMachineEngine::s_IsNumber(const wchar_t wch) noexcept
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool OutputStateMachineEngine::s_IsHexNumber(const wchar_t wch) noexcept
+static constexpr bool _isHexNumber(const wchar_t wch) noexcept
 {
     return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
            (wch >= L'A' && wch <= L'F') ||
            (wch >= L'a' && wch <= L'f');
 }
-
-#pragma warning(pop)
 
 // Routine Description:
 // - Given a color spec string, attempts to parse the color that's encoded.
@@ -1405,7 +1400,7 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
             {
                 const wchar_t wch = *curr++;
 
-                if (s_IsHexNumber(wch))
+                if (_isHexNumber(wch))
                 {
                     value *= 16;
                     unsigned int intVal = 0;
@@ -1499,7 +1494,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
     for (size_t i = 0; i < 4; i++)
     {
         const wchar_t wch = string.at(current);
-        if (s_IsNumber(wch))
+        if (_isNumber(wch))
         {
             _TableIndex *= 10;
             _TableIndex += wch - L'0';
