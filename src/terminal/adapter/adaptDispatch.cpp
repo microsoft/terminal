@@ -160,7 +160,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                 break;
             }
 
-            if (success)
+            if (success && pModify)
             {
                 // For up and left, we need to subtract the magnitude of the vector to get the new spot. Right/down = add.
                 // Use safe short subtraction to prevent under/overflow.
@@ -346,23 +346,30 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         }
         else
         {
-            rowActual = csbiex.dwCursorPosition.Y - csbiex.srWindow.Top; // remember, in VT speak, this is relative to the viewport. not absolute.
+            // remember, in VT speak, this is relative to the viewport. not absolute.
+            const SHORT diff = csbiex.dwCursorPosition.Y - csbiex.srWindow.Top;
+            success = SUCCEEDED(ShortToSizeT(diff, &rowActual));
         }
 
-        if (column)
+        if (success)
         {
-            if (column.value() != 0)
+            if (column)
             {
-                columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                if (column.value() != 0)
+                {
+                    columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                }
+                else
+                {
+                    success = false; // The parser should never return 0 (0 maps to 1), so this is a failure condition.
+                }
             }
             else
             {
-                success = false; // The parser should never return 0 (0 maps to 1), so this is a failure condition.
+                // remember, in VT speak, this is relative to the viewport. not absolute.
+                const SHORT diff = csbiex.dwCursorPosition.X - csbiex.srWindow.Left;
+                success = SUCCEEDED(ShortToSizeT(diff, &columnActual));
             }
-        }
-        else
-        {
-            columnActual = csbiex.dwCursorPosition.X - csbiex.srWindow.Left; // remember, in VT speak, this is relative to the viewport. not absolute.
         }
 
         if (success)
@@ -673,7 +680,7 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
     {
         const COORD startPosition = csbiex.dwCursorPosition;
 
-        const size_t remainingSpaces = csbiex.dwSize.X - startPosition.X;
+        const auto remainingSpaces = csbiex.dwSize.X - startPosition.X;
         const auto actualRemaining = (remainingSpaces < 0) ? 0 : remainingSpaces;
         // erase at max the number of characters remaining in the line from the current position.
         const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
@@ -1250,7 +1257,7 @@ bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
         success = SUCCEEDED(SizeTToShort(topMargin, &actualTop)) && SUCCEEDED(SizeTToShort(bottomMargin, &actualBottom));
         if (success)
         {
-            SHORT screenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+            const SHORT screenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
             // The default top margin is line 1
             if (actualTop == 0)
             {
@@ -1505,7 +1512,7 @@ bool AdaptDispatch::SoftReset()
     }
     if (success)
     {
-        DispatchTypes::GraphicsOptions opt = DispatchTypes::GraphicsOptions::Off;
+        const auto opt = DispatchTypes::GraphicsOptions::Off;
         success = SetGraphicsRendition({ &opt, 1 }); // Normal rendition.
     }
     if (success)
@@ -1587,7 +1594,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     {
         // Fill the screen with the letter E using the default attributes.
         auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
-        auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
+        const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
         // Reset the meta/extended attributes (but leave the colors unchanged).
         success = success && _pConApi->PrivateSetLegacyAttributes(0, false, false, true);
