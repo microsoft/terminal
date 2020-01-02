@@ -60,10 +60,11 @@ Edge cases:
 
 ## UI/UX Design
 
-Upon successful implementation, the user is able to add new properties to the json profile file, which is illustrated in the picture below:
-
-![Sol Design](images/ProfileSnapshot.png)
-
+Upon successful implementation, the user is able to add new properties to the json profile file, which is illustrated in the code block below:
+```json
+"initialPosition": "500,500",
+"launchMode": "default"
+```
 The rest of the UI will be the same of the current Terminal experience, except that the initial position may be different.
 
 ### Accessibility
