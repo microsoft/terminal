@@ -19,33 +19,38 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
-    void MinMaxCloseControl::Maximize()
-    {
-        VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
-    }
-
-    void MinMaxCloseControl::RestoreDown()
-    {
-        VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
-    }
-
     // These event handlers simply forward each buttons click events up to the
     // events we've exposed.
-    void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+    void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             RoutedEventArgs const& e)
     {
         _minimizeClickHandlers(*this, e);
     }
 
-    void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+    void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             RoutedEventArgs const& e)
     {
         _maximizeClickHandlers(*this, e);
     }
-    void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
+    void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                          RoutedEventArgs const& e)
     {
         _closeClickHandlers(*this, e);
+    }
+
+    void MinMaxCloseControl::SetWindowVisualState(WindowVisualState visualState)
+    {
+        switch (visualState)
+        {
+        case WindowVisualState::WindowVisualStateMaximized:
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
+            break;
+        case WindowVisualState::WindowVisualStateNormal:
+        case WindowVisualState::WindowVisualStateIconified:
+        default:
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
+            break;
+        }
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);

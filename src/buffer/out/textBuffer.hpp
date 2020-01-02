@@ -69,10 +69,8 @@ public:
                Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
-    ~TextBuffer() = default;
-
     // Used for duplicating properties to another text buffer
-    void CopyProperties(const TextBuffer& OtherBuffer);
+    void CopyProperties(const TextBuffer& OtherBuffer) noexcept;
 
     // row manipulation
     const ROW& GetRowByOffset(const size_t index) const;
@@ -89,11 +87,12 @@ public:
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
-                             const COORD target);
+                             const COORD target,
+                             const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteLine(const OutputCellIterator givenIt,
                                  const COORD target,
-                                 const bool setWrap = false,
+                                 const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<size_t> limitRight = std::nullopt);
 
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
@@ -102,21 +101,21 @@ public:
     bool NewlineCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
-    bool IncrementCircularBuffer();
+    bool IncrementCircularBuffer(const bool inVtMode = false);
 
     COORD GetLastNonSpaceCharacter() const;
     COORD GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const;
 
-    Cursor& GetCursor();
-    const Cursor& GetCursor() const;
+    Cursor& GetCursor() noexcept;
+    const Cursor& GetCursor() const noexcept;
 
-    const SHORT GetFirstRowIndex() const;
+    const SHORT GetFirstRowIndex() const noexcept;
 
     const Microsoft::Console::Types::Viewport GetSize() const;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
-    UINT TotalRowCount() const;
+    UINT TotalRowCount() const noexcept;
 
     [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
 
@@ -124,12 +123,15 @@ public:
 
     void Reset();
 
-    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize);
 
-    const UnicodeStorage& GetUnicodeStorage() const;
-    UnicodeStorage& GetUnicodeStorage();
+    const UnicodeStorage& GetUnicodeStorage() const noexcept;
+    UnicodeStorage& GetUnicodeStorage() noexcept;
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget();
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
+
+    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun = false) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun = false) const;
 
     class TextAndColor
     {
@@ -147,8 +149,14 @@ public:
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
-                               const PCWCHAR fontFaceName,
+                               const std::wstring_view fontFaceName,
+                               const COLORREF backgroundColor,
                                const std::string& htmlTitle);
+
+    static std::string GenRTF(const TextAndColor& rows,
+                              const int fontHeightPoints,
+                              const std::wstring_view fontFaceName,
+                              const COLORREF backgroundColor);
 
 private:
     std::deque<ROW> _storage;
@@ -165,7 +173,7 @@ private:
 
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
-    void _SetFirstRowIndex(const SHORT FirstRowIndex);
+    void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
     COORD _GetPreviousFromCursor() const;
 
@@ -180,6 +188,14 @@ private:
 
     ROW& _GetFirstRow();
     ROW& _GetPrevRowNoWrap(const ROW& row);
+
+    enum class DelimiterClass
+    {
+        ControlChar,
+        DelimiterChar,
+        RegularChar
+    };
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

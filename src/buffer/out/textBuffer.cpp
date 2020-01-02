@@ -49,7 +49,7 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
 // - OtherBuffer - The text buffer to copy properties from
 // Return Value:
 // - <none>
-void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
+void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 {
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
 }
@@ -60,9 +60,9 @@ void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 // - <none>
 // Return Value:
 // - Total number of rows in the buffer
-UINT TextBuffer::TotalRowCount() const
+UINT TextBuffer::TotalRowCount() const noexcept
 {
-    return static_cast<UINT>(_storage.size());
+    return gsl::narrow<UINT>(_storage.size());
 }
 
 // Routine Description:
@@ -78,7 +78,7 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
     const size_t offsetIndex = (_firstRow + index) % totalRows;
-    return _storage[offsetIndex];
+    return _storage.at(offsetIndex);
 }
 
 // Routine Description:
@@ -90,7 +90,11 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 // - reference to the requested row. Asserts if out of bounds.
 ROW& TextBuffer::GetRowByOffset(const size_t index)
 {
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetRowByOffset(index));
+    const size_t totalRows = TotalRowCount();
+
+    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
+    const size_t offsetIndex = (_firstRow + index) % totalRows;
+    return _storage.at(offsetIndex);
 }
 
 // Routine Description:
@@ -314,10 +318,12 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
 // Arguments:
 // - givenIt - Iterator representing output cell data to write
 // - target - the row/column to start writing the text to
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
 // Return Value:
 // - The final position of the iterator
 OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
-                                     const COORD target)
+                                     const COORD target,
+                                     const std::optional<bool> wrap)
 {
     // Make mutable copy so we can walk.
     auto it = givenIt;
@@ -332,7 +338,8 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
     while (it && size.IsInBounds(lineTarget))
     {
         // Attempt to write as much data as possible onto this line.
-        it = WriteLine(it, lineTarget, true);
+        // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
+        it = WriteLine(it, lineTarget, wrap);
 
         // Move to the next line down.
         lineTarget.X = 0;
@@ -347,13 +354,13 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
 // Arguments:
 // - givenIt - The iterator that will dereference into cell data to insert
 // - target - Coordinate targeted within output buffer
-// - setWrap - Whether we should try to set the wrap flag if we write up to the end of the line and have more data
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data in the iterator.
 // - limitRight - Optionally restrict the right boundary for writing (e.g. stop writing earlier than the end of line)
 // Return Value:
 // - The iterator, but advanced to where we stopped writing. Use to find input consumed length or cells written length.
 OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
                                          const COORD target,
-                                         const bool setWrap,
+                                         const std::optional<bool> wrap,
                                          std::optional<size_t> limitRight)
 {
     // If we're not in bounds, exit early.
@@ -364,7 +371,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 
     //  Get the row and write the cells
     ROW& row = GetRowByOffset(target.Y);
-    const auto newIt = row.WriteCells(givenIt, target.X, setWrap, limitRight);
+    const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight);
 
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
@@ -532,17 +539,24 @@ bool TextBuffer::NewlineCursor()
 //Routine Description:
 // - Increments the circular buffer by one. Circular buffer is represented by FirstRow variable.
 //Arguments:
-// - <none>
+// - inVtMode - set to true in VT mode, so standard erase attributes are used for the new row.
 //Return Value:
 // - true if we successfully incremented the buffer.
-bool TextBuffer::IncrementCircularBuffer()
+bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
+    auto fillAttributes = _currentAttributes;
+    if (inVtMode)
+    {
+        // The VT standard requires that the new row is initialized with
+        // the current background color, but with no meta attributes set.
+        fillAttributes.SetStandardErase();
+    }
+    const bool fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -584,9 +598,9 @@ COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::View
     // Search the given viewport by starting at the bottom.
     coordEndOfText.Y = viewport.BottomInclusive();
 
-    const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
+    const auto& currRow = GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
+    coordEndOfText.X = gsl::narrow<short>(currRow.GetCharRow().MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
@@ -594,10 +608,10 @@ COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::View
     while (fDoBackUp)
     {
         coordEndOfText.Y--;
-        pCurrRow = &GetRowByOffset(coordEndOfText.Y);
+        const auto& backupRow = GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
+        coordEndOfText.X = gsl::narrow<short>(backupRow.GetCharRow().MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 
@@ -640,7 +654,7 @@ COORD TextBuffer::_GetPreviousFromCursor() const
     return coordPosition;
 }
 
-const SHORT TextBuffer::GetFirstRowIndex() const
+const SHORT TextBuffer::GetFirstRowIndex() const noexcept
 {
     return _firstRow;
 }
@@ -649,7 +663,7 @@ const Viewport TextBuffer::GetSize() const
     return Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
 }
 
-void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex)
+void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex) noexcept
 {
     _firstRow = FirstRowIndex;
 }
@@ -755,12 +769,12 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
     _RefreshRowIDs(std::nullopt);
 }
 
-Cursor& TextBuffer::GetCursor()
+Cursor& TextBuffer::GetCursor() noexcept
 {
     return _cursor;
 }
 
-const Cursor& TextBuffer::GetCursor() const
+const Cursor& TextBuffer::GetCursor() const noexcept
 {
     return _cursor;
 }
@@ -795,7 +809,7 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize)
 {
     RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
 
@@ -812,7 +826,7 @@ void TextBuffer::Reset()
     // rotate rows until the top row is at index 0
     try
     {
-        const ROW& newTopRow = _storage[TopRowIndex];
+        const ROW& newTopRow = _storage.at(TopRowIndex);
         while (&newTopRow != &_storage.front())
         {
             _storage.push_back(std::move(_storage.front()));
@@ -843,12 +857,12 @@ void TextBuffer::Reset()
     return S_OK;
 }
 
-const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
+const UnicodeStorage& TextBuffer::GetUnicodeStorage() const noexcept
 {
     return _unicodeStorage;
 }
 
-UnicodeStorage& TextBuffer::GetUnicodeStorage()
+UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
 {
     return _unicodeStorage;
 }
@@ -923,7 +937,7 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
     }
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
-    return _storage[prevRowIndex];
+    return _storage.at(prevRowIndex);
 }
 
 // Method Description:
@@ -932,9 +946,121 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 // - <none>
 // Return Value:
 // - This buffer's current render target.
-Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
+Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcept
 {
     return _renderTarget;
+}
+
+// Method Description:
+// - Get the COORD for the beginning of the word you are on
+// Arguments:
+// - target - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - includeCharacterRun - include the character run located at the beginning of the word
+// Return Value:
+// - The COORD for the first character on the "word"  (inclusive)
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun) const
+{
+    const auto bufferSize = GetSize();
+    COORD result = target;
+
+    // can't expand left
+    if (target.X == bufferSize.Left())
+    {
+        return result;
+    }
+
+    auto bufferIterator = GetTextDataAt(result);
+    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+    {
+        bufferSize.DecrementInBounds(result);
+        --bufferIterator;
+    }
+
+    if (includeCharacterRun)
+    {
+        // include character run for readable word
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+        {
+            result = GetWordStart(result, wordDelimiters);
+        }
+    }
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    {
+        // move off of delimiter
+        bufferSize.IncrementInBounds(result);
+    }
+
+    return result;
+}
+
+// Method Description:
+// - Get the COORD for the end of the word you are on
+// Arguments:
+// - target - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - includeDelimiterRun - include the delimiter runs located at the end of the word
+// Return Value:
+// - The COORD for the last character on the "word" (inclusive)
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun) const
+{
+    const auto bufferSize = GetSize();
+    COORD result = target;
+
+    // can't expand right
+    if (target.X == bufferSize.RightInclusive())
+    {
+        return result;
+    }
+
+    auto bufferIterator = GetTextDataAt(result);
+    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+    {
+        bufferSize.IncrementInBounds(result);
+        ++bufferIterator;
+    }
+
+    if (includeDelimiterRun)
+    {
+        // include delimiter run after word
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+        {
+            result = GetWordEnd(result, wordDelimiters);
+        }
+    }
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    {
+        // move off of delimiter
+        bufferSize.DecrementInBounds(result);
+    }
+
+    return result;
+}
+
+// Method Description:
+// - get delimiter class for buffer cell data
+// - used for double click selection and uia word navigation
+// Arguments:
+// - cellChar: the char saved to the buffer cell under observation
+// - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
+// Return Value:
+// - the delimiter class for the given char
+TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept
+{
+    if (cellChar.at(0) <= UNICODE_SPACE)
+    {
+        return DelimiterClass::ControlChar;
+    }
+    else if (wordDelimiters.find(cellChar) != std::wstring_view::npos)
+    {
+        return DelimiterClass::DelimiterChar;
+    }
+    else
+    {
+        return DelimiterClass::RegularChar;
+    }
 }
 
 // Routine Description:
@@ -977,9 +1103,9 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
         std::vector<COLORREF> selectionBkAttr;
 
         // preallocate to avoid reallocs
-        selectionText.reserve(highlight.Width() + 2); // + 2 for \r\n if we munged it
-        selectionFgAttr.reserve(highlight.Width() + 2);
-        selectionBkAttr.reserve(highlight.Width() + 2);
+        selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
+        selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
+        selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
 
         // copy char data into the string buffer, skipping trailing bytes
         while (it)
@@ -998,6 +1124,8 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                     selectionBkAttr.push_back(CellBkAttr);
                 }
             }
+#pragma warning(suppress : 26444)
+            // TODO GH 2675: figure out why there's custom construction/destruction happening here
             it++;
         }
 
@@ -1050,12 +1178,13 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - Generates a CF_HTML compliant structure based on the passed in text and color data
 // Arguments:
 // - rows - the text and color data we will format & encapsulate
+// - backgroundColor - default background color for characters, also used in padding
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string& htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const std::string& htmlTitle)
 {
     try
     {
@@ -1076,20 +1205,14 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
             htmlBuilder << "display:inline-block;";
             htmlBuilder << "white-space:pre;";
 
-            // fixme: this is only walkaround for filling background after last char of row.
-            // It is based on first char of first row, not the actual char at correct position.
             htmlBuilder << "background-color:";
-            const COLORREF globalBgColor = rows.BkAttr.at(0).at(0);
-            htmlBuilder << Utils::ColorToHexString(globalBgColor);
+            htmlBuilder << Utils::ColorToHexString(backgroundColor);
             htmlBuilder << ";";
 
             htmlBuilder << "font-family:";
-            if (fontFaceName[0] != '\0')
-            {
-                htmlBuilder << "'";
-                htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
-                htmlBuilder << "',";
-            }
+            htmlBuilder << "'";
+            htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
+            htmlBuilder << "',";
             // even with different font, add monospace as fallback
             htmlBuilder << "monospace;";
 
@@ -1109,7 +1232,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         bool hasWrittenAnyText = false;
         std::optional<COLORREF> fgColor = std::nullopt;
         std::optional<COLORREF> bkColor = std::nullopt;
-        for (UINT row = 0; row < rows.text.size(); row++)
+        for (size_t row = 0; row < rows.text.size(); row++)
         {
             size_t startOffset = 0;
 
@@ -1118,34 +1241,50 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 htmlBuilder << "<BR>";
             }
 
-            for (UINT col = 0; col < rows.text[row].length(); col++)
+            for (size_t col = 0; col < rows.text.at(row).length(); col++)
             {
                 // do not include \r nor \n as they don't have attributes
                 // and are not HTML friendly. For line break use '<BR>' instead.
-                bool isLastCharInRow =
-                    col == rows.text[row].length() - 1 ||
-                    rows.text[row][col + 1] == '\r' ||
-                    rows.text[row][col + 1] == '\n';
+                const bool isLastCharInRow =
+                    col == rows.text.at(row).length() - 1 ||
+                    rows.text.at(row).at(col + 1) == '\r' ||
+                    rows.text.at(row).at(col + 1) == '\n';
 
                 bool colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr[row][col] != fgColor.value())
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
                 {
-                    fgColor = rows.FgAttr[row][col];
+                    fgColor = rows.FgAttr.at(row).at(col);
                     colorChanged = true;
                 }
 
-                if (!bkColor.has_value() || rows.BkAttr[row][col] != bkColor.value())
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
                 {
-                    bkColor = rows.BkAttr[row][col];
+                    bkColor = rows.BkAttr.at(row).at(col);
                     colorChanged = true;
                 }
 
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
-                    if (col > startOffset)
+                    if (col >= startOffset)
                     {
-                        // note: this should be escaped (for '<', '>', and '&'),
-                        // however MS Word doesn't appear to support HTML entities
-                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text[row].data() + startOffset, col - startOffset + includeCurrent));
+                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
+                        for (const auto c : unescapedText)
+                        {
+                            switch (c)
+                            {
+                            case '<':
+                                htmlBuilder << "&lt;";
+                                break;
+                            case '>':
+                                htmlBuilder << "&gt;";
+                                break;
+                            case '&':
+                                htmlBuilder << "&amp;";
+                                break;
+                            default:
+                                htmlBuilder << c;
+                            }
+                        }
+
                         startOffset = col;
                     }
                 };
@@ -1213,6 +1352,188 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         clipHeaderBuilder << "EndSelection:" << std::setw(10) << fragEndPos << "\r\n";
 
         return clipHeaderBuilder.str() + htmlBuilder.str();
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return {};
+    }
+}
+
+// Routine Description:
+// - Generates an RTF document based on the passed in text and color data
+//   RTF 1.5 Spec: https://www.biblioscape.com/rtf15_spec.htm
+// Arguments:
+// - rows - the text and color data we will format & encapsulate
+// - backgroundColor - default background color for characters, also used in padding
+// - fontHeightPoints - the unscaled font height
+// - fontFaceName - the name of the font used
+// - htmlTitle - value used in title tag of html header. Used to name the application
+// Return Value:
+// - string containing the generated RTF
+std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
+{
+    try
+    {
+        std::ostringstream rtfBuilder;
+
+        // start rtf
+        rtfBuilder << "{";
+
+        // Standard RTF header.
+        // This is similar to the header gnerated by WordPad.
+        // \ansi - specifies that the ANSI char set is used in the current doc
+        // \ansicpg1252 - represents the ANSI code page which is used to perform the Unicode to ANSI conversion when writing RTF text
+        // \deff0 - specifes that the default font for the document is the one at index 0 in the font table
+        // \nouicompat - ?
+        rtfBuilder << "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
+
+        // font table
+        rtfBuilder << "{\\fonttbl{\\f0\\fmodern\\fcharset0 " << ConvertToA(CP_UTF8, fontFaceName) << ";}}";
+
+        // map to keep track of colors:
+        // keys are colors represented by COLORREF
+        // values are indices of the corresponding colors in the color table
+        std::unordered_map<COLORREF, int> colorMap;
+        int nextColorIndex = 1; // leave 0 for the default color and start from 1.
+
+        // RTF color table
+        std::ostringstream colorTableBuilder;
+        colorTableBuilder << "{\\colortbl ;";
+        colorTableBuilder << "\\red" << static_cast<int>(GetRValue(backgroundColor))
+                          << "\\green" << static_cast<int>(GetGValue(backgroundColor))
+                          << "\\blue" << static_cast<int>(GetBValue(backgroundColor))
+                          << ";";
+        colorMap[backgroundColor] = nextColorIndex++;
+
+        // content
+        std::ostringstream contentBuilder;
+        contentBuilder << "\\viewkind4\\uc4";
+
+        // paragraph styles
+        // \fs specificies font size in half-points i.e. \fs20 results in a font size
+        // of 10 pts. That's why, font size is multiplied by 2 here.
+        contentBuilder << "\\pard\\slmult1\\f0\\fs" << std::to_string(2 * fontHeightPoints)
+                       << "\\highlight1"
+                       << " ";
+
+        std::optional<COLORREF> fgColor = std::nullopt;
+        std::optional<COLORREF> bkColor = std::nullopt;
+        for (size_t row = 0; row < rows.text.size(); ++row)
+        {
+            size_t startOffset = 0;
+
+            if (row != 0)
+            {
+                contentBuilder << "\\line "; // new line
+            }
+
+            for (size_t col = 0; col < rows.text.at(row).length(); ++col)
+            {
+                const bool isLastCharInRow =
+                    col == rows.text.at(row).length() - 1 ||
+                    rows.text.at(row).at(col + 1) == '\r' ||
+                    rows.text.at(row).at(col + 1) == '\n';
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                {
+                    fgColor = rows.FgAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                {
+                    bkColor = rows.BkAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                const auto writeAccumulatedChars = [&](bool includeCurrent) {
+                    if (col >= startOffset)
+                    {
+                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
+                        for (const auto c : unescapedText)
+                        {
+                            switch (c)
+                            {
+                            case '\\':
+                            case '{':
+                            case '}':
+                                contentBuilder << "\\" << c;
+                                break;
+                            default:
+                                contentBuilder << c;
+                            }
+                        }
+
+                        startOffset = col;
+                    }
+                };
+
+                if (colorChanged)
+                {
+                    writeAccumulatedChars(false);
+
+                    int bkColorIndex = 0;
+                    if (colorMap.find(bkColor.value()) != colorMap.end())
+                    {
+                        // color already exists in the map, just retrieve the index
+                        bkColorIndex = colorMap[bkColor.value()];
+                    }
+                    else
+                    {
+                        // color not present in the map, so add it
+                        colorTableBuilder << "\\red" << static_cast<int>(GetRValue(bkColor.value()))
+                                          << "\\green" << static_cast<int>(GetGValue(bkColor.value()))
+                                          << "\\blue" << static_cast<int>(GetBValue(bkColor.value()))
+                                          << ";";
+                        colorMap[bkColor.value()] = nextColorIndex;
+                        bkColorIndex = nextColorIndex++;
+                    }
+
+                    int fgColorIndex = 0;
+                    if (colorMap.find(fgColor.value()) != colorMap.end())
+                    {
+                        // color already exists in the map, just retrieve the index
+                        fgColorIndex = colorMap[fgColor.value()];
+                    }
+                    else
+                    {
+                        // color not present in the map, so add it
+                        colorTableBuilder << "\\red" << static_cast<int>(GetRValue(fgColor.value()))
+                                          << "\\green" << static_cast<int>(GetGValue(fgColor.value()))
+                                          << "\\blue" << static_cast<int>(GetBValue(fgColor.value()))
+                                          << ";";
+                        colorMap[fgColor.value()] = nextColorIndex;
+                        fgColorIndex = nextColorIndex++;
+                    }
+
+                    contentBuilder << "\\highglight" << bkColorIndex
+                                   << "\\cf" << fgColorIndex
+                                   << " ";
+                }
+
+                if (isLastCharInRow)
+                {
+                    writeAccumulatedChars(true);
+                    break;
+                }
+            }
+        }
+
+        // end colortbl
+        colorTableBuilder << "}";
+
+        // add color table to the final RTF
+        rtfBuilder << colorTableBuilder.str();
+
+        // add the text content to the final RTF
+        rtfBuilder << contentBuilder.str();
+
+        // end rtf
+        rtfBuilder << "}";
+
+        return rtfBuilder.str();
     }
     catch (...)
     {

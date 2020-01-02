@@ -24,19 +24,18 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
     }
 
-    Windows::UI::Xaml::UIElement TitlebarControl::Content()
+    IInspectable TitlebarControl::Content()
     {
-        return ContentRoot().Children().Size() > 0 ? ContentRoot().Children().GetAt(0) : nullptr;
+        return ContentRoot().Content();
     }
 
-    void TitlebarControl::Content(Windows::UI::Xaml::UIElement content)
+    void TitlebarControl::Content(IInspectable content)
     {
-        ContentRoot().Children().Clear();
-        ContentRoot().Children().Append(content);
+        ContentRoot().Content(content);
     }
 
-    void TitlebarControl::Root_SizeChanged(const IInspectable& sender,
-                                           const Windows::UI::Xaml::SizeChangedEventArgs& e)
+    void TitlebarControl::Root_SizeChanged(const IInspectable& /*sender*/,
+                                           const Windows::UI::Xaml::SizeChangedEventArgs& /*e*/)
     {
         const auto windowWidth = ActualWidth();
         const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
@@ -59,27 +58,25 @@ namespace winrt::TerminalApp::implementation
         ::GetWindowPlacement(_window, &placement);
         if (placement.showCmd == SW_SHOWNORMAL)
         {
-            MinMaxCloseControl().Maximize();
             ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
         }
         else if (placement.showCmd == SW_SHOWMAXIMIZED)
         {
-            MinMaxCloseControl().RestoreDown();
             ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
         }
     }
 
-    void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         _OnMaximizeOrRestore(HTMAXBUTTON);
     }
 
-    void TitlebarControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
+    void TitlebarControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& /*e*/)
     {
         _OnMaximizeOrRestore(HTCAPTION);
     }
 
-    void TitlebarControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void TitlebarControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         if (_window)
         {
@@ -87,9 +84,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void TitlebarControl::Close_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        ::PostQuitMessage(0);
+        ::PostMessage(_window, WM_SYSCOMMAND, SC_CLOSE, 0);
+    }
+
+    void TitlebarControl::SetWindowVisualState(WindowVisualState visualState)
+    {
+        MinMaxCloseControl().SetWindowVisualState(visualState);
     }
 
 }

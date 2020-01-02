@@ -28,6 +28,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
+// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
@@ -35,10 +36,14 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                             const COLORREF colorBackground,
                                                             const WORD /*legacyColorAttribute*/,
-                                                            const bool isBold,
+                                                            const ExtendedAttributes extendedAttrs,
                                                             const bool /*isSettingDefaultBrushes*/) noexcept
 {
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
+                                                  colorBackground,
+                                                  WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
+                                                  _ColorTable,
+                                                  _cColorTable);
 }
 
 // Routine Description:
@@ -104,7 +109,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring_view wstr) noexcept
 {
     return VtEngine::_WriteTerminalAscii(wstr);
 }

@@ -24,7 +24,7 @@ Revision History:
 class ShortcutSerialization
 {
 public:
-    [[nodiscard]] static NTSTATUS s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, const BOOL fEastAsianSystem, const BOOL fForceV2);
+    [[nodiscard]] static NTSTATUS s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo, const BOOL fEastAsianSystem, const BOOL fForceV2, const bool writeTerminalSettings);
     [[nodiscard]] static NTSTATUS s_GetLinkConsoleProperties(_Inout_ PCONSOLE_STATE_INFO pStateInfo);
     [[nodiscard]] static NTSTATUS s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pStateInfo,
                                                   _Out_ BOOL* const pfReadConsoleProperties,

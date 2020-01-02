@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     TerminalSettings::TerminalSettings() :
         _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
         _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+        _selectionBackground{ DEFAULT_FOREGROUND },
         _colorTable{},
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
@@ -23,7 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
         _copyOnSelect{ false },
         _useAcrylic{ false },
-        _closeOnExit{ true },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
@@ -56,6 +56,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::DefaultBackground(uint32_t value)
     {
         _defaultBackground = value;
+    }
+
+    uint32_t TerminalSettings::SelectionBackground()
+    {
+        return _selectionBackground;
+    }
+
+    void TerminalSettings::SelectionBackground(uint32_t value)
+    {
+        _selectionBackground = value;
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const
@@ -168,16 +178,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::UseAcrylic(bool value)
     {
         _useAcrylic = value;
-    }
-
-    bool TerminalSettings::CloseOnExit()
-    {
-        return _closeOnExit;
-    }
-
-    void TerminalSettings::CloseOnExit(bool value)
-    {
-        _closeOnExit = value;
     }
 
     double TerminalSettings::TintOpacity()
@@ -310,6 +310,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _startingTitle = value;
     }
 
+    bool TerminalSettings::SuppressApplicationTitle()
+    {
+        return _suppressApplicationTitle;
+    }
+
+    void TerminalSettings::SuppressApplicationTitle(bool value)
+    {
+        _suppressApplicationTitle = value;
+    }
+
     hstring TerminalSettings::EnvironmentVariables()
     {
         return _envVars;
@@ -328,6 +338,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::ScrollState(Settings::ScrollbarState const& value) noexcept
     {
         _scrollbarState = value;
+    }
+
+    bool TerminalSettings::RetroTerminalEffect()
+    {
+        return _retroTerminalEffect;
+    }
+
+    void TerminalSettings::RetroTerminalEffect(bool value)
+    {
+        _retroTerminalEffect = value;
     }
 
 }

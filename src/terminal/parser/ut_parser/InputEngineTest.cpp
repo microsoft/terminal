@@ -94,7 +94,7 @@ public:
         Log::Comment(
             NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length()));
 
-        _stateMachine->ProcessString(&vtseq[0], vtseq.length());
+        _stateMachine->ProcessString(vtseq);
         Log::Comment(L"String processed");
     }
 
@@ -230,6 +230,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(AltBackspaceTest);
     TEST_METHOD(AltCtrlDTest);
     TEST_METHOD(AltIntermediateTest);
+    TEST_METHOD(AltBackspaceEnterTest);
 
     friend class TestInteractDispatch;
 };
@@ -241,14 +242,12 @@ public:
                          _In_ TestState* testState);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
     virtual bool WriteCtrlC() override;
-    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                    _In_reads_(cParams) const unsigned short* const rgusParams,
-                                    const size_t cParams) override; // DTTERM_WindowManipulation
-    virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
-                             const size_t cch) override;
+    virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                    const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+    virtual bool WriteString(const std::wstring_view string) override;
 
-    virtual bool MoveCursor(const unsigned int row,
-                            const unsigned int col) override;
+    virtual bool MoveCursor(const size_t row,
+                            const size_t col) override;
 
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
@@ -277,27 +276,26 @@ bool TestInteractDispatch::WriteCtrlC()
     return WriteInput(inputEvents);
 }
 
-bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                              _In_reads_(cParams) const unsigned short* const rgusParams,
-                                              const size_t cParams)
+bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                              const std::basic_string_view<size_t> parameters)
 {
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
-    VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, uiFunction);
-    for (size_t i = 0; i < cParams; i++)
+    VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
+    for (size_t i = 0; i < parameters.size(); i++)
     {
-        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], rgusParams[i]);
+        unsigned short actual;
+        VERIFY_SUCCEEDED(SizeTToUShort(parameters.at(i), &actual));
+        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
     }
     return true;
 }
 
-bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
-                                       const size_t cch)
+bool TestInteractDispatch::WriteString(const std::wstring_view string)
 {
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
-    for (size_t i = 0; i < cch; ++i)
+    for (const auto& wch : string)
     {
-        const wchar_t wch = pws[i];
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
         std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_USA);
@@ -309,8 +307,7 @@ bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
     return WriteInput(keyEvents);
 }
 
-bool TestInteractDispatch::MoveCursor(const unsigned int row,
-                                      const unsigned int col)
+bool TestInteractDispatch::MoveCursor(const size_t row, const size_t col)
 {
     VERIFY_IS_TRUE(_testState->_expectCursorPosition);
     COORD received = { static_cast<short>(col), static_cast<short>(row) };
@@ -323,8 +320,9 @@ void InputEngineTest::C0Test()
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -411,7 +409,7 @@ void InputEngineTest::C0Test()
 
         testState.vExpectedInput.push_back(inputRec);
 
-        _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
+        _stateMachine->ProcessString(inputSeq);
     }
 }
 
@@ -419,9 +417,9 @@ void InputEngineTest::AlphanumericTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -456,7 +454,7 @@ void InputEngineTest::AlphanumericTest()
 
         testState.vExpectedInput.push_back(inputRec);
 
-        _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
+        _stateMachine->ProcessString(inputSeq);
     }
 }
 
@@ -464,8 +462,9 @@ void InputEngineTest::RoundTripTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -524,9 +523,9 @@ void InputEngineTest::WindowManipulationTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine.get());
     testState._stateMachine = _stateMachine.get();
 
@@ -583,7 +582,7 @@ void InputEngineTest::WindowManipulationTest()
         std::wstring seq = seqBuilder.str();
         Log::Comment(NoThrowString().Format(
             L"Processing \"%s\"", seq.c_str()));
-        _stateMachine->ProcessString(&seq[0], seq.length());
+        _stateMachine->ProcessString(seq);
     }
 }
 
@@ -591,9 +590,9 @@ void InputEngineTest::NonAsciiTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputStringCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine.get());
     testState._stateMachine = _stateMachine.get();
     Log::Comment(L"Sending various non-ascii strings, and seeing what we get out");
@@ -624,7 +623,7 @@ void InputEngineTest::NonAsciiTest()
     testState.vExpectedInput.push_back(test);
     test.Event.KeyEvent.bKeyDown = FALSE;
     testState.vExpectedInput.push_back(test);
-    _stateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+    _stateMachine->ProcessString(utf8Input);
 
     // "旅", UTF-16: 0x65C5, utf8: "0xE6 0x97 0x85"
     utf8Input = L"\u65C5";
@@ -638,7 +637,7 @@ void InputEngineTest::NonAsciiTest()
     testState.vExpectedInput.push_back(test);
     test.Event.KeyEvent.bKeyDown = FALSE;
     testState.vExpectedInput.push_back(test);
-    _stateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+    _stateMachine->ProcessString(utf8Input);
 }
 
 void InputEngineTest::CursorPositioningTest()
@@ -648,9 +647,9 @@ void InputEngineTest::CursorPositioningTest()
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     VERIFY_IS_NOT_NULL(dispatch.get());
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(dispatch.release(), true);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
     VERIFY_IS_NOT_NULL(inputEngine.get());
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -666,7 +665,7 @@ void InputEngineTest::CursorPositioningTest()
 
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
-    _stateMachine->ProcessString(&seq[0], seq.length());
+    _stateMachine->ProcessString(seq);
 
     testState._expectCursorPosition = false;
 
@@ -682,16 +681,16 @@ void InputEngineTest::CursorPositioningTest()
     testState.vExpectedInput.push_back(inputRec);
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
-    _stateMachine->ProcessString(&seq[0], seq.length());
+    _stateMachine->ProcessString(seq);
 }
 
 void InputEngineTest::CSICursorBackTabTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -710,16 +709,16 @@ void InputEngineTest::CSICursorBackTabTest()
     const std::wstring seq = L"\x1b[Z";
     Log::Comment(NoThrowString().Format(
         L"Processing \"%s\"", seq.c_str()));
-    _stateMachine->ProcessString(&seq[0], seq.length());
+    _stateMachine->ProcessString(seq);
 }
 
 void InputEngineTest::AltBackspaceTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -744,9 +743,9 @@ void InputEngineTest::AltCtrlDTest()
 {
     TestState testState;
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
-
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
-    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
@@ -808,8 +807,9 @@ void InputEngineTest::AltIntermediateTest()
             terminalInput.HandleKey(ev.get());
         }
     };
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfnInputStateMachineCallback, &testState));
-    auto stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfnInputStateMachineCallback, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(stateMachine);
     testState._stateMachine = stateMachine.get();
 
@@ -825,4 +825,55 @@ void InputEngineTest::AltIntermediateTest()
     expectedTranslation = seq;
     Log::Comment(NoThrowString().Format(L"Processing \"\\x05\""));
     stateMachine->ProcessString(seq);
+}
+
+void InputEngineTest::AltBackspaceEnterTest()
+{
+    // Created as a test for microsoft/terminal#2746. See that issue for mode
+    // details. We're going to send an Alt+Backspace to conpty, followed by an
+    // enter. The enter should be processed as just a single VK_ENTER, not a
+    // alt+enter.
+
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    INPUT_RECORD inputRec;
+
+    inputRec.EventType = KEY_EVENT;
+    inputRec.Event.KeyEvent.bKeyDown = TRUE;
+    inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
+    inputRec.Event.KeyEvent.wRepeatCount = 1;
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
+
+    // First, expect a alt+backspace.
+    testState.vExpectedInput.push_back(inputRec);
+
+    std::wstring seq = L"\x1b\x7f";
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x7f\""));
+    _stateMachine->ProcessString(seq);
+
+    // Ensure the state machine has correctly returned to the ground state
+    VERIFY_ARE_EQUAL(StateMachine::VTStates::Ground, _stateMachine->_state);
+
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
+    inputRec.Event.KeyEvent.dwControlKeyState = 0;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x0d'; //maybe \xa
+
+    // Then, expect a enter
+    testState.vExpectedInput.push_back(inputRec);
+
+    seq = L"\x0d";
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x0d\""));
+    _stateMachine->ProcessString(seq);
+
+    // Ensure the state machine has correctly returned to the ground state
+    VERIFY_ARE_EQUAL(StateMachine::VTStates::Ground, _stateMachine->_state);
 }

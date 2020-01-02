@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- By default, binplace our output under the bin/ directory in the root of
+       the project. The other non-cppwinrt projects are binplaced there as well.
+       However, Cascadia projects want to be built into an appx, and the wapproj
+       that consumes them will complain if you do this. So they'll set
+       NoOutputRedirection before including this props file.
+  -->
+  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
+    <OutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutputPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- This one is always set so that non-redirected projects can depend on it. -->
+    <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OpenConsoleCommonOutDir>
+  </PropertyGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
   <ItemGroup Label="ProjectConfigurations">
   <ProjectConfiguration Include="AuditMode|Win32">
       <Configuration>AuditMode</Configuration>
@@ -39,22 +56,18 @@
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+
   <PropertyGroup Label="Globals">
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
+
+  <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
-    <UseDebugLibraries>true</UseDebugLibraries>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'" Label="Configuration">
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <!-- For ALL build types-->
+
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -63,8 +76,8 @@
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
       <TreatWarningAsError>true</TreatWarningAsError>
       <!-- disable warning on nameless structs (4201) -->
-      <DisableSpecificWarnings>4201;4312;4467</DisableSpecificWarnings>
-      <PreprocessorDefinitions>EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4201;4312;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -76,14 +89,21 @@
       <AdditionalOptions>/std:c++17 /utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
-        <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)FullPDB.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
     </Link>
   </ItemDefinitionGroup>
+
   <!-- For Debug ONLY -->
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -93,7 +113,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+
   <!-- For Release ONLY -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
@@ -107,17 +133,20 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <ClCompile>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
+
   <!-- For our Audit mode -->
   <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
     <CodeAnalysisRuleSet>$(SolutionDir)\src\StaticAnalysis.ruleset</CodeAnalysisRuleSet>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CAExcludePath>$(SolutionDir)\dep</CAExcludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>

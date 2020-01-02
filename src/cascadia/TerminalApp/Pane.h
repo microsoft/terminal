@@ -23,67 +23,88 @@
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+enum class Borders : int
+{
+    None = 0x0,
+    Top = 0x1,
+    Bottom = 0x2,
+    Left = 0x4,
+    Right = 0x8
+};
+DEFINE_ENUM_FLAG_OPERATORS(Borders);
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    enum class SplitState : int
-    {
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
-    };
+    Pane(const GUID& profile,
+         const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
+         const bool lastFocused = false);
 
-    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, const bool lastFocused = false);
-
-    std::shared_ptr<Pane> GetFocusedPane();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    std::shared_ptr<Pane> GetActivePane();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
     std::optional<GUID> GetFocusedProfile();
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool WasLastFocused() const noexcept;
-    void UpdateFocus();
+    void UpdateVisuals();
+    void ClearActive();
+    void SetActive();
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
+                        const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-    bool CanSplit(SplitState splitType);
-    void Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    bool CanSplit(winrt::TerminalApp::SplitState splitType);
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::TerminalApp::SplitState splitType,
+                                                                  const GUID& profile,
+                                                                  const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void Close();
 
-    DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+    WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+    DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
-    winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Border _border{};
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
-    SplitState _splitState{ SplitState::None };
+    winrt::TerminalApp::SplitState _splitState{ winrt::TerminalApp::SplitState::None };
     std::optional<float> _firstPercent{ std::nullopt };
     std::optional<float> _secondPercent{ std::nullopt };
 
-    bool _lastFocused{ false };
+    bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };
-    winrt::event_token _connectionClosedToken{ 0 };
+    winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
+    winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
+
     std::shared_mutex _createCloseLock{};
+
+    Borders _borders{ Borders::None };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    bool _CanSplit(SplitState splitType);
-    void _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    bool _CanSplit(winrt::TerminalApp::SplitState splitType);
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::TerminalApp::SplitState splitType,
+                                                                   const GUID& profile,
+                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
+    void _UpdateBorders();
 
     bool _Resize(const winrt::TerminalApp::Direction& direction);
     bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
@@ -91,12 +112,15 @@ private:
     void _CloseChild(const bool closeFirst);
 
     void _FocusFirstChild();
-    void _ControlClosedHandler();
+    void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
+    void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                 winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
+    winrt::TerminalApp::SplitState _convertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.
@@ -107,27 +131,29 @@ private:
     //   again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
-    // - splitType: The SplitState to compare
+    // - splitType: The winrt::TerminalApp::SplitState to compare
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
-    //   SplitState::None.
+    //   winrt::TerminalApp::SplitState::None.
     static constexpr bool DirectionMatchesSplit(const winrt::TerminalApp::Direction& direction,
-                                                const SplitState& splitType)
+                                                const winrt::TerminalApp::SplitState& splitType)
     {
-        if (splitType == SplitState::None)
+        if (splitType == winrt::TerminalApp::SplitState::None)
         {
             return false;
         }
-        else if (splitType == SplitState::Horizontal)
+        else if (splitType == winrt::TerminalApp::SplitState::Horizontal)
         {
             return direction == winrt::TerminalApp::Direction::Up ||
                    direction == winrt::TerminalApp::Direction::Down;
         }
-        else if (splitType == SplitState::Vertical)
+        else if (splitType == winrt::TerminalApp::SplitState::Vertical)
         {
             return direction == winrt::TerminalApp::Direction::Left ||
                    direction == winrt::TerminalApp::Direction::Right;
         }
         return false;
     }
+
+    static void _SetupResources();
 };

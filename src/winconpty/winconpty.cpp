@@ -200,7 +200,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 //      write the resize message to the pty.
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size)
 {
-    if (pPty == NULL)
+    if (pPty == NULL || size.X < 0 || size.Y < 0)
     {
         return E_INVALIDARG;
     }
@@ -308,21 +308,22 @@ VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 //      reply to this message, the conpty will not process any input until it
 //      does. Most *nix terminals and the Windows Console (after Windows 10
 //      Anniversary Update) will be able to handle such a message.
-HRESULT WINAPI CreatePseudoConsole(_In_ COORD size,
-                                   _In_ HANDLE hInput,
-                                   _In_ HANDLE hOutput,
-                                   _In_ DWORD dwFlags,
-                                   _Out_ HPCON* phPC)
+
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ COORD size,
+                                                    _In_ HANDLE hInput,
+                                                    _In_ HANDLE hOutput,
+                                                    _In_ DWORD dwFlags,
+                                                    _Out_ HPCON* phPC)
 {
-    return CreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
+    return ConptyCreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
 }
 
-HRESULT CreatePseudoConsoleAsUser(_In_ HANDLE hToken,
-                                  _In_ COORD size,
-                                  _In_ HANDLE hInput,
-                                  _In_ HANDLE hOutput,
-                                  _In_ DWORD dwFlags,
-                                  _Out_ HPCON* phPC)
+extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
+                                                   _In_ COORD size,
+                                                   _In_ HANDLE hInput,
+                                                   _In_ HANDLE hOutput,
+                                                   _In_ DWORD dwFlags,
+                                                   _Out_ HPCON* phPC)
 {
     if (phPC == NULL)
     {
@@ -355,7 +356,7 @@ HRESULT CreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 
 // Function Description:
 // Resizes the given conpty to the specified size, in characters.
-HRESULT WINAPI ResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
+extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
 {
     PseudoConsole* const pPty = (PseudoConsole*)hPC;
     HRESULT hr = pPty == NULL ? E_INVALIDARG : S_OK;
@@ -372,7 +373,7 @@ HRESULT WINAPI ResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
 //      console window they were running in was closed.
 // This can fail if the conhost hosting the pseudoconsole failed to be
 //      terminated, or if the pseudoconsole was already terminated.
-VOID WINAPI ClosePseudoConsole(_In_ HPCON hPC)
+extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
     PseudoConsole* const pPty = (PseudoConsole*)hPC;
     if (pPty != NULL)

@@ -42,7 +42,7 @@ steps:
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    msbuildArgs: ${{ parameters.additionalBuildArguments }}
+    msbuildArgs: "${{ parameters.additionalBuildArguments }}"
     clean: true
     maximumCpuCount: true
 
@@ -53,6 +53,14 @@ steps:
     script: |
       $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
       .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
+
+- task: powershell@2
+  displayName: 'Source Index PDBs'
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Index-Pdbs.ps1
+    arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+    errorActionPreference: silentlyContinue
 
 - task: VSTest@2
   displayName: 'Run Unit Tests'

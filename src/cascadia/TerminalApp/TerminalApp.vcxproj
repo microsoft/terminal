@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
-  <PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
+    <ProjectName>TerminalApp</ProjectName>
+    <RootNamespace>TerminalApp</RootNamespace>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
-    <ProjectName>TerminalApp</ProjectName>
-    <RootNamespace>TerminalApp</RootNamespace>
-  </PropertyGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
   </ItemGroup>
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in TerminalAppLib.vcxproj instead! -->
+    <ClInclude Include="AppLogic.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="TerminalPage.h" />
     <ClInclude Include="MinMaxCloseControl.h" />
@@ -60,38 +62,24 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
     include Settings and Connection, since Control will include them for us) -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
-
     <!-- Reference TerminalAppLib here, so we can use it's TerminalApp.winmd as
     our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" >
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-
   </ItemGroup>
-
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
     <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
     <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -99,18 +87,13 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-
       <!-- TerminalAppLib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
-  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- Import this set of targets that fixes a VS bug that manifests when using
   the TerminalAppLib project -->
   <Import Project="FixVisualStudioBug.targets" />
-
 </Project>

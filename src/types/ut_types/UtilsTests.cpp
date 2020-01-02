@@ -20,6 +20,7 @@ class UtilsTests
 
     TEST_METHOD(TestClampToShortMax);
     TEST_METHOD(TestSwapColorPalette);
+    TEST_METHOD(TestGuidToString);
 };
 
 void UtilsTests::TestClampToShortMax()
@@ -52,11 +53,11 @@ void UtilsTests::TestSwapColorPalette()
     std::array<COLORREF, COLOR_TABLE_SIZE> consoleTable;
 
     gsl::span<COLORREF> terminalTableView = { &terminalTable[0], gsl::narrow<ptrdiff_t>(terminalTable.size()) };
-    gsl::span<COLORREF> consoleTableleView = { &consoleTable[0], gsl::narrow<ptrdiff_t>(consoleTable.size()) };
+    gsl::span<COLORREF> consoleTableView = { &consoleTable[0], gsl::narrow<ptrdiff_t>(consoleTable.size()) };
 
     // First set up the colors
     InitializeCampbellColorTable(terminalTableView);
-    InitializeCampbellColorTableForConhost(consoleTableleView);
+    InitializeCampbellColorTableForConhost(consoleTableView);
 
     VERIFY_ARE_EQUAL(terminalTable[0], consoleTable[0]);
     VERIFY_ARE_EQUAL(terminalTable[1], consoleTable[4]);
@@ -74,4 +75,17 @@ void UtilsTests::TestSwapColorPalette()
     VERIFY_ARE_EQUAL(terminalTable[13], consoleTable[13]);
     VERIFY_ARE_EQUAL(terminalTable[14], consoleTable[11]);
     VERIFY_ARE_EQUAL(terminalTable[15], consoleTable[15]);
+}
+
+void UtilsTests::TestGuidToString()
+{
+    constexpr GUID constantGuid{
+        0x01020304, 0x0506, 0x0708, { 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10 }
+    };
+    constexpr std::wstring_view constantGuidString{ L"{01020304-0506-0708-090a-0b0c0d0e0f10}" };
+
+    auto generatedGuid{ GuidToString(constantGuid) };
+
+    VERIFY_ARE_EQUAL(constantGuidString.size(), generatedGuid.size());
+    VERIFY_ARE_EQUAL(constantGuidString, generatedGuid);
 }

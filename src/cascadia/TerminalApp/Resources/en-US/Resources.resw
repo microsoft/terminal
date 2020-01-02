@@ -129,8 +129,16 @@
     <value>Found multiple profiles with the same GUID in your settings file - ignoring duplicates. Make sure each profile's GUID is unique.
 </value>
   </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>Found a profile with an invalid "colorScheme". Defaulting that profile to the default colors. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.
+</value>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>No profiles were found in your settings.
+</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>All profiles were hidden in your settings. You must have at least one non-hidden profile.
 </value>
   </data>
   <data name="ReloadJsonParseErrorText" xml:space="preserve">
@@ -149,7 +157,7 @@ Temporarily using the Windows Terminal default settings.
     <value>Encountered errors while loading user settings</value>
   </data>
   <data name="Ok" xml:space="preserve">
-    <value>Ok</value>
+    <value>OK</value>
   </data>
   <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to reload settings</value>
@@ -192,5 +200,14 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="CloseWindowWarningTitle" xml:space="preserve">
+    <value>Do you want to close all tabs?</value>
   </data>
 </root>

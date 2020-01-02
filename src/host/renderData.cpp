@@ -27,6 +27,19 @@ Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 }
 
 // Routine Description:
+// - Retrieves the end position of the text buffer. We use
+//   the cursor position as the text buffer end position
+// Return Value:
+// - COORD of the end position of the text buffer
+COORD RenderData::GetTextBufferEndPosition() const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Viewport bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
+    COORD endPosition{ bufferSize.Width() - 1, bufferSize.BottomInclusive() };
+    return endPosition;
+}
+
+// Routine Description:
 // - Provides access to the text data that can be presented. Check GetViewport() for
 //   the appropriate windowing.
 // Return Value:
@@ -368,5 +381,29 @@ void RenderData::ClearSelection()
 void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+}
+
+// Routine Description:
+// - Gets the current selection anchor position
+// Arguments:
+// - none
+// Return Value:
+// - current selection anchor
+const COORD RenderData::GetSelectionAnchor() const
+{
+    return Selection::Instance().GetSelectionAnchor();
+}
+
+// Routine Description:
+// - Given two points in the buffer space, color the selection between the two with the given attribute.
+// - This will create an internal selection rectangle covering the two points, assume a line selection,
+//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
+// Arguments:
+// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
+// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
+// - attr - Color to apply to region.
+void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
+{
+    Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }
 #pragma endregion

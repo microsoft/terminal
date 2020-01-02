@@ -128,19 +128,19 @@ COORD Terminal::GetCursorPosition()
 }
 
 // Method Description:
-// - deletes uiCount characters starting from the cursor's current position
+// - deletes count characters starting from the cursor's current position
 // - it moves over the remaining text to 'replace' the deleted text
 // - for example, if the buffer looks like this ('|' is the cursor): [abc|def]
 // - calling DeleteCharacter(1) will change it to: [abc|ef],
 // - i.e. the 'd' gets deleted and the 'ef' gets shifted over 1 space and **retain their previous text attributes**
 // Arguments:
-// - uiCount, the number of characters to delete
+// - count, the number of characters to delete
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::DeleteCharacter(const unsigned int uiCount)
+bool Terminal::DeleteCharacter(const size_t count)
 {
     SHORT dist;
-    if (!SUCCEEDED(UIntToShort(uiCount, &dist)))
+    if (!SUCCEEDED(SizeTToShort(count, &dist)))
     {
         return false;
     }
@@ -175,22 +175,22 @@ bool Terminal::DeleteCharacter(const unsigned int uiCount)
 }
 
 // Method Description:
-// - Inserts uiCount spaces starting from the cursor's current position, moving over the existing text
+// - Inserts count spaces starting from the cursor's current position, moving over the existing text
 // - for example, if the buffer looks like this ('|' is the cursor): [abc|def]
 // - calling InsertCharacter(1) will change it to: [abc| def],
 // - i.e. the 'def' gets shifted over 1 space and **retain their previous text attributes**
 // Arguments:
-// - uiCount, the number of spaces to insert
+// - count, the number of spaces to insert
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::InsertCharacter(const unsigned int uiCount)
+bool Terminal::InsertCharacter(const size_t count)
 {
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
     // that does the 'move a region from here to there' operation
     // TODO: Github issue #2163
     SHORT dist;
-    if (!SUCCEEDED(UIntToShort(uiCount, &dist)))
+    if (!SUCCEEDED(SizeTToShort(count, &dist)))
     {
         return false;
     }
@@ -227,7 +227,7 @@ bool Terminal::InsertCharacter(const unsigned int uiCount)
     return true;
 }
 
-bool Terminal::EraseCharacters(const unsigned int numChars)
+bool Terminal::EraseCharacters(const size_t numChars)
 {
     const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -265,18 +265,20 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
         break;
     case DispatchTypes::EraseType::ToEnd:
         startPos.X = cursorPos.X;
-        nlength = viewport.RightInclusive() - startPos.X;
+        nlength = viewport.RightExclusive() - startPos.X;
         break;
     case DispatchTypes::EraseType::All:
         startPos.X = viewport.Left();
-        nlength = viewport.RightInclusive() - startPos.X;
+        nlength = viewport.RightExclusive() - startPos.X;
         break;
     case DispatchTypes::EraseType::Scrollback:
         return false;
     }
 
     auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), nlength);
-    _buffer->Write(eraseIter, startPos);
+
+    // Explicitly turn off end-of-line wrap-flag-setting when erasing cells.
+    _buffer->Write(eraseIter, startPos, false);
     return true;
 }
 
@@ -363,35 +365,35 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
 bool Terminal::SetWindowTitle(std::wstring_view title)
 {
-    _title = title;
+    _title = _suppressApplicationTitle ? _startingTitle : title;
 
-    if (_pfnTitleChanged)
-    {
-        _pfnTitleChanged(title);
-    }
+    _pfnTitleChanged(_title);
 
     return true;
 }
 
 // Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
-//   dwColor. dwColor is a COLORREF, format 0x00BBGGRR.
+//   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
 // - tableIndex: the index of the color table to update.
-// - dwColor: the new COLORREF to use as that color table value.
+// - color: the new COLORREF to use as that color table value.
 // Return Value:
 // - true iff we successfully updated the color table entry.
-bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor)
+bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
-    if (tableIndex > _colorTable.size())
+    try
+    {
+        _colorTable.at(tableIndex) = color;
+
+        // Repaint everything - the colors might have changed
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        return true;
+    }
+    catch (std::out_of_range&)
     {
         return false;
     }
-    _colorTable.at(tableIndex) = dwColor;
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
 }
 
 // Method Description:
@@ -447,12 +449,12 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // Method Description:
 // - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
 // Arguments:
-// - dwColor: the new COLORREF to use as the default foreground color
+// - color: the new COLORREF to use as the default foreground color
 // Return Value:
 // - true
-bool Terminal::SetDefaultForeground(const COLORREF dwColor)
+bool Terminal::SetDefaultForeground(const COLORREF color)
 {
-    _defaultFg = dwColor;
+    _defaultFg = color;
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
@@ -462,13 +464,13 @@ bool Terminal::SetDefaultForeground(const COLORREF dwColor)
 // Method Description:
 // - Updates the default background color from a COLORREF, format 0x00BBGGRR.
 // Arguments:
-// - dwColor: the new COLORREF to use as the default background color
+// - color: the new COLORREF to use as the default background color
 // Return Value:
 // - true
-bool Terminal::SetDefaultBackground(const COLORREF dwColor)
+bool Terminal::SetDefaultBackground(const COLORREF color)
 {
-    _defaultBg = dwColor;
-    _pfnBackgroundColorChanged(dwColor);
+    _defaultBg = color;
+    _pfnBackgroundColorChanged(color);
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();

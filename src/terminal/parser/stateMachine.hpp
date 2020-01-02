@@ -29,11 +29,10 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(IStateMachineEngine* const pEngine);
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine);
 
         void ProcessCharacter(const wchar_t wch);
-        void ProcessString(const wchar_t* const rgwch, const size_t cch);
-        void ProcessString(const std::wstring& wstr);
+        void ProcessString(const std::wstring_view string);
 
         void ResetState();
 
@@ -41,10 +40,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
-
-        static const short s_cIntermediateMax = 1;
-        static const short s_cParamsMax = 16;
-        static const short s_cOscStringMaxLength = 256;
 
     private:
         static bool s_IsActionableFromGround(const wchar_t wch);
@@ -64,8 +59,6 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_IsOscInvalid(const wchar_t wch);
         static bool s_IsOscTerminator(const wchar_t wch);
         static bool s_IsOscTerminationInitiator(const wchar_t wch);
-        static bool s_IsDesignateCharsetIndicator(const wchar_t wch);
-        static bool s_IsCharsetCode(const wchar_t wch);
         static bool s_IsNumber(const wchar_t wch);
         static bool s_IsSs3Indicator(const wchar_t wch);
 
@@ -110,6 +103,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
 
+        void _AccumulateTo(const wchar_t wch, size_t& value);
+
         enum class VTStates
         {
             Ground,
@@ -128,27 +123,20 @@ namespace Microsoft::Console::VirtualTerminal
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
 
-        std::unique_ptr<IStateMachineEngine> _pEngine;
+        std::unique_ptr<IStateMachineEngine> _engine;
 
         VTStates _state;
 
-        wchar_t _wchIntermediate;
-        unsigned short _cIntermediate;
+        std::wstring_view _run;
 
-        unsigned short _rgusParams[s_cParamsMax];
-        unsigned short _cParams;
-        unsigned short* _pusActiveParam;
-        unsigned short _iParamAccumulatePos;
+        std::vector<wchar_t> _intermediates;
+        std::vector<size_t> _parameters;
 
-        unsigned short _sOscParam;
-        unsigned short _sOscNextChar;
-        wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
+        std::wstring _oscString;
+        size_t _oscParameter;
 
-        // These members track out state in the parsing of a single string.
-        // FlushToTerminal uses these, so that an engine can force a string
-        // we're parsing to go straight through to the engine's ActionPassThroughString
-        const wchar_t* _pwchCurr;
-        const wchar_t* _pwchSequenceStart;
-        size_t _currRunLength;
+        // This is tracked per state machine instance so that separate calls to Process*
+        //   can start and finish a sequence.
+        bool _processingIndividually;
     };
 }

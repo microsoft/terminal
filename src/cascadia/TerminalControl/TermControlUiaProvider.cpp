@@ -7,15 +7,20 @@
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::WRL;
 
-TermControlUiaProvider::TermControlUiaProvider(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& termControl,
-                                               _In_ std::function<RECT(void)> GetBoundingRect) :
-    _getBoundingRect(GetBoundingRect),
-    _termControl(termControl),
-    ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, termControl.GetUiaData()))
+HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* termControl,
+                                                       _In_ std::function<RECT(void)> GetBoundingRect)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, termControl);
+    RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(termControl->GetUiaData()));
+
+    _getBoundingRect = GetBoundingRect;
+    _termControl = termControl;
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+    return S_OK;
 }
 
 IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction,
@@ -82,49 +87,83 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
 
 const COORD TermControlUiaProvider::GetFontSize() const
 {
-    return _termControl.GetActualFont().GetSize();
+    return _termControl->GetActualFont().GetSize();
 }
 
 const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() const
 {
-    return _termControl.GetPadding();
+    return _termControl->GetPadding();
 }
 
-std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* const pProvider)
+HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
 {
-    std::deque<UiaTextRangeBase*> result;
-
-    auto ranges = UiaTextRange::GetSelectionRanges(_pData, pProvider);
-    while (!ranges.empty())
+    try
     {
-        result.emplace_back(ranges.back());
-        ranges.pop_back();
+        result.clear();
+        typename std::remove_reference<decltype(result)>::type temporaryResult;
+
+        std::deque<ComPtr<UiaTextRange>> ranges;
+        RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, wordDelimiters, ranges));
+
+        while (!ranges.empty())
+        {
+            temporaryResult.emplace_back(std::move(ranges.back()));
+            ranges.pop_back();
+        }
+
+        std::swap(result, temporaryResult);
+        return S_OK;
     }
-
-    return result;
+    CATCH_RETURN();
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
-    return UiaTextRange::Create(_pData, pProvider);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                          const Cursor& cursor)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                const Cursor& cursor,
+                                                const std::wstring_view wordDelimiters,
+                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
-    return UiaTextRange::Create(_pData, pProvider, cursor);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, cursor, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                          const Endpoint start,
-                                                          const Endpoint end,
-                                                          const bool degenerate)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                const Endpoint start,
+                                                const Endpoint end,
+                                                const bool degenerate,
+                                                const std::wstring_view wordDelimiters,
+                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
-    return UiaTextRange::Create(_pData, pProvider, start, end, degenerate);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, degenerate, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
-UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                          const UiaPoint point)
+HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                const UiaPoint point,
+                                                const std::wstring_view wordDelimiters,
+                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
-    return UiaTextRange::Create(_pData, pProvider, point);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, point, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }

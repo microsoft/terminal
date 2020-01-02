@@ -22,51 +22,53 @@ Author(s):
 
 #include "precomp.h"
 
+#include <wrl/implements.h>
+
 namespace Microsoft::Console::Types
 {
     class IUiaWindow;
 
     class WindowUiaProviderBase :
-        public IRawElementProviderSimple,
-        public IRawElementProviderFragment,
-        public IRawElementProviderFragmentRoot
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, IRawElementProviderFragmentRoot>
     {
+    public:
+        ~WindowUiaProviderBase() = default;
+
+    protected:
+        WindowUiaProviderBase() = default;
+        HRESULT RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept;
+
+        WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
+        WindowUiaProviderBase(WindowUiaProviderBase&&) = default;
+        WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = default;
+        WindowUiaProviderBase& operator=(WindowUiaProviderBase&&) = default;
+
     public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;
 
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef();
-        IFACEMETHODIMP_(ULONG)
-        Release();
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface);
-
         // IRawElementProviderSimple methods
-        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
+        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;
         IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface) override;
         IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
-                                        _Out_ VARIANT* pVariant);
-        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
+                                        _Out_ VARIANT* pVariant) override;
+        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) override;
 
         // IRawElementProviderFragment methods
         virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
-        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
-        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect);
-        IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
+        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) override;
+        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
+        IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) override;
         virtual IFACEMETHODIMP SetFocus() = 0;
-        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
+        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         // IRawElementProviderFragmentRoot methods
         virtual IFACEMETHODIMP ElementProviderFromPoint(_In_ double x,
                                                         _In_ double y,
                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
-
-        WindowUiaProviderBase(IUiaWindow* baseWindow);
 
         RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
@@ -92,9 +94,6 @@ namespace Microsoft::Console::Types
         const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Console Host Window";
 
     private:
-        // Ref counter for COM object
-        ULONG _cRefs;
-
         IUiaWindow* _baseWindow;
     };
 

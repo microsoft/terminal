@@ -9,6 +9,9 @@ LONG gcxScreen;
 LONG gcyScreen;
 
 BOOL g_fForceV2;
+// If we didn't launch as a v2 console window, we don't want to persist v2
+// settings when we close, as they'll get zero'd. Use this to track the initial
+// launch state.
 BOOL g_fEditKeys;
 BYTE g_bPreviewOpacity = 0x00; //sentinel value for initial test on dialog entry. Once initialized, won't be less than TRANSPARENCY_RANGE_MIN
 
@@ -55,3 +58,4 @@ COLORREF g_fakeBackgroundColor = RGB(12, 12, 12); // Default black
 COLORREF g_fakeCursorColor = RGB(242, 242, 242); // Default bright white
 
 HWND g_hTerminalDlg = static_cast<HWND>(INVALID_HANDLE_VALUE);
+HWND g_hOptionsDlg = static_cast<HWND>(INVALID_HANDLE_VALUE);

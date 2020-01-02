@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>HostEXE</RootNamespace>
+    <ProjectName>Host.EXE</ProjectName>
+    <TargetName>OpenConsole</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
   <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -66,13 +74,6 @@
     <Manifest Include="openconsole.exe.manifest" />
   </ItemGroup>
   <PropertyGroup>
-    <ProjectGuid>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>HostEXE</RootNamespace>
-    <ProjectName>Host.EXE</ProjectName>
-    <TargetName>OpenConsole</TargetName>
-  </PropertyGroup>
-  <PropertyGroup>
     <EmbedManifest>
     </EmbedManifest>
     <GenerateManifest>true</GenerateManifest>
@@ -86,6 +87,5 @@
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.exe.props" />
   <Import Project="..\..\common.build.post.props" />
 </Project>

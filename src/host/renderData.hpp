@@ -24,6 +24,7 @@ class RenderData final :
 public:
 #pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
+    COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
 
@@ -59,5 +60,7 @@ public:
     const bool IsSelectionActive() const override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+    const COORD GetSelectionAnchor() const;
+    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
 #pragma endregion
 };

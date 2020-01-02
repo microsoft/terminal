@@ -39,10 +39,12 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
 
+        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,
-                                                           const bool isBold,
+                                                           const ExtendedAttributes extendedAttrs,
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               const COORD coord,
@@ -51,7 +53,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
 
-        [[nodiscard]] HRESULT WriteTerminalW(_In_ const std::wstring& str) noexcept override;
+        [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
     protected:
         const COLORREF* const _ColorTable;
@@ -60,6 +62,8 @@ namespace Microsoft::Console::Render
         bool _previousLineWrapped;
         bool _usingUnderLine;
         bool _needToDisableCursor;
+        bool _lastCursorIsVisible;
+        bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 

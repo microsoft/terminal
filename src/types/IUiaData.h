@@ -23,11 +23,21 @@ namespace Microsoft::Console::Types
     class IUiaData : public IBaseData
     {
     public:
-        virtual ~IUiaData() = 0;
+        ~IUiaData() = 0;
 
+    protected:
+        IUiaData() = default;
+        IUiaData(const IUiaData&) = default;
+        IUiaData(IUiaData&&) = default;
+        IUiaData& operator=(const IUiaData&) = default;
+        IUiaData& operator=(IUiaData&&) = default;
+
+    public:
         virtual const bool IsSelectionActive() const = 0;
         virtual void ClearSelection() = 0;
         virtual void SelectNewRegion(const COORD coordStart, const COORD coordEnd) = 0;
+        virtual const COORD GetSelectionAnchor() const = 0;
+        virtual void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr) = 0;
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.

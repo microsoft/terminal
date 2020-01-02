@@ -6,10 +6,19 @@
 #include "resource.h"
 
 using namespace winrt;
-using namespace Windows::UI;
-using namespace Windows::UI::Composition;
-using namespace Windows::UI::Xaml::Hosting;
-using namespace Windows::Foundation::Numerics;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Composition;
+using namespace winrt::Windows::UI::Xaml::Hosting;
+using namespace winrt::Windows::Foundation::Numerics;
+
+// Note: Generate GUID using TlgGuid.exe tool - seriously, it won't work if you
+// just generate an arbitrary GUID
+TRACELOGGING_DEFINE_PROVIDER(
+    g_hWindowsTerminalProvider,
+    "Microsoft.Windows.Terminal.Win32Host",
+    // {56c06166-2e2e-5f4d-7ff3-74f4b78c87d6}
+    (0x56c06166, 0x2e2e, 0x5f4d, 0x7f, 0xf3, 0x74, 0xf4, 0xb7, 0x8c, 0x87, 0xd6),
+    TraceLoggingOptionMicrosoftTelemetry());
 
 // Routine Description:
 // - Retrieves the string resource from the current module with the given ID
@@ -76,24 +85,27 @@ static void EnsureNativeArchitecture()
         const auto nativeArchitecture = ImageArchitectureToString(nativeMachine);
         const auto processArchitecture = ImageArchitectureToString(processMachine);
 
-        const auto lengthRequired = _scwprintf(formatPattern.data(), nativeArchitecture.data(), processArchitecture.data());
-        const auto bufferSize = lengthRequired + 1;
-
-        std::wstring buffer;
-        buffer.resize(bufferSize);
-
-        swprintf_s(buffer.data(), buffer.size(), formatPattern.data(), nativeArchitecture.data(), processArchitecture.data());
+        auto buffer{ wil::str_printf<std::wstring>(formatPattern.data(), nativeArchitecture.data(), processArchitecture.data()) };
 
         MessageBoxW(nullptr,
                     buffer.data(),
                     GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
                     MB_OK | MB_ICONERROR);
+
         ExitProcess(0);
     }
 }
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
+    TraceLoggingRegister(g_hWindowsTerminalProvider);
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "ExecutableStarted",
+        TraceLoggingDescription("Event emitted immediately on startup"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
     // Block the user from starting if they launched the incorrect architecture version of the project.
     // This should only be applicable to developer versions. The package installation process
     // should choose and install the correct one from the bundle.

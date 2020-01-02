@@ -33,8 +33,9 @@ namespace Microsoft::Terminal
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        TermControlUiaProvider(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& termControl,
-                               _In_ std::function<RECT()> GetBoundingRect);
+        TermControlUiaProvider() = default;
+        HRESULT RuntimeClassInitialize(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* termControl,
+                                       _In_ std::function<RECT()> GetBoundingRect);
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
@@ -46,27 +47,33 @@ namespace Microsoft::Terminal
         const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:
-        std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) override;
+        HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>>& selectionRanges) override;
 
         // degenerate range
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // degenerate range at cursor position
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const Cursor& cursor) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const Cursor& cursor,
+                                const std::wstring_view wordDelimiters,
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // specific endpoint range
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const Endpoint start,
-                                                                     const Endpoint end,
-                                                                     const bool degenerate) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const Endpoint start,
+                                const Endpoint end,
+                                const bool degenerate,
+                                const std::wstring_view wordDelimiters,
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // range from a UiaPoint
-        Microsoft::Console::Types::UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                                     const UiaPoint point) override;
+        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                const UiaPoint point,
+                                const std::wstring_view wordDelimiters,
+                                _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
     private:
         std::function<RECT(void)> _getBoundingRect;
-        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& _termControl;
+        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* _termControl;
     };
 }

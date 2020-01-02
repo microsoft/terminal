@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package-Dev.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PropertySheet.props" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{4718a03b-f768-4d96-9106-096573a315a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\en-US">
+      <UniqueIdentifier>{943541d5-c1da-435d-9f61-85d1b118f041}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <Filter>Resources\en-US</Filter>
+    </PRIResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="internal-background.png" />
+  </ItemGroup>
+</Project>

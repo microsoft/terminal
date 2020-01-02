@@ -345,3 +345,91 @@ using namespace Microsoft::Console::Render;
 {
     return _Write("\x1b[24m");
 }
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start italicizing text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginItalics() noexcept
+{
+    return _Write("\x1b[3m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop italicizing text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndItalics() noexcept
+{
+    return _Write("\x1b[23m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start blinking text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginBlink() noexcept
+{
+    return _Write("\x1b[5m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop blinking text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndBlink() noexcept
+{
+    return _Write("\x1b[25m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start marking text as invisible
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginInvisible() noexcept
+{
+    return _Write("\x1b[8m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop marking text as invisible
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndInvisible() noexcept
+{
+    return _Write("\x1b[28m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start crossing-out text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_BeginCrossedOut() noexcept
+{
+    return _Write("\x1b[9m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop crossing-out text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndCrossedOut() noexcept
+{
+    return _Write("\x1b[29m");
+}

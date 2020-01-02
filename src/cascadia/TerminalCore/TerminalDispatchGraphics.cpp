@@ -69,9 +69,8 @@ bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptio
 //      RGB sequences then take 3 MORE params to designate the R, G, B parts of the color
 //      Xterm index will use the param that follows to use a color from the preset 256 color xterm color table.
 // Arguments:
-// - rgOptions - An array of options that will be used to generate the RGB color
-// - cOptions - The count of options
-// - pcOptionsConsumed - a pointer to place the number of options we consumed parsing this option.
+// - options - An array of options that will be used to generate the RGB color
+// - optionsConsumed - Returns the number of options we consumed parsing this option.
 // Return Value:
 // Returns true if we successfully parsed an extended color option from the options array.
 // - This corresponds to the following number of options consumed (pcOptionsConsumed):
@@ -79,20 +78,19 @@ bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptio
 //     2 - false, not enough options to parse.
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
-bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
-                                           const size_t cOptions,
-                                           _Out_ size_t* const pcOptionsConsumed)
+bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+                                           size_t& optionsConsumed)
 {
     COLORREF color = 0;
     bool isForeground = false;
 
-    bool fSuccess = false;
-    *pcOptionsConsumed = 1;
-    if (cOptions >= 2 && s_IsRgbColorOption(rgOptions[0]))
+    bool success = false;
+    optionsConsumed = 1;
+    if (options.size() >= 2 && s_IsRgbColorOption(options.front()))
     {
-        *pcOptionsConsumed = 2;
-        DispatchTypes::GraphicsOptions extendedOpt = rgOptions[0];
-        DispatchTypes::GraphicsOptions typeOpt = rgOptions[1];
+        optionsConsumed = 2;
+        DispatchTypes::GraphicsOptions extendedOpt = options.at(0);
+        DispatchTypes::GraphicsOptions typeOpt = options.at(1);
 
         if (extendedOpt == DispatchTypes::GraphicsOptions::ForegroundExtended)
         {
@@ -103,31 +101,32 @@ bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTy
             isForeground = false;
         }
 
-        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColor && cOptions >= 5)
+        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint && options.size() >= 5)
         {
-            *pcOptionsConsumed = 5;
+            optionsConsumed = 5;
             // ensure that each value fits in a byte
-            unsigned int red = rgOptions[2] > 255 ? 255 : rgOptions[2];
-            unsigned int green = rgOptions[3] > 255 ? 255 : rgOptions[3];
-            unsigned int blue = rgOptions[4] > 255 ? 255 : rgOptions[4];
+            const auto limit = (DispatchTypes::GraphicsOptions)255;
+            const auto red = std::min(options.at(2), limit);
+            const auto green = std::min(options.at(3), limit);
+            const auto blue = std::min(options.at(4), limit);
 
             color = RGB(red, green, blue);
 
-            fSuccess = _terminalApi.SetTextRgbColor(color, isForeground);
+            success = _terminalApi.SetTextRgbColor(color, isForeground);
         }
-        else if (typeOpt == DispatchTypes::GraphicsOptions::Xterm256Index && cOptions >= 3)
+        else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && options.size() >= 3)
         {
-            *pcOptionsConsumed = 3;
-            if (rgOptions[2] <= 255) // ensure that the provided index is on the table
+            optionsConsumed = 3;
+            if (options.at(2) <= 255) // ensure that the provided index is on the table
             {
-                unsigned int tableIndex = rgOptions[2];
-                fSuccess = isForeground ?
-                               _terminalApi.SetTextForegroundIndex((BYTE)tableIndex) :
-                               _terminalApi.SetTextBackgroundIndex((BYTE)tableIndex);
+                unsigned int tableIndex = options.at(2);
+                success = isForeground ?
+                              _terminalApi.SetTextForegroundIndex((BYTE)tableIndex) :
+                              _terminalApi.SetTextBackgroundIndex((BYTE)tableIndex);
             }
         }
     }
-    return fSuccess;
+    return success;
 }
 
 bool TerminalDispatch::_SetBoldColorHelper(const DispatchTypes::GraphicsOptions option)
@@ -288,41 +287,40 @@ void TerminalDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOpt
     }
 }
 
-bool TerminalDispatch::SetGraphicsRendition(const DispatchTypes::GraphicsOptions* const rgOptions,
-                                            const size_t cOptions)
+bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options)
 {
-    bool fSuccess = false;
+    bool success = false;
     // Run through the graphics options and apply them
-    for (size_t i = 0; i < cOptions; i++)
+    for (size_t i = 0; i < options.size(); i++)
     {
-        DispatchTypes::GraphicsOptions opt = rgOptions[i];
+        DispatchTypes::GraphicsOptions opt = options.at(i);
         if (s_IsDefaultColorOption(opt))
         {
-            fSuccess = _SetDefaultColorHelper(opt);
+            success = _SetDefaultColorHelper(opt);
         }
         else if (s_IsBoldColorOption(opt))
         {
-            fSuccess = _SetBoldColorHelper(rgOptions[i]);
+            success = _SetBoldColorHelper(opt);
         }
         else if (s_IsRgbColorOption(opt))
         {
-            size_t cOptionsConsumed = 0;
+            size_t optionsConsumed = 0;
 
             // _SetRgbColorsHelper will call the appropriate ConApi function
-            fSuccess = _SetRgbColorsHelper(&(rgOptions[i]), cOptions - i, &cOptionsConsumed);
+            success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
 
-            i += (cOptionsConsumed - 1); // cOptionsConsumed includes the opt we're currently on.
+            i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
         }
         else
         {
             _SetGraphicsOptionHelper(opt);
 
             // Make sure we un-bold
-            if (fSuccess && opt == DispatchTypes::GraphicsOptions::Off)
+            if (success && opt == DispatchTypes::GraphicsOptions::Off)
             {
-                fSuccess = _SetBoldColorHelper(opt);
+                success = _SetBoldColorHelper(opt);
             }
         }
     }
-    return fSuccess;
+    return success;
 }

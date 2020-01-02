@@ -12,14 +12,17 @@
         <!-- You can't do too much trickyness inside the DisplayString format
                 string, so we'd have to add entries for each flag if we really
                 wanted them to show up like that. -->
-        <DisplayString Condition="_isBold">{{FG:{_foreground},BG:{_background},{_wAttrLegacy}, Bold}}</DisplayString>
-        <DisplayString>{{FG:{_foreground},BG:{_background},{_wAttrLegacy}, Normal}}</DisplayString>
+        <DisplayString>{{FG: {_foreground}, BG: {_background}, Legacy: {_wAttrLegacy}, {_extendedAttrs}}</DisplayString>
         <Expand>
-            <Item Name="_wAttrLegacy">_wAttrLegacy</Item>
-            <Item Name="_isBold">_isBold</Item>
-            <Item Name="_foreground">_foreground</Item>
-            <Item Name="_background">_background</Item>
+            <Item Name="Legacy">_wAttrLegacy</Item>
+            <Item Name="FG">_foreground</Item>
+            <Item Name="BG">_background</Item>
+            <Item Name="Extended">_extendedAttrs</Item>
         </Expand>
+    </Type>
+
+    <Type Name="TextAttributeRun">
+        <DisplayString>Length={_cchLength} Attr={_attributes}</DisplayString>
     </Type>
 
     <Type Name="Microsoft::Console::Types::Viewport">
@@ -71,5 +74,10 @@
         <Expand>
             <ExpandedItem>_Mypair._Myval2</ExpandedItem>
         </Expand>
+    </Type>
+
+    <Type Name="KeyEvent">
+        <DisplayString Condition="_keyDown">{{↓  wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+        <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
     </Type>
 </AutoVisualizer>
