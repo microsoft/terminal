@@ -28,6 +28,7 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::string_view ConfirmCloseAllKey{ "confimCloseAllTabs" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
@@ -39,6 +40,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
+    _confirmCloseAllTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
     _initialX{},
@@ -140,6 +142,15 @@ void GlobalAppSettings::SetLaunchMode(const LaunchMode launchMode)
 {
     _launchMode = launchMode;
 }
+bool GlobalAppSettings::GetConfirmCloseAllTabs() const noexcept
+{
+    return _confirmCloseAllTabs;
+}
+
+void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept
+{
+    _confirmCloseAllTabs = confirmCloseAllTabs;
+}
 
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
@@ -202,6 +213,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
+    jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
 
     return jsonObject;
 }
@@ -230,6 +242,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
     {
         _alwaysShowTabs = alwaysShowTabs.asBool();
+    }
+    if (auto confirmCloseAllTabs{ json[JsonKey(ConfirmCloseAllKey)] })
+    {
+        _confirmCloseAllTabs = confirmCloseAllTabs.asBool();
     }
     if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
     {

@@ -8,6 +8,7 @@
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+    "confirmCloseAllTabs": true,
 
     "profiles":
     [

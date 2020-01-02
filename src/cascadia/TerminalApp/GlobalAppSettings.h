@@ -50,6 +50,9 @@ public:
     bool GetShowTitleInTitlebar() const noexcept;
     void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
 
+    bool GetConfirmCloseAllTabs() const noexcept;
+    void SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept;
+
     void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
 
     bool GetShowTabsInTitlebar() const noexcept;
@@ -91,6 +94,7 @@ private:
     bool _showStatusline;
     bool _alwaysShowTabs;
     bool _showTitleInTitlebar;
+    bool _confirmCloseAllTabs;
 
     bool _showTabsInTitlebar;
     std::wstring _wordDelimiters;
