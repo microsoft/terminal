@@ -175,10 +175,5 @@ namespace Microsoft::Console::VirtualTerminal
         bool _SetBoldColorHelper(const DispatchTypes::GraphicsOptions option);
         bool _SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option);
         bool _SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions option);
-
-        static bool s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
-        static bool s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
-        static bool s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept;
-        static bool s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept;
     };
 }

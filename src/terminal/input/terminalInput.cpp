@@ -209,9 +209,9 @@ void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
     _cursorApplicationMode = applicationMode;
 }
 
-const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
-                                                        const bool cursorApplicationMode,
-                                                        const bool keypadApplicationMode) noexcept
+static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
+                                                               const bool cursorApplicationMode,
+                                                               const bool keypadApplicationMode) noexcept
 {
     if (keyEvent.IsCursorKey())
     {
@@ -244,10 +244,9 @@ const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent
 // - keyMapping - Array of key mappings to search
 // Return Value:
 // - Has value if there was a match to a key translation.
-std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
-                                                   std::basic_string_view<TermKeyMap> keyMapping) noexcept
+static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
+                                                         std::basic_string_view<TermKeyMap> keyMapping) noexcept
 {
-    bool keyTranslated = false;
     for (auto& map : keyMapping)
     {
         if (map.vkey == keyEvent.GetVirtualKeyCode())
@@ -271,7 +270,6 @@ std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
 
             if (modifiersMatch)
             {
-                keyTranslated = true;
                 return map;
             }
         }
@@ -290,7 +288,7 @@ typedef std::function<void(const std::wstring_view)> InputSender;
 // - sender - Function to use to dispatch translated event
 // Return Value:
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
-bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
+static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 {
     bool success = false;
 
@@ -349,14 +347,14 @@ bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 // - sender - Function to use to dispatch translated event
 // Return Value:
 // - True if there was a match to a key translation, and we successfully sent it to the input
-bool _TranslateDefaultMapping(const KeyEvent& keyEvent,
-                              const std::basic_string_view<TermKeyMap> keyMapping,
-                              InputSender sender)
+static bool _translateDefaultMapping(const KeyEvent& keyEvent,
+                                     const std::basic_string_view<TermKeyMap> keyMapping,
+                                     InputSender sender)
 {
     const auto match = _searchKeyMapping(keyEvent, keyMapping);
     if (match)
     {
-        sender(match.value().sequence);
+        sender(match->sequence);
     }
     return match.has_value();
 }
@@ -451,7 +449,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
                 if ((keyEvent.GetVirtualKeyCode() < '0' || keyEvent.GetVirtualKeyCode() > 'Z') &&
                     keyEvent.GetVirtualKeyCode() != VK_CANCEL)
                 {
-                    keyHandled = _TranslateDefaultMapping(keyEvent, _getKeyMapping(keyEvent, _cursorApplicationMode, _keypadApplicationMode), senderFunc);
+                    keyHandled = _translateDefaultMapping(keyEvent, _getKeyMapping(keyEvent, _cursorApplicationMode, _keypadApplicationMode), senderFunc);
                 }
                 else
                 {

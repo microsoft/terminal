@@ -1689,83 +1689,83 @@ bool AdaptDispatch::_EraseAll()
 // Routine Description:
 // - Enables or disables support for the DECCOLM escape sequence.
 // Arguments:
-// - fEnabled - set to true to allow DECCOLM to be used, false to disallow.
+// - enabled - set to true to allow DECCOLM to be used, false to disallow.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableDECCOLMSupport(const bool fEnabled) noexcept
+bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 {
-    _isDECCOLMAllowed = fEnabled;
+    _isDECCOLMAllowed = enabled;
     return true;
 }
 
 //Routine Description:
 // Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableVT200MouseMode(fEnabled);
+    return _pConApi->PrivateEnableVT200MouseMode(enabled);
 }
 
 //Routine Description:
 // Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
 //      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
+    return _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable SGR Extended Encoding - this changes the encoding scheme for sequences
 //      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
+    return _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableButtonEventMouseMode(fEnabled);
+    return _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
 
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableAnyEventMouseMode(fEnabled);
+    return _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
 //      scroll up/down events instead of the usual sequences
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
+bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 {
-    return _pConApi->PrivateEnableAlternateScroll(fEnabled);
+    return _pConApi->PrivateEnableAlternateScroll(enabled);
 }
 
 //Routine Description:

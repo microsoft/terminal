@@ -800,19 +800,13 @@ public:
     }
 
     bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept override
+    try
     {
-        try
-        {
-            _options.assign(options.cbegin(), options.cend());
-            _setGraphics = true;
-            return true;
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            return false;
-        }
+        _options.assign(options.cbegin(), options.cend());
+        _setGraphics = true;
+        return true;
     }
+    CATCH_LOG_RETURN_FALSE()
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) noexcept override
     {

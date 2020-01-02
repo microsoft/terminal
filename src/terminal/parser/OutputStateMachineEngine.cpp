@@ -279,7 +279,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
     std::vector<DispatchTypes::GraphicsOptions> graphicsOptions;
-    DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(-1); // there is no default status type.
+    DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
     size_t repeatCount = 0;
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingParams = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
@@ -1400,7 +1400,7 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            auto value = colorValues.at(component);
+            auto& value = colorValues.at(component);
             for (size_t i = 0; i < 3; i++)
             {
                 const wchar_t wch = *curr++;

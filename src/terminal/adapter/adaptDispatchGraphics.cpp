@@ -267,15 +267,12 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
     }
 }
 
-#pragma warning(push)
-#pragma warning(disable : 26497) // we do not want constexpr compilation because these always evaluate at runtime
-
 // Routine Description:
 // Returns true if the GraphicsOption represents an extended text attribute.
 //   These include things such as Underlined, Italics, Blinking, etc.
 // Return Value:
 // - true if the opt is the indicator for an extended text attribute, false otherwise.
-bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     // TODO:GH#2916 add support for DoublyUnderlined, Faint(RGBColorOrFaint).
     // These two are currently partially implemented as other things:
@@ -299,7 +296,7 @@ bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptio
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::ForegroundExtended ||
            opt == DispatchTypes::GraphicsOptions::BackgroundExtended;
@@ -310,7 +307,7 @@ bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::BoldBright ||
            opt == DispatchTypes::GraphicsOptions::UnBold;
@@ -321,14 +318,12 @@ bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt
 //the default attributes.
 // Return Value:
 // - true if the opt sets either/or attribute to the defaults, false otherwise.
-bool AdaptDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::Off ||
            opt == DispatchTypes::GraphicsOptions::ForegroundDefault ||
            opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
 }
-
-#pragma warning(pop)
 
 // Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
@@ -354,7 +349,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
 {
     bool success = false;
     optionsConsumed = 1;
-    if (options.size() >= 2 && s_IsRgbColorOption(options.at(0)))
+    if (options.size() >= 2 && _isRgbColorOption(options.at(0)))
     {
         optionsConsumed = 2;
         const auto extendedOpt = til::at(options, 0);
@@ -498,19 +493,19 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
         for (size_t i = 0; i < options.size(); i++)
         {
             const auto opt = til::at(options, i);
-            if (s_IsDefaultColorOption(opt))
+            if (_isDefaultColorOption(opt))
             {
                 success = _SetDefaultColorHelper(opt);
             }
-            else if (s_IsBoldColorOption(opt))
+            else if (_isBoldColorOption(opt))
             {
                 success = _SetBoldColorHelper(opt);
             }
-            else if (s_IsExtendedTextAttribute(opt))
+            else if (_isExtendedTextAttribute(opt))
             {
                 success = _SetExtendedTextAttributeHelper(opt);
             }
-            else if (s_IsRgbColorOption(opt))
+            else if (_isRgbColorOption(opt))
             {
                 COLORREF rgbColor{ 0 };
                 bool isForeground = true;
