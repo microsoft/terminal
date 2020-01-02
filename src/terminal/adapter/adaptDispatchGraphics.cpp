@@ -350,7 +350,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
 {
     bool success = false;
     optionsConsumed = 1;
-    if (options.size() >= 2 && _isRgbColorOption(options.at(0)))
+    if (options.size() >= 2 && _isRgbColorOption(til::at(options, 0)))
     {
         optionsConsumed = 2;
         const auto extendedOpt = til::at(options, 0);

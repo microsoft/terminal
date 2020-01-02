@@ -65,7 +65,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         WriteInputEvents _pfnWriteEvents;
 
-        ExtendedMode _ExtendedMode = ExtendedMode::None;
+        ExtendedMode _extendedMode = ExtendedMode::None;
         TrackingMode _trackingMode = TrackingMode::None;
 
         bool _alternateScroll = false;
@@ -75,22 +75,22 @@ namespace Microsoft::Console::VirtualTerminal
         unsigned int _lastButton;
 
         void _SendInputSequence(const std::wstring_view sequence) const noexcept;
-        std::wstring _GenerateDefaultSequence(const COORD position,
-                                              const unsigned int button,
-                                              const bool isHover,
-                                              const short modifierKeyState,
-                                              const short delta) const;
-        std::wstring _GenerateUtf8Sequence(const COORD position,
-                                           const unsigned int button,
-                                           const bool isHover,
-                                           const short modifierKeyState,
-                                           const short delta) const;
-        std::wstring _GenerateSGRSequence(const COORD position,
-                                          const unsigned int button,
-                                          const bool isDown,
-                                          const bool isHover,
-                                          const short modifierKeyState,
-                                          const short delta) const;
+        static std::wstring _GenerateDefaultSequence(const COORD position,
+                                                     const unsigned int button,
+                                                     const bool isHover,
+                                                     const short modifierKeyState,
+                                                     const short delta);
+        static std::wstring _GenerateUtf8Sequence(const COORD position,
+                                                  const unsigned int button,
+                                                  const bool isHover,
+                                                  const short modifierKeyState,
+                                                  const short delta);
+        static std::wstring _GenerateSGRSequence(const COORD position,
+                                                 const unsigned int button,
+                                                 const bool isDown,
+                                                 const bool isHover,
+                                                 const short modifierKeyState,
+                                                 const short delta);
 
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;

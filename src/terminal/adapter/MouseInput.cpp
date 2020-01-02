@@ -297,7 +297,7 @@ bool MouseInput::HandleMouse(const COORD position,
             if (success)
             {
                 std::wstring sequence;
-                switch (_ExtendedMode)
+                switch (_extendedMode)
                 {
                 case ExtendedMode::None:
                     sequence = _GenerateDefaultSequence(position,
@@ -365,7 +365,7 @@ std::wstring MouseInput::_GenerateDefaultSequence(const COORD position,
                                                   const unsigned int button,
                                                   const bool isHover,
                                                   const short modifierKeyState,
-                                                  const short delta) const
+                                                  const short delta)
 {
     // In the default, non-extended encoding scheme, coordinates above 94 shouldn't be supported,
     //   because (95+32+1)=128, which is not an ASCII character.
@@ -402,7 +402,7 @@ std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
                                                const unsigned int button,
                                                const bool isHover,
                                                const short modifierKeyState,
-                                               const short delta) const
+                                               const short delta)
 {
     // So we have some complications here.
     // The windows input stream is typically encoded as UTF16.
@@ -454,7 +454,7 @@ std::wstring MouseInput::_GenerateSGRSequence(const COORD position,
                                               const bool isDown,
                                               const bool isHover,
                                               const short modifierKeyState,
-                                              const short delta) const
+                                              const short delta)
 {
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
@@ -476,7 +476,7 @@ std::wstring MouseInput::_GenerateSGRSequence(const COORD position,
 // <none>
 void MouseInput::SetUtf8ExtendedMode(const bool enable) noexcept
 {
-    _ExtendedMode = enable ? ExtendedMode::Utf8 : ExtendedMode::None;
+    _extendedMode = enable ? ExtendedMode::Utf8 : ExtendedMode::None;
 }
 
 // Routine Description:
@@ -490,7 +490,7 @@ void MouseInput::SetUtf8ExtendedMode(const bool enable) noexcept
 // <none>
 void MouseInput::SetSGRExtendedMode(const bool enable) noexcept
 {
-    _ExtendedMode = enable ? ExtendedMode::Sgr : ExtendedMode::None;
+    _extendedMode = enable ? ExtendedMode::Sgr : ExtendedMode::None;
 }
 
 // Routine Description:

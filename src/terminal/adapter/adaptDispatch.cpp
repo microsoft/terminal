@@ -347,8 +347,8 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         else
         {
             // remember, in VT speak, this is relative to the viewport. not absolute.
-            const SHORT diff = csbiex.dwCursorPosition.Y - csbiex.srWindow.Top;
-            success = SUCCEEDED(ShortToSizeT(diff, &rowActual));
+            SHORT diff = 0;
+            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.Y, csbiex.srWindow.Top, &diff)) && SUCCEEDED(ShortToSizeT(diff, &rowActual));
         }
 
         if (success)
@@ -367,8 +367,8 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
             else
             {
                 // remember, in VT speak, this is relative to the viewport. not absolute.
-                const SHORT diff = csbiex.dwCursorPosition.X - csbiex.srWindow.Left;
-                success = SUCCEEDED(ShortToSizeT(diff, &columnActual));
+                SHORT diff = 0;
+                success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.X, csbiex.srWindow.Left, &diff)) && SUCCEEDED(ShortToSizeT(diff, &columnActual));
             }
         }
 
