@@ -160,7 +160,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                 break;
             }
 
-            if (success)
+            if (success && pModify)
             {
                 // For up and left, we need to subtract the magnitude of the vector to get the new spot. Right/down = add.
                 // Use safe short subtraction to prevent under/overflow.
@@ -321,15 +321,14 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
 
     if (success)
     {
-        // handle optional parameters. If not specified, keep same cursor position from what we just loaded.
-        size_t rowActual = 0;
-        size_t columnActual = 0;
+        COORD cursor = csbiex.dwCursorPosition;
 
+        // handle optional parameters. If not specified, keep same cursor position from what we just loaded.
         if (row)
         {
             if (row.value() != 0)
             {
-                rowActual = row.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                auto rowActual = row.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
 
                 // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
                 // line numbers start at the top margin of the scrolling region, and cannot move below the bottom.
@@ -338,6 +337,9 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
                     rowActual += _scrollMargins.Top;
                     rowActual = std::min<decltype(rowActual)>(rowActual, _scrollMargins.Bottom);
                 }
+
+                // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
+                success = SUCCEEDED(SizeTToShort(rowActual, &cursor.Y));
             }
             else
             {
@@ -346,14 +348,17 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         }
         else
         {
-            rowActual = csbiex.dwCursorPosition.Y - csbiex.srWindow.Top; // remember, in VT speak, this is relative to the viewport. not absolute.
+            cursor.Y = csbiex.dwCursorPosition.Y - csbiex.srWindow.Top; // remember, in VT speak, this is relative to the viewport. not absolute.
         }
 
         if (column)
         {
             if (column.value() != 0)
             {
-                columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                auto columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+
+                // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
+                success = SUCCEEDED(SizeTToShort(columnActual, &cursor.X));
             }
             else
             {
@@ -362,31 +367,23 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         }
         else
         {
-            columnActual = csbiex.dwCursorPosition.X - csbiex.srWindow.Left; // remember, in VT speak, this is relative to the viewport. not absolute.
+            cursor.X = csbiex.dwCursorPosition.X - csbiex.srWindow.Left; // remember, in VT speak, this is relative to the viewport. not absolute.
         }
 
         if (success)
         {
-            COORD cursor = csbiex.dwCursorPosition;
-
-            // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
-            success = SUCCEEDED(SizeTToShort(rowActual, &cursor.Y)) && SUCCEEDED(SizeTToShort(columnActual, &cursor.X));
+            // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
+            success = SUCCEEDED(ShortAdd(cursor.Y, csbiex.srWindow.Top, &cursor.Y)) &&
+                      SUCCEEDED(ShortAdd(cursor.X, csbiex.srWindow.Left, &cursor.X));
 
             if (success)
             {
-                // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-                success = SUCCEEDED(ShortAdd(cursor.Y, csbiex.srWindow.Top, &cursor.Y)) &&
-                          SUCCEEDED(ShortAdd(cursor.X, csbiex.srWindow.Left, &cursor.X));
+                // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
+                cursor.Y = std::clamp(cursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
+                cursor.X = std::clamp(cursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
-                if (success)
-                {
-                    // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                    cursor.Y = std::clamp(cursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-                    cursor.X = std::clamp(cursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
-
-                    // Finally, attempt to set the adjusted cursor position back into the console.
-                    success = _pConApi->SetConsoleCursorPosition(cursor);
-                }
+                // Finally, attempt to set the adjusted cursor position back into the console.
+                success = _pConApi->SetConsoleCursorPosition(cursor);
             }
         }
     }
@@ -673,7 +670,7 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
     {
         const COORD startPosition = csbiex.dwCursorPosition;
 
-        const size_t remainingSpaces = csbiex.dwSize.X - startPosition.X;
+        const auto remainingSpaces = csbiex.dwSize.X - startPosition.X;
         const auto actualRemaining = (remainingSpaces < 0) ? 0 : remainingSpaces;
         // erase at max the number of characters remaining in the line from the current position.
         const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
@@ -1958,7 +1955,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         if (parameters.size() == 2)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters[1], parameters[0]);
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
         }
         break;
     default:

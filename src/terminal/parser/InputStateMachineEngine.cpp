@@ -805,7 +805,7 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
         return false;
     }
 
-    const auto identifier = (GenericKeyIdentifiers)parameters[0];
+    const auto identifier = (GenericKeyIdentifiers)til::at(parameters, 0);
 
     const auto mapping = std::find(s_genericMap.cbegin(), s_genericMap.cend(), identifier);
     if (mapping != s_genericMap.end())
@@ -953,7 +953,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string
 
     if (!parameters.empty())
     {
-        switch (parameters[0])
+        switch (til::at(parameters, 0))
         {
         case DispatchTypes::WindowManipulationType::RefreshWindow:
             function = DispatchTypes::WindowManipulationType::RefreshWindow;
@@ -994,13 +994,13 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
     else if (parameters.size() == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
-        line = parameters[0];
+        line = til::at(parameters, 0);
     }
     else if (parameters.size() == 2)
     {
         // If there are exactly two parameters, use them.
-        line = parameters[0];
-        column = parameters[1];
+        line = til::at(parameters, 0);
+        column = til::at(parameters, 1);
     }
     else
     {
