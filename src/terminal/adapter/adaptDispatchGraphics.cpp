@@ -44,7 +44,7 @@ void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground) noex
 // - <none>
 void AdaptDispatch::s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground) noexcept
 {
-#pragma warning(suppress:26496) // SA is wrong. This variable is assigned more than once.
+#pragma warning(suppress : 26496) // SA is wrong. This variable is assigned more than once.
     // Copy the new attribute to apply
     WORD wNewColors = applyThis;
 
