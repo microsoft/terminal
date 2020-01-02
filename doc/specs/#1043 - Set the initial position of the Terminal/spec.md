@@ -33,8 +33,9 @@ Two new properties should be added in the json settings file:
        "abc, 1000" equals to (default, 1000)
 
 **launchMode**: string. Determine the launch mode. There are two modes for now
-                         1. maximize: the window will be maximized when launch.
-                         2. default: the window will be initialized with system default size. 
+
+1. maximize: the window will be maximized when launch.
+2. default: the window will be initialized with system default size.
 
 The steps of this process:
 
