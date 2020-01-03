@@ -204,7 +204,7 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
     {
         // This is a C0 Control Character.
         // This should be translated as Ctrl+(wch+x40)
-        wchar_t actualChar = wch;
+        const wchar_t actualChar = wch;
         bool writeCtrl = true;
 
         short vkey = 0;
@@ -393,7 +393,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     const auto remainingArgs = parameters.size() > 1 ? parameters.substr(1) : std::basic_string_view<size_t>{};
 
     bool success = false;
-    switch ((CsiActionCodes)wch)
+    switch (static_cast<CsiActionCodes>(wch))
     {
     case CsiActionCodes::Generic:
         modifierState = _GetGenericKeysModifierState(parameters);
@@ -437,7 +437,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 
     if (success)
     {
-        switch ((CsiActionCodes)wch)
+        switch (static_cast<CsiActionCodes>(wch))
         {
         // case CsiActionCodes::DSR_DeviceStatusReportResponse:
         case CsiActionCodes::CSI_F3:
@@ -493,14 +493,14 @@ bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
 {
     // Ss3 sequence keys aren't modified.
     // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
-    DWORD dwModifierState = 0;
+    const DWORD modifierState = 0;
     short vkey = 0;
 
     bool success = _GetSs3KeysVkey(wch, vkey);
 
     if (success)
     {
-        success = _WriteSingleKey(vkey, dwModifierState);
+        success = _WriteSingleKey(vkey, modifierState);
     }
 
     return success;
@@ -513,7 +513,7 @@ bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
 // - <none>
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionClear()
+bool InputStateMachineEngine::ActionClear() noexcept
 {
     return true;
 }
@@ -525,7 +525,7 @@ bool InputStateMachineEngine::ActionClear()
 // - <none>
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionIgnore()
+bool InputStateMachineEngine::ActionIgnore() noexcept
 {
     return true;
 }
@@ -541,7 +541,7 @@ bool InputStateMachineEngine::ActionIgnore()
 // - true if we handled the dsipatch.
 bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                 const size_t /*parameter*/,
-                                                const std::wstring_view /*string*/)
+                                                const std::wstring_view /*string*/) noexcept
 {
     return false;
 }
@@ -575,7 +575,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     const bool ctrl = WI_IsFlagSet(modifierState, LEFT_CTRL_PRESSED);
     const bool alt = WI_IsFlagSet(modifierState, LEFT_ALT_PRESSED);
 
-    INPUT_RECORD next;
+    INPUT_RECORD next{ 0 };
 
     DWORD currentModifiers = 0;
 
@@ -587,7 +587,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -599,7 +599,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -611,7 +611,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -626,7 +626,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -638,7 +638,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -650,7 +650,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -681,7 +681,7 @@ void InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
     rec.Event.KeyEvent.dwControlKeyState = modifierState;
     rec.Event.KeyEvent.wRepeatCount = 1;
     rec.Event.KeyEvent.wVirtualKeyCode = vkey;
-    rec.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+    rec.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(vkey, MAPVK_VK_TO_VSC));
     rec.Event.KeyEvent.uChar.UnicodeChar = wch;
     input.push_back(rec);
 
@@ -715,12 +715,12 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 //      Will automatically get the wchar_t associated with that vkey.
 // Arguments:
 // - vkey - the VKEY of the key to write to the input callback.
-// - dwModifierState - the modifier state to write with the key.
+// - modifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwModifierState)
 {
-    wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
+    const wchar_t wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
     return _WriteSingleKey(wch, vkey, dwModifierState);
 }
 
@@ -732,7 +732,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwMo
 // - cParams - the number of elements in rgusParams
 // Return Value:
 // - the INPUT_RECORD comaptible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters)
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
 {
     // Both Cursor keys and generic keys keep their modifiers in the same index.
     return _GetGenericKeysModifierState(parameters);
@@ -746,7 +746,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_stri
 // - cParams - the number of elements in rgusParams
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters)
+DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
 {
     DWORD modifiers = 0;
     if (_IsModified(parameters.size()) && parameters.size() >= 2)
@@ -762,7 +762,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
 // - paramCount - the nummber of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
-bool InputStateMachineEngine::_IsModified(const size_t paramCount)
+bool InputStateMachineEngine::_IsModified(const size_t paramCount) noexcept
 {
     // modified input either looks like
     // \x1b[1;mA or \x1b[17;m~
@@ -776,7 +776,7 @@ bool InputStateMachineEngine::_IsModified(const size_t paramCount)
 // - modifierParam - the VT modifier value to convert
 // Return Value:
 // - The equivalent INPUT_RECORD modifier value.
-DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam)
+DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 {
     // VT Modifiers are 1+(modifier flags)
     const auto vtParam = modifierParam - 1;
@@ -805,7 +805,7 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
         return false;
     }
 
-    const auto identifier = (GenericKeyIdentifiers)parameters[0];
+    const auto identifier = (GenericKeyIdentifiers)til::at(parameters, 0);
 
     const auto mapping = std::find(s_genericMap.cbegin(), s_genericMap.cend(), identifier);
     if (mapping != s_genericMap.end())
@@ -869,14 +869,14 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) co
 // <none>
 bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
                                                    short& vkey,
-                                                   DWORD& modifierState)
+                                                   DWORD& modifierState) noexcept
 {
     // Low order byte is key, high order is modifiers
-    short keyscan = VkKeyScanW(wch);
+    const short keyscan = VkKeyScanW(wch);
 
     short key = LOBYTE(keyscan);
 
-    short keyscanModifiers = HIBYTE(keyscan);
+    const short keyscanModifiers = HIBYTE(keyscan);
 
     if (key == -1 && keyscanModifiers == -1)
     {
@@ -902,7 +902,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
-bool InputStateMachineEngine::FlushAtEndOfString() const
+bool InputStateMachineEngine::FlushAtEndOfString() const noexcept
 {
     return true;
 }
@@ -917,7 +917,7 @@ bool InputStateMachineEngine::FlushAtEndOfString() const
 // Return Value:
 // - True iff we should return to the Ground state when the state machine
 //      encounters a Control (C0) character in the Escape state.
-bool InputStateMachineEngine::DispatchControlCharsFromEscape() const
+bool InputStateMachineEngine::DispatchControlCharsFromEscape() const noexcept
 {
     return true;
 }
@@ -930,7 +930,7 @@ bool InputStateMachineEngine::DispatchControlCharsFromEscape() const
 // Return Value:
 // - True iff we should dispatch in the Escape state when we encounter a
 //   Intermediate character.
-bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const
+bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 {
     return true;
 }
@@ -946,14 +946,14 @@ bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
 bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
-                                                         unsigned int& function) const
+                                                         unsigned int& function) const noexcept
 {
     bool success = false;
     function = DispatchTypes::WindowManipulationType::Invalid;
 
     if (!parameters.empty())
     {
-        switch (parameters[0])
+        switch (til::at(parameters, 0))
         {
         case DispatchTypes::WindowManipulationType::RefreshWindow:
             function = DispatchTypes::WindowManipulationType::RefreshWindow;
@@ -981,7 +981,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
 bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t> parameters,
                                              size_t& line,
-                                             size_t& column) const
+                                             size_t& column) const noexcept
 {
     bool success = true;
     line = DefaultLine;
@@ -994,13 +994,13 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
     else if (parameters.size() == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
-        line = parameters[0];
+        line = til::at(parameters, 0);
     }
     else if (parameters.size() == 2)
     {
         // If there are exactly two parameters, use them.
-        line = parameters[0];
-        column = parameters[1];
+        line = til::at(parameters, 0);
+        column = til::at(parameters, 1);
     }
     else
     {

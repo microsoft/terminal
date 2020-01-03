@@ -20,7 +20,7 @@ using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 // - isForeground - True if we're modifying the FOREGROUND colors. False if we're doing BACKGROUND.
 // Return Value:
 // - <none>
-void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground)
+void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground) noexcept
 {
     if (isForeground)
     {
@@ -42,8 +42,9 @@ void AdaptDispatch::s_DisableAllColors(WORD& attr, const bool isForeground)
 //   upon.
 // Return Value:
 // - <none>
-void AdaptDispatch::s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground)
+void AdaptDispatch::s_ApplyColors(WORD& attr, const WORD applyThis, const bool isForeground) noexcept
 {
+#pragma warning(suppress : 26496) // SA is wrong. This variable is assigned more than once.
     // Copy the new attribute to apply
     WORD wNewColors = applyThis;
 
@@ -262,12 +263,15 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
     }
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // we do not want constexpr compilation because these always evaluate at runtime
+
 // Routine Description:
 // Returns true if the GraphicsOption represents an extended text attribute.
 //   These include things such as Underlined, Italics, Blinking, etc.
 // Return Value:
 // - true if the opt is the indicator for an extended text attribute, false otherwise.
-bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     // TODO:GH#2916 add support for DoublyUnderlined, Faint(RGBColorOrFaint).
     // These two are currently partially implemented as other things:
@@ -291,7 +295,7 @@ bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptio
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
+static constexpr bool _isRgbColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::ForegroundExtended ||
            opt == DispatchTypes::GraphicsOptions::BackgroundExtended;
@@ -302,7 +306,7 @@ bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
-bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::BoldBright ||
            opt == DispatchTypes::GraphicsOptions::UnBold;
@@ -313,12 +317,14 @@ bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt
 //the default attributes.
 // Return Value:
 // - true if the opt sets either/or attribute to the defaults, false otherwise.
-bool AdaptDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
+static constexpr bool _isDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
     return opt == DispatchTypes::GraphicsOptions::Off ||
            opt == DispatchTypes::GraphicsOptions::ForegroundDefault ||
            opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
@@ -344,11 +350,11 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
 {
     bool success = false;
     optionsConsumed = 1;
-    if (options.size() >= 2 && s_IsRgbColorOption(options.at(0)))
+    if (options.size() >= 2 && _isRgbColorOption(til::at(options, 0)))
     {
         optionsConsumed = 2;
-        DispatchTypes::GraphicsOptions extendedOpt = options.at(0);
-        DispatchTypes::GraphicsOptions typeOpt = options.at(1);
+        const auto extendedOpt = til::at(options, 0);
+        const auto typeOpt = til::at(options, 1);
 
         if (extendedOpt == DispatchTypes::GraphicsOptions::ForegroundExtended)
         {
@@ -363,9 +369,9 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
         {
             optionsConsumed = 5;
             // ensure that each value fits in a byte
-            unsigned int red = std::min(static_cast<unsigned int>(options.at(2)), 255u);
-            unsigned int green = std::min(static_cast<unsigned int>(options.at(3)), 255u);
-            unsigned int blue = std::min(static_cast<unsigned int>(options.at(4)), 255u);
+            unsigned int red = std::min(static_cast<unsigned int>(til::at(options, 2)), 255u);
+            unsigned int green = std::min(static_cast<unsigned int>(til::at(options, 3)), 255u);
+            unsigned int blue = std::min(static_cast<unsigned int>(til::at(options, 4)), 255u);
 
             rgbColor = RGB(red, green, blue);
 
@@ -374,9 +380,9 @@ bool AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTyp
         else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && options.size() >= 3)
         {
             optionsConsumed = 3;
-            if (options.at(2) <= 255) // ensure that the provided index is on the table
+            if (til::at(options, 2) <= 255) // ensure that the provided index is on the table
             {
-                unsigned int tableIndex = options.at(2);
+                const auto tableIndex = til::at(options, 2);
 
                 success = _pConApi->SetConsoleXtermTextAttribute(tableIndex, isForeground);
             }
@@ -487,22 +493,22 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
         // Run through the graphics options and apply them
         for (size_t i = 0; i < options.size(); i++)
         {
-            DispatchTypes::GraphicsOptions opt = options.at(i);
-            if (s_IsDefaultColorOption(opt))
+            const auto opt = til::at(options, i);
+            if (_isDefaultColorOption(opt))
             {
                 success = _SetDefaultColorHelper(opt);
             }
-            else if (s_IsBoldColorOption(opt))
+            else if (_isBoldColorOption(opt))
             {
                 success = _SetBoldColorHelper(opt);
             }
-            else if (s_IsExtendedTextAttribute(opt))
+            else if (_isExtendedTextAttribute(opt))
             {
                 success = _SetExtendedTextAttributeHelper(opt);
             }
-            else if (s_IsRgbColorOption(opt))
+            else if (_isRgbColorOption(opt))
             {
-                COLORREF rgbColor;
+                COLORREF rgbColor{ 0 };
                 bool isForeground = true;
 
                 size_t optionsConsumed = 0;

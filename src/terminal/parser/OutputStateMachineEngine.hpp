@@ -23,7 +23,6 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
-        ~OutputStateMachineEngine();
 
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
@@ -41,20 +40,20 @@ namespace Microsoft::Console::VirtualTerminal
                                const std::basic_string_view<wchar_t> intermediates,
                                const std::basic_string_view<size_t> parameters) override;
 
-        bool ActionClear() override;
+        bool ActionClear() noexcept override;
 
-        bool ActionIgnore() override;
+        bool ActionIgnore() noexcept override;
 
         bool ActionOscDispatch(const wchar_t wch,
                                const size_t parameter,
                                const std::wstring_view string) override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                               const std::basic_string_view<size_t> parameters) override;
+                               const std::basic_string_view<size_t> parameters) noexcept override;
 
-        bool FlushAtEndOfString() const override;
-        bool DispatchControlCharsFromEscape() const override;
-        bool DispatchIntermediatesFromEscape() const override;
+        bool FlushAtEndOfString() const noexcept override;
+        bool DispatchControlCharsFromEscape() const noexcept override;
+        bool DispatchIntermediatesFromEscape() const noexcept override;
 
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
@@ -152,32 +151,32 @@ namespace Microsoft::Console::VirtualTerminal
 
         static constexpr DispatchTypes::EraseType DefaultEraseType = DispatchTypes::EraseType::ToEnd;
         bool _GetEraseOperation(const std::basic_string_view<size_t> parameters,
-                                DispatchTypes::EraseType& eraseType) const;
+                                DispatchTypes::EraseType& eraseType) const noexcept;
 
         static constexpr size_t DefaultCursorDistance = 1;
         bool _GetCursorDistance(const std::basic_string_view<size_t> parameters,
-                                size_t& distance) const;
+                                size_t& distance) const noexcept;
 
         static constexpr size_t DefaultScrollDistance = 1;
         bool _GetScrollDistance(const std::basic_string_view<size_t> parameters,
-                                size_t& distance) const;
+                                size_t& distance) const noexcept;
 
         static constexpr size_t DefaultConsoleWidth = 80;
         bool _GetConsoleWidth(const std::basic_string_view<size_t> parameters,
-                              size_t& consoleWidth) const;
+                              size_t& consoleWidth) const noexcept;
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;
         bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
                             size_t& line,
-                            size_t& column) const;
+                            size_t& column) const noexcept;
 
         bool _GetDeviceStatusOperation(const std::basic_string_view<size_t> parameters,
-                                       DispatchTypes::AnsiStatusType& statusType) const;
+                                       DispatchTypes::AnsiStatusType& statusType) const noexcept;
 
-        bool _VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const;
+        bool _VerifyHasNoParameters(const std::basic_string_view<size_t> parameters) const noexcept;
 
-        bool _VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const;
+        bool _VerifyDeviceAttributesParams(const std::basic_string_view<size_t> parameters) const noexcept;
 
         bool _GetPrivateModeParams(const std::basic_string_view<size_t> parameters,
                                    std::vector<DispatchTypes::PrivateModeParams>& privateModes) const;
@@ -186,44 +185,42 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr size_t DefaultBottomMargin = 0;
         bool _GetTopBottomMargins(const std::basic_string_view<size_t> parameters,
                                   size_t& topMargin,
-                                  size_t& bottomMargin) const;
+                                  size_t& bottomMargin) const noexcept;
 
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 
         static constexpr size_t DefaultTabDistance = 1;
         bool _GetTabDistance(const std::basic_string_view<size_t> parameters,
-                             size_t& distance) const;
+                             size_t& distance) const noexcept;
 
         static constexpr size_t DefaultTabClearType = 0;
         bool _GetTabClearType(const std::basic_string_view<size_t> parameters,
-                              size_t& clearType) const;
+                              size_t& clearType) const noexcept;
 
         static constexpr DesignateCharsetTypes DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
         bool _GetDesignateType(const wchar_t intermediate,
-                               DesignateCharsetTypes& designateType) const;
+                               DesignateCharsetTypes& designateType) const noexcept;
 
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
-                                        unsigned int& function) const;
+                                        unsigned int& function) const noexcept;
 
         static bool s_HexToUint(const wchar_t wch,
-                                unsigned int& value);
-        static bool s_IsNumber(const wchar_t wch);
-        static bool s_IsHexNumber(const wchar_t wch);
+                                unsigned int& value) noexcept;
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   size_t& tableIndex,
-                                  DWORD& rgb) const;
+                                  DWORD& rgb) const noexcept;
 
         static bool s_ParseColorSpec(const std::wstring_view string,
-                                     DWORD& rgb);
+                                     DWORD& rgb) noexcept;
 
         bool _GetOscSetColor(const std::wstring_view string,
-                             DWORD& rgb) const;
+                             DWORD& rgb) const noexcept;
 
         static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
         bool _GetCursorStyle(const std::basic_string_view<size_t> parameters,
-                             DispatchTypes::CursorStyle& cursorStyle) const;
+                             DispatchTypes::CursorStyle& cursorStyle) const noexcept;
 
         static constexpr size_t DefaultRepeatCount = 1;
         bool _GetRepeatCount(const std::basic_string_view<size_t> parameters,
