@@ -89,8 +89,8 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
     if (options.size() >= 2 && s_IsRgbColorOption(options.front()))
     {
         optionsConsumed = 2;
-        const auto extendedOpt = options.at(0);
-        const auto typeOpt = options.at(1);
+        const auto extendedOpt = til::at(options, 0);
+        const auto typeOpt = til::at(options, 1);
 
         if (extendedOpt == DispatchTypes::GraphicsOptions::ForegroundExtended)
         {
@@ -119,7 +119,7 @@ bool TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispatch
             optionsConsumed = 3;
             if (options.at(2) <= 255) // ensure that the provided index is on the table
             {
-                const auto tableIndex = options.at(2);
+                const auto tableIndex = til::at(options, 2);
                 success = isForeground ?
                               _terminalApi.SetTextForegroundIndex(gsl::narrow_cast<BYTE>(tableIndex)) :
                               _terminalApi.SetTextBackgroundIndex(gsl::narrow_cast<BYTE>(tableIndex));
@@ -290,45 +290,37 @@ void TerminalDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOpt
 bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept
 {
     bool success = false;
-    try
+    // Run through the graphics options and apply them
+    for (size_t i = 0; i < options.size(); i++)
     {
-        // Run through the graphics options and apply them
-        for (size_t i = 0; i < options.size(); i++)
+        DispatchTypes::GraphicsOptions opt = options.at(i);
+        if (s_IsDefaultColorOption(opt))
         {
-            const auto opt = options.at(i);
-            if (s_IsDefaultColorOption(opt))
-            {
-                success = _SetDefaultColorHelper(opt);
-            }
-            else if (s_IsBoldColorOption(opt))
+            success = _SetDefaultColorHelper(opt);
+        }
+        else if (s_IsBoldColorOption(opt))
+        {
+            success = _SetBoldColorHelper(opt);
+        }
+        else if (s_IsRgbColorOption(opt))
+        {
+            size_t optionsConsumed = 0;
+
+            // _SetRgbColorsHelper will call the appropriate ConApi function
+            success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
+
+            i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
+        }
+        else
+        {
+            _SetGraphicsOptionHelper(opt);
+
+            // Make sure we un-bold
+            if (success && opt == DispatchTypes::GraphicsOptions::Off)
             {
                 success = _SetBoldColorHelper(opt);
             }
-            else if (s_IsRgbColorOption(opt))
-            {
-                size_t optionsConsumed = 0;
-
-                // _SetRgbColorsHelper will call the appropriate ConApi function
-                success = _SetRgbColorsHelper(options.substr(i), optionsConsumed);
-
-                i += (optionsConsumed - 1); // optionsConsumed includes the opt we're currently on.
-            }
-            else
-            {
-                _SetGraphicsOptionHelper(opt);
-
-                // Make sure we un-bold
-                if (success && opt == DispatchTypes::GraphicsOptions::Off)
-                {
-                    success = _SetBoldColorHelper(opt);
-                }
-            }
         }
-    }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        success = false;
     }
     return success;
 }

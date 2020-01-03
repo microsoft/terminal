@@ -9,8 +9,6 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
 
-#include <safeint.h>
-
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -119,7 +117,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
         if (success)
         {
             // Prepare our variables for math. All operations are some variation on these two parameters
-            SHORT& modify = cursor.X; // The coordinate X or Y gets modified
+            SHORT* pModify = nullptr; // The coordinate X or Y gets modified
             SHORT boundary = 0; // There is a particular edge of the viewport that is our boundary condition as we approach it.
 
             // Up and Down modify the Y coordinate. Left and Right modify the X.
@@ -129,11 +127,11 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
             case CursorDirection::Down:
             case CursorDirection::NextLine:
             case CursorDirection::PrevLine:
-                modify = cursor.Y;
+                pModify = &cursor.Y;
                 break;
             case CursorDirection::Left:
             case CursorDirection::Right:
-                modify = cursor.X;
+                pModify = &cursor.X;
                 break;
             default:
                 success = false;
@@ -162,7 +160,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                 break;
             }
 
-            if (success)
+            if (success && pModify)
             {
                 // For up and left, we need to subtract the magnitude of the vector to get the new spot. Right/down = add.
                 // Use safe short subtraction to prevent under/overflow.
@@ -171,12 +169,12 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                 case CursorDirection::Up:
                 case CursorDirection::Left:
                 case CursorDirection::PrevLine:
-                    success = SUCCEEDED(ShortSub(modify, delta, &modify));
+                    success = SUCCEEDED(ShortSub(*pModify, delta, pModify));
                     break;
                 case CursorDirection::Down:
                 case CursorDirection::Right:
                 case CursorDirection::NextLine:
-                    success = SUCCEEDED(ShortAdd(modify, delta, &modify));
+                    success = SUCCEEDED(ShortAdd(*pModify, delta, pModify));
                     break;
                 }
 
@@ -188,13 +186,13 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
                     case CursorDirection::Up:
                     case CursorDirection::Left:
                     case CursorDirection::PrevLine:
-                        modify = std::max(modify, boundary);
+                        *pModify = std::max(*pModify, boundary);
                         break;
                     case CursorDirection::Down:
                     case CursorDirection::Right:
                     case CursorDirection::NextLine:
                         // For the bottom and right edges, the viewport value is stated to be one outside the rectangle.
-                        modify = std::min(modify, gsl::narrow<SHORT>(boundary - 1));
+                        *pModify = std::min(*pModify, gsl::narrow<SHORT>(boundary - 1));
                         break;
                     default:
                         success = false;
@@ -349,33 +347,28 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
         else
         {
             // remember, in VT speak, this is relative to the viewport. not absolute.
-            SHORT diff;
-            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.Y, csbiex.srWindow.Top, &diff));
-            if (success)
-            {
-                success = SUCCEEDED(ShortToSizeT(diff, &rowActual));
-            }
+            SHORT diff = 0;
+            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.Y, csbiex.srWindow.Top, &diff)) && SUCCEEDED(ShortToSizeT(diff, &rowActual));
         }
 
-        if (column)
+        if (success)
         {
-            if (column.value() != 0)
+            if (column)
             {
-                columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                if (column.value() != 0)
+                {
+                    columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                }
+                else
+                {
+                    success = false; // The parser should never return 0 (0 maps to 1), so this is a failure condition.
+                }
             }
             else
             {
-                success = false; // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-            }
-        }
-        else
-        {
-            // remember, in VT speak, this is relative to the viewport. not absolute.
-            SHORT diff;
-            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.X, csbiex.srWindow.Left, &diff));
-            if (success)
-            {
-                success = SUCCEEDED(ShortToSizeT(diff, &columnActual));
+                // remember, in VT speak, this is relative to the viewport. not absolute.
+                SHORT diff = 0;
+                success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.X, csbiex.srWindow.Left, &diff)) && SUCCEEDED(ShortToSizeT(diff, &columnActual));
             }
         }
 
@@ -546,24 +539,15 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT distance;
-    if (FAILED(SizeTToShort(count, &distance)))
-    {
-        return false;
-    }
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(SizeTToShort(count, &distance)));
 
     // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    if (!_pConApi->MoveToBottom())
-    {
-        return false;
-    }
-    if (!_pConApi->GetConsoleScreenBufferInfoEx(csbiex))
-    {
-        return false;
-    }
+    RETURN_BOOL_IF_FALSE(_pConApi->MoveToBottom());
+    RETURN_BOOL_IF_FALSE(_pConApi->GetConsoleScreenBufferInfoEx(csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
@@ -696,22 +680,13 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
     {
         const COORD startPosition = csbiex.dwCursorPosition;
 
-        SHORT result{ 0 };
-        success = SUCCEEDED(ShortSub(csbiex.dwSize.X, startPosition.X, &result));
-        if (success)
-        {
-            size_t remainingSpaces{ 0 };
-            success = SUCCEEDED(ShortToSizeT(result, &remainingSpaces));
-            if (success)
-            {
-                const auto actualRemaining = (remainingSpaces < 0) ? 0 : remainingSpaces;
-                // erase at max the number of characters remaining in the line from the current position.
-                const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
+        const SHORT remainingSpaces = csbiex.dwSize.X - startPosition.X;
+        const size_t actualRemaining = gsl::narrow_cast<size_t>((remainingSpaces < 0) ? 0 : remainingSpaces);
+        // erase at max the number of characters remaining in the line from the current position.
+        const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
 
-                // Note that the region is filled with the standard erase attributes.
-                success = _pConApi->PrivateFillRegion(startPosition, eraseLength, UNICODE_SPACE, true);
-            }
-        }
+        // Note that the region is filled with the standard erase attributes.
+        success = _pConApi->PrivateFillRegion(startPosition, eraseLength, L' ', true);
     }
     return success;
 }
@@ -1724,83 +1699,83 @@ bool AdaptDispatch::_EraseAll()
 // Routine Description:
 // - Enables or disables support for the DECCOLM escape sequence.
 // Arguments:
-// - fEnabled - set to true to allow DECCOLM to be used, false to disallow.
+// - enabled - set to true to allow DECCOLM to be used, false to disallow.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableDECCOLMSupport(const bool fEnabled) noexcept
+bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 {
-    _isDECCOLMAllowed = fEnabled;
+    _isDECCOLMAllowed = enabled;
     return true;
 }
 
 //Routine Description:
 // Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableVT200MouseMode(fEnabled);
+    return _pConApi->PrivateEnableVT200MouseMode(enabled);
 }
 
 //Routine Description:
 // Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
 //      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
+    return _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable SGR Extended Encoding - this changes the encoding scheme for sequences
 //      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
+    return _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableButtonEventMouseMode(fEnabled);
+    return _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
 
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
+bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
-    return _pConApi->PrivateEnableAnyEventMouseMode(fEnabled);
+    return _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 }
 
 //Routine Description:
 // Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
 //      scroll up/down events instead of the usual sequences
 //Arguments:
-// - fEnabled - true to enable, false to disable.
+// - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
+bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 {
-    return _pConApi->PrivateEnableAlternateScroll(fEnabled);
+    return _pConApi->PrivateEnableAlternateScroll(enabled);
 }
 
 //Routine Description:
@@ -1990,7 +1965,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         if (parameters.size() == 2)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters.back(), parameters.front());
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
         }
         break;
     default:

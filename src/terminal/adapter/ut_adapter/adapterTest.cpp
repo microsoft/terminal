@@ -289,7 +289,7 @@ public:
         return true;
     }
 
-    bool PrivateSetExtendedTextAttributes(const ExtendedAttributes& /*attrs*/)
+    bool PrivateSetExtendedTextAttributes(const ExtendedAttributes /*attrs*/)
     {
         Log::Comment(L"PrivateSetExtendedTextAttributes MOCK called...");
         return true;

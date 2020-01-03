@@ -109,7 +109,7 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
 {
     if (string.size() == 1)
     {
-        const wchar_t wch = *string.cbegin();
+        const auto wch = til::at(string, 0);
         const auto sch = gsl::narrow_cast<INT16>(wch);
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",

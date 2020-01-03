@@ -83,6 +83,9 @@
     <None Include="packages.config" />
     <None Include="TerminalControl.def" />
   </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources/en-US/Resources.resw" />
+  </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="..\..\types\lib\types.vcxproj" />
@@ -100,6 +103,10 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

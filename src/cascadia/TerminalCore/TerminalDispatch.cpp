@@ -37,25 +37,15 @@ try
     SHORT x{ 0 };
     SHORT y{ 0 };
 
-    if (FAILED(SizeTToShort(column, &x)) ||
-        FAILED(SizeTToShort(line, &y)))
-    {
-        return false;
-    }
-
-    if (FAILED(ShortSub(x, 1, &x)) ||
-        FAILED(ShortSub(y, 1, &y)))
-    {
-        return false;
-    }
+    RETURN_BOOL_IF_FALSE(FAILED(SizeTToShort(column, &x)) ||
+        FAILED(SizeTToShort(line, &y)));
+    
+    RETURN_BOOL_IF_FALSE(FAILED(ShortSub(x, 1, &x)) ||
+        FAILED(ShortSub(y, 1, &y)));
 
     return _terminalApi.SetCursorPosition(x, y);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::CursorForward(const size_t distance) noexcept
 try
@@ -64,11 +54,7 @@ try
     const COORD newCursorPos{ cursorPos.X + gsl::narrow<short>(distance), cursorPos.Y };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::CursorBackward(const size_t distance) noexcept
 try
@@ -77,11 +63,7 @@ try
     const COORD newCursorPos{ cursorPos.X - gsl::narrow<short>(distance), cursorPos.Y };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::CursorUp(const size_t distance) noexcept
 try
@@ -90,33 +72,21 @@ try
     const COORD newCursorPos{ cursorPos.X, cursorPos.Y + gsl::narrow<short>(distance) };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::EraseCharacters(const size_t numChars) noexcept
 try
 {
     return _terminalApi.EraseCharacters(numChars);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::SetWindowTitle(std::wstring_view title) noexcept
 try
 {
     return _terminalApi.SetWindowTitle(title);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Sets a single entry of the colortable to a new value
@@ -131,22 +101,14 @@ try
 {
     return _terminalApi.SetColorTableEntry(tableIndex, color);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noexcept
 try
 {
     return _terminalApi.SetCursorStyle(cursorStyle);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Sets the default foreground color to a new value
@@ -159,11 +121,7 @@ try
 {
     return _terminalApi.SetDefaultForeground(color);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Sets the default background color to a new value
@@ -176,11 +134,7 @@ try
 {
     return _terminalApi.SetDefaultBackground(color);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Erases characters in the buffer depending on the erase type
@@ -193,11 +147,7 @@ try
 {
     return _terminalApi.EraseInLine(eraseType);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Deletes count number of characters starting from where the cursor is currently
@@ -210,11 +160,7 @@ try
 {
     return _terminalApi.DeleteCharacter(count);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Adds count number of spaces starting from where the cursor is currently
@@ -227,11 +173,7 @@ try
 {
     return _terminalApi.InsertCharacter(count);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Moves the viewport and erases text from the buffer depending on the eraseType
@@ -244,8 +186,4 @@ try
 {
     return _terminalApi.EraseInDisplay(eraseType);
 }
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
+CATCH_LOG_RETURN_FALSE()

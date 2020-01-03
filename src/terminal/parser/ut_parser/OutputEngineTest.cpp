@@ -307,7 +307,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
-        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345);
+        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345u);
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -442,12 +442,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'0');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         mach.ProcessCharacter(L';');
-        for (int i = 0; i < MAX_PATH; i++) // The buffer is only 256 long, so any longer value should work :P
+        for (int i = 0; i < 260u; i++) // The buffer is only 256 long, so any longer value should work :P
         {
             mach.ProcessCharacter(L's');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         }
-        VERIFY_ARE_EQUAL(mach._oscString.size(), MAX_PATH);
+        VERIFY_ARE_EQUAL(mach._oscString.size(), 260u);
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -468,7 +468,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -498,7 +498,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -800,20 +800,13 @@ public:
     }
 
     bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept override
+    try
     {
-        try
-        {
-            _options.assign(options.cbegin(), options.cend());
-            _setGraphics = true;
-
-            return true;
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            return false;
-        }
+        _options.assign(options.cbegin(), options.cend());
+        _setGraphics = true;
+        return true;
     }
+    CATCH_LOG_RETURN_FALSE()
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) noexcept override
     {
@@ -972,30 +965,6 @@ class StateMachineExternalTest final
     TEST_METHOD_SETUP(SetupState)
     {
         return true;
-    }
-
-    void TestEscCursorMovement(wchar_t const wchCommand,
-                               const bool* const pfFlag,
-                               StateMachine& mach,
-                               StatefulDispatch& dispatch)
-    {
-        mach.ProcessCharacter(AsciiChars::ESC);
-        mach.ProcessCharacter(wchCommand);
-
-        VERIFY_IS_TRUE(*pfFlag);
-        VERIFY_ARE_EQUAL(dispatch._cursorDistance, 1u);
-    }
-
-    TEST_METHOD(TestEscCursorMovement)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-        TestEscCursorMovement(L'A', &pDispatch->_cursorUp, mach, *pDispatch);
-        TestEscCursorMovement(L'B', &pDispatch->_cursorDown, mach, *pDispatch);
-        TestEscCursorMovement(L'C', &pDispatch->_cursorForward, mach, *pDispatch);
-        TestEscCursorMovement(L'D', &pDispatch->_cursorBackward, mach, *pDispatch);
     }
 
     void InsertNumberToMachine(StateMachine* const pMachine, size_t number)

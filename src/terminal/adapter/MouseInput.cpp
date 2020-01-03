@@ -26,9 +26,6 @@ MouseInput::MouseInput(const WriteInputEvents pfnWriteEvents) noexcept :
 {
 }
 
-#pragma warning(push)
-#pragma warning(disable : 26497) // we do not want constexpr compilation of these test functions
-
 // Routine Description:
 // - Determines if the input windows message code describes a button event
 //     (left, middle, right button and any of up, down or double click)
@@ -37,7 +34,7 @@ MouseInput::MouseInput(const WriteInputEvents pfnWriteEvents) noexcept :
 // - button - the message to decode.
 // Return value:
 // - true iff button is a button message to translate
-bool MouseInput::s_IsButtonMsg(const unsigned int button) noexcept
+static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 {
     bool isButton = false;
     switch (button)
@@ -65,7 +62,7 @@ bool MouseInput::s_IsButtonMsg(const unsigned int button) noexcept
 // - buttonCode - the message to decode.
 // Return value:
 // - true iff buttonCode is a hover enent to translate
-bool MouseInput::s_IsHoverMsg(const unsigned int buttonCode) noexcept
+static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEMOVE;
 }
@@ -77,7 +74,7 @@ bool MouseInput::s_IsHoverMsg(const unsigned int buttonCode) noexcept
 // - button - the message to decode.
 // Return value:
 // - true iff button is a button down event
-bool MouseInput::s_IsButtonDown(const unsigned int button) noexcept
+static constexpr bool _isButtonDown(const unsigned int button) noexcept
 {
     bool isButtonDown = false;
     switch (button)
@@ -125,10 +122,10 @@ bool MouseInput::s_IsButtonDown(const unsigned int button) noexcept
 // - delta - scroll wheel delta
 // Return value:
 // - the int representing the equivalent X button encoding.
-int MouseInput::s_WindowsButtonToXEncoding(const unsigned int button,
-                                           const bool isHover,
-                                           const short modifierKeyState,
-                                           const short delta) noexcept
+static constexpr int _windowsButtonToXEncoding(const unsigned int button,
+                                               const bool isHover,
+                                               const short modifierKeyState,
+                                               const short delta) noexcept
 {
     int xvalue = 0;
     switch (button)
@@ -179,10 +176,10 @@ int MouseInput::s_WindowsButtonToXEncoding(const unsigned int button,
 // - button - the message to decode.
 // Return value:
 // - the int representing the equivalent X button encoding.
-int MouseInput::s_WindowsButtonToSGREncoding(const unsigned int button,
-                                             const bool isHover,
-                                             const short modifierKeyState,
-                                             const short delta) noexcept
+static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
+                                                 const bool isHover,
+                                                 const short modifierKeyState,
+                                                 const short delta) noexcept
 {
     int xvalue = 0;
     switch (button)
@@ -230,7 +227,7 @@ int MouseInput::s_WindowsButtonToSGREncoding(const unsigned int button,
 // - coordWinCoordinate - the coordinate to translate
 // Return value:
 // - the translated coordinate.
-COORD MouseInput::s_WinToVTCoord(const COORD coordWinCoordinate) noexcept
+static constexpr COORD _winToVTCoord(const COORD coordWinCoordinate) noexcept
 {
     return { coordWinCoordinate.X + 1, coordWinCoordinate.Y + 1 };
 }
@@ -242,12 +239,10 @@ COORD MouseInput::s_WinToVTCoord(const COORD coordWinCoordinate) noexcept
 // - sCoordinateValue - the value to encode.
 // Return value:
 // - the encoded value.
-short MouseInput::s_EncodeDefaultCoordinate(const short sCoordinateValue) noexcept
+static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) noexcept
 {
     return sCoordinateValue + 32;
 }
-
-#pragma warning(pop)
 
 // Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
@@ -276,8 +271,8 @@ bool MouseInput::HandleMouse(const COORD position,
         if (success)
         {
             // isHover is only true for WM_MOUSEMOVE events
-            const bool isHover = s_IsHoverMsg(button);
-            const bool isButton = s_IsButtonMsg(button);
+            const bool isHover = _isHoverMsg(button);
+            const bool isButton = _isButtonMsg(button);
 
             const bool sameCoord = (position.X == _lastPos.X) &&
                                    (position.Y == _lastPos.Y) &&
@@ -302,7 +297,7 @@ bool MouseInput::HandleMouse(const COORD position,
             if (success)
             {
                 std::wstring sequence;
-                switch (_ExtendedMode)
+                switch (_extendedMode)
                 {
                 case ExtendedMode::None:
                     sequence = _GenerateDefaultSequence(position,
@@ -325,7 +320,7 @@ bool MouseInput::HandleMouse(const COORD position,
                     //      then use that pressed button instead.
                     sequence = _GenerateSGRSequence(position,
                                                     physicalButtonPressed ? realButton : button,
-                                                    s_IsButtonDown(realButton), // Use realButton here, to properly get the up/down state
+                                                    _isButtonDown(realButton), // Use realButton here, to properly get the up/down state
                                                     isHover,
                                                     modifierKeyState,
                                                     delta);
@@ -370,7 +365,7 @@ std::wstring MouseInput::_GenerateDefaultSequence(const COORD position,
                                                   const unsigned int button,
                                                   const bool isHover,
                                                   const short modifierKeyState,
-                                                  const short delta) const
+                                                  const short delta)
 {
     // In the default, non-extended encoding scheme, coordinates above 94 shouldn't be supported,
     //   because (95+32+1)=128, which is not an ASCII character.
@@ -378,12 +373,12 @@ std::wstring MouseInput::_GenerateDefaultSequence(const COORD position,
     //   stream without bash.exe trying to convert it into utf8, and generating extra bytes in the process.
     if (position.X <= MouseInput::s_MaxDefaultCoordinate && position.Y <= MouseInput::s_MaxDefaultCoordinate)
     {
-        const COORD vtCoords = s_WinToVTCoord(position);
-        const short encodedX = s_EncodeDefaultCoordinate(vtCoords.X);
-        const short encodedY = s_EncodeDefaultCoordinate(vtCoords.Y);
+        const COORD vtCoords = _winToVTCoord(position);
+        const short encodedX = _encodeDefaultCoordinate(vtCoords.X);
+        const short encodedY = _encodeDefaultCoordinate(vtCoords.Y);
 
         std::wstring format{ L"\x1b[Mbxy" };
-        format.at(3) = ' ' + gsl::narrow_cast<short>(s_WindowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
+        format.at(3) = ' ' + gsl::narrow_cast<short>(_windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
         format.at(4) = encodedX;
         format.at(5) = encodedY;
         return format;
@@ -407,7 +402,7 @@ std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
                                                const unsigned int button,
                                                const bool isHover,
                                                const short modifierKeyState,
-                                               const short delta) const
+                                               const short delta)
 {
     // So we have some complications here.
     // The windows input stream is typically encoded as UTF16.
@@ -425,12 +420,12 @@ std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
     // TODO: Followup once the UTF-8 input stack is ready, MSFT:8509613
     if (position.X <= (SHORT_MAX - 33) && position.Y <= (SHORT_MAX - 33))
     {
-        const COORD vtCoords = s_WinToVTCoord(position);
-        const short encodedX = s_EncodeDefaultCoordinate(vtCoords.X);
-        const short encodedY = s_EncodeDefaultCoordinate(vtCoords.Y);
+        const COORD vtCoords = _winToVTCoord(position);
+        const short encodedX = _encodeDefaultCoordinate(vtCoords.X);
+        const short encodedY = _encodeDefaultCoordinate(vtCoords.Y);
         std::wstring format{ L"\x1b[Mbxy" };
         // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
-        format.at(3) = ' ' + gsl::narrow_cast<short>(s_WindowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
+        format.at(3) = ' ' + gsl::narrow_cast<short>(_windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
         format.at(4) = encodedX;
         format.at(5) = encodedY;
         return format;
@@ -459,11 +454,11 @@ std::wstring MouseInput::_GenerateSGRSequence(const COORD position,
                                               const bool isDown,
                                               const bool isHover,
                                               const short modifierKeyState,
-                                              const short delta) const
+                                              const short delta)
 {
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
-    const int xbutton = s_WindowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
+    const int xbutton = _windowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
 
     auto format = wil::str_printf<std::wstring>(L"\x1b[<%d;%d;%d%c", xbutton, position.X + 1, position.Y + 1, isDown ? L'M' : L'm');
 
@@ -481,7 +476,7 @@ std::wstring MouseInput::_GenerateSGRSequence(const COORD position,
 // <none>
 void MouseInput::SetUtf8ExtendedMode(const bool enable) noexcept
 {
-    _ExtendedMode = enable ? ExtendedMode::Utf8 : ExtendedMode::None;
+    _extendedMode = enable ? ExtendedMode::Utf8 : ExtendedMode::None;
 }
 
 // Routine Description:
@@ -495,7 +490,7 @@ void MouseInput::SetUtf8ExtendedMode(const bool enable) noexcept
 // <none>
 void MouseInput::SetSGRExtendedMode(const bool enable) noexcept
 {
-    _ExtendedMode = enable ? ExtendedMode::Sgr : ExtendedMode::None;
+    _extendedMode = enable ? ExtendedMode::Sgr : ExtendedMode::None;
 }
 
 // Routine Description:

@@ -42,26 +42,6 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine& Engine() noexcept;
 
     private:
-        static bool s_IsActionableFromGround(const wchar_t wch) noexcept;
-        static bool s_IsC0Code(const wchar_t wch) noexcept;
-        static bool s_IsC1Csi(const wchar_t wch) noexcept;
-        static bool s_IsIntermediate(const wchar_t wch) noexcept;
-        static bool s_IsDelete(const wchar_t wch) noexcept;
-        static bool s_IsEscape(const wchar_t wch) noexcept;
-        static bool s_IsCsiIndicator(const wchar_t wch) noexcept;
-        static bool s_IsCsiDelimiter(const wchar_t wch) noexcept;
-        static bool s_IsCsiParamValue(const wchar_t wch) noexcept;
-        static bool s_IsCsiPrivateMarker(const wchar_t wch) noexcept;
-        static bool s_IsCsiInvalid(const wchar_t wch) noexcept;
-        static bool s_IsOscIndicator(const wchar_t wch) noexcept;
-        static bool s_IsOscDelimiter(const wchar_t wch) noexcept;
-        static bool s_IsOscParamValue(const wchar_t wch) noexcept;
-        static bool s_IsOscInvalid(const wchar_t wch) noexcept;
-        static bool s_IsOscTerminator(const wchar_t wch) noexcept;
-        static bool s_IsOscTerminationInitiator(const wchar_t wch) noexcept;
-        static bool s_IsNumber(const wchar_t wch) noexcept;
-        static bool s_IsSs3Indicator(const wchar_t wch) noexcept;
-
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
@@ -129,7 +109,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::wstring_view _run;
 
-        std::optional<wchar_t> _intermediate;
+        std::vector<wchar_t> _intermediates;
         std::vector<size_t> _parameters;
 
         std::wstring _oscString;

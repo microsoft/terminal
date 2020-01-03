@@ -185,7 +185,7 @@ using namespace Microsoft::Console::Types;
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
         FontInfoDesired fiDesired(fiCurrent);
-        FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
+        FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
 
         const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
         // fiProposal will be updated by the renderer for this new font.

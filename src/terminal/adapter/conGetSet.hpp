@@ -46,7 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetConsoleRGBTextAttribute(const COLORREF rgbColor, const bool isForeground) = 0;
         virtual bool PrivateBoldText(const bool bolded) = 0;
         virtual bool PrivateGetExtendedTextAttributes(ExtendedAttributes& attrs) = 0;
-        virtual bool PrivateSetExtendedTextAttributes(const ExtendedAttributes& attrs) = 0;
+        virtual bool PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs) = 0;
         virtual bool PrivateGetTextAttributes(TextAttribute& attrs) const = 0;
         virtual bool PrivateSetTextAttributes(const TextAttribute& attrs) = 0;
 
