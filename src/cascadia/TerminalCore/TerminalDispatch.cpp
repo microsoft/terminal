@@ -38,10 +38,10 @@ try
     SHORT y{ 0 };
 
     RETURN_BOOL_IF_FALSE(FAILED(SizeTToShort(column, &x)) ||
-        FAILED(SizeTToShort(line, &y)));
-    
+                         FAILED(SizeTToShort(line, &y)));
+
     RETURN_BOOL_IF_FALSE(FAILED(ShortSub(x, 1, &x)) ||
-        FAILED(ShortSub(y, 1, &y)));
+                         FAILED(ShortSub(y, 1, &y)));
 
     return _terminalApi.SetCursorPosition(x, y);
 }
