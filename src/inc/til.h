@@ -23,27 +23,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // color is a universal integral 8bpp RGBA (0-255) color type implicitly convertible to/from
     // a number of other color types.
+#pragma warning(push)
+    // we can't depend on GSL here (some libraries use BLOCK_GSL), so we use static_cast for explicit narrowing
+#pragma warning(disable : 26472)
     struct color
     {
         uint8_t r, g, b, a;
 
         constexpr color() noexcept :
-            r(0),
-            g(0),
-            b(0),
-            a(0) {}
+            r{ 0 },
+            g{ 0 },
+            b{ 0 },
+            a{ 0 } {}
 
         constexpr color(uint8_t _r, uint8_t _g, uint8_t _b) noexcept :
-            r(_r),
-            g(_g),
-            b(_b),
-            a(255) {}
+            r{ _r },
+            g{ _g },
+            b{ _b },
+            a{ 255 } {}
 
         constexpr color(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a) noexcept :
-            r(_r),
-            g(_g),
-            b(_b),
-            a(_a) {}
+            r{ _r },
+            g{ _g },
+            b{ _b },
+            a{ _a } {}
 
         constexpr color(const color&) = default;
         constexpr color(color&&) = default;
@@ -53,10 +56,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #ifdef _WINDEF_
         constexpr color(COLORREF c) :
-            r(static_cast<uint8_t>(c & 0xFF)),
-            g(static_cast<uint8_t>((c & 0xFF00) >> 8)),
-            b(static_cast<uint8_t>((c & 0xFF0000) >> 16)),
-            a(255)
+            r{ static_cast<uint8_t>(c & 0xFF) },
+            g{ static_cast<uint8_t>((c & 0xFF00) >> 8) },
+            b{ static_cast<uint8_t>((c & 0xFF0000) >> 16) },
+            a{ 255 }
         {
         }
 
@@ -74,10 +77,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         //   template ill-formed. Because SFINAE, ill-formed templated members "disappear" instead of causing an error.
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().R)> && std::is_integral_v<decltype(std::declval<TOther>().A)>, int> /*sentinel*/ = 0) :
-            r(static_cast<uint8_t>(other.R)),
-            g(static_cast<uint8_t>(other.G)),
-            b(static_cast<uint8_t>(other.B)),
-            a(static_cast<uint8_t>(other.A))
+            r{ static_cast<uint8_t>(other.R) },
+            g{ static_cast<uint8_t>(other.G) },
+            b{ static_cast<uint8_t>(other.B) },
+            a{ static_cast<uint8_t>(other.A) }
         {
         }
 
@@ -85,10 +88,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // - Converting constructor for any other color structure type containing integral r, g, b, a (case sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().r)> && std::is_integral_v<decltype(std::declval<TOther>().a)>, int> /*sentinel*/ = 0) :
-            r(static_cast<uint8_t>(other.r)),
-            g(static_cast<uint8_t>(other.g)),
-            b(static_cast<uint8_t>(other.b)),
-            a(static_cast<uint8_t>(other.a))
+            r{ static_cast<uint8_t>(other.r) },
+            g{ static_cast<uint8_t>(other.g) },
+            b{ static_cast<uint8_t>(other.b) },
+            a{ static_cast<uint8_t>(other.a) }
         {
         }
 
@@ -96,10 +99,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().R)> && std::is_floating_point_v<decltype(std::declval<TOther>().A)>, float> /*sentinel*/ = 1.0f) :
-            r(static_cast<uint8_t>(other.R * 255.0f)),
-            g(static_cast<uint8_t>(other.G * 255.0f)),
-            b(static_cast<uint8_t>(other.B * 255.0f)),
-            a(static_cast<uint8_t>(other.A * 255.0f))
+            r{ static_cast<uint8_t>(other.R * 255.0f) },
+            g{ static_cast<uint8_t>(other.G * 255.0f) },
+            b{ static_cast<uint8_t>(other.B * 255.0f) },
+            a{ static_cast<uint8_t>(other.A * 255.0f) }
         {
         }
 
@@ -107,10 +110,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().r)> && std::is_floating_point_v<decltype(std::declval<TOther>().a)>, float> /*sentinel*/ = 1.0f) :
-            r(static_cast<uint8_t>(other.r * 255.0f)),
-            g(static_cast<uint8_t>(other.g * 255.0f)),
-            b(static_cast<uint8_t>(other.b * 255.0f)),
-            a(static_cast<uint8_t>(other.a * 255.0f))
+            r{ static_cast<uint8_t>(other.r * 255.0f) },
+            g{ static_cast<uint8_t>(other.g * 255.0f) },
+            b{ static_cast<uint8_t>(other.b * 255.0f) },
+            a{ static_cast<uint8_t>(other.a * 255.0f) }
         {
         }
 
@@ -121,6 +124,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
     };
+#pragma warning(pop)
 }
 
 // These sit outside the namespace because they sit outside for WIL too.
