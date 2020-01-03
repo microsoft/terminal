@@ -10,17 +10,21 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Print puts the text in the buffer and moves the cursor
-bool Terminal::PrintString(std::wstring_view stringView)
+bool Terminal::PrintString(std::wstring_view stringView) noexcept
+try
 {
     _WriteBuffer(stringView);
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
-bool Terminal::ExecuteChar(wchar_t wch)
+bool Terminal::ExecuteChar(wchar_t wch) noexcept
+try
 {
     _WriteBuffer({ &wch, 1 });
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 bool Terminal::SetTextToDefaults(bool foreground, bool background) noexcept
 {
@@ -100,7 +104,8 @@ bool Terminal::ReverseText(bool reversed) noexcept
     return true;
 }
 
-bool Terminal::SetCursorPosition(short x, short y)
+bool Terminal::SetCursorPosition(short x, short y) noexcept
+try
 {
     const auto viewport = _GetMutableViewport();
     const auto viewOrigin = viewport.Origin();
@@ -112,6 +117,7 @@ bool Terminal::SetCursorPosition(short x, short y)
 
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 COORD Terminal::GetCursorPosition() noexcept
 {
@@ -136,7 +142,8 @@ COORD Terminal::GetCursorPosition() noexcept
 // - count, the number of characters to delete
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::DeleteCharacter(const size_t count)
+bool Terminal::DeleteCharacter(const size_t count) noexcept
+try
 {
     SHORT dist;
     if (!SUCCEEDED(SizeTToShort(count, &dist)))
@@ -172,6 +179,7 @@ bool Terminal::DeleteCharacter(const size_t count)
 
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Inserts count spaces starting from the cursor's current position, moving over the existing text
@@ -182,7 +190,8 @@ bool Terminal::DeleteCharacter(const size_t count)
 // - count, the number of spaces to insert
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::InsertCharacter(const size_t count)
+bool Terminal::InsertCharacter(const size_t count) noexcept
+try
 {
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
@@ -225,8 +234,10 @@ bool Terminal::InsertCharacter(const size_t count)
 
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
-bool Terminal::EraseCharacters(const size_t numChars)
+bool Terminal::EraseCharacters(const size_t numChars) noexcept
+try
 {
     const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -236,6 +247,7 @@ bool Terminal::EraseCharacters(const size_t numChars)
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method description:
 // - erases a line of text, either from
@@ -247,7 +259,8 @@ bool Terminal::EraseCharacters(const size_t numChars)
 // - the erase type
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType)
+bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept
+try
 {
     const auto cursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -280,6 +293,7 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
     _buffer->Write(eraseIter, startPos, false);
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method description:
 // - erases text in the buffer in two ways depending on erase type
@@ -289,7 +303,8 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
 // - the erase type
 // Return Value:
 // - true if succeeded, false otherwise
-bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
+bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType) noexcept
+try
 {
     // Store the relative cursor position so we can restore it later after we move the viewport
     const auto cursorPos = _buffer->GetCursor().GetPosition();
@@ -362,8 +377,10 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
-bool Terminal::SetWindowTitle(std::wstring_view title)
+bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
+try
 {
     _title = _suppressApplicationTitle ? _startingTitle : title;
 
@@ -371,6 +388,7 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
@@ -380,21 +398,16 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 // - color: the new COLORREF to use as that color table value.
 // Return Value:
 // - true iff we successfully updated the color table entry.
-bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
+bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
+try
 {
-    try
-    {
-        _colorTable.at(tableIndex) = color;
+    _colorTable.at(tableIndex) = color;
 
-        // Repaint everything - the colors might have changed
-        _buffer->GetRenderTarget().TriggerRedrawAll();
-        return true;
-    }
-    catch (std::out_of_range&)
-    {
-        return false;
-    }
+    // Repaint everything - the colors might have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Sets the cursor style to the given style.
@@ -452,7 +465,8 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
 // - color: the new COLORREF to use as the default foreground color
 // Return Value:
 // - true
-bool Terminal::SetDefaultForeground(const COLORREF color)
+bool Terminal::SetDefaultForeground(const COLORREF color) noexcept
+try
 {
     _defaultFg = color;
 
@@ -460,6 +474,7 @@ bool Terminal::SetDefaultForeground(const COLORREF color)
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Updates the default background color from a COLORREF, format 0x00BBGGRR.
@@ -467,7 +482,8 @@ bool Terminal::SetDefaultForeground(const COLORREF color)
 // - color: the new COLORREF to use as the default background color
 // Return Value:
 // - true
-bool Terminal::SetDefaultBackground(const COLORREF color)
+bool Terminal::SetDefaultBackground(const COLORREF color) noexcept
+try
 {
     _defaultBg = color;
     _pfnBackgroundColorChanged(color);
@@ -476,3 +492,4 @@ bool Terminal::SetDefaultBackground(const COLORREF color)
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
+CATCH_LOG_RETURN_FALSE()

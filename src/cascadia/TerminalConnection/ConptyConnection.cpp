@@ -68,8 +68,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
         siEx.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
-
-        size_t size{};
+        SIZE_T size{};
         // This call will return an error (by design); we are ignoring it.
         InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
 #pragma warning(suppress : 26414) // We don't move/touch this smart pointer, but we have to allocate strangely for the adjustable size list.

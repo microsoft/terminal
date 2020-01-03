@@ -64,8 +64,8 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    bool PrintString(std::wstring_view stringView) override;
-    bool ExecuteChar(wchar_t wch) override;
+    bool PrintString(std::wstring_view stringView) noexcept override;
+    bool ExecuteChar(wchar_t wch) noexcept override;
     bool SetTextToDefaults(bool foreground, bool background) noexcept override;
     bool SetTextForegroundIndex(BYTE colorIndex) noexcept override;
     bool SetTextBackgroundIndex(BYTE colorIndex) noexcept override;
@@ -73,18 +73,18 @@ public:
     bool BoldText(bool boldOn) noexcept override;
     bool UnderlineText(bool underlineOn) noexcept override;
     bool ReverseText(bool reversed) noexcept override;
-    bool SetCursorPosition(short x, short y) override;
+    bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
-    bool DeleteCharacter(const size_t count) override;
-    bool InsertCharacter(const size_t count) override;
-    bool EraseCharacters(const size_t numChars) override;
-    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
-    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
-    bool SetWindowTitle(std::wstring_view title) override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
+    bool DeleteCharacter(const size_t count) noexcept override;
+    bool InsertCharacter(const size_t count) noexcept override;
+    bool EraseCharacters(const size_t numChars) noexcept override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool SetWindowTitle(std::wstring_view title) noexcept override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
-    bool SetDefaultForeground(const COLORREF color) override;
-    bool SetDefaultBackground(const COLORREF color) override;
+    bool SetDefaultForeground(const COLORREF color) noexcept override;
+    bool SetDefaultBackground(const COLORREF color) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput

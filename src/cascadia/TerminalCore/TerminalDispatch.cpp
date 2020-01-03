@@ -15,17 +15,17 @@ TerminalDispatch::TerminalDispatch(ITerminalApi& terminalApi) noexcept :
 {
 }
 
-void TerminalDispatch::Execute(const wchar_t wchControl)
+void TerminalDispatch::Execute(const wchar_t wchControl) noexcept
 {
     _terminalApi.ExecuteChar(wchControl);
 }
 
-void TerminalDispatch::Print(const wchar_t wchPrintable)
+void TerminalDispatch::Print(const wchar_t wchPrintable) noexcept
 {
     _terminalApi.PrintString({ &wchPrintable, 1 });
 }
 
-void TerminalDispatch::PrintString(const std::wstring_view string)
+void TerminalDispatch::PrintString(const std::wstring_view string) noexcept
 {
     _terminalApi.PrintString(string);
 }

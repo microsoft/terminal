@@ -33,5 +33,4 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
     return TRUE;
 }
 
-#pragma warning(suppress : 26485) // Array-to-pointer decay might technically be avoidable, but this is elegant and clean.
 UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.TerminalConnection/Resources");
