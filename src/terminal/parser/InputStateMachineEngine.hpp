@@ -46,31 +46,31 @@ namespace Microsoft::Console::VirtualTerminal
                                const std::basic_string_view<wchar_t> intermediates,
                                const std::basic_string_view<size_t> parameters) override;
 
-        bool ActionClear() override;
+        bool ActionClear() noexcept override;
 
-        bool ActionIgnore() override;
+        bool ActionIgnore() noexcept override;
 
         bool ActionOscDispatch(const wchar_t wch,
                                const size_t parameter,
-                               const std::wstring_view string) override;
+                               const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
                                const std::basic_string_view<size_t> parameters) override;
 
-        bool FlushAtEndOfString() const override;
-        bool DispatchControlCharsFromEscape() const override;
-        bool DispatchIntermediatesFromEscape() const override;
+        bool FlushAtEndOfString() const noexcept override;
+        bool DispatchControlCharsFromEscape() const noexcept override;
+        bool DispatchIntermediatesFromEscape() const noexcept override;
 
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         bool _lookingForDSR;
 
-        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters);
-        DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters);
-        bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState);
+        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
+        DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
+        bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
-        bool _IsModified(const size_t paramCount);
-        DWORD _GetModifier(const size_t parameter);
+        bool _IsModified(const size_t paramCount) noexcept;
+        DWORD _GetModifier(const size_t parameter) noexcept;
 
         bool _GetGenericVkey(const std::basic_string_view<size_t> parameters,
                              short& vkey) const;
@@ -91,13 +91,13 @@ namespace Microsoft::Console::VirtualTerminal
                                 std::vector<INPUT_RECORD>& input);
 
         bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
-                                        unsigned int& function) const;
+                                        unsigned int& function) const noexcept;
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;
         bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
                             size_t& line,
-                            size_t& column) const;
+                            size_t& column) const noexcept;
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
     };

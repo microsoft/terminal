@@ -78,6 +78,9 @@
 // WRL
 #include <wrl.h>
 
+// TIL - Terminal Implementation Library
+#include "til.h"
+
 #pragma warning(pop)
 
 // clang-format on

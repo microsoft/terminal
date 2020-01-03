@@ -6,16 +6,19 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-ParserTracing::ParserTracing()
+#pragma warning(push)
+#pragma warning(disable : 26494) // _Tlgdata uninitialized from TraceLoggingWrite
+#pragma warning(disable : 26477) // Use nullptr instead of NULL or 0 from TraceLoggingWrite
+#pragma warning(disable : 26485) // _Tlgdata, no array to pointer decay from TraceLoggingWrite
+#pragma warning(disable : 26446) // Prefer gsl::at over unchecked subscript from TraceLoggingLevel
+#pragma warning(disable : 26482) // Only index to arrays with constant expressions from TraceLoggingLevel
+
+ParserTracing::ParserTracing() noexcept
 {
     ClearSequenceTrace();
 }
 
-ParserTracing::~ParserTracing()
-{
-}
-
-void ParserTracing::TraceStateChange(const std::wstring_view name) const
+void ParserTracing::TraceStateChange(const std::wstring_view name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_EnterState",
@@ -23,7 +26,7 @@ void ParserTracing::TraceStateChange(const std::wstring_view name) const
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
-void ParserTracing::TraceOnAction(const std::wstring_view name) const
+void ParserTracing::TraceOnAction(const std::wstring_view name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Action",
@@ -33,7 +36,7 @@ void ParserTracing::TraceOnAction(const std::wstring_view name) const
 
 void ParserTracing::TraceOnExecute(const wchar_t wch) const
 {
-    INT16 sch = (INT16)wch;
+    const auto sch = gsl::narrow_cast<INT16>(wch);
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Execute",
                       TraceLoggingWChar(wch),
@@ -43,7 +46,7 @@ void ParserTracing::TraceOnExecute(const wchar_t wch) const
 
 void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
 {
-    INT16 sch = (INT16)wch;
+    const auto sch = gsl::narrow_cast<INT16>(wch);
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_ExecuteFromEscape",
                       TraceLoggingWChar(wch),
@@ -51,7 +54,7 @@ void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
-void ParserTracing::TraceOnEvent(const std::wstring_view name) const
+void ParserTracing::TraceOnEvent(const std::wstring_view name) const noexcept
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Event",
@@ -62,7 +65,7 @@ void ParserTracing::TraceOnEvent(const std::wstring_view name) const
 void ParserTracing::TraceCharInput(const wchar_t wch)
 {
     AddSequenceTrace(wch);
-    INT16 sch = (INT16)wch;
+    const auto sch = gsl::narrow_cast<INT16>(wch);
 
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_NewChar",
@@ -76,7 +79,7 @@ void ParserTracing::AddSequenceTrace(const wchar_t wch)
     _sequenceTrace.push_back(wch);
 }
 
-void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
+void ParserTracing::DispatchSequenceTrace(const bool fSuccess) noexcept
 {
     if (fSuccess)
     {
@@ -96,7 +99,7 @@ void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
     ClearSequenceTrace();
 }
 
-void ParserTracing::ClearSequenceTrace()
+void ParserTracing::ClearSequenceTrace() noexcept
 {
     _sequenceTrace.clear();
 }
@@ -106,8 +109,8 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
 {
     if (string.size() == 1)
     {
-        wchar_t wch = string.front();
-        INT16 sch = (INT16)wch;
+        const auto wch = til::at(string, 0);
+        const auto sch = gsl::narrow_cast<INT16>(wch);
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",
                           TraceLoggingWChar(wch),
@@ -125,3 +128,5 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view string) const
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 }
+
+#pragma warning(pop)
