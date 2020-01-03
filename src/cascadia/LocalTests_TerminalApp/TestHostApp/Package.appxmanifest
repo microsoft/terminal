@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
+  <Identity Name="22cb772f-640f-410a-bc1f-2f8d2e5475ec" Publisher="CN=pdeets" Version="1.0.0.0" />
+  <mp:PhoneIdentity PhoneProductId="22cb772f-640f-410a-bc1f-2f8d2e5475ec" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Properties>
+    <DisplayName>TestHostApp</DisplayName>
+    <PublisherDisplayName>pdeets</PublisherDisplayName>
+    <Logo>taef.png</Logo>
+    <uap:SupportedUsers>multiple</uap:SupportedUsers>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.0.0" MaxVersionTested="10.0.0.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="x-generate" />
+  </Resources>
+  <Applications>
+    <Application Id="taef.executionengine.universal.App" Executable="$targetnametoken$.exe" EntryPoint="TestHostApp.App">
+      <uap:VisualElements DisplayName="TestHostApp" Square150x150Logo="taef.png" Square44x44Logo="taef.png" Description="TestHostApp" BackgroundColor="transparent">
+        <uap:DefaultTile Wide310x150Logo="taef.png">
+        </uap:DefaultTile>
+        <uap:SplashScreen Image="taef.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+</Package>
