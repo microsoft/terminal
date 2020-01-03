@@ -241,16 +241,11 @@ namespace winrt::TerminalApp::implementation
         auto title = RS_(L"CloseWindowWarningTitle");
         auto primaryButtonText = RS_(L"CloseAll");
         auto secondaryButtonText = RS_(L"Cancel");
-        auto checkBoxText = RS_(L"CloseWindowRememberChoiceText");
 
         WUX::Controls::ContentDialog dialog;
-        WUX::Controls::CheckBox remember;        
+        WUX::Controls::CheckBox remember;
         dialog.Title(winrt::box_value(title));
 
-        remember.Content(winrt::box_value(checkBoxText));            
-        remember.Checked({ this, &TerminalPage::_CloseWarningHideCheckboxChecked });
-        dialog.Content(remember);
-        
         dialog.PrimaryButtonText(primaryButtonText);
         dialog.SecondaryButtonText(secondaryButtonText);
         auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
@@ -928,7 +923,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_tabs.size() > 1 && _settings->GlobalSettings().GetConfirmCloseAllTabs())
         {
-            _ShowCloseWarningDialog();            
+            _ShowCloseWarningDialog();
         }
         else
         {
@@ -1363,28 +1358,6 @@ namespace winrt::TerminalApp::implementation
                                                          WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
         _CloseAllTabs();
-    }
-
-    // Method Description:
-    // - Called when the user checks the "Remember my choice" checkbox.
-    // Arguments:
-    // - sender: unused
-    // - RoutedEventARgs: unused
-    void TerminalPage::_CloseWarningHideCheckboxChecked(const IInspectable& /*sender*/,
-                                                        const Windows::UI::Xaml::RoutedEventArgs& /* eventArgs */)
-    {
-        _settings->GlobalSettings().SetConfirmCloseAllTabs(true);
-    }
-
-    // Method Description:
-    // - Called when the user unchecks the "Remember my choice" checkbox.
-    // Arguments:
-    // - sender: unused
-    // - RoutedEventARgs: unused
-    void TerminalPage::_CloseWarningHideCheckboxUnchecked(const IInspectable& /*sender*/,
-                                                          const Windows::UI::Xaml::RoutedEventArgs& /* eventArgs */)
-    {
-        _settings->GlobalSettings().SetConfirmCloseAllTabs(false);
     }
 
     // Method Description:

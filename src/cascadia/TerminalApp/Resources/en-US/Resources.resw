@@ -210,7 +210,4 @@ Temporarily using the Windows Terminal default settings.
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
-  <data name="CloseWindowRememberChoiceText" xml:space="preserve">
-    <value>Remember my choice</value>
-  </data>
 </root>
