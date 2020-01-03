@@ -263,6 +263,9 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
     }
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // we do not want constexpr compilation because these always evaluate at runtime
+
 // Routine Description:
 // Returns true if the GraphicsOption represents an extended text attribute.
 //   These include things such as Underlined, Italics, Blinking, etc.
@@ -320,6 +323,8 @@ static constexpr bool _isDefaultColorOption(const DispatchTypes::GraphicsOptions
            opt == DispatchTypes::GraphicsOptions::ForegroundDefault ||
            opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)

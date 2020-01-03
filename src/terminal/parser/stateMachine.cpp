@@ -43,6 +43,9 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
+
 // Routine Description:
 // - Determines if a character belongs to the C0 escape range.
 //   This is character sequences less than a space character (null, backspace, new line, etc.)
@@ -278,6 +281,8 @@ static constexpr bool _isActionableFromGround(const wchar_t wch) noexcept
 {
     return (wch <= AsciiChars::US) || _isC1Csi(wch) || _isDelete(wch);
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - Triggers the Execute action to indicate that the listener should immediately respond to a C0 control character.

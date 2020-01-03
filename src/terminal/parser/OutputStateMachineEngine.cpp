@@ -1324,6 +1324,9 @@ bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
     return success;
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
+
 // Routine Description:
 // - Determines if a character is a valid number character, 0-9.
 // Arguments:
@@ -1347,6 +1350,8 @@ static constexpr bool _isHexNumber(const wchar_t wch) noexcept
            (wch >= L'A' && wch <= L'F') ||
            (wch >= L'a' && wch <= L'f');
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - Given a color spec string, attempts to parse the color that's encoded.
