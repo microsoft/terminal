@@ -79,7 +79,9 @@
 #include <wrl.h>
 
 // TIL - Terminal Implementation Library
+#ifndef BLOCK_TIL // Certain projects may want to include TIL manually to gain superpowers
 #include "til.h"
+#endif
 
 #pragma warning(pop)
 

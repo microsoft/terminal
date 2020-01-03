@@ -80,4 +80,8 @@
         <DisplayString Condition="_keyDown">{{↓  wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
         <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
     </Type>
+  
+    <Type Name="til::color">
+      <DisplayString>{{RGB: {(int)r,d}, {(int)g,d}, {(int)b,d}; Alpha: {(int)a,d}}}</DisplayString>
+    </Type>
 </AutoVisualizer>
