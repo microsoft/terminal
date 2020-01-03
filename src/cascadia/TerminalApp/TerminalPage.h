@@ -12,6 +12,12 @@
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
+
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -154,6 +160,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
+
+        friend class TerminalAppLocalTests::TabTests;
     };
 }
 
