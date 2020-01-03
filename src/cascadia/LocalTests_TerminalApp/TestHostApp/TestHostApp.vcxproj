@@ -16,14 +16,18 @@
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
+  <!-- This project is _heavily_ cribbed directly from the TAEF samples. In
+  order to avoid breaking this project, it's been left largely unmodified. The
+  only modifications are those near the bottom of the file:
+  * References to our dependent winrt projects (Connection, Settings, Control,
+    App)
+  * Manual copy steps to copy the actual test code (TerminalApp.LocalTests.dll)
+    and the dlls that TerminalConnection is dependent upon, but don't role up
+    here for whatever reason.
+  -->
 
-  <!-- <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Common.props))\Common.props" /> -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <!-- Native code outputs to Configuration\Win32, but managed x86 code and some Package ES features like signing default to Configuration\x86.
-         Switch to x86 so the managed and native code output to the same location on the x86 build. -->
-  <!-- <PropertyGroup Condition="!$(MSBuildProjectFile.StartsWith('AutoGen'))">
-    <RelativeOutputRoot Condition="'$(Platform)' == 'Win32'">$(Configuration)\x86</RelativeOutputRoot>
-  </PropertyGroup> -->
+
   <PropertyGroup>
     <PlatformName>$(Platform)</PlatformName>
     <PlatformName Condition="'$(Platform)'=='Win32'">x86</PlatformName>
@@ -121,7 +125,7 @@
     </ClCompile>
   </ItemGroup>
 
-  <!-- <Import Project="$(OpenConsoleDir)\src\common.build.tests.props" /> -->
+  <!-- Reference all the WinRT projects that we want to role up into this test project. -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
@@ -130,16 +134,40 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- TODO: The current version of TAEF doesn't ship all the architectures of this dll. It only ships the x86 version. We'll need to hold this PR until there's an updated TAEF with all the necessary architectures. -->
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
       <!-- <HintPath>$(OutputRoot)\$(Configuration)\$(PlatformName)\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath> -->
       <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.48.191205003-develop\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
+
       <!-- Heads up, this file is only x86 for the time being -->
       <Implementation>TE.AppxUnitTestClient.dll</Implementation>
     </Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <PropertyGroup>
+    <!-- Some helper paths to find our test code -->
+    <TestBinRoot>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)</TestBinRoot>
+    <CppWinrtBinRoot>$(OpenConsoleDir)\$(Platform)\$(Configuration)</CppWinrtBinRoot>
+    <CppWinrtBinRoot Condition="'$(Platform)'=='Win32'">$(OpenConsoleDir)\$(Configuration)</CppWinrtBinRoot>
+  </PropertyGroup>
+
   <Target Name="AfterBuild">
-    <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\UapCustomExeAppXManifest.xml" />
+
+    <!-- Copy the AppxManifest.xml to another file, because when TAEF is
+      deploying the app, it'll delete the AppxManifest.xml file from this
+      directory when it tries to clean up after itself. -->
+    <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\TestHostAppXManifest.xml" />
+
+    <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
+    <Copy SourceFiles="$(TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
+
+    <!-- Copy some dlls which TerminalConnection is dependent upon that didn't
+      get rolled up into this  directory -->
+
+    <Copy SourceFiles="$(CppWinrtBinRoot)\TerminalConnection\cpprest142_2_10d.dll" DestinationFiles="$(TargetDir)\cpprest142_2_10d.dll" />
+    <Copy SourceFiles="$(CppWinrtBinRoot)\TerminalConnection\telnetpp.dll" DestinationFiles="$(TargetDir)\telnetpp.dll" />
+
   </Target>
 </Project>

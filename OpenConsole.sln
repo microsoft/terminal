@@ -258,6 +258,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winconpty.DLL", "src\winconpty\dll\winconptydll.vcxproj", "{A22EC5F6-7851-4B88-AC52-47249D437A52}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestHostApp", "src\cascadia\LocalTests_TerminalApp\TestHostApp\TestHostApp.vcxproj", "{A021EDFF-45C8-4DC2-BEF7-36E1B3B8CFE8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-B11C-4DDB-A4FE-C3AFAE9B5506} = {CA5CAD1A-B11C-4DDB-A4FE-C3AFAE9B5506}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

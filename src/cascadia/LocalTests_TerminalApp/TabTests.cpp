@@ -38,15 +38,7 @@ namespace TerminalAppLocalTests
 
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            // C:\Users\migrie\dev\private\OpenConsole\bin\Win32\Debug\LocalTests_TerminalApp
-            // C:\Users\migrie\dev\private\OpenConsole\Debug\TestHostApp
-            // ../../../../Debug/TestsHostApp
-            // TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
-            // TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"../TestHostApp/AppxManifest.xml")
-            // TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"../../../../Debug/TestHostApp/AppxManifest.xml")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"UapCustomExeAppXManifest.xml")
-            // TEST_CLASS_PROPERTY(L"UAP:Host", L"Xaml")
-            // TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they

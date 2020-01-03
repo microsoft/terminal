@@ -34,7 +34,7 @@ namespace TerminalAppLocalTests
         // details on that.
         BEGIN_TEST_CLASS(SettingsTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
