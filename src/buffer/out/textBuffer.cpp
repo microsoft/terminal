@@ -809,23 +809,23 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize)
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
 
-    const auto currentSize = GetSize().Dimensions();
-    const auto attributes = GetCurrentAttributes();
-
-    SHORT TopRow = 0; // new top row of the screen buffer
-    if (newSize.Y <= GetCursor().GetPosition().Y)
-    {
-        TopRow = GetCursor().GetPosition().Y - newSize.Y + 1;
-    }
-    const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
-
-    // rotate rows until the top row is at index 0
     try
     {
+        const auto currentSize = GetSize().Dimensions();
+        const auto attributes = GetCurrentAttributes();
+
+        SHORT TopRow = 0; // new top row of the screen buffer
+        if (newSize.Y <= GetCursor().GetPosition().Y)
+        {
+            TopRow = GetCursor().GetPosition().Y - newSize.Y + 1;
+        }
+        const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
+
+        // rotate rows until the top row is at index 0
         const ROW& newTopRow = _storage.at(TopRowIndex);
         while (&newTopRow != &_storage.front())
         {

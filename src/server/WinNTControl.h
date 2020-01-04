@@ -26,8 +26,6 @@ public:
                                              _In_ ULONG ShareAccess,
                                              _In_ ULONG OpenOptions);
 
-    ~WinNTControl();
-
 private:
     WinNTControl();
 

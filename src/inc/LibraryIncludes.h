@@ -31,6 +31,7 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -76,6 +77,9 @@
 
 // WRL
 #include <wrl.h>
+
+// TIL - Terminal Implementation Library
+#include "til.h"
 
 #pragma warning(pop)
 

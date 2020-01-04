@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
-        void Close();
+        void Close() noexcept;
 
         winrt::guid Guid() const noexcept;
 

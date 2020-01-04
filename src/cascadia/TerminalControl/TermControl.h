@@ -216,9 +216,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        void _Search(const winrt::Windows::Foundation::IInspectable& sender, const winrt::hstring& text);
+        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void _CloseSearchBoxControlHelper();
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);

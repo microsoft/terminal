@@ -22,21 +22,22 @@ using namespace Microsoft::Console::VirtualTerminal;
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
-    for (auto& ev : inEventsToWrite)
+    for (const auto& ev : inEventsToWrite)
     {
         if (ev->EventType() == InputEventType::KeyEvent)
         {
-            auto& k = static_cast<KeyEvent&>(*ev);
-            auto wch = k.GetCharData();
+            const auto& k = static_cast<KeyEvent&>(*ev);
+            const auto wch = k.GetCharData();
             wstr += wch;
         }
     }
     return wstr;
 }
 
+#pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
-    _title{ L"" },
+    _title{},
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },
@@ -50,7 +51,10 @@ Terminal::Terminal() :
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
 {
-    _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
+    auto dispatch = std::make_unique<TerminalDispatch>(*this);
+    auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+
+    _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
@@ -136,7 +140,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     for (int i = 0; i < 16; i++)
     {
-        _colorTable[i] = settings.GetColorTableEntry(i);
+        _colorTable.at(i) = settings.GetColorTableEntry(i);
     }
 
     _snapOnInput = settings.SnapOnInput();
@@ -199,7 +203,7 @@ void Terminal::Write(std::wstring_view stringView)
 {
     auto lock = LockForWriting();
 
-    _stateMachine->ProcessString(stringView.data(), stringView.size());
+    _stateMachine->ProcessString(stringView);
 }
 
 // Method Description:
@@ -307,32 +311,37 @@ WORD Terminal::_ScanCodeFromVirtualKey(const WORD vkey) noexcept
 // Return Value:
 // - The character that would result from this virtual key code and keyboard state.
 wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept
+try
 {
     const auto sc = scanCode != 0 ? scanCode : _ScanCodeFromVirtualKey(vkey);
 
     // We might want to use GetKeyboardState() instead of building our own keyState.
     // The question is whether that's necessary though. For now it seems to work fine as it is.
-    BYTE keyState[256] = {};
-    keyState[VK_SHIFT] = states.IsShiftPressed() ? 0x80 : 0;
-    keyState[VK_CONTROL] = states.IsCtrlPressed() ? 0x80 : 0;
-    keyState[VK_MENU] = states.IsAltPressed() ? 0x80 : 0;
+    std::array<BYTE, 256> keyState = {};
+    keyState.at(VK_SHIFT) = states.IsShiftPressed() ? 0x80 : 0;
+    keyState.at(VK_CONTROL) = states.IsCtrlPressed() ? 0x80 : 0;
+    keyState.at(VK_MENU) = states.IsAltPressed() ? 0x80 : 0;
 
     // For the following use of ToUnicodeEx() please look here:
     //   https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-tounicodeex
 
     // Technically ToUnicodeEx() can produce arbitrarily long sequences of diacritics etc.
     // Since we only handle the case of a single UTF-16 code point, we can set the buffer size to 2 though.
-    constexpr size_t bufferSize = 2;
-    wchar_t buffer[bufferSize];
+    std::array<wchar_t, 2> buffer;
 
     // wFlags:
     // * If bit 0 is set, a menu is active.
     //   If this flag is not specified ToUnicodeEx will send us character events on certain Alt+Key combinations (e.g. Alt+Arrow-Up).
     // * If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
-    const auto result = ToUnicodeEx(vkey, sc, keyState, buffer, bufferSize, 0b101, nullptr);
+    const auto result = ToUnicodeEx(vkey, sc, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
 
     // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
-    return result == 1 || result == -1 ? buffer[0] : 0;
+    return result == 1 || result == -1 ? buffer.at(0) : 0;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return UNICODE_INVALID;
 }
 
 // Method Description:
@@ -413,7 +422,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 
     for (size_t i = 0; i < stringView.size(); i++)
     {
-        wchar_t wch = stringView[i];
+        const auto wch = stringView.at(i);
         const COORD cursorPosBefore = cursor.GetPosition();
         COORD proposedCursorPosition = cursorPosBefore;
         bool notifyScroll = false;
@@ -449,7 +458,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // This is not great but I need it demoable. Fix by making a buffer stream writer.
             if (wch >= 0xD800 && wch <= 0xDFFF)
             {
-                OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
+                const OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
                 const auto end = _buffer->Write(it);
                 const auto cellDistance = end.GetCellDistance(it);
                 i += cellDistance - 1;
@@ -457,7 +466,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
             else
             {
-                OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
+                const OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
                 const auto end = _buffer->Write(it);
                 const auto cellDistance = end.GetCellDistance(it);
                 proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
@@ -514,12 +523,13 @@ void Terminal::UserScrollViewport(const int viewTop)
     _buffer->GetRenderTarget().TriggerRedrawAll();
 }
 
-int Terminal::GetScrollOffset()
+int Terminal::GetScrollOffset() noexcept
 {
     return _VisibleStartIndex();
 }
 
-void Terminal::_NotifyScrollEvent()
+void Terminal::_NotifyScrollEvent() noexcept
+try
 {
     if (_pfnScrollPositionChanged)
     {
@@ -530,20 +540,21 @@ void Terminal::_NotifyScrollEvent()
         _pfnScrollPositionChanged(top, height, bottom);
     }
 }
+CATCH_LOG()
 
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
 {
-    _pfnWriteInput = pfn;
+    _pfnWriteInput.swap(pfn);
 }
 
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
-    _pfnTitleChanged = pfn;
+    _pfnTitleChanged.swap(pfn);
 }
 
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
-    _pfnScrollPositionChanged = pfn;
+    _pfnScrollPositionChanged.swap(pfn);
 }
 
 // Method Description:
@@ -552,12 +563,13 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
 // - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
 void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
 {
-    _pfnBackgroundColorChanged = pfn;
+    _pfnBackgroundColorChanged.swap(pfn);
 }
 
 void Terminal::_InitializeColorTable()
+try
 {
-    gsl::span<COLORREF> tableView = { &_colorTable[0], gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    const gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
     // First set up the basic 256 colors
     Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
@@ -565,6 +577,7 @@ void Terminal::_InitializeColorTable()
     // Then make sure all the values have an alpha of 255
     Utils::SetColorTableAlpha(tableView, 0xff);
 }
+CATCH_LOG()
 
 // Method Description:
 // - Sets the visibility of the text cursor.
