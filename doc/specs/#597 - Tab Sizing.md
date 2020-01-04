@@ -19,7 +19,7 @@ Global properties that encompass tab sizing:
 
 Acceptable values for `tabWidthMode`:
 
-* [default] `even` (all tabs are sized the same, regardless of tab title length)
+* [default] `equal` (all tabs are sized the same, regardless of tab title length)
 * `titleLength` (width of tab contains entire tab title)
 
 ## Inspiration
@@ -30,7 +30,7 @@ Other browsers and terminals have varying tab width behavior, so we should give 
 
 `tabWidthMode` will be a global setting that will accept the following strings:
 
-* `even`
+* `equal`
     * All tabs are equal in width
     * If the tab bar has filled, tabs will shrink as additional tabs are added
     * Utilizes the `equal` setting from WinUI's TabView
@@ -58,11 +58,11 @@ In addition to `tabWidthMode`, the following global properties will also be avai
 
 If `tabWidthMode` is set to `titleLength`, the tab widths will fall between the `tabWidthMin` and `tabWidthMax` values if they are set, depending on the length of the tab title.
 
-If `tabWidthMode` isn't set, the default experience will be `even`. Justification for the default experience is the results from this [twitter poll](https://twitter.com/cinnamon_msft/status/1203093459055210496).
+If `tabWidthMode` isn't set, the default experience will be `equal`. Justification for the default experience is the results from this [twitter poll](https://twitter.com/cinnamon_msft/status/1203093459055210496).
 
 ## UI/UX Design
 
-[This tweet](https://twitter.com/cinnamon_msft/status/1203094776117022720) displays how the `even` and `titleLength` values behave for the `tabWidthMode` property.
+[This tweet](https://twitter.com/cinnamon_msft/status/1203094776117022720) displays how the `equal` and `titleLength` values behave for the `tabWidthMode` property.
 
 ## Capabilities
 
