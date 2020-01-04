@@ -134,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _rowsToScroll = value;
     }
 
-    bool TerminalSettings::SnapOnInput()
+    bool TerminalSettings::SnapOnInput() noexcept
     {
         return _snapOnInput;
     }

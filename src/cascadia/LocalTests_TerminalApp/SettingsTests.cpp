@@ -442,8 +442,8 @@ namespace TerminalAppLocalTests
             "globals": {
                 "showTabsInTitlebar": false,
                 "initialCols" : 240,
-                "initialRows" : 60
-                "rowsToScroll" :  8, 
+                "initialRows" : 60,
+                "rowsToScroll" : 8 
             }
         })" };
         const auto settings0Json = VerifyParseSucceeded(settings0String);
