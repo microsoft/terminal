@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _initialCols = value;
     }
 
-    int32_t TerminalSettings::RowsToScroll()
+    int32_t TerminalSettings::RowsToScroll() noexcept
     {
         if (_rowsToScroll != 0)
         {
@@ -129,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         return systemRowsToScroll;
     }
 
-    void TerminalSettings::RowsToScroll(int32_t value)
+    void TerminalSettings::RowsToScroll(int32_t value) noexcept
     {
         _rowsToScroll = value;
     }
