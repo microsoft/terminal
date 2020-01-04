@@ -906,7 +906,7 @@ public:
         return true;
     }
 
-    bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override
+    bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept override
     {
         _lineFeed = true;
         _lineFeedType = lineFeedType;

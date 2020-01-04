@@ -74,7 +74,8 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool TerminalDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
+bool TerminalDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept
+try
 {
     switch (lineFeedType)
     {
@@ -92,6 +93,7 @@ bool TerminalDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
         return false;
     }
 }
+CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::EraseCharacters(const size_t numChars) noexcept
 try
