@@ -19,7 +19,6 @@
 // - Mike Griese (zadjii-msft) 16-May-2019
 
 #pragma once
-#include <functional>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -30,6 +29,10 @@ class Pane
 {
 public:
     virtual ~Pane() = default;
+    Pane(const Pane&) = delete;
+    Pane(Pane&&) = delete;
+    Pane& operator=(const Pane&) = delete;
+    Pane& operator=(Pane&&) = delete;
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement() const;
 

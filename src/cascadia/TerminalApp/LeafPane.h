@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 #include "Pane.h"
 #include "ParentPane.h"
@@ -18,12 +21,14 @@ DEFINE_ENUM_FLAG_OPERATORS(Borders);
 class LeafPane : public Pane, public std::enable_shared_from_this<LeafPane>
 {
 public:
-    struct SplitResult;
-
     LeafPane(const GUID& profile,
              const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
              const bool lastFocused = false);
     ~LeafPane() override;
+    LeafPane(const LeafPane&) = delete;
+    LeafPane(LeafPane&&) = delete;
+    LeafPane& operator=(const LeafPane&) = delete;
+    LeafPane& operator=(LeafPane&&) = delete;
 
     std::shared_ptr<LeafPane> FindActivePane() override;
     void PropagateToLeaves(std::function<void(LeafPane&)> action) override;

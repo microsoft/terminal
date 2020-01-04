@@ -25,8 +25,8 @@ namespace TerminalApp
 
     enum SplitState
     {
-        Vertical = 0,
-        Horizontal = 1
+        Vertical,
+        Horizontal
     };
 
     [default_interface] runtimeclass NewTerminalArgs {

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "LeafPane.h"
 #include "Profile.h"
@@ -14,9 +17,9 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
-static const int PaneBorderSize = 2;
-static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
-static const float Half = 0.50f;
+static constexpr int PaneBorderSize = 2;
+static constexpr int CombinedPaneBorderSize = 2 * PaneBorderSize;
+static constexpr float Half = 0.50f;
 winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_unfocusedBorderBrush = { nullptr };
 

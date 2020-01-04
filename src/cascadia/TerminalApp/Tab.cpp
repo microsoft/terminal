@@ -266,7 +266,7 @@ float Tab::CalcSnappedDimension(const bool widthOrHeight, const float dimension)
 // - <none>
 void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 {
-    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // NOTE: This _must_ be called on the root pane, so that it can propagate
     // throughout the entire tree.
     _rootPane->ResizeContent(newSize);
 }
@@ -280,7 +280,7 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 // - <none>
 void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 {
-    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // NOTE: This _must_ be called on the root pane, so that it can propagate
     // throughout the entire tree.
 
     if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
@@ -298,7 +298,7 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 // - <none>
 void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 {
-    // NOTE: This _must_ be called on the root pane, so that it can propogate
+    // NOTE: This _must_ be called on the root pane, so that it can propagate
     // throughout the entire tree.
 
     if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))

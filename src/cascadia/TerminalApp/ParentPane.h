@@ -1,15 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 #include "Pane.h"
 #include "LeafPane.h"
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 class ParentPane : public Pane, public std::enable_shared_from_this<ParentPane>
 {
 public:
     ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<LeafPane> secondChild, winrt::TerminalApp::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
     ~ParentPane() override;
+    ParentPane(const ParentPane&) = delete;
+    ParentPane(ParentPane&&) = delete;
+    ParentPane& operator=(const ParentPane&) = delete;
+    ParentPane& operator=(ParentPane&&) = delete;
 
     void InitializeChildren();
 
