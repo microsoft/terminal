@@ -6,6 +6,7 @@
 #include "ConptyConnection.g.h"
 #include "ConnectionStateHolder.h"
 #include "../inc/cppwinrt_utils.h"
+#include "../../types/inc/Utf8Utf16Convert.hpp"
 
 #include <conpty-static.h>
 
@@ -52,7 +53,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
 
-        std::array<char, 4096> _buffer{};
+        u8state _u8State;
+        std::wstring _u16Str;
+        std::array<char, 4096> _buffer;
 
         DWORD _OutputThread();
     };

@@ -15,7 +15,6 @@
 
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/Environment.hpp"
-#include "../../types/inc/Utf8Utf16Convert.hpp"
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
@@ -170,6 +169,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
         _guid{ initialGuid },
+        _u8State{},
+        _u16Str{},
         _buffer{}
     {
         if (_guid == guid{})
@@ -345,9 +346,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
-        UTF8ChunkToUTF16Converter convertUTF8ChunkToUTF16{};
-        std::wstring_view u16Sv{};
-
         // process the data of the output pipe in a loop
         while (true)
         {
@@ -367,8 +365,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
             }
 
-            const HRESULT result{ convertUTF8ChunkToUTF16({ _buffer.data(), read }, u16Sv) };
-
+            const HRESULT result{ u8u16({ _buffer.data(), read }, _u16Str, _u8State) };
             if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
@@ -383,7 +380,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 return gsl::narrow_cast<DWORD>(result);
             }
 
-            if (u16Sv.empty())
+            if (_u16Str.empty())
             {
                 return 0;
             }
@@ -405,7 +402,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // Pass the output to our registered event handlers
-            _TerminalOutputHandlers(u16Sv);
+            _TerminalOutputHandlers(_u16Str);
         }
 
         return 0;

@@ -6,9 +6,8 @@ Module Name:
 - Utf8Utf16Convert.hpp
 
 Abstract:
+- Defines classes which hold the status of the current partials handling.
 - Defines functions for converting between UTF-8 and UTF-16 strings.
-- Defines classes to complement partial code points at the begin of a string and cache partials from the end of a string.
-- Defines classes to do both the complement/cache task and the conversion task at once.
 
 Author(s):
 - Steffen Illhardt (german-one) 2019
@@ -16,16 +15,12 @@ Author(s):
 
 #pragma once
 
-[[nodiscard]] HRESULT U8ToU16(_In_ const std::string_view u8Str, _Out_ std::wstring& u16Str, bool discardInvalids = false) noexcept;
-
-[[nodiscard]] HRESULT U16ToU8(_In_ const std::wstring_view u16Str, _Out_ std::string& u8Str, bool discardInvalids = false) noexcept;
-
-class UTF8PartialHandler final
+class u8state final
 {
 public:
-    UTF8PartialHandler() noexcept;
-    [[nodiscard]] HRESULT operator()(_Inout_ std::string_view& u8Str) noexcept;
-    void Reset() noexcept;
+    u8state() noexcept;
+    [[nodiscard]] HRESULT operator()(const std::string_view in, std::string_view& out) noexcept;
+    void reset() noexcept;
 
 private:
     enum _Utf8BitMasks : BYTE
@@ -58,44 +53,30 @@ private:
         _Utf8BitMasks::IsLeadByteThreeByteSequence,
     };
 
-    std::string _buffer;
+    std::string _buffer8;
     std::array<char, 4> _utf8Partials; // buffer for code units of a partial UTF-8 code point that have to be cached
     size_t _partialsLen{}; // number of cached UTF-8 code units
 };
 
-class UTF16PartialHandler final
+class u16state final
 {
 public:
-    UTF16PartialHandler() noexcept;
-    [[nodiscard]] HRESULT operator()(_Inout_ std::wstring_view& u16Str) noexcept;
-    void Reset() noexcept;
+    u16state() noexcept;
+    [[nodiscard]] HRESULT operator()(const std::wstring_view in, std::wstring_view& out) noexcept;
+    void reset() noexcept;
 
 private:
-    std::wstring _buffer;
+    std::wstring _buffer16;
     wchar_t _highSurrogate{}; // UTF-16 high surrogate that has to be cached
     size_t _cached{}; // 1 if a high surrogate has been cached, 0 otherwise
 };
 
-class UTF8ChunkToUTF16Converter final
-{
-public:
-    UTF8ChunkToUTF16Converter() noexcept;
-    [[nodiscard]] HRESULT operator()(_In_ std::string_view u8Str, _Out_ std::wstring_view& u16Str, bool discardInvalids = false) noexcept;
-    void Reset() noexcept;
+[[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, u8state& state, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, u16state& state, bool discardInvalids = false) noexcept;
 
-private:
-    UTF8PartialHandler _handleU8Partials;
-    std::wstring _buffer;
-};
-
-class UTF16ChunkToUTF8Converter final
-{
-public:
-    UTF16ChunkToUTF8Converter() noexcept;
-    [[nodiscard]] HRESULT operator()(_In_ std::wstring_view u16Str, _Out_ std::string_view& u8Str, bool discardInvalids = false) noexcept;
-    void Reset() noexcept;
-
-private:
-    UTF16PartialHandler _handleU16Partials;
-    std::string _buffer;
-};
+std::wstring u8u16(const std::string_view in, bool discardInvalids = false);
+std::wstring u8u16(const std::string_view in, u8state& state, bool discardInvalids = false);
+std::string u16u8(const std::wstring_view in, bool discardInvalids = false);
+std::string u16u8(const std::wstring_view in, u16state& state, bool discardInvalids = false);
