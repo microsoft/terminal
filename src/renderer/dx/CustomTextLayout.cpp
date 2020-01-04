@@ -404,15 +404,24 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             // Offsets is how far to move the origin (in pixels) from where it is
             auto& offset = _glyphOffsets.at(i);
 
-            // Get how many columns we expected the glyph to have and mutiply into pixels.
+            // Get how many columns we expected the glyph to have and multiply into pixels.
             UINT16 columns = 0;
             {
+                // Because of typographic features such as ligatures, it is well possible for a glyph to represent
+                //  multiple code points. Previous calls to IDWriteTextAnalyzer::GetGlyphs stores the mapping
+                //  information between code points and glyphs in _glyphClusters.
+                // To properly allocate the columns for such glyphs, we need to find all characters that this glyph
+                //  is representing and add column counts for all the characters together.
+
+                // Find the range for current glyph run in _glyphClusters.
                 const auto runStartIterator = _glyphClusters.begin() + run.textStart;
                 const auto runEndIterator = _glyphClusters.begin() + run.textStart + run.textLength;
 
+                // Find the range of characters that the current glyph is representing.
                 const auto firstIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart);
                 const auto lastIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart + 1);
 
+                // Add all allocated column counts together.
                 for (auto j = firstIterator; j < lastIterator; j++)
                 {
                     const auto charIndex = std::distance(_glyphClusters.begin(), j);
