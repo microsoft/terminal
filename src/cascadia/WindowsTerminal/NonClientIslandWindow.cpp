@@ -406,12 +406,13 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // - The size difference
 SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
 {
+    const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
 
     // If we failed to get the correct window size for whatever reason, log
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
-    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi));
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
 
     islandFrame.top = -topBorderVisibleHeight;
 

@@ -188,12 +188,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         // If user has dragged anything but the top or bottom border (so e.g. left border,
         // top-right corner etc.), then this means that the width has changed. We thus ask to
         // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
-        clientWidth = static_cast<int>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));
+        clientWidth = gsl::narrow_cast<int>(_pfnSnapDimensionCallback(true, gsl::narrow_cast<float>(clientWidth)));
     }
     if (wParam != WMSZ_LEFT && wParam != WMSZ_RIGHT)
     {
         // Analogous to above, but for height.
-        clientHeight = static_cast<int>(_pfnSnapDimensionCallback(false, static_cast<float>(clientHeight)));
+        clientHeight = gsl::narrow_cast<int>(_pfnSnapDimensionCallback(false, gsl::narrow_cast<float>(clientHeight)));
     }
 
     // Now make the window rectangle match the calculated client width and height,
@@ -398,12 +398,13 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 // - The size difference
 SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
 {
+    const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
 
     // If we failed to get the correct window size for whatever reason, log
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
-    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpi));
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
 
     return {
         islandFrame.right - islandFrame.left,
