@@ -169,7 +169,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
-        _guid{ initialGuid }
+        _guid{ initialGuid },
+        _buffer{}
     {
         if (_guid == guid{})
         {
@@ -344,7 +345,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
-        std::array<char, 4096> buffer{}; // buffer for the chunk read.
         UTF8ChunkToUTF16Converter convertUTF8ChunkToUTF16{};
         std::wstring_view u16Sv{};
 
@@ -353,7 +353,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             DWORD read{};
 
-            const auto readFail{ !ReadFile(_outPipe.get(), &buffer.at(0), gsl::narrow<DWORD>(buffer.size()), &read, nullptr) };
+            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
             if (readFail) // reading failed (we must check this first, because read will also be 0.)
             {
                 const auto lastError = GetLastError();
@@ -362,12 +362,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     // EXIT POINT
                     _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
                     _transitionToState(ConnectionState::Failed);
-                    return (DWORD)-1;
+                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
                 }
                 // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
             }
 
-            const HRESULT result{ convertUTF8ChunkToUTF16({ &buffer.at(0), read }, u16Sv) };
+            const HRESULT result{ convertUTF8ChunkToUTF16({ _buffer.data(), read }, u16Sv) };
 
             if (FAILED(result))
             {
@@ -380,7 +380,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(-1);
+                return gsl::narrow_cast<DWORD>(result);
             }
 
             if (u16Sv.empty())

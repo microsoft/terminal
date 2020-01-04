@@ -52,6 +52,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
 
+        std::array<char, 4096> _buffer{};
+
         DWORD _OutputThread();
     };
 }
