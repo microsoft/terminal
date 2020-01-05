@@ -139,10 +139,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     MSG message;
 
-    while (GetMessage(&message, nullptr, 0, 0))
+    while (GetMessageW(&message, nullptr, 0, 0) > 0)
     {
         TranslateMessage(&message);
-        DispatchMessage(&message);
+        DispatchMessageW(&message);
     }
     return 0;
 }
