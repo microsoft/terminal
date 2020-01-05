@@ -1,0 +1,356 @@
+﻿// TEST TOOL U8U16Test
+
+#include <iostream>
+#include <memory>
+#include <chrono>
+#include <random>
+
+#include "U8U16Test.hpp"
+
+typedef NTSTATUS(WINAPI* t_RtlUTF8ToUnicodeN)(PWSTR, ULONG, PULONG, PCCH, ULONG);
+typedef NTSTATUS(WINAPI* t_RtlUnicodeToUTF8N)(PCHAR, ULONG, PULONG, PCWSTR, ULONG);
+NTSTATUS(WINAPI* p_RtlUTF8ToUnicodeN)
+(
+    _Out_ PWSTR UnicodeStringDestination,
+    _In_ ULONG UnicodeStringMaxByteCount,
+    _Out_opt_ PULONG UnicodeStringActualByteCount,
+    _In_ PCCH UTF8StringSource,
+    _In_ ULONG UTF8StringByteCount){};
+NTSTATUS(WINAPI* p_RtlUnicodeToUTF8N)
+(
+    _Out_ PCHAR UTF8StringDestination,
+    _In_ ULONG UTF8StringMaxByteCount,
+    _Out_opt_ PULONG UTF8StringActualByteCount,
+    _In_ PCWSTR UnicodeStringSource,
+    _In_ ULONG UnicodeStringWCharCount){};
+
+// helper functions
+double GetDuration();
+ptrdiff_t RandomIndex(ptrdiff_t length);
+void PrintHeader(const char* const funcName);
+
+// test functions
+void WideCharToMultiByte_WholeString(std::wstring_view testU16)
+{
+    PrintHeader(__func__);
+    GetDuration();
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(testU16.length() * 3) };
+    const int length = WideCharToMultiByte(65001, 0, testU16.data(), static_cast<int>(testU16.length()), u8Buffer.get(), static_cast<int>(testU16.length()) * 3, nullptr, nullptr);
+    const double duration = GetDuration();
+    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(length))];
+    u8Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
+              << "\n length " << length << "\n elapsed " << duration << std::endl;
+}
+
+void RtlUnicodeToUTF8N_WholeString(std::wstring_view testU16)
+{
+    PrintHeader(__func__);
+    ULONG written{};
+    GetDuration();
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(testU16.length() * 3) };
+    const NTSTATUS status = p_RtlUnicodeToUTF8N(u8Buffer.get(), static_cast<ULONG>(testU16.length()) * 3, &written, testU16.data(), static_cast<ULONG>(testU16.length() * 2));
+    const double duration = GetDuration();
+    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(written))];
+    u8Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
+              << "\n NTSTATUS " << status << "\n length " << written << "\n elapsed " << duration << std::endl;
+}
+
+void u16u8_WholeString(std::wstring_view testU16, std::string& u8Str)
+{
+    PrintHeader(__func__);
+    GetDuration();
+    const HRESULT hRes = u16u8(testU16, u8Str);
+    const double duration = GetDuration();
+    const char randElem8 = u8Str.at(RandomIndex(static_cast<ptrdiff_t>(u8Str.length())));
+    std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
+              << "\n HRESULT " << hRes << "\n length " << u8Str.length() << "\n elapsed " << duration << std::endl;
+}
+
+void WideCharToMultiByte_Chunks(std::wstring_view testU16, size_t u8CharLen, size_t u8ChunkLen)
+{
+    PrintHeader(__func__);
+    const size_t endLoop{ testU16.length() / u8ChunkLen };
+    double duration{};
+    GetDuration();
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(u8ChunkLen * u8CharLen) };
+    duration += GetDuration();
+    int length{};
+
+    for (size_t i{}; i <= endLoop; ++i)
+    {
+        const std::wstring_view sv{ &testU16.at(i), u8ChunkLen };
+        GetDuration();
+        length += WideCharToMultiByte(65001, 0, sv.data(), static_cast<int>(sv.length()), u8Buffer.get(), static_cast<int>(sv.length()) * 3, nullptr, nullptr);
+        duration += GetDuration();
+    }
+
+    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(u8ChunkLen * u8CharLen))];
+    u8Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
+              << "\n length " << length << "\n elapsed " << duration << std::endl;
+}
+
+void RtlUnicodeToUTF8N_Chunks(std::wstring_view testU16, size_t u8CharLen, size_t u8ChunkLen)
+{
+    PrintHeader(__func__);
+    const size_t endLoop{ testU16.length() / u8ChunkLen };
+    double duration{};
+    ULONG written{};
+    ULONG total{};
+    NTSTATUS status{};
+    GetDuration();
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(u8ChunkLen * u8CharLen) };
+    duration += GetDuration();
+
+    for (size_t i{}; i <= endLoop; ++i)
+    {
+        const std::wstring_view sv{ &testU16.at(i), u8ChunkLen };
+        GetDuration();
+        status = p_RtlUnicodeToUTF8N(u8Buffer.get(), static_cast<ULONG>(sv.length()) * 3, &written, sv.data(), static_cast<ULONG>(sv.length() * 2));
+        duration += GetDuration();
+        total += written;
+    }
+
+    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(u8ChunkLen * u8CharLen))];
+    u8Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
+              << "\n NTSTATUS " << status << "\n length " << total << "\n elapsed " << duration << std::endl;
+}
+
+void u16u8_Chunks(std::wstring_view testU16, size_t u8ChunkLen)
+{
+    PrintHeader(__func__);
+    const size_t endLoop{ testU16.length() / u8ChunkLen };
+    double duration{};
+    size_t length{};
+    HRESULT hRes{};
+    std::string u8Str{};
+
+    for (size_t i{}; i <= endLoop; ++i)
+    {
+        const std::wstring_view sv{ &testU16.at(i), u8ChunkLen };
+        GetDuration();
+        hRes = u16u8(sv, u8Str);
+        duration += GetDuration();
+        length += u8Str.length();
+    }
+
+    const char randElem8 = u8Str.at(RandomIndex(static_cast<ptrdiff_t>(u8Str.length())));
+    std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
+              << "\n HRESULT " << hRes << "\n length " << length << "\n elapsed " << duration << std::endl;
+}
+
+void MultiByteToWideChar_WholeString(std::string_view u8Str)
+{
+    PrintHeader(__func__);
+    GetDuration();
+    std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
+    const int length = MultiByteToWideChar(65001, 0, u8Str.data(), static_cast<int>(u8Str.length()), u16Buffer.get(), static_cast<int>(u8Str.length()));
+    const double duration = GetDuration();
+    const wchar_t randElem16 = u16Buffer[RandomIndex(static_cast<ptrdiff_t>(length))];
+    u16Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(randElem16)
+              << "\n length " << length << "\n elapsed " << duration << std::endl;
+}
+
+void RtlUTF8ToUnicodeN_WholeString(std::string_view u8Str)
+{
+    PrintHeader(__func__);
+    ULONG written{};
+    GetDuration();
+    std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
+    const NTSTATUS status = p_RtlUTF8ToUnicodeN(u16Buffer.get(), static_cast<ULONG>(u8Str.length() * sizeof(wchar_t)), &written, u8Str.data(), static_cast<ULONG>(u8Str.length()));
+    const double duration = GetDuration();
+    const wchar_t randElem16 = u16Buffer[RandomIndex(static_cast<ptrdiff_t>(written / sizeof(wchar_t)))];
+    u16Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(randElem16)
+              << "\n NTSTATUS " << status << "\n length " << (written / sizeof(wchar_t)) << "\n elapsed " << duration << std::endl;
+}
+
+void u8u16_WholeString(std::string_view u8Str)
+{
+    PrintHeader(__func__);
+    GetDuration();
+    std::wstring u16Str{};
+    const HRESULT hRes = u8u16(u8Str, u16Str);
+    const double duration = GetDuration();
+    const wchar_t randElem16 = u16Str.at(RandomIndex(static_cast<ptrdiff_t>(u16Str.length())));
+    std::cout << " ignore me " << static_cast<int>(randElem16)
+              << "\n HRESULT " << hRes << "\n length " << u16Str.length() << "\n elapsed " << duration << std::endl;
+}
+
+void MultiByteToWideChar_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkLen)
+{
+    PrintHeader(__func__);
+    const size_t endLoop{ u8Str.length() / u16ChunkLen };
+    double duration{};
+    int length{};
+    GetDuration();
+    std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
+    duration += GetDuration();
+
+    for (size_t i{}; i <= endLoop; i += u8CharLen)
+    {
+        const std::string_view sv{ &u8Str.at(i), u16ChunkLen * u8CharLen };
+        GetDuration();
+        length += MultiByteToWideChar(65001, 0, sv.data(), static_cast<int>(sv.length()), u16Buffer.get(), static_cast<int>(sv.length()));
+        duration += GetDuration();
+    }
+
+    const wchar_t randElem16 = u16Buffer[RandomIndex(static_cast<ptrdiff_t>(u16ChunkLen))];
+    u16Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(randElem16)
+              << "\n length " << length << "\n elapsed " << duration << std::endl;
+}
+
+void RtlUTF8ToUnicodeN_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkLen)
+{
+    PrintHeader(__func__);
+    const size_t endLoop{ u8Str.length() / u16ChunkLen };
+    double duration{};
+    ULONG written{};
+    ULONG total{};
+    NTSTATUS status{};
+    GetDuration();
+    std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
+    duration += GetDuration();
+
+    for (size_t i{}; i <= endLoop; i += u8CharLen)
+    {
+        const std::string_view sv{ &u8Str.at(i), u16ChunkLen * u8CharLen };
+        GetDuration();
+        status = p_RtlUTF8ToUnicodeN(u16Buffer.get(), static_cast<ULONG>(sv.length() * sizeof(wchar_t)), &written, sv.data(), static_cast<ULONG>(sv.length()));
+        duration += GetDuration();
+        total += written;
+    }
+
+    const wchar_t randElem16 = u16Buffer[RandomIndex(static_cast<ptrdiff_t>(u16ChunkLen))];
+    u16Buffer.reset();
+    std::cout << " ignore me " << static_cast<int>(randElem16)
+              << "\n NTSTATUS " << status << "\n length " << (total / sizeof(wchar_t)) << "\n elapsed " << duration << std::endl;
+}
+
+void u8u16_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkLen)
+{
+    PrintHeader(__func__);
+    const size_t endLoop{ u8Str.length() / u16ChunkLen };
+    double duration{};
+    size_t length{};
+    HRESULT hRes{};
+    std::wstring u16Str{};
+
+    for (size_t i{}; i <= endLoop; i += u8CharLen)
+    {
+        const std::string_view sv{ &u8Str.at(i), u16ChunkLen * u8CharLen };
+        GetDuration();
+        hRes = u8u16(sv, u16Str);
+        duration += GetDuration();
+        length += u16Str.length();
+    }
+
+    const wchar_t randElem16 = u16Str.at(RandomIndex(static_cast<ptrdiff_t>(u16Str.length())));
+    std::cout << " ignore me " << static_cast<int>(randElem16)
+              << "\n HRESULT " << hRes << "\n length " << length << "\n elapsed " << duration << std::endl;
+}
+
+int main()
+{
+    // UTF-16 string length
+    constexpr const size_t u16Length{ 100000000u }; // 100,000 code points
+    //constexpr const size_t u16Length{ 10000000u }; // 10,000 code points
+
+    // chunk length in code points
+    constexpr const size_t chunkLen = 10u;
+
+    // UTF-16 character to be used
+    //const std::wstring testU16(u16Length, static_cast<wchar_t>(0x007E)); // TILDE (1 Byte in UTF-8)
+    //const std::wstring testU16(u16Length, static_cast<wchar_t>(0x00F6)); // LATIN SMALL LETTER O WITH DIAERESIS (2 Bytes in UTF-8)
+    const std::wstring testU16(u16Length, static_cast<wchar_t>(0x20AC)); // // EURO SIGN (3 Bytes in UTF-8)
+
+    HMODULE ntdll = LoadLibraryA("ntdll.dll");
+    if (ntdll != nullptr)
+    {
+        p_RtlUTF8ToUnicodeN = reinterpret_cast<t_RtlUTF8ToUnicodeN>(GetProcAddress(ntdll, "RtlUTF8ToUnicodeN"));
+        p_RtlUnicodeToUTF8N = reinterpret_cast<t_RtlUnicodeToUTF8N>(GetProcAddress(ntdll, "RtlUnicodeToUTF8N"));
+        if (!p_RtlUTF8ToUnicodeN || !p_RtlUnicodeToUTF8N)
+        {
+            FreeLibrary(ntdll);
+            return 1;
+        }
+    }
+    else
+    {
+        return 1;
+    }
+
+    std::string u8Str{};
+
+    std::cout << "### UTF-16 To UTF-8 ###" << std::endl;
+
+    WideCharToMultiByte_WholeString(testU16);
+    RtlUnicodeToUTF8N_WholeString(testU16);
+    u16u8_WholeString(testU16, u8Str);
+
+    const size_t u8CharLen{ u8Str.length() / testU16.length() };
+    const size_t u8ChunkLen{ u8CharLen * chunkLen };
+    if (u8Str.length() % u8ChunkLen != 0)
+    {
+        std::cerr << "Chunk length has to be a divisor of string length!" << std::endl;
+        FreeLibrary(ntdll);
+        return 1;
+    }
+
+    WideCharToMultiByte_Chunks(testU16, u8CharLen, u8ChunkLen);
+    RtlUnicodeToUTF8N_Chunks(testU16, u8CharLen, u8ChunkLen);
+    u16u8_Chunks(testU16, u8ChunkLen);
+
+    std::cout << "\n\n### UTF-8 To UTF-16 ###" << std::endl;
+
+    MultiByteToWideChar_WholeString(u8Str);
+    RtlUTF8ToUnicodeN_WholeString(u8Str);
+    u8u16_WholeString(u8Str);
+
+    MultiByteToWideChar_Chunks(u8Str, u8CharLen, chunkLen);
+    RtlUTF8ToUnicodeN_Chunks(u8Str, u8CharLen, chunkLen);
+    u8u16_Chunks(u8Str, u8CharLen, chunkLen);
+
+    FreeLibrary(ntdll);
+
+    return 0;
+}
+
+// returns the time elapsed between two calls (the return value of the first call is undefined)
+double GetDuration()
+{
+    static std::chrono::time_point<std::chrono::high_resolution_clock> previous{};
+    const auto current = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = current - previous;
+    previous = current;
+    return elapsed.count();
+}
+
+// returns a value 0..(length - 1), or -1 if the function failed
+ptrdiff_t RandomIndex(ptrdiff_t length)
+{
+    static bool generatorInitialized{ false };
+    static std::default_random_engine generator;
+    if (generatorInitialized == false)
+    {
+        generator.seed(static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count()));
+        generatorInitialized = true;
+    }
+    if (length > 0)
+    {
+        std::uniform_int_distribution<ptrdiff_t> distribution{ static_cast<ptrdiff_t>(0), --length };
+        return distribution(generator);
+    }
+    return static_cast<ptrdiff_t>(-1);
+}
+
+// print the header for a test in function funcName
+void PrintHeader(const char* const funcName)
+{
+    std::cout << "\n~~~\ntest \"" << funcName << "\"" << std::endl;
+}
