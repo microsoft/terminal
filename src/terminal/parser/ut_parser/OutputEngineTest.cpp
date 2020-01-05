@@ -940,7 +940,7 @@ public:
         return true;
     }
 
-    bool SetAutoWrapMode(const bool wrapAtEOL) override
+    bool SetAutoWrapMode(const bool wrapAtEOL) noexcept override
     {
         _isAutoWrapEnabled = wrapAtEOL;
         return true;
