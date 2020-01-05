@@ -37,11 +37,11 @@ try
     SHORT x{ 0 };
     SHORT y{ 0 };
 
-    RETURN_BOOL_IF_FALSE(FAILED(SizeTToShort(column, &x)) ||
-                         FAILED(SizeTToShort(line, &y)));
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(SizeTToShort(column, &x)) &&
+                         SUCCEEDED(SizeTToShort(line, &y)));
 
-    RETURN_BOOL_IF_FALSE(FAILED(ShortSub(x, 1, &x)) ||
-                         FAILED(ShortSub(y, 1, &y)));
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(ShortSub(x, 1, &x)) &&
+                         SUCCEEDED(ShortSub(y, 1, &y)));
 
     return _terminalApi.SetCursorPosition(x, y);
 }
