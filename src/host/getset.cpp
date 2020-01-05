@@ -1360,6 +1360,8 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     auto& textBuffer = screenInfo.GetTextBuffer();
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
+    // We turn the cursor on before an operation that might scroll the viewport, otherwise
+    // that can result in an old copy of the cursor being left behind on the screen.
     textBuffer.GetCursor().SetIsOn(true);
 
     // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
