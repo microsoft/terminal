@@ -902,7 +902,7 @@ public:
         return true;
     }
 
-    bool SetScreenMode(const bool reverseMode) override
+    bool SetScreenMode(const bool reverseMode) noexcept override
     {
         _isScreenModeReversed = reverseMode;
         return true;
