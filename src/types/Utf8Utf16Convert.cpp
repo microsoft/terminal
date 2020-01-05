@@ -362,7 +362,6 @@ void u16state::reset() noexcept
             }
         }
 
-        out.shrink_to_fit();
         return hRes;
     }
     catch (std::length_error&)
@@ -471,7 +470,6 @@ void u16state::reset() noexcept
             }
         }
 
-        out.shrink_to_fit();
         return hRes;
     }
     catch (std::length_error&)
