@@ -332,7 +332,7 @@ bool AdaptDispatch::CursorRestoreState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
 
     auto row = savedCursorState.Row;
-    auto col = savedCursorState.Column;
+    const auto col = savedCursorState.Column;
 
     // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
     // we need to make sure the restored position is clamped within the margins.
