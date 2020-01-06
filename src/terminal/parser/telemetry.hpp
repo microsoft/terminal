@@ -24,7 +24,7 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         // Implement this as a singleton class.
-        static TermTelemetry& Instance()
+        static TermTelemetry& Instance() noexcept
         {
             static TermTelemetry s_Instance;
             return s_Instance;
@@ -84,23 +84,26 @@ namespace Microsoft::Console::VirtualTerminal
             REP,
             OSCFG,
             OSCBG,
+            DECALN,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };
-        void Log(const Codes code);
-        void LogFailed(const wchar_t wch);
-        void SetShouldWriteFinalLog(const bool writeLog);
-        void SetActivityId(const GUID* activityId);
-        unsigned int GetAndResetTimesUsedCurrent();
-        unsigned int GetAndResetTimesFailedCurrent();
-        unsigned int GetAndResetTimesFailedOutsideRangeCurrent();
+        void Log(const Codes code) noexcept;
+        void LogFailed(const wchar_t wch) noexcept;
+        void SetShouldWriteFinalLog(const bool writeLog) noexcept;
+        void SetActivityId(const GUID* activityId) noexcept;
+        unsigned int GetAndResetTimesUsedCurrent() noexcept;
+        unsigned int GetAndResetTimesFailedCurrent() noexcept;
+        unsigned int GetAndResetTimesFailedOutsideRangeCurrent() noexcept;
 
     private:
         // Used to prevent multiple instances
-        TermTelemetry();
+        TermTelemetry() noexcept;
         ~TermTelemetry();
-        TermTelemetry(TermTelemetry const&);
-        void operator=(TermTelemetry const&);
+        TermTelemetry(TermTelemetry const&) = delete;
+        TermTelemetry(TermTelemetry&&) = delete;
+        TermTelemetry& operator=(const TermTelemetry&) = delete;
+        TermTelemetry& operator=(TermTelemetry&&) = delete;
 
         void WriteFinalTraceLog() const;
 

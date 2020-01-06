@@ -284,6 +284,13 @@
           "minimum": 1,
           "type": "integer"
         },
+        "rowsToScroll": {
+          "default": "system",
+          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or 'system'.",
+          "maximum": 999,
+          "minimum": 0,
+          "type": "integer"
+        },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
           "items": {
@@ -622,7 +629,8 @@
           "description": "The default settings that apply to every profile.",
           "$ref": "#/definitions/Profile"
         }
-      }
+      },
+      "type": "object"
     },
     "SchemeList": {
       "description": "Properties are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.",

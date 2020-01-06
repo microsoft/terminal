@@ -12,7 +12,9 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
+#include "SearchBoxControl.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -75,6 +77,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ResetFontSize();
 
         void SwapChainChanged();
+
+        void CreateSearchBoxControl();
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -105,6 +110,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
+
+        winrt::com_ptr<SearchBoxControl> _searchBox;
+
         TSFInputControl _tsfInputControl;
 
         event_token _connectionOutputEventToken;
@@ -123,6 +131,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
+
+        int _rowsToScroll;
 
         std::optional<int> _lastScrollOffset;
 
@@ -164,8 +174,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
         void _UpdateFont();
-        void _SetFontSize(int fontSize);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _SetFontSize(int fontSize);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -206,10 +216,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
+        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
-        void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
-        void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
+        void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
+        void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
     };
 }
 

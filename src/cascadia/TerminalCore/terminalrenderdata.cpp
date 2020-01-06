@@ -13,11 +13,25 @@ Viewport Terminal::GetViewport() noexcept
     return _GetVisibleViewport();
 }
 
+COORD Terminal::GetTextBufferEndPosition() const noexcept
+{
+    // We use the end line of mutableViewport as the end
+    // of the text buffer, it always moves with the written
+    // text
+    COORD endPosition{ _GetMutableViewport().Width() - 1, gsl::narrow<short>(ViewEndIndex()) };
+    return endPosition;
+}
+
 const TextBuffer& Terminal::GetTextBuffer() noexcept
 {
     return *_buffer;
 }
 
+// Creating a FontInfo can technically throw (on string allocation) and this is noexcept.
+// That means this will std::terminate. We could come back and make there be a default constructor
+// backup to FontInfo that throws no exceptions and allocates a default FontInfo structure.
+#pragma warning(push)
+#pragma warning(disable : 26447)
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
     // TODO: This font value is only used to check if the font is a raster font.
@@ -29,6 +43,7 @@ const FontInfo& Terminal::GetFontInfo() noexcept
     static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
     return _fakeFontInfo;
 }
+#pragma warning(pop)
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 {
@@ -37,12 +52,12 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const noexcept
 {
-    return 0xff000000 | attr.CalculateRgbForeground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
+    return 0xff000000 | attr.CalculateRgbForeground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
 }
 
 const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noexcept
 {
-    const auto bgColor = attr.CalculateRgbBackground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
+    const auto bgColor = attr.CalculateRgbBackground({ _colorTable.data(), _colorTable.size() }, _defaultFg, _defaultBg);
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, then make it fully opaque.
     if (!attr.BackgroundIsDefault())
@@ -106,6 +121,7 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
+try
 {
     std::vector<Viewport> result;
 
@@ -116,16 +132,59 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
 
     return result;
 }
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
 
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
-    SetSelectionAnchor(coordStart);
-    SetEndSelectionPosition(coordEnd);
+#pragma warning(push)
+#pragma warning(disable : 26496) // cpp core checks wants these const, but they're decremented below.
+    COORD realCoordStart = coordStart;
+    COORD realCoordEnd = coordEnd;
+#pragma warning(pop)
+
+    bool notifyScrollChange = false;
+    if (coordStart.Y < _VisibleStartIndex())
+    {
+        // recalculate the scrollOffset
+        _scrollOffset = ViewStartIndex() - coordStart.Y;
+        notifyScrollChange = true;
+    }
+    else if (coordEnd.Y > _VisibleEndIndex())
+    {
+        // recalculate the scrollOffset, note that if the found text is
+        // beneath the current visible viewport, it may be within the
+        // current mutableViewport and the scrollOffset will be smaller
+        // than 0
+        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.Y);
+        notifyScrollChange = true;
+    }
+
+    if (notifyScrollChange)
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _NotifyScrollEvent();
+    }
+
+    realCoordStart.Y -= gsl::narrow<short>(_VisibleStartIndex());
+    realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
+
+    SetSelectionAnchor(realCoordStart);
+    SetEndSelectionPosition(realCoordEnd);
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept
+try
 {
     return _title;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
 }
 
 // Method Description:

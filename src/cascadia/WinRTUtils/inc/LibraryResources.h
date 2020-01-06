@@ -59,7 +59,9 @@ namespace Microsoft::Console::Utils
 
 #endif
 
+// Array-to-pointer decay might technically be avoidable, but this is elegant and clean.
 #define UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(x) \
+    __pragma(warning(suppress : 26485));       \
     __declspec(selectany) extern const wchar_t* g_WinRTUtilsLibraryResourceScope{ (x) };
 
 winrt::hstring GetLibraryResourceString(const std::wstring_view key);

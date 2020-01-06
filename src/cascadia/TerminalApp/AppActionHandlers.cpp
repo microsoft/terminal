@@ -214,6 +214,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
+                                   const TerminalApp::ActionEventArgs& args)
+    {
+        _Find();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const TerminalApp::ActionEventArgs& args)
     {
@@ -228,5 +235,4 @@ namespace winrt::TerminalApp::implementation
         _ToggleFullscreen();
         args.Handled(true);
     }
-
 }
