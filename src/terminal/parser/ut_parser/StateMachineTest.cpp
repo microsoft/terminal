@@ -158,11 +158,15 @@ void StateMachineTest::RunStorageBeforeEscape()
     auto& engine{ *enginePtr.get() };
     StateMachine machine{ std::move(enginePtr) };
 
+    // Hook up the passthrough function.
+    engine.pfnFlushToTerminal = std::bind(&StateMachine::FlushToTerminal, &machine);
+
     // Print a bunch of regular text to build up the run buffer before transitioning state.
     machine.ProcessString(L"12345 Hello World\x1b[?999h");
 
     // Then ensure the entire buffered run was printed all at once back to us.
     VERIFY_ARE_EQUAL(String(L"12345 Hello World"), String(engine.printed.c_str()));
+    VERIFY_ARE_EQUAL(String(L"\x1b[?999h"), String(engine.passedThrough.c_str()));
 }
 
 void StateMachineTest::BulkTextPrint()
