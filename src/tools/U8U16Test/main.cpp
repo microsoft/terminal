@@ -68,69 +68,69 @@ void u16u8_WholeString(std::wstring_view testU16, std::string& u8Str)
               << "\n HRESULT " << hRes << "\n length " << u8Str.length() << "\n elapsed " << duration << std::endl;
 }
 
-void WideCharToMultiByte_Chunks(std::wstring_view testU16, size_t u8CharLen, size_t u8ChunkLen)
+void WideCharToMultiByte_Chunks(std::wstring_view testU16, size_t u8CharLen, size_t chunkLen)
 {
     PrintHeader(__func__);
-    const size_t endLoop{ testU16.length() / u8ChunkLen };
+    const size_t endLoop{ testU16.length() / chunkLen };
     double duration{};
     GetDuration();
-    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(u8ChunkLen * u8CharLen) };
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(chunkLen * u8CharLen) };
     duration += GetDuration();
     int length{};
 
-    for (size_t i{}; i <= endLoop; ++i)
+    for (size_t i{}; i < endLoop; ++i)
     {
-        const std::wstring_view sv{ &testU16.at(i), u8ChunkLen };
+        const std::wstring_view sv{ &testU16.at(i), chunkLen };
         GetDuration();
         length += WideCharToMultiByte(65001, 0, sv.data(), static_cast<int>(sv.length()), u8Buffer.get(), static_cast<int>(sv.length()) * 3, nullptr, nullptr);
         duration += GetDuration();
     }
 
-    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(u8ChunkLen * u8CharLen))];
+    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(chunkLen * u8CharLen))];
     u8Buffer.reset();
     std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
               << "\n length " << length << "\n elapsed " << duration << std::endl;
 }
 
-void RtlUnicodeToUTF8N_Chunks(std::wstring_view testU16, size_t u8CharLen, size_t u8ChunkLen)
+void RtlUnicodeToUTF8N_Chunks(std::wstring_view testU16, size_t u8CharLen, size_t chunkLen)
 {
     PrintHeader(__func__);
-    const size_t endLoop{ testU16.length() / u8ChunkLen };
+    const size_t endLoop{ testU16.length() / chunkLen };
     double duration{};
     ULONG written{};
     ULONG total{};
     NTSTATUS status{};
     GetDuration();
-    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(u8ChunkLen * u8CharLen) };
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(chunkLen * u8CharLen) };
     duration += GetDuration();
 
-    for (size_t i{}; i <= endLoop; ++i)
+    for (size_t i{}; i < endLoop; ++i)
     {
-        const std::wstring_view sv{ &testU16.at(i), u8ChunkLen };
+        const std::wstring_view sv{ &testU16.at(i), chunkLen };
         GetDuration();
         status = p_RtlUnicodeToUTF8N(u8Buffer.get(), static_cast<ULONG>(sv.length()) * 3, &written, sv.data(), static_cast<ULONG>(sv.length() * 2));
         duration += GetDuration();
         total += written;
     }
 
-    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(u8ChunkLen * u8CharLen))];
+    const char randElem8 = u8Buffer[RandomIndex(static_cast<ptrdiff_t>(chunkLen * u8CharLen))];
     u8Buffer.reset();
     std::cout << " ignore me " << static_cast<int>(static_cast<unsigned char>(randElem8))
               << "\n NTSTATUS " << status << "\n length " << total << "\n elapsed " << duration << std::endl;
 }
 
-void u16u8_Chunks(std::wstring_view testU16, size_t u8ChunkLen)
+void u16u8_Chunks(std::wstring_view testU16, size_t chunkLen)
 {
     PrintHeader(__func__);
-    const size_t endLoop{ testU16.length() / u8ChunkLen };
+    const size_t endLoop{ testU16.length() / chunkLen };
     double duration{};
     size_t length{};
     HRESULT hRes{};
     std::string u8Str{};
 
-    for (size_t i{}; i <= endLoop; ++i)
+    for (size_t i{}; i < endLoop; ++i)
     {
-        const std::wstring_view sv{ &testU16.at(i), u8ChunkLen };
+        const std::wstring_view sv{ &testU16.at(i), chunkLen };
         GetDuration();
         hRes = u16u8(sv, u8Str);
         duration += GetDuration();
@@ -191,7 +191,7 @@ void MultiByteToWideChar_Chunks(std::string_view u8Str, size_t u8CharLen, size_t
     std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
     duration += GetDuration();
 
-    for (size_t i{}; i <= endLoop; i += u8CharLen)
+    for (size_t i{}; i < endLoop; i += u8CharLen)
     {
         const std::string_view sv{ &u8Str.at(i), u16ChunkLen * u8CharLen };
         GetDuration();
@@ -217,7 +217,7 @@ void RtlUTF8ToUnicodeN_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u
     std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
     duration += GetDuration();
 
-    for (size_t i{}; i <= endLoop; i += u8CharLen)
+    for (size_t i{}; i < endLoop; i += u8CharLen)
     {
         const std::string_view sv{ &u8Str.at(i), u16ChunkLen * u8CharLen };
         GetDuration();
@@ -241,7 +241,7 @@ void u8u16_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkLen)
     HRESULT hRes{};
     std::wstring u16Str{};
 
-    for (size_t i{}; i <= endLoop; i += u8CharLen)
+    for (size_t i{}; i < endLoop; i += u8CharLen)
     {
         const std::string_view sv{ &u8Str.at(i), u16ChunkLen * u8CharLen };
         GetDuration();
@@ -302,9 +302,9 @@ int main()
         return 1;
     }
 
-    WideCharToMultiByte_Chunks(testU16, u8CharLen, u8ChunkLen);
-    RtlUnicodeToUTF8N_Chunks(testU16, u8CharLen, u8ChunkLen);
-    u16u8_Chunks(testU16, u8ChunkLen);
+    WideCharToMultiByte_Chunks(testU16, u8CharLen, chunkLen);
+    RtlUnicodeToUTF8N_Chunks(testU16, u8CharLen, chunkLen);
+    u16u8_Chunks(testU16, chunkLen);
 
     std::cout << "\n\n### UTF-8 To UTF-16 ###" << std::endl;
 
