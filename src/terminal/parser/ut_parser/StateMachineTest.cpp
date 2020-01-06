@@ -109,6 +109,8 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(TwoStateMachinesDoNotInterfereWithEachother);
 
     TEST_METHOD(PassThroughUnhandled);
+
+    TEST_METHOD(RunStorageBeforeEscape);
 };
 
 void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
@@ -147,4 +149,18 @@ void StateMachineTest::PassThroughUnhandled()
 
     VERIFY_ARE_EQUAL(String(L"\x1b[?999h"), String(engine.passedThrough.c_str()));
     VERIFY_ARE_EQUAL(String(L" 12345 Hello World"), String(engine.printed.c_str()));
+}
+
+void StateMachineTest::RunStorageBeforeEscape()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    // this dance is required because StateMachine presumes to take ownership of its engine.
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr) };
+
+    // Print a bunch of regular text to build up the run buffer before transitioning state.
+    machine.ProcessString(L"12345 Hello World\x1b[?999h");
+
+    // Then ensure the entire buffered run was printed all at once back to us.
+    VERIFY_ARE_EQUAL(String(L"12345 Hello World"), String(engine.printed.c_str()));
 }
