@@ -140,12 +140,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _array[pos];
         }
 
-        constexpr reference operator[](size_type pos) noexcept 
+        constexpr reference operator[](size_type pos) noexcept
         {
             return _array[pos];
         }
 
-        constexpr const_reference operator[](size_type pos) const noexcept 
+        constexpr const_reference operator[](size_type pos) const noexcept
         {
             return _array[pos];
         }
