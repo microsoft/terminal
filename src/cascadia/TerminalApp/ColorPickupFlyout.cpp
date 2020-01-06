@@ -26,9 +26,7 @@ namespace winrt::TerminalApp::implementation
         btnCustomColor().Content(winrt::box_value(customColorText));
         btnClearColor().Content(winrt::box_value(clearColorText));
 
-        customColorPicker().ColorChanged([this](const auto&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args) {
-            _colorSelected(args.NewColor());
-        });
+        customColorPicker().ColorChanged({ get_weak(), &ColorPickupFlyout::_ColorChangedHandler });
     }
 
     // Method Description:
@@ -102,6 +100,11 @@ namespace winrt::TerminalApp::implementation
         auto color = customColorPicker().Color();
         _colorSelected(color);
         Hide();
+    }
+
+    void ColorPickupFlyout::_ColorChangedHandler(const Windows::UI::Xaml::Controls::ColorPicker&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args)
+    {
+        _colorSelected(args.NewColor());
     }
 
     DEFINE_EVENT(ColorPickupFlyout, ColorSelected, _colorSelected, TerminalApp::ColorSelectedArgs);

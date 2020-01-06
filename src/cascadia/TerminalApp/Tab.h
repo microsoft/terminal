@@ -10,8 +10,8 @@ class Tab : public std::enable_shared_from_this<Tab>
 public:
     Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    // Called after construction to setup events with weak_ptr
-    void BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
+    // Called after construction to perform the necessary setup, which relies on weak_ptr
+    void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
@@ -55,6 +55,9 @@ private:
     void _Focus();
     void _SetTabColor(const winrt::Windows::UI::Color& color);
     void _ResetTabColor();
+    void _RefreshVisualState();
+    
+    void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
 
     void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);

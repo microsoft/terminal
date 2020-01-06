@@ -146,8 +146,8 @@
                      IsColorChannelTextInputVisible="True"
                      IsHexInputVisible="True"
                      IsAlphaEnabled="False"
-                     IsAlphaSliderVisible="True"
-                     IsAlphaTextInputVisible="True"
+                     IsAlphaSliderVisible="False"
+                     IsAlphaTextInputVisible="False"
                      FontSize="10"
                      Grid.Row="0"
                      >

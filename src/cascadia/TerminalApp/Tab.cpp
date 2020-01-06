@@ -6,7 +6,6 @@
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "Utils.h"
-#include "winrt/Windows.UI.Popups.h"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -34,7 +33,6 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 void Tab::_MakeTabViewItem()
 {
     _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
-    _CreateContextMenu();
 }
 
 UIElement Tab::GetRootElement()
@@ -115,11 +113,26 @@ std::optional<GUID> Tab::GetFocusedProfile() const noexcept
 // - control: reference to the TermControl object to bind event to
 // Return Value:
 // - <none>
-void Tab::BindEventHandlers(const TermControl& control) noexcept
+void Tab::_BindEventHandlers(const TermControl& control) noexcept
 {
     _AttachEventHandlersToPane(_rootPane);
     _AttachEventHandlersToControl(control);
 }
+
+// Method Description:
+// - Called after construction of a Tab object to bind event handlers to its
+//   associated Pane and TermControl object and to create the context menu of
+//   the tab item
+// Arguments:
+// - control: reference to the TermControl object to bind event to
+// Return Value:
+// - <none>
+void Tab::Initialize(const TermControl& control)
+{
+    _BindEventHandlers(control);
+    _CreateContextMenu();
+}
+
 
 // Method Description:
 // - Attempts to update the settings of this tab's tree of panes.
@@ -396,20 +409,34 @@ void Tab::_CreateContextMenu()
     closeTabMenuItem.Text(tabClose);
     closeTabMenuItem.Icon(closeSymbol);
 
-    closeTabMenuItem.Click([this](auto&&, auto&&) {
-        ClosePane();
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
+        if (auto tab{ weakThis.lock() })
+        {
+            tab->ClosePane();
+        }
     });
 
-    _tabColorPickup.ColorSelected([this](auto newTabColor) {
-        _SetTabColor(newTabColor);
+    _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
+        if (auto tab{ weakThis.lock() })
+        {
+           tab->_SetTabColor(newTabColor);
+        }
     });
 
-    _tabColorPickup.ColorCleared([this]() {
-        _ResetTabColor();
+    _tabColorPickup.ColorCleared([weakThis]() {
+        if (auto tab{ weakThis.lock() })
+        {
+            tab->_ResetTabColor();
+        }
     });
 
-    chooseColorMenuItem.Click([this](auto&&, auto&&) {
-        _tabColorPickup.ShowAt(_tabViewItem);
+    chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
+        if (auto tab{ weakThis.lock() })
+        {
+            tab->_tabColorPickup.ShowAt(tab->_tabViewItem);
+        }
     });
     chooseColorMenuItem.Icon(colorPickSymbol);
 
@@ -432,12 +459,19 @@ void Tab::_CreateContextMenu()
 // - <none>
 void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
 {
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, color]() {
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, color]() {
+        auto ptrTab = weakThis.lock();
+        if (!ptrTab)
+            return;
+
+        auto tab{ ptrTab };
         Media::SolidColorBrush selectedTabBrush{};
         Media::SolidColorBrush deselectedTabBrush{};
         Media::SolidColorBrush fontBrush{};
 
-        // see https://en.wikipedia.org/wiki/Luma_(video)#Rec._601_luma_versus_Rec._709_luma_coefficients
+        // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
         float c[] = { color.R / 255.f, color.G / 255.f, color.B / 255.f };
         for (int i = 0; i < 3; i++)
         {
@@ -470,23 +504,14 @@ void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
         auto deselectedTabColor = color;
         deselectedTabColor.A = 64;
         deselectedTabBrush.Color(deselectedTabColor);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), selectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        //switch the visual state so that the colors are updated immediately
-        if (_focused)
-        {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-        }
-        else
-        {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-        }
+        tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), selectedTabBrush);
+        tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
+        tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
+        tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
+
+        tab->_RefreshVisualState();
     });
 }
 
@@ -499,7 +524,14 @@ void Tab::_SetTabColor(const winrt::Windows::UI::Color& color)
 // - <none>
 void Tab::_ResetTabColor()
 {
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
+        auto ptrTab = weakThis.lock();
+        if (!ptrTab)
+            return;
+
+        auto tab{ ptrTab };
         winrt::hstring keys[] = {
             L"TabViewItemHeaderBackground",
             L"TabViewItemHeaderBackgroundSelected",
@@ -513,24 +545,35 @@ void Tab::_ResetTabColor()
         for (auto keyString : keys)
         {
             auto key = winrt::box_value(keyString);
-            if (_tabViewItem.Resources().HasKey(key))
+            if (tab->_tabViewItem.Resources().HasKey(key))
             {
-                _tabViewItem.Resources().Remove(key);
+                tab->_tabViewItem.Resources().Remove(key);
             }
         }
 
-        //switch the visual state so that the colors are updated
-        if (_focused)
-        {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-        }
-        else
-        {
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-        }
+        tab->_RefreshVisualState();
     });
+}
+
+// Method Description:
+// Toggles the visual state of the tab view item,
+// so that changes to the tab color are reflected immediately
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Tab::_RefreshVisualState()
+{
+    if (_focused)
+    {
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+    }
+    else
+    {
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+    }
 }
 
 UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources")

@@ -15,6 +15,9 @@ namespace winrt::TerminalApp::implementation
 
         DECLARE_EVENT(ColorSelected, _colorSelected, TerminalApp::ColorSelectedArgs);
         DECLARE_EVENT(ColorCleared, _colorCleared, TerminalApp::ColorClearedArgs);
+
+    private:
+        void _ColorChangedHandler(const Windows::UI::Xaml::Controls::ColorPicker&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args);
     };
 }
 

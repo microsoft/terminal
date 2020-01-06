@@ -60,3 +60,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <filesystem>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Windows.UI.Popups.h>
