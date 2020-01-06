@@ -1249,7 +1249,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
     while (current < string.size())
     {
-        _run = string.substr(start, current - start);
+        _run = string.substr(start, current - start + 1);
 
         if (_processingIndividually)
         {
@@ -1266,8 +1266,10 @@ void StateMachine::ProcessString(const std::wstring_view string)
         {
             if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                _engine->ActionPrintString(_run); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(_run);
+                const auto allLeadingUpTo = _run.substr(0, _run.size() - 1);
+
+                _engine->ActionPrintString(allLeadingUpTo); // ... print all the chars leading up to it as part of the run...
+                _trace.DispatchPrintRunTrace(allLeadingUpTo);
                 _processingIndividually = true; // begin processing future characters individually...
                 start = current;
                 continue;
@@ -1279,7 +1281,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
     }
 
-    _run = string.substr(start, current - start);
+    _run = string.substr(start, current - start + 1);
 
     // If we're at the end of the string and have remaining un-printed characters,
     if (!_processingIndividually && !_run.empty())
