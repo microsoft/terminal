@@ -133,7 +133,6 @@ void Tab::Initialize(const TermControl& control)
     _CreateContextMenu();
 }
 
-
 // Method Description:
 // - Attempts to update the settings of this tab's tree of panes.
 // Arguments:
@@ -421,7 +420,7 @@ void Tab::_CreateContextMenu()
     _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
         if (auto tab{ weakThis.lock() })
         {
-           tab->_SetTabColor(newTabColor);
+            tab->_SetTabColor(newTabColor);
         }
     });
 

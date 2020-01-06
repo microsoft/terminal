@@ -56,7 +56,7 @@ private:
     void _SetTabColor(const winrt::Windows::UI::Color& color);
     void _ResetTabColor();
     void _RefreshVisualState();
-    
+
     void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
 
     void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
