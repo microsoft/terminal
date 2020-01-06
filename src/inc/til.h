@@ -3,9 +3,7 @@
 
 #pragma once
 
-#ifndef _NO_TIL_SOME
 #include "til/some.h"
-#endif
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {

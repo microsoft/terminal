@@ -7,208 +7,201 @@
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    template<class _Ty, size_t _Size>
-    class some : std::array<_Ty, _Size>
+    template<class T, size_t N>
+    class some
     {
+    private:
+        std::array<T, N> _array;
+        size_t _used{ 0 };
+
+#ifdef UNIT_TESTING
+        friend class SomeTests;
+#endif
+
     public:
-        using value_type = _Ty;
+        using value_type = T;
         using size_type = size_t;
         using difference_type = ptrdiff_t;
-        using pointer = _Ty*;
-        using const_pointer = const _Ty*;
-        using reference = _Ty&;
-        using const_reference = const _Ty&;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using reference = T&;
+        using const_reference = const T&;
 
-        using iterator = _STD _Array_iterator<_Ty, _Size>;
-        using const_iterator = _STD _Array_const_iterator<_Ty, _Size>;
+        using iterator = typename decltype(_array)::iterator;
+        using const_iterator = typename decltype(_array)::const_iterator;
 
-        using reverse_iterator = _STD reverse_iterator<iterator>;
-        using const_reverse_iterator = _STD reverse_iterator<const_iterator>;
+        using reverse_iterator = typename decltype(_array)::reverse_iterator;
+        using const_reverse_iterator = typename decltype(_array)::const_reverse_iterator;
 
-        void fill(const _Ty& _Value)
+        void fill(const T& _Value)
         {
-            array::fill(_Value);
+            _array.fill(_Value);
+            _used = N;
         }
 
-        void swap(some& _Other) noexcept(_Is_nothrow_swappable<_Ty>::value)
+        void swap(some& _Other) noexcept(std::is_nothrow_swappable<T>::value)
         {
-            array::swap(_Other);
-            std::swap(_Used, _Other._Used);
+            _array.swap(_Other._array);
+            std::swap(_used, _Other._used);
         }
 
-        _NODISCARD _CONSTEXPR17 iterator begin() noexcept
+        constexpr iterator begin() noexcept
         {
-            return iterator(_Elems, 0);
+            return iterator(_array.data(), 0);
         }
 
-        _NODISCARD _CONSTEXPR17 const_iterator begin() const noexcept
+        constexpr const_iterator begin() const noexcept
         {
-            return const_iterator(_Elems, 0);
+            return const_iterator(_array.data(), 0);
         }
 
-        _NODISCARD _CONSTEXPR17 iterator end() noexcept
+        constexpr iterator end() noexcept
         {
-            return iterator(_Elems, _Used);
+            return iterator(_array.data(), _used);
         }
 
-        _NODISCARD _CONSTEXPR17 const_iterator end() const noexcept
+        constexpr const_iterator end() const noexcept
         {
-            return const_iterator(_Elems, _Used);
+            return const_iterator(_array.data(), _used);
         }
 
-        _NODISCARD _CONSTEXPR17 reverse_iterator rbegin() noexcept
+        constexpr reverse_iterator rbegin() noexcept
         {
             return reverse_iterator(end());
         }
 
-        _NODISCARD _CONSTEXPR17 const_reverse_iterator rbegin() const noexcept
+        constexpr const_reverse_iterator rbegin() const noexcept
         {
             return const_reverse_iterator(end());
         }
 
-        _NODISCARD _CONSTEXPR17 reverse_iterator rend() noexcept
+        constexpr reverse_iterator rend() noexcept
         {
             return reverse_iterator(begin());
         }
 
-        _NODISCARD _CONSTEXPR17 const_reverse_iterator rend() const noexcept
+        constexpr const_reverse_iterator rend() const noexcept
         {
             return const_reverse_iterator(begin());
         }
 
-        _NODISCARD _CONSTEXPR17 const_iterator cbegin() const noexcept
+        constexpr const_iterator cbegin() const noexcept
         {
             return begin();
         }
 
-        _NODISCARD _CONSTEXPR17 const_iterator cend() const noexcept
+        constexpr const_iterator cend() const noexcept
         {
             return end();
         }
 
-        _NODISCARD _CONSTEXPR17 const_reverse_iterator crbegin() const noexcept
+        constexpr const_reverse_iterator crbegin() const noexcept
         {
             return rbegin();
         }
 
-        _NODISCARD _CONSTEXPR17 const_reverse_iterator crend() const noexcept
+        constexpr const_reverse_iterator crend() const noexcept
         {
             return rend();
         }
 
-        _NODISCARD constexpr size_type size() const noexcept
+        constexpr size_type size() const noexcept
         {
-            return _Used;
+            return _used;
         }
 
-        _NODISCARD constexpr size_type max_size() const noexcept
+        constexpr size_type max_size() const noexcept
         {
-            return _Size;
+            return N;
         }
 
-        _NODISCARD constexpr bool empty() const noexcept
+        constexpr bool empty() const noexcept
         {
-            return !_Used;
+            return !_used;
         }
 
-        _NODISCARD _CONSTEXPR17 reference at(size_type _Pos)
+        constexpr reference at(size_type pos)
         {
-            if (_Used <= _Pos)
+            if (_used <= pos)
             {
-                _Xran();
+                _outOfRange();
             }
 
-            return _Elems[_Pos];
+            return _array[pos];
         }
 
-        _NODISCARD constexpr const_reference at(size_type _Pos) const
+        constexpr const_reference at(size_type pos) const
         {
-            if (_Used <= _Pos)
+            if (_used <= pos)
             {
-                _Xran();
+                _outOfRange();
             }
 
-            return _Elems[_Pos];
+            return _array[pos];
         }
 
-        _NODISCARD _CONSTEXPR17 reference operator[](_In_range_(0, _Used - 1) size_type _Pos) noexcept /* strengthened */
+        constexpr reference operator[](size_type pos) noexcept 
         {
-#if _CONTAINER_DEBUG_LEVEL > 0
-            _STL_VERIFY(_Pos < _Used, "some subscript out of range");
-#endif // _CONTAINER_DEBUG_LEVEL > 0
-
-            return _Elems[_Pos];
+            return _array[pos];
         }
 
-        _NODISCARD constexpr const_reference operator[](_In_range_(0, _Used - 1) size_type _Pos) const
-            noexcept /* strengthened */
+        constexpr const_reference operator[](size_type pos) const noexcept 
         {
-#if _CONTAINER_DEBUG_LEVEL > 0
-            _STL_VERIFY(_Pos < _Used, "some subscript out of range");
-#endif // _CONTAINER_DEBUG_LEVEL > 0
-
-            return _Elems[_Pos];
+            return _array[pos];
         }
 
-        _NODISCARD _CONSTEXPR17 reference front() noexcept /* strengthened */
+        constexpr reference front() noexcept
         {
-            return _Elems[0];
+            return _array[0];
         }
 
-        _NODISCARD constexpr const_reference front() const noexcept /* strengthened */
+        constexpr const_reference front() const noexcept
         {
-            return _Elems[0];
+            return _array[0];
         }
 
-        _NODISCARD _CONSTEXPR17 reference back() noexcept /* strengthened */
+        constexpr reference back() noexcept
         {
-            return _Elems[_Used - 1];
+            return _array[_used - 1];
         }
 
-        _NODISCARD constexpr const_reference back() const noexcept /* strengthened */
+        constexpr const_reference back() const noexcept
         {
-            return _Elems[_Used - 1];
+            return _array[_used - 1];
         }
 
-        _NODISCARD _CONSTEXPR17 _Ty* data() noexcept
+        constexpr const T* data() const noexcept
         {
-            return _Elems;
+            return _array;
         }
 
-        _NODISCARD _CONSTEXPR17 const _Ty* data() const noexcept
+        void push_back(const T& val)
         {
-            return _Elems;
-        }
-
-        void push_back(const _Ty& _Val)
-        {
-            if (_Used >= _Size)
+            if (_used >= N)
             {
-                _Xran();
+                _outOfRange();
             }
 
-            _Elems[_Used] = _Val;
+            _array[_used] = val;
 
-            ++_Used;
+            ++_used;
         }
 
         void pop_back() noexcept
         {
-            if (_Used <= 0)
+            if (_used <= 0)
             {
-                _Xran();
+                _outOfRange();
             }
 
-            --_Used;
+            --_used;
 
-            _Elems[_Used] = 0;
+            _array[_used] = 0;
         }
 
-        [[noreturn]] void _Xran() const
+        [[noreturn]] void _outOfRange() const
         {
-            _Xout_of_range("invalid some<T, N> subscript");
+            throw std::out_of_range("invalid <some T, N> subscript");
         }
-
-        size_t _Used;
     };
 }
