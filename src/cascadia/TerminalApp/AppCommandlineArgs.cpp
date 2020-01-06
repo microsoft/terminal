@@ -31,19 +31,30 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
     const int argc = static_cast<int>(command.Argc());
 
-    // CLI11 needs a mutable vector<string>, so copy out the args here.
-    std::vector<std::string> args = command.Args();
-
-    // Revert our state to the initial state. As this function can be called
-    // multiple times during the parsing of a single commandline (once for each
-    // sub-command), we don't want the leftover state from previous calls to
-    // pollute this run's state.
-    _resetStateToDefault();
-
     try
     {
+        // CLI11 needs a mutable vector<string>, so copy out the args here.
+        // * When we're using the vector<string> parse(), it also expects that
+        //   there isn't a leading executable name in the args, so slice that
+        //   out.
+        //   - In AppCommandlineArgs::BuildCommands, we'll make sure each
+        //     subsequent command in a single commandline starts with a wt.exe.
+        //     Our very first argument might not be "wt.exe", it could be `wt`,
+        //     or `wtd.exe`, etc. Regardless, we want to ignore the first arg of
+        //     every Commandline
+        // * Not only that, but this particular overload of parse() wants the
+        //   args _reversed_ here.
+        std::vector<std::string> args{ command.Args().begin() + 1, command.Args().end() };
+        std::reverse(args.begin(), args.end());
+
+        // Revert our state to the initial state. As this function can be called
+        // multiple times during the parsing of a single commandline (once for each
+        // sub-command), we don't want the leftover state from previous calls to
+        // pollute this run's state.
+        _resetStateToDefault();
+
         // Manually check for the "/?" or "-?" flags, to manually trigger the help text.
-        if (argc == 2 && (NixHelpFlag == args.at(1) || WindowsHelpFlag == args.at(1)))
+        if (argc == 2 && (NixHelpFlag == command.Args().at(1) || WindowsHelpFlag == command.Args().at(1)))
         {
             throw CLI::CallForHelp();
         }
@@ -56,11 +67,6 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         // If we parsed the commandline, and _no_ subcommands were provided, try
         // parsing again as a "new-tab" command.
 
-        // TODO:<during-pr> miniksa suggested just throwing here to go into the
-        // ParseError case below and de-dupe this block of code, but I'm not
-        // sure that'll work right. I'll need to make sure that doing that
-        // doesn't incorrectly display an error message for an otherwise valid
-        // commandline.
         if (_noCommandsProvided())
         {
             _newTabCommand->clear();
@@ -79,6 +85,10 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         {
             try
             {
+                // CLI11 mutated the original vector the first time it tried to
+                // parse the args. Reconstruct it the way CLI11 wants here.
+                std::vector<std::string> args{ command.Args().begin() + 1, command.Args().end() };
+                std::reverse(args.begin(), args.end());
                 _newTabCommand->clear();
                 _newTabCommand->parse(args);
             }
@@ -144,6 +154,11 @@ void AppCommandlineArgs::_buildNewTabParser()
 {
     _newTabCommand = _app.add_subcommand("new-tab", "Create a new tab");
     _addNewTerminalArgs(_newTabCommand);
+
+    // When ParseCommand is called, if this subcommand was provided, this
+    // callback function will be triggered on the same thread. We can be sure
+    // that `this` will still be safe - this function just lets us know this
+    // command was parsed.
     _newTabCommand->callback([&, this]() {
         // Buld the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
@@ -173,6 +188,10 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                                                   "Create the new pane as a vertical split (think [|])");
     verticalOpt->excludes(horizontalOpt);
 
+    // When ParseCommand is called, if this subcommand was provided, this
+    // callback function will be triggered on the same thread. We can be sure
+    // that `this` will still be safe - this function just lets us know this
+    // command was parsed.
     _newPaneCommand->callback([&, this]() {
         // Buld the SplitPane action from the values we've parsed on the commandline.
         auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
@@ -214,6 +233,10 @@ void AppCommandlineArgs::_buildFocusTabParser()
     indexOpt->excludes(prevOpt);
     indexOpt->excludes(nextOpt);
 
+    // When ParseCommand is called, if this subcommand was provided, this
+    // callback function will be triggered on the same thread. We can be sure
+    // that `this` will still be safe - this function just lets us know this
+    // command was parsed.
     _focusTabCommand->callback([&, this]() {
         // Buld the action from the values we've parsed on the commandline.
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
@@ -383,6 +406,9 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const wchar_t* argv[])
 {
     std::vector<Commandline> commands;
+    // Initialize a first Commandline without a leading `wt.exe` argument. When
+    // we're run from the commandline, `wt.exe` (or whatever the exe's name is)
+    // will be the first argument passed to us
     commands.resize(1);
 
     // For each arg in argv:
@@ -447,6 +473,8 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
 
             // Create a new commandline
             commands.emplace_back(Commandline{});
+            // Initialize it with "wt.exe" as the first arg, as if that command
+            // was passed individually by the user on the commandline.
             commands.back().AddArg(std::wstring{ L"wt.exe" });
 
             // Look for the next match in the string, but updating our
