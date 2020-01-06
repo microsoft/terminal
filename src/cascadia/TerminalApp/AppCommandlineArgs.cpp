@@ -29,7 +29,7 @@ AppCommandlineArgs::AppCommandlineArgs()
 // - 0 if the commandline was successfully parsed
 int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
-    const int argc = gsl::narrow_cast<int>(command.Argc());
+    const int argc = static_cast<int>(command.Argc());
     const auto argv = command.Argv();
 
     // Revert our state to the initial state. As this function can be called
@@ -53,6 +53,12 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 
         // If we parsed the commandline, and _no_ subcommands were provided, try
         // parsing again as a "new-tab" command.
+
+        // TODO:<during-pr> miniksa suggested just throwing here to go into the
+        // ParseError case below and de-dupe this block of code, but I'm not
+        // sure that'll work right. I'll need to make sure that doing that
+        // doesn't incorrectly display an error message for an otherwise valid
+        // commandline.
         if (_noCommandsProvided())
         {
             _newTabCommand->clear();
@@ -318,8 +324,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
 // - <none>
 void AppCommandlineArgs::_resetStateToDefault()
 {
-    _profileName = "";
-    _startingDirectory = "";
+    _profileName.clear();
+    _startingDirectory.clear();
     _commandline.clear();
 
     _splitVertical = false;
@@ -375,7 +381,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const wchar_t* argv[])
 {
     std::vector<Commandline> commands;
-    commands.emplace_back(Commandline{});
+    commands.resize(1);
 
     // For each arg in argv:
     // Check the string for a delimiter.
@@ -415,10 +421,10 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
     std::regex_search(remaining, match, AppCommandlineArgs::_commandDelimiterRegex);
     do
     {
-        if (match.size() == 0)
+        if (match.empty())
         {
             // Easy case: no delimiter. Add it to the current command.
-            commands.rbegin()->AddArg(remaining);
+            commands.back().AddArg(remaining);
             break;
         }
         else
@@ -432,21 +438,21 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
             auto delimiterPosition = matchedFirstChar ? match.position(0) : match.position(0) + 1;
             auto nextArg = remaining.substr(0, delimiterPosition);
 
-            if (nextArg != L"")
+            if (!nextArg.empty())
             {
-                commands.rbegin()->AddArg(nextArg);
+                commands.back().AddArg(nextArg);
             }
 
             // Create a new commandline
             commands.emplace_back(Commandline{});
-            commands.rbegin()->AddArg(std::wstring{ L"wt.exe" });
+            commands.back().AddArg(std::wstring{ L"wt.exe" });
 
             // Look for the next match in the string, but updating our
             // remaining to be the text after the match.
             remaining = match.suffix().str();
             std::regex_search(remaining, match, AppCommandlineArgs::_commandDelimiterRegex);
         }
-    } while (remaining.size() > 0);
+    } while (!remaining.empty());
 }
 
 // Method Description:
@@ -491,7 +497,7 @@ void AppCommandlineArgs::ValidateStartupCommands()
 {
     // If we parsed no commands, or the first command we've parsed is not a new
     // tab action, prepend a new-tab command to the front of the list.
-    if (_startupActions.size() == 0 ||
+    if (_startupActions.empty() ||
         _startupActions.front().Action() != ShortcutAction::NewTab)
     {
         // Buld the NewTab action from the values we've parsed on the commandline.

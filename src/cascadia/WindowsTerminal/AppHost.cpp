@@ -7,8 +7,6 @@
 #include "../types/inc/utils.hpp"
 
 #include "resource.h"
-#include <shellapi.h>
-#include <processenv.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -55,7 +53,7 @@ AppHost::AppHost() noexcept :
 
     // If there were commandline args to our process, try and process them here.
     // Do this before AppLogic::Create, otherwise this will have no effect
-    _handleCommandlineArgs();
+    _HandleCommandlineArgs();
 
     if (_useNonClientArea)
     {
@@ -98,7 +96,7 @@ AppHost::~AppHost()
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_handleCommandlineArgs()
+void AppHost::_HandleCommandlineArgs()
 {
     if (auto commandline{ GetCommandLineW() })
     {
@@ -111,7 +109,7 @@ void AppHost::_handleCommandlineArgs()
             std::vector<winrt::hstring> args;
             for (auto i = 0; i < argc; i++)
             {
-                args.push_back({ argv[i] });
+                args.emplace_back(argv[i]);
             }
             auto result = _logic.SetStartupCommandline({ args });
 

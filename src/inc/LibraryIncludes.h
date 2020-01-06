@@ -46,6 +46,7 @@
 #include <functional>
 #include <set>
 #include <unordered_set>
+#include <regex>
 
 // WIL
 #include <wil/Common.h>

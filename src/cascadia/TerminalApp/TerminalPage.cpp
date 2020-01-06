@@ -131,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
         // Actually start the terminal.
-        if (_appArgs.GetStartupActions().size() == 0)
+        if (_appArgs.GetStartupActions().empty())
         {
             _OpenNewTab(nullptr);
         }
@@ -142,7 +142,7 @@ namespace winrt::TerminalApp::implementation
             // This will kick off a chain of events to perform each startup
             // action. As each startup action is completed, the next will be
             // fired.
-            _processNextStartupAction();
+            _ProcessNextStartupAction();
         }
     }
 
@@ -153,10 +153,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_processNextStartupAction()
+    void TerminalPage::_ProcessNextStartupAction()
     {
         // If there are no actions left, do nothing.
-        if (_appArgs.GetStartupActions().size() == 0)
+        if (_appArgs.GetStartupActions().empty())
         {
             return;
         }
@@ -172,7 +172,7 @@ namespace winrt::TerminalApp::implementation
                 page->_actionDispatch->DoAction(nextAction);
 
                 // Kick off the next action to be handled (if necessary)
-                page->_processNextStartupAction();
+                page->_ProcessNextStartupAction();
             }
         });
     }
@@ -483,7 +483,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
-        const bool isFirstTab = _tabs.size() == 0;
+        const bool isFirstTab = _tabs.empty();
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -1468,10 +1468,10 @@ namespace winrt::TerminalApp::implementation
     // - args: an array of strings to process as a commandline. These args can contain spaces
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
-    //   or 0. (see TerminalPage::_parseArgs)
+    //   or 0. (see TerminalPage::_ParseArgs)
     int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
     {
-        return _parseArgs(args);
+        return _ParseArgs(args);
     }
 
     // Method Description:
@@ -1486,7 +1486,7 @@ namespace winrt::TerminalApp::implementation
     // - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
     // Return Value:
     // - 0 if the commandline was successfully parsed
-    int TerminalPage::_parseArgs(winrt::array_view<const hstring>& args)
+    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
     {
         auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 

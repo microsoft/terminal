@@ -27,7 +27,7 @@ const std::vector<std::wstring>& Commandline::Wargs() const
 }
 
 // Method Description:
-// - Creates a c-style argv array of char* strings, and return it. If we've
+// - Creates a c-style argv array of char* strings, and returns it. If we've
 //   previously run this, we don't need to re-generate the buffer, we can just
 //   return it early.
 // - We need this method because CLI11 only operates on c-style (argc, argv),
