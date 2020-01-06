@@ -123,7 +123,7 @@ public:
 
     void Reset();
 
-    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
     UnicodeStorage& GetUnicodeStorage() noexcept;
