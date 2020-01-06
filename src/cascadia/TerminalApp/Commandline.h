@@ -20,15 +20,11 @@ public:
     static constexpr std::wstring_view EscapedDelimiter{ L"\\;" };
 
     size_t Argc() const;
-    char** Argv() const;
-    const std::vector<std::wstring>& Wargs() const;
-    char** BuildArgv();
+    const std::vector<std::string>& Args() const;
     void AddArg(const std::wstring& nextArg);
 
 private:
-    std::vector<std::wstring> _wargs;
-    char** _argv = nullptr;
-    void _resetArgv();
+    std::vector<std::string> _args;
 
     friend class TerminalAppLocalTests::CommandlineTest;
 };

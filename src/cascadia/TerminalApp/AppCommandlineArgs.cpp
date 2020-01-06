@@ -30,7 +30,9 @@ AppCommandlineArgs::AppCommandlineArgs()
 int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
     const int argc = static_cast<int>(command.Argc());
-    const auto argv = command.Argv();
+
+    // CLI11 needs a mutable vector<string>, so copy out the args here.
+    std::vector<std::string> args = command.Args();
 
     // Revert our state to the initial state. As this function can be called
     // multiple times during the parsing of a single commandline (once for each
@@ -41,7 +43,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
     try
     {
         // Manually check for the "/?" or "-?" flags, to manually trigger the help text.
-        if (argc == 2 && (NixHelpFlag == argv[1] || WindowsHelpFlag == argv[1]))
+        if (argc == 2 && (NixHelpFlag == args.at(1) || WindowsHelpFlag == args.at(1)))
         {
             throw CLI::CallForHelp();
         }
@@ -49,7 +51,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         _app.clear();
 
         // attempt to parse the commandline
-        _app.parse(argc, argv);
+        _app.parse(args);
 
         // If we parsed the commandline, and _no_ subcommands were provided, try
         // parsing again as a "new-tab" command.
@@ -62,7 +64,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         if (_noCommandsProvided())
         {
             _newTabCommand->clear();
-            _newTabCommand->parse(argc, argv);
+            _newTabCommand->parse(args);
         }
     }
     catch (const CLI::CallForHelp& e)
@@ -78,7 +80,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
             try
             {
                 _newTabCommand->clear();
-                _newTabCommand->parse(argc, argv);
+                _newTabCommand->parse(args);
             }
             catch (const CLI::ParseError& e)
             {

@@ -1492,7 +1492,6 @@ namespace winrt::TerminalApp::implementation
 
         for (auto& cmdBlob : commands)
         {
-            cmdBlob.BuildArgv();
             // On one hand, it seems like we should be able to have one
             // AppCommandlineArgs for parsing all of them, and collect the
             // results one at a time.
