@@ -69,8 +69,10 @@ private:
 };
 
 [[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u8u16_ptr(const std::string_view in, std::wstring& out, bool discardInvalids = false) noexcept;
 [[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, u8state& state, bool discardInvalids = false) noexcept;
 [[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u16u8_ptr(const std::wstring_view in, std::string& out, bool discardInvalids = false) noexcept;
 [[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, u16state& state, bool discardInvalids = false) noexcept;
 
 std::wstring u8u16(const std::string_view in, bool discardInvalids = false);
