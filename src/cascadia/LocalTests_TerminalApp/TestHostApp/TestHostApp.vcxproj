@@ -130,28 +130,52 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <!-- TODO: The current version of TAEF doesn't ship all the architectures of this dll. It only ships the x86 version. We'll need to hold this PR until there's an updated TAEF with all the necessary architectures. -->
-    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
-      <!-- <HintPath>$(OutputRoot)\$(Configuration)\$(PlatformName)\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath> -->
-      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.48.191205003-develop\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
+    <!-- Don't reference TerminalApp or TerminalAppLib here.
+         * If you reference TerminalApp, it'll also try to reference
+           TerminalAppLib, and when makepri.exe is eventually called, it'll run
+           into a duplicate entry for all the xbfs defined in that project.
+         * If you only reference TerminalAppLib here, the AppxManifest.xml will
+           think that TerminalAppLib.lib is the hosting binary for all the
+           TerminalApp types, which is _bad_
 
-      <!-- Heads up, this file is only x86 for the time being -->
-      <Implementation>TE.AppxUnitTestClient.dll</Implementation>
-    </Reference>
+         We'll manually reference the correct dll below.
+     -->
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
   <PropertyGroup>
     <!-- Some helper paths to find our test code -->
-    <TestBinRoot>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)</TestBinRoot>
-    <CppWinrtBinRoot>$(OpenConsoleDir)\$(Platform)\$(Configuration)</CppWinrtBinRoot>
-    <CppWinrtBinRoot Condition="'$(Platform)'=='Win32'">$(OpenConsoleDir)\$(Configuration)</CppWinrtBinRoot>
+    <_TestBinRoot>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)</_TestBinRoot>
+    <_CppWinrtBinRoot>$(OpenConsoleDir)\$(Platform)\$(Configuration)</_CppWinrtBinRoot>
+    <_CppWinrtBinRoot Condition="'$(Platform)'=='Win32'">$(OpenConsoleDir)\$(Configuration)</_CppWinrtBinRoot>
+    <_TAEFPlatformName>$(Platform)</_TAEFPlatformName>
+    <_TAEFPlatformName Condition="'$(Platform)'=='Win32'">x86</_TAEFPlatformName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
+      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.48.200103003-develop\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+
+      <!-- This path is _relative to the .winmd_ -->
+      <Implementation>..\build\Binaries\$(_TAEFPlatformName)\TE.AppxUnitTestClient.dll</Implementation>
+    </Reference>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- Manually reference TerminalApp -->
+    <Reference Include="TerminalApp">
+      <HintPath>$(_CppWinrtBinRoot)\TerminalApp\TerminalApp.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Implementation>TerminalApp.dll</Implementation>
+    </Reference>
+  </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
 
   <Target Name="AfterBuild">
 
@@ -161,13 +185,13 @@
     <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\TestHostAppXManifest.xml" />
 
     <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
-    <Copy SourceFiles="$(TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
+    <Copy SourceFiles="$(_TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
 
     <!-- Copy some dlls which TerminalConnection is dependent upon that didn't
       get rolled up into this  directory -->
 
-    <Copy SourceFiles="$(CppWinrtBinRoot)\TerminalConnection\cpprest142_2_10d.dll" DestinationFiles="$(TargetDir)\cpprest142_2_10d.dll" />
-    <Copy SourceFiles="$(CppWinrtBinRoot)\TerminalConnection\telnetpp.dll" DestinationFiles="$(TargetDir)\telnetpp.dll" />
+    <Copy SourceFiles="$(_CppWinrtBinRoot)\TerminalConnection\cpprest142_2_10d.dll" DestinationFiles="$(TargetDir)\cpprest142_2_10d.dll" />
+    <Copy SourceFiles="$(_CppWinrtBinRoot)\TerminalConnection\telnetpp.dll" DestinationFiles="$(TargetDir)\telnetpp.dll" />
 
   </Target>
 </Project>
