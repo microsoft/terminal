@@ -452,7 +452,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 {
                     const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
                     XPosition = (SHORT)(XPosition + TabSize);
-                    if (XPosition >= coordScreenBufferSize.X || WI_IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
+                    if (XPosition >= coordScreenBufferSize.X)
                     {
                         goto EndWhile;
                     }
@@ -774,16 +774,13 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 CursorPosition.Y = cursor.GetPosition().Y;
             }
 
-            if (!WI_IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
+            try
             {
-                try
-                {
-                    const OutputCellIterator it(UNICODE_SPACE, Attributes, NumChars);
-                    const auto done = screenInfo.Write(it, cursor.GetPosition());
-                    NumChars = done.GetCellDistance(it);
-                }
-                CATCH_LOG();
+                const OutputCellIterator it(UNICODE_SPACE, Attributes, NumChars);
+                const auto done = screenInfo.Write(it, cursor.GetPosition());
+                NumChars = done.GetCellDistance(it);
             }
+            CATCH_LOG();
 
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;

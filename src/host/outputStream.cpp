@@ -85,7 +85,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  &dwNumBytes,
                                  nullptr,
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_LIMIT_BACKSPACE | WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
+                                 WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }
 
