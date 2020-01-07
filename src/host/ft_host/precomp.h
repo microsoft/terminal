@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define NOMINMAX
+
 #include "windows.h"
 #include "wincon.h"
 #include "windowsx.h"
@@ -30,3 +32,12 @@
 #include "common.hpp"
 
 #include "resource.h"
+
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+

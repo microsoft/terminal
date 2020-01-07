@@ -19,6 +19,8 @@ Notes:
 
 --*/
 
+#define NOMINMAX
+
 #define _OLEAUT32_
 #include <windows.h>
 #include <ole2.h>
