@@ -404,14 +404,15 @@ void til::u16state::reset() noexcept
             return hRes;
         }
 
-        size_t lengthHint{};
-        if (FAILED(SizeTMult(in.length(), gsl::narrow_cast<size_t>(3u), &lengthHint)))
+        size_t worstCaseSize{};
+        if (FAILED(SizeTMult(in.length(), gsl::narrow_cast<size_t>(3u), &worstCaseSize)))
         {
-            lengthHint = std::max(out.capacity(), in.length());
+            return E_ABORT;
         }
 
-        out.reserve(lengthHint); // avoid any further re-allocations and copying
+        out.resize(worstCaseSize); // avoid any further re-allocations and copying
 
+        char* it8{ out.data() };
         const auto end16{ in.cend() };
         for (auto it16{ in.cbegin() }; it16 < end16;)
         {
@@ -443,33 +444,41 @@ void til::u16state::reset() noexcept
             // *** convert the code point to UTF-8 ***
             if (codePoint != unicodeReplacementChar || discardInvalids == false)
             {
-                // the outcome of performance tests is that subsequent calls of push_back
-                // perform much better than appending a single initializer_list
+                // The outcome of performance tests is that the function performs
+                // much better using pointers than std::string methods like .push_back() or .append().
+                // String `out` was resized to three times as many code units as in string `in`
+                // which would be needed in the worst case. Thus, it8 will always point to a valid address
+                // in the array returned using .data().
+#pragma warning(push)
+#pragma warning(disable : 26481) // bounds.1
+#pragma warning(disable : 26489) // lifetime.1
                 if (codePoint < 0x00000080u)
                 {
-                    out.push_back(gsl::narrow_cast<char>(codePoint));
+                    *it8++ = gsl::narrow_cast<char>(codePoint);
                 }
                 else if (codePoint < 0x00000800u)
                 {
-                    out.push_back(gsl::narrow_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u));
-                    out.push_back(gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u);
+                    *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
                 }
                 else if (codePoint < 0x00010000u)
                 {
-                    out.push_back(gsl::narrow_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u));
-                    out.push_back(gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
-                    out.push_back(gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    *it8++ = gsl::narrow_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u);
+                    *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u);
+                    *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
                 }
                 else
                 {
-                    out.push_back(gsl::narrow_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u));
-                    out.push_back(gsl::narrow_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u));
-                    out.push_back(gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
-                    out.push_back(gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    *it8++ = gsl::narrow_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u);
+                    *it8++ = gsl::narrow_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u);
+                    *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u);
+                    *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
                 }
+#pragma warning(pop)
             }
         }
 
+        out.resize(gsl::narrow_cast<size_t>(it8 - out.data()));
         return hRes;
     }
     catch (std::length_error&)
