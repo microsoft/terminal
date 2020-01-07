@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 rem Run the console unit tests.
 rem Keep this file in sync with tests.xml
