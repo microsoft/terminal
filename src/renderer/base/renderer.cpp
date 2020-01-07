@@ -931,6 +931,6 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 //      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
-    THROW_IF_NULL_ALLOC(pEngine);
+    THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
     _rgpEngines.push_back(pEngine);
 }

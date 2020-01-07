@@ -17,7 +17,7 @@ OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch
     _pTtyConnection(nullptr),
     _lastPrintedChar(AsciiChars::NUL)
 {
-    THROW_IF_NULL_ALLOC(_dispatch.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
 }
 
 const ITermDispatch& OutputStateMachineEngine::Dispatch() const noexcept
