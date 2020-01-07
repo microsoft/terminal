@@ -9,8 +9,7 @@ using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
 // Either a ; at the start of a line, or a ; preceeded by any non-\ char.
-// We need \\\\ here, to have an escaped backslash in the actual regex itself.
-const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ L"^;|[^\\\\];" };
+const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
 
 AppCommandlineArgs::AppCommandlineArgs()
 {
@@ -152,7 +151,7 @@ void AppCommandlineArgs::_buildParser()
 // - <none>
 void AppCommandlineArgs::_buildNewTabParser()
 {
-    _newTabCommand = _app.add_subcommand("new-tab", "Create a new tab");
+    _newTabCommand = _app.add_subcommand("new-tab", NEEDS_LOC("Create a new tab"));
     _addNewTerminalArgs(_newTabCommand);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -178,14 +177,14 @@ void AppCommandlineArgs::_buildNewTabParser()
 // - <none>
 void AppCommandlineArgs::_buildSplitPaneParser()
 {
-    _newPaneCommand = _app.add_subcommand("split-pane", "Create a new pane");
+    _newPaneCommand = _app.add_subcommand("split-pane", NEEDS_LOC("Create a new pane"));
     _addNewTerminalArgs(_newPaneCommand);
     auto* horizontalOpt = _newPaneCommand->add_flag("-H,--horizontal",
                                                     _splitHorizontal,
-                                                    "Create the new pane as a horizontal split (think [-])");
+                                                    NEEDS_LOC("Create the new pane as a horizontal split (think [-])"));
     auto* verticalOpt = _newPaneCommand->add_flag("-V,--vertical",
                                                   _splitVertical,
-                                                  "Create the new pane as a vertical split (think [|])");
+                                                  NEEDS_LOC("Create the new pane as a vertical split (think [|])"));
     verticalOpt->excludes(horizontalOpt);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -221,14 +220,14 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 // - <none>
 void AppCommandlineArgs::_buildFocusTabParser()
 {
-    _focusTabCommand = _app.add_subcommand("focus-tab", "Move focus to another tab");
-    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, "Move focus the tab at the given index");
+    _focusTabCommand = _app.add_subcommand("focus-tab", NEEDS_LOC("Move focus to another tab"));
+    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, NEEDS_LOC("Move focus the tab at the given index"));
     auto* nextOpt = _focusTabCommand->add_flag("-n,--next",
                                                _focusNextTab,
-                                               "Move focus to the next tab");
+                                               NEEDS_LOC("Move focus to the next tab"));
     auto* prevOpt = _focusTabCommand->add_flag("-p,--previous",
                                                _focusPrevTab,
-                                               "Move focus to the previous tab");
+                                               NEEDS_LOC("Move focus to the previous tab"));
     nextOpt->excludes(prevOpt);
     indexOpt->excludes(prevOpt);
     indexOpt->excludes(nextOpt);
@@ -268,13 +267,13 @@ void AppCommandlineArgs::_addNewTerminalArgs(CLI::App* subcommand)
 {
     subcommand->add_option("-p,--profile",
                            _profileName,
-                           "Open with the given profile. Accepts either the name or guid of a profile");
+                           NEEDS_LOC("Open with the given profile. Accepts either the name or guid of a profile"));
     subcommand->add_option("-d,--startingDirectory",
                            _startingDirectory,
-                           "Open in the given directory instead of the profile's set startingDirectory");
+                           NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
     subcommand->add_option("cmdline",
                            _commandline,
-                           "Commandline to run in the given profile");
+                           NEEDS_LOC("Commandline to run in the given profile"));
 }
 
 // Method Description:
@@ -475,7 +474,7 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
             commands.emplace_back(Commandline{});
             // Initialize it with "wt.exe" as the first arg, as if that command
             // was passed individually by the user on the commandline.
-            commands.back().AddArg(std::wstring{ L"wt.exe" });
+            commands.back().AddArg(std::wstring{ AppCommandlineArgs::PlaceholderExeName });
 
             // Look for the next match in the string, but updating our
             // remaining to be the text after the match.

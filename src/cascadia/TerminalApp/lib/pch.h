@@ -62,3 +62,9 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include <CLI11/CLI11.hpp>
+
+// TODO:GH#<file this> - This macro can be used to identify strings that need to
+// be localized in the future, but aren't localized currently due to some build
+// system restrictions, mainly due to breaking our unittests. All of these
+// strings should eventually be moved to Resources.resw.
+#define NEEDS_LOC(x) (x)

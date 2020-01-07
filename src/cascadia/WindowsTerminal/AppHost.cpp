@@ -5,6 +5,7 @@
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
+#include "../types/inc/User32Utils.hpp"
 
 #include "resource.h"
 
@@ -15,32 +16,6 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
-
-// TODO: Before finishing PR, move this to a shared place (with main.cpp), and
-// polish the dialog a bit
-// Routine Description:
-// - Retrieves the string resource from the current module with the given ID
-//   from the resources files. See resource.h and the .rc definitions for valid IDs.
-// Arguments:
-// - id - Resource ID
-// Return Value:
-// - String resource retrieved from that ID.
-static std::wstring GetStringResource(const UINT id)
-{
-    // Calling LoadStringW with a pointer-sized storage and no length will return a read-only pointer
-    // directly to the resource data instead of copying it immediately into a buffer.
-    LPWSTR readOnlyResource = nullptr;
-    const auto length = LoadStringW(wil::GetModuleInstanceHandle(),
-                                    id,
-                                    reinterpret_cast<LPWSTR>(&readOnlyResource),
-                                    0);
-
-    // However, the pointer and length given are NOT guaranteed to be zero-terminated
-    // and most uses of this data will probably want a zero-terminated string.
-    // So we're going to construct and return a std::wstring copy from the pointer/length
-    // since those are certainly zero-terminated.
-    return { readOnlyResource, gsl::narrow<size_t>(length) };
-}
 
 AppHost::AppHost() noexcept :
     _app{},
@@ -104,23 +79,28 @@ void AppHost::_HandleCommandlineArgs()
 
         // Get the argv, and turn them into a hstring array to pass to the app.
         LPWSTR* argv = CommandLineToArgvW(commandline, &argc);
-        if (argc > 0)
+        auto deleter = wil::scope_exit([&]() { LocalFree(argv); });
+        if (argv)
         {
             std::vector<winrt::hstring> args;
             for (auto i = 0; i < argc; i++)
             {
                 args.emplace_back(argv[i]);
             }
-            auto result = _logic.SetStartupCommandline({ args });
 
+            auto result = _logic.SetStartupCommandline({ args });
             auto message = _logic.EarlyExitMessage();
             if (!message.empty())
             {
-                // TODO:GH#TODO: polish this dialog more, to make the text more like msiexec /?
+                const auto displayHelp = result == 0;
+                const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
+                const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
+                // TODO:GH#4134: polish this dialog more, to make the text more
+                // like msiexec /?
                 MessageBoxW(nullptr,
                             message.data(),
-                            GetStringResource(IDS_ERROR_DIALOG_TITLE).data(),
-                            MB_OK | MB_ICONERROR);
+                            GetStringResource(messageTitle).data(),
+                            MB_OK | messageIcon);
 
                 ExitProcess(result);
             }

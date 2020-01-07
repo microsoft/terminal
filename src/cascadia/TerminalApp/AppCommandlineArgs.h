@@ -22,6 +22,7 @@ class TerminalApp::AppCommandlineArgs final
 public:
     static constexpr std::string_view NixHelpFlag{ "-?" };
     static constexpr std::string_view WindowsHelpFlag{ "/?" };
+    static constexpr std::wstring_view PlaceholderExeName{ L"wt.exe" };
 
     AppCommandlineArgs();
     ~AppCommandlineArgs() = default;

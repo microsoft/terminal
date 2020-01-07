@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppHost.h"
 #include "resource.h"
+#include "../types/inc/User32Utils.hpp"
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
@@ -19,30 +20,6 @@ TRACELOGGING_DEFINE_PROVIDER(
     // {56c06166-2e2e-5f4d-7ff3-74f4b78c87d6}
     (0x56c06166, 0x2e2e, 0x5f4d, 0x7f, 0xf3, 0x74, 0xf4, 0xb7, 0x8c, 0x87, 0xd6),
     TraceLoggingOptionMicrosoftTelemetry());
-
-// Routine Description:
-// - Retrieves the string resource from the current module with the given ID
-//   from the resources files. See resource.h and the .rc definitions for valid IDs.
-// Arguments:
-// - id - Resource ID
-// Return Value:
-// - String resource retrieved from that ID.
-static std::wstring GetStringResource(const UINT id)
-{
-    // Calling LoadStringW with a pointer-sized storage and no length will return a read-only pointer
-    // directly to the resource data instead of copying it immediately into a buffer.
-    LPWSTR readOnlyResource = nullptr;
-    const auto length = LoadStringW(wil::GetModuleInstanceHandle(),
-                                    id,
-                                    reinterpret_cast<LPWSTR>(&readOnlyResource),
-                                    0);
-
-    // However, the pointer and length given are NOT guaranteed to be zero-terminated
-    // and most uses of this data will probably want a zero-terminated string.
-    // So we're going to construct and return a std::wstring copy from the pointer/length
-    // since those are certainly zero-terminated.
-    return { readOnlyResource, gsl::narrow<size_t>(length) };
-}
 
 // Routine Description:
 // - Takes an image architecture and locates a string resource that maps to that architecture.
