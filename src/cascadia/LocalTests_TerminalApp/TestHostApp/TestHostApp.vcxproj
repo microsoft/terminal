@@ -30,6 +30,10 @@
     here for whatever reason.
   -->
 
+  <PropertyGroup Label="UserMacros">
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+  </PropertyGroup>
+
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
