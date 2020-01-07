@@ -123,6 +123,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return D3DCOLORVALUE{ r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f };
         }
 #endif
+
+        constexpr bool operator==(const til::color& other) const
+        {
+            return r == other.r && g == other.g && b == other.b && a == other.a;
+        }
     };
 #pragma warning(pop)
 }
