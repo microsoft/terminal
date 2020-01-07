@@ -64,12 +64,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr const_iterator begin() const noexcept
         {
-            return const_iterator(_array.data(), 0);
+            return _array.begin();
         }
 
         constexpr const_iterator end() const noexcept
         {
-            return const_iterator(_array.data(), _used);
+            return _array.begin() + _used;
         }
 
         constexpr const_reverse_iterator rbegin() const noexcept

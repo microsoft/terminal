@@ -75,38 +75,38 @@ class SomeTests
     {
         til::some<int, 2> c;
 
-        VERIFY_ARE_EQUAL(0, c.size());
+        VERIFY_ARE_EQUAL(0u, c.size());
 
         c.push_back(3);
-        VERIFY_ARE_EQUAL(1, c.size());
+        VERIFY_ARE_EQUAL(1u, c.size());
 
         c.push_back(12);
-        VERIFY_ARE_EQUAL(2, c.size());
+        VERIFY_ARE_EQUAL(2u, c.size());
 
         c.pop_back();
-        VERIFY_ARE_EQUAL(1, c.size());
+        VERIFY_ARE_EQUAL(1u, c.size());
 
         c.pop_back();
-        VERIFY_ARE_EQUAL(0, c.size());
+        VERIFY_ARE_EQUAL(0u, c.size());
     }
 
     TEST_METHOD(MaxSize)
     {
         til::some<int, 2> c;
 
-        VERIFY_ARE_EQUAL(2, c.max_size());
+        VERIFY_ARE_EQUAL(2u, c.max_size());
 
         c.push_back(3);
-        VERIFY_ARE_EQUAL(2, c.max_size());
+        VERIFY_ARE_EQUAL(2u, c.max_size());
 
         c.push_back(12);
-        VERIFY_ARE_EQUAL(2, c.size());
+        VERIFY_ARE_EQUAL(2u, c.size());
 
         c.pop_back();
-        VERIFY_ARE_EQUAL(2, c.max_size());
+        VERIFY_ARE_EQUAL(2u, c.max_size());
 
         c.pop_back();
-        VERIFY_ARE_EQUAL(2, c.max_size());
+        VERIFY_ARE_EQUAL(2u, c.max_size());
     }
 
     TEST_METHOD(PushBack)
@@ -199,9 +199,8 @@ class SomeTests
 
     TEST_METHOD(ForwardIter)
     {
-        const int vals[] = { 17,
-                             99 };
-        const auto valLength = ARRAYSIZE(vals);
+        const int vals[] = { 17, 99 };
+        const int valLength = ARRAYSIZE(vals);
 
         til::some<int, 2> s;
         VERIFY_ARE_EQUAL(s.begin(), s.end());
@@ -243,7 +242,7 @@ class SomeTests
     TEST_METHOD(ReverseIter)
     {
         const int vals[] = { 17, 99 };
-        const auto valLength = ARRAYSIZE(vals);
+        const int valLength = ARRAYSIZE(vals);
 
         til::some<int, 2> s;
         VERIFY_ARE_EQUAL(s.rbegin(), s.rend());
