@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "inc/Utf8Utf16Convert.hpp"
 
-u8state::u8state() noexcept :
+til::u8state::u8state() noexcept :
     _buffer8{},
     _utf8Partials{}
 {
@@ -22,7 +22,7 @@ u8state::u8state() noexcept :
 // - E_OUTOFMEMORY - the method failed to allocate memory for the resulting string
 // - E_ABORT       - the resulting string length would exceed the max_size and thus, the processing was aborted
 // - E_UNEXPECTED  - an unexpected error occurred
-[[nodiscard]] HRESULT u8state::operator()(const std::string_view in, std::string_view& out) noexcept
+[[nodiscard]] HRESULT til::u8state::operator()(const std::string_view in, std::string_view& out) noexcept
 {
     try
     {
@@ -107,12 +107,12 @@ u8state::u8state() noexcept :
 // - none
 // Return Value:
 // - void
-void u8state::reset() noexcept
+void til::u8state::reset() noexcept
 {
     _partialsLen = 0u;
 }
 
-u16state::u16state() noexcept :
+til::u16state::u16state() noexcept :
     _buffer16{}
 {
 }
@@ -129,7 +129,7 @@ u16state::u16state() noexcept :
 // - E_OUTOFMEMORY - the method failed to allocate memory for the resulting string
 // - E_ABORT       - the resulting string length would exceed the max_size and thus, the processing was aborted
 // - E_UNEXPECTED  - an unexpected error occurred
-[[nodiscard]] HRESULT u16state::operator()(const std::wstring_view in, std::wstring_view& out) noexcept
+[[nodiscard]] HRESULT til::u16state::operator()(const std::wstring_view in, std::wstring_view& out) noexcept
 {
     try
     {
@@ -198,7 +198,7 @@ u16state::u16state() noexcept :
 // - none
 // Return Value:
 // - void
-void u16state::reset() noexcept
+void til::u16state::reset() noexcept
 {
     _cached = 0u;
 }
@@ -215,7 +215,7 @@ void u16state::reset() noexcept
 // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
 // - E_ABORT       - the resulting string length would exceed the max_size and thus, the conversion was aborted before the conversion has been completed
 // - E_UNEXPECTED  - an unexpected error occurred
-[[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, bool discardInvalids) noexcept
+[[nodiscard]] HRESULT til::u8u16(const std::string_view in, std::wstring& out, bool discardInvalids) noexcept
 {
     constexpr const uint8_t contBegin{ 0x80u }; // usual begin of the range of continuation Bytes
     constexpr const uint8_t contEnd{ 0xBfu }; // usual end of the range of continuation Bytes
@@ -390,7 +390,7 @@ void u16state::reset() noexcept
 // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
 // - E_ABORT       - the resulting string length would exceed the max_size and thus, the conversion was aborted before the conversion has been completed
 // - E_UNEXPECTED  - an unexpected error occurred
-[[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, bool discardInvalids) noexcept
+[[nodiscard]] HRESULT til::u16u8(const std::wstring_view in, std::string& out, bool discardInvalids) noexcept
 {
     constexpr const uint32_t unicodeReplacementChar{ 0xFFFDu };
 
@@ -491,7 +491,7 @@ void u16state::reset() noexcept
 // Arguments:
 // - in - string_view of the UTF-8 string to be converted
 // - out - reference to the resulting UTF-16 string
-// - state - reference to a u8state class holding the status of the current partials handling
+// - state - reference to a til::u8state class holding the status of the current partials handling
 // - discardInvalids - if `true` invalid characters are discarded instead of replaced with U+FFFD, default is `false`
 // Return Value:
 // - S_OK          - the conversion succeded without any change of the represented code points
@@ -499,11 +499,11 @@ void u16state::reset() noexcept
 // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
 // - E_ABORT       - the resulting string length would exceed the max_size and thus, the conversion was aborted before the conversion has been completed
 // - E_UNEXPECTED  - an unexpected error occurred
-[[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, u8state& state, bool discardInvalids) noexcept
+[[nodiscard]] HRESULT til::u8u16(const std::string_view in, std::wstring& out, til::u8state& state, bool discardInvalids) noexcept
 {
     std::string_view sv{};
     RETURN_IF_FAILED(state(in, sv));
-    return u8u16(sv, out, discardInvalids);
+    return til::u8u16(sv, out, discardInvalids);
 }
 
 // Routine Description:
@@ -511,7 +511,7 @@ void u16state::reset() noexcept
 // Arguments:
 // - in - string_view of the UTF-16 string to be converted
 // - out - reference to the resulting UTF-8 string
-// - state - reference to a u16state class holding the status of the current partials handling
+// - state - reference to a til::u16state class holding the status of the current partials handling
 // - discardInvalids - if `true` invalid characters are discarded instead of replaced with U+FFFD, default is `false`
 // Return Value:
 // - S_OK          - the conversion succeded without any change of the represented code points
@@ -519,11 +519,11 @@ void u16state::reset() noexcept
 // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
 // - E_ABORT       - the resulting string length would exceed the max_size and thus, the conversion was aborted before the conversion has been completed
 // - E_UNEXPECTED  - an unexpected error occurred
-[[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, u16state& state, bool discardInvalids) noexcept
+[[nodiscard]] HRESULT til::u16u8(const std::wstring_view in, std::string& out, til::u16state& state, bool discardInvalids) noexcept
 {
     std::wstring_view sv{};
     RETURN_IF_FAILED(state(in, sv));
-    return u16u8(sv, out, discardInvalids);
+    return til::u16u8(sv, out, discardInvalids);
 }
 
 // Routine Description:
@@ -534,10 +534,10 @@ void u16state::reset() noexcept
 // Return Value:
 // - the resulting UTF-16 string
 // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-std::wstring u8u16(const std::string_view in, bool discardInvalids)
+std::wstring til::u8u16(const std::string_view in, bool discardInvalids)
 {
     std::wstring out{};
-    THROW_IF_FAILED(u8u16(in, out, discardInvalids));
+    THROW_IF_FAILED(til::u8u16(in, out, discardInvalids));
     return out;
 }
 
@@ -549,10 +549,10 @@ std::wstring u8u16(const std::string_view in, bool discardInvalids)
 // Return Value:
 // - the resulting UTF-8 string
 // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-std::string u16u8(const std::wstring_view in, bool discardInvalids)
+std::string til::u16u8(const std::wstring_view in, bool discardInvalids)
 {
     std::string out{};
-    THROW_IF_FAILED(u16u8(in, out, discardInvalids));
+    THROW_IF_FAILED(til::u16u8(in, out, discardInvalids));
     return out;
 }
 
@@ -560,15 +560,15 @@ std::string u16u8(const std::wstring_view in, bool discardInvalids)
 // Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
 // Arguments:
 // - in - string_view of the UTF-8 string to be converted
-// - state - reference to a u8state class holding the status of the current partials handling
+// - state - reference to a til::u8state class holding the status of the current partials handling
 // - discardInvalids - if `true` invalid characters are discarded instead of replaced with U+FFFD, default is `false`
 // Return Value:
 // - the resulting UTF-16 string
 // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-std::wstring u8u16(const std::string_view in, u8state& state, bool discardInvalids)
+std::wstring til::u8u16(const std::string_view in, til::u8state& state, bool discardInvalids)
 {
     std::wstring out{};
-    THROW_IF_FAILED(u8u16(in, out, state, discardInvalids));
+    THROW_IF_FAILED(til::u8u16(in, out, state, discardInvalids));
     return out;
 }
 
@@ -576,14 +576,14 @@ std::wstring u8u16(const std::string_view in, u8state& state, bool discardInvali
 // Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
 // Arguments:
 // - in - string_view of the UTF-16 string to be converted
-// - state - reference to a u16state class holding the status of the current partials handling
+// - state - reference to a til::u16state class holding the status of the current partials handling
 // - discardInvalids - if `true` invalid characters are discarded instead of replaced with U+FFFD, default is `false`
 // Return Value:
 // - the resulting UTF-8 string
 // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-std::string u16u8(const std::wstring_view in, u16state& state, bool discardInvalids)
+std::string til::u16u8(const std::wstring_view in, til::u16state& state, bool discardInvalids)
 {
     std::string out{};
-    THROW_IF_FAILED(u16u8(in, out, state, discardInvalids));
+    THROW_IF_FAILED(til::u16u8(in, out, state, discardInvalids));
     return out;
 }

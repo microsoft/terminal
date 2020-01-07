@@ -51,7 +51,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16()
     };
 
     std::wstring u16Out{};
-    const HRESULT hRes{ u8u16(u8String, u16Out) };
+    const HRESULT hRes{ til::u8u16(u8String, u16Out) };
     VERIFY_ARE_EQUAL(S_OK, hRes);
     VERIFY_ARE_EQUAL(u16StringComp, u16Out);
 }
@@ -82,7 +82,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16NonMinimals()
     };
 
     std::wstring u16Out{};
-    const HRESULT hRes{ u8u16(u8String, u16Out, true) }; // third parameter: invalid characters are discarded
+    const HRESULT hRes{ til::u8u16(u8String, u16Out, true) }; // third parameter: invalid characters are discarded
     VERIFY_ARE_EQUAL(S_FALSE, hRes);
     VERIFY_ARE_EQUAL(u16StringComp, u16Out);
 }
@@ -115,7 +115,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16Invalids()
     };
 
     std::wstring u16Out{};
-    const HRESULT hRes{ u8u16(u8String, u16Out, true) }; // third parameter: invalid characters are discarded
+    const HRESULT hRes{ til::u8u16(u8String, u16Out, true) }; // third parameter: invalid characters are discarded
     VERIFY_ARE_EQUAL(S_FALSE, hRes);
     VERIFY_ARE_EQUAL(u16StringComp, u16Out);
 }
@@ -144,7 +144,7 @@ void Utf8Utf16ConvertTests::TestU16ToU8()
     };
 
     std::string u8Out{};
-    const HRESULT hRes{ u16u8(u16String, u8Out) };
+    const HRESULT hRes{ til::u16u8(u16String, u8Out) };
     VERIFY_ARE_EQUAL(S_OK, hRes);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out);
 }
@@ -166,7 +166,7 @@ void Utf8Utf16ConvertTests::TestU16ToU8Invalids()
     };
 
     std::string u8Out{};
-    const HRESULT hRes{ u16u8(u16String, u8Out, true) }; // third parameter: invalid characters are discarded
+    const HRESULT hRes{ til::u16u8(u16String, u8Out, true) }; // third parameter: invalid characters are discarded
     VERIFY_ARE_EQUAL(S_FALSE, hRes);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out);
 }
@@ -192,15 +192,15 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
         gsl::narrow_cast<wchar_t>(0xDF5C)
     };
 
-    u8state state{};
+    til::u8state state{};
 
     std::wstring u16Out1{};
-    const HRESULT hRes1{ u8u16(u8String1, u16Out1, state) };
+    const HRESULT hRes1{ til::u8u16(u8String1, u16Out1, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes1);
     VERIFY_ARE_EQUAL(u16StringComp, u16Out1);
 
     std::wstring u16Out2{};
-    const HRESULT hRes2{ u8u16(u8String2, u16Out2, state) };
+    const HRESULT hRes2{ til::u8u16(u8String2, u16Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u16StringComp, u16Out2);
 }
@@ -224,15 +224,15 @@ void Utf8Utf16ConvertTests::TestU16ToU8Partials()
         '\x9C'
     };
 
-    u16state state{};
+    til::u16state state{};
 
     std::string u8Out1{};
-    const HRESULT hRes1{ u16u8(u16String1, u8Out1, state) };
+    const HRESULT hRes1{ til::u16u8(u16String1, u8Out1, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes1);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out1);
 
     std::string u8Out2{};
-    const HRESULT hRes2{ u16u8(u16String2, u8Out2, state) };
+    const HRESULT hRes2{ til::u16u8(u16String2, u8Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out2);
 }

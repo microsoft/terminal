@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
 
-        u8state _u8State;
+        til::u8state _u8State;
         std::wstring _u16Str;
         std::array<char, 4096> _buffer;
 
