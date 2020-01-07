@@ -12,6 +12,23 @@ class SomeTests
 {
     TEST_CLASS(SomeTests);
 
+    TEST_METHOD(Construct)
+    {
+        Log::Comment(L"Default Constructor");
+        til::some<int, 2> s;
+
+        Log::Comment(L"Valid Initializer List Constructor");
+        til::some<int, 2> t{ 1 };
+        til::some<int, 2> u{ 1, 2 };
+
+        Log::Comment(L"Invalid Initializer List Constructor");
+        auto f = []() {
+            til::some<int, 2> v{ 1, 2, 3 };
+        };
+
+        VERIFY_THROWS(f(), std::invalid_argument);
+    }
+
     TEST_METHOD(Fill)
     {
         til::some<int, 4> s;
@@ -116,5 +133,144 @@ class SomeTests
         VERIFY_IS_FALSE(s.empty());
         s.pop_back();
         VERIFY_IS_TRUE(s.empty());
+    }
+
+    TEST_METHOD(Data)
+    {
+        til::some<int, 2> s;
+        const auto one = 1;
+        const auto two = 2;
+        s.push_back(one);
+        s.push_back(two);
+
+        auto data = s.data();
+
+        VERIFY_ARE_EQUAL(one, *data);
+        VERIFY_ARE_EQUAL(two, *(data + 1));
+    }
+
+    TEST_METHOD(FrontBack)
+    {
+        til::some<int, 2> s;
+        const auto one = 1;
+        const auto two = 2;
+        s.push_back(one);
+        s.push_back(two);
+
+        VERIFY_ARE_EQUAL(one, s.front());
+        VERIFY_ARE_EQUAL(two, s.back());
+    }
+
+    TEST_METHOD(Indexing)
+    {
+        const auto one = 14;
+        const auto two = 28;
+
+        til::some<int, 2> s;
+        VERIFY_THROWS(s.at(0), std::out_of_range);
+        VERIFY_THROWS(s.at(1), std::out_of_range);
+        auto a = s[0];
+        a = s[1];
+
+        s.push_back(one);
+        VERIFY_ARE_EQUAL(one, s.at(0));
+        VERIFY_ARE_EQUAL(one, s[0]);
+        VERIFY_THROWS(s.at(1), std::out_of_range);
+        a = s[1];
+
+        s.push_back(two);
+        VERIFY_ARE_EQUAL(one, s.at(0));
+        VERIFY_ARE_EQUAL(one, s[0]);
+        VERIFY_ARE_EQUAL(two, s.at(1));
+        VERIFY_ARE_EQUAL(two, s[1]);
+
+        s.pop_back();
+        VERIFY_ARE_EQUAL(one, s.at(0));
+        VERIFY_ARE_EQUAL(one, s[0]);
+        VERIFY_THROWS(s.at(1), std::out_of_range);
+        a = s[1];
+
+        s.pop_back();
+        VERIFY_THROWS(s.at(0), std::out_of_range);
+        VERIFY_THROWS(s.at(1), std::out_of_range);
+        a = s[0];
+        a = s[1];
+    }
+
+    TEST_METHOD(ForwardIter)
+    {
+        const int vals[] = { 17,
+                             99 };
+        const auto valLength = ARRAYSIZE(vals);
+
+        til::some<int, 2> s;
+        VERIFY_ARE_EQUAL(s.begin(), s.end());
+        VERIFY_ARE_EQUAL(s.cbegin(), s.cend());
+        VERIFY_ARE_EQUAL(s.begin(), s.cbegin());
+        VERIFY_ARE_EQUAL(s.end(), s.cend());
+
+        s.push_back(vals[0]);
+        s.push_back(vals[1]);
+
+        VERIFY_ARE_EQUAL(s.begin() + valLength, s.end());
+        VERIFY_ARE_EQUAL(s.cbegin() + valLength, s.cend());
+
+        auto count = 0;
+        for (const auto& i : s)
+        {
+            VERIFY_ARE_EQUAL(vals[count], i);
+            ++count;
+        }
+        VERIFY_ARE_EQUAL(valLength, count);
+
+        count = 0;
+        for (auto i = s.cbegin(); i < s.cend(); ++i)
+        {
+            VERIFY_ARE_EQUAL(vals[count], *i);
+            ++count;
+        }
+        VERIFY_ARE_EQUAL(valLength, count);
+
+        count = 0;
+        for (auto i = s.begin(); i < s.end(); ++i)
+        {
+            VERIFY_ARE_EQUAL(vals[count], *i);
+            ++count;
+        }
+        VERIFY_ARE_EQUAL(valLength, count);
+    }
+
+    TEST_METHOD(ReverseIter)
+    {
+        const int vals[] = { 17, 99 };
+        const auto valLength = ARRAYSIZE(vals);
+
+        til::some<int, 2> s;
+        VERIFY_ARE_EQUAL(s.rbegin(), s.rend());
+        VERIFY_ARE_EQUAL(s.crbegin(), s.crend());
+        VERIFY_ARE_EQUAL(s.rbegin(), s.crbegin());
+        VERIFY_ARE_EQUAL(s.rend(), s.crend());
+
+        s.push_back(vals[0]);
+        s.push_back(vals[1]);
+
+        VERIFY_ARE_EQUAL(s.rbegin() + valLength, s.rend());
+        VERIFY_ARE_EQUAL(s.crbegin() + valLength, s.crend());
+
+        auto count = 0;
+        for (auto i = s.crbegin(); i < s.crend(); ++i)
+        {
+            VERIFY_ARE_EQUAL(vals[valLength - count - 1], *i);
+            ++count;
+        }
+        VERIFY_ARE_EQUAL(valLength, count);
+
+        count = 0;
+        for (auto i = s.rbegin(); i < s.rend(); ++i)
+        {
+            VERIFY_ARE_EQUAL(vals[valLength - count - 1], *i);
+            ++count;
+        }
+        VERIFY_ARE_EQUAL(valLength, count);
     }
 };
