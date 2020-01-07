@@ -30,21 +30,6 @@
     here for whatever reason.
   -->
 
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <UseDebugLibraries>true</UseDebugLibraries>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
-  </PropertyGroup>
-
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-
-  <ImportGroup>
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
-  </ImportGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -120,14 +105,14 @@
 
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
 
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-
   <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
     don't roll these up automatically, so we'll need to copy them manually
     (below) -->
   <ItemGroup>
       <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
   </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 
   <Target Name="AfterBuild">
 
