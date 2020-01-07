@@ -374,18 +374,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             }
         }
 
-        if (screenInfo.InVTMode())
-        {
-            // if we're at the beginning of a row and we get a backspace and told to limit backspacing, skip it
-            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0 && WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE))
-            {
-                *pcb += sizeof(wchar_t);
-                ++lpString;
-                ++pwchRealUnicode;
-                continue;
-            }
-        }
-
         // As an optimization, collect characters in buffer and print out all at once.
         XPosition = cursor.GetPosition().X;
         size_t i = 0;
