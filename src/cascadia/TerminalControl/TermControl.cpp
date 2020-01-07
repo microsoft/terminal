@@ -351,6 +351,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
         _tsfInputControl.Foreground(foregroundBrush);
         _tsfInputControl.Margin(newMargin);
+
+        // set number of rows to scroll at a time
+        _rowsToScroll = _settings.RowsToScroll();
     }
 
     // Method Description:
@@ -1152,13 +1155,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // However, for us, the signs are flipped.
         const auto rowDelta = mouseDelta < 0 ? 1.0 : -1.0;
 
-        // TODO: Should we be getting some setting from the system
-        //      for number of lines scrolled?
         // With one of the precision mouses, one click is always a multiple of 120,
         // but the "smooth scrolling" mode results in non-int values
 
-        // Conhost seems to use four lines at a time, so we'll emulate that for now.
-        double newValue = (4 * rowDelta) + (currentOffset);
+        double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
 
         // Clear our expected scroll offset. The viewport will now move in
         //      response to our user input.
@@ -1322,6 +1322,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Event handler for the GotFocus event. This is used to...
     //   - enable accessibility notifications for this TermControl
     //   - start blinking the cursor when the window is focused
+    //   - update the number of lines to scroll to the value set in the system
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
@@ -1347,6 +1348,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->SetCursorVisible(true);
             _cursorTimer.value().Start();
         }
+        _rowsToScroll = _settings.RowsToScroll();
     }
 
     // Method Description:

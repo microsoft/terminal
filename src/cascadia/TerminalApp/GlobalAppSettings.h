@@ -85,6 +85,8 @@ private:
     int32_t _initialRows;
     int32_t _initialCols;
 
+    int32_t _rowsToScroll;
+
     std::optional<int32_t> _initialX;
     std::optional<int32_t> _initialY;
 
