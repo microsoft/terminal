@@ -76,6 +76,8 @@ public:
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
+    GETSET_PROPERTY(bool, SnapToGridOnResize, true);
+
 private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
