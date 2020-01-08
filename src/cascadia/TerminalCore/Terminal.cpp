@@ -456,21 +456,17 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             // TODO: MSFT 21006766
             // This is not great but I need it demoable. Fix by making a buffer stream writer.
-            if (wch >= 0xD800 && wch <= 0xDFFF)
-            {
-                const OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
-                const auto end = _buffer->Write(it);
-                const auto cellDistance = end.GetCellDistance(it);
-                i += cellDistance - 1;
-                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-            }
-            else
-            {
-                const OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
-                const auto end = _buffer->Write(it);
-                const auto cellDistance = end.GetCellDistance(it);
-                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-            }
+            //
+            // If wch is a surrogate character we need to read 2 code units
+            // from the stringView to form a single code point.
+            const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
+            const size_t codePointLength = isSurrogate ? 2 : 1;
+            const auto view = stringView.substr(i, codePointLength);
+            const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
+            const auto end = _buffer->Write(it);
+            const auto cellDistance = end.GetCellDistance(it);
+            proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+            i += codePointLength - 1;
         }
 
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
