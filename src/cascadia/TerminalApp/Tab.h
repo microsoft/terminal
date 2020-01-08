@@ -25,6 +25,8 @@ public:
     bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
     void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
     void UpdateIcon(const winrt::hstring iconPath);
 
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);

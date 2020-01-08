@@ -56,6 +56,9 @@
     <ClCompile Include="../Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
+    <ClCompile Include="../Pane.LayoutSizeNode.cpp">
+      <Filter>pane</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../Utils.h" />
@@ -103,6 +106,7 @@
     <ClInclude Include="../Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
+    <ClInclude Include="../TelnetGenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="../AppLogic.idl">
