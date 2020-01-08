@@ -85,7 +85,8 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
-        *ppProvider = _pScreenInfoProvider.Get();
+
+        RETURN_IF_FAILED(_pScreenInfoProvider.CopyTo(ppProvider));
 
         // signal that the focus changed
         LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
@@ -110,7 +111,7 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = _pScreenInfoProvider.Get();
+    RETURN_IF_FAILED(_pScreenInfoProvider.CopyTo(ppProvider));
 
     return S_OK;
 }
