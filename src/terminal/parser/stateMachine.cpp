@@ -1249,7 +1249,10 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
     while (current < string.size())
     {
-        _run = string.substr(start, current - start);
+        // The run will be everything from the start INCLUDING the current one
+        // in case we process the current character and it turns into a passthrough
+        // fallback that picks up this _run inside `FlushToTerminal` above.
+        _run = string.substr(start, current - start + 1);
 
         if (_processingIndividually)
         {
@@ -1266,8 +1269,13 @@ void StateMachine::ProcessString(const std::wstring_view string)
         {
             if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                _engine->ActionPrintString(_run); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(_run);
+                // Because the _run above is composed INCLUDING current, we must
+                // trim it off here since we just determined it's actionable
+                // and only pass through everything before it.
+                const auto allLeadingUpTo = _run.substr(0, _run.size() - 1);
+
+                _engine->ActionPrintString(allLeadingUpTo); // ... print all the chars leading up to it as part of the run...
+                _trace.DispatchPrintRunTrace(allLeadingUpTo);
                 _processingIndividually = true; // begin processing future characters individually...
                 start = current;
                 continue;
@@ -1279,6 +1287,11 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
     }
 
+    // When we leave the loop, current has been advanced to the length of the string itself
+    // (or one past the array index to the final char) so this `substr` operation doesn't +1
+    // to include the final character (unlike the one inside the top of the loop above.)
+    // NOTE: std::basic_string_view will auto-trim excessively large sizes down to the valid length
+    //       so passing something too large in the second parameter WILL NOT FAIL.
     _run = string.substr(start, current - start);
 
     // If we're at the end of the string and have remaining un-printed characters,

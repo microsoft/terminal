@@ -31,9 +31,17 @@ public:
     bool ActionExecute(const wchar_t /* wch */) override { return true; };
     bool ActionExecuteFromEscape(const wchar_t /* wch */) override { return true; };
     bool ActionPrint(const wchar_t /* wch */) override { return true; };
-    bool ActionPrintString(const std::wstring_view /* string */) override { return true; };
+    bool ActionPrintString(const std::wstring_view string) override
+    {
+        printed = string;
+        return true;
+    };
 
-    bool ActionPassThroughString(const std::wstring_view /* string */) override { return true; };
+    bool ActionPassThroughString(const std::wstring_view string) override
+    {
+        passedThrough = string;
+        return true;
+    };
 
     bool ActionEscDispatch(const wchar_t /* wch */,
                            const std::basic_string_view<wchar_t> /* intermediates */) override { return true; };
@@ -58,12 +66,30 @@ public:
                            const std::basic_string_view<wchar_t> /*intermediates*/,
                            const std::basic_string_view<size_t> parameters) override
     {
-        csiParams.emplace(parameters.cbegin(), parameters.cend());
-        return true;
+        // If flush to terminal is registered for a test, then use it.
+        if (pfnFlushToTerminal)
+        {
+            pfnFlushToTerminal();
+            return true;
+        }
+        else
+        {
+            csiParams.emplace(parameters.cbegin(), parameters.cend());
+            return true;
+        }
     }
 
     // This will only be populated if ActionCsiDispatch is called.
     std::optional<std::vector<size_t>> csiParams;
+
+    // Flush function for pass-through test.
+    std::function<bool()> pfnFlushToTerminal;
+
+    // Passed through string.
+    std::wstring passedThrough;
+
+    // Printed string.
+    std::wstring printed;
 };
 
 class Microsoft::Console::VirtualTerminal::StateMachineTest
@@ -81,6 +107,10 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     }
 
     TEST_METHOD(TwoStateMachinesDoNotInterfereWithEachother);
+
+    TEST_METHOD(PassThroughUnhandled);
+    TEST_METHOD(RunStorageBeforeEscape);
+    TEST_METHOD(BulkTextPrint);
 };
 
 void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
@@ -103,4 +133,52 @@ void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
 
     VERIFY_ARE_EQUAL(expectedFirstCsi, firstEngine.csiParams);
     VERIFY_ARE_EQUAL(expectedSecondCsi, secondEngine.csiParams);
+}
+
+void StateMachineTest::PassThroughUnhandled()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    // this dance is required because StateMachine presumes to take ownership of its engine.
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr) };
+
+    // Hook up the passthrough function.
+    engine.pfnFlushToTerminal = std::bind(&StateMachine::FlushToTerminal, &machine);
+
+    machine.ProcessString(L"\x1b[?999h 12345 Hello World");
+
+    VERIFY_ARE_EQUAL(String(L"\x1b[?999h"), String(engine.passedThrough.c_str()));
+    VERIFY_ARE_EQUAL(String(L" 12345 Hello World"), String(engine.printed.c_str()));
+}
+
+void StateMachineTest::RunStorageBeforeEscape()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    // this dance is required because StateMachine presumes to take ownership of its engine.
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr) };
+
+    // Hook up the passthrough function.
+    engine.pfnFlushToTerminal = std::bind(&StateMachine::FlushToTerminal, &machine);
+
+    // Print a bunch of regular text to build up the run buffer before transitioning state.
+    machine.ProcessString(L"12345 Hello World\x1b[?999h");
+
+    // Then ensure the entire buffered run was printed all at once back to us.
+    VERIFY_ARE_EQUAL(String(L"12345 Hello World"), String(engine.printed.c_str()));
+    VERIFY_ARE_EQUAL(String(L"\x1b[?999h"), String(engine.passedThrough.c_str()));
+}
+
+void StateMachineTest::BulkTextPrint()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    // this dance is required because StateMachine presumes to take ownership of its engine.
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr) };
+
+    // Print a bunch of regular text to build up the run buffer before transitioning state.
+    machine.ProcessString(L"12345 Hello World");
+
+    // Then ensure the entire buffered run was printed all at once back to us.
+    VERIFY_ARE_EQUAL(String(L"12345 Hello World"), String(engine.printed.c_str()));
 }
