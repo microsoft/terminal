@@ -30,8 +30,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
-      on being compiled with RTTI (/GR). I don't know what kind of hit this has
-      on us. -->
+      on being compiled with RTTI (/GR). -->
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>

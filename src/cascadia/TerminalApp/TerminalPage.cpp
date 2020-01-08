@@ -153,7 +153,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_ProcessNextStartupAction()
+    fire_and_forget TerminalPage::_ProcessNextStartupAction()
     {
         // If there are no actions left, do nothing.
         if (_appArgs.GetStartupActions().empty())
@@ -165,16 +165,17 @@ namespace winrt::TerminalApp::implementation
         auto nextAction = _appArgs.GetStartupActions().front();
         _appArgs.GetStartupActions().pop_front();
 
-        // Handle it on the UI thread.
-        Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis{ get_weak() }, nextAction]() {
-            if (auto page{ weakThis.get() })
-            {
-                page->_actionDispatch->DoAction(nextAction);
+        auto weakThis{ get_weak() };
 
-                // Kick off the next action to be handled (if necessary)
-                page->_ProcessNextStartupAction();
-            }
-        });
+        // Handle it on the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        if (auto page{ weakThis.get() })
+        {
+            page->_actionDispatch->DoAction(nextAction);
+
+            // Kick off the next action to be handled (if necessary)
+            page->_ProcessNextStartupAction();
+        }
     }
 
     // Method Description:
