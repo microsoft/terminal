@@ -14,6 +14,16 @@
     <UseWmXml>true</UseWmXml>
     <ConfigurationType>Application</ConfigurationType>
     <NoOutputRedirection>true</NoOutputRedirection>
+
+    <!--
+    These two properties are very important!
+    Without them, msbuild will stomp MinVersion and MaxVersionTested in the
+    Package.appxmanifest and replace them with whatever our values for
+    TargetPlatformMinVersion and TargetPlatformVersion are.
+     -->
+    <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
+    <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
+
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
