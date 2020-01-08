@@ -460,13 +460,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // If wch is a surrogate character we need to read 2 code units
             // from the stringView to form a single code point.
             const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
-            const size_t codePointLength = isSurrogate ? 2 : 1;
-            const auto view = stringView.substr(i, codePointLength);
+            const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
             const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
             const auto end = _buffer->Write(it);
-            const auto cellDistance = end.GetCellDistance(it);
-            proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-            i += codePointLength - 1;
+            proposedCursorPosition.X += gsl::narrow<SHORT>(end.GetCellDistance(it));
+            i += end.GetInputDistance(it) - 1;
         }
 
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
