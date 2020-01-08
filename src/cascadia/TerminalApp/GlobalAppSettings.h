@@ -52,7 +52,7 @@ public:
 
     void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
 
-    void SetTabWidth(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidth);
+    void SetTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode);
 
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
@@ -72,7 +72,7 @@ public:
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
-    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidth() const noexcept;
+    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidthMode() const noexcept;
 
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
@@ -100,15 +100,15 @@ private:
     std::wstring _wordDelimiters;
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
-    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidth;
+    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
 
     winrt::TerminalApp::LaunchMode _launchMode;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
-    static std::wstring_view _SerializeTabWidth(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidth) noexcept;
-    static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidth(const std::wstring& tabWidthString) noexcept;
+    static std::wstring_view _SerializeTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode) noexcept;
+    static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
 
     static void _ParseInitialPosition(const std::wstring& initialPosition,
                                       std::optional<int32_t>& initialX,

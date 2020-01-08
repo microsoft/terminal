@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
-        _UpdateTabWidth();
+        _UpdateTabWidthMode();
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
@@ -699,9 +699,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Handle changes to the tab width set by the user
-    void TerminalPage::_UpdateTabWidth()
+    void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidth());
+        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidthMode());
     }
 
     // Method Description:
@@ -1404,7 +1404,7 @@ namespace winrt::TerminalApp::implementation
             // profile, which might have changed
             if (auto page{ weakThis.get() })
             {
-                page->_UpdateTabWidth();
+                page->_UpdateTabWidthMode();
                 page->_CreateNewTabFlyout();
             }
         });

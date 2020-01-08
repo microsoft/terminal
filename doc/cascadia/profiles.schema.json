@@ -288,12 +288,12 @@
           "description": "When set to true, titlebar displays the title of the selected tab. When set to false, titlebar displays 'Windows Terminal'.",
           "type": "boolean"
         },
-        "tabWidth": {
+        "tabWidthMode": {
           "default": "equal",
           "description": "Sets the width of the tabs.",
           "enum": [
             "equal",
-            "sizetocontent"
+            "titleLength"
           ],
           "type": "string"
         },
