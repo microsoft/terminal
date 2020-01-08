@@ -170,7 +170,7 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     _pDispatch(std::move(pDispatch)),
     _lookingForDSR(lookingForDSR)
 {
-    THROW_IF_NULL_ALLOC(_pDispatch.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
 // Method Description:

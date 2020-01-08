@@ -24,7 +24,7 @@ VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
     _fUseConPty(fUseConpty),
     _lastDimensions(initialSize)
 {
-    THROW_IF_NULL_ALLOC(pfnReadCallback);
+    THROW_HR_IF_NULL(E_INVALIDARG, pfnReadCallback);
 }
 
 void VtConsole::spawn()
