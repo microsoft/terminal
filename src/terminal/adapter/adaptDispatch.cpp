@@ -36,8 +36,8 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
     _changedMetaAttrs(false),
     _termOutput()
 {
-    THROW_IF_NULL_ALLOC(_pConApi.get());
-    THROW_IF_NULL_ALLOC(_pDefaults.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pDefaults.get());
     _scrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 

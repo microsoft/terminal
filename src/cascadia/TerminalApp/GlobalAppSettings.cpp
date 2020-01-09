@@ -21,6 +21,7 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
+static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
@@ -28,6 +29,7 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
@@ -41,6 +43,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
+    _rowsToScroll{ DEFAULT_ROWSTOSCROLL },
     _initialX{},
     _initialY{},
     _showTitleInTitlebar{ true },
@@ -175,6 +178,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);
     settings.InitialCols(_initialCols);
+    settings.RowsToScroll(_rowsToScroll);
 
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
@@ -193,6 +197,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+    jsonObject[JsonKey(RowsToScrollKey)] = _rowsToScroll;
     jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX, _initialY);
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
@@ -202,6 +207,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
+    jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
 
     return jsonObject;
 }
@@ -238,6 +244,18 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto initialCols{ json[JsonKey(InitialColsKey)] })
     {
         _initialCols = initialCols.asInt();
+    }
+    if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
+    {
+        //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
+        if (rowsToScroll.isInt())
+        {
+            _rowsToScroll = rowsToScroll.asInt();
+        }
+        else
+        {
+            _rowsToScroll = 0;
+        }
     }
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
@@ -276,6 +294,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
         _keybindings->LayerJson(keybindings);
+    }
+
+    if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
+    {
+        _SnapToGridOnResize = snapToGridOnResize.asBool();
     }
 }
 
