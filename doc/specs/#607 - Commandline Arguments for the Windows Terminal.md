@@ -144,6 +144,8 @@ wt -v
 wt new-tab --startingDirectory "c:/Users/Foo/dev/MyProject"
 wt --startingDirectory "c:/Users/Foo/dev/MyProject"
 wt -d "c:/Users/Foo/dev/MyProject"
+# Windows-style paths work too
+wt -d "c:\Users\Foo\dev\MyProject"
 
 # Runs the user's "Windows Powershell" profile in a new tab in directory
 #  "c:/Users/Foo/dev/MyProject" (user story 2, 8)
@@ -375,17 +377,11 @@ These commands are listed above as accepting `[terminal_parameters]` as a
 parameter. For these commands, `[terminal_parameters]` can be any of the
 following:
 
-`[--profile,-p profile-name]|[--guid,-g profile-guid] [--startingDirectory,-d starting-directory] [commandline]`
+`[--profile,-p profile-name] [--startingDirectory,-d starting-directory] [commandline]`
 
 * `--profile,-p profile-name`: Use the given profile to open the new tab/pane,
-  where `profile-name` is the `name` of a profile. If `name` does not match
-  _any_ profiles, uses the default. If both `--profile` and `--guid` are
-  omitted, uses the default profile.
-* `--guid,-g profile-guid`: Use the given profile to open the new tab/pane,
-  where `profile-guid` is the `guid` of a profile. If `guid` does not match
-  _any_ profiles, uses the default. If both `--profile` and `--guid` are
-  omitted, uses the default profile. If both `--profile` and `--guid` are
-  specified at the same time, `--guid` takes precedence.
+  where `profile-name` is the `name` or `guid` of a profile. If `profile-name`
+  does not match _any_ profiles, uses the default.
 * `--startingDirectory,-d starting-directory`: Overrides the value of
   `startingDirectory` of the specified profile, to start in `starting-directory`
   instead.
