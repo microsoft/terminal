@@ -69,6 +69,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetTopBottomScrollingMargins(const size_t topMargin,
                                           const size_t bottomMargin) override; // DECSTBM
+        bool WarningBell() override; // BEL
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL
         bool ReverseLineFeed() override; // RI

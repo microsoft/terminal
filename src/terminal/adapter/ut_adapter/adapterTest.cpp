@@ -369,6 +369,13 @@ public:
         return _privateSetScrollingRegionResult;
     }
 
+    bool PrivateWarningBell() override
+    {
+        Log::Comment(L"PrivateWarningBell MOCK called...");
+        // We made it through the adapter, woo! Return true.
+        return TRUE;
+    }
+
     bool PrivateGetLineFeedMode() const override
     {
         Log::Comment(L"PrivateGetLineFeedMode MOCK called...");
