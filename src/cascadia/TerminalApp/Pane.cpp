@@ -732,9 +732,14 @@ void Pane::_CloseChild(const bool closeFirst)
 
 winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 {
+    auto weakThis{ shared_from_this() };
+
     co_await winrt::resume_foreground(_root.Dispatcher());
 
-    _CloseChild(closeFirst);
+    if (auto pane{ weakThis.get() })
+    {
+        _CloseChild(closeFirst);
+    }
 }
 
 // Method Description:

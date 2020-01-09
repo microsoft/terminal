@@ -63,30 +63,30 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        _tabView.TabDragStarting([weakThis{ get_weak() }, this](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
-                _rearranging = true;
-                _rearrangeFrom = std::nullopt;
-                _rearrangeTo = std::nullopt;
+                page->_rearranging = true;
+                page->_rearrangeFrom = std::nullopt;
+                page->_rearrangeTo = std::nullopt;
             }
         });
 
-        _tabView.TabDragCompleted([weakThis{ get_weak() }, this](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragCompleted([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
-                auto& from{ _rearrangeFrom };
-                auto& to{ _rearrangeTo };
+                auto& from{ page->_rearrangeFrom };
+                auto& to{ page->_rearrangeTo };
 
                 if (from.has_value() && to.has_value() && to != from)
                 {
-                    auto& tabs{ _tabs };
+                    auto& tabs{ page->_tabs };
                     auto tab = tabs.at(from.value());
                     tabs.erase(tabs.begin() + from.value());
                     tabs.insert(tabs.begin() + to.value(), tab);
                 }
 
-                _rearranging = false;
+                page->_rearranging = false;
                 from = std::nullopt;
                 to = std::nullopt;
             }
@@ -113,10 +113,10 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         //Event Bindings (Early)
-        _newTabButton.Click([weakThis{ get_weak() }, this](auto&&, auto&&) {
+        _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                _OpenNewTab(nullptr);
+                page->_OpenNewTab(nullptr);
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
@@ -319,12 +319,12 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            profileMenuItem.Click([profileIndex, weakThis{ get_weak() }, this](auto&&, auto&&) {
+            profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
                     auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
                     newTerminalArgs->ProfileIndex(profileIndex);
-                    _OpenNewTab(*newTerminalArgs);
+                    page->_OpenNewTab(*newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -459,17 +459,17 @@ namespace winrt::TerminalApp::implementation
 
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        newTab->ActivePaneChanged([weakTabPtr, weakThis{ get_weak() }, this]() {
+        newTab->ActivePaneChanged([weakTabPtr, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTabPtr.lock() };
 
             if (page && tab)
             {
                 // Possibly update the icon of the tab.
-                _UpdateTabIcon(tab);
+                page->_UpdateTabIcon(tab);
                 // Possibly update the title of the tab, window to match the newly
                 // focused pane.
-                _UpdateTitle(tab);
+                page->_UpdateTitle(tab);
             }
         });
 
@@ -486,10 +486,10 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, weakThis{ get_weak() }, this](auto&& /*s*/, auto&& /*e*/) {
+        newTab->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (auto page{ weakThis.get() })
             {
-                _RemoveOnCloseRoutine(tabViewItem, page);
+                page->_RemoveOnCloseRoutine(tabViewItem, page);
             }
         });
 
@@ -797,7 +797,7 @@ namespace winrt::TerminalApp::implementation
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
 
-        term.TitleChanged([weakTabPtr, weakThis{ get_weak() }, this](auto newTitle) {
+        term.TitleChanged([weakTabPtr, weakThis{ get_weak() }](auto newTitle) {
             auto page{ weakThis.get() };
             auto tab{ weakTabPtr.lock() };
 
@@ -806,7 +806,7 @@ namespace winrt::TerminalApp::implementation
                 // The title of the control changed, but not necessarily the title
                 // of the tab. Get the title of the focused pane of the tab, and set
                 // the tab's text to the focused panes' text.
-                _UpdateTitle(tab);
+                page->_UpdateTitle(tab);
             }
         });
     }
@@ -881,13 +881,13 @@ namespace winrt::TerminalApp::implementation
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
-        auto tab = _tabs.at(tabIndex);
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(_tabView.Dispatcher());
 
         if (auto page{ weakThis.get() })
         {
+            auto tab = _tabs.at(tabIndex);
             _tabView.SelectedItem(tab->GetTabViewItem());
         }
     }

@@ -1623,6 +1623,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        // Set this value as our next expected scroll position.
+        _lastScrollOffset = { viewTop };
+        _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(_scrollBar.Dispatcher());
@@ -1636,10 +1640,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // Update our scrollbar
                 _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
-
-                // Set this value as our next expected scroll position.
-                _lastScrollOffset = { viewTop };
-                _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
             }
         }
     }
