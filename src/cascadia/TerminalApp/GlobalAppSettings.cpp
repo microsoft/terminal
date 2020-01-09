@@ -29,6 +29,7 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
@@ -206,6 +207,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
+    jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
 
     return jsonObject;
 }
@@ -292,6 +294,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
         _keybindings->LayerJson(keybindings);
+    }
+
+    if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
+    {
+        _SnapToGridOnResize = snapToGridOnResize.asBool();
     }
 }
 
