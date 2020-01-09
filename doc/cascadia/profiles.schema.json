@@ -318,7 +318,11 @@
           "description": "When set to true, titlebar displays the title of the selected tab. When set to false, titlebar displays 'Windows Terminal'.",
           "type": "boolean"
         },
-<<<<<<< HEAD
+        "snapToGridOnResize": {
+          "default": false,
+          "description": "When set to `true`, the window will snap to the nearest character boundary on resize. When `false`, the window will resize 'smoothly'",
+          "type": "boolean"
+        },
         "tabWidthMode": {
           "default": "equal",
           "description": "Sets the width of the tabs.",
@@ -327,12 +331,6 @@
             "titleLength"
           ],
           "type": "string"
-=======
-        "snapToGridOnResize": {
-          "default": false,
-          "description": "When set to `true`, the window will snap to the nearest character boundary on resize. When `false`, the window will resize 'smoothly'",
-          "type": "boolean"
->>>>>>> master
         },
         "wordDelimiters": {
           "default": " ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?│",
