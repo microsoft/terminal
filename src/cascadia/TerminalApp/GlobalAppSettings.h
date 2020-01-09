@@ -79,6 +79,8 @@ public:
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
+    GETSET_PROPERTY(bool, SnapToGridOnResize, true);
+
 private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
@@ -87,6 +89,8 @@ private:
 
     int32_t _initialRows;
     int32_t _initialCols;
+
+    int32_t _rowsToScroll;
 
     std::optional<int32_t> _initialX;
     std::optional<int32_t> _initialY;

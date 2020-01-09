@@ -1735,7 +1735,7 @@ float DxEngine::GetScaling() const noexcept
         }
     }
 
-    THROW_IF_NULL_ALLOC(face);
+    THROW_HR_IF_NULL(E_FAIL, face);
 
     return face;
 }

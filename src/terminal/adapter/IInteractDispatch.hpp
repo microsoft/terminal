@@ -23,7 +23,10 @@ namespace Microsoft::Console::VirtualTerminal
     class IInteractDispatch
     {
     public:
+#pragma warning(push)
+#pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
         virtual ~IInteractDispatch() = default;
+#pragma warning(pop)
 
         virtual bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
 

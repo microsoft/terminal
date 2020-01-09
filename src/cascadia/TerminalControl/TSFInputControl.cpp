@@ -104,7 +104,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_editContext != nullptr)
         {
-            // _editContext.NotifyFocusLeave(); TODO GitHub #3645: Enabling causes IME to no longer show up, need to determine if required
+            _editContext.NotifyFocusLeave();
         }
     }
 
@@ -209,23 +209,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            const auto hstr = to_hstring(_inputBuffer.c_str());
-
             // call event handler with data handled by parent
-            _compositionCompletedHandlers(hstr);
+            _compositionCompletedHandlers(_inputBuffer);
 
             // clear the buffer for next round
+            const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
             _inputBuffer.clear();
             _textBlock.Text(L"");
 
-            // tell the input server that we've cleared the buffer
-            CoreTextRange emptyTextRange;
-            emptyTextRange.StartCaretPosition = 0;
-            emptyTextRange.EndCaretPosition = 0;
-
             // indicate text is now 0
-            _editContext.NotifyTextChanged(emptyTextRange, 0, emptyTextRange);
-            _editContext.NotifySelectionChanged(emptyTextRange);
+            _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
 
             // hide the controls until composition starts again
             _canvas.Visibility(Visibility::Collapsed);

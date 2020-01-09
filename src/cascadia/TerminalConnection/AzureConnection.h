@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
     {
-        static bool IsAzureConnectionAvailable();
+        static bool IsAzureConnectionAvailable() noexcept;
         AzureConnection(const uint32_t rows, const uint32_t cols);
 
         void Start();

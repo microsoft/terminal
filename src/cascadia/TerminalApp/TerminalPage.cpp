@@ -1123,6 +1123,25 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Calculates the appropriate size to snap to in the gived direction, for
+    //   the given dimension. If the global setting `snapToGridOnResize` is set
+    //   to `false`, this will just immediately return the provided dimension,
+    //   effectively disabling snapping.
+    // - See Pane::CalcSnappedDimension
+    float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    {
+        if (_settings->GlobalSettings().SnapToGridOnResize())
+        {
+            const auto focusedTabIndex = _GetFocusedTabIndex();
+            return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+        }
+        else
+        {
+            return dimension;
+        }
+    }
+
+    // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
     //   terminal control raises it's CopyToClipboard event.
     // Arguments:

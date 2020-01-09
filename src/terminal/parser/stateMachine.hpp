@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
 
-        void ResetState();
+        void ResetState() noexcept;
 
         bool FlushToTerminal();
 
@@ -42,26 +42,6 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine& Engine() noexcept;
 
     private:
-        static bool s_IsActionableFromGround(const wchar_t wch);
-        static bool s_IsC0Code(const wchar_t wch);
-        static bool s_IsC1Csi(const wchar_t wch);
-        static bool s_IsIntermediate(const wchar_t wch);
-        static bool s_IsDelete(const wchar_t wch);
-        static bool s_IsEscape(const wchar_t wch);
-        static bool s_IsCsiIndicator(const wchar_t wch);
-        static bool s_IsCsiDelimiter(const wchar_t wch);
-        static bool s_IsCsiParamValue(const wchar_t wch);
-        static bool s_IsCsiPrivateMarker(const wchar_t wch);
-        static bool s_IsCsiInvalid(const wchar_t wch);
-        static bool s_IsOscIndicator(const wchar_t wch);
-        static bool s_IsOscDelimiter(const wchar_t wch);
-        static bool s_IsOscParamValue(const wchar_t wch);
-        static bool s_IsOscInvalid(const wchar_t wch);
-        static bool s_IsOscTerminator(const wchar_t wch);
-        static bool s_IsOscTerminationInitiator(const wchar_t wch);
-        static bool s_IsNumber(const wchar_t wch);
-        static bool s_IsSs3Indicator(const wchar_t wch);
-
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
@@ -75,20 +55,20 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionSs3Dispatch(const wchar_t wch);
 
         void _ActionClear();
-        void _ActionIgnore();
+        void _ActionIgnore() noexcept;
 
-        void _EnterGround();
+        void _EnterGround() noexcept;
         void _EnterEscape();
-        void _EnterEscapeIntermediate();
+        void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
-        void _EnterCsiParam();
-        void _EnterCsiIgnore();
-        void _EnterCsiIntermediate();
-        void _EnterOscParam();
-        void _EnterOscString();
-        void _EnterOscTermination();
+        void _EnterCsiParam() noexcept;
+        void _EnterCsiIgnore() noexcept;
+        void _EnterCsiIntermediate() noexcept;
+        void _EnterOscParam() noexcept;
+        void _EnterOscString() noexcept;
+        void _EnterOscTermination() noexcept;
         void _EnterSs3Entry();
-        void _EnterSs3Param();
+        void _EnterSs3Param() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);

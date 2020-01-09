@@ -17,7 +17,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
     _pConApi(std::move(pConApi))
 {
-    THROW_IF_NULL_ALLOC(_pConApi.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 // Method Description:
@@ -115,7 +115,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         // the ConGetSet interface, that specifically handles a conpty resize.
         if (parameters.size() == 2)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, parameters[1], parameters[0]);
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
             if (success)
             {
                 DispatchCommon::s_SuppressResizeRepaint(*_pConApi);

@@ -64,27 +64,27 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    bool PrintString(std::wstring_view stringView) override;
-    bool ExecuteChar(wchar_t wch) override;
-    bool SetTextToDefaults(bool foreground, bool background) override;
-    bool SetTextForegroundIndex(BYTE colorIndex) override;
-    bool SetTextBackgroundIndex(BYTE colorIndex) override;
-    bool SetTextRgbColor(COLORREF color, bool foreground) override;
-    bool BoldText(bool boldOn) override;
-    bool UnderlineText(bool underlineOn) override;
-    bool ReverseText(bool reversed) override;
-    bool SetCursorPosition(short x, short y) override;
-    COORD GetCursorPosition() override;
-    bool DeleteCharacter(const size_t count) override;
-    bool InsertCharacter(const size_t count) override;
-    bool EraseCharacters(const size_t numChars) override;
-    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
-    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
-    bool SetWindowTitle(std::wstring_view title) override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
-    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
-    bool SetDefaultForeground(const COLORREF color) override;
-    bool SetDefaultBackground(const COLORREF color) override;
+    bool PrintString(std::wstring_view stringView) noexcept override;
+    bool ExecuteChar(wchar_t wch) noexcept override;
+    bool SetTextToDefaults(bool foreground, bool background) noexcept override;
+    bool SetTextForegroundIndex(BYTE colorIndex) noexcept override;
+    bool SetTextBackgroundIndex(BYTE colorIndex) noexcept override;
+    bool SetTextRgbColor(COLORREF color, bool foreground) noexcept override;
+    bool BoldText(bool boldOn) noexcept override;
+    bool UnderlineText(bool underlineOn) noexcept override;
+    bool ReverseText(bool reversed) noexcept override;
+    bool SetCursorPosition(short x, short y) noexcept override;
+    COORD GetCursorPosition() noexcept override;
+    bool DeleteCharacter(const size_t count) noexcept override;
+    bool InsertCharacter(const size_t count) noexcept override;
+    bool EraseCharacters(const size_t numChars) noexcept override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool SetWindowTitle(std::wstring_view title) noexcept override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
+    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
+    bool SetDefaultForeground(const COLORREF color) noexcept override;
+    bool SetDefaultBackground(const COLORREF color) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -94,7 +94,7 @@ public:
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
-    int GetScrollOffset() override;
+    int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
 #pragma endregion
@@ -128,7 +128,7 @@ public:
 
 #pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    const bool IsSelectionActive() const noexcept;
+    const bool IsSelectionActive() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const override;
@@ -230,7 +230,7 @@ private:
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
-    void _NotifyScrollEvent();
+    void _NotifyScrollEvent() noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

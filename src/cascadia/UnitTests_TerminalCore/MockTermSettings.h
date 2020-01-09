@@ -25,6 +25,7 @@ namespace TerminalCoreUnitTests
         int32_t HistorySize() { return _historySize; }
         int32_t InitialRows() { return _initialRows; }
         int32_t InitialCols() { return _initialCols; }
+        int32_t RowsToScroll() { return 4; }
         uint32_t DefaultForeground() { return COLOR_WHITE; }
         uint32_t DefaultBackground() { return COLOR_BLACK; }
         bool SnapOnInput() { return false; }
@@ -44,6 +45,7 @@ namespace TerminalCoreUnitTests
         void HistorySize(int32_t) {}
         void InitialRows(int32_t) {}
         void InitialCols(int32_t) {}
+        void RowsToScroll(int32_t) {}
         void DefaultForeground(uint32_t) {}
         void DefaultBackground(uint32_t) {}
         void SnapOnInput(bool) {}
