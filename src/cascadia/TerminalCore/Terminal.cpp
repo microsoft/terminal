@@ -463,8 +463,27 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
             const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
             const auto end = _buffer->Write(it);
-            proposedCursorPosition.X += gsl::narrow<SHORT>(end.GetCellDistance(it));
-            i += end.GetInputDistance(it) - 1;
+            const auto cellDistance = end.GetCellDistance(it);
+            const auto inputDistance = end.GetInputDistance(it);
+
+            if (inputDistance > 0)
+            {
+                // If "wch" was a surrogate character, we just consumed 2 code units above.
+                // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
+                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+                i += inputDistance - 1;
+            }
+            else
+            {
+                // If _WriteBuffer() is called with a consecutive string longer than the viewport/buffer width
+                // the call to _buffer->Write() will refuse to write anything on the current line.
+                // GetInputDistance() thus returns 0, which would in turn cause i to be
+                // decremented by 1 below and force the outer loop to loop forever.
+                // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
+                // With well behaving shells during normal operation this safeguard should normally not be encountered.
+                proposedCursorPosition.X = 0;
+                proposedCursorPosition.Y++;
+            }
         }
 
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
