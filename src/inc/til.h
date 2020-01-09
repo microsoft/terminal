@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "til/some.h"
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     // The at function declares that you've already sufficiently checked that your array access
