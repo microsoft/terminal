@@ -220,7 +220,6 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
     jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
     jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
-
     return jsonObject;
 }
 
