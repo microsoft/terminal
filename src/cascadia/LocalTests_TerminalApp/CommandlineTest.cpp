@@ -314,7 +314,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg ; with spaces" };
             _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             {
                 auto actionAndArgs = appArgs._startupActions.at(0);
@@ -352,7 +352,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg \\; with spaces" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             {
                 auto actionAndArgs = appArgs._startupActions.at(0);
@@ -380,7 +380,7 @@ namespace TerminalAppLocalTests
 
         _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-        VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+        VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
     }
@@ -392,7 +392,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -411,7 +411,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"--profile", L"cmd" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -431,7 +431,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"--startingDirectory", L"c:\\Foo" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -451,7 +451,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -471,7 +471,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg with spaces" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -492,7 +492,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"powershell.exe", L"This is an arg with spaces", L"another-arg", L"more spaces in this one" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -517,7 +517,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -536,7 +536,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane", L"-H" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -557,7 +557,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -580,7 +580,7 @@ namespace TerminalAppLocalTests
         auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
         _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
-        VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+        VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
         VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, appArgs._startupActions.at(1).Action());
@@ -593,7 +593,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -612,7 +612,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--profile", L"cmd" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -632,7 +632,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--startingDirectory", L"c:\\Foo" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -652,7 +652,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"powershell.exe" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -672,7 +672,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"powershell.exe", L"This is an arg with spaces" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -696,7 +696,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(1, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -706,7 +706,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-n" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -720,7 +720,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-p" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -734,7 +734,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-t", L"2" };
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
@@ -777,7 +777,7 @@ namespace TerminalAppLocalTests
         auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
         _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
-        VERIFY_ARE_EQUAL(3, appArgs._startupActions.size());
+        VERIFY_ARE_EQUAL(3u, appArgs._startupActions.size());
 
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
         VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, appArgs._startupActions.at(1).Action());
@@ -796,7 +796,7 @@ namespace TerminalAppLocalTests
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";", L"slpit-pane" };
             _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
-            VERIFY_ARE_EQUAL(2, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
 
             auto actionAndArgs = appArgs._startupActions.at(0);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
