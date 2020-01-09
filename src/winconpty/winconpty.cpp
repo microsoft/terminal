@@ -82,7 +82,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    const wchar_t* pwszFormat = L"%s --headless %s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    const wchar_t* pwszFormat = L"\"%s\" --headless %s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
@@ -149,7 +149,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         if (hToken == INVALID_HANDLE_VALUE || hToken == nullptr)
         {
             // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
                                                       cmd,
                                                       nullptr,
                                                       nullptr,
@@ -164,7 +164,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         {
             // Call create process
             RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
-                                                            nullptr,
+                                                            _ConsoleHostPath(),
                                                             cmd,
                                                             nullptr,
                                                             nullptr,
