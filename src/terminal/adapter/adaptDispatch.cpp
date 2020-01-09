@@ -1316,6 +1316,19 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
 }
 
 // Routine Description:
+// - CR - Performs a carriage return.
+//    Moves the cursor to the leftmost column.
+// Arguments:
+// - None
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::CarriageReturn()
+{
+    // TODO: This will need to be rewritten after PR #3628
+    return _CursorMovePosition(std::nullopt, 1);
+}
+
+// Routine Description:
 // - IND/NEL - Performs a line feed, possibly preceded by carriage return.
 //    Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:

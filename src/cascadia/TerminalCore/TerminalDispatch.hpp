@@ -25,6 +25,7 @@ public:
     bool LineFeed(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::LineFeedType lineFeedType) noexcept override;
 
     bool EraseCharacters(const size_t numChars) noexcept override;
+    bool CarriageReturn() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
 
     bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept override;
