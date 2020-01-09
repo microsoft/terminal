@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Pane.h"
 
 class Tab : public std::enable_shared_from_this<Tab>
@@ -25,6 +24,8 @@ public:
 
     bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
     void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
     void UpdateIcon(const winrt::hstring iconPath);
 

@@ -539,17 +539,24 @@ bool TextBuffer::NewlineCursor()
 //Routine Description:
 // - Increments the circular buffer by one. Circular buffer is represented by FirstRow variable.
 //Arguments:
-// - <none>
+// - inVtMode - set to true in VT mode, so standard erase attributes are used for the new row.
 //Return Value:
 // - true if we successfully incremented the buffer.
-bool TextBuffer::IncrementCircularBuffer()
+bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    const bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
+    auto fillAttributes = _currentAttributes;
+    if (inVtMode)
+    {
+        // The VT standard requires that the new row is initialized with
+        // the current background color, but with no meta attributes set.
+        fillAttributes.SetStandardErase();
+    }
+    const bool fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -802,23 +809,23 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize)
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
 
-    const auto currentSize = GetSize().Dimensions();
-    const auto attributes = GetCurrentAttributes();
-
-    SHORT TopRow = 0; // new top row of the screen buffer
-    if (newSize.Y <= GetCursor().GetPosition().Y)
-    {
-        TopRow = GetCursor().GetPosition().Y - newSize.Y + 1;
-    }
-    const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
-
-    // rotate rows until the top row is at index 0
     try
     {
+        const auto currentSize = GetSize().Dimensions();
+        const auto attributes = GetCurrentAttributes();
+
+        SHORT TopRow = 0; // new top row of the screen buffer
+        if (newSize.Y <= GetCursor().GetPosition().Y)
+        {
+            TopRow = GetCursor().GetPosition().Y - newSize.Y + 1;
+        }
+        const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
+
+        // rotate rows until the top row is at index 0
         const ROW& newTopRow = _storage.at(TopRowIndex);
         while (&newTopRow != &_storage.front())
         {
@@ -942,6 +949,118 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcept
 {
     return _renderTarget;
+}
+
+// Method Description:
+// - Get the COORD for the beginning of the word you are on
+// Arguments:
+// - target - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - includeCharacterRun - include the character run located at the beginning of the word
+// Return Value:
+// - The COORD for the first character on the "word"  (inclusive)
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun) const
+{
+    const auto bufferSize = GetSize();
+    COORD result = target;
+
+    // can't expand left
+    if (target.X == bufferSize.Left())
+    {
+        return result;
+    }
+
+    auto bufferIterator = GetTextDataAt(result);
+    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+    {
+        bufferSize.DecrementInBounds(result);
+        --bufferIterator;
+    }
+
+    if (includeCharacterRun)
+    {
+        // include character run for readable word
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+        {
+            result = GetWordStart(result, wordDelimiters);
+        }
+    }
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    {
+        // move off of delimiter
+        bufferSize.IncrementInBounds(result);
+    }
+
+    return result;
+}
+
+// Method Description:
+// - Get the COORD for the end of the word you are on
+// Arguments:
+// - target - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - includeDelimiterRun - include the delimiter runs located at the end of the word
+// Return Value:
+// - The COORD for the last character on the "word" (inclusive)
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun) const
+{
+    const auto bufferSize = GetSize();
+    COORD result = target;
+
+    // can't expand right
+    if (target.X == bufferSize.RightInclusive())
+    {
+        return result;
+    }
+
+    auto bufferIterator = GetTextDataAt(result);
+    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+    {
+        bufferSize.IncrementInBounds(result);
+        ++bufferIterator;
+    }
+
+    if (includeDelimiterRun)
+    {
+        // include delimiter run after word
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+        {
+            result = GetWordEnd(result, wordDelimiters);
+        }
+    }
+    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    {
+        // move off of delimiter
+        bufferSize.DecrementInBounds(result);
+    }
+
+    return result;
+}
+
+// Method Description:
+// - get delimiter class for buffer cell data
+// - used for double click selection and uia word navigation
+// Arguments:
+// - cellChar: the char saved to the buffer cell under observation
+// - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
+// Return Value:
+// - the delimiter class for the given char
+TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept
+{
+    if (cellChar.at(0) <= UNICODE_SPACE)
+    {
+        return DelimiterClass::ControlChar;
+    }
+    else if (wordDelimiters.find(cellChar) != std::wstring_view::npos)
+    {
+        return DelimiterClass::DelimiterChar;
+    }
+    else
+    {
+        return DelimiterClass::RegularChar;
+    }
 }
 
 // Routine Description:

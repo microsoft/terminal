@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
+#include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
 
@@ -12,6 +13,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
+#include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
 
 using namespace winrt;
@@ -25,6 +27,7 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
+using namespace ::Microsoft::Console;
 
 namespace winrt
 {
@@ -116,7 +119,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTab(std::nullopt);
+                page->_OpenNewTab(nullptr);
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
@@ -125,7 +128,7 @@ namespace winrt::TerminalApp::implementation
 
         _CreateNewTabFlyout();
         _UpdateTabWidthMode();
-        _OpenNewTab(std::nullopt);
+        _OpenNewTab(nullptr);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
     }
@@ -285,7 +288,9 @@ namespace winrt::TerminalApp::implementation
                     auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
                     actionAndArgs->Action(ShortcutAction::NewTab);
                     auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                    newTabArgs->ProfileIndex(profileIndex);
+                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                    newTerminalArgs->ProfileIndex(profileIndex);
+                    newTabArgs->TerminalArgs(*newTerminalArgs);
                     actionAndArgs->Args(*newTabArgs);
                     profileKeyChord = keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs);
                 }
@@ -323,7 +328,9 @@ namespace winrt::TerminalApp::implementation
             profileMenuItem.Click([profileIndex, weakThis](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
-                    page->_OpenNewTab({ profileIndex });
+                    auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+                    newTerminalArgs->ProfileIndex(profileIndex);
+                    page->_OpenNewTab(*newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -335,34 +342,39 @@ namespace winrt::TerminalApp::implementation
 
         // add static items
         {
-            // Create the settings button.
-            auto settingsItem = WUX::Controls::MenuFlyoutItem{};
-            settingsItem.Text(RS_(L"SettingsMenuItem"));
+            const auto isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
 
-            WUX::Controls::SymbolIcon ico{};
-            ico.Symbol(WUX::Controls::Symbol::Setting);
-            settingsItem.Icon(ico);
-
-            settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
-            newTabFlyout.Items().Append(settingsItem);
-
-            auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
-            if (settingsKeyChord)
+            if (!isUwp)
             {
-                _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
+                // Create the settings button.
+                auto settingsItem = WUX::Controls::MenuFlyoutItem{};
+                settingsItem.Text(RS_(L"SettingsMenuItem"));
+
+                WUX::Controls::SymbolIcon ico{};
+                ico.Symbol(WUX::Controls::Symbol::Setting);
+                settingsItem.Icon(ico);
+
+                settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
+                newTabFlyout.Items().Append(settingsItem);
+
+                auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
+                if (settingsKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
+                }
+
+                // Create the feedback button.
+                auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
+                feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
+
+                WUX::Controls::FontIcon feedbackIcon{};
+                feedbackIcon.Glyph(L"\xE939");
+                feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                feedbackFlyout.Icon(feedbackIcon);
+
+                feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
+                newTabFlyout.Items().Append(feedbackFlyout);
             }
-
-            // Create the feedback button.
-            auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(RS_(L"FeedbackMenuItem"));
-
-            WUX::Controls::FontIcon feedbackIcon{};
-            feedbackIcon.Glyph(L"\xE939");
-            feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            feedbackFlyout.Icon(feedbackIcon);
-
-            feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
-            newTabFlyout.Items().Append(feedbackFlyout);
 
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
@@ -392,48 +404,29 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Open a new tab. This will create the TerminalControl hosting the
-    //      terminal, and add a new Tab to our list of tabs. The method can
-    //      optionally be provided a profile index, which will be used to create
-    //      a tab using the profile in that index.
-    //      If no index is provided, the default profile will be used.
+    //   terminal, and add a new Tab to our list of tabs. The method can
+    //   optionally be provided a NewTerminalArgs, which will be used to create
+    //   a tab using the values in that object.
     // Arguments:
-    // - profileIndex: an optional index into the list of profiles to use to
-    //      initialize this tab up with.
-    void TerminalPage::_OpenNewTab(std::optional<int> profileIndex)
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        GUID profileGuid;
+        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
-        if (profileIndex)
-        {
-            const auto realIndex = profileIndex.value();
-            const auto profiles = _settings->GetProfiles();
-
-            // If we don't have that many profiles, then do nothing.
-            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
-            {
-                return;
-            }
-
-            const auto& selectedProfile = profiles[realIndex];
-            profileGuid = selectedProfile.GetGuid();
-        }
-        else
-        {
-            // Getting Guid for default profile
-            const auto globalSettings = _settings->GlobalSettings();
-            profileGuid = globalSettings.GetDefaultProfile();
-        }
-
-        TerminalSettings settings = _settings->MakeSettings(profileGuid);
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
+        const bool usedManualProfile = (newTerminalArgs != nullptr) &&
+                                       (newTerminalArgs.ProfileIndex() != nullptr ||
+                                        newTerminalArgs.Profile().empty());
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
-            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -543,6 +536,12 @@ namespace winrt::TerminalApp::implementation
                                                              settings.InitialCols());
         }
 
+        else if (profile->HasConnectionType() &&
+                 profile->GetConnectionType() == TelnetConnectionType)
+        {
+            connection = TerminalConnection::TelnetConnection(settings.Commandline());
+        }
+
         else
         {
             auto conhostConn = TerminalConnection::ConptyConnection(settings.Commandline(),
@@ -617,7 +616,7 @@ namespace winrt::TerminalApp::implementation
     // - bindings: A AppKeyBindings object to wire up with our event handlers
     void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
-        bindings.SetDispatch(_actionDispatch);
+        bindings.SetDispatch(*_actionDispatch);
     }
 
     // Method Description:
@@ -632,29 +631,29 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-
-        _actionDispatch.OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
-        _actionDispatch.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
-        _actionDispatch.CloseTab({ this, &TerminalPage::_HandleCloseTab });
-        _actionDispatch.ClosePane({ this, &TerminalPage::_HandleClosePane });
-        _actionDispatch.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
-        _actionDispatch.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
-        _actionDispatch.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
-        _actionDispatch.NextTab({ this, &TerminalPage::_HandleNextTab });
-        _actionDispatch.PrevTab({ this, &TerminalPage::_HandlePrevTab });
-        _actionDispatch.SplitPane({ this, &TerminalPage::_HandleSplitPane });
-        _actionDispatch.ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
-        _actionDispatch.ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        _actionDispatch.OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
-        _actionDispatch.PasteText({ this, &TerminalPage::_HandlePasteText });
-        _actionDispatch.NewTab({ this, &TerminalPage::_HandleNewTab });
-        _actionDispatch.SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
-        _actionDispatch.ResizePane({ this, &TerminalPage::_HandleResizePane });
-        _actionDispatch.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
-        _actionDispatch.CopyText({ this, &TerminalPage::_HandleCopyText });
-        _actionDispatch.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
-        _actionDispatch.ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
-        _actionDispatch.ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
+        _actionDispatch->OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
+        _actionDispatch->DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
+        _actionDispatch->CloseTab({ this, &TerminalPage::_HandleCloseTab });
+        _actionDispatch->ClosePane({ this, &TerminalPage::_HandleClosePane });
+        _actionDispatch->CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
+        _actionDispatch->ScrollUp({ this, &TerminalPage::_HandleScrollUp });
+        _actionDispatch->ScrollDown({ this, &TerminalPage::_HandleScrollDown });
+        _actionDispatch->NextTab({ this, &TerminalPage::_HandleNextTab });
+        _actionDispatch->PrevTab({ this, &TerminalPage::_HandlePrevTab });
+        _actionDispatch->SplitPane({ this, &TerminalPage::_HandleSplitPane });
+        _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
+        _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
+        _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
+        _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
+        _actionDispatch->SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
+        _actionDispatch->ResizePane({ this, &TerminalPage::_HandleResizePane });
+        _actionDispatch->MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
+        _actionDispatch->CopyText({ this, &TerminalPage::_HandleCopyText });
+        _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
+        _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
+        _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
 
     // Method Description:
@@ -732,9 +731,11 @@ namespace winrt::TerminalApp::implementation
         const auto& _tab = _tabs.at(focusedTabIndex);
 
         const auto& profileGuid = _tab->GetFocusedProfile();
-        const auto& settings = _settings->MakeSettings(profileGuid);
-
-        _CreateNewTabFromSettings(profileGuid.value(), settings);
+        if (profileGuid.has_value())
+        {
+            const auto settings = _settings->BuildSettings(profileGuid.value());
+            _CreateNewTabFromSettings(profileGuid.value(), settings);
+        }
     }
 
     // Method Description:
@@ -967,9 +968,11 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
-    // - profile: The profile GUID to associate with the newly created pane. If
-    //   this is nullopt, use the default profile.
-    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType, const std::optional<GUID>& profileGuid)
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
+                                  const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
         if (splitType == TerminalApp::SplitState::None)
@@ -977,9 +980,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto realGuid = profileGuid ? profileGuid.value() :
-                                            _settings->GlobalSettings().GetDefaultProfile();
-        const auto controlSettings = _settings->MakeSettings(realGuid);
+        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
@@ -1125,6 +1126,25 @@ namespace winrt::TerminalApp::implementation
             {
                 menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
             }
+        }
+    }
+
+    // Method Description:
+    // - Calculates the appropriate size to snap to in the gived direction, for
+    //   the given dimension. If the global setting `snapToGridOnResize` is set
+    //   to `false`, this will just immediately return the provided dimension,
+    //   effectively disabling snapping.
+    // - See Pane::CalcSnappedDimension
+    float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    {
+        if (_settings->GlobalSettings().SnapToGridOnResize())
+        {
+            const auto focusedTabIndex = _GetFocusedTabIndex();
+            return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+        }
+        else
+        {
+            return dimension;
         }
     }
 
@@ -1382,7 +1402,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
-            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+            const auto settings = _settings->BuildSettings(profileGuid);
 
             for (auto& tab : _tabs)
             {
@@ -1423,6 +1443,20 @@ namespace winrt::TerminalApp::implementation
         {
             _newTabButton.Flyout().Hide();
         }
+    }
+
+    // Method Description:
+    // - Called when the user tries to do a search using keybindings.
+    //   This will tell the current focused terminal control to create
+    //   a search box and enable find process.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_Find()
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.CreateSearchBoxControl();
     }
 
     // Method Description:

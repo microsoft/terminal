@@ -4,6 +4,7 @@
 namespace Microsoft.Terminal.TerminalControl
 {
     delegate void TitleChangedEventArgs(String newTitle);
+    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
     runtimeclass CopyToClipboardEventArgs
@@ -28,6 +29,7 @@ namespace Microsoft.Terminal.TerminalControl
         void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
 
         event TitleChangedEventArgs TitleChanged;
+        event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
 
@@ -43,12 +45,15 @@ namespace Microsoft.Terminal.TerminalControl
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
+        Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
         void ScrollViewport(Int32 viewTop);
         void KeyboardScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
+
+        void CreateSearchBoxControl();
 
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();

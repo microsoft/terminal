@@ -10,50 +10,41 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(IStateMachineEngine* const pEngine) :
-    _pEngine(THROW_IF_NULL_ALLOC(pEngine)),
+StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
+    _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
-    _cParams(0),
-    _pusActiveParam(nullptr),
-    _cIntermediate(0),
-    _wchIntermediate(UNICODE_NULL),
-    _pwchCurr(nullptr),
-    _iParamAccumulatePos(0),
-    // pwchOscStringBuffer Initialized below
-    _pwchSequenceStart(nullptr),
-    // rgusParams Initialized below
-    _sOscNextChar(0),
-    _sOscParam(0),
-    _currRunLength(0),
-    _fProcessingIndividually(false)
+    _intermediates{},
+    _parameters{},
+    _oscString{},
+    _processingIndividually(false)
 {
-    ZeroMemory(_pwchOscStringBuffer, sizeof(_pwchOscStringBuffer));
-    ZeroMemory(_rgusParams, sizeof(_rgusParams));
     _ActionClear();
 }
 
 const IStateMachineEngine& StateMachine::Engine() const noexcept
 {
-    return *_pEngine;
+    return *_engine;
 }
 
 IStateMachineEngine& StateMachine::Engine() noexcept
 {
-    return *_pEngine;
+    return *_engine;
 }
 
 // Routine Description:
-// - Determines if a character indicates an action that should be taken in the ground state -
-//     These are C0 characters and the C1 [single-character] CSI.
+// - Determines if a character is a valid number character, 0-9.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsActionableFromGround(const wchar_t wch)
+static constexpr bool _isNumber(const wchar_t wch) noexcept
 {
-    return (wch <= AsciiChars::US) || s_IsC1Csi(wch) || s_IsDelete(wch);
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
 
 // Routine Description:
 // - Determines if a character belongs to the C0 escape range.
@@ -63,7 +54,7 @@ bool StateMachine::s_IsActionableFromGround(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsC0Code(const wchar_t wch)
+static constexpr bool _isC0Code(const wchar_t wch) noexcept
 {
     return (wch >= AsciiChars::NUL && wch <= AsciiChars::ETB) ||
            wch == AsciiChars::EM ||
@@ -89,7 +80,7 @@ bool StateMachine::s_IsC0Code(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsC1Csi(const wchar_t wch)
+static constexpr bool _isC1Csi(const wchar_t wch) noexcept
 {
     return wch == L'\x9b';
 }
@@ -103,7 +94,7 @@ bool StateMachine::s_IsC1Csi(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsIntermediate(const wchar_t wch)
+static constexpr bool _isIntermediate(const wchar_t wch) noexcept
 {
     return wch >= L' ' && wch <= L'/'; // 0x20 - 0x2F
 }
@@ -114,7 +105,7 @@ bool StateMachine::s_IsIntermediate(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsDelete(const wchar_t wch)
+static constexpr bool _isDelete(const wchar_t wch) noexcept
 {
     return wch == AsciiChars::DEL;
 }
@@ -126,7 +117,7 @@ bool StateMachine::s_IsDelete(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsEscape(const wchar_t wch)
+static constexpr bool _isEscape(const wchar_t wch) noexcept
 {
     return wch == AsciiChars::ESC;
 }
@@ -138,7 +129,7 @@ bool StateMachine::s_IsEscape(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsCsiIndicator(const wchar_t wch)
+static constexpr bool _isCsiIndicator(const wchar_t wch) noexcept
 {
     return wch == L'['; // 0x5B
 }
@@ -151,7 +142,7 @@ bool StateMachine::s_IsCsiIndicator(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsCsiDelimiter(const wchar_t wch)
+static constexpr bool _isCsiDelimiter(const wchar_t wch) noexcept
 {
     return wch == L';'; // 0x3B
 }
@@ -163,7 +154,7 @@ bool StateMachine::s_IsCsiDelimiter(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsCsiParamValue(const wchar_t wch)
+static constexpr bool _isCsiParamValue(const wchar_t wch) noexcept
 {
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
@@ -175,7 +166,7 @@ bool StateMachine::s_IsCsiParamValue(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsCsiPrivateMarker(const wchar_t wch)
+static constexpr bool _isCsiPrivateMarker(const wchar_t wch) noexcept
 {
     return wch == L'<' || wch == L'=' || wch == L'>' || wch == L'?'; // 0x3C - 0x3F
 }
@@ -186,7 +177,7 @@ bool StateMachine::s_IsCsiPrivateMarker(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsCsiInvalid(const wchar_t wch)
+static constexpr bool _isCsiInvalid(const wchar_t wch) noexcept
 {
     return wch == L':'; // 0x3A
 }
@@ -200,7 +191,7 @@ bool StateMachine::s_IsCsiInvalid(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsSs3Indicator(const wchar_t wch)
+static constexpr bool _isSs3Indicator(const wchar_t wch) noexcept
 {
     return wch == L'O'; // 0x4F
 }
@@ -212,7 +203,7 @@ bool StateMachine::s_IsSs3Indicator(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsOscIndicator(const wchar_t wch)
+static constexpr bool _isOscIndicator(const wchar_t wch) noexcept
 {
     return wch == L']'; // 0x5D
 }
@@ -225,7 +216,7 @@ bool StateMachine::s_IsOscIndicator(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsOscDelimiter(const wchar_t wch)
+static constexpr bool _isOscDelimiter(const wchar_t wch) noexcept
 {
     return wch == L';'; // 0x3B
 }
@@ -238,9 +229,9 @@ bool StateMachine::s_IsOscDelimiter(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsOscParamValue(const wchar_t wch)
+static constexpr bool _isOscParamValue(const wchar_t wch) noexcept
 {
-    return s_IsNumber(wch); // 0x30 - 0x39
+    return _isNumber(wch); // 0x30 - 0x39
 }
 
 // Routine Description:
@@ -249,7 +240,7 @@ bool StateMachine::s_IsOscParamValue(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsOscTerminationInitiator(const wchar_t wch)
+static constexpr bool _isOscTerminationInitiator(const wchar_t wch) noexcept
 {
     return wch == AsciiChars::ESC;
 }
@@ -260,7 +251,7 @@ bool StateMachine::s_IsOscTerminationInitiator(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsOscInvalid(const wchar_t wch)
+static constexpr bool _isOscInvalid(const wchar_t wch) noexcept
 {
     return wch <= L'\x17' ||
            wch == L'\x19' ||
@@ -274,21 +265,24 @@ bool StateMachine::s_IsOscInvalid(const wchar_t wch)
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsOscTerminator(const wchar_t wch)
+static constexpr bool _isOscTerminator(const wchar_t wch) noexcept
 {
     return wch == L'\x7' || wch == L'\x9C'; // Bell character or C1 terminator
 }
 
 // Routine Description:
-// - Determines if a character is a valid number character, 0-9.
+// - Determines if a character indicates an action that should be taken in the ground state -
+//     These are C0 characters and the C1 [single-character] CSI.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
-bool StateMachine::s_IsNumber(const wchar_t wch)
+static constexpr bool _isActionableFromGround(const wchar_t wch) noexcept
 {
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+    return (wch <= AsciiChars::US) || _isC1Csi(wch) || _isDelete(wch);
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - Triggers the Execute action to indicate that the listener should immediately respond to a C0 control character.
@@ -299,7 +293,7 @@ bool StateMachine::s_IsNumber(const wchar_t wch)
 void StateMachine::_ActionExecute(const wchar_t wch)
 {
     _trace.TraceOnExecute(wch);
-    _pEngine->ActionExecute(wch);
+    _engine->ActionExecute(wch);
 }
 
 // Routine Description:
@@ -313,7 +307,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 {
     _trace.TraceOnExecuteFromEscape(wch);
-    _pEngine->ActionExecuteFromEscape(wch);
+    _engine->ActionExecuteFromEscape(wch);
 }
 
 // Routine Description:
@@ -325,7 +319,7 @@ void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 void StateMachine::_ActionPrint(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Print");
-    _pEngine->ActionPrint(wch);
+    _engine->ActionPrint(wch);
 }
 
 // Routine Description:
@@ -339,12 +333,12 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    bool fSuccess = _pEngine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
+    const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
 
     // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
+    _trace.DispatchSequenceTrace(success);
 
-    if (!fSuccess)
+    if (!success)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
@@ -362,12 +356,14 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
 
-    bool fSuccess = _pEngine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
+    const bool success = _engine->ActionCsiDispatch(wch,
+                                                    { _intermediates.data(), _intermediates.size() },
+                                                    { _parameters.data(), _parameters.size() });
 
     // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
+    _trace.DispatchSequenceTrace(success);
 
-    if (!fSuccess)
+    if (!success)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
@@ -385,12 +381,7 @@ void StateMachine::_ActionCollect(const wchar_t wch)
     _trace.TraceOnAction(L"Collect");
 
     // store collect data
-    if (_cIntermediate < s_cIntermediateMax)
-    {
-        _wchIntermediate = wch;
-    }
-
-    _cIntermediate++;
+    _intermediates.push_back(wch);
 }
 
 // Routine Description:
@@ -404,70 +395,24 @@ void StateMachine::_ActionParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Param");
 
-    // Verify both the count and that the pointer didn't run off the end of the
-    //      array. If we're past the end, this param is just ignored.
-    if (_cParams <= s_cParamsMax && _pusActiveParam < &_rgusParams[s_cParamsMax])
+    // If we have no parameters and we're about to add one, get the 0 value ready here.
+    if (_parameters.empty())
     {
-        // If we're adding a character to the first parameter,
-        //      then we now have one parameter.
-        if (_iParamAccumulatePos == 0 && _cParams == 0)
-        {
-            _cParams++;
-        }
+        _parameters.push_back(0);
+    }
 
-        // On a delimiter, increase the number of params we've seen.
-        // "Empty" params should still count as a param -
-        //      eg "\x1b[0;;m" should be three "0" params
-        if (wch == L';')
-        {
-            // Move to next param.
-            //      If we're on the last param (_cParams == s_cParamsMax),
-            //      then _pusActiveParam will now be past the end of _rgusParams,
-            //      and any future params will be ignored.
-            _pusActiveParam++;
-
-            // clear out the accumulator count to prepare for the next one
-            _iParamAccumulatePos = 0;
-
-            // Don't increment the _cParams to be greater than s_cParamsMax.
-            //      We're using _pusActiveParam to make sure we don't fill too
-            //      many params.
-            if (_cParams < s_cParamsMax)
-            {
-                _cParams++;
-            }
-        }
-        else
-        {
-            // don't bother accumulating if we're storing more than 4 digits (since we're putting it into a short)
-            if (_iParamAccumulatePos < 5)
-            {
-                // convert character into digit.
-                unsigned short const usDigit = wch - L'0'; // convert character into value
-
-                // multiply existing values by 10 to make space in the 1s digit
-                *_pusActiveParam *= 10;
-
-                // store the digit in the 1s place.
-                *_pusActiveParam += usDigit;
-
-                // if the total is zero, it must be a leading zero digit, so we don't count it.
-                if (*_pusActiveParam != 0)
-                {
-                    // otherwise mark that we've now stored another digit.
-                    _iParamAccumulatePos++;
-                }
-
-                if (*_pusActiveParam > SHORT_MAX)
-                {
-                    *_pusActiveParam = SHORT_MAX;
-                }
-            }
-            else
-            {
-                *_pusActiveParam = SHORT_MAX;
-            }
-        }
+    // On a delimiter, increase the number of params we've seen.
+    // "Empty" params should still count as a param -
+    //      eg "\x1b[0;;m" should be three "0" params
+    if (wch == L';')
+    {
+        // Move to next param.
+        _parameters.push_back(0);
+    }
+    else
+    {
+        // Accumulate the character given into the last (current) parameter
+        _AccumulateTo(wch, _parameters.back());
     }
 }
 
@@ -482,22 +427,14 @@ void StateMachine::_ActionClear()
     _trace.TraceOnAction(L"Clear");
 
     // clear all internal stored state.
-    _wchIntermediate = 0;
-    _cIntermediate = 0;
+    _intermediates.clear();
 
-    for (unsigned short i = 0; i < s_cParamsMax; i++)
-    {
-        _rgusParams[i] = 0;
-    }
+    _parameters.clear();
 
-    _cParams = 0;
-    _iParamAccumulatePos = 0;
-    _pusActiveParam = _rgusParams; // set pointer back to beginning of array
+    _oscString.clear();
+    _oscParameter = 0;
 
-    _sOscParam = 0;
-    _sOscNextChar = 0;
-
-    _pEngine->ActionClear();
+    _engine->ActionClear();
 }
 
 // Routine Description:
@@ -506,7 +443,7 @@ void StateMachine::_ActionClear()
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionIgnore()
+void StateMachine::_ActionIgnore() noexcept
 {
     // do nothing.
     _trace.TraceOnAction(L"Ignore");
@@ -522,34 +459,7 @@ void StateMachine::_ActionOscParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscParamCollect");
 
-    // don't bother accumulating if we're storing more than 4 digits (since we're putting it into a short)
-    if (_iParamAccumulatePos < 5)
-    {
-        // convert character into digit.
-        unsigned short const usDigit = wch - L'0'; // convert character into value
-
-        // multiply existing values by 10 to make space in the 1s digit
-        _sOscParam *= 10;
-
-        // store the digit in the 1s place.
-        _sOscParam += usDigit;
-
-        // if the total is zero, it must be a leading zero digit, so we don't count it.
-        if (_sOscParam != 0)
-        {
-            // otherwise mark that we've now stored another digit.
-            _iParamAccumulatePos++;
-        }
-
-        if (_sOscParam > SHORT_MAX)
-        {
-            _sOscParam = SHORT_MAX;
-        }
-    }
-    else
-    {
-        _sOscParam = SHORT_MAX;
-    }
+    _AccumulateTo(wch, _oscParameter);
 }
 
 // Routine Description:
@@ -562,14 +472,7 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscPut");
 
-    // if we're past the end, this param is just ignored.
-    // need to leave one char for \0 at end
-    if (_sOscNextChar < s_cOscStringMaxLength - 1)
-    {
-        _pwchOscStringBuffer[_sOscNextChar] = wch;
-        _sOscNextChar++;
-        //we'll place the null at the end of the string when we send the actual action.
-    }
+    _oscString.push_back(wch);
 }
 
 // Routine Description:
@@ -583,12 +486,12 @@ void StateMachine::_ActionOscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscDispatch");
 
-    bool fSuccess = _pEngine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
+    const bool success = _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
 
     // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
+    _trace.DispatchSequenceTrace(success);
 
-    if (!fSuccess)
+    if (!success)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
@@ -606,12 +509,12 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Ss3Dispatch");
 
-    bool fSuccess = _pEngine->ActionSs3Dispatch(wch, _rgusParams, _cParams);
+    const bool success = _engine->ActionSs3Dispatch(wch, { _parameters.data(), _parameters.size() });
 
     // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
+    _trace.DispatchSequenceTrace(success);
 
-    if (!fSuccess)
+    if (!success)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
@@ -627,7 +530,7 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterGround()
+void StateMachine::_EnterGround() noexcept
 {
     _state = VTStates::Ground;
     _trace.TraceStateChange(L"Ground");
@@ -657,7 +560,7 @@ void StateMachine::_EnterEscape()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterEscapeIntermediate()
+void StateMachine::_EnterEscapeIntermediate() noexcept
 {
     _state = VTStates::EscapeIntermediate;
     _trace.TraceStateChange(L"EscapeIntermediate");
@@ -686,7 +589,7 @@ void StateMachine::_EnterCsiEntry()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterCsiParam()
+void StateMachine::_EnterCsiParam() noexcept
 {
     _state = VTStates::CsiParam;
     _trace.TraceStateChange(L"CsiParam");
@@ -701,7 +604,7 @@ void StateMachine::_EnterCsiParam()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterCsiIgnore()
+void StateMachine::_EnterCsiIgnore() noexcept
 {
     _state = VTStates::CsiIgnore;
     _trace.TraceStateChange(L"CsiIgnore");
@@ -716,7 +619,7 @@ void StateMachine::_EnterCsiIgnore()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterCsiIntermediate()
+void StateMachine::_EnterCsiIntermediate() noexcept
 {
     _state = VTStates::CsiIntermediate;
     _trace.TraceStateChange(L"CsiIntermediate");
@@ -730,7 +633,7 @@ void StateMachine::_EnterCsiIntermediate()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterOscParam()
+void StateMachine::_EnterOscParam() noexcept
 {
     _state = VTStates::OscParam;
     _trace.TraceStateChange(L"OscParam");
@@ -744,7 +647,7 @@ void StateMachine::_EnterOscParam()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterOscString()
+void StateMachine::_EnterOscString() noexcept
 {
     _state = VTStates::OscString;
     _trace.TraceStateChange(L"OscString");
@@ -759,7 +662,7 @@ void StateMachine::_EnterOscString()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterOscTermination()
+void StateMachine::_EnterOscTermination() noexcept
 {
     _state = VTStates::OscTermination;
     _trace.TraceStateChange(L"OscTermination");
@@ -788,7 +691,7 @@ void StateMachine::_EnterSs3Entry()
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::_EnterSs3Param()
+void StateMachine::_EnterSs3Param() noexcept
 {
     _state = VTStates::Ss3Param;
     _trace.TraceStateChange(L"Ss3Param");
@@ -807,11 +710,11 @@ void StateMachine::_EnterSs3Param()
 void StateMachine::_EventGround(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"Ground");
-    if (s_IsC0Code(wch) || s_IsDelete(wch))
+    if (_isC0Code(wch) || _isDelete(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsC1Csi(wch))
+    else if (_isC1Csi(wch))
     {
         _EnterCsiEntry();
     }
@@ -836,9 +739,9 @@ void StateMachine::_EventGround(const wchar_t wch)
 void StateMachine::_EventEscape(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"Escape");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
-        if (_pEngine->DispatchControlCharsFromEscape())
+        if (_engine->DispatchControlCharsFromEscape())
         {
             _ActionExecuteFromEscape(wch);
             _EnterGround();
@@ -848,13 +751,13 @@ void StateMachine::_EventEscape(const wchar_t wch)
             _ActionExecute(wch);
         }
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsIntermediate(wch))
+    else if (_isIntermediate(wch))
     {
-        if (_pEngine->DispatchIntermediatesFromEscape())
+        if (_engine->DispatchIntermediatesFromEscape())
         {
             _ActionEscDispatch(wch);
             _EnterGround();
@@ -865,15 +768,15 @@ void StateMachine::_EventEscape(const wchar_t wch)
             _EnterEscapeIntermediate();
         }
     }
-    else if (s_IsCsiIndicator(wch))
+    else if (_isCsiIndicator(wch))
     {
         _EnterCsiEntry();
     }
-    else if (s_IsOscIndicator(wch))
+    else if (_isOscIndicator(wch))
     {
         _EnterOscParam();
     }
-    else if (s_IsSs3Indicator(wch))
+    else if (_isSs3Indicator(wch))
     {
         _EnterSs3Entry();
     }
@@ -898,15 +801,15 @@ void StateMachine::_EventEscape(const wchar_t wch)
 void StateMachine::_EventEscapeIntermediate(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"EscapeIntermediate");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsIntermediate(wch))
+    else if (_isIntermediate(wch))
     {
         _ActionCollect(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
@@ -934,29 +837,29 @@ void StateMachine::_EventEscapeIntermediate(const wchar_t wch)
 void StateMachine::_EventCsiEntry(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"CsiEntry");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsIntermediate(wch))
+    else if (_isIntermediate(wch))
     {
         _ActionCollect(wch);
         _EnterCsiIntermediate();
     }
-    else if (s_IsCsiInvalid(wch))
+    else if (_isCsiInvalid(wch))
     {
         _EnterCsiIgnore();
     }
-    else if (s_IsCsiParamValue(wch) || s_IsCsiDelimiter(wch))
+    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterCsiParam();
     }
-    else if (s_IsCsiPrivateMarker(wch))
+    else if (_isCsiPrivateMarker(wch))
     {
         _ActionCollect(wch);
         _EnterCsiParam();
@@ -983,19 +886,19 @@ void StateMachine::_EventCsiEntry(const wchar_t wch)
 void StateMachine::_EventCsiIntermediate(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"CsiIntermediate");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsIntermediate(wch))
+    else if (_isIntermediate(wch))
     {
         _ActionCollect(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsCsiParamValue(wch) || s_IsCsiInvalid(wch) || s_IsCsiDelimiter(wch) || s_IsCsiPrivateMarker(wch))
+    else if (_isCsiParamValue(wch) || _isCsiInvalid(wch) || _isCsiDelimiter(wch) || _isCsiPrivateMarker(wch))
     {
         _EnterCsiIgnore();
     }
@@ -1021,19 +924,19 @@ void StateMachine::_EventCsiIntermediate(const wchar_t wch)
 void StateMachine::_EventCsiIgnore(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"CsiIgnore");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsIntermediate(wch))
+    else if (_isIntermediate(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsCsiParamValue(wch) || s_IsCsiInvalid(wch) || s_IsCsiDelimiter(wch) || s_IsCsiPrivateMarker(wch))
+    else if (_isCsiParamValue(wch) || _isCsiInvalid(wch) || _isCsiDelimiter(wch) || _isCsiPrivateMarker(wch))
     {
         _ActionIgnore();
     }
@@ -1059,24 +962,24 @@ void StateMachine::_EventCsiIgnore(const wchar_t wch)
 void StateMachine::_EventCsiParam(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"CsiParam");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsCsiParamValue(wch) || s_IsCsiDelimiter(wch))
+    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
     {
         _ActionParam(wch);
     }
-    else if (s_IsIntermediate(wch))
+    else if (_isIntermediate(wch))
     {
         _ActionCollect(wch);
         _EnterCsiIntermediate();
     }
-    else if (s_IsCsiInvalid(wch) || s_IsCsiPrivateMarker(wch))
+    else if (_isCsiInvalid(wch) || _isCsiPrivateMarker(wch))
     {
         _EnterCsiIgnore();
     }
@@ -1100,15 +1003,15 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
 void StateMachine::_EventOscParam(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"OscParam");
-    if (s_IsOscTerminator(wch))
+    if (_isOscTerminator(wch))
     {
         _EnterGround();
     }
-    else if (s_IsOscParamValue(wch))
+    else if (_isOscParamValue(wch))
     {
         _ActionOscParam(wch);
     }
-    else if (s_IsOscDelimiter(wch))
+    else if (_isOscDelimiter(wch))
     {
         _EnterOscString();
     }
@@ -1133,16 +1036,16 @@ void StateMachine::_EventOscParam(const wchar_t wch)
 void StateMachine::_EventOscString(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"OscString");
-    if (s_IsOscTerminator(wch))
+    if (_isOscTerminator(wch))
     {
         _ActionOscDispatch(wch);
         _EnterGround();
     }
-    else if (s_IsOscTerminationInitiator(wch))
+    else if (_isOscTerminationInitiator(wch))
     {
         _EnterOscTermination();
     }
-    else if (s_IsOscInvalid(wch))
+    else if (_isOscInvalid(wch))
     {
         _ActionIgnore();
     }
@@ -1187,21 +1090,21 @@ void StateMachine::_EventOscTermination(const wchar_t wch)
 void StateMachine::_EventSs3Entry(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"Ss3Entry");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsCsiInvalid(wch))
+    else if (_isCsiInvalid(wch))
     {
         // It's safe for us to go into the CSI ignore here, because both SS3 and
         //      CSI sequences ignore characters the same way.
         _EnterCsiIgnore();
     }
-    else if (s_IsCsiParamValue(wch) || s_IsCsiDelimiter(wch))
+    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
     {
         _ActionParam(wch);
         _EnterSs3Param();
@@ -1228,19 +1131,19 @@ void StateMachine::_EventSs3Entry(const wchar_t wch)
 void StateMachine::_EventSs3Param(const wchar_t wch)
 {
     _trace.TraceOnEvent(L"Ss3Param");
-    if (s_IsC0Code(wch))
+    if (_isC0Code(wch))
     {
         _ActionExecute(wch);
     }
-    else if (s_IsDelete(wch))
+    else if (_isDelete(wch))
     {
         _ActionIgnore();
     }
-    else if (s_IsCsiParamValue(wch) || s_IsCsiDelimiter(wch))
+    else if (_isCsiParamValue(wch) || _isCsiDelimiter(wch))
     {
         _ActionParam(wch);
     }
-    else if (s_IsCsiInvalid(wch) || s_IsCsiPrivateMarker(wch))
+    else if (_isCsiInvalid(wch) || _isCsiPrivateMarker(wch))
     {
         _EnterCsiIgnore();
     }
@@ -1268,7 +1171,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (s_IsEscape(wch) && _state != VTStates::OscString)
+    else if (_isEscape(wch) && _state != VTStates::OscString)
     {
         // Don't go to escape from the OSC string state - ESC can be used to
         //      terminate OSC strings.
@@ -1327,8 +1230,7 @@ bool StateMachine::FlushToTerminal()
     //      that pwchCurr was processed.
     // However, if we're here, then the processing of pwchChar triggered the
     //      engine to request the entire sequence get passed through, including pwchCurr.
-    return _pEngine->ActionPassThroughString(_pwchSequenceStart,
-                                             _pwchCurr - _pwchSequenceStart + 1);
+    return _engine->ActionPassThroughString(_run);
 }
 
 // Routine Description:
@@ -1337,64 +1239,69 @@ bool StateMachine::FlushToTerminal()
 //     a escape sequence, then feed characters into the state machine one at a
 //     time until we return to the ground state.
 // Arguments:
-// - rgwch - Array of new characters to operate upon
-// - cch - Count of characters in array
+// - string - Characters to operate upon
 // Return Value:
 // - <none>
-void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
+void StateMachine::ProcessString(const std::wstring_view string)
 {
-    _pwchCurr = rgwch;
-    _pwchSequenceStart = rgwch;
-    _currRunLength = 0;
+    size_t start = 0;
+    size_t current = start;
 
-    for (size_t cchCharsRemaining = cch; cchCharsRemaining > 0; cchCharsRemaining--)
+    while (current < string.size())
     {
-        if (_fProcessingIndividually)
+        // The run will be everything from the start INCLUDING the current one
+        // in case we process the current character and it turns into a passthrough
+        // fallback that picks up this _run inside `FlushToTerminal` above.
+        _run = string.substr(start, current - start + 1);
+
+        if (_processingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(*_pwchCurr);
-            _pwchCurr++;
+            ProcessCharacter(string.at(current));
+            ++current;
             if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
             { //   is the start of the next run of characters that might be printable.
-                _fProcessingIndividually = false;
-                _pwchSequenceStart = _pwchCurr;
-                _currRunLength = 0;
+                _processingIndividually = false;
+                start = current;
             }
         }
         else
         {
-            if (s_IsActionableFromGround(*_pwchCurr)) // If the current char is the start of an escape sequence, or should be executed in ground state...
+            if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                FAIL_FAST_IF(!(_pwchSequenceStart + _currRunLength <= rgwch + cch));
-                _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
-                _fProcessingIndividually = true; // begin processing future characters individually...
-                _currRunLength = 0;
-                _pwchSequenceStart = _pwchCurr;
-                ProcessCharacter(*_pwchCurr); // ... Then process the character individually.
-                if (_state == VTStates::Ground) // If the character took us right back to ground, start another run after it.
-                {
-                    _fProcessingIndividually = false;
-                    _pwchSequenceStart = _pwchCurr + 1;
-                    _currRunLength = 0;
-                }
+                // Because the _run above is composed INCLUDING current, we must
+                // trim it off here since we just determined it's actionable
+                // and only pass through everything before it.
+                const auto allLeadingUpTo = _run.substr(0, _run.size() - 1);
+
+                _engine->ActionPrintString(allLeadingUpTo); // ... print all the chars leading up to it as part of the run...
+                _trace.DispatchPrintRunTrace(allLeadingUpTo);
+                _processingIndividually = true; // begin processing future characters individually...
+                start = current;
+                continue;
             }
             else
             {
-                _currRunLength++; // Otherwise, add this char to the current run to be printed.
+                ++current; // Otherwise, add this char to the current run to be printed.
             }
-            _pwchCurr++;
         }
     }
 
+    // When we leave the loop, current has been advanced to the length of the string itself
+    // (or one past the array index to the final char) so this `substr` operation doesn't +1
+    // to include the final character (unlike the one inside the top of the loop above.)
+    // NOTE: std::basic_string_view will auto-trim excessively large sizes down to the valid length
+    //       so passing something too large in the second parameter WILL NOT FAIL.
+    _run = string.substr(start, current - start);
+
     // If we're at the end of the string and have remaining un-printed characters,
-    if (!_fProcessingIndividually && _currRunLength > 0)
+    if (!_processingIndividually && !_run.empty())
     {
         // print the rest of the characters in the string
-        _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength);
-        _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
+        _engine->ActionPrintString(_run);
+        _trace.DispatchPrintRunTrace(_run);
     }
-    else if (_fProcessingIndividually)
+    else if (_processingIndividually)
     {
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
@@ -1415,40 +1322,41 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
         // means we'll make sure to call `_ActionEscDispatch('[')`., which will
         // properly decode the string as <kbd>alt+[</kbd>.
 
-        if (_pEngine->FlushAtEndOfString())
+        if (_engine->FlushAtEndOfString())
         {
             // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            const wchar_t* pwch = _pwchSequenceStart;
-            for (; pwch < _pwchCurr - 1; pwch++)
+            auto wchIter = _run.cbegin();
+            while (wchIter < _run.cend() - 1)
             {
-                ProcessCharacter(*pwch);
+                ProcessCharacter(*wchIter);
+                wchIter++;
             }
             // Manually execute the last char [pwchCurr]
             switch (_state)
             {
             case VTStates::Ground:
-                _ActionExecute(*pwch);
+                _ActionExecute(*wchIter);
                 break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*pwch);
+                _ActionEscDispatch(*wchIter);
                 break;
             case VTStates::CsiEntry:
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
-                _ActionCsiDispatch(*pwch);
+                _ActionCsiDispatch(*wchIter);
                 break;
             case VTStates::OscParam:
             case VTStates::OscString:
             case VTStates::OscTermination:
-                _ActionOscDispatch(*pwch);
+                _ActionOscDispatch(*wchIter);
                 break;
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*pwch);
+                _ActionSs3Dispatch(*wchIter);
                 break;
             }
             // microsoft/terminal#2746: Make sure to return to the ground state
@@ -1456,11 +1364,6 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             _EnterGround();
         }
     }
-}
-
-void StateMachine::ProcessString(const std::wstring& wstr)
-{
-    return ProcessString(wstr.c_str(), wstr.length());
 }
 
 // Routine Description:
@@ -1471,7 +1374,30 @@ void StateMachine::ProcessString(const std::wstring& wstr)
 // - <none>
 // Return Value:
 // - <none>
-void StateMachine::ResetState()
+void StateMachine::ResetState() noexcept
 {
     _EnterGround();
+}
+
+// Routine Description:
+// - Takes the given printable character and accumulates it as the new ones digit
+//   into the given size_t. All existing value is moved up by 10.
+// - For example, if your value had 437 and you put in the printable number 2,
+//   this function will update value to 4372.
+// - Clamps to size_t max if it gets too big.
+// Arguments:
+// - wch - Printable character to accumulate into the value (after conversion to number, of course)
+// - value - The value to update with the printable character. See example above.
+// Return Value:
+// - <none> - But really it's the update to the given value parameter.
+void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value)
+{
+    const size_t digit = wch - L'0';
+
+    // If we overflow while multiplying and adding, the value is just size_t max.
+    if (FAILED(SizeTMult(value, 10, &value)) ||
+        FAILED(SizeTAdd(value, digit, &value)))
+    {
+        value = std::numeric_limits<size_t>().max();
+    }
 }

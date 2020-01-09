@@ -8,6 +8,7 @@ DIRS=\
      server \
      terminal \
      testlist \
+     til \
      tools \
      tsf \
      types \

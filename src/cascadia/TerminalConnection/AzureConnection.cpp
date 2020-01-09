@@ -2,6 +2,11 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+
+// We have to define GSL here, not PCH
+// because TelnetConnection has a conflicting GSL implementation.
+#include <gsl/gsl>
+
 #include "AzureConnection.h"
 #include "AzureClientID.h"
 #include <sstream>
@@ -32,14 +37,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // This function exists because the clientID only gets added by the release pipelines
     // and is not available on local builds, so we want to be able to make sure we don't
     // try to make an Azure connection if its a local build
-    bool AzureConnection::IsAzureConnectionAvailable()
+    bool AzureConnection::IsAzureConnectionAvailable() noexcept
     {
         return (AzureClientID != L"0");
     }
 
     AzureConnection::AzureConnection(const uint32_t initialRows, const uint32_t initialCols) :
         _initialRows{ initialRows },
-        _initialCols{ initialCols }
+        _initialCols{ initialCols },
+        _maxStored{},
+        _maxSize{},
+        _expiry{}
     {
     }
 
@@ -181,7 +189,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto str = winrt::to_string(data);
             msg.set_utf8_message(str);
 
-            _cloudShellSocket.send(msg);
+            _cloudShellSocket.send(msg).get();
         }
         default:
             return;
@@ -212,7 +220,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             terminalRequest.set_body(json::value(L""));
 
             // Send the request
-            _RequestHelper(terminalClient, terminalRequest);
+            const auto response = _RequestHelper(terminalClient, terminalRequest);
         }
     }
 
@@ -264,8 +272,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the exit code of the thread
     DWORD WINAPI AzureConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
-        AzureConnection* const pInstance = (AzureConnection*)lpParameter;
-        return pInstance->_OutputThread();
+        AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
+        if (pInstance)
+        {
+            return pInstance->_OutputThread();
+        }
+        return gsl::narrow_cast<DWORD>(E_INVALIDARG);
     }
 
     // Method description:
@@ -698,7 +710,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_request commonRequest(L"POST");
         commonRequest.set_request_uri(L"common/oauth2/devicecode");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource;
-        commonRequest.set_body(body, L"application/x-www-form-urlencoded");
+        commonRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
         // Send the request and receive the response as a json value
         return _RequestHelper(loginClient, commonRequest);
@@ -719,7 +731,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_client pollingClient(_loginUri);
 
         // Continuously send a poll request until the user authenticates
-        const auto body = L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
+        const auto body = hstring() + L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
         const auto requestUri = L"common/oauth2/token";
         json::value responseJson;
         for (int count = 0; count < expiresIn / pollInterval; count++)
@@ -731,7 +743,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             http_request pollRequest(L"POST");
             pollRequest.set_request_uri(requestUri);
-            pollRequest.set_body(body, L"application/x-www-form-urlencoded");
+            pollRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
             responseJson = _RequestHelper(pollingClient, pollRequest);
 
@@ -784,7 +796,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_request refreshRequest(L"POST");
         refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
-        refreshRequest.set_body(body, L"application/x-www-form-urlencoded");
+        refreshRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
         refreshRequest.headers().add(L"User-Agent", HttpUserAgent);
 
         // Send the request and return the response as a json value

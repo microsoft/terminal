@@ -8,7 +8,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest" />
+    <AppxManifest Include="Package-Dev.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />
@@ -26,5 +26,8 @@
     <PRIResource Include="Resources\en-US\Resources.resw">
       <Filter>Resources\en-US</Filter>
     </PRIResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="internal-background.png" />
   </ItemGroup>
 </Project>

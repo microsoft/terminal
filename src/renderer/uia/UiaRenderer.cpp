@@ -13,9 +13,12 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Constructs a UIA engine for console text
 //   which primarily notifies automation clients of any activity
-UiaEngine::UiaEngine() noexcept :
+UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
+    _dispatcher{ THROW_HR_IF_NULL(E_INVALIDARG, dispatcher) },
     _isPainting{ false },
-    _isEnabled{ false },
+    _selectionChanged{ false },
+    _isEnabled{ true },
+    _prevSelection{},
     RenderEngineBase()
 {
 }
@@ -53,7 +56,7 @@ UiaEngine::UiaEngine() noexcept :
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -87,9 +90,41 @@ UiaEngine::UiaEngine() noexcept :
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
-    return E_NOTIMPL;
+    // early exit: different number of rows
+    if (_prevSelection.size() != rectangles.size())
+    {
+        try
+        {
+            _selectionChanged = true;
+            _prevSelection = rectangles;
+        }
+        CATCH_LOG_RETURN_HR(E_FAIL);
+        return S_OK;
+    }
+
+    for (size_t i = 0; i < rectangles.size(); i++)
+    {
+        try
+        {
+            const auto prevRect = _prevSelection.at(i);
+            const auto newRect = rectangles.at(i);
+
+            // if any value is different, selection has changed
+            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            {
+                _selectionChanged = true;
+                _prevSelection = rectangles;
+                return S_OK;
+            }
+        }
+        CATCH_LOG_RETURN_HR(E_FAIL);
+    }
+
+    // assume selection has not changed
+    _selectionChanged = false;
+    return S_OK;
 }
 
 // Routine Description:
@@ -102,7 +137,7 @@ UiaEngine::UiaEngine() noexcept :
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -115,7 +150,7 @@ UiaEngine::UiaEngine() noexcept :
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::InvalidateAll() noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -156,19 +191,13 @@ UiaEngine::UiaEngine() noexcept :
 {
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
+    // add more events here
+    // bool somethingToDo = _selectionChanged;
+
     // If there's nothing to do, quick return
-    bool somethingToDo = false;
+    RETURN_HR_IF(S_FALSE, !_selectionChanged);
 
-    if (_isEnabled)
-    {
-        somethingToDo = false;
-
-        if (somethingToDo)
-        {
-            _isPainting = true;
-        }
-    }
-
+    _isPainting = true;
     return S_OK;
 }
 
@@ -180,14 +209,22 @@ UiaEngine::UiaEngine() noexcept :
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::EndPaint() noexcept
 {
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
-    if (_isEnabled)
+    // Fire UIA Events here
+    if (_selectionChanged)
     {
-        _isPainting = false;
-
-        // fire UIA events here
+        try
+        {
+            _dispatcher->SignalSelectionChanged();
+        }
+        CATCH_LOG();
     }
+
+    _selectionChanged = false;
+    _prevSelection.clear();
+    _isPainting = false;
 
     return S_OK;
 }
@@ -230,17 +267,18 @@ UiaEngine::UiaEngine() noexcept :
 
 // Routine Description:
 // - Places one line of text onto the screen at the given position
+//  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - clusters - Iterable collection of cluster information (text and columns it should consume)
 // - coord - Character coordinate position in the cell grid
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
-// - E_NOTIMPL
+// - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -277,6 +315,7 @@ UiaEngine::UiaEngine() noexcept :
 
 // Routine Description:
 // - Draws the cursor on the screen
+//  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - options - Packed options relevant to how to draw the cursor
 // Return Value:
@@ -288,7 +327,7 @@ UiaEngine::UiaEngine() noexcept :
 
 // Routine Description:
 // - Updates the default brush colors used for drawing
-// - Not currently used by UiaEngine.
+//  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - colorForeground - <unused>
 // - colorBackground - <unused>
@@ -315,7 +354,7 @@ UiaEngine::UiaEngine() noexcept :
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*fiFontInfo*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -327,7 +366,7 @@ UiaEngine::UiaEngine() noexcept :
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Method Description:
@@ -338,7 +377,7 @@ UiaEngine::UiaEngine() noexcept :
 // - HRESULT S_OK
 [[nodiscard]] HRESULT UiaEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -376,7 +415,7 @@ UiaEngine::UiaEngine() noexcept :
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::GetFontSize(_Out_ COORD* const /*pFontSize*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -385,10 +424,10 @@ UiaEngine::UiaEngine() noexcept :
 // - glyph - The glyph run to process for column width.
 // - pResult - True if it should take two columns. False if it should take one.
 // Return Value:
-// - E_NOTIMPL
+// - S_OK or relevant DirectWrite error.
 [[nodiscard]] HRESULT UiaEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const /*pResult*/) noexcept
 {
-    return E_NOTIMPL;
+    return S_FALSE;
 }
 
 // Method Description:

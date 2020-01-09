@@ -77,6 +77,7 @@ static constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" }; // Legacy
 static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" }; // Legacy
 static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" }; // Legacy
 static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" }; // Legacy
+static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
@@ -142,6 +143,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
     { SplitPaneKey, ShortcutAction::SplitPane },
     { UnboundKey, ShortcutAction::Invalid },
+    { FindKey, ShortcutAction::Find },
 };
 
 // Function Description:
@@ -222,7 +224,9 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(
 {
     auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-        args->ProfileIndex(index);
+        auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+        newTerminalArgs->ProfileIndex(index);
+        args->TerminalArgs(*newTerminalArgs);
         return *args;
     };
     return pfn;

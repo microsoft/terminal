@@ -34,7 +34,7 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_IF_NULL_ALLOC(_pConApi.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()

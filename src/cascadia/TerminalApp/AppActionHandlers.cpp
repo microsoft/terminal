@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), std::nullopt);
+            _SplitPane(realArgs.SplitStyle(), realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -137,19 +137,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(std::nullopt);
+            _OpenNewTab(nullptr);
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabArgs>())
         {
-            if (realArgs.ProfileIndex() == nullptr)
-            {
-                _OpenNewTab(std::nullopt);
-            }
-            else
-            {
-                _OpenNewTab(realArgs.ProfileIndex().Value());
-            }
+            _OpenNewTab(realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -221,6 +214,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
+                                   const TerminalApp::ActionEventArgs& args)
+    {
+        _Find();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const TerminalApp::ActionEventArgs& args)
     {
@@ -235,5 +235,4 @@ namespace winrt::TerminalApp::implementation
         _ToggleFullscreen();
         args.Handled(true);
     }
-
 }

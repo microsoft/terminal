@@ -28,6 +28,7 @@ namespace winrt::TerminalApp::implementation
         ~AppLogic() = default;
 
         void Create();
+        bool IsUwp() const noexcept;
         void RunAsUwp();
         void LoadSettings();
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
@@ -37,6 +38,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
+        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 

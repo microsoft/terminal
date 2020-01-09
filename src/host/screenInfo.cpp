@@ -103,10 +103,10 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
     try
     {
         IWindowMetrics* pMetrics = ServiceLocator::LocateWindowMetrics();
-        THROW_IF_NULL_ALLOC(pMetrics);
+        THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
         IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        THROW_IF_NULL_ALLOC(pNotifier);
+        THROW_HR_IF_NULL(E_FAIL, pNotifier);
 
         SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
@@ -275,15 +275,14 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 {
     try
     {
-        auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ *this },
-                                                       new WriteBuffer{ *this });
-        THROW_IF_NULL_ALLOC(adapter.get());
-
+        auto getset = std::make_unique<ConhostInternalGetSet>(*this);
+        auto defaults = std::make_unique<WriteBuffer>(*this);
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), std::move(defaults));
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
         //      TerminalConnection later, in VtIo::StartIfNeeded
-        _stateMachine = std::make_shared<StateMachine>(new OutputStateMachineEngine(adapter.release()));
-        THROW_IF_NULL_ALLOC(_stateMachine.get());
+        _stateMachine = std::make_shared<StateMachine>(std::move(engine));
     }
     catch (...)
     {
@@ -2027,10 +2026,15 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 
     const FontInfo& existingFont = GetCurrentFont();
 
+    // The buffer needs to be initialized with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto initAttributes = GetAttributes();
+    initAttributes.SetStandardErase();
+
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
                                                          WindowSize,
-                                                         GetAttributes(),
+                                                         initAttributes,
                                                          *GetPopupAttributes(),
                                                          Cursor::CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
@@ -2489,16 +2493,21 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     _viewport.ConvertFromOrigin(&relativeCursor);
     RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
-    // Update all the rows in the current viewport with the currently active attributes.
-    OutputCellIterator it(GetAttributes());
-    WriteRect(it, _viewport);
+    // Update all the rows in the current viewport with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto fillAttributes = GetAttributes();
+    fillAttributes.SetStandardErase();
+    auto fillPosition = COORD{ 0, _viewport.Top() };
+    auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
+    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
+    Write(fillData, fillPosition, false);
 
     return S_OK;
 }
 
 // Method Description:
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
-//      understand will be written to tthe pTtyConnection passed in here.
+//      understand will be written to the pTtyConnection passed in here.
 // Arguments:
 // - pTtyConnection: This is a TerminaOutputConnection that we can write the
 //      sequence we didn't understand to.
@@ -2789,7 +2798,7 @@ void SCREEN_INFORMATION::UpdateBottom()
 }
 
 // Method Description:
-// - Initialize the row with the cursor on it to the current text attributes.
+// - Initialize the row with the cursor on it to the standard erase attributes.
 //      This is executed when we move the cursor below the current viewport in
 //      VT mode. When that happens in a real terminal, the line is brand new,
 //      so it gets initialized for the first time with the current attributes.
@@ -2806,7 +2815,11 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
     {
         const auto& cursor = _textBuffer->GetCursor();
         ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
-        row.GetAttrRow().SetAttrToEnd(0, GetAttributes());
+        // The VT standard requires that the new row is initialized with
+        // the current background color, but with no meta attributes set.
+        auto fillAttributes = GetAttributes();
+        fillAttributes.SetStandardErase();
+        row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
     }
 }
 

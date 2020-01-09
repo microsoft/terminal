@@ -249,6 +249,13 @@ void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profil
 }
 
 // Method Description:
+// - See Pane::CalcSnappedDimension
+float Tab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+{
+    return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
+}
+
+// Method Description:
 // - Update the size of our panes to fill the new given size. This happens when
 //   the window is resized.
 // Arguments:
@@ -324,6 +331,20 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
             // The title of the control changed, but not necessarily the title of the tab.
             // Set the tab's text to the active panes' text.
             tab->SetTabText(tab->GetActiveTitle());
+        }
+    });
+
+    // This is called when the terminal changes its font size or sets it for the first
+    // time (because when we just create terminal via its ctor it has invalid font size).
+    // On the latter event, we tell the root pane to resize itself so that its descendants
+    // (including ourself) can properly snap to character grids. In future, we may also
+    // want to do that on regular font changes.
+    control.FontSizeChanged([this](const int /* fontWidth */,
+                                   const int /* fontHeight */,
+                                   const bool isInitialChange) {
+        if (isInitialChange)
+        {
+            _rootPane->Relayout();
         }
     });
 }

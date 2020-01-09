@@ -133,7 +133,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                                                     const size_t cchData)
 {
-    THROW_IF_NULL_ALLOC(pData);
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
 
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
