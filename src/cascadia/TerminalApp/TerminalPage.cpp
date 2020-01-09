@@ -1118,6 +1118,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - See Pane::CalcSnappedDimension
+    float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+    }
+
+    // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
     //   terminal control raises it's CopyToClipboard event.
     // Arguments:

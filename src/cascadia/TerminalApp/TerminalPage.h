@@ -29,6 +29,8 @@ namespace winrt::TerminalApp::implementation
 
         void TitlebarClicked();
 
+        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
         void CloseWindow();
 
         // -------------------------------- WinRT Events ---------------------------------

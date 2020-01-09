@@ -36,6 +36,8 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
+    virtual SIZE GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
+
     void Initialize() override;
 
     void OnAppInitialized() override;

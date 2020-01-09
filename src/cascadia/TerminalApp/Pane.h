@@ -54,6 +54,7 @@ public:
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
+    void Relayout();
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
@@ -61,6 +62,7 @@ public:
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::TerminalApp::SplitState splitType,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
     void Close();
 
@@ -68,6 +70,10 @@ public:
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
+    struct SnapSizeResult;
+    struct SnapChildrenSizeResult;
+    struct LayoutSizeNode;
+
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _border{};
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
@@ -77,8 +83,7 @@ private:
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     winrt::TerminalApp::SplitState _splitState{ winrt::TerminalApp::SplitState::None };
-    std::optional<float> _firstPercent{ std::nullopt };
-    std::optional<float> _secondPercent{ std::nullopt };
+    float _desiredSplitPosition;
 
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };
@@ -114,12 +119,17 @@ private:
 
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-
-    std::pair<float, float> _GetPaneSizes(const float& fullSize);
-
-    winrt::Windows::Foundation::Size _GetMinSize() const;
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+    std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
+    SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
+    SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
+
+    winrt::Windows::Foundation::Size _GetMinSize() const;
+    LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
+    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     winrt::TerminalApp::SplitState _convertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
     // Function Description:
@@ -157,4 +167,41 @@ private:
     }
 
     static void _SetupResources();
+
+    struct SnapSizeResult
+    {
+        float lower;
+        float higher;
+    };
+
+    struct SnapChildrenSizeResult
+    {
+        std::pair<float, float> lower;
+        std::pair<float, float> higher;
+    };
+
+    // Helper structure that builds a (roughly) binary tree corresponding
+    // to the pane tree. Used for layouting panes with snapped sizes.
+    struct LayoutSizeNode
+    {
+        float size;
+        bool isMinimumSize;
+        std::unique_ptr<LayoutSizeNode> firstChild;
+        std::unique_ptr<LayoutSizeNode> secondChild;
+
+        // These two fields hold next possible snapped values of firstChild and
+        // secondChild. Although that could be calculated from these fields themself,
+        // it would be wasteful as we have to know these values more often than for
+        // simple increment. Hence we cache that here.
+        std::unique_ptr<LayoutSizeNode> nextFirstChild;
+        std::unique_ptr<LayoutSizeNode> nextSecondChild;
+
+        LayoutSizeNode(const float minSize);
+        LayoutSizeNode(const LayoutSizeNode& other);
+
+        LayoutSizeNode& operator=(const LayoutSizeNode& other);
+
+    private:
+        void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
+    };
 };

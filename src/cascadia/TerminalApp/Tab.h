@@ -27,6 +27,8 @@ public:
 
     winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
 
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void ResizePane(const winrt::TerminalApp::Direction& direction);
     void NavigateFocus(const winrt::TerminalApp::Direction& direction);

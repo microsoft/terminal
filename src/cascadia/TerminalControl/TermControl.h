@@ -67,6 +67,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize() const;
+        float SnapDimensionToGrid(const bool widthOrHeight, const float dimension) const;
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);
@@ -94,6 +95,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
@@ -131,6 +133,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
+
+        int _rowsToScroll;
 
         std::optional<int> _lastScrollOffset;
 
@@ -171,9 +175,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
-        void _UpdateFont();
-        void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
+        void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);

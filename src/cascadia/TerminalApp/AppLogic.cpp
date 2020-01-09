@@ -444,6 +444,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - See Pane::CalcSnappedDimension
+    float AppLogic::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    {
+        return _root->CalcSnappedDimension(widthOrHeight, dimension);
+    }
+
+    // Method Description:
     // - Attempt to load the settings. If we fail for any reason, returns an error.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
