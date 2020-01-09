@@ -88,24 +88,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
-
-        {
-            // Convert connection Guid to string and ignore the enclosing '{}'.
-            std::wstring wsGuid{ Utils::GuidToString(_guid) };
-            wsGuid.pop_back();
-
-            const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
-
-            // Ensure every connection has the unique identifier in the environment.
-            environment.emplace(L"WT_SESSION", guidSubStr.data());
-        }
-
-        std::vector<wchar_t> newEnvVars;
-        auto zeroNewEnv = wil::scope_exit([&]() noexcept {
-            ::SecureZeroMemory(newEnvVars.data(),
-                               newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
-        });
-
         auto zeroEnvMap = wil::scope_exit([&] {
             // Can't zero the keys, but at least we can zero the values.
             for (auto& [name, value] : environment)
@@ -116,7 +98,30 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.clear();
         });
 
+        // Populate the environment map with the current environment.
         RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+
+        {
+            // Convert connection Guid to string and ignore the enclosing '{}'.
+            std::wstring wsGuid{ Utils::GuidToString(_guid) };
+            wsGuid.pop_back();
+
+            const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
+
+            // Ensure every connection has the unique identifier in the environment.
+            environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
+
+            auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
+            wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
+            environment.insert_or_assign(L"WSLENV", wslEnv);
+        }
+
+        std::vector<wchar_t> newEnvVars;
+        auto zeroNewEnv = wil::scope_exit([&]() noexcept {
+            ::SecureZeroMemory(newEnvVars.data(),
+                               newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
+        });
+
         RETURN_IF_FAILED(Utils::EnvironmentMapToEnvironmentStringsW(environment, newEnvVars));
 
         LPWCH lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
