@@ -10,6 +10,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
 | `initialCols` | _Required_ | Integer | `120` | The number of columns displayed in the window upon first load. |
 | `initialRows` | _Required_ | Integer | `30` | The number of rows displayed in the window upon first load. |
+| `rowsToScroll` | Optional | Integer | `system` | The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or "system". |
 | `requestedTheme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | `true` | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
 | `showTabsInTitlebar` | Optional | Boolean | `true` | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |
@@ -43,13 +44,14 @@ Properties listed below are specific to each unique profile.
 | `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `padding` | Optional | String | `8, 8, 8, 8` | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
 | `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
-| `selectionBackground` | Optional | String | Sets the selection background color of the profile. Overrides `selectionBackground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
+| `selectionBackground` | Optional | String | | Sets the selection background color of the profile. Overrides `selectionBackground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `snapOnInput` | Optional | Boolean | `true` | When set to `true`, the window will scroll to the command input line when typing. When set to `false`, the window will not scroll when you start typing. |
 | `source` | Optional | String | | Stores the name of the profile generator that originated this profile. _There are no discoverable values for this field._ |
 | `startingDirectory` | Optional | String | `%USERPROFILE%` | The directory the shell starts in when it is loaded. |
 | `suppressApplicationTitle` | Optional | Boolean | | When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal. |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 | `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
+| `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
 
 ## Schemes
 Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
@@ -137,6 +139,7 @@ Commands listed below are per the implementation in [`src/cascadia/TerminalApp/A
 - moveFocusUp
 - moveFocusDown
 - toggleFullscreen
+- find
 
 ## Example Keys
 - ctrl+1

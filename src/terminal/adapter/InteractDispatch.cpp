@@ -14,9 +14,10 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // takes ownership of pConApi
-InteractDispatch::InteractDispatch(ConGetSet* const pConApi) :
-    _pConApi(THROW_IF_NULL_ALLOC(pConApi))
+InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
+    _pConApi(std::move(pConApi))
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 // Method Description:
@@ -29,10 +30,10 @@ InteractDispatch::InteractDispatch(ConGetSet* const pConApi) :
 // - inputEvents: a collection of IInputEvents
 // Return Value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
+bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
-    size_t dwWritten = 0;
-    return !!_pConApi->PrivateWriteConsoleInputW(inputEvents, dwWritten);
+    size_t written = 0;
+    return _pConApi->PrivateWriteConsoleInputW(inputEvents, written);
 }
 
 // Method Description:
@@ -46,43 +47,41 @@ bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>&
 bool InteractDispatch::WriteCtrlC()
 {
     KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
-    return !!_pConApi->PrivateWriteConsoleControlInput(key);
+    return _pConApi->PrivateWriteConsoleControlInput(key);
 }
 
 // Method Description:
 // - Writes a string of input to the host. The string is converted to keystrokes
 //      that will faithfully represent the input by CharToKeyEvents.
 // Arguments:
-// - pws: a string to write to the console.
-// - cch: the number of chars in pws.
+// - string : a string to write to the console.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
-                                   const size_t cch)
+bool InteractDispatch::WriteString(const std::wstring_view string)
 {
-    if (cch == 0)
+    if (string.empty())
     {
         return true;
     }
 
     unsigned int codepage = 0;
-    bool fSuccess = !!_pConApi->GetConsoleOutputCP(&codepage);
-    if (fSuccess)
+    bool success = _pConApi->GetConsoleOutputCP(codepage);
+    if (success)
     {
         std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
-        for (size_t i = 0; i < cch; ++i)
+        for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(pws[i], codepage);
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
                       std::back_inserter(keyEvents));
         }
 
-        fSuccess = WriteInput(keyEvents);
+        success = WriteInput(keyEvents);
     }
-    return fSuccess;
+    return success;
 }
 
 //Method Description:
@@ -92,45 +91,43 @@ bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
 //  This is kept seperate from the output version, as there may be
 //      codes that are supported in one direction but not the other.
 //Arguments:
-// - uiFunction - An identifier of the WindowManipulation function to perform
-// - rgusParams - Additional parameters to pass to the function
-// - cParams - size of rgusParams
+// - function - An identifier of the WindowManipulation function to perform
+// - parameters - Additional parameters to pass to the function
 // Return value:
 // True if handled successfully. False otherwise.
-bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                          _In_reads_(cParams) const unsigned short* const rgusParams,
-                                          const size_t cParams)
+bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                          const std::basic_string_view<size_t> parameters)
 {
-    bool fSuccess = false;
+    bool success = false;
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
-    switch (uiFunction)
+    switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        if (cParams == 0)
+        if (parameters.empty())
         {
-            fSuccess = DispatchCommon::s_RefreshWindow(*_pConApi);
+            success = DispatchCommon::s_RefreshWindow(*_pConApi);
         }
         break;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // the ConGetSet interface, that specifically handles a conpty resize.
-        if (cParams == 2)
+        if (parameters.size() == 2)
         {
-            fSuccess = DispatchCommon::s_ResizeWindow(*_pConApi, rgusParams[1], rgusParams[0]);
-            if (fSuccess)
+            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
+            if (success)
             {
                 DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
             }
         }
         break;
     default:
-        fSuccess = false;
+        success = false;
         break;
     }
 
-    return fSuccess;
+    return success;
 }
 
 //Method Description:
@@ -143,66 +140,66 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // True if we successfully moved the cursor to the given location.
 // False otherwise, including if given invalid coordinates (either component being 0)
 //  or if any API calls failed.
-bool InteractDispatch::MoveCursor(const unsigned int row, const unsigned int col)
+bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 {
-    unsigned int uiRow = row;
-    unsigned int uiCol = col;
+    size_t rowFixed = row;
+    size_t colFixed = col;
 
-    bool fSuccess = true;
+    bool success = true;
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
     if (row != 0)
     {
-        uiRow = row - 1;
+        rowFixed = row - 1;
     }
     else
     {
         // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-        fSuccess = false;
+        success = false;
     }
 
     if (col != 0)
     {
-        uiCol = col - 1;
+        colFixed = col - 1;
     }
     else
     {
         // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-        fSuccess = false;
+        success = false;
     }
 
-    if (fSuccess)
+    if (success)
     {
         // First retrieve some information about the buffer
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-        if (fSuccess)
+        if (success)
         {
             COORD coordCursor = csbiex.dwCursorPosition;
 
-            // Safely convert the UINT positions we were given into shorts (which is the size the console deals with)
-            fSuccess = SUCCEEDED(UIntToShort(uiRow, &coordCursor.Y)) &&
-                       SUCCEEDED(UIntToShort(uiCol, &coordCursor.X));
+            // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
+            success = SUCCEEDED(SizeTToShort(rowFixed, &coordCursor.Y)) &&
+                      SUCCEEDED(SizeTToShort(colFixed, &coordCursor.X));
 
-            if (fSuccess)
+            if (success)
             {
                 // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-                fSuccess = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                           SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+                success = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
+                          SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
 
-                if (fSuccess)
+                if (success)
                 {
                     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
                     coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
                     coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
                     // Finally, attempt to set the adjusted cursor position back into the console.
-                    fSuccess = !!_pConApi->SetConsoleCursorPosition(coordCursor);
+                    success = _pConApi->SetConsoleCursorPosition(coordCursor);
                 }
             }
         }
     }
 
-    return fSuccess;
+    return success;
 }

@@ -13,7 +13,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>onecoreuap_apiset.lib;dwmapi.lib;uxtheme.lib;shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecoreuap_apiset.lib;d3dcompiler.lib;dwmapi.lib;uxtheme.lib;shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
