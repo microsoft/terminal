@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-11-08
-last updated: 2019-12-20
+last updated: 2020-01-09
 issue id: #607
 ---
 
@@ -292,17 +292,21 @@ same window.
 * `--initialPosition x,y`: Create the new Windows Terminal window at the given
   location on the screen in pixels. This parameter is only used when initially
   creating the window, and ignored for subsequent `new-tab` commands. When
-  combined with any of `--maximized` or `--fullscreen`, TODO: what do?
+  combined with any of `--maximized` or `--fullscreen`, an error message will be
+  displayed to the user, indicating that an invalid combination of arguments was
+  provided.
 * `--initialRows rows`: Create the terminal window with `rows` rows (in
   characters). If omitted, uses the value from the user's settings. This
   parameter is only used when initially creating the window, and ignored for
   subsequent `new-tab` commands. When combined with any of `--maximized` or
-  `--fullscreen`, TODO: what do?
+  `--fullscreen`, an error message will be displayed to the user, indicating
+  that an invalid combination of arguments was provided.
 * `--initialCols cols`: Create the terminal window with `cols` cols (in
   characters). If omitted, uses the value from the user's settings. This
   parameter is only used when initially creating the window, and ignored for
   subsequent `new-tab` commands. When combined with any of `--maximized` or
-  `--fullscreen`, TODO: what do?
+  `--fullscreen`, an error message will be displayed to the user, indicating
+  that an invalid combination of arguments was provided.
 * `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
 
@@ -615,7 +619,7 @@ environment, it's also the least bad option available to us.
 
 ### What happens if `new-tab` isn't the first command?
 
-**TODO**: What should we do if we encounter the following?
+Consider the following commandline:
 
 ```sh
 wt.exe split-pane -v ; new-tab
@@ -624,8 +628,8 @@ wt.exe split-pane -v ; new-tab
 In the future, maybe we could presume in this case that the commands are
 intended for the current Windows Terminal window, though that's not
 functionality that will arrive in 1.0. Even when sessions are supported like
-that, I'm not sure that when we're parsing a commandline, we'll be possible to
-know what session we're currently running in.That might make it challenging to
+that, I'm not sure that when we're parsing a commandline, we'll be able to
+know what session we're currently running in. That might make it challenging to
 dispatch this kind of command to "the current WT window".
 
 Additionally, what would happen if this was run in a `conhost` window, that
@@ -640,9 +644,15 @@ correct behavior here. Instead we should either:
 * Immediately display an error that the commandline is invalid, and that a
   commandline should start with a `new-tab ; `?
 
-**TODO**: This ^ is left for discussion. In my initial implementation, I
-resolved this by assuming there was an implicit `new-tab` command, and that felt
-right.
+In my initial implementation, I resolved this by assuming there was an implicit
+`new-tab` command, and that felt right. The team has discussed this, and
+concluded that's the correct behavior. In the words of @DHowett-MSFT:
+
+> In favor of "implicit `new-tab`": `wt.exe` without any arguments is _already_
+> an implicit `new-window` or `new-tab`; we can't claw back the implicitness and
+> ease of use in that one, so I think in the spirit of keeping that going WT
+> should automatically do anything necessary to service a command (`wt
+> split-pane` should operate in a new tab or new window, etc.)
 
 We should also make sure that when we add support for the `open-settings`
 command, that command by itself should not imply a `new-tab`. `wt open-settings`
