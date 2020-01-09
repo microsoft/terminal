@@ -63,7 +63,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 #include <CLI11/CLI11.hpp>
 
-// TODO:GH#<file this> - This macro can be used to identify strings that need to
+// TODO:GH#4155 - This macro can be used to identify strings that need to
 // be localized in the future, but aren't localized currently due to some build
 // system restrictions, mainly due to breaking our unittests. All of these
 // strings should eventually be moved to Resources.resw.

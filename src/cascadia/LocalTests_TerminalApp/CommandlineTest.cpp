@@ -787,7 +787,7 @@ namespace TerminalAppLocalTests
     void CommandlineTest::CheckTypos()
     {
         Log::Comment(NoThrowString().Format(
-            L"Check what happens when the user typo's a subcommand. It should "
+            L"Check what happens when the user typos a subcommand. It should "
             L"be treated as a commandline, unless other args are present that "
             L"the new-tab subcommand doesn't understand"));
 

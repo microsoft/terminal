@@ -298,7 +298,7 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs()
     if (!_commandline.empty())
     {
         std::string buffer;
-        auto i = 0;
+        size_t i = 0;
         for (auto arg : _commandline)
         {
             if (arg.find(" ") != std::string::npos)

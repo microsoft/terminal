@@ -9,7 +9,7 @@
 // - id - Resource ID
 // Return Value:
 // - String resource retrieved from that ID.
-inline std::wstring GetStringResource(const UINT id)
+__declspec(noinline) inline std::wstring GetStringResource(const UINT id)
 {
     // Calling LoadStringW with a pointer-sized storage and no length will
     // return a read-only pointer directly to the resource data instead of

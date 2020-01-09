@@ -83,14 +83,13 @@ void AppHost::_HandleCommandlineArgs()
         int argc = 0;
 
         // Get the argv, and turn them into a hstring array to pass to the app.
-        LPWSTR* argv = CommandLineToArgvW(commandline, &argc);
-        auto deleter = wil::scope_exit([&]() { LocalFree(argv); });
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
         if (argv)
         {
             std::vector<winrt::hstring> args;
-            for (auto i = 0; i < argc; i++)
+            for (auto& elem : wil::make_range(argv.get(), argc))
             {
-                args.emplace_back(argv[i]);
+                args.emplace_back(elem);
             }
 
             auto result = _logic.SetStartupCommandline({ args });
