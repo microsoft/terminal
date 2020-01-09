@@ -6,10 +6,6 @@
 
 using namespace TerminalApp;
 
-Commandline::~Commandline()
-{
-}
-
 size_t Commandline::Argc() const
 {
     return _args.size();

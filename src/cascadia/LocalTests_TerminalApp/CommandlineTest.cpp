@@ -56,7 +56,7 @@ namespace TerminalAppLocalTests
                                       const size_t expectedSubcommands,
                                       std::vector<const wchar_t*>& rawCommands)
         {
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(expectedSubcommands, commandlines.size());
             for (auto& cmdBlob : commandlines)
             {
@@ -82,33 +82,33 @@ namespace TerminalAppLocalTests
     {
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe" };
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"an arg with spaces" };
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--parameter", L"an arg with spaces" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";" };
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(2u, commandlines.size());
             VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -119,7 +119,7 @@ namespace TerminalAppLocalTests
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L";" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(2u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -129,7 +129,7 @@ namespace TerminalAppLocalTests
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L";", L";" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(3u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -158,7 +158,7 @@ namespace TerminalAppLocalTests
         std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
-        auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+        auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
         VERIFY_ARE_EQUAL(1u, commandlines.size());
         VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
         VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -191,7 +191,7 @@ namespace TerminalAppLocalTests
         std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
-        auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+        auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
         VERIFY_ARE_EQUAL(1u, commandlines.size());
         VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
         VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -225,7 +225,7 @@ namespace TerminalAppLocalTests
         std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
-        auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+        auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
         VERIFY_ARE_EQUAL(1u, commandlines.size());
         VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
         VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -246,7 +246,7 @@ namespace TerminalAppLocalTests
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab;" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(2u, commandlines.size());
             VERIFY_ARE_EQUAL(2u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -256,7 +256,7 @@ namespace TerminalAppLocalTests
         }
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L";new-tab;" };
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(3u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -269,7 +269,7 @@ namespace TerminalAppLocalTests
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe;" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(2u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -279,7 +279,7 @@ namespace TerminalAppLocalTests
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe;;" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(3u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -291,7 +291,7 @@ namespace TerminalAppLocalTests
         {
             std::vector<const wchar_t*> rawCommands{ L"wt.exe;foo;bar;baz" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(4u, commandlines.size());
             VERIFY_ARE_EQUAL(1u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -376,7 +376,7 @@ namespace TerminalAppLocalTests
     {
         AppCommandlineArgs appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab" };
-        auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+        auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
 
         _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
@@ -553,7 +553,7 @@ namespace TerminalAppLocalTests
         {
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane", L"-V" };
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
@@ -577,7 +577,7 @@ namespace TerminalAppLocalTests
     {
         AppCommandlineArgs appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";", L"split-pane" };
-        auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+        auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
         _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
         VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
@@ -753,7 +753,7 @@ namespace TerminalAppLocalTests
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"focus-tab", L"-p", L"-n" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             VERIFY_ARE_EQUAL(4u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
@@ -774,7 +774,7 @@ namespace TerminalAppLocalTests
     {
         AppCommandlineArgs appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"split-pane", L";", L"split-pane" };
-        auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+        auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
         _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
         VERIFY_ARE_EQUAL(3u, appArgs._startupActions.size());
@@ -830,7 +830,7 @@ namespace TerminalAppLocalTests
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"slpit-pane", L"-H" };
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(static_cast<int>(rawCommands.size()), rawCommands.data());
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
             VERIFY_ARE_EQUAL(1u, commandlines.size());
             VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));

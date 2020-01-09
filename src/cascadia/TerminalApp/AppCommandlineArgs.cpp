@@ -26,6 +26,7 @@ AppCommandlineArgs::AppCommandlineArgs()
 // - command: The individual commandline to parse as a command.
 // Return Value:
 // - 0 if the commandline was successfully parsed
+// - nonzero return values are defined in CLI::ExitCodes
 int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
     const int argc = static_cast<int>(command.Argc());
@@ -53,7 +54,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         _resetStateToDefault();
 
         // Manually check for the "/?" or "-?" flags, to manually trigger the help text.
-        if (argc == 2 && (NixHelpFlag == command.Args().at(1) || WindowsHelpFlag == command.Args().at(1)))
+        if (argc == 2 && (NixHelpFlag == til::at(command.Args(), 1) || WindowsHelpFlag == til::at(command.Args(), 1)))
         {
             throw CLI::CallForHelp();
         }
@@ -86,6 +87,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
             {
                 // CLI11 mutated the original vector the first time it tried to
                 // parse the args. Reconstruct it the way CLI11 wants here.
+                // "See above for why it's begin() + 1"
                 std::vector<std::string> args{ command.Args().begin() + 1, command.Args().end() };
                 std::reverse(args.begin(), args.end());
                 _newTabCommand->clear();
@@ -112,6 +114,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 // - e: the CLI::Error to process as the exit reason for parsing.
 // Return Value:
 // - 0 if the command exited successfully
+// - nonzero return values are defined in CLI::ExitCodes
 int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e)
 {
     // Create some streams to collect the output that would otherwise go to stdout.
@@ -382,9 +385,9 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
     // * If there is a delimiter, split the string at that delimiter. Add the
     //   first part of the string to the current command, ansd start a new
     //   command with the second bit.
-    for (uint32_t i = 0; i < args.size(); i++)
+    for (const auto& arg : args)
     {
-        _addCommandsForArg(commands, { args.at(i) });
+        _addCommandsForArg(commands, { arg });
     }
 
     return commands;
@@ -402,7 +405,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 // Return Value:
 // - a list of Commandline objects, where each one represents a single
 //   commandline to parse.
-std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const wchar_t* argv[])
+std::vector<Commandline> AppCommandlineArgs::BuildCommands(std::vector<const wchar_t*>& args)
 {
     std::vector<Commandline> commands;
     // Initialize a first Commandline without a leading `wt.exe` argument. When
@@ -416,9 +419,9 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const int argc, const
     // * If there is a delimiter, split the string at that delimiter. Add the
     //   first part of the string to the current command, ansd start a new
     //   command with the second bit.
-    for (auto i = 0; i < argc; i++)
+    for (const auto& arg : args)
     {
-        _addCommandsForArg(commands, { argv[i] });
+        _addCommandsForArg(commands, { arg });
     }
 
     return commands;
@@ -462,8 +465,8 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
             // next arg should be "", since there was no content before the
             // delimiter. Otherwise, add one, since the regex will include
             // the last character of the string before the delimiter.
-            auto delimiterPosition = matchedFirstChar ? match.position(0) : match.position(0) + 1;
-            auto nextArg = remaining.substr(0, delimiterPosition);
+            const auto delimiterPosition = matchedFirstChar ? match.position(0) : match.position(0) + 1;
+            const auto nextArg = remaining.substr(0, delimiterPosition);
 
             if (!nextArg.empty())
             {
@@ -529,7 +532,7 @@ void AppCommandlineArgs::ValidateStartupCommands()
     if (_startupActions.empty() ||
         _startupActions.front().Action() != ShortcutAction::NewTab)
     {
-        // Buld the NewTab action from the values we've parsed on the commandline.
+        // Build the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
         newTabAction->Action(ShortcutAction::NewTab);
         auto args = winrt::make_self<implementation::NewTabArgs>();

@@ -1495,15 +1495,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Attempts to parse a c-style array of commandline args into a list of
+    // - Attempts to parse a array of commandline args into a list of
     //   commands to execute, and then parses these commands. As commands are
     //   succesfully parsed, they will generate ShortcutAction's for us to be
     //   able to execute. If we fail to parse any commands, we'll return the
     //   error code from the failure to parse that command, and stop processing
     //   additional commands.
     // Arguments:
-    // - argc: the number of arguments provided in argv
-    // - argv: a c-style array of wchar_t strings. These strings can include spaces in them.
+    // - args: an array of strings to process as a commandline. These args can contain spaces
     // Return Value:
     // - 0 if the commandline was successfully parsed
     int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
@@ -1587,6 +1586,17 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabView();
     }
 
+    // Method Description:
+    // - If there were any errors parsing the commandline that was used to
+    //   initialize the terminal, this will return a string containing that
+    //   message. If there were no errors, this message will be blank.
+    // - If the user requested help on any command (using --help), this will
+    //   contain the help message.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the help text or error message for the providied commandline, if one
+    //   exists, otherwise the empty string.
     winrt::hstring TerminalPage::EarlyExitMessage()
     {
         return winrt::to_hstring(_appArgs.GetExitMessage());

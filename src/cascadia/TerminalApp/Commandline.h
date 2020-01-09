@@ -31,8 +31,6 @@ namespace TerminalApp
 class TerminalApp::Commandline
 {
 public:
-    ~Commandline();
-
     static constexpr std::wstring_view Delimiter{ L";" };
     static constexpr std::wstring_view EscapedDelimiter{ L"\\;" };
 

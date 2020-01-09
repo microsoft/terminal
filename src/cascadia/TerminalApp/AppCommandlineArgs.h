@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+#pragma once
 
 #include "ActionAndArgs.h"
 
-#pragma once
 #include "Commandline.h"
 
+#ifdef UNIT_TESTING
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
     class CommandlineTest;
 };
+#endif
 
 namespace TerminalApp
 {
@@ -28,7 +30,7 @@ public:
     ~AppCommandlineArgs() = default;
     int ParseCommand(const Commandline& command);
 
-    static std::vector<Commandline> BuildCommands(const int argc, const wchar_t* argv[]);
+    static std::vector<Commandline> BuildCommands(std::vector<const wchar_t*>& args);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     void ValidateStartupCommands();
@@ -72,5 +74,7 @@ private:
 
     static void _addCommandsForArg(std::vector<Commandline>& commands, std::wstring_view arg);
 
+#ifdef UNIT_TESTING
     friend class TerminalAppLocalTests::CommandlineTest;
+#endif
 };
