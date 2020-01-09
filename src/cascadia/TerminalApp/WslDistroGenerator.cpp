@@ -88,7 +88,8 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
     // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/open-osfhandle?view=vs-2019)
     // so, we detach_from_smart_pointer it -- but...
     // "File descriptors passed into _fdopen are owned by the returned FILE * stream.
-    // If _fdopen is successful, do not call _close on the file descriptor."
+    // If _fdopen is successful, do not call _close on the file descriptor.
+    // Calling fclose on the returned FILE * also closes the file descriptor."
     // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fdopen-wfdopen?view=vs-2019
     FILE* stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
     auto closeFile = wil::scope_exit([&]() { fclose(stdioPipeHandle); });
