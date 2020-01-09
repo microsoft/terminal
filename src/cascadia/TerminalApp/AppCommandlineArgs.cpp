@@ -405,7 +405,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 // Return Value:
 // - a list of Commandline objects, where each one represents a single
 //   commandline to parse.
-std::vector<Commandline> AppCommandlineArgs::BuildCommands(std::vector<const wchar_t*>& args)
+std::vector<Commandline> AppCommandlineArgs::BuildCommands(const std::vector<const wchar_t*>& args)
 {
     std::vector<Commandline> commands;
     // Initialize a first Commandline without a leading `wt.exe` argument. When

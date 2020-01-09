@@ -30,7 +30,7 @@ public:
     ~AppCommandlineArgs() = default;
     int ParseCommand(const Commandline& command);
 
-    static std::vector<Commandline> BuildCommands(std::vector<const wchar_t*>& args);
+    static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     void ValidateStartupCommands();
