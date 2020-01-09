@@ -104,8 +104,8 @@ clearly.
 
 **Parameters** are arguments that provide additional information to "commands".
 They can be provided in either a long form or a short form. In the long form,
-they're provided in `--camelCase`, with two hyphens preceeding the argument
-name. In short form, they're provided as just a single character preceeded by a
+they're provided in `--camelCase`, with two hyphens preceding the argument
+name. In short form, they're provided as just a single character preceded by a
 hyphen, like so: `-c`.
 
 Let's enumerate some possible example commandlines, with explanations, to
@@ -322,8 +322,8 @@ vertically or horizontally.
   "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
   omitted, defaults to vertical. If both `-h` and `-v` are provided, defaults to
   vertical.
-* `--percent,-% split-percentage`: Designtates the amount of space that the new
-  pane should take, as a percentage of the parent's space. If omitted, the pane
+* `--percent,-% split-percentage`: Designates the amount of space that the new
+  pane should take as a percentage of the parent's space. If omitted, the pane
   will take 50% by default.
 * `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
@@ -366,7 +366,7 @@ Moves focus within the currently focused tab in the given direction.
 
 #### `[terminal_parameters]`
 
-Some of the preceeding commands are used to create a new terminal instance.
+Some of the preceding commands are used to create a new terminal instance.
 These commands are listed above as accepting `[terminal_parameters]` as a
 parameter. For these commands, `[terminal_parameters]` can be any of the
 following:
@@ -396,7 +396,7 @@ property, but the long form would certainly be reasonable.
 
 The arguments listed above represent both special cases of the profile settings
 like `guid` and `name`, as well as high priority properties to add as arguments.
-* It deosn't really make sense to override `name` or `guid`, so those have been
+* It doesn't really make sense to override `name` or `guid`, so those have been
   repurposed as arguments for selecting a profile.
 * `commandline` is a bit of a unique case - we're not explicitly using an
   argument to identify the start of the commandline here. This is to help avoid
