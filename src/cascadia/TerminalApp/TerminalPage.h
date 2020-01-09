@@ -29,6 +29,8 @@ namespace winrt::TerminalApp::implementation
 
         void TitlebarClicked();
 
+        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
         void CloseWindow();
 
         int32_t SetStartupCommandline(winrt::array_view<const hstring> args);

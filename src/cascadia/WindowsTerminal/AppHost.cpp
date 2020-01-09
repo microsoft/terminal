@@ -47,6 +47,11 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
+    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::CalcSnappedDimension,
+                                                _logic,
+                                                std::placeholders::_1,
+                                                std::placeholders::_2));
+
     _window->MakeWindow();
 }
 
@@ -254,20 +259,11 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
         const short islandHeight = Utils::ClampToShortMax(
             static_cast<long>(ceil(initialSize.Y)), 1);
 
-        RECT islandFrame = {};
-        bool succeeded = AdjustWindowRectExForDpi(&islandFrame, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-        // If we failed to get the correct window size for whatever reason, log
-        // the error and go on. We'll use whatever the control proposed as the
-        // size of our window, which will be at least close.
-        LOG_LAST_ERROR_IF(!succeeded);
-
-        if (_useNonClientArea)
-        {
-            islandFrame.top = -NonClientIslandWindow::topBorderVisibleHeight;
-        }
-
-        adjustedWidth = -islandFrame.left + islandWidth + islandFrame.right;
-        adjustedHeight = -islandFrame.top + islandHeight + islandFrame.bottom;
+        // Get the size of a window we'd need to host that client rect. This will
+        // add the titlebar space.
+        const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+        adjustedWidth = islandWidth + nonClientSize.cx;
+        adjustedHeight = islandHeight + nonClientSize.cy;
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
