@@ -112,6 +112,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
             auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
+            // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
+            // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
             wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
             environment.insert_or_assign(L"WSLENV", wslEnv);
         }
