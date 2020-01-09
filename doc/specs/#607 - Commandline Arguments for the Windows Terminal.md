@@ -286,7 +286,7 @@ name, seperated by newlines.
 
 `new-tab [--initialPosition x,y]|[--maximized]|[--fullscreen] [--initialRows rows] [--initialCols cols] [terminal_parameters]`
 
-Opens a new tab with the given customizations. On it's _first_ invocation, also
+Opens a new tab with the given customizations. On its _first_ invocation, also
 opens a new window. Subsequent `new-tab` commands will all open new tabs in the
 same window.
 
@@ -412,7 +412,7 @@ our arguments. We'll need to add some additional logic on top of CLI11 in order
 to properly seperate commands with `;`, but that's not impossible to achieve.
 
 CLI11 will allow us to parse commandlines as a series of options, with a
-possible sub-command that takes it's own set of parameters. This functionality
+possible sub-command that takes its own set of parameters. This functionality
 will be used to enable our options & commands style of parameters.
 
 When commands are parsed, each command will build an `ActionAndArgs` that can be
@@ -469,9 +469,9 @@ runtimeclass TerminalParameters {
       `name`, `guid`, respectively, as opposed to the default profile.
     - The others will override their respective properties from the
       `TerminalSettings` created for that profile.
-* [ ] Add an optional `"percent"` argument to `SplitPane`, that enables a pane
+* [x] Add an optional `"percent"` argument to `SplitPane`, that enables a pane
   to be split with a specified percent of the parent pane.
-* [ ] Add support to `TerminalApp` for parsing commandline arguments, and
+* [x] Add support to `TerminalApp` for parsing commandline arguments, and
   constructing a list of `ActionAndArgs` based on those commands
   - This will include adding tests that validate a particular commandline
     generates the given sequence of `ActionAndArgs`.
@@ -485,7 +485,6 @@ runtimeclass TerminalParameters {
   [`--initialPosition`, `--maximized`, `--initialRows`, `--initialCols`]. Only
   set this state for the first `new-tab` parsed. These settings will overwrite
   the corresponding global properties on launch.
-  - at this time, this state is still not settable externally by the user.
 * [ ] When parsing a `help` command or a `list-profiles` command, trigger a
   event on `AppLogic`. This event should be able to be handled by
   WindowsTerminal (`AppHost`), and used to display a `MessageBox` with the given
