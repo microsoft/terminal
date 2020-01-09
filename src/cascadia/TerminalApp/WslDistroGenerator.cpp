@@ -102,7 +102,8 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
 
             if (distName.substr(0, std::min(distName.size(), DockerDistributionPrefix.size())) == DockerDistributionPrefix)
             {
-                // Skip all of the known Docker WSL2 distributions.
+                // Docker for Windows creates some utility distributions to handle Docker commands.
+                // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
                 continue;
             }
 
