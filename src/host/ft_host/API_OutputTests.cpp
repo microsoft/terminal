@@ -237,10 +237,10 @@ void OutputTests::WriteConsoleOutputWWithClipping()
     adjustedRegion.Bottom += bufferSize.Y / 2;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API and confirm results.
     auto affected = adjustedRegion;
@@ -324,10 +324,10 @@ void OutputTests::WriteConsoleOutputWNegativePositions()
     adjustedRegion.Bottom -= 10;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API and confirm results.
     auto affected = adjustedRegion;
@@ -758,10 +758,10 @@ void OutputTests::ReadConsoleOutputWWithClipping()
     adjustedRegion.Bottom += bufferSize.Y / 2;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API and confirm results.
     // NOTE: We expect this to be broken for v1. It's always been wrong there (returning a clipped count of bytes instead of the whole rectangle).
@@ -852,10 +852,10 @@ void OutputTests::ReadConsoleOutputWNegativePositions()
     adjustedRegion.Bottom -= 10;
 
     auto expectedRegion = adjustedRegion;
-    expectedRegion.Left = max(0, adjustedRegion.Left);
-    expectedRegion.Top = max(0, adjustedRegion.Top);
-    expectedRegion.Right = min(bufferSize.X - 1, adjustedRegion.Right);
-    expectedRegion.Bottom = min(bufferSize.Y - 1, adjustedRegion.Bottom);
+    expectedRegion.Left = std::max<SHORT>(0, adjustedRegion.Left);
+    expectedRegion.Top = std::max<SHORT>(0, adjustedRegion.Top);
+    expectedRegion.Right = std::min<SHORT>(bufferSize.X - 1, adjustedRegion.Right);
+    expectedRegion.Bottom = std::min<SHORT>(bufferSize.Y - 1, adjustedRegion.Bottom);
 
     // Call the API
     // NOTE: Due to the same reason as the ReadConsoleOutputWWithClipping test (the v1 buffer told the driver the wrong return buffer byte length)
