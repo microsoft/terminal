@@ -21,6 +21,23 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
+      on being compiled with RTTI (/GR). -->
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
   <Import Project="..\..\common.build.tests.props" />
