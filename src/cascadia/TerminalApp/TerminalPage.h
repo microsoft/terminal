@@ -84,6 +84,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTitle(std::shared_ptr<Tab> tab);
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
         void _UpdateTabView();
+        void _UpdateTabWidthMode();
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
