@@ -323,6 +323,15 @@
           "description": "When set to `true`, the window will snap to the nearest character boundary on resize. When `false`, the window will resize 'smoothly'",
           "type": "boolean"
         },
+        "tabWidthMode": {
+          "default": "equal",
+          "description": "Sets the width of the tabs.",
+          "enum": [
+            "equal",
+            "titleLength"
+          ],
+          "type": "string"
+        },
         "wordDelimiters": {
           "default": " ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?│",
           "description": "Determines the delimiters used in a double click selection.",

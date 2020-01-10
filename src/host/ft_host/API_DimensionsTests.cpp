@@ -477,7 +477,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     }
 
     // 2b. Do the comparison. Y should be correct, but X will be the lesser of the size we asked for or the window limit for word wrap.
-    if (sbiex.dwSize.Y == sbiexAfter.dwSize.Y && min(sbiex.dwSize.X, sWidthLimit) == sbiexAfter.dwSize.X)
+    if (sbiex.dwSize.Y == sbiexAfter.dwSize.Y && std::min(sbiex.dwSize.X, sWidthLimit) == sbiexAfter.dwSize.X)
     {
         fBufferSizePassed = true;
     }

@@ -255,45 +255,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - newSettings: New settings values for the profile in this terminal.
     // Return Value:
     // - <none>
-    void TermControl::UpdateSettings(Settings::IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings(Settings::IControlSettings newSettings)
     {
         _settings = newSettings;
+        auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, this]() {
-            // If 'weakThis' is locked, then we can safely work with 'this'
-            if (auto control{ weakThis.get() })
+        co_await winrt::resume_foreground(_root.Dispatcher());
+
+        // If 'weakThis' is locked, then we can safely work with 'this'
+        if (auto control{ weakThis.get() })
+        {
+            // Update our control settings
+            _ApplyUISettings();
+
+            // Update DxEngine's SelectionBackground
+            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
+
+            // Update the terminal core with its new Core settings
+            _terminal->UpdateSettings(_settings);
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+
+            const auto width = _swapChainPanel.ActualWidth();
+            const auto height = _swapChainPanel.ActualHeight();
+            if (width != 0 && height != 0)
             {
-                // Update our control settings
-                _ApplyUISettings();
-
-                // Update DxEngine's SelectionBackground
-                _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
-                // Update the terminal core with its new Core settings
-                _terminal->UpdateSettings(_settings);
-
-                // Refresh our font with the renderer
-                _UpdateFont();
-
-                const auto width = _swapChainPanel.ActualWidth();
-                const auto height = _swapChainPanel.ActualHeight();
-                if (width != 0 && height != 0)
-                {
-                    // If the font size changed, or the _swapchainPanel's size changed
-                    // for any reason, we'll need to make sure to also resize the
-                    // buffer. _DoResize will invalidate everything for us.
-                    auto lock = _terminal->LockForWriting();
-                    _DoResize(width, height);
-                }
-
-                // set TSF Foreground
-                Media::SolidColorBrush foregroundBrush{};
-                foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
-                _tsfInputControl.Foreground(foregroundBrush);
+                // If the font size changed, or the _swapchainPanel's size changed
+                // for any reason, we'll need to make sure to also resize the
+                // buffer. _DoResize will invalidate everything for us.
+                auto lock = _terminal->LockForWriting();
+                _DoResize(width, height);
             }
-        });
+
+            // set TSF Foreground
+            Media::SolidColorBrush foregroundBrush{};
+            foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+            _tsfInputControl.Foreground(foregroundBrush);
+        }
     }
 
     // Method Description:
@@ -451,37 +452,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
     // - <none>
-    void TermControl::_BackgroundColorChanged(const uint32_t color)
+    winrt::fire_and_forget TermControl::_BackgroundColorChanged(const uint32_t color)
     {
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, this, color]() {
-            // If 'weakThis' is locked, then we can safely work with 'this'
-            if (auto control{ weakThis.get() })
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(_root.Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            const auto R = GetRValue(color);
+            const auto G = GetGValue(color);
+            const auto B = GetBValue(color);
+
+            winrt::Windows::UI::Color bgColor{};
+            bgColor.R = R;
+            bgColor.G = G;
+            bgColor.B = B;
+            bgColor.A = 255;
+
+            if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
             {
-                const auto R = GetRValue(color);
-                const auto G = GetGValue(color);
-                const auto B = GetBValue(color);
-
-                winrt::Windows::UI::Color bgColor{};
-                bgColor.R = R;
-                bgColor.G = G;
-                bgColor.B = B;
-                bgColor.A = 255;
-
-                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
-                {
-                    acrylic.FallbackColor(bgColor);
-                    acrylic.TintColor(bgColor);
-                }
-                else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
-                {
-                    solidColor.Color(bgColor);
-                }
-
-                // Set the default background as transparent to prevent the
-                // DX layer from overwriting the background image or acrylic effect
-                _settings.DefaultBackground(ARGB(0, R, G, B));
+                acrylic.FallbackColor(bgColor);
+                acrylic.TintColor(bgColor);
             }
-        });
+            else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
+            {
+                solidColor.Color(bgColor);
+            }
+
+            // Set the default background as transparent to prevent the
+            // DX layer from overwriting the background image or acrylic effect
+            _settings.DefaultBackground(ARGB(0, R, G, B));
+        }
     }
 
     TermControl::~TermControl()
@@ -536,7 +538,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _connection.State();
     }
 
-    void TermControl::SwapChainChanged()
+    winrt::fire_and_forget TermControl::SwapChainChanged()
     {
         if (!_initializedTerminal)
         {
@@ -544,16 +546,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         auto chain = _renderEngine->GetSwapChain();
+        auto weakThis{ get_weak() };
 
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis{ get_weak() }, this, chain]() {
-            // If 'weakThis' is locked, then we can safely work with 'this'
-            if (auto control{ weakThis.get() })
-            {
-                auto lock = _terminal->LockForWriting();
-                auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
-                nativePanel->SetSwapChain(chain.Get());
-            }
-        });
+        co_await winrt::resume_foreground(_swapChainPanel.Dispatcher());
+
+        // If 'weakThis' is locked, then we can safely work with 'this'
+        if (auto control{ weakThis.get() })
+        {
+            auto lock = _terminal->LockForWriting();
+            auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
+            nativePanel->SetSwapChain(chain.Get());
+        }
+    }
+
+    winrt::fire_and_forget TermControl::_SwapChainRoutine()
+    {
+        auto chain = _renderEngine->GetSwapChain();
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(_swapChainPanel.Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            _terminal->LockConsole();
+            auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
+            nativePanel->SetSwapChain(chain.Get());
+            _terminal->UnlockConsole();
+        }
     }
 
     bool TermControl::_InitializeTerminal()
@@ -637,17 +656,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
 
-        auto chain = _renderEngine->GetSwapChain();
-
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [weakThis{ get_weak() }, this, chain]() {
-            if (auto control{ weakThis.get() })
-            {
-                _terminal->LockConsole();
-                auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
-                nativePanel->SetSwapChain(chain.Get());
-                _terminal->UnlockConsole();
-            }
-        });
+        _SwapChainRoutine();
 
         // Set up the height of the ScrollViewer and the grid we're using to fake our scrolling height
         auto bottom = _terminal->GetViewport().BottomExclusive();
@@ -1614,9 +1623,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    void TermControl::_TerminalScrollPositionChanged(const int viewTop,
-                                                     const int viewHeight,
-                                                     const int bufferSize)
+    winrt::fire_and_forget TermControl::_TerminalScrollPositionChanged(const int viewTop,
+                                                                       const int viewHeight,
+                                                                       const int bufferSize)
     {
         // Since this callback fires from non-UI thread, we might be already
         // closed/closing.
@@ -1625,25 +1634,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakThis{ get_weak() }, this, viewTop, viewHeight, bufferSize]() {
-            // Even if we weren't closed/closing few lines above, we might be
-            // while waiting for this block of code to be dispatched.
-            // If 'weakThis' is locked, then we can safely work with 'this'
-            if (auto control{ weakThis.get() })
-            {
-                if (_closing.load())
-                {
-                    return;
-                }
-
-                _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
-            }
-        });
-
         // Set this value as our next expected scroll position.
         _lastScrollOffset = { viewTop };
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
+
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(_scrollBar.Dispatcher());
+
+        // Even if we weren't closed/closing few lines above, we might be
+        // while waiting for this block of code to be dispatched.
+        // If 'weakThis' is locked, then we can safely work with 'this'
+        if (auto control{ weakThis.get() })
+        {
+            if (!_closing.load())
+            {
+                // Update our scrollbar
+                _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
+            }
+        }
     }
 
     hstring TermControl::Title()

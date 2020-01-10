@@ -1,5 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- A note about this project: We're building the test code dll from this
+    project, but it _MUST_ be run in conjunction with the TestHostApp project.
+    TestHostApp actually will build a TestHost executable and packaging bits
+    that we can use to run our tests. We need TestHostApp so that our
+    dependencies, like MUX, can be aggregated correctly, and resources properly
+    combined into a resources.pri file.
+
+    TestHostApp will manually copy the output of this project into it's own
+    OutDir, so we can run the tests from there. -->
+
   <PropertyGroup>
     <ProjectGuid>{CA5CAD1A-b11c-4ddb-a4fe-c3afae9b5506}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -109,86 +120,5 @@
 <!-- We actually can just straight up reference MUX here, it's fine -->
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
-
-  <!-- This project will generate individual sxs manifests for each of our winrt libraries -->
-  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-
-  <!-- This is important: actually add the _LocalTestsGenerateCombinedManifests
-    target to the list of targets to run. -->
-  <PropertyGroup>
-    <BeforeLinkTargets Condition="'$(WindowsTargetPlatformVersion)' &gt;= '10.0.18362.0'">
-      $(BeforeLinkTargets);
-      _LocalTestsGenerateCombinedManifests;
-      _LocalTestsBuildAppxManifest;
-      _LocalTestsCopyDependencies;
-    </BeforeLinkTargets>
-  </PropertyGroup>
-
-  <!-- Step 1: Combine all our SxS manifests into a single SxS manifest. TAEF
-  needs us to specify a single activation context at runtime, so we need a
-  single file with all our types in it.-->
-  <Target Name="_LocalTestsGenerateCombinedManifests"
-          Inputs="@(_ConsoleWinmdManifest)"
-          Outputs="$(OutDir)$(TargetName).manifest"
-          DependsOnTargets="_ConsoleGenerateAdditionalWinmdManifests">
-
-    <Exec Command="mt.exe -manifest @(_ConsoleWinmdManifest, ' -manifest ') -out:$(OutDir)$(TargetName).manifest" />
-  </Target>
-
-  <!-- Step 2: Take our combined SxS manifest, and use it to build an
-  Appxmanifest.xml. We'll use the Appxmanifest.prototype.xml in this project's
-  directory as a base, and the script will tak all our activatableClasses and
-  turn them into appxmanifest-compatible Extensions -->
-  <Target Name="_LocalTestsBuildAppxManifest"
-          Inputs="$(OutDir)$(TargetName).manifest"
-          Outputs="$(OutDir)$(TargetName).AppxManifest.xml"
-          DependsOnTargets="_LocalTestsGenerateCombinedManifests">
-
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 -SxSManifest $(OutDir)$(TargetName).manifest -AppxManifestPrototype $(TargetName).AppxManifest.prototype.xml -OutPath $(OutDir)$(TargetName).AppxManifest.xml" />
-
-  </Target>
-
-  <!-- Step 3: Manually copy all our dependent DLLs into our OutDir. For SxS
-  activation to work, they all need to be in the same directory as our test dll.
-  This is using code that's heavliy cribbed from WindowsTerminal.vcxproj, which
-  is already cribbed from the GetPackagingOutputs in
-  Microsoft.*.AppxPackage.targets. We're filtering this list down to the dlls,
-  pris and xbfs, because this list _can_ contain directories, which will make
-  the Copy task explode. -->
-
-  <PropertyGroup>
-    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>
-    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
-  </PropertyGroup>
-
-  <!-- First gather the files... -->
-  <Target Name="MyGetPackagingOutputs" Returns="@(MyPackagingOutputs)">
-    <MSBuild
-      Projects="@(ProjectReferenceWithConfiguration)"
-      Targets="GetPackagingOutputs"
-      BuildInParallel="$(BuildInParallel)"
-      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
-      Condition="'@(ProjectReferenceWithConfiguration)' != ''
-                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
-                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
-      ContinueOnError="$(_ContinueOnError)">
-      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
-    </MSBuild>
-
-    <ItemGroup>
-      <!-- IMPORTANT: Grab all the xbf files _except_ App.xbf. If that's there, then the tests will hyperexplode. -->
-      <MyPackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" Condition="'%(Extension)'=='.dll' Or '%(Extension)'=='.pri' Or ('%(Extension)'=='.xbf' And '%(Filename)' != 'App')" />
-    </ItemGroup>
-  </Target>
-
-  <!-- Then copy the files to our outdir -->
-  <Target Name="_LocalTestsCopyDependencies"
-          DependsOnTargets="MyGetPackagingOutputs">
-
-    <Copy SourceFiles="@(MyPackagingOutputs)"
-          SkipUnchangedFiles="true"
-          DestinationFolder="$(OutDir)"
-    />
-  </Target>
 
 </Project>
