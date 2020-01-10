@@ -40,14 +40,9 @@
     here for whatever reason.
   -->
 
-  <PropertyGroup Label="UserMacros">
-    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
-  </PropertyGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4453;28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)
         ;$(IntermediateOutputPath)
       </AdditionalIncludeDirectories>
