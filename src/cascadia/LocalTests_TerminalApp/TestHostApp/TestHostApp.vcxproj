@@ -40,6 +40,15 @@
     here for whatever reason.
   -->
 
+  <!-- This is important: It somehow convinces the CI to not validate that
+    "taef.png" is actually in the package. taef.png will get copied to the
+    OutputPath when taef is run, but if this isn't set to false, then the CI
+    will try and make sure taef.png is in the OutputPath at build time.-->
+  
+  <PropertyGroup Label="UserMacros">
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+  </PropertyGroup>
+  
   <ItemDefinitionGroup>
     <ClCompile>
       <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
