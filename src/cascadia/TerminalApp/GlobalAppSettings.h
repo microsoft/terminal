@@ -52,6 +52,8 @@ public:
 
     void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
 
+    void SetTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode);
+
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
 
@@ -69,6 +71,8 @@ public:
     void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
+
+    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidthMode() const noexcept;
 
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
@@ -100,11 +104,15 @@ private:
     std::wstring _wordDelimiters;
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
 
     winrt::TerminalApp::LaunchMode _launchMode;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+
+    static std::wstring_view _SerializeTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode) noexcept;
+    static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
 
     static void _ParseInitialPosition(const std::wstring& initialPosition,
                                       std::optional<int32_t>& initialX,

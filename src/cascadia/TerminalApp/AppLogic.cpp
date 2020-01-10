@@ -589,6 +589,30 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    fire_and_forget AppLogic::_LoadErrorsDialogRoutine()
+    {
+        co_await winrt::resume_foreground(_root->Dispatcher());
+
+        const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+        const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+        _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+    }
+
+    fire_and_forget AppLogic::_ShowLoadWarningsDialogRoutine()
+    {
+        co_await winrt::resume_foreground(_root->Dispatcher());
+
+        _ShowLoadWarningsDialog();
+    }
+
+    fire_and_forget AppLogic::_RefreshThemeRoutine()
+    {
+        co_await winrt::resume_foreground(_root->Dispatcher());
+
+        // Refresh the UI theme
+        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+    }
+
     // Method Description:
     // - Reloads the settings from the profile.json.
     void AppLogic::_ReloadSettings()
@@ -602,19 +626,12 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-                _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
-            });
-
+            _LoadErrorsDialogRoutine();
             return;
         }
         else if (_settingsLoadedResult == S_FALSE)
         {
-            _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-                _ShowLoadWarningsDialog();
-            });
+            _ShowLoadWarningsDialogRoutine();
         }
 
         // Here, we successfully reloaded the settings, and created a new
@@ -623,10 +640,7 @@ namespace winrt::TerminalApp::implementation
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
 
-        _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-            // Refresh the UI theme
-            _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
-        });
+        _RefreshThemeRoutine();
     }
 
     // Method Description:
