@@ -124,6 +124,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
+        _UpdateTabWidthMode();
         _OpenNewTab(nullptr);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
@@ -692,6 +693,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Handle changes to the tab width set by the user
+    void TerminalPage::_UpdateTabWidthMode()
+    {
+        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidthMode());
+    }
+
+    // Method Description:
     // - Handle changes in tab layout.
     void TerminalPage::_UpdateTabView()
     {
@@ -1118,11 +1126,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Calculates the appropriate size to snap to in the gived direction, for
+    //   the given dimension. If the global setting `snapToGridOnResize` is set
+    //   to `false`, this will just immediately return the provided dimension,
+    //   effectively disabling snapping.
     // - See Pane::CalcSnappedDimension
     float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        const auto focusedTabIndex = _GetFocusedTabIndex();
-        return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+        if (_settings->GlobalSettings().SnapToGridOnResize())
+        {
+            const auto focusedTabIndex = _GetFocusedTabIndex();
+            return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+        }
+        else
+        {
+            return dimension;
+        }
     }
 
     // Method Description:
@@ -1403,6 +1422,7 @@ namespace winrt::TerminalApp::implementation
         // profile, which might have changed
         if (auto page{ weakThis.get() })
         {
+            _UpdateTabWidthMode();
             _CreateNewTabFlyout();
         }
     }
