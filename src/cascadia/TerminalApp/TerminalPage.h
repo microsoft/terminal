@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo;
 
         std::wstring _GetWindowsVersion();
-        
+
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
         void _ShowAboutDialog();
