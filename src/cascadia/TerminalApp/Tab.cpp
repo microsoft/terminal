@@ -19,15 +19,11 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 {
     _rootPane = std::make_shared<Pane>(profile, control, true);
 
-    _rootPane->Closed([=]() {
-        _closedHandlers();
+    _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+        _ClosedHandlers(nullptr, nullptr);
     });
 
     _activePane = _rootPane;
-
-    _AttachEventHandlersToPane(_rootPane);
-
-    _AttachEventHandlersToControl(control);
 
     _MakeTabViewItem();
 }
@@ -109,6 +105,19 @@ std::optional<GUID> Tab::GetFocusedProfile() const noexcept
 }
 
 // Method Description:
+// - Called after construction of a Tab object to bind event handlers to its
+//   associated Pane and TermControl object
+// Arguments:
+// - control: reference to the TermControl object to bind event to
+// Return Value:
+// - <none>
+void Tab::BindEventHandlers(const TermControl& control) noexcept
+{
+    _AttachEventHandlersToPane(_rootPane);
+    _AttachEventHandlersToControl(control);
+}
+
+// Method Description:
 // - Attempts to update the settings of this tab's tree of panes.
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
@@ -137,7 +146,7 @@ void Tab::_Focus()
     }
 }
 
-void Tab::UpdateIcon(const winrt::hstring iconPath)
+winrt::fire_and_forget Tab::UpdateIcon(const winrt::hstring iconPath)
 {
     // Don't reload our icon if it hasn't changed.
     if (iconPath == _lastIconPath)
@@ -147,9 +156,14 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 
     _lastIconPath = iconPath;
 
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+
+    if (auto tab{ weakThis.lock() })
+    {
         _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
-    });
+    }
 }
 
 // Method Description:
@@ -171,13 +185,18 @@ winrt::hstring Tab::GetActiveTitle() const
 // - text: The new text string to use as the Header for our TabViewItem
 // Return Value:
 // - <none>
-void Tab::SetTabText(const winrt::hstring& text)
+winrt::fire_and_forget Tab::SetTabText(const winrt::hstring text)
 {
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this]() {
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+
+    if (auto tab{ weakThis.lock() })
+    {
         _tabViewItem.Header(winrt::box_value(text));
-    });
+    }
 }
 
 // Method Description:
@@ -188,13 +207,14 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - delta: a number of lines to move the viewport relative to the current viewport.
 // Return Value:
 // - <none>
-void Tab::Scroll(const int delta)
+winrt::fire_and_forget Tab::Scroll(const int delta)
 {
     auto control = GetActiveTerminalControl();
-    control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
-        const auto currentOffset = control.GetScrollOffset();
-        control.KeyboardScrollViewport(currentOffset + delta);
-    });
+
+    co_await winrt::resume_foreground(control.Dispatcher());
+
+    const auto currentOffset = control.GetScrollOffset();
+    control.KeyboardScrollViewport(currentOffset + delta);
 }
 
 // Method Description:
@@ -203,7 +223,7 @@ void Tab::Scroll(const int delta)
 // - splitType: The type of split we want to create.
 // Return Value:
 // - True if the focused pane can be split. False otherwise.
-bool Tab::CanSplitPane(Pane::SplitState splitType)
+bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
 {
     return _activePane->CanSplit(splitType);
 }
@@ -217,7 +237,7 @@ bool Tab::CanSplitPane(Pane::SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
+void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
 {
     auto [first, second] = _activePane->Split(splitType, profile, control);
 
@@ -227,6 +247,13 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
     // gains focus, we'll mark it as the new active pane.
     _AttachEventHandlersToPane(first);
     _AttachEventHandlersToPane(second);
+}
+
+// Method Description:
+// - See Pane::CalcSnappedDimension
+float Tab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+{
+    return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
 }
 
 // Method Description:
@@ -296,12 +323,30 @@ void Tab::ClosePane()
 // - <none>
 void Tab::_AttachEventHandlersToControl(const TermControl& control)
 {
-    control.TitleChanged([this](auto newTitle) {
-        // The title of the control changed, but not necessarily the title
-        // of the tab. Get the title of the active pane of the tab, and set
-        // the tab's text to the active panes' text.
-        auto newTabTitle = GetActiveTitle();
-        SetTabText(newTabTitle);
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    control.TitleChanged([weakThis](auto newTitle) {
+        // Check if Tab's lifetime has expired
+        if (auto tab{ weakThis.lock() })
+        {
+            // The title of the control changed, but not necessarily the title of the tab.
+            // Set the tab's text to the active panes' text.
+            tab->SetTabText(tab->GetActiveTitle());
+        }
+    });
+
+    // This is called when the terminal changes its font size or sets it for the first
+    // time (because when we just create terminal via its ctor it has invalid font size).
+    // On the latter event, we tell the root pane to resize itself so that its descendants
+    // (including ourself) can properly snap to character grids. In future, we may also
+    // want to do that on regular font changes.
+    control.FontSizeChanged([this](const int /* fontWidth */,
+                                   const int /* fontHeight */,
+                                   const bool isInitialChange) {
+        if (isInitialChange)
+        {
+            _rootPane->Relayout();
+        }
     });
 }
 
@@ -316,24 +361,26 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
 // - <none>
 void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
 {
-    pane->GotFocus([this](std::shared_ptr<Pane> sender) {
-        // Do nothing if it's the same pane as before.
-        if (sender == _activePane)
+    std::weak_ptr<Tab> weakThis{ shared_from_this() };
+
+    pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
+        // Do nothing if the Tab's lifetime is expired or pane isn't new.
+        auto tab{ weakThis.lock() };
+
+        if (tab && sender != tab->_activePane)
         {
-            return;
+            // Clear the active state of the entire tree, and mark only the sender as active.
+            tab->_rootPane->ClearActive();
+            tab->_activePane = sender;
+            tab->_activePane->SetActive();
+
+            // Update our own title text to match the newly-active pane.
+            tab->SetTabText(tab->GetActiveTitle());
+
+            // Raise our own ActivePaneChanged event.
+            tab->_ActivePaneChangedHandlers();
         }
-        // Clear the active state of the entire tree, and mark only the sender as active.
-        _rootPane->ClearActive();
-        _activePane = sender;
-        _activePane->SetActive();
-
-        // Update our own title text to match the newly-active pane.
-        SetTabText(GetActiveTitle());
-
-        // Raise our own ActivePaneChanged event.
-        _ActivePaneChangedHandlers();
     });
 }
 
-DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
 DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

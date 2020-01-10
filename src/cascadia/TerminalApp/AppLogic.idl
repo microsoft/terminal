@@ -22,6 +22,9 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
+        Boolean IsUwp();
+        void RunAsUwp();
+
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
@@ -32,6 +35,7 @@ namespace TerminalApp
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
 

@@ -2,6 +2,11 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+
+// We have to define GSL here, not PCH
+// because TelnetConnection has a conflicting GSL implementation.
+#include <gsl/gsl>
+
 #include "AzureConnection.h"
 #include "AzureClientID.h"
 #include <sstream>
@@ -32,14 +37,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // This function exists because the clientID only gets added by the release pipelines
     // and is not available on local builds, so we want to be able to make sure we don't
     // try to make an Azure connection if its a local build
-    bool AzureConnection::IsAzureConnectionAvailable()
+    bool AzureConnection::IsAzureConnectionAvailable() noexcept
     {
         return (AzureClientID != L"0");
     }
 
     AzureConnection::AzureConnection(const uint32_t initialRows, const uint32_t initialCols) :
         _initialRows{ initialRows },
-        _initialCols{ initialCols }
+        _initialCols{ initialCols },
+        _maxStored{},
+        _maxSize{},
+        _expiry{}
     {
     }
 
@@ -49,51 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - str: the string to write.
     void AzureConnection::_WriteStringWithNewline(const winrt::hstring& str)
     {
-        _outputHandlers(str + L"\r\n");
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - registers an output event handler
-    // Arguments:
-    // - the handler
-    // Return value:
-    // - the event token for the handler
-    winrt::event_token AzureConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
-    {
-        return _outputHandlers.add(handler);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - revokes an output event handler
-    // Arguments:
-    // - the event token for the handler
-    void AzureConnection::TerminalOutput(winrt::event_token const& token) noexcept
-    {
-        _outputHandlers.remove(token);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - registers a terminal-disconnected event handler
-    // Arguments:
-    // - the handler
-    // Return value:
-    // - the event token for the handler
-    winrt::event_token AzureConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        return _disconnectHandlers.add(handler);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - revokes a terminal-disconnected event handler
-    // Arguments:
-    // - the event token for the handler
-    void AzureConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        _disconnectHandlers.remove(token);
+        _TerminalOutputHandlers(str + L"\r\n");
     }
 
     // Method description:
@@ -112,7 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
-        _connected = true;
+        _transitionToState(ConnectionState::Connecting);
     }
 
     // Method description:
@@ -122,7 +86,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // the user's input
     void AzureConnection::WriteInput(hstring const& data)
     {
-        if (!_connected || _closing.load())
+        // We read input while connected AND connecting.
+        if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))
         {
             return;
         }
@@ -131,7 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         switch (_state)
         {
         // The user has stored connection settings, let them choose one of them, create a new one or remove all stored ones
-        case State::AccessStored:
+        case AzureState::AccessStored:
         {
             const auto s = winrt::to_string(data);
             int storeNum = -1;
@@ -172,7 +137,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
         // The user has multiple tenants in their Azure account, let them choose one of them
-        case State::TenantChoice:
+        case AzureState::TenantChoice:
         {
             int tenantNum = -1;
             try
@@ -195,7 +160,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
         // User has the option to save their connection settings for future logins
-        case State::StoreTokens:
+        case AzureState::StoreTokens:
         {
             std::lock_guard<std::mutex> lg{ _commonMutex };
             if (data == RS_(L"AzureUserEntry_Yes"))
@@ -218,13 +183,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
         // We are connected, send user's input over the websocket
-        case State::TermConnected:
+        case AzureState::TermConnected:
         {
             websocket_outgoing_message msg;
             const auto str = winrt::to_string(data);
             msg.set_utf8_message(str);
 
-            _cloudShellSocket.send(msg);
+            _cloudShellSocket.send(msg).get();
         }
         default:
             return;
@@ -238,12 +203,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the new rows/cols values
     void AzureConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_connected || !(_state == State::TermConnected))
+        if (!_isConnected())
         {
             _initialRows = rows;
             _initialCols = columns;
         }
-        else if (!_closing.load())
+        else // We only transition to Connected when we've established the websocket.
         {
             // Initialize client
             http_client terminalClient(_cloudShellUri);
@@ -255,7 +220,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             terminalRequest.set_body(json::value(L""));
 
             // Send the request
-            _RequestHelper(terminalClient, terminalRequest);
+            const auto response = _RequestHelper(terminalClient, terminalRequest);
         }
     }
 
@@ -264,24 +229,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - closes the websocket connection and the output thread
     void AzureConnection::Close()
     {
-        if (!_connected)
-        {
-            return;
-        }
-
-        if (!_closing.exchange(true))
+        if (_transitionToState(ConnectionState::Closing))
         {
             _canProceed.notify_all();
-            if (_state == State::TermConnected)
+            if (_state == AzureState::TermConnected)
             {
                 // Close the websocket connection
                 auto closedTask = _cloudShellSocket.close();
                 closedTask.wait();
             }
 
-            // Tear down our output thread
-            WaitForSingleObject(_hOutputThread.get(), INFINITE);
-            _hOutputThread.reset();
+            if (_hOutputThread)
+            {
+                // Tear down our output thread
+                WaitForSingleObject(_hOutputThread.get(), INFINITE);
+                _hOutputThread.reset();
+            }
+
+            _transitionToState(ConnectionState::Closed);
         }
     }
 
@@ -307,8 +272,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the exit code of the thread
     DWORD WINAPI AzureConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
-        AzureConnection* const pInstance = (AzureConnection*)lpParameter;
-        return pInstance->_OutputThread();
+        AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
+        if (pInstance)
+        {
+            return pInstance->_OutputThread();
+        }
+        return gsl::narrow_cast<DWORD>(E_INVALIDARG);
     }
 
     // Method description:
@@ -320,45 +289,52 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         while (true)
         {
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                // If we enter a new state while closing, just bail.
+                return S_FALSE;
+            }
+
             try
             {
                 switch (_state)
                 {
                 // Initial state, check if the user has any stored connection settings and allow them to login with those
                 // or allow them to login with a different account or allow them to remove the saved settings
-                case State::AccessStored:
+                case AzureState::AccessStored:
                 {
                     RETURN_IF_FAILED(_AccessHelper());
                     break;
                 }
                 // User has no saved connection settings or has opted to login with a different account
                 // Azure authentication happens here
-                case State::DeviceFlow:
+                case AzureState::DeviceFlow:
                 {
                     RETURN_IF_FAILED(_DeviceFlowHelper());
                     break;
                 }
                 // User has multiple tenants in their Azure account, they need to choose which one to connect to
-                case State::TenantChoice:
+                case AzureState::TenantChoice:
                 {
                     RETURN_IF_FAILED(_TenantChoiceHelper());
                     break;
                 }
                 // Ask the user if they want to save these connection settings for future logins
-                case State::StoreTokens:
+                case AzureState::StoreTokens:
                 {
                     RETURN_IF_FAILED(_StoreHelper());
                     break;
                 }
                 // Connect to Azure, we only get here once we have everything we need (tenantID, accessToken, refreshToken)
-                case State::TermConnecting:
+                case AzureState::TermConnecting:
                 {
                     RETURN_IF_FAILED(_ConnectHelper());
                     break;
                 }
                 // We are connected, continuously read from the websocket until its closed
-                case State::TermConnected:
+                case AzureState::TermConnected:
                 {
+                    _transitionToState(ConnectionState::Connected);
                     while (true)
                     {
                         // Read from websocket
@@ -370,15 +346,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         }
                         catch (...)
                         {
-                            // Websocket has been closed
-                            if (!_closing.load())
+                            // Websocket has been closed; consider it a graceful exit?
+                            // This should result in our termination.
+                            if (_transitionToState(ConnectionState::Closed))
                             {
-                                _state = State::NoConnect;
-                                _disconnectHandlers();
+                                // End the output thread.
                                 return S_FALSE;
                             }
-                            break;
                         }
+
                         auto msg = msgT.get();
                         auto msgStringTask = msg.extract_string();
                         auto msgString = msgStringTask.get();
@@ -387,21 +363,21 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         const auto hstr = winrt::to_hstring(msgString);
 
                         // Pass the output to our registered event handlers
-                        _outputHandlers(hstr);
+                        _TerminalOutputHandlers(hstr);
                     }
                     return S_OK;
                 }
-                case State::NoConnect:
+                case AzureState::NoConnect:
                 {
                     _WriteStringWithNewline(RS_(L"AzureInternetOrServerIssue"));
-                    _disconnectHandlers();
+                    _transitionToState(ConnectionState::Failed);
                     return E_FAIL;
                 }
                 }
             }
             catch (...)
             {
-                _state = State::NoConnect;
+                _state = AzureState::NoConnect;
             }
         }
     }
@@ -425,7 +401,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         catch (...)
         {
             // No credentials are stored, so start the device flow
-            _state = State::DeviceFlow;
+            _state = AzureState::DeviceFlow;
             return S_FALSE;
         }
         _maxStored = 0;
@@ -458,7 +434,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _WriteStringWithNewline(RS_(L"AzureOldCredentialsFlushedMessage"));
             }
             // No valid up-to-date credentials were found, so start the device flow
-            _state = State::DeviceFlow;
+            _state = AzureState::DeviceFlow;
             return S_FALSE;
         }
 
@@ -468,10 +444,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         std::unique_lock<std::mutex> storedLock{ _commonMutex };
         _canProceed.wait(storedLock, [=]() {
-            return (_storedNumber >= 0 && _storedNumber < _maxStored) || _removeOrNew.has_value() || _closing.load();
+            return (_storedNumber >= 0 && _storedNumber < _maxStored) || _removeOrNew.has_value() || _isStateAtOrBeyond(ConnectionState::Closing);
         });
         // User might have closed the tab while we waited for input
-        if (_closing.load())
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
             return E_FAIL;
         }
@@ -479,13 +455,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             // User wants to remove the stored settings
             _RemoveCredentials();
-            _state = State::DeviceFlow;
+            _state = AzureState::DeviceFlow;
             return S_OK;
         }
         else if (_removeOrNew.has_value() && !_removeOrNew.value())
         {
             // User wants to login with a different account
-            _state = State::DeviceFlow;
+            _state = AzureState::DeviceFlow;
             return S_OK;
         }
         // User wants to login with one of the saved connection settings
@@ -514,7 +490,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         // We have everything we need, so go ahead and connect
-        _state = State::TermConnecting;
+        _state = AzureState::TermConnecting;
         return S_OK;
     }
 
@@ -558,6 +534,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (tenantListAsArray.size() == 0)
         {
             _WriteStringWithNewline(RS_(L"AzureNoTenants"));
+            _transitionToState(ConnectionState::Failed);
             return E_FAIL;
         }
         else if (_tenantList.size() == 1)
@@ -571,11 +548,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _refreshToken = refreshResponse.at(L"refresh_token").as_string();
             _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
 
-            _state = State::StoreTokens;
+            _state = AzureState::StoreTokens;
         }
         else
         {
-            _state = State::TenantChoice;
+            _state = AzureState::TenantChoice;
         }
         return S_OK;
     }
@@ -602,10 +579,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Use a lock to wait for the user to input a valid number
             std::unique_lock<std::mutex> tenantNumberLock{ _commonMutex };
             _canProceed.wait(tenantNumberLock, [=]() {
-                return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _closing.load();
+                return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _isStateAtOrBeyond(ConnectionState::Closing);
             });
             // User might have closed the tab while we waited for input
-            if (_closing.load())
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
                 return E_FAIL;
             }
@@ -619,7 +596,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _refreshToken = refreshResponse.at(L"refresh_token").as_string();
             _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
 
-            _state = State::StoreTokens;
+            _state = AzureState::StoreTokens;
             return S_OK;
         }
         CATCH_RETURN();
@@ -636,10 +613,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Wait for user input
         std::unique_lock<std::mutex> storeLock{ _commonMutex };
         _canProceed.wait(storeLock, [=]() {
-            return _store.has_value() || _closing.load();
+            return _store.has_value() || _isStateAtOrBeyond(ConnectionState::Closing);
         });
         // User might have closed the tab while we waited for input
-        if (_closing.load())
+        if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
             return E_FAIL;
         }
@@ -651,7 +628,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _WriteStringWithNewline(RS_(L"AzureTokensStored"));
         }
 
-        _state = State::TermConnecting;
+        _state = AzureState::TermConnecting;
         return S_OK;
     }
 
@@ -667,6 +644,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (settingsResponse.has_field(L"error"))
         {
             _WriteStringWithNewline(RS_(L"AzureNoCloudAccount"));
+            _transitionToState(ConnectionState::Failed);
             return E_FAIL;
         }
 
@@ -683,13 +661,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto shellType = L"bash";
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
-        _outputHandlers(L"\r\n");
+        _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal
         const auto connReqTask = _cloudShellSocket.connect(socketUri);
         connReqTask.wait();
 
-        _state = State::TermConnected;
+        _state = AzureState::TermConnected;
         return S_OK;
     }
 
@@ -732,7 +710,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_request commonRequest(L"POST");
         commonRequest.set_request_uri(L"common/oauth2/devicecode");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource;
-        commonRequest.set_body(body, L"application/x-www-form-urlencoded");
+        commonRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
         // Send the request and receive the response as a json value
         return _RequestHelper(loginClient, commonRequest);
@@ -753,19 +731,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_client pollingClient(_loginUri);
 
         // Continuously send a poll request until the user authenticates
-        const auto body = L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
+        const auto body = hstring() + L"grant_type=device_code&resource=" + _wantedResource + L"&client_id=" + AzureClientID + L"&code=" + deviceCode;
         const auto requestUri = L"common/oauth2/token";
         json::value responseJson;
         for (int count = 0; count < expiresIn / pollInterval; count++)
         {
             // User might close the tab while we wait for them to authenticate, this case handles that
-            if (_closing.load())
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
             {
                 throw "Tab closed.";
             }
             http_request pollRequest(L"POST");
             pollRequest.set_request_uri(requestUri);
-            pollRequest.set_body(body, L"application/x-www-form-urlencoded");
+            pollRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
 
             responseJson = _RequestHelper(pollingClient, pollRequest);
 
@@ -818,7 +796,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_request refreshRequest(L"POST");
         refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
-        refreshRequest.set_body(body, L"application/x-www-form-urlencoded");
+        refreshRequest.set_body(body.c_str(), L"application/x-www-form-urlencoded");
         refreshRequest.headers().add(L"User-Agent", HttpUserAgent);
 
         // Send the request and return the response as a json value

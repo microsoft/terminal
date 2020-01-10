@@ -12,10 +12,40 @@
 #include "../../inc/DefaultSettings.h"
 #include <VersionHelpers.h>
 
+#include "ScreenPixelShader.h"
+#include "ScreenVertexShader.h"
+#include <DirectXMath.h>
+#include <d3dcompiler.h>
+#include <DirectXColors.h>
+
+using namespace DirectX;
+
+// Quad where we draw the terminal.
+// pos is world space coordinates where origin is at the center of screen.
+// tex is texel coordinates where origin is top left.
+// Layout the quad as a triangle strip where the _screenQuadVertices are place like so.
+// 2 0
+// 3 1
+struct ShaderInput
+{
+    XMFLOAT3 pos;
+    XMFLOAT2 tex;
+} const _screenQuadVertices[] = {
+    { XMFLOAT3(1.f, 1.f, 0.f), XMFLOAT2(1.f, 0.f) },
+    { XMFLOAT3(1.f, -1.f, 0.f), XMFLOAT2(1.f, 1.f) },
+    { XMFLOAT3(-1.f, 1.f, 0.f), XMFLOAT2(0.f, 0.f) },
+    { XMFLOAT3(-1.f, -1.f, 0.f), XMFLOAT2(0.f, 1.f) },
+};
+
+D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
+    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+};
+
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
-static constexpr std::wstring_view FALLBACK_FONT_FACE = L"Consolas";
+static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 
 using namespace Microsoft::Console::Render;
@@ -41,7 +71,7 @@ DxEngine::DxEngine() :
     _displaySizePixels{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
-    _selectionBackground{ DEFAULT_FOREGROUND },
+    _selectionBackground{},
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
@@ -57,6 +87,10 @@ DxEngine::DxEngine() :
         DWRITE_FACTORY_TYPE_SHARED,
         __uuidof(_dwriteFactory),
         reinterpret_cast<IUnknown**>(_dwriteFactory.GetAddressOf())));
+
+    // Initialize our default selection color to DEFAULT_FOREGROUND, but make
+    // sure to set to to a D2D1::ColorF
+    SetSelectionBackground(DEFAULT_FOREGROUND);
 }
 
 // Routine Description:
@@ -109,6 +143,141 @@ DxEngine::~DxEngine()
     {
         _ReleaseDeviceResources();
     }
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Compiles a shader source into binary blob.
+// Arguments:
+// - source - Shader source
+// - target - What kind of shader this is
+// - entry - Entry function of shader
+// Return Value:
+// - Compiled binary. Errors are thrown and logged.
+inline Microsoft::WRL::ComPtr<ID3DBlob>
+_CompileShader(
+    std::string source,
+    std::string target,
+    std::string entry = "main")
+{
+    Microsoft::WRL::ComPtr<ID3DBlob> code{};
+    Microsoft::WRL::ComPtr<ID3DBlob> error{};
+
+    const HRESULT hr = D3DCompile(
+        source.c_str(),
+        source.size(),
+        nullptr,
+        nullptr,
+        nullptr,
+        entry.c_str(),
+        target.c_str(),
+        0,
+        0,
+        &code,
+        &error);
+
+    if (FAILED(hr))
+    {
+        LOG_HR_MSG(hr, "D3DCompile failed with %x.", static_cast<int>(hr));
+        if (error)
+        {
+            LOG_HR_MSG(hr, "D3DCompile error\n%*S", static_cast<int>(error->GetBufferSize()), static_cast<PWCHAR>(error->GetBufferPointer()));
+        }
+
+        THROW_HR(hr);
+    }
+
+    return code;
+}
+
+// Routine Description:
+// - Setup D3D objects for doing shader things for terminal effects.
+// Arguments:
+// Return Value:
+// - HRESULT status.
+HRESULT DxEngine::_SetupTerminalEffects()
+{
+    ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
+
+    // Setup render target.
+    RETURN_IF_FAILED(_d3dDevice->CreateRenderTargetView(swapBuffer.Get(), nullptr, &_renderTargetView));
+
+    // Setup _framebufferCapture, to where we'll copy current frame when rendering effects.
+    D3D11_TEXTURE2D_DESC framebufferCaptureDesc{};
+    swapBuffer->GetDesc(&framebufferCaptureDesc);
+    WI_SetFlag(framebufferCaptureDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
+    RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferCaptureDesc, nullptr, &_framebufferCapture));
+
+    // Setup the viewport.
+    D3D11_VIEWPORT vp;
+    vp.Width = static_cast<FLOAT>(_displaySizePixels.cx);
+    vp.Height = static_cast<FLOAT>(_displaySizePixels.cy);
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = 0;
+    vp.TopLeftY = 0;
+    _d3dDeviceContext->RSSetViewports(1, &vp);
+
+    // Prepare shaders.
+    auto vertexBlob = _CompileShader(screenVertexShaderString, "vs_5_0");
+    auto pixelBlob = _CompileShader(screenPixelShaderString, "ps_5_0");
+    // TODO:GH#3928 move the shader files to to hlsl files and package their
+    // build output to UWP app and load with these.
+    // ::Microsoft::WRL::ComPtr<ID3DBlob> vertexBlob, pixelBlob;
+    // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenVertexShader.cso", &vertexBlob));
+    // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenPixelShader.cso", &pixelBlob));
+
+    RETURN_IF_FAILED(_d3dDevice->CreateVertexShader(
+        vertexBlob->GetBufferPointer(),
+        vertexBlob->GetBufferSize(),
+        nullptr,
+        &_vertexShader));
+
+    RETURN_IF_FAILED(_d3dDevice->CreatePixelShader(
+        pixelBlob->GetBufferPointer(),
+        pixelBlob->GetBufferSize(),
+        nullptr,
+        &_pixelShader));
+
+    RETURN_IF_FAILED(_d3dDevice->CreateInputLayout(
+        static_cast<const D3D11_INPUT_ELEMENT_DESC*>(_shaderInputLayout),
+        ARRAYSIZE(_shaderInputLayout),
+        vertexBlob->GetBufferPointer(),
+        vertexBlob->GetBufferSize(),
+        &_vertexLayout));
+
+    // Create vertex buffer for screen quad.
+    D3D11_BUFFER_DESC bd{};
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(ShaderInput) * ARRAYSIZE(_screenQuadVertices);
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA InitData{};
+    InitData.pSysMem = static_cast<const void*>(_screenQuadVertices);
+
+    RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&bd, &InitData, &_screenQuadVertexBuffer));
+
+    // Sampler state is needed to use texture as input to shader.
+    D3D11_SAMPLER_DESC samplerDesc{};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    samplerDesc.BorderColor[0] = 0;
+    samplerDesc.BorderColor[1] = 0;
+    samplerDesc.BorderColor[2] = 0;
+    samplerDesc.BorderColor[3] = 0;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    // Create the texture sampler state.
+    RETURN_IF_FAILED(_d3dDevice->CreateSamplerState(&samplerDesc, &_samplerState));
 
     return S_OK;
 }
@@ -250,6 +419,16 @@ DxEngine::~DxEngine()
             }
             default:
                 THROW_HR(E_NOTIMPL);
+            }
+
+            if (_retroTerminalEffects)
+            {
+                const HRESULT hr = _SetupTerminalEffects();
+                if (FAILED(hr))
+                {
+                    _retroTerminalEffects = false;
+                    LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
+                }
             }
         }
         CATCH_RETURN();
@@ -425,6 +604,11 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 void DxEngine::SetCallback(std::function<void()> pfn)
 {
     _pfn = pfn;
+}
+
+void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+{
+    _retroTerminalEffects = enable;
 }
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
@@ -870,6 +1054,16 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK on success, E_PENDING to indicate a retry or a relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::Present() noexcept
 {
+    if (_retroTerminalEffects)
+    {
+        const HRESULT hr2 = _PaintTerminalEffects();
+        if (FAILED(hr2))
+        {
+            _retroTerminalEffects = false;
+            LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+        }
+    }
+
     if (_presentReady)
     {
         try
@@ -1215,6 +1409,53 @@ enum class CursorPaintType
 }
 
 // Routine Description:
+// - Paint terminal effects.
+// Arguments:
+// Return Value:
+// - S_OK or relevant DirectX error.
+[[nodiscard]] HRESULT DxEngine::_PaintTerminalEffects() noexcept
+try
+{
+    // Should have been initialized.
+    RETURN_HR_IF(E_NOT_VALID_STATE, !_framebufferCapture);
+
+    // Capture current frame in swap chain to a texture.
+    ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&swapBuffer)));
+    _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
+
+    // Prepare captured texture as input resource to shader program.
+    D3D11_TEXTURE2D_DESC desc;
+    _framebufferCapture->GetDesc(&desc);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Format = desc.Format;
+
+    ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
+    RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebufferCapture.Get(), &srvDesc, &shaderResource));
+
+    // Render the screen quad with shader effects.
+    const UINT stride = sizeof(ShaderInput);
+    const UINT offset = 0;
+
+    _d3dDeviceContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), nullptr);
+    _d3dDeviceContext->IASetVertexBuffers(0, 1, _screenQuadVertexBuffer.GetAddressOf(), &stride, &offset);
+    _d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    _d3dDeviceContext->IASetInputLayout(_vertexLayout.Get());
+    _d3dDeviceContext->VSSetShader(_vertexShader.Get(), nullptr, 0);
+    _d3dDeviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
+    _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
+    _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
+    _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
+
+    return S_OK;
+}
+CATCH_RETURN()
+
+// Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
 // - colorForeground - Foreground brush color
@@ -1442,7 +1683,11 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
-    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+    if (_hwndTarget != INVALID_HANDLE_VALUE)
+    {
+        return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+    }
+    return S_FALSE;
 }
 
 // Routine Description:
@@ -1467,20 +1712,30 @@ float DxEngine::GetScaling() const noexcept
 
     if (!face)
     {
-        familyName = FALLBACK_FONT_FACE;
-        face = _FindFontFace(familyName, weight, stretch, style, localeName);
+        for (const auto fallbackFace : FALLBACK_FONT_FACES)
+        {
+            familyName = fallbackFace;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+            if (face)
+            {
+                break;
+            }
+
+            familyName = fallbackFace;
+            weight = DWRITE_FONT_WEIGHT_NORMAL;
+            stretch = DWRITE_FONT_STRETCH_NORMAL;
+            style = DWRITE_FONT_STYLE_NORMAL;
+            face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+            if (face)
+            {
+                break;
+            }
+        }
     }
 
-    if (!face)
-    {
-        familyName = FALLBACK_FONT_FACE;
-        weight = DWRITE_FONT_WEIGHT_NORMAL;
-        stretch = DWRITE_FONT_STRETCH_NORMAL;
-        style = DWRITE_FONT_STYLE_NORMAL;
-        face = _FindFontFace(familyName, weight, stretch, style, localeName);
-    }
-
-    THROW_IF_NULL_ALLOC(face);
+    THROW_HR_IF_NULL(E_FAIL, face);
 
     return face;
 }

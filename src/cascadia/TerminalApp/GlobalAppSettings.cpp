@@ -15,19 +15,25 @@ using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
+static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
+static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
+static constexpr std::wstring_view EqualTabWidthModeValue{ L"equal" };
+static constexpr std::wstring_view TitleLengthTabWidthModeValue{ L"titleLength" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
@@ -41,11 +47,13 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
+    _rowsToScroll{ DEFAULT_ROWSTOSCROLL },
     _initialX{},
     _initialY{},
     _showTitleInTitlebar{ true },
     _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default },
+    _tabWidthMode{ TabViewWidthMode::Equal },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
     _launchMode{ LaunchMode::DefaultMode }
@@ -109,6 +117,16 @@ ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
 void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
 {
     _requestedTheme = requestedTheme;
+}
+
+TabViewWidthMode GlobalAppSettings::GetTabWidthMode() const noexcept
+{
+    return _tabWidthMode;
+}
+
+void GlobalAppSettings::SetTabWidthMode(const TabViewWidthMode tabWidthMode)
+{
+    _tabWidthMode = tabWidthMode;
 }
 
 std::wstring GlobalAppSettings::GetWordDelimiters() const noexcept
@@ -175,6 +193,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);
     settings.InitialCols(_initialCols);
+    settings.RowsToScroll(_rowsToScroll);
 
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
@@ -193,6 +212,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+    jsonObject[JsonKey(RowsToScrollKey)] = _rowsToScroll;
     jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX, _initialY);
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
@@ -201,7 +221,9 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
     jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[JsonKey(TabWidthModeKey)] = winrt::to_string(_SerializeTabWidthMode(_tabWidthMode));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
+    jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
 
     return jsonObject;
 }
@@ -239,6 +261,18 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     {
         _initialCols = initialCols.asInt();
     }
+    if (auto rowsToScroll{ json[JsonKey(RowsToScrollKey)] })
+    {
+        //if it's not an int we fall back to setting it to 0, which implies using the system setting. This will be the case if it's set to "system"
+        if (rowsToScroll.isInt())
+        {
+            _rowsToScroll = rowsToScroll.asInt();
+        }
+        else
+        {
+            _rowsToScroll = 0;
+        }
+    }
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
         _ParseInitialPosition(GetWstringFromJson(initialPosition), _initialX, _initialY);
@@ -273,9 +307,19 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         _requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
     }
 
+    if (auto tabWidthMode{ json[JsonKey(TabWidthModeKey)] })
+    {
+        _tabWidthMode = _ParseTabWidthMode(GetWstringFromJson(tabWidthMode));
+    }
+
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
         _keybindings->LayerJson(keybindings);
+    }
+
+    if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
+    {
+        _SnapToGridOnResize = snapToGridOnResize.asBool();
     }
 }
 
@@ -428,6 +472,41 @@ std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launc
         return MaximizedLaunchModeValue;
     default:
         return DefaultLaunchModeValue;
+    }
+}
+
+// Method Description:
+// - Helper function for converting the user-specified tab width
+//   to a TabViewWidthMode enum value
+// Arguments:
+// - tabWidthModeString: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+TabViewWidthMode GlobalAppSettings::_ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept
+{
+    if (tabWidthModeString == TitleLengthTabWidthModeValue)
+    {
+        return TabViewWidthMode::SizeToContent;
+    }
+    // default behavior for invalid data or EqualTabWidthValue
+    return TabViewWidthMode::Equal;
+}
+
+// Method Description:
+// - Helper function for converting a TabViewWidthMode to its corresponding string
+//   value.
+// Arguments:
+// - tabWidthMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given TabWidthMode
+std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMode tabWidthMode) noexcept
+{
+    switch (tabWidthMode)
+    {
+    case TabViewWidthMode::SizeToContent:
+        return TitleLengthTabWidthModeValue;
+    default:
+        return EqualTabWidthModeValue;
     }
 }
 

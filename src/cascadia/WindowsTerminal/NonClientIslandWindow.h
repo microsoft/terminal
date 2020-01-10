@@ -36,6 +36,8 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
+    virtual SIZE GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
+
     void Initialize() override;
 
     void OnAppInitialized() override;
@@ -71,8 +73,6 @@ private:
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
 
     void _SetIsFullscreen(const bool fFullscreenEnabled) override;
-    // See IslandWindow::_SetIsFullscreen for details on this method.
-    bool _ShouldUpdateStylesOnFullscreen() const override { return false; };
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;

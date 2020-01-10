@@ -13,7 +13,7 @@ namespace Microsoft
             {
             public:
                 void Print(const wchar_t wchPrintable) override;
-                void PrintString(const wchar_t* const rgwch, const size_t cch) override;
+                void PrintString(const std::wstring_view string) override;
                 void Execute(const wchar_t wchControl) override;
             };
         }

@@ -5,6 +5,13 @@
 
 #include "telemetry.hpp"
 
+#pragma warning(push)
+#pragma warning(disable : 26494) // _Tlgdata uninitialized from TraceLoggingWrite
+#pragma warning(disable : 26477) // Use nullptr instead of NULL or 0 from TraceLoggingWrite
+#pragma warning(disable : 26485) // _Tlgdata, no array to pointer decay from TraceLoggingWrite
+#pragma warning(disable : 26446) // Prefer gsl::at over unchecked subscript from TraceLoggingLevel
+#pragma warning(disable : 26482) // Only index to arrays with constant expressions from TraceLoggingLevel
+
 TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider,
                              "Microsoft.Windows.Console.VirtualTerminal.Parser",
                              // {c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d}
@@ -15,7 +22,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 #pragma warning(push)
 // Disable 4351 so we can initialize the arrays to 0 without a warning.
 #pragma warning(disable : 4351)
-TermTelemetry::TermTelemetry() :
+TermTelemetry::TermTelemetry() noexcept :
     _uiTimesUsedCurrent(0),
     _uiTimesFailedCurrent(0),
     _uiTimesFailedOutsideRangeCurrent(0),
@@ -34,8 +41,12 @@ TermTelemetry::TermTelemetry() :
 
 TermTelemetry::~TermTelemetry()
 {
-    WriteFinalTraceLog();
-    TraceLoggingUnregister(g_hConsoleVirtTermParserEventTraceProvider);
+    try
+    {
+        WriteFinalTraceLog();
+        TraceLoggingUnregister(g_hConsoleVirtTermParserEventTraceProvider);
+    }
+    CATCH_LOG()
 }
 
 // Routine Description:
@@ -45,7 +56,7 @@ TermTelemetry::~TermTelemetry()
 // - code - VT100 code.
 // Return Value:
 // - <none>
-void TermTelemetry::Log(const Codes code)
+void TermTelemetry::Log(const Codes code) noexcept
 {
     // Initially we wanted to pass over a string (ex. "CUU") and use a dictionary data type to hold the counts.
     // However we would have to search through the dictionary every time we called this method, so we decided
@@ -63,7 +74,7 @@ void TermTelemetry::Log(const Codes code)
 // - code - VT100 code.
 // Return Value:
 // - <none>
-void TermTelemetry::LogFailed(const wchar_t wch)
+void TermTelemetry::LogFailed(const wchar_t wch) noexcept
 {
     if (wch > CHAR_MAX)
     {
@@ -85,11 +96,11 @@ void TermTelemetry::LogFailed(const wchar_t wch)
 // - <none>
 // Return Value:
 // - total number.
-unsigned int TermTelemetry::GetAndResetTimesUsedCurrent()
+unsigned int TermTelemetry::GetAndResetTimesUsedCurrent() noexcept
 {
-    unsigned int uiTemp = _uiTimesUsedCurrent;
+    const auto temp = _uiTimesUsedCurrent;
     _uiTimesUsedCurrent = 0;
-    return uiTemp;
+    return temp;
 }
 
 // Routine Description:
@@ -99,11 +110,11 @@ unsigned int TermTelemetry::GetAndResetTimesUsedCurrent()
 // - <none>
 // Return Value:
 // - total number.
-unsigned int TermTelemetry::GetAndResetTimesFailedCurrent()
+unsigned int TermTelemetry::GetAndResetTimesFailedCurrent() noexcept
 {
-    unsigned int uiTemp = _uiTimesFailedCurrent;
+    const auto temp = _uiTimesFailedCurrent;
     _uiTimesFailedCurrent = 0;
-    return uiTemp;
+    return temp;
 }
 
 // Routine Description:
@@ -113,11 +124,11 @@ unsigned int TermTelemetry::GetAndResetTimesFailedCurrent()
 // - <none>
 // Return Value:
 // - total number.
-unsigned int TermTelemetry::GetAndResetTimesFailedOutsideRangeCurrent()
+unsigned int TermTelemetry::GetAndResetTimesFailedOutsideRangeCurrent() noexcept
 {
-    unsigned int uiTemp = _uiTimesFailedOutsideRangeCurrent;
+    const auto temp = _uiTimesFailedOutsideRangeCurrent;
     _uiTimesFailedOutsideRangeCurrent = 0;
-    return uiTemp;
+    return temp;
 }
 
 // Routine Description:
@@ -128,7 +139,7 @@ unsigned int TermTelemetry::GetAndResetTimesFailedOutsideRangeCurrent()
 // - writeLog - true if we should write the log.
 // Return Value:
 // - <none>
-void TermTelemetry::SetShouldWriteFinalLog(const bool writeLog)
+void TermTelemetry::SetShouldWriteFinalLog(const bool writeLog) noexcept
 {
     _fShouldWriteFinalLog = writeLog;
 }
@@ -140,7 +151,7 @@ void TermTelemetry::SetShouldWriteFinalLog(const bool writeLog)
 // - activityId - Pointer to Guid to set our activity Id to.
 // Return Value:
 // - <none>
-void TermTelemetry::SetActivityId(const GUID* activityId)
+void TermTelemetry::SetActivityId(const GUID* activityId) noexcept
 {
     _activityId = *activityId;
 }
@@ -246,8 +257,11 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[OSCFG], "OscForegroundColor"),
                                       TraceLoggingUInt32(_uiTimesUsed[OSCBG], "OscBackgroundColor"),
                                       TraceLoggingUInt32(_uiTimesUsed[REP], "REP"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECALN], "DECALN"),
                                       TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
                                       TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"));
         }
     }
 }
+
+#pragma warning(pop)

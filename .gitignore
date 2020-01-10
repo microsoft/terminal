@@ -261,6 +261,9 @@ build*.rec
 build*.wrn
 build*.metadata
 
+# MS Build binary logs
+*.binlog
+
 # .razzlerc.cmd file - used by dev environment
 tools/.razzlerc.*
 # .PowershellModules - if one needs a powershell module dependency, one

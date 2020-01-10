@@ -74,7 +74,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
     }
 
-    const auto bufferAttributes = screenInfo.GetAttributes();
+    // The VT standard requires the lines revealed when scrolling are filled
+    // with the current background color, but with no meta attributes set.
+    auto fillAttributes = screenInfo.GetAttributes();
+    fillAttributes.SetStandardErase();
 
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
     auto viewport = screenInfo.GetViewport();
@@ -144,7 +147,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
         try
         {
-            ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, fillAttributes);
         }
         CATCH_LOG();
 
@@ -193,11 +196,20 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
         try
         {
-            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, fillAttributes);
         }
         CATCH_LOG();
 
         coordCursor.Y -= diff;
+    }
+
+    // If the margins are set, then it shouldn't be possible for the cursor to
+    //   move below the bottom of the viewport. Either it should be constrained
+    //   inside the margins by one of the scrollDown cases handled above, or
+    //   we'll need to clamp it inside the viewport here.
+    if (fMarginsSet && coordCursor.Y > viewport.BottomInclusive())
+    {
+        coordCursor.Y = viewport.BottomInclusive();
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -746,7 +758,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             if (screenInfo.InVTMode())
             {
                 const COORD cCursorOld = cursor.GetPosition();
-                // Get Forward tab handles tabbing past the end of the buffer
                 CursorPosition = screenInfo.GetForwardTab(cCursorOld);
             }
             else
@@ -957,7 +968,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 StateMachine& machine = screenInfo.GetStateMachine();
                 size_t const cch = BufferSize / sizeof(WCHAR);
 
-                machine.ProcessString(pwchRealUnicode, cch);
+                machine.ProcessString({ pwchRealUnicode, cch });
                 *pcb += BufferSize;
             }
         }

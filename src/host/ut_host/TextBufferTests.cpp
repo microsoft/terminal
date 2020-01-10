@@ -639,7 +639,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
 
     wchar_t* sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
     const short x = cursor.GetPosition().X;
     const short y = cursor.GetPosition().Y;
     const ROW& row = tbi.GetRowByOffset(y);
@@ -665,7 +665,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), gci.LookupBackgroundColor(si.GetAttributes()));
 
     wchar_t* reset = L"\x1b[0m";
-    stateMachine.ProcessString(reset, std::wcslen(reset));
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
@@ -683,7 +683,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     Log::Comment(L"Case 2 \"\\E[m\\E[48;2;64;128;255mX\\E[39mX\\E[m\"");
 
     wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
@@ -709,7 +709,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), gci.LookupForegroundColor(si.GetAttributes()));
 
     wchar_t* reset = L"\x1b[0m";
-    stateMachine.ProcessString(reset, std::wcslen(reset));
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
@@ -725,7 +725,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     //      Make sure that the second X has RGB attributes AND underline
     Log::Comment(L"Case 3 \"\\E[m\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
     wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
@@ -754,7 +754,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
 
     wchar_t* reset = L"\x1b[0m";
-    stateMachine.ProcessString(reset, std::wcslen(reset));
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
@@ -773,7 +773,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
     wchar_t* sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
@@ -796,7 +796,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), bright_green);
 
     wchar_t* reset = L"\x1b[0m";
-    stateMachine.ProcessString(reset, std::wcslen(reset));
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestRgbEraseLine()
@@ -815,15 +815,15 @@ void TextBufferTests::TestRgbEraseLine()
     //      BG = rgb(128;128;255)
     {
         std::wstring sequence = L"\x1b[m\x1b[48;2;64;128;255m";
-        stateMachine.ProcessString(&sequence[0], sequence.length());
+        stateMachine.ProcessString(sequence);
         sequence = L"X";
-        stateMachine.ProcessString(&sequence[0], sequence.length());
+        stateMachine.ProcessString(sequence);
         sequence = L"\x1b[48;2;128;128;255m";
-        stateMachine.ProcessString(&sequence[0], sequence.length());
+        stateMachine.ProcessString(sequence);
         sequence = L"\x1b[K";
-        stateMachine.ProcessString(&sequence[0], sequence.length());
+        stateMachine.ProcessString(sequence);
         sequence = L"X";
-        stateMachine.ProcessString(&sequence[0], sequence.length());
+        stateMachine.ProcessString(sequence);
 
         const auto x = cursor.GetPosition().X;
         const auto y = cursor.GetPosition().Y;
@@ -853,7 +853,7 @@ void TextBufferTests::TestRgbEraseLine()
             VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr), RGB(128, 128, 255));
         }
         std::wstring reset = L"\x1b[0m";
-        stateMachine.ProcessString(&reset[0], reset.length());
+        stateMachine.ProcessString(reset);
     }
 }
 
@@ -872,7 +872,7 @@ void TextBufferTests::TestUnBold()
     //      The first X should be bright green.
     //      The second x should be dark green.
     std::wstring sequence = L"\x1b[1;32mX\x1b[22mX";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -905,7 +905,7 @@ void TextBufferTests::TestUnBold()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
 
     std::wstring reset = L"\x1b[0m";
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestUnBoldRgb()
@@ -924,7 +924,7 @@ void TextBufferTests::TestUnBoldRgb()
     //      The second X should be dark green, and not legacy.
     //      BG = rgb(1;2;3)
     std::wstring sequence = L"\x1b[1;32m\x1b[48;2;1;2;3mX\x1b[22mX";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -960,7 +960,7 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
 
     std::wstring reset = L"\x1b[0m";
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestComplexUnBold()
@@ -984,7 +984,7 @@ void TextBufferTests::TestComplexUnBold()
     //      BG = rgb(1;2;3)
     std::wstring sequence = L"\x1b[1;32m\x1b[48;2;1;2;3mA\x1b[22mB\x1b[38;2;32;32;32mC\x1b[1mD\x1b[38;2;64;64;64mE\x1b[22mF";
     Log::Comment(NoThrowString().Format(sequence.c_str()));
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1054,7 +1054,7 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_IS_FALSE(attrF.IsBold());
 
     std::wstring reset = L"\x1b[0m";
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::CopyAttrs()
@@ -1073,7 +1073,7 @@ void TextBufferTests::CopyAttrs()
     // The third X should be blue
     // The fourth X should be magenta
     std::wstring sequence = L"\x1b[32mX\x1b[33mX\n\x1b[34mX\x1b[35mX\x1b[H\x1b[M";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1119,7 +1119,7 @@ void TextBufferTests::EmptySgrTest()
     cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
     const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
     const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
 
@@ -1129,7 +1129,7 @@ void TextBufferTests::EmptySgrTest()
     //      The second X should be (darkRed,default).
     //      The third X should be default colors.
     std::wstring sequence = L"\x1b[0mX\x1b[31mX\x1b[31;mX";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1166,7 +1166,7 @@ void TextBufferTests::EmptySgrTest()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), defaultFg);
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), defaultBg);
 
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestReverseReset()
@@ -1183,7 +1183,7 @@ void TextBufferTests::TestReverseReset()
     cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
     const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
     const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
 
@@ -1193,7 +1193,7 @@ void TextBufferTests::TestReverseReset()
     //      The second X should be (fg,bg) = (dark_green, rgb(128;5;255))
     //      The third X should be (fg,bg) = (rgb(128;5;255), dark_green)
     std::wstring sequence = L"\x1b[42m\x1b[38;2;128;5;255mX\x1b[7mX\x1b[27mX";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1232,7 +1232,7 @@ void TextBufferTests::TestReverseReset()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), rgbColor);
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), dark_green);
 
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::CopyLastAttr()
@@ -1251,7 +1251,7 @@ void TextBufferTests::CopyLastAttr()
     cursor.SetYPosition(0);
 
     std::wstring reset = L"\x1b[0m";
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
     const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
     const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
 
@@ -1278,30 +1278,30 @@ void TextBufferTests::CopyLastAttr()
     // then go home, and insert a line.
 
     // Row 1
-    stateMachine.ProcessString(&solFgSeq[0], solFgSeq.length());
-    stateMachine.ProcessString(&solBgSeq[0], solBgSeq.length());
-    stateMachine.ProcessString(L"X", 1);
-    stateMachine.ProcessString(L"\n", 1);
+    stateMachine.ProcessString(solFgSeq);
+    stateMachine.ProcessString(solBgSeq);
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(L"\n");
 
     // Row 2
     // Remember that the colors from before persist here too, so we don't need
     //      to emit both the FG and BG if they haven't changed.
-    stateMachine.ProcessString(L"X", 1);
-    stateMachine.ProcessString(&solCyanSeq[0], solCyanSeq.length());
-    stateMachine.ProcessString(L"X", 1);
-    stateMachine.ProcessString(L"\n", 1);
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(solCyanSeq);
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(L"\n");
 
     // Row 3
-    stateMachine.ProcessString(&solFgSeq[0], solFgSeq.length());
-    stateMachine.ProcessString(&solBgSeq[0], solBgSeq.length());
-    stateMachine.ProcessString(L"X", 1);
-    stateMachine.ProcessString(&solCyanSeq[0], solCyanSeq.length());
-    stateMachine.ProcessString(L"X", 1);
-    stateMachine.ProcessString(&solFgSeq[0], solFgSeq.length());
-    stateMachine.ProcessString(L"X", 1);
+    stateMachine.ProcessString(solFgSeq);
+    stateMachine.ProcessString(solBgSeq);
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(solCyanSeq);
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(solFgSeq);
+    stateMachine.ProcessString(L"X");
 
     std::wstring insertLineAtHome = L"\x1b[H\x1b[L";
-    stateMachine.ProcessString(&insertLineAtHome[0], insertLineAtHome.length());
+    stateMachine.ProcessString(insertLineAtHome);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1359,7 +1359,7 @@ void TextBufferTests::CopyLastAttr()
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr3C), solFg);
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr3C), solBg);
 
-    stateMachine.ProcessString(&reset[0], reset.length());
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestRgbThenBold()
@@ -1377,7 +1377,7 @@ void TextBufferTests::TestRgbThenBold()
     const auto background = RGB(168, 153, 132);
 
     const wchar_t* const sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
     const auto& row = tbi.GetRowByOffset(y);
@@ -1404,7 +1404,7 @@ void TextBufferTests::TestRgbThenBold()
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), background);
 
     wchar_t* reset = L"\x1b[0m";
-    stateMachine.ProcessString(reset, std::wcslen(reset));
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestResetClearsBoldness()
@@ -1430,7 +1430,7 @@ void TextBufferTests::TestResetClearsBoldness()
 
     wchar_t* sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
     Log::Comment(NoThrowString().Format(sequence));
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1464,7 +1464,7 @@ void TextBufferTests::TestResetClearsBoldness()
     VERIFY_IS_FALSE(attrD.IsBold());
 
     wchar_t* reset = L"\x1b[0m";
-    stateMachine.ProcessString(reset, std::wcslen(reset));
+    stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestBackspaceRightSideVt()
@@ -1482,7 +1482,7 @@ void TextBufferTests::TestBackspaceRightSideVt()
     Log::Comment(NoThrowString().Format(sequence));
 
     const auto preCursorPosition = cursor.GetPosition();
-    stateMachine.ProcessString(sequence, std::wcslen(sequence));
+    stateMachine.ProcessString(sequence);
     const auto postCursorPosition = cursor.GetPosition();
 
     // make sure newline was handled correctly
@@ -1514,7 +1514,7 @@ void TextBufferTests::TestBackspaceStrings()
         x0,
         y0));
     std::wstring seq = L"a\b \b";
-    stateMachine.ProcessString(seq.c_str(), seq.length());
+    stateMachine.ProcessString(seq);
 
     const auto x1 = cursor.GetPosition().X;
     const auto y1 = cursor.GetPosition().Y;
@@ -1523,13 +1523,13 @@ void TextBufferTests::TestBackspaceStrings()
     VERIFY_ARE_EQUAL(y1, y0);
 
     seq = L"a";
-    stateMachine.ProcessString(seq.c_str(), seq.length());
+    stateMachine.ProcessString(seq);
     seq = L"\b";
-    stateMachine.ProcessString(seq.c_str(), seq.length());
+    stateMachine.ProcessString(seq);
     seq = L" ";
-    stateMachine.ProcessString(seq.c_str(), seq.length());
+    stateMachine.ProcessString(seq);
     seq = L"\b";
-    stateMachine.ProcessString(seq.c_str(), seq.length());
+    stateMachine.ProcessString(seq);
 
     const auto x2 = cursor.GetPosition().X;
     const auto y2 = cursor.GetPosition().Y;

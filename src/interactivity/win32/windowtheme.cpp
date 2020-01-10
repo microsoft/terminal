@@ -7,9 +7,18 @@
 
 #include <dwmapi.h>
 
+#ifdef __INSIDE_WINDOWS
+#include <dwmapip.h>
+#endif
+
 using namespace Microsoft::Console::Interactivity::Win32;
 
-#define DWMWA_USE_IMMERSIVE_DARK_MODE 19
+#define DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 19
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
 #define DARK_MODE_STRING_NAME L"DarkMode_Explorer"
 #define UXTHEME_DLL_NAME L"uxtheme.dll"
 #define UXTHEME_SHOULDAPPSUSEDARKMODE_ORDINAL 132
@@ -39,12 +48,15 @@ WindowTheme::WindowTheme()
     if (isDarkMode)
     {
         RETURN_IF_FAILED(SetWindowTheme(hwnd, DARK_MODE_STRING_NAME, nullptr));
-        RETURN_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &isDarkMode, sizeof(isDarkMode)));
     }
     else
     {
         RETURN_IF_FAILED(SetWindowTheme(hwnd, L"", nullptr));
-        RETURN_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &isDarkMode, sizeof(isDarkMode)));
+    }
+
+    if (FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &isDarkMode, sizeof(isDarkMode))))
+    {
+        RETURN_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, &isDarkMode, sizeof(isDarkMode)));
     }
 
     return S_OK;
