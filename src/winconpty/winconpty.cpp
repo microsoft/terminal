@@ -82,6 +82,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
+    // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
     const wchar_t* pwszFormat = L"\"%s\" --headless %s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
