@@ -41,15 +41,32 @@ private:
     static const std::wregex _commandDelimiterRegex;
 
     CLI::App _app{ "wt - the Windows Terminal" };
+
+    // this is a helper struct to encapsulate all the options for a subcommand
+    // that produces a NewTerminalArgs.
+    struct NewTerminalSubcommand
+    {
+        CLI::App* subcommand;
+        CLI::Option* commandlineOption;
+        CLI::Option* profileNameOption;
+        CLI::Option* startingDirectoryOption;
+    };
+
     // --- Subcommands ---
-    CLI::App* _newTabCommand;
-    CLI::App* _newPaneCommand;
+    NewTerminalSubcommand _newTabCommand;
+    NewTerminalSubcommand _newPaneCommand;
     CLI::App* _focusTabCommand;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
+    CLI::Option* _horizontalOption;
+    CLI::Option* _verticalOption;
+
     std::string _profileName;
     std::string _startingDirectory;
+
+    // _comamndline will receive the commandline as it's parsed by CLI11
     std::vector<std::string> _commandline;
+    const Commandline* _currentCommandline{ nullptr };
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
@@ -62,8 +79,8 @@ private:
     std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
     std::string _exitMessage;
 
-    winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs();
-    void _addNewTerminalArgs(CLI::App* subcommand);
+    winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
+    void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
     void _buildNewTabParser();
     void _buildSplitPaneParser();

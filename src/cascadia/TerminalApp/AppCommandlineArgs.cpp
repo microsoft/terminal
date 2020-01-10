@@ -31,6 +31,15 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
     const int argc = static_cast<int>(command.Argc());
 
+    // Stash a pointer to the current Commandline instance we're parsing.
+    // When we're trying to parse the commandline for a new-tab/split-pane
+    // subcommand, we'll need to inspect the original Args from this
+    // Commandline to find the entirety of the commandline args for the new
+    // terminal instance. Discard the pointer when we leave this method. The
+    // pointer will be safe for usage, since the parse callback will be
+    // executed on the same thread, higher on the stack.
+    _currentCommandline = &command;
+    auto clearPointer = wil::scope_exit([this]() { _currentCommandline = nullptr; });
     try
     {
         // CLI11 needs a mutable vector<string>, so copy out the args here.
@@ -69,8 +78,8 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 
         if (_noCommandsProvided())
         {
-            _newTabCommand->clear();
-            _newTabCommand->parse(args);
+            _newTabCommand.subcommand->clear();
+            _newTabCommand.subcommand->parse(args);
         }
     }
     catch (const CLI::CallForHelp& e)
@@ -90,12 +99,12 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
                 // "See above for why it's begin() + 1"
                 std::vector<std::string> args{ command.Args().begin() + 1, command.Args().end() };
                 std::reverse(args.begin(), args.end());
-                _newTabCommand->clear();
-                _newTabCommand->parse(args);
+                _newTabCommand.subcommand->clear();
+                _newTabCommand.subcommand->parse(args);
             }
             catch (const CLI::ParseError& e)
             {
-                return _handleExit(*_newTabCommand, e);
+                return _handleExit(*_newTabCommand.subcommand, e);
             }
         }
         else
@@ -154,19 +163,21 @@ void AppCommandlineArgs::_buildParser()
 // - <none>
 void AppCommandlineArgs::_buildNewTabParser()
 {
-    _newTabCommand = _app.add_subcommand("new-tab", NEEDS_LOC("Create a new tab"));
+    _newTabCommand.subcommand = _app.add_subcommand("new-tab", NEEDS_LOC("Create a new tab"));
     _addNewTerminalArgs(_newTabCommand);
 
     // When ParseCommand is called, if this subcommand was provided, this
     // callback function will be triggered on the same thread. We can be sure
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
-    _newTabCommand->callback([&, this]() {
+    _newTabCommand.subcommand->callback([&, this]() {
         // Buld the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
         newTabAction->Action(ShortcutAction::NewTab);
         auto args = winrt::make_self<implementation::NewTabArgs>();
-        args->TerminalArgs(_getNewTerminalArgs());
+        // _getNewTerminalArgs MUST be called before parsing any other options,
+        // as it might clear those options while finding the commandline
+        args->TerminalArgs(_getNewTerminalArgs(_newTabCommand));
         newTabAction->Args(*args);
         _startupActions.push_back(*newTabAction);
     });
@@ -180,28 +191,31 @@ void AppCommandlineArgs::_buildNewTabParser()
 // - <none>
 void AppCommandlineArgs::_buildSplitPaneParser()
 {
-    _newPaneCommand = _app.add_subcommand("split-pane", NEEDS_LOC("Create a new pane"));
+    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", NEEDS_LOC("Create a new pane"));
     _addNewTerminalArgs(_newPaneCommand);
-    auto* horizontalOpt = _newPaneCommand->add_flag("-H,--horizontal",
-                                                    _splitHorizontal,
-                                                    NEEDS_LOC("Create the new pane as a horizontal split (think [-])"));
-    auto* verticalOpt = _newPaneCommand->add_flag("-V,--vertical",
-                                                  _splitVertical,
-                                                  NEEDS_LOC("Create the new pane as a vertical split (think [|])"));
-    verticalOpt->excludes(horizontalOpt);
+    _horizontalOption = _newPaneCommand.subcommand->add_flag("-H,--horizontal",
+                                                             _splitHorizontal,
+                                                             NEEDS_LOC("Create the new pane as a horizontal split (think [-])"));
+    _verticalOption = _newPaneCommand.subcommand->add_flag("-V,--vertical",
+                                                           _splitVertical,
+                                                           NEEDS_LOC("Create the new pane as a vertical split (think [|])"));
+    _verticalOption->excludes(_horizontalOption);
 
     // When ParseCommand is called, if this subcommand was provided, this
     // callback function will be triggered on the same thread. We can be sure
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
-    _newPaneCommand->callback([&, this]() {
+    _newPaneCommand.subcommand->callback([&, this]() {
         // Buld the SplitPane action from the values we've parsed on the commandline.
         auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
         splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
         auto args = winrt::make_self<implementation::SplitPaneArgs>();
-        args->TerminalArgs(_getNewTerminalArgs());
-
-        if (_splitHorizontal)
+        // _getNewTerminalArgs MUST be called before parsing any other options,
+        // as it might clear those options while finding the commandline
+        args->TerminalArgs(_getNewTerminalArgs(_newPaneCommand));
+        // Make sure to use the `Option`s here to check if they were set -
+        // _getNewTerminalArgs might reset them while parsing a commandline
+        if ((*_horizontalOption || *_verticalOption) && (_splitHorizontal))
         {
             args->SplitStyle(SplitState::Horizontal);
         }
@@ -266,17 +280,17 @@ void AppCommandlineArgs::_buildFocusTabParser()
 // - subcommand: the command to add the args to.
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_addNewTerminalArgs(CLI::App* subcommand)
+void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubcommand& subcommand)
 {
-    subcommand->add_option("-p,--profile",
-                           _profileName,
-                           NEEDS_LOC("Open with the given profile. Accepts either the name or guid of a profile"));
-    subcommand->add_option("-d,--startingDirectory",
-                           _startingDirectory,
-                           NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
-    subcommand->add_option("cmdline",
-                           _commandline,
-                           NEEDS_LOC("Commandline to run in the given profile"));
+    subcommand.profileNameOption = subcommand.subcommand->add_option("-p,--profile",
+                                                                     _profileName,
+                                                                     NEEDS_LOC("Open with the given profile. Accepts either the name or guid of a profile"));
+    subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
+                                                                           _startingDirectory,
+                                                                           NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
+    subcommand.commandlineOption = subcommand.subcommand->add_option("cmdline",
+                                                                     _commandline,
+                                                                     NEEDS_LOC("Commandline to run in the given profile"));
 }
 
 // Method Description:
@@ -285,43 +299,92 @@ void AppCommandlineArgs::_addNewTerminalArgs(CLI::App* subcommand)
 // - <none>
 // Return Value:
 // - A fully initialized NewTerminalArgs corresponding to values we've currently parsed.
-NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs()
+NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewTerminalSubcommand& subcommand)
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
-    if (!_profileName.empty())
+
+    if (*subcommand.commandlineOption)
+    {
+        auto opts = subcommand.subcommand->parse_order(); // const std::vector<Option*>&
+        auto foundCommandlineStart = false;
+        for (auto opt : opts)
+        {
+            if (opt == subcommand.commandlineOption)
+            {
+                foundCommandlineStart = true;
+            }
+            else if (foundCommandlineStart)
+            {
+                opt->clear();
+            }
+            // otherwise, this option preceeded the start of the commandline
+        }
+
+        const auto& firstCmdlineArg = _commandline.at(0);
+        auto foundFirstArg = false;
+        std::string fullCommandlineBuffer;
+        for (const auto& arg : _currentCommandline->Args())
+        {
+            if (arg == firstCmdlineArg)
+            {
+                foundFirstArg = true;
+            }
+            if (foundFirstArg)
+            {
+                if (arg.find(" ") != std::string::npos)
+                {
+                    fullCommandlineBuffer += "\"";
+                    fullCommandlineBuffer += arg;
+                    fullCommandlineBuffer += "\"";
+                }
+                else
+                {
+                    fullCommandlineBuffer += arg;
+                }
+                fullCommandlineBuffer += " ";
+            }
+        }
+
+        // Discard the space from the last arg we appended.
+        std::string_view realCommandline = fullCommandlineBuffer;
+        realCommandline = realCommandline.substr(0, static_cast<size_t>(fullCommandlineBuffer.size() - 1));
+        args->Commandline(winrt::to_hstring(realCommandline));
+    }
+
+    if (*subcommand.profileNameOption)
     {
         args->Profile(winrt::to_hstring(_profileName));
     }
 
-    if (!_startingDirectory.empty())
+    if (*subcommand.startingDirectoryOption)
     {
         args->StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
-    if (!_commandline.empty())
-    {
-        std::string buffer;
-        size_t i = 0;
-        for (auto arg : _commandline)
-        {
-            if (arg.find(" ") != std::string::npos)
-            {
-                buffer += "\"";
-                buffer += arg;
-                buffer += "\"";
-            }
-            else
-            {
-                buffer += arg;
-            }
-            if (i + 1 < _commandline.size())
-            {
-                buffer += " ";
-            }
-            i++;
-        }
-        args->Commandline(winrt::to_hstring(buffer));
-    }
+    // if (!_commandline.empty())
+    // {
+    //     std::string buffer;
+    //     size_t i = 0;
+    //     for (auto arg : _commandline)
+    //     {
+    //         if (arg.find(" ") != std::string::npos)
+    //         {
+    //             buffer += "\"";
+    //             buffer += arg;
+    //             buffer += "\"";
+    //         }
+    //         else
+    //         {
+    //             buffer += arg;
+    //         }
+    //         if (i + 1 < _commandline.size())
+    //         {
+    //             buffer += " ";
+    //         }
+    //         i++;
+    //     }
+    //     args->Commandline(winrt::to_hstring(buffer));
+    // }
 
     return *args;
 }
@@ -336,9 +399,9 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs()
 // - true if no sub commands were parsed.
 bool AppCommandlineArgs::_noCommandsProvided()
 {
-    return !(*_newTabCommand ||
+    return !(*_newTabCommand.subcommand ||
              *_focusTabCommand ||
-             *_newPaneCommand);
+             *_newPaneCommand.subcommand);
 }
 
 // Method Description:
