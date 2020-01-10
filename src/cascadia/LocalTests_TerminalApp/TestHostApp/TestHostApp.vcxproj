@@ -116,7 +116,17 @@
 
   <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
     don't roll these up automatically, so we'll need to copy them manually
-    (below) -->
+    (below)
+
+    The dependencies from TerminalConnection get rolled up in the
+    GetPackagingOutputs step, when it produces the "appx recipe". This means
+    they only show up when the build produces an AppX\ folder for either running
+    or packaging.
+
+    It is literally impossible to produce an AppX\ folder using MSBuild without
+    packaging an appx, and we don't want to do that anyway, so we use these copy
+    rules instead.
+  -->
   <ItemGroup>
       <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
   </ItemGroup>
