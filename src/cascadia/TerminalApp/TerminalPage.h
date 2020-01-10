@@ -97,10 +97,12 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         int _GetFocusedTabIndex() const;
-        void _SetFocusedTabIndex(int tabIndex);
+        winrt::fire_and_forget _SetFocusedTabIndex(int tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();
+
+        winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
@@ -110,9 +112,9 @@ namespace winrt::TerminalApp::implementation
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
-        void _CopyToClipboardHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData);
-        void _PasteFromClipboardHandler(const IInspectable& sender,
-                                        const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
+        winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
+        winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
+                                                          const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
         static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
@@ -127,7 +129,7 @@ namespace winrt::TerminalApp::implementation
 
         void _Find();
 
-        void _RefreshUIForSettingsReload();
+        winrt::fire_and_forget _RefreshUIForSettingsReload();
 
         void _ToggleFullscreen();
 
