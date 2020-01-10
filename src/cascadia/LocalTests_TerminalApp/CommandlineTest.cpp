@@ -936,7 +936,6 @@ namespace TerminalAppLocalTests
         {
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L";", L"slpit-pane" };
-            DebugBreak();
             _buildCommandlinesHelper(appArgs, 2u, rawCommands);
 
             VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());

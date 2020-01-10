@@ -303,6 +303,27 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
 
+    // If a commandline was provided, we need to get a little tricky parsing
+    // here. The behavior we want is that once we see a string that we don't
+    // recognize, we want to treat the rest of the command as the commandline to
+    // pass to the NewTerminalArgs. However, if that commandline contains any
+    // options that _we_ understand, CLI11 will try to first grab those options
+    // from the provided string to parse our own args, and _not_ include them in
+    // the _commandline here. Consider for example, the following command:
+    //
+    //     wt.exe new-tab wsl.exe -d Alpine
+    //
+    // We want the commandline here to be "wsl.exe -d Alpine zsh". However, by
+    // default, that'll be parsed by CLI11 as a _startingDirectory of "Alpine",
+    // with a commandline of "wsl.exe zsh".
+    //
+    // So, instead, when we see that there's a commandlineOption that's been
+    // parsed, we'll use that as our cue to handle the commandline ourselves.
+    //  * We'll start by going through all the options that were parsed by
+    //    CLI11, and clearing all of the ones after the first commandline
+    //    option. This will prevent use from acting on their values later.
+    //  * Then, we'll grab all the strings starting with the first commandline
+    //    string, and add them to the commandline for the NewTerminalArgs.
     if (*subcommand.commandlineOption)
     {
         auto opts = subcommand.subcommand->parse_order(); // const std::vector<Option*>&
@@ -320,6 +341,8 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
             // otherwise, this option preceeded the start of the commandline
         }
 
+        // Concatenate all the strings starting with the first arg in the
+        // _commandline as the _real_ commandline.
         const auto& firstCmdlineArg = _commandline.at(0);
         auto foundFirstArg = false;
         std::string fullCommandlineBuffer;
@@ -360,31 +383,6 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     {
         args->StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
-
-    // if (!_commandline.empty())
-    // {
-    //     std::string buffer;
-    //     size_t i = 0;
-    //     for (auto arg : _commandline)
-    //     {
-    //         if (arg.find(" ") != std::string::npos)
-    //         {
-    //             buffer += "\"";
-    //             buffer += arg;
-    //             buffer += "\"";
-    //         }
-    //         else
-    //         {
-    //             buffer += arg;
-    //         }
-    //         if (i + 1 < _commandline.size())
-    //         {
-    //             buffer += " ";
-    //         }
-    //         i++;
-    //     }
-    //     args->Commandline(winrt::to_hstring(buffer));
-    // }
 
     return *args;
 }

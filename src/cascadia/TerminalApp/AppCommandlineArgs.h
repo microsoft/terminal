@@ -42,7 +42,7 @@ private:
 
     CLI::App _app{ "wt - the Windows Terminal" };
 
-    // this is a helper struct to encapsulate all the options for a subcommand
+    // This is a helper struct to encapsulate all the options for a subcommand
     // that produces a NewTerminalArgs.
     struct NewTerminalSubcommand
     {
