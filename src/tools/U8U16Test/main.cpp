@@ -329,12 +329,12 @@ void u8u16_ptr_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkL
 
 void CompNaturalLang(const std::string& fileName)
 {
-    std::string head{__func__};
+    std::string head{ __func__ };
     head += " - " + fileName;
     PrintHeader(head.c_str());
     std::ostringstream u8Ss{};
     std::ostringstream buf{};
-    buf << std::ifstream{fileName}.rdbuf();
+    buf << std::ifstream{ fileName }.rdbuf();
     std::fill_n(std::ostream_iterator<const char*>{ u8Ss }, 100000u, buf.str().c_str());
     std::string u8Str = u8Ss.str();
 
