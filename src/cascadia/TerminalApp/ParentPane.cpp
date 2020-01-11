@@ -29,7 +29,7 @@ ParentPane::ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<Lea
 }
 
 // Method Description:
-// - Sets up row/column definitions for this pane. There are two total row/cols, 
+// - Sets up row/column definitions for this pane. There are two total row/cols,
 //   one for each children and are given a size in pixels, based off the
 //   available space, and the percent of the space they respectively consume,
 //   which is stored in _desiredSplitPosition
@@ -74,8 +74,8 @@ void ParentPane::_CreateRowColDefinitions(const Size& rootSize)
 }
 
 // Method Description:
-// - Called after ctor to start listening to our children and append their xaml 
-//   elements. Call this only when both children can be attached (ep. they are not 
+// - Called after ctor to start listening to our children and append their xaml
+//   elements. Call this only when both children can be attached (ep. they are not
 //   already attached somewhere).
 // Arguments:
 // - <none>
@@ -115,7 +115,7 @@ void ParentPane::_SetupChildEventHandlers(bool firstChild)
             _CloseChild(firstChild);
         });
 
-        // When our child is a leaf and got splitted, it produces the new parent pane that contains 
+        // When our child is a leaf and got splitted, it produces the new parent pane that contains
         // both him and the new leaf near him. We then replace that child with the new parent pane.
         typeChangedToken = childAsLeaf->Splitted([=, &child](std::shared_ptr<ParentPane> splittedChild) {
             // Unsub form all the events of the child. It will now have a new parent and we
@@ -287,7 +287,7 @@ void ParentPane::Relayout()
 
 // Method Description:
 // - Changes the relative sizes of our children, so that the separation point moves
-//   in given direction. Chooses ParentPane that's closest depth-wise to the currently 
+//   in given direction. Chooses ParentPane that's closest depth-wise to the currently
 //   focused LeafPane, that's also in the correct direction to be moved. If it didn't
 //   find one in the tree, then this method returns false, as we couldn't handle the resize.
 // Arguments:
@@ -503,7 +503,7 @@ void ParentPane::_CloseChild(const bool closeFirst)
     });
 
     // When we invoke the ChildClosed event, our reference count might (and should) drop
-    // to 0 and we'd become freed, so to prevent that we capture one more ref for the 
+    // to 0 and we'd become freed, so to prevent that we capture one more ref for the
     // duration of this function.
     const auto lifeSaver = shared_from_this();
 

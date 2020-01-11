@@ -44,8 +44,8 @@ public:
     GUID GetProfile() const noexcept;
     bool CanSplit(winrt::TerminalApp::SplitState splitType);
     std::shared_ptr<LeafPane> Split(winrt::TerminalApp::SplitState splitType,
-                      const GUID& profile,
-                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+                                    const GUID& profile,
+                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void SetActive(const bool focusControl);
     void ClearActive();

@@ -325,7 +325,7 @@ void Tab::ClosePane()
 //   the events that we register for every other pane in the tree, however, this method
 //   also calls _AttachEventHandlersToLeafPane and _AttachEventHandlersToControl, so there
 //   is no need to also call these on the root pane.
-// - It is called on initialization, and when the root pane changes (this is, it gets 
+// - It is called on initialization, and when the root pane changes (this is, it gets
 //   splitted or collapsed after split).
 // Arguments:
 // - <none>
@@ -373,7 +373,7 @@ void Tab::_SetupRootPaneEventHandlers()
 
 // Method Description:
 // - Unsubscribes from all the events of the root pane that we're subscribed to.
-// - Called when the root pane gets splitted/collapsed (because it is now the root 
+// - Called when the root pane gets splitted/collapsed (because it is now the root
 //   pane then), when the root pane closes and in dtor.
 // Arguments:
 // - <none>

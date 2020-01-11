@@ -48,7 +48,7 @@ public:
     virtual std::shared_ptr<LeafPane> FindActivePane() = 0;
 
     // Method Description:
-    // - Invokes the given action on each descendant leaf pane, which may be just this pane if 
+    // - Invokes the given action on each descendant leaf pane, which may be just this pane if
     //   it is a leaf.
     // Arguments:
     // - action: function to invoke on leaves. Parameters:
