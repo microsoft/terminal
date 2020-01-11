@@ -242,7 +242,16 @@ void til::u16state::reset() noexcept
             // - 00..7F
             if (gsl::narrow_cast<uint8_t>(*it8) <= 0x7Fu)
             {
+                // The outcome of performance tests is that the function performs
+                // much better using pointers than std::string methods like .push_back() or .append().
+                // String `out` was resized to the same number of code units as in string `in`
+                // which would be needed in the worst case. Thus, it16 will always point to a valid address
+                // in the array returned using .data().
+#pragma warning(push)
+#pragma warning(disable : 26481) // bounds.1
+#pragma warning(disable : 26489) // lifetime.1
                 *it16++ = gsl::narrow_cast<wchar_t>(*it8++);
+#pragma warning(pop)
             }
             else
             {
@@ -352,11 +361,6 @@ void til::u16state::reset() noexcept
                 // *** convert the code point to UTF-16 ***
                 if (codePoint != unicodeReplacementChar || discardInvalids == false)
                 {
-                    // The outcome of performance tests is that the function performs
-                    // much better using pointers than std::string methods like .push_back() or .append().
-                    // String `out` was resized to three times as many code units as in string `in`
-                    // which would be needed in the worst case. Thus, it8 will always point to a valid address
-                    // in the array returned using .data().
 #pragma warning(push)
 #pragma warning(disable : 26481) // bounds.1
 #pragma warning(disable : 26489) // lifetime.1
@@ -433,7 +437,16 @@ void til::u16state::reset() noexcept
             // *** convert ASCII directly to UTF-8 ***
             if (*it16 <= 0x007Fu)
             {
+                // The outcome of performance tests is that the function performs
+                // much better using pointers than std::string methods like .push_back() or .append().
+                // String `out` was resized to three times as many code units as in string `in`
+                // which would be needed in the worst case. Thus, it8 will always point to a valid address
+                // in the array returned using .data().
+#pragma warning(push)
+#pragma warning(disable : 26481) // bounds.1
+#pragma warning(disable : 26489) // lifetime.1
                 *it8++ = gsl::narrow_cast<char>(*it16++);
+#pragma warning(pop)
             }
             else
             {
@@ -465,11 +478,6 @@ void til::u16state::reset() noexcept
                 // *** convert the code point to UTF-8 ***
                 if (codePoint != unicodeReplacementChar || discardInvalids == false)
                 {
-                    // The outcome of performance tests is that the function performs
-                    // much better using pointers than std::string methods like .push_back() or .append().
-                    // String `out` was resized to three times as many code units as in string `in`
-                    // which would be needed in the worst case. Thus, it8 will always point to a valid address
-                    // in the array returned using .data().
 #pragma warning(push)
 #pragma warning(disable : 26481) // bounds.1
 #pragma warning(disable : 26489) // lifetime.1
