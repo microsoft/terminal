@@ -327,7 +327,7 @@ void u8u16_ptr_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkL
               << "\n HRESULT " << hRes << "\n length " << length << "\n elapsed " << duration << std::endl;
 }
 
-void CompNaturalLang(const std::string& fileName)
+void CompNaturalLang_WholeString(const std::string& fileName)
 {
     std::string head{ __func__ };
     head += " - " + fileName;
@@ -335,7 +335,7 @@ void CompNaturalLang(const std::string& fileName)
     std::ostringstream u8Ss{};
     std::ostringstream buf{};
     buf << std::ifstream{ fileName }.rdbuf();
-    std::fill_n(std::ostream_iterator<const char*>{ u8Ss }, 100000u, buf.str().c_str());
+    std::fill_n(std::ostream_iterator<const char*>{ u8Ss }, 300000u, buf.str().c_str());
     std::string u8Str = u8Ss.str();
 
     GetDuration();
@@ -363,6 +363,80 @@ void CompNaturalLang(const std::string& fileName)
     hRes = u16u8_ptr(u16Str, u8StrOut);
     duration = GetDuration();
     std::cout << " u16u8_ptr           length " << u8StrOut.length() << " elapsed " << duration << std::endl;
+}
+
+void CompNaturalLang_Chunks(const std::string& fileName)
+{
+    std::string head{ __func__ };
+    head += " - " + fileName;
+    PrintHeader(head.c_str());
+    std::ostringstream u8Ss{};
+    std::ostringstream buf{};
+    buf << std::ifstream{ fileName }.rdbuf();
+    std::fill_n(std::ostream_iterator<const char*>{ u8Ss }, 300000u, buf.str().c_str());
+    std::string u8Str = u8Ss.str();
+
+    std::wstring u16Str{ 10u };
+    if (FAILED(u8u16_ptr(u8Str, u16Str)))
+    {
+        return;
+    }
+
+    constexpr const size_t chunkSize{ 10u };
+    HRESULT hRes{};
+    int lenTotalMB2WC{};
+    int lenTotalWC2MB{};
+    size_t lenTotalU8U16{};
+    size_t lenTotalU16U8{};
+    double durTotalMB2WC{};
+    double durTotalWC2MB{};
+    double durTotalU8U16{};
+    double durTotalU16U8{};
+
+    GetDuration();
+    std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(chunkSize) };
+    durTotalMB2WC += GetDuration();
+
+    GetDuration();
+    std::wstring u16StrOut{};
+    durTotalU8U16 += GetDuration();
+
+    GetDuration();
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(chunkSize * 3) };
+    durTotalWC2MB += GetDuration();
+
+    GetDuration();
+    std::string u8StrOut{};
+    durTotalU16U8 += GetDuration();
+
+    for (size_t idx = 0u; idx < u16Str.length(); idx += chunkSize)
+    {
+        std::wstring u16Chunk{ u16Str.substr(idx, chunkSize) };
+        std::string u8Chunk{ u16u8(u16Chunk) };
+
+        GetDuration();
+        lenTotalMB2WC += MultiByteToWideChar(65001, 0, u8Chunk.data(), static_cast<int>(u8Chunk.length()), u16Buffer.get(), static_cast<int>(u8Str.length()));
+        durTotalMB2WC += GetDuration();
+
+        GetDuration();
+        hRes = u8u16_ptr(u8Chunk, u16StrOut);
+        durTotalU8U16 += GetDuration();
+        lenTotalU8U16 += u16StrOut.length();
+
+        GetDuration();
+        lenTotalWC2MB += WideCharToMultiByte(65001, 0, u16Chunk.data(), static_cast<int>(u16Chunk.length()), u8Buffer.get(), static_cast<int>(u16Chunk.length()) * 3, nullptr, nullptr);
+        durTotalWC2MB += GetDuration();
+
+        GetDuration();
+        hRes = u16u8_ptr(u16Chunk, u8StrOut);
+        durTotalU16U8 += GetDuration();
+        lenTotalU16U8 += u8StrOut.length();
+    }
+
+    std::cout << " MultiByteToWideChar length " << lenTotalMB2WC << " elapsed " << durTotalMB2WC << std::endl;
+    std::cout << " u8u16_ptr           length " << lenTotalU8U16 << " elapsed " << durTotalU8U16 << std::endl;
+    std::cout << " WideCharToMultiByte length " << lenTotalWC2MB << " elapsed " << durTotalWC2MB << std::endl;
+    std::cout << " u16u8_ptr           length " << lenTotalU16U8 << " elapsed " << durTotalU16U8 << std::endl;
 }
 
 int main()
@@ -432,10 +506,15 @@ int main()
 
     std::cout << "\n\n### Natural Languages ###" << std::endl;
 
-    CompNaturalLang("en.txt");
-    CompNaturalLang("fr.txt");
-    CompNaturalLang("ru.txt");
-    CompNaturalLang("zh.txt");
+    CompNaturalLang_WholeString("en.txt");
+    CompNaturalLang_WholeString("fr.txt");
+    CompNaturalLang_WholeString("ru.txt");
+    CompNaturalLang_WholeString("zh.txt");
+
+    CompNaturalLang_Chunks("en.txt");
+    CompNaturalLang_Chunks("fr.txt");
+    CompNaturalLang_Chunks("ru.txt");
+    CompNaturalLang_Chunks("zh.txt");
 
     FreeLibrary(ntdll);
     return 0;
