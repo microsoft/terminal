@@ -241,6 +241,7 @@ bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
 // - <none>
 void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
 {
+    OutputDebugString(L"SplitPane() start\n");
     const auto newLeafPane = _rootPane->FindActivePane()->Split(splitType, profile, control);
 
     _AttachEventHandlersToControl(control);
@@ -248,6 +249,7 @@ void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profil
     // Add a event handlers to the new pane's GotFocus event. When the pane
     // gains focus, we'll mark it as the new active pane.
     _AttachEventHandlersToLeafPane(newLeafPane);
+    OutputDebugString(L"SplitPane() end\n");
 }
 
 // Method Description:
@@ -450,12 +452,13 @@ void Tab::_AttachEventHandlersToLeafPane(std::shared_ptr<LeafPane> pane)
         auto tab{ weakThis.lock() };
         if (tab && sender != tab->_rootPane->FindActivePane())
         {
+            OutputDebugString(L"GotFocus()\n");
             // Clear the active state of the entire tree, and mark only the sender as active.
             tab->_rootPane->PropagateToLeaves([](LeafPane& pane) {
                 pane.ClearActive();
             });
 
-            sender->SetActive();
+            sender->SetActive(false);
 
             // Update our own title text to match the newly-active pane.
             tab->SetTabText(tab->GetActiveTitle());

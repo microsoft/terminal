@@ -49,7 +49,7 @@ LeafPane::LeafPane(const GUID& profile, const TermControl& control, const bool l
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
     _border.Tapped([this](auto&, auto& e) {
-        SetActive();
+        SetActive(true);
         e.Handled(true);
     });
 }
@@ -185,7 +185,7 @@ bool LeafPane::CanSplit(SplitState splitType)
 // - profile: The profile GUID to associate with the newly created LeafPane.
 // - control: A TermControl that will be placed into the new LeafPane.
 // Return Value:
-// - The newly created LeafPane, that is now our the neighbour.
+// - Newly created LeafPane that is now our neighbour.
 std::shared_ptr<LeafPane> LeafPane::Split(winrt::TerminalApp::SplitState splitType,
                                           const GUID& profile,
                                           const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
@@ -208,12 +208,10 @@ std::shared_ptr<LeafPane> LeafPane::Split(winrt::TerminalApp::SplitState splitTy
     _UpdateBorders();
     newNeighbour->_UpdateBorders();
 
-    // If we were active (and usually we were since it's the active pane that is chosen to split),
-    // then move the focus to the new pane.
     if (WasLastActive())
     {
         ClearActive();
-        newNeighbour->SetActive();
+        newNeighbour->SetActive(false);
     }
 
     // Parent pane has to know it's size when creating, which will just be the size of ours.
@@ -232,7 +230,7 @@ std::shared_ptr<LeafPane> LeafPane::Split(winrt::TerminalApp::SplitState splitTy
 
 // Method Description:
 // - Converts an "automatic" split type into either Vertical or Horizontal,
-//   based upon the current dimensions of the Pane.
+//   based upon the current dimensions of the pane.
 // - If any of the other SplitState values are passed in, they're returned
 //   unmodified.
 // Arguments:
@@ -263,10 +261,13 @@ SplitState LeafPane::_ConvertAutomaticSplitState(const SplitState& splitType) co
 // - <none>
 // Return Value:
 // - <none>
-void LeafPane::SetActive()
+void LeafPane::SetActive(const bool focusControl)
 {
     _lastActive = true;
-    _control.Focus(FocusState::Programmatic);
+    if (focusControl)
+    {
+        _control.Focus(FocusState::Programmatic);
+    }
     _UpdateVisuals();
 }
 
@@ -382,18 +383,22 @@ winrt::fire_and_forget LeafPane::_ControlConnectionStateChangedHandler(const Ter
         co_return;
     }
 
+    auto weakThis{ weak_from_this() };
     co_await winrt::resume_foreground(_root.Dispatcher());
-    //TODO: Check if we still listen to this event (but how?).
 
-    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
-    auto paneProfile = settings.FindProfile(_profile);
-    if (paneProfile)
+    if (auto strongThis{ weakThis.lock() })
     {
-        auto mode = paneProfile->GetCloseOnExitMode();
-        if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        //TODO: Check if we still listen to this event (but how?).
+        const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+        auto paneProfile = settings.FindProfile(_profile);
+        if (paneProfile)
         {
-            Close();
+            auto mode = paneProfile->GetCloseOnExitMode();
+            if ((mode == CloseOnExitMode::Always) ||
+                (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+            {
+                strongThis->Close();
+            }
         }
     }
 }

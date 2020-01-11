@@ -472,7 +472,7 @@ bool ParentPane::_NavigateFocus(const Direction& direction)
     });
 
     // Transfer focus to our child.
-    newlyFocusedChild->_FindFirstLeaf()->SetActive();
+    newlyFocusedChild->_FindFirstLeaf()->SetActive(true);
 
     return true;
 }
@@ -519,7 +519,7 @@ void ParentPane::_CloseChild(const bool closeFirst)
     // control to xaml tree and only then can it properly gain focus.
     if (closedChild->FindActivePane())
     {
-        remainingChild->_FindFirstLeaf()->SetActive();
+        remainingChild->_FindFirstLeaf()->SetActive(true);
     }
 }
 

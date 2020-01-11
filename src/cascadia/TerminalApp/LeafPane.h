@@ -47,7 +47,7 @@ public:
                       const GUID& profile,
                       const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void SetActive();
+    void SetActive(const bool focusControl);
     void ClearActive();
     bool WasLastActive() const noexcept;
     void UpdateBorderWithClosedNeightbour(std::shared_ptr<LeafPane> closedNeightbour,
