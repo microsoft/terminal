@@ -1,9 +1,12 @@
 ﻿// TEST TOOL U8U16Test
+// Performance tests for UTF-8 <--> UTF-16 conversions, related to PR #4093
 
 #include <iostream>
 #include <memory>
 #include <chrono>
 #include <random>
+#include <fstream>
+#include <sstream>
 
 #include "U8U16Test.hpp"
 
@@ -324,11 +327,49 @@ void u8u16_ptr_Chunks(std::string_view u8Str, size_t u8CharLen, size_t u16ChunkL
               << "\n HRESULT " << hRes << "\n length " << length << "\n elapsed " << duration << std::endl;
 }
 
+void CompNaturalLang(const std::string& fileName)
+{
+    std::string head{__func__};
+    head += " - " + fileName;
+    PrintHeader(head.c_str());
+    std::ostringstream u8Ss{};
+    std::ostringstream buf{};
+    buf << std::ifstream{fileName}.rdbuf();
+    std::fill_n(std::ostream_iterator<const char*>{ u8Ss }, 100000u, buf.str().c_str());
+    std::string u8Str = u8Ss.str();
+
+    GetDuration();
+    std::unique_ptr<wchar_t[]> u16Buffer{ std::make_unique<wchar_t[]>(u8Str.length()) };
+    int length = MultiByteToWideChar(65001, 0, u8Str.data(), static_cast<int>(u8Str.length()), u16Buffer.get(), static_cast<int>(u8Str.length()));
+    double duration = GetDuration();
+    u16Buffer.reset();
+    std::cout << " MultiByteToWideChar length " << length << " elapsed " << duration << std::endl;
+
+    GetDuration();
+    std::wstring u16Str{};
+    HRESULT hRes = u8u16_ptr(u8Str, u16Str);
+    duration = GetDuration();
+    std::cout << " u8u16_ptr           length " << u16Str.length() << " elapsed " << duration << std::endl;
+
+    GetDuration();
+    std::unique_ptr<char[]> u8Buffer{ std::make_unique<char[]>(u16Str.length() * 3) };
+    length = WideCharToMultiByte(65001, 0, u16Str.data(), static_cast<int>(u16Str.length()), u8Buffer.get(), static_cast<int>(u16Str.length()) * 3, nullptr, nullptr);
+    duration = GetDuration();
+    u8Buffer.reset();
+    std::cout << " WideCharToMultiByte length " << length << " elapsed " << duration << std::endl;
+
+    GetDuration();
+    std::string u8StrOut{};
+    hRes = u16u8_ptr(u16Str, u8StrOut);
+    duration = GetDuration();
+    std::cout << " u16u8_ptr           length " << u8StrOut.length() << " elapsed " << duration << std::endl;
+}
+
 int main()
 {
     // UTF-16 string length
-    constexpr const size_t u16Length{ 100000000u }; // 100,000 code points
-    //constexpr const size_t u16Length{ 10000000u }; // 10,000 code points
+    //constexpr const size_t u16Length{ 100000000u }; // 100,000 code points
+    constexpr const size_t u16Length{ 10000000u }; // 10,000 code points
 
     // chunk length in code points
     constexpr const size_t chunkLen = 10u;
@@ -389,8 +430,14 @@ int main()
     u8u16_Chunks(u8Str, u8CharLen, chunkLen);
     u8u16_ptr_Chunks(u8Str, u8CharLen, chunkLen);
 
-    FreeLibrary(ntdll);
+    std::cout << "\n\n### Natural Languages ###" << std::endl;
 
+    CompNaturalLang("en.txt");
+    CompNaturalLang("fr.txt");
+    CompNaturalLang("ru.txt");
+    CompNaturalLang("zh.txt");
+
+    FreeLibrary(ntdll);
     return 0;
 }
 

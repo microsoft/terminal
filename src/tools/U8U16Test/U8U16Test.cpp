@@ -186,128 +186,131 @@ void u16state::reset() noexcept
         const auto end8{ in.cend() };
         for (auto it8{ in.cbegin() }; it8 < end8;)
         {
-            uint32_t codePoint{ unicodeReplacementChar }; // default
-
-            // *** convert UTF-8 to a code point ***
+            // *** convert ASCII directly to UTF-16 ***
             // valid single bytes
             // - 00..7F
             if (static_cast<uint8_t>(*it8) <= 0x7Fu)
             {
-                codePoint = static_cast<uint8_t>(*it8++);
-            }
-            // valid two bytes
-            // - C2..DF | 80..BF (first byte 0xC0 and 0xC1 invalid)
-            else if (static_cast<uint8_t>(*it8) >= 0xC2u && static_cast<uint8_t>(*it8) <= 0xDFu)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 && static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)
-                {
-                    ++cnt;
-                    codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000C0u) << 6u) |
-                                (static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u);
-                }
-                else
-                {
-                    hRes = S_FALSE;
-                }
-
-                it8 += cnt;
-            }
-            // valid three bytes
-            // - E0     | A0..BF | 80..BF
-            // - E1..EC | 80..BF | 80..BF
-            // - ED     | 80..9F | 80..BF
-            // - EE..EF | 80..BF | 80..BF
-            else if (static_cast<uint8_t>(*it8) >= 0xE0u && static_cast<uint8_t>(*it8) <= 0xEFu)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 &&
-                    (( // E0     | *A0*..BF
-                         static_cast<uint8_t>(*it8) == 0xE0u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= 0xA0u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // E1..EC | 80..BF
-                         static_cast<uint8_t>(*it8) >= 0xE1u && static_cast<uint8_t>(*it8) <= 0xECu &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // ED     | 80..*9F*
-                         static_cast<uint8_t>(*it8) == 0xEDu &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x9Fu) ||
-                     ( // EE..EF | 80..BF
-                         static_cast<uint8_t>(*it8) >= 0xEEu && static_cast<uint8_t>(*it8) <= 0xEFu &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)))
-                {
-                    ++cnt;
-                    if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
-                    {
-                        ++cnt;
-                        codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000E0u) << 12u) |
-                                    ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 6u) |
-                                    (static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u);
-                    }
-                }
-
-                it8 += cnt;
-                if (cnt < 3u)
-                {
-                    hRes = S_FALSE;
-                }
-            }
-            // valid four bytes
-            // - F0     | 90..BF | 80..BF | 80..BF
-            // - F1..F3 | 80..BF | 80..BF | 80..BF
-            // - F4     | 80..8F | 80..BF | 80..BF
-            else if (static_cast<uint8_t>(*it8) >= 0xF0u && static_cast<uint8_t>(*it8) <= 0xF4u)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 &&
-                    (( // F0     | *90*..BF
-                         static_cast<uint8_t>(*it8) == 0xF0u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= 0x90u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // F1..F3 | 80..BF
-                         static_cast<uint8_t>(*it8) >= 0xF1u && static_cast<uint8_t>(*it8) <= 0xF3u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // F4     | 80..*8F*
-                         static_cast<uint8_t>(*it8) == 0xF4u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x8Fu)))
-                {
-                    ++cnt;
-                    if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
-                    {
-                        ++cnt;
-                        if ((it8 + 3) < end8 && static_cast<uint8_t>(*(it8 + 3)) >= contBegin && static_cast<uint8_t>(*(it8 + 3)) <= contEnd)
-                        {
-                            ++cnt;
-                            codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000F0u) << 18u) |
-                                        ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 12u) |
-                                        ((static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u) << 6u) |
-                                        (static_cast<uint8_t>(*(it8 + 3)) ^ 0x00000080u);
-                        }
-                    }
-                }
-
-                it8 += cnt;
-                if (cnt < 4u)
-                {
-                    hRes = S_FALSE;
-                }
+                out.push_back(static_cast<wchar_t>(*it8++));
             }
             else
             {
-                hRes = S_FALSE;
-                ++it8;
-            }
+                uint32_t codePoint{ unicodeReplacementChar }; // default
 
-            // *** convert the code point to UTF-16 ***
-            if (codePoint != unicodeReplacementChar || discardInvalids == false)
-            {
-                if (codePoint < 0x00010000u)
+                // valid two bytes
+                // - C2..DF | 80..BF (first byte 0xC0 and 0xC1 invalid)
+                if (static_cast<uint8_t>(*it8) >= 0xC2u && static_cast<uint8_t>(*it8) <= 0xDFu)
                 {
-                    out.push_back(static_cast<wchar_t>(codePoint));
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 && static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)
+                    {
+                        ++cnt;
+                        codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000C0u) << 6u) |
+                                    (static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u);
+                    }
+                    else
+                    {
+                        hRes = S_FALSE;
+                    }
+
+                    it8 += cnt;
+                }
+                // valid three bytes
+                // - E0     | A0..BF | 80..BF
+                // - E1..EC | 80..BF | 80..BF
+                // - ED     | 80..9F | 80..BF
+                // - EE..EF | 80..BF | 80..BF
+                else if (static_cast<uint8_t>(*it8) >= 0xE0u && static_cast<uint8_t>(*it8) <= 0xEFu)
+                {
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 &&
+                        (( // E0     | *A0*..BF
+                             static_cast<uint8_t>(*it8) == 0xE0u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= 0xA0u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // E1..EC | 80..BF
+                             static_cast<uint8_t>(*it8) >= 0xE1u && static_cast<uint8_t>(*it8) <= 0xECu &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // ED     | 80..*9F*
+                             static_cast<uint8_t>(*it8) == 0xEDu &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x9Fu) ||
+                         ( // EE..EF | 80..BF
+                             static_cast<uint8_t>(*it8) >= 0xEEu && static_cast<uint8_t>(*it8) <= 0xEFu &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)))
+                    {
+                        ++cnt;
+                        if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
+                        {
+                            ++cnt;
+                            codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000E0u) << 12u) |
+                                        ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 6u) |
+                                        (static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u);
+                        }
+                    }
+
+                    it8 += cnt;
+                    if (cnt < 3u)
+                    {
+                        hRes = S_FALSE;
+                    }
+                }
+                // valid four bytes
+                // - F0     | 90..BF | 80..BF | 80..BF
+                // - F1..F3 | 80..BF | 80..BF | 80..BF
+                // - F4     | 80..8F | 80..BF | 80..BF
+                else if (static_cast<uint8_t>(*it8) >= 0xF0u && static_cast<uint8_t>(*it8) <= 0xF4u)
+                {
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 &&
+                        (( // F0     | *90*..BF
+                             static_cast<uint8_t>(*it8) == 0xF0u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= 0x90u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // F1..F3 | 80..BF
+                             static_cast<uint8_t>(*it8) >= 0xF1u && static_cast<uint8_t>(*it8) <= 0xF3u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // F4     | 80..*8F*
+                             static_cast<uint8_t>(*it8) == 0xF4u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x8Fu)))
+                    {
+                        ++cnt;
+                        if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
+                        {
+                            ++cnt;
+                            if ((it8 + 3) < end8 && static_cast<uint8_t>(*(it8 + 3)) >= contBegin && static_cast<uint8_t>(*(it8 + 3)) <= contEnd)
+                            {
+                                ++cnt;
+                                codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000F0u) << 18u) |
+                                            ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 12u) |
+                                            ((static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u) << 6u) |
+                                            (static_cast<uint8_t>(*(it8 + 3)) ^ 0x00000080u);
+                            }
+                        }
+                    }
+
+                    it8 += cnt;
+                    if (cnt < 4u)
+                    {
+                        hRes = S_FALSE;
+                    }
                 }
                 else
                 {
-                    codePoint -= 0x00010000u;
-                    out.push_back(static_cast<wchar_t>(0x0000D800u + ((codePoint >> 10u) & 0x000003FFu)));
-                    out.push_back(static_cast<wchar_t>(0x0000DC00u + (codePoint & 0x000003FFu)));
+                    hRes = S_FALSE;
+                    ++it8;
+                }
+
+                // *** convert the code point to UTF-16 ***
+                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                {
+                    if (codePoint < 0x00010000u)
+                    {
+                        out.push_back(static_cast<wchar_t>(codePoint));
+                    }
+                    else
+                    {
+                        codePoint -= 0x00010000u;
+                        out.push_back(static_cast<wchar_t>(0x0000D800u + ((codePoint >> 10u) & 0x000003FFu)));
+                        out.push_back(static_cast<wchar_t>(0x0000DC00u + (codePoint & 0x000003FFu)));
+                    }
                 }
             }
         }
@@ -351,128 +354,131 @@ void u16state::reset() noexcept
         const auto end8{ in.cend() };
         for (auto it8{ in.cbegin() }; it8 < end8;)
         {
-            uint32_t codePoint{ unicodeReplacementChar }; // default
-
-            // *** convert UTF-8 to a code point ***
+            // *** convert ASCII directly to UTF-16 ***
             // valid single bytes
             // - 00..7F
             if (static_cast<uint8_t>(*it8) <= 0x7Fu)
             {
-                codePoint = static_cast<uint8_t>(*it8++);
-            }
-            // valid two bytes
-            // - C2..DF | 80..BF (first byte 0xC0 and 0xC1 invalid)
-            else if (static_cast<uint8_t>(*it8) >= 0xC2u && static_cast<uint8_t>(*it8) <= 0xDFu)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 && static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)
-                {
-                    ++cnt;
-                    codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000C0u) << 6u) |
-                                (static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u);
-                }
-                else
-                {
-                    hRes = S_FALSE;
-                }
-
-                it8 += cnt;
-            }
-            // valid three bytes
-            // - E0     | A0..BF | 80..BF
-            // - E1..EC | 80..BF | 80..BF
-            // - ED     | 80..9F | 80..BF
-            // - EE..EF | 80..BF | 80..BF
-            else if (static_cast<uint8_t>(*it8) >= 0xE0u && static_cast<uint8_t>(*it8) <= 0xEFu)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 &&
-                    (( // E0     | *A0*..BF
-                         static_cast<uint8_t>(*it8) == 0xE0u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= 0xA0u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // E1..EC | 80..BF
-                         static_cast<uint8_t>(*it8) >= 0xE1u && static_cast<uint8_t>(*it8) <= 0xECu &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // ED     | 80..*9F*
-                         static_cast<uint8_t>(*it8) == 0xEDu &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x9Fu) ||
-                     ( // EE..EF | 80..BF
-                         static_cast<uint8_t>(*it8) >= 0xEEu && static_cast<uint8_t>(*it8) <= 0xEFu &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)))
-                {
-                    ++cnt;
-                    if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
-                    {
-                        ++cnt;
-                        codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000E0u) << 12u) |
-                                    ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 6u) |
-                                    (static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u);
-                    }
-                }
-
-                it8 += cnt;
-                if (cnt < 3u)
-                {
-                    hRes = S_FALSE;
-                }
-            }
-            // valid four bytes
-            // - F0     | 90..BF | 80..BF | 80..BF
-            // - F1..F3 | 80..BF | 80..BF | 80..BF
-            // - F4     | 80..8F | 80..BF | 80..BF
-            else if (static_cast<uint8_t>(*it8) >= 0xF0u && static_cast<uint8_t>(*it8) <= 0xF4u)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 &&
-                    (( // F0     | *90*..BF
-                         static_cast<uint8_t>(*it8) == 0xF0u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= 0x90u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // F1..F3 | 80..BF
-                         static_cast<uint8_t>(*it8) >= 0xF1u && static_cast<uint8_t>(*it8) <= 0xF3u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // F4     | 80..*8F*
-                         static_cast<uint8_t>(*it8) == 0xF4u &&
-                         static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x8Fu)))
-                {
-                    ++cnt;
-                    if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
-                    {
-                        ++cnt;
-                        if ((it8 + 3) < end8 && static_cast<uint8_t>(*(it8 + 3)) >= contBegin && static_cast<uint8_t>(*(it8 + 3)) <= contEnd)
-                        {
-                            ++cnt;
-                            codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000F0u) << 18u) |
-                                        ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 12u) |
-                                        ((static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u) << 6u) |
-                                        (static_cast<uint8_t>(*(it8 + 3)) ^ 0x00000080u);
-                        }
-                    }
-                }
-
-                it8 += cnt;
-                if (cnt < 4u)
-                {
-                    hRes = S_FALSE;
-                }
+                *it16++ = (static_cast<wchar_t>(*it8++));
             }
             else
             {
-                hRes = S_FALSE;
-                ++it8;
-            }
+                uint32_t codePoint{ unicodeReplacementChar }; // default
 
-            // *** convert the code point to UTF-16 ***
-            if (codePoint != unicodeReplacementChar || discardInvalids == false)
-            {
-                if (codePoint < 0x00010000u)
+                // valid two bytes
+                // - C2..DF | 80..BF (first byte 0xC0 and 0xC1 invalid)
+                if (static_cast<uint8_t>(*it8) >= 0xC2u && static_cast<uint8_t>(*it8) <= 0xDFu)
                 {
-                    *it16++ = (static_cast<wchar_t>(codePoint));
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 && static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)
+                    {
+                        ++cnt;
+                        codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000C0u) << 6u) |
+                                    (static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u);
+                    }
+                    else
+                    {
+                        hRes = S_FALSE;
+                    }
+
+                    it8 += cnt;
+                }
+                // valid three bytes
+                // - E0     | A0..BF | 80..BF
+                // - E1..EC | 80..BF | 80..BF
+                // - ED     | 80..9F | 80..BF
+                // - EE..EF | 80..BF | 80..BF
+                else if (static_cast<uint8_t>(*it8) >= 0xE0u && static_cast<uint8_t>(*it8) <= 0xEFu)
+                {
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 &&
+                        (( // E0     | *A0*..BF
+                             static_cast<uint8_t>(*it8) == 0xE0u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= 0xA0u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // E1..EC | 80..BF
+                             static_cast<uint8_t>(*it8) >= 0xE1u && static_cast<uint8_t>(*it8) <= 0xECu &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // ED     | 80..*9F*
+                             static_cast<uint8_t>(*it8) == 0xEDu &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x9Fu) ||
+                         ( // EE..EF | 80..BF
+                             static_cast<uint8_t>(*it8) >= 0xEEu && static_cast<uint8_t>(*it8) <= 0xEFu &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd)))
+                    {
+                        ++cnt;
+                        if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
+                        {
+                            ++cnt;
+                            codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000E0u) << 12u) |
+                                        ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 6u) |
+                                        (static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u);
+                        }
+                    }
+
+                    it8 += cnt;
+                    if (cnt < 3u)
+                    {
+                        hRes = S_FALSE;
+                    }
+                }
+                // valid four bytes
+                // - F0     | 90..BF | 80..BF | 80..BF
+                // - F1..F3 | 80..BF | 80..BF | 80..BF
+                // - F4     | 80..8F | 80..BF | 80..BF
+                else if (static_cast<uint8_t>(*it8) >= 0xF0u && static_cast<uint8_t>(*it8) <= 0xF4u)
+                {
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 &&
+                        (( // F0     | *90*..BF
+                             static_cast<uint8_t>(*it8) == 0xF0u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= 0x90u && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // F1..F3 | 80..BF
+                             static_cast<uint8_t>(*it8) >= 0xF1u && static_cast<uint8_t>(*it8) <= 0xF3u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // F4     | 80..*8F*
+                             static_cast<uint8_t>(*it8) == 0xF4u &&
+                             static_cast<uint8_t>(*(it8 + 1)) >= contBegin && static_cast<uint8_t>(*(it8 + 1)) <= 0x8Fu)))
+                    {
+                        ++cnt;
+                        if ((it8 + 2) < end8 && static_cast<uint8_t>(*(it8 + 2)) >= contBegin && static_cast<uint8_t>(*(it8 + 2)) <= contEnd)
+                        {
+                            ++cnt;
+                            if ((it8 + 3) < end8 && static_cast<uint8_t>(*(it8 + 3)) >= contBegin && static_cast<uint8_t>(*(it8 + 3)) <= contEnd)
+                            {
+                                ++cnt;
+                                codePoint = ((static_cast<uint8_t>(*it8) ^ 0x000000F0u) << 18u) |
+                                            ((static_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 12u) |
+                                            ((static_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u) << 6u) |
+                                            (static_cast<uint8_t>(*(it8 + 3)) ^ 0x00000080u);
+                            }
+                        }
+                    }
+
+                    it8 += cnt;
+                    if (cnt < 4u)
+                    {
+                        hRes = S_FALSE;
+                    }
                 }
                 else
                 {
-                    codePoint -= 0x00010000u;
-                    *it16++ = (static_cast<wchar_t>(0x0000D800u + ((codePoint >> 10u) & 0x000003FFu)));
-                    *it16++ = (static_cast<wchar_t>(0x0000DC00u + (codePoint & 0x000003FFu)));
+                    hRes = S_FALSE;
+                    ++it8;
+                }
+
+                // *** convert the code point to UTF-16 ***
+                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                {
+                    if (codePoint < 0x00010000u)
+                    {
+                        *it16++ = (static_cast<wchar_t>(codePoint));
+                    }
+                    else
+                    {
+                        codePoint -= 0x00010000u;
+                        *it16++ = (static_cast<wchar_t>(0x0000D800u + ((codePoint >> 10u) & 0x000003FFu)));
+                        *it16++ = (static_cast<wchar_t>(0x0000DC00u + (codePoint & 0x000003FFu)));
+                    }
                 }
             }
         }
@@ -519,57 +525,61 @@ void u16state::reset() noexcept
         const auto end16{ in.cend() };
         for (auto it16{ in.cbegin() }; it16 < end16;)
         {
-            uint32_t codePoint{ unicodeReplacementChar }; // default
-
-            // *** convert UTF-16 to a code point ***
-            if (*it16 >= 0xD800u && *it16 <= 0xDBFFu) // range of high surrogates
+            // *** convert ASCII directly to UTF-8 ***
+            if (*it16 <= 0x007Fu)
             {
-                const uint32_t high{ *it16++ };
-                if (it16 < end16 && *it16 >= 0xDC00u && *it16 <= 0xDFFFu) // range of low surrogates
-                {
-                    codePoint = (high << 10u) + *it16++ - static_cast<uint32_t>(0x035FDC00u);
-                }
-                else
-                {
-                    hRes = S_FALSE;
-                }
-            }
-            else if (*it16 >= 0xDC00u && *it16 <= 0xDFFFu) // standing alone low surrogates are invalid
-            {
-                hRes = S_FALSE;
-                ++it16;
+                out.push_back(static_cast<char>(*it16++));
             }
             else
             {
-                codePoint = *it16++;
-            }
+                uint32_t codePoint{ unicodeReplacementChar }; // default
 
-            // *** convert the code point to UTF-8 ***
-            if (codePoint != unicodeReplacementChar || discardInvalids == false)
-            {
-                // the outcome of performance tests is that subsequent calls of push_back
-                // perform much better than appending a single initializer_list
-                if (codePoint < 0x00000080u)
+                // *** convert UTF-16 to a code point ***
+                if (*it16 >= 0xD800u && *it16 <= 0xDBFFu) // range of high surrogates
                 {
-                    out.push_back(static_cast<char>(codePoint));
+                    const uint32_t high{ *it16++ };
+                    if (it16 < end16 && *it16 >= 0xDC00u && *it16 <= 0xDFFFu) // range of low surrogates
+                    {
+                        codePoint = (high << 10u) + *it16++ - static_cast<uint32_t>(0x035FDC00u);
+                    }
+                    else
+                    {
+                        hRes = S_FALSE;
+                    }
                 }
-                else if (codePoint < 0x00000800u)
+                else if (*it16 >= 0xDC00u && *it16 <= 0xDFFFu) // standing alone low surrogates are invalid
                 {
-                    out.push_back(static_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u));
-                    out.push_back(static_cast<char>((codePoint & 0x3Fu) | 0x80u));
-                }
-                else if (codePoint < 0x00010000u)
-                {
-                    out.push_back(static_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u));
-                    out.push_back(static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
-                    out.push_back(static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    hRes = S_FALSE;
+                    ++it16;
                 }
                 else
                 {
-                    out.push_back(static_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u));
-                    out.push_back(static_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u));
-                    out.push_back(static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
-                    out.push_back(static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    codePoint = *it16++;
+                }
+
+                // *** convert the code point to UTF-8 ***
+                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                {
+                    // the outcome of performance tests is that subsequent calls of push_back
+                    // perform much better than appending a single initializer_list
+                    if (codePoint < 0x00000800u)
+                    {
+                        out.push_back(static_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u));
+                        out.push_back(static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    }
+                    else if (codePoint < 0x00010000u)
+                    {
+                        out.push_back(static_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u));
+                        out.push_back(static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
+                        out.push_back(static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    }
+                    else
+                    {
+                        out.push_back(static_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u));
+                        out.push_back(static_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u));
+                        out.push_back(static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
+                        out.push_back(static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    }
                 }
             }
         }
@@ -617,57 +627,61 @@ void u16state::reset() noexcept
         const auto end16{ in.cend() };
         for (auto it16{ in.cbegin() }; it16 < end16;)
         {
-            uint32_t codePoint{ unicodeReplacementChar }; // default
-
-            // *** convert UTF-16 to a code point ***
-            if (*it16 >= 0xD800u && *it16 <= 0xDBFFu) // range of high surrogates
+            // *** convert ASCII directly to UTF-8 ***
+            if (*it16 <= 0x007Fu)
             {
-                const uint32_t high{ *it16++ };
-                if (it16 < end16 && *it16 >= 0xDC00u && *it16 <= 0xDFFFu) // range of low surrogates
-                {
-                    codePoint = (high << 10u) + *it16++ - static_cast<uint32_t>(0x035FDC00u);
-                }
-                else
-                {
-                    hRes = S_FALSE;
-                }
-            }
-            else if (*it16 >= 0xDC00u && *it16 <= 0xDFFFu) // standing alone low surrogates are invalid
-            {
-                hRes = S_FALSE;
-                ++it16;
+                *it8++ = (static_cast<char>(*it16++));
             }
             else
             {
-                codePoint = *it16++;
-            }
+                uint32_t codePoint{ unicodeReplacementChar }; // default
 
-            // *** convert the code point to UTF-8 ***
-            if (codePoint != unicodeReplacementChar || discardInvalids == false)
-            {
-                // the outcome of further performance tests is that using pointers
-                // perform even better than subsequent calls of push_back
-                if (codePoint < 0x00000080u)
+                // *** convert UTF-16 to a code point ***
+                if (*it16 >= 0xD800u && *it16 <= 0xDBFFu) // range of high surrogates
                 {
-                    *it8++ = (static_cast<char>(codePoint));
+                    const uint32_t high{ *it16++ };
+                    if (it16 < end16 && *it16 >= 0xDC00u && *it16 <= 0xDFFFu) // range of low surrogates
+                    {
+                        codePoint = (high << 10u) + *it16++ - static_cast<uint32_t>(0x035FDC00u);
+                    }
+                    else
+                    {
+                        hRes = S_FALSE;
+                    }
                 }
-                else if (codePoint < 0x00000800u)
+                else if (*it16 >= 0xDC00u && *it16 <= 0xDFFFu) // standing alone low surrogates are invalid
                 {
-                    *it8++ = (static_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u));
-                    *it8++ = (static_cast<char>((codePoint & 0x3Fu) | 0x80u));
-                }
-                else if (codePoint < 0x00010000u)
-                {
-                    *it8++ = (static_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u));
-                    *it8++ = (static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
-                    *it8++ = (static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    hRes = S_FALSE;
+                    ++it16;
                 }
                 else
                 {
-                    *it8++ = (static_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u));
-                    *it8++ = (static_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u));
-                    *it8++ = (static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
-                    *it8++ = (static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    codePoint = *it16++;
+                }
+
+                // *** convert the code point to UTF-8 ***
+                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                {
+                    // the outcome of further performance tests is that using pointers
+                    // perform even better than subsequent calls of push_back
+                    if (codePoint < 0x00000800u)
+                    {
+                        *it8++ = (static_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u));
+                        *it8++ = (static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    }
+                    else if (codePoint < 0x00010000u)
+                    {
+                        *it8++ = (static_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u));
+                        *it8++ = (static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
+                        *it8++ = (static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    }
+                    else
+                    {
+                        *it8++ = (static_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u));
+                        *it8++ = (static_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u));
+                        *it8++ = (static_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u));
+                        *it8++ = (static_cast<char>((codePoint & 0x3Fu) | 0x80u));
+                    }
                 }
             }
         }
