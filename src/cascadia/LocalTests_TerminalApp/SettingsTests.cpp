@@ -34,7 +34,7 @@ namespace TerminalAppLocalTests
         // details on that.
         BEGIN_TEST_CLASS(SettingsTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
@@ -434,7 +434,7 @@ namespace TerminalAppLocalTests
                 "alwaysShowTabs": true,
                 "initialCols" : 120,
                 "initialRows" : 30,
-                "rowsToScroll" :  4,
+                "rowsToScroll" :  4
             }
         })" };
         const std::string settings1String{ R"(
@@ -443,7 +443,7 @@ namespace TerminalAppLocalTests
                 "showTabsInTitlebar": false,
                 "initialCols" : 240,
                 "initialRows" : 60,
-                "rowsToScroll" : 8 
+                "rowsToScroll" : 8
             }
         })" };
         const auto settings0Json = VerifyParseSucceeded(settings0String);

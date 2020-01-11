@@ -20,12 +20,14 @@ public:
     bool IsFocused() const noexcept;
     void SetFocused(const bool focused);
 
-    void Scroll(const int delta);
+    winrt::fire_and_forget Scroll(const int delta);
 
     bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
     void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void UpdateIcon(const winrt::hstring iconPath);
+    winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
+
+    float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void ResizePane(const winrt::TerminalApp::Direction& direction);
@@ -33,7 +35,7 @@ public:
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
     winrt::hstring GetActiveTitle() const;
-    void SetTabText(const winrt::hstring& text);
+    winrt::fire_and_forget SetTabText(const winrt::hstring text);
 
     void ClosePane();
 

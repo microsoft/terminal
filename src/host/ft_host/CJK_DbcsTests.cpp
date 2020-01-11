@@ -2321,7 +2321,7 @@ void ReadStringWithReadConsoleInputAHelper(HANDLE hIn, PCSTR pszExpectedText, si
     while (cchRead < cchExpectedText)
     {
         // expected read is either the size of the buffer or the number of characters remaining, whichever is smaller.
-        DWORD const dwReadExpected = (DWORD)min(cbBuffer, cchExpectedText - cchRead);
+        DWORD const dwReadExpected = (DWORD)std::min(cbBuffer, cchExpectedText - cchRead);
 
         DWORD dwRead;
         if (!VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputA(hIn, irRead, (DWORD)cbBuffer, &dwRead), L"Attempt to read input into buffer."))

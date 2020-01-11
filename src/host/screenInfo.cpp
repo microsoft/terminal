@@ -103,10 +103,10 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
     try
     {
         IWindowMetrics* pMetrics = ServiceLocator::LocateWindowMetrics();
-        THROW_IF_NULL_ALLOC(pMetrics);
+        THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
         IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        THROW_IF_NULL_ALLOC(pNotifier);
+        THROW_HR_IF_NULL(E_FAIL, pNotifier);
 
         SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
