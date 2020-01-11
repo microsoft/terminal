@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Tab.h"
 #include "Utils.h"
-#include <debugapi.h>
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -25,7 +24,6 @@ Tab::Tab(const GUID& profile, const TermControl& control)
 Tab::~Tab()
 {
     _RemoveAllRootPaneEventHandlers();
-    OutputDebugString(L"~Tab()\n");
 }
 
 void Tab::_MakeTabViewItem()

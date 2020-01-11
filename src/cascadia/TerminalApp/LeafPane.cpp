@@ -54,11 +54,6 @@ LeafPane::LeafPane(const GUID& profile, const TermControl& control, const bool l
     });
 }
 
-LeafPane::~LeafPane()
-{
-    OutputDebugString(L"~LeafPane()\n");
-}
-
 // Function Description:
 // - Attempts to load some XAML resources that the pane will need. This includes:
 //   * The Color we'll use for active panes's borders - SystemAccentColor
@@ -388,7 +383,6 @@ winrt::fire_and_forget LeafPane::_ControlConnectionStateChangedHandler(const Ter
 
     if (auto strongThis{ weakThis.lock() })
     {
-        //TODO: Check if we still listen to this event (but how?).
         const auto& settings = CascadiaSettings::GetCurrentAppSettings();
         auto paneProfile = settings.FindProfile(_profile);
         if (paneProfile)

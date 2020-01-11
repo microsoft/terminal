@@ -11,7 +11,7 @@ class ParentPane : public Pane, public std::enable_shared_from_this<ParentPane>
 {
 public:
     ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<LeafPane> secondChild, winrt::TerminalApp::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
-    ~ParentPane() override;
+    ~ParentPane() override = default;
     ParentPane(const ParentPane&) = delete;
     ParentPane(ParentPane&&) = delete;
     ParentPane& operator=(const ParentPane&) = delete;

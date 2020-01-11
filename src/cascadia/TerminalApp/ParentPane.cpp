@@ -28,11 +28,6 @@ ParentPane::ParentPane(std::shared_ptr<LeafPane> firstChild, std::shared_ptr<Lea
     _GetGridSetColOrRowFunc()(secondChild->GetRootElement(), 1);
 }
 
-ParentPane::~ParentPane()
-{
-    OutputDebugString(L"~ParentPane()\n");
-}
-
 // Method Description:
 // - Sets up row/column definitions for this pane. There are two total row/cols, 
 //   one for each children and are given a size in pixels, based off the

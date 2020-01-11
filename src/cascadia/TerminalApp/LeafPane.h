@@ -24,7 +24,7 @@ public:
     LeafPane(const GUID& profile,
              const winrt::Microsoft::Terminal::TerminalControl::TermControl& control,
              const bool lastFocused = false);
-    ~LeafPane() override;
+    ~LeafPane() override = default;
     LeafPane(const LeafPane&) = delete;
     LeafPane(LeafPane&&) = delete;
     LeafPane& operator=(const LeafPane&) = delete;
