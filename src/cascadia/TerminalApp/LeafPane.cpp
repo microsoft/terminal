@@ -150,6 +150,7 @@ GUID LeafPane::GetProfile() const noexcept
 // - True if the pane can be split. False otherwise.
 bool LeafPane::CanSplit(SplitState splitType)
 {
+    splitType = _ConvertAutomaticSplitState(splitType);
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
 
@@ -189,6 +190,7 @@ std::shared_ptr<LeafPane> LeafPane::Split(winrt::TerminalApp::SplitState splitTy
                                           const GUID& profile,
                                           const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
 {
+    splitType = _ConvertAutomaticSplitState(splitType);
     const auto newNeighbour = std::make_shared<LeafPane>(profile, control);
 
     // Update the border of this pane and set appropriate border for the new leaf pane.
@@ -226,6 +228,31 @@ std::shared_ptr<LeafPane> LeafPane::Split(winrt::TerminalApp::SplitState splitTy
     newParent->InitializeChildren();
 
     return newNeighbour;
+}
+
+// Method Description:
+// - Converts an "automatic" split type into either Vertical or Horizontal,
+//   based upon the current dimensions of the Pane.
+// - If any of the other SplitState values are passed in, they're returned
+//   unmodified.
+// Arguments:
+// - splitType: The SplitState to attempt to convert
+// Return Value:
+// - One of Horizontal or Vertical
+SplitState LeafPane::_ConvertAutomaticSplitState(const SplitState& splitType) const
+{
+    // Careful here! If the pane doesn't yet have a size, these dimensions will
+    // be 0, and we'll always return Vertical.
+
+    if (splitType == SplitState::Automatic)
+    {
+        // If the requested split type was "auto", determine which direction to
+        // split based on our current dimensions
+        const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                               gsl::narrow_cast<float>(_root.ActualHeight()) };
+        return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+    }
+    return splitType;
 }
 
 // Method Description:

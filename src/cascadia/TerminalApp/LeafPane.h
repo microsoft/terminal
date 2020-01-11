@@ -81,6 +81,7 @@ private:
     std::shared_ptr<LeafPane> _FindFirstLeaf() override;
     void _UpdateBorders();
     void _UpdateVisuals();
+    winrt::TerminalApp::SplitState _ConvertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
     SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const override;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const override;
     winrt::Windows::Foundation::Size _GetMinSize() const override;

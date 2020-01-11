@@ -450,6 +450,7 @@ namespace winrt::TerminalApp::implementation
 
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
+        newTab->BindEventHandlers();
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
@@ -471,6 +472,17 @@ namespace winrt::TerminalApp::implementation
                 // Possibly update the title of the tab, window to match the newly
                 // focused pane.
                 page->_UpdateTitle(tab);
+            }
+        });
+
+        newTab->RootPaneChanged([weakTabPtr, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTabPtr.lock() };
+
+            if (page && tab)
+            {
+                page->_tabContent.Children().Clear();
+                page->_tabContent.Children().Append(tab->GetRootElement());
             }
         });
 
@@ -797,9 +809,6 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
-
-        // Bind Tab events to the TermControl and the Tab's Pane
-        hostingTab->BindEventHandlers(term);
 
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
