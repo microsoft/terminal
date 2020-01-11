@@ -231,137 +231,151 @@ void til::u16state::reset() noexcept
             return hRes;
         }
 
-        out.reserve(in.length()); // avoid any further re-allocations and copying
+        out.resize(in.length()); // avoid any further re-allocations and copying
 
+        wchar_t* it16{ out.data() };
         const auto end8{ in.cend() };
         for (auto it8{ in.cbegin() }; it8 < end8;)
         {
-            uint32_t codePoint{ unicodeReplacementChar }; // default
-
-            // *** convert UTF-8 to a code point ***
+            // *** convert ASCII directly to UTF-16 ***
             // valid single bytes
             // - 00..7F
             if (gsl::narrow_cast<uint8_t>(*it8) <= 0x7Fu)
             {
-                codePoint = gsl::narrow_cast<uint8_t>(*it8++);
-            }
-            // valid two bytes
-            // - C2..DF | 80..BF (first byte 0xC0 and 0xC1 invalid)
-            else if (gsl::narrow_cast<uint8_t>(*it8) >= 0xC2u && gsl::narrow_cast<uint8_t>(*it8) <= 0xDFu)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd)
-                {
-                    ++cnt;
-                    codePoint = ((gsl::narrow_cast<uint8_t>(*it8) ^ 0x000000C0u) << 6u) |
-                                (gsl::narrow_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u);
-                }
-                else
-                {
-                    hRes = S_FALSE;
-                }
-
-                it8 += cnt;
-            }
-            // valid three bytes
-            // - E0     | A0..BF | 80..BF
-            // - E1..EC | 80..BF | 80..BF
-            // - ED     | 80..9F | 80..BF
-            // - EE..EF | 80..BF | 80..BF
-            else if (gsl::narrow_cast<uint8_t>(*it8) >= 0xE0u && gsl::narrow_cast<uint8_t>(*it8) <= 0xEFu)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 &&
-                    (( // E0     | *A0*..BF
-                         gsl::narrow_cast<uint8_t>(*it8) == 0xE0u &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= 0xA0u && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // E1..EC | 80..BF
-                         gsl::narrow_cast<uint8_t>(*it8) >= 0xE1u && gsl::narrow_cast<uint8_t>(*it8) <= 0xECu &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // ED     | 80..*9F*
-                         gsl::narrow_cast<uint8_t>(*it8) == 0xEDu &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= 0x9Fu) ||
-                     ( // EE..EF | 80..BF
-                         gsl::narrow_cast<uint8_t>(*it8) >= 0xEEu && gsl::narrow_cast<uint8_t>(*it8) <= 0xEFu &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd)))
-                {
-                    ++cnt;
-                    if ((it8 + 2) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 2)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 2)) <= contEnd)
-                    {
-                        ++cnt;
-                        codePoint = ((gsl::narrow_cast<uint8_t>(*it8) ^ 0x000000E0u) << 12u) |
-                                    ((gsl::narrow_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 6u) |
-                                    (gsl::narrow_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u);
-                    }
-                }
-
-                it8 += cnt;
-                if (cnt < 3u)
-                {
-                    hRes = S_FALSE;
-                }
-            }
-            // valid four bytes
-            // - F0     | 90..BF | 80..BF | 80..BF
-            // - F1..F3 | 80..BF | 80..BF | 80..BF
-            // - F4     | 80..8F | 80..BF | 80..BF
-            else if (gsl::narrow_cast<uint8_t>(*it8) >= 0xF0u && gsl::narrow_cast<uint8_t>(*it8) <= 0xF4u)
-            {
-                size_t cnt{ 1u };
-                if ((it8 + 1) < end8 &&
-                    (( // F0     | *90*..BF
-                         gsl::narrow_cast<uint8_t>(*it8) == 0xF0u &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= 0x90u && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // F1..F3 | 80..BF
-                         gsl::narrow_cast<uint8_t>(*it8) >= 0xF1u && gsl::narrow_cast<uint8_t>(*it8) <= 0xF3u &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
-                     ( // F4     | 80..*8F*
-                         gsl::narrow_cast<uint8_t>(*it8) == 0xF4u &&
-                         gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= 0x8Fu)))
-                {
-                    ++cnt;
-                    if ((it8 + 2) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 2)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 2)) <= contEnd)
-                    {
-                        ++cnt;
-                        if ((it8 + 3) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 3)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 3)) <= contEnd)
-                        {
-                            ++cnt;
-                            codePoint = ((gsl::narrow_cast<uint8_t>(*it8) ^ 0x000000F0u) << 18u) |
-                                        ((gsl::narrow_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 12u) |
-                                        ((gsl::narrow_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u) << 6u) |
-                                        (gsl::narrow_cast<uint8_t>(*(it8 + 3)) ^ 0x00000080u);
-                        }
-                    }
-                }
-
-                it8 += cnt;
-                if (cnt < 4u)
-                {
-                    hRes = S_FALSE;
-                }
+                *it16++ = gsl::narrow_cast<wchar_t>(*it8++);
             }
             else
             {
-                hRes = S_FALSE;
-                ++it8;
-            }
+                uint32_t codePoint{ unicodeReplacementChar }; // default
 
-            // *** convert the code point to UTF-16 ***
-            if (codePoint != unicodeReplacementChar || discardInvalids == false)
-            {
-                if (codePoint < 0x00010000u)
+                // valid two bytes
+                // - C2..DF | 80..BF (first byte 0xC0 and 0xC1 invalid)
+                if (gsl::narrow_cast<uint8_t>(*it8) >= 0xC2u && gsl::narrow_cast<uint8_t>(*it8) <= 0xDFu)
                 {
-                    out.push_back(gsl::narrow_cast<wchar_t>(codePoint));
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd)
+                    {
+                        ++cnt;
+                        codePoint = ((gsl::narrow_cast<uint8_t>(*it8) ^ 0x000000C0u) << 6u) |
+                                    (gsl::narrow_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u);
+                    }
+                    else
+                    {
+                        hRes = S_FALSE;
+                    }
+
+                    it8 += cnt;
+                }
+                // valid three bytes
+                // - E0     | A0..BF | 80..BF
+                // - E1..EC | 80..BF | 80..BF
+                // - ED     | 80..9F | 80..BF
+                // - EE..EF | 80..BF | 80..BF
+                else if (gsl::narrow_cast<uint8_t>(*it8) >= 0xE0u && gsl::narrow_cast<uint8_t>(*it8) <= 0xEFu)
+                {
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 &&
+                        (( // E0     | *A0*..BF
+                             gsl::narrow_cast<uint8_t>(*it8) == 0xE0u &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= 0xA0u && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // E1..EC | 80..BF
+                             gsl::narrow_cast<uint8_t>(*it8) >= 0xE1u && gsl::narrow_cast<uint8_t>(*it8) <= 0xECu &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // ED     | 80..*9F*
+                             gsl::narrow_cast<uint8_t>(*it8) == 0xEDu &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= 0x9Fu) ||
+                         ( // EE..EF | 80..BF
+                             gsl::narrow_cast<uint8_t>(*it8) >= 0xEEu && gsl::narrow_cast<uint8_t>(*it8) <= 0xEFu &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd)))
+                    {
+                        ++cnt;
+                        if ((it8 + 2) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 2)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 2)) <= contEnd)
+                        {
+                            ++cnt;
+                            codePoint = ((gsl::narrow_cast<uint8_t>(*it8) ^ 0x000000E0u) << 12u) |
+                                        ((gsl::narrow_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 6u) |
+                                        (gsl::narrow_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u);
+                        }
+                    }
+
+                    it8 += cnt;
+                    if (cnt < 3u)
+                    {
+                        hRes = S_FALSE;
+                    }
+                }
+                // valid four bytes
+                // - F0     | 90..BF | 80..BF | 80..BF
+                // - F1..F3 | 80..BF | 80..BF | 80..BF
+                // - F4     | 80..8F | 80..BF | 80..BF
+                else if (gsl::narrow_cast<uint8_t>(*it8) >= 0xF0u && gsl::narrow_cast<uint8_t>(*it8) <= 0xF4u)
+                {
+                    size_t cnt{ 1u };
+                    if ((it8 + 1) < end8 &&
+                        (( // F0     | *90*..BF
+                             gsl::narrow_cast<uint8_t>(*it8) == 0xF0u &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= 0x90u && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // F1..F3 | 80..BF
+                             gsl::narrow_cast<uint8_t>(*it8) >= 0xF1u && gsl::narrow_cast<uint8_t>(*it8) <= 0xF3u &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= contEnd) ||
+                         ( // F4     | 80..*8F*
+                             gsl::narrow_cast<uint8_t>(*it8) == 0xF4u &&
+                             gsl::narrow_cast<uint8_t>(*(it8 + 1)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 1)) <= 0x8Fu)))
+                    {
+                        ++cnt;
+                        if ((it8 + 2) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 2)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 2)) <= contEnd)
+                        {
+                            ++cnt;
+                            if ((it8 + 3) < end8 && gsl::narrow_cast<uint8_t>(*(it8 + 3)) >= contBegin && gsl::narrow_cast<uint8_t>(*(it8 + 3)) <= contEnd)
+                            {
+                                ++cnt;
+                                codePoint = ((gsl::narrow_cast<uint8_t>(*it8) ^ 0x000000F0u) << 18u) |
+                                            ((gsl::narrow_cast<uint8_t>(*(it8 + 1)) ^ 0x00000080u) << 12u) |
+                                            ((gsl::narrow_cast<uint8_t>(*(it8 + 2)) ^ 0x00000080u) << 6u) |
+                                            (gsl::narrow_cast<uint8_t>(*(it8 + 3)) ^ 0x00000080u);
+                            }
+                        }
+                    }
+
+                    it8 += cnt;
+                    if (cnt < 4u)
+                    {
+                        hRes = S_FALSE;
+                    }
                 }
                 else
                 {
-                    codePoint -= 0x00010000u;
-                    out.push_back(gsl::narrow_cast<wchar_t>(0x0000D800u + ((codePoint >> 10u) & 0x000003FFu)));
-                    out.push_back(gsl::narrow_cast<wchar_t>(0x0000DC00u + (codePoint & 0x000003FFu)));
+                    hRes = S_FALSE;
+                    ++it8;
+                }
+
+                // *** convert the code point to UTF-16 ***
+                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                {
+                    // The outcome of performance tests is that the function performs
+                    // much better using pointers than std::string methods like .push_back() or .append().
+                    // String `out` was resized to three times as many code units as in string `in`
+                    // which would be needed in the worst case. Thus, it8 will always point to a valid address
+                    // in the array returned using .data().
+#pragma warning(push)
+#pragma warning(disable : 26481) // bounds.1
+#pragma warning(disable : 26489) // lifetime.1
+                    if (codePoint < 0x00010000u)
+                    {
+                        *it16++ = gsl::narrow_cast<wchar_t>(codePoint);
+                    }
+                    else
+                    {
+                        codePoint -= 0x00010000u;
+                        *it16++ = gsl::narrow_cast<wchar_t>(0x0000D800u + ((codePoint >> 10u) & 0x000003FFu));
+                        *it16++ = gsl::narrow_cast<wchar_t>(0x0000DC00u + (codePoint & 0x000003FFu));
+                    }
+#pragma warning(pop)
                 }
             }
         }
 
+        out.resize(gsl::narrow_cast<size_t>(it16 - out.data()));
         return hRes;
     }
     catch (std::length_error&)
@@ -404,77 +418,81 @@ void til::u16state::reset() noexcept
             return hRes;
         }
 
-        size_t worstCaseSize{};
-        if (FAILED(SizeTMult(in.length(), gsl::narrow_cast<size_t>(3u), &worstCaseSize)))
+        size_t lengthHint{};
+        if (FAILED(SizeTMult(in.length(), gsl::narrow_cast<size_t>(3u), &lengthHint)))
         {
             return E_ABORT;
         }
 
-        out.resize(worstCaseSize); // avoid any further re-allocations and copying
+        out.resize(lengthHint); // avoid any further re-allocations and copying
 
         char* it8{ out.data() };
         const auto end16{ in.cend() };
         for (auto it16{ in.cbegin() }; it16 < end16;)
         {
-            uint32_t codePoint{ unicodeReplacementChar }; // default
-
-            // *** convert UTF-16 to a code point ***
-            if (*it16 >= 0xD800u && *it16 <= 0xDBFFu) // range of high surrogates
+            // *** convert ASCII directly to UTF-8 ***
+            if (*it16 <= 0x007Fu)
             {
-                const uint32_t high{ *it16++ };
-                if (it16 < end16 && *it16 >= 0xDC00u && *it16 <= 0xDFFFu) // range of low surrogates
-                {
-                    codePoint = (high << 10u) + *it16++ - gsl::narrow_cast<uint32_t>(0x035FDC00u);
-                }
-                else
-                {
-                    hRes = S_FALSE;
-                }
-            }
-            else if (*it16 >= 0xDC00u && *it16 <= 0xDFFFu) // standing alone low surrogates are invalid
-            {
-                hRes = S_FALSE;
-                ++it16;
+                *it8++ = gsl::narrow_cast<char>(*it16++);
             }
             else
             {
-                codePoint = *it16++;
-            }
+                uint32_t codePoint{ unicodeReplacementChar }; // default
 
-            // *** convert the code point to UTF-8 ***
-            if (codePoint != unicodeReplacementChar || discardInvalids == false)
-            {
-                // The outcome of performance tests is that the function performs
-                // much better using pointers than std::string methods like .push_back() or .append().
-                // String `out` was resized to three times as many code units as in string `in`
-                // which would be needed in the worst case. Thus, it8 will always point to a valid address
-                // in the array returned using .data().
-#pragma warning(push)
-#pragma warning(disable : 26481) // bounds.1
-#pragma warning(disable : 26489) // lifetime.1
-                if (codePoint < 0x00000080u)
+                // *** convert UTF-16 to a code point ***
+                if (*it16 >= 0xD800u && *it16 <= 0xDBFFu) // range of high surrogates
                 {
-                    *it8++ = gsl::narrow_cast<char>(codePoint);
+                    const uint32_t high{ *it16++ };
+                    if (it16 < end16 && *it16 >= 0xDC00u && *it16 <= 0xDFFFu) // range of low surrogates
+                    {
+                        codePoint = (high << 10u) + *it16++ - gsl::narrow_cast<uint32_t>(0x035FDC00u);
+                    }
+                    else
+                    {
+                        hRes = S_FALSE;
+                    }
                 }
-                else if (codePoint < 0x00000800u)
+                else if (*it16 >= 0xDC00u && *it16 <= 0xDFFFu) // standing alone low surrogates are invalid
                 {
-                    *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u);
-                    *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
-                }
-                else if (codePoint < 0x00010000u)
-                {
-                    *it8++ = gsl::narrow_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u);
-                    *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u);
-                    *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
+                    hRes = S_FALSE;
+                    ++it16;
                 }
                 else
                 {
-                    *it8++ = gsl::narrow_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u);
-                    *it8++ = gsl::narrow_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u);
-                    *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u);
-                    *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
+                    codePoint = *it16++;
                 }
+
+                // *** convert the code point to UTF-8 ***
+                if (codePoint != unicodeReplacementChar || discardInvalids == false)
+                {
+                    // The outcome of performance tests is that the function performs
+                    // much better using pointers than std::string methods like .push_back() or .append().
+                    // String `out` was resized to three times as many code units as in string `in`
+                    // which would be needed in the worst case. Thus, it8 will always point to a valid address
+                    // in the array returned using .data().
+#pragma warning(push)
+#pragma warning(disable : 26481) // bounds.1
+#pragma warning(disable : 26489) // lifetime.1
+                    if (codePoint < 0x00000800u)
+                    {
+                        *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x1Fu) | 0xC0u);
+                        *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
+                    }
+                    else if (codePoint < 0x00010000u)
+                    {
+                        *it8++ = gsl::narrow_cast<char>((codePoint >> 12u & 0x0Fu) | 0xE0u);
+                        *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u);
+                        *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
+                    }
+                    else
+                    {
+                        *it8++ = gsl::narrow_cast<char>((codePoint >> 18u & 0x07u) | 0xF0u);
+                        *it8++ = gsl::narrow_cast<char>((codePoint >> 12u & 0x3Fu) | 0x80u);
+                        *it8++ = gsl::narrow_cast<char>((codePoint >> 6u & 0x3Fu) | 0x80u);
+                        *it8++ = gsl::narrow_cast<char>((codePoint & 0x3Fu) | 0x80u);
+                    }
 #pragma warning(pop)
+                }
             }
         }
 
