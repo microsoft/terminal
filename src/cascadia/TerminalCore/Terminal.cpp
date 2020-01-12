@@ -431,27 +431,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             proposedCursorPosition.Y++;
         }
-        else if (wch == UNICODE_CARRIAGERETURN)
-        {
-            proposedCursorPosition.X = 0;
-        }
-        else if (wch == UNICODE_BACKSPACE)
-        {
-            if (cursorPosBefore.X == 0)
-            {
-                proposedCursorPosition.X = bufferSize.Width() - 1;
-                proposedCursorPosition.Y--;
-            }
-            else
-            {
-                proposedCursorPosition.X--;
-            }
-        }
-        else if (wch == UNICODE_BEL)
-        {
-            // TODO: GitHub #1883
-            // For now its empty just so we don't try to write the BEL character
-        }
         else
         {
             // TODO: MSFT 21006766

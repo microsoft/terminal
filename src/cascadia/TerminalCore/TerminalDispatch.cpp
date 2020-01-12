@@ -86,7 +86,7 @@ try
         Execute(L'\n');
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        Execute(L'\r');
+        CarriageReturn();
         Execute(L'\n');
         return true;
     default:
