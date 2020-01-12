@@ -162,7 +162,7 @@ void Tab::_Focus()
     }
 }
 
-void Tab::UpdateIcon(const winrt::hstring iconPath)
+winrt::fire_and_forget Tab::UpdateIcon(const winrt::hstring iconPath)
 {
     // Don't reload our icon if it hasn't changed.
     if (iconPath == _lastIconPath)
@@ -174,12 +174,12 @@ void Tab::UpdateIcon(const winrt::hstring iconPath)
 
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-        if (auto tab{ weakThis.lock() })
-        {
-            tab->_tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(tab->_lastIconPath));
-        }
-    });
+    co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+
+    if (auto tab{ weakThis.lock() })
+    {
+        _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+    }
 }
 
 // Method Description:
@@ -201,18 +201,18 @@ winrt::hstring Tab::GetActiveTitle() const
 // - text: The new text string to use as the Header for our TabViewItem
 // Return Value:
 // - <none>
-void Tab::SetTabText(const winrt::hstring& text)
+winrt::fire_and_forget Tab::SetTabText(const winrt::hstring text)
 {
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
     std::weak_ptr<Tab> weakThis{ shared_from_this() };
 
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), weakThis]() {
-        if (auto tab{ weakThis.lock() })
-        {
-            tab->_tabViewItem.Header(winrt::box_value(text));
-        }
-    });
+    co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+
+    if (auto tab{ weakThis.lock() })
+    {
+        _tabViewItem.Header(winrt::box_value(text));
+    }
 }
 
 // Method Description:
@@ -223,13 +223,14 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - delta: a number of lines to move the viewport relative to the current viewport.
 // Return Value:
 // - <none>
-void Tab::Scroll(const int delta)
+winrt::fire_and_forget Tab::Scroll(const int delta)
 {
     auto control = GetActiveTerminalControl();
-    control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
-        const auto currentOffset = control.GetScrollOffset();
-        control.KeyboardScrollViewport(currentOffset + delta);
-    });
+
+    co_await winrt::resume_foreground(control.Dispatcher());
+
+    const auto currentOffset = control.GetScrollOffset();
+    control.KeyboardScrollViewport(currentOffset + delta);
 }
 
 // Method Description:
@@ -262,6 +263,13 @@ void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profil
     // gains focus, we'll mark it as the new active pane.
     _AttachEventHandlersToPane(first);
     _AttachEventHandlersToPane(second);
+}
+
+// Method Description:
+// - See Pane::CalcSnappedDimension
+float Tab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+{
+    return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
 }
 
 // Method Description:
@@ -342,6 +350,20 @@ void Tab::_AttachEventHandlersToControl(const TermControl& control)
             tab->SetTabText(tab->GetActiveTitle());
         }
     });
+
+    // This is called when the terminal changes its font size or sets it for the first
+    // time (because when we just create terminal via its ctor it has invalid font size).
+    // On the latter event, we tell the root pane to resize itself so that its descendants
+    // (including ourself) can properly snap to character grids. In future, we may also
+    // want to do that on regular font changes.
+    control.FontSizeChanged([this](const int /* fontWidth */,
+                                   const int /* fontHeight */,
+                                   const bool isInitialChange) {
+        if (isInitialChange)
+        {
+            _rootPane->Relayout();
+        }
+    });
 }
 
 // Method Description:
@@ -360,6 +382,7 @@ void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
     pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
         // Do nothing if the Tab's lifetime is expired or pane isn't new.
         auto tab{ weakThis.lock() };
+
         if (tab && sender != tab->_activePane)
         {
             // Clear the active state of the entire tree, and mark only the sender as active.

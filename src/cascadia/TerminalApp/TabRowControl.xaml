@@ -14,7 +14,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
                  IsAddTabButtonVisible="false"
-                 TabWidthMode="SizeToContent"
+                 TabWidthMode="Equal"
                  CanReorderTabs="True"
                  CanDragTabs="True"
                  AllowDropTabs="True">

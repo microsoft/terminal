@@ -17,7 +17,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
     _pConApi(std::move(pConApi))
 {
-    THROW_IF_NULL_ALLOC(_pConApi.get());
+    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 // Method Description:
