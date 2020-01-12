@@ -330,47 +330,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // Only act on a delayed EOL if we didn't move the cursor to a different position from where the EOL was marked.
             if (coordDelayedAt.X == CursorPosition.X && coordDelayedAt.Y == CursorPosition.Y)
             {
-                bool fDoEolWrap = false;
+                CursorPosition.X = 0;
+                CursorPosition.Y++;
 
-                if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP))
-                {
-                    // Correct if it's a printable character and whoever called us still understands/wants delayed EOL wrap.
-                    if (*lpString >= UNICODE_SPACE)
-                    {
-                        fDoEolWrap = true;
-                    }
-                    else if (*lpString == UNICODE_BACKSPACE)
-                    {
-                        // if we have an active wrap and a backspace comes in, process it by moving the cursor
-                        // back one cell position unless it's already at the start of a row.
-                        *pcb += sizeof(WCHAR);
-                        lpString++;
-                        pwchRealUnicode++;
-                        if (CursorPosition.X != 0)
-                        {
-                            --CursorPosition.X;
-                            Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
-                            CursorPosition = cursor.GetPosition();
-                        }
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Uh oh, we've hit a consumer that doesn't know about delayed end of lines. To rectify this, just quickly jump
-                    // forward to the next line as if we had done it earlier, then let everything else play out normally.
-                    fDoEolWrap = true;
-                }
+                Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
-                if (fDoEolWrap)
-                {
-                    CursorPosition.X = 0;
-                    CursorPosition.Y++;
-
-                    Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
-
-                    CursorPosition = cursor.GetPosition();
-                }
+                CursorPosition = cursor.GetPosition();
             }
         }
 
