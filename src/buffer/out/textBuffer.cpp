@@ -1243,26 +1243,6 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
             for (size_t col = 0; col < rows.text.at(row).length(); col++)
             {
-                // do not include \r nor \n as they don't have attributes
-                // and are not HTML friendly. For line break use '<BR>' instead.
-                const bool isLastCharInRow =
-                    col == rows.text.at(row).length() - 1 ||
-                    rows.text.at(row).at(col + 1) == '\r' ||
-                    rows.text.at(row).at(col + 1) == '\n';
-
-                bool colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
-                {
-                    fgColor = rows.FgAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
-                {
-                    bkColor = rows.BkAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col >= startOffset)
                     {
@@ -1289,6 +1269,27 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                     }
                 };
 
+                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
+                {
+                    // do not include \r nor \n as they don't have color attributes
+                    // and are not HTML friendly. For line break use '<BR>' instead.
+                    writeAccumulatedChars(false);
+                    break;
+                }
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                {
+                    fgColor = rows.FgAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                {
+                    bkColor = rows.BkAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
                 if (colorChanged)
                 {
                     writeAccumulatedChars(false);
@@ -1310,10 +1311,10 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
                 hasWrittenAnyText = true;
 
-                if (isLastCharInRow)
+                // if this is the last character in the row, flush the whole row
+                if (col == rows.text.at(row).length() - 1)
                 {
                     writeAccumulatedChars(true);
-                    break;
                 }
             }
         }
@@ -1430,24 +1431,6 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 
             for (size_t col = 0; col < rows.text.at(row).length(); ++col)
             {
-                const bool isLastCharInRow =
-                    col == rows.text.at(row).length() - 1 ||
-                    rows.text.at(row).at(col + 1) == '\r' ||
-                    rows.text.at(row).at(col + 1) == '\n';
-
-                bool colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
-                {
-                    fgColor = rows.FgAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
-                {
-                    bkColor = rows.BkAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col >= startOffset)
                     {
@@ -1469,6 +1452,27 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                         startOffset = col;
                     }
                 };
+
+                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
+                {
+                    // do not include \r nor \n as they don't have color attributes.
+                    // For line break use \line instead.
+                    writeAccumulatedChars(false);
+                    break;
+                }
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                {
+                    fgColor = rows.FgAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                {
+                    bkColor = rows.BkAttr.at(row).at(col);
+                    colorChanged = true;
+                }
 
                 if (colorChanged)
                 {
@@ -1513,10 +1517,10 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                                    << " ";
                 }
 
-                if (isLastCharInRow)
+                // if this is the last character in the row, flush the whole row
+                if (col == rows.text.at(row).length() - 1)
                 {
                     writeAccumulatedChars(true);
-                    break;
                 }
             }
         }
