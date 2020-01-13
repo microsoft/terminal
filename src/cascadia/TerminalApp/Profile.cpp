@@ -881,6 +881,14 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 }
 
 // Method Description:
+// - Resets the std::optional holding the background image file path string.
+//   HasBackgroundImage() will return false after the execution of this function.
+void Profile::ResetBackgroundImagePath()
+{
+    _backgroundImage.reset();
+}
+
+// Method Description:
 // - Returns the name of this profile.
 // Arguments:
 // - <none>

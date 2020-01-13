@@ -198,6 +198,9 @@ void CascadiaSettings::_ValidateSettings()
     // just use the hardcoded defaults
     _ValidateAllSchemesExist();
 
+    // Ensure all profile's with specified background images have valid files
+    _ValidateBackgroundImage();
+
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
@@ -421,6 +424,39 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     if (foundInvalidScheme)
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
+    }
+}
+
+// Method Description:
+// - Ensures that all specified background images are valid files existing on the local machine.
+//   This does not verify that the background image file is encoded as an image.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
+//   we find any invalid background images.
+void CascadiaSettings::_ValidateBackgroundImage()
+{
+    bool invalidImage{ false };
+
+    for (auto& profile : _profiles)
+    {
+        if (profile.HasBackgroundImage())
+        {
+            auto imagePath{ profile.GetExpandedBackgroundImagePath() };
+
+            if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(imagePath.c_str()))
+            {
+                profile.ResetBackgroundImagePath();
+                invalidImage = true;
+            }
+        }
+    }
+
+    if (invalidImage)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
     }
 }
 
