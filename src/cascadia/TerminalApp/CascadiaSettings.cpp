@@ -444,9 +444,13 @@ void CascadiaSettings::_ValidateBackgroundImages()
     {
         if (profile.HasBackgroundImage())
         {
-            auto imagePath{ profile.GetExpandedBackgroundImagePath() };
-
-            if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(imagePath.c_str()))
+            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+            // This covers file paths on the machine, app data, URLs, and other resource paths.
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedBackgroundImagePath() };
+            }
+            catch (...)
             {
                 profile.ResetBackgroundImagePath();
                 invalidImage = true;
