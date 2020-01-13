@@ -1542,6 +1542,16 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
     }
 }
 
+// Function Description:
+// - Reflow the contents from the old buffer into the new buffer. The new buffer
+//   can have different dimensions than the old buffer. If it does, then this
+//   function will attempt to maintain the logical contents of the old buffer,
+//   by continuing wrapped lines onto the next line in the new buffer.
+// Arguments:
+// - oldBuffer - the text buffer to copy the contents FROM
+// - newBuffer - the text buffer to copy the contents TO
+// Return Value:
+// - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
