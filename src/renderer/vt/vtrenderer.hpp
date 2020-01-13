@@ -222,6 +222,7 @@ namespace Microsoft::Console::Render
         bool _usingTestCallback;
 
         friend class VtRendererTest;
+        friend class ConptyOutputTests;
 #endif
 
         void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);

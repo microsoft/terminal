@@ -143,7 +143,7 @@ public:
         gci.SetCookedReadData(nullptr);
     }
 
-    void PrepareNewTextBufferInfo()
+    void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
@@ -152,11 +152,14 @@ public:
 
         UINT uiCursorSize = 12;
 
+        auto initialAttributes = useDefaultAttributes ? gci.GetDefaultAttributes() :
+                                                        TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY };
+
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);
         try
         {
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
-                                                                                  TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY },
+                                                                                  initialAttributes,
                                                                                   uiCursorSize,
                                                                                   gci.pCurrentScreenBuffer->GetRenderTarget());
             if (textBuffer.get() == nullptr)

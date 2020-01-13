@@ -307,5 +307,6 @@ private:
     friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;
     friend class CommonState;
+    friend class ConptyOutputTests;
 #endif
 };
