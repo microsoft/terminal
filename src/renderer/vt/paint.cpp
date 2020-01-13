@@ -449,6 +449,21 @@ using namespace Microsoft::Console::Types;
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
+    // If we've written text to the last column of the viewport, then mark
+    // that we've wrapped this line. The next time we attempt to move the
+    // cursor, if we're trying to move it to the start of the next line,
+    // we'll remember that this line was wrapped, and not manually break the
+    // line.
+    // Don't do this is the last character we're writing is a space - The last
+    // char will always be a space, but if we see that, we shouldn't wrap.
+
+    // TODO: This seems to be off by one char. Resizing cmd.exe, the '.' at the
+    // end of the initial message sometimes gets cut off weirdly.
+    if ((_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
+    {
+        _wrappedRow = coord.Y;
+    }
+
     // Update our internal tracker of the cursor's position.
     // See MSFT:20266233
     // If the cursor is at the rightmost column of the terminal, and we write a

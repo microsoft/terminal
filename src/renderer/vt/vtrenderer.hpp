@@ -136,6 +136,8 @@ namespace Microsoft::Console::Render
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         bool _inResizeRequest{ false };
 
+        std::optional<short> _wrappedRow{ std::nullopt };
+
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
         [[nodiscard]] HRESULT _Flush() noexcept;
