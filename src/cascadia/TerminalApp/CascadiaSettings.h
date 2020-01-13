@@ -115,7 +115,7 @@ private:
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
-    void _ValidateBackgroundImage();
+    void _ValidateBackgroundImages();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

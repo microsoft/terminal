@@ -199,7 +199,7 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateAllSchemesExist();
 
     // Ensure all profile's with specified background images have valid files
-    _ValidateBackgroundImage();
+    _ValidateBackgroundImages();
 
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
@@ -436,7 +436,7 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 // - <none>
 // - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
 //   we find any invalid background images.
-void CascadiaSettings::_ValidateBackgroundImage()
+void CascadiaSettings::_ValidateBackgroundImages()
 {
     bool invalidImage{ false };
 
