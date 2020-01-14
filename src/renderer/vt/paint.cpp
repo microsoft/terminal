@@ -376,7 +376,9 @@ using namespace Microsoft::Console::Types;
         return S_OK;
     }
 
-    RETURN_IF_FAILED(_MoveCursor(coord));
+    // auto lastPaintWrapped = _wrappedRow;
+
+    // RETURN_IF_FAILED(_MoveCursor(coord));
 
     std::wstring unclusteredString;
     unclusteredString.reserve(clusters.size());
@@ -444,6 +446,16 @@ using namespace Microsoft::Console::Types;
     const size_t columnsActual = removeSpaces ?
                                      (totalWidth - numSpaces) :
                                      totalWidth;
+
+    if (removeSpaces && _wrappedRow.has_value() /* && columnsActual == 0*/)
+    {
+        // If the previous row _exactly_ filled the line, and we're about to
+        // clear _the entire line_, then we actually do want to move the
+        // cursor down.
+        // RETURN_IF_FAILED(_MoveCursor(coord));
+        _wrappedRow = std::nullopt;
+    }
+    RETURN_IF_FAILED(_MoveCursor(coord));
 
     // Write the actual text string
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);

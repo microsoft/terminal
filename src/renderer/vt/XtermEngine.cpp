@@ -235,6 +235,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
 
+    _trace.TraceMoveCursor(coord);
+
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -256,6 +258,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             if (previousLineWrapped)
             {
+                _trace.TraceWrapped();
                 hr = S_OK;
             }
             else

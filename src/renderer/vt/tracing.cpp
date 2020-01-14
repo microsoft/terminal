@@ -210,3 +210,30 @@ void RenderTracing::TraceLastText(const COORD lastTextPos) const
     UNREFERENCED_PARAMETER(lastTextPos);
 #endif UNIT_TESTING
 }
+
+void RenderTracing::TraceMoveCursor(const COORD pos) const
+{
+#ifndef UNIT_TESTING
+    const auto lastTextStr = _CoordToString(pos);
+    const auto cursor = lastTextStr.c_str();
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TraceMoveCursor",
+                      TraceLoggingString(cursor),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+    UNREFERENCED_PARAMETER(pos);
+#endif UNIT_TESTING
+}
+
+void RenderTracing::TraceWrapped() const
+{
+#ifndef UNIT_TESTING
+    const auto* const msg = "Wrapped instead of \\r\\n";
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TraceWrapped",
+                      TraceLoggingString(msg),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+    UNREFERENCED_PARAMETER(pos);
+#endif UNIT_TESTING
+}
