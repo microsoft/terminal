@@ -104,6 +104,7 @@ class ConptyOutputTests
 
     TEST_METHOD(ConptyOutputTestCanary);
     TEST_METHOD(SimpleWriteOutputTest);
+    TEST_METHOD(WriteTwoLinesUsesNewline);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -157,26 +158,65 @@ void ConptyOutputTests::ConptyOutputTestCanary()
         L"This is a simple test to make sure that everything is working as expected."));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
-    // auto& g = ServiceLocator::LocateGlobals();
-    // auto& renderer = *g.pRender;
-    // auto& gci = g.getConsoleInformation();
-    // auto& currentBuffer = gci.GetActiveOutputBuffer();
-
     _flushFirstFrame();
 }
 
 void ConptyOutputTests::SimpleWriteOutputTest()
 {
     Log::Comment(NoThrowString().Format(
-        L"This is a simple test to make sure that everything is working as expected."));
+        L"Write some simple output, and make sure it gets rendered largely "
+        L"unmodified to the terminal"));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
-    // auto& g = ServiceLocator::LocateGlobals();
-    // auto& renderer = *g.pRender;
-    // auto& gci = g.getConsoleInformation();
-    // auto& currentBuffer = gci.GetActiveOutputBuffer();
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
 
     _flushFirstFrame();
 
     expectedOutput.push_back("Hello World");
+    sm.ProcessString(L"Hello World");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::WriteTwoLinesUsesNewline()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write two lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& tb = si.GetTextBuffer();
+
+    _flushFirstFrame();
+
+    sm.ProcessString(L"AAA");
+    sm.ProcessString(L"\x1b[2;1H");
+    sm.ProcessString(L"BBB");
+
+    {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 1 });
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+    }
+
+    expectedOutput.push_back("AAA");
+    expectedOutput.push_back("\r\n");
+    expectedOutput.push_back("BBB");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
