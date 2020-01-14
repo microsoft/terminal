@@ -9,6 +9,10 @@
       "type": "string",
       "format": "color"
     },
+    "Coordinates": {
+      "pattern": "^(0|[1-9][0-9]*),(0|[1-9][0-9]*)|(0|[1-9][0-9]*)|(0|[1-9][0-9]*),|,(0|[1-9][0-9]*)",
+      "type": "string"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -278,12 +282,25 @@
           "minimum": 1,
           "type": "integer"
         },
+        "initialPosition": {
+          "$ref": "#/definitions/Coordinates",
+          "description": "The position of the top left corner of the window upon first load."
+        },
         "initialRows": {
           "default": 30,
           "description": "The number of rows displayed in the window upon first load.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
+        },
+        "launchMode": {
+          "default": "default",
+          "description": "Defines whether the Terminal will launch as maximized or not.",
+          "enum": [
+            "maximized",
+            "default"
+          ],
+          "type": "string"
         },
         "rowsToScroll": {
           "default": "system",
