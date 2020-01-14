@@ -1552,7 +1552,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - newBuffer - the text buffer to copy the contents TO
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
-HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
+HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1563,8 +1563,8 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
     // the new buffer.
-    COORD cOldCursorPos = oldCursor.GetPosition();
-    COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
+    const COORD cOldCursorPos = oldCursor.GetPosition();
+    const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
     short const cOldColsTotal = oldBuffer.GetSize().Width();
@@ -1579,7 +1579,7 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const CharRow& charRow = row.GetCharRow();
-        short iRight = static_cast<short>(charRow.MeasureRight());
+        short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1682,7 +1682,7 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
                     const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newBuffer.GetRowByOffset(coordNewCursor.Y - 1).GetCharRow().WasWrapForced())
+                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).GetCharRow().WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
                         }
@@ -1708,7 +1708,7 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
             // get the number of newlines and spaces between the old end of text and the old cursor,
             //   then advance that many newlines and chars
             int iNewlines = cOldCursorPos.Y - cOldLastChar.Y;
-            int iIncrements = cOldCursorPos.X - cOldLastChar.X;
+            const int iIncrements = cOldCursorPos.X - cOldLastChar.X;
             const COORD cNewLastChar = newBuffer.GetLastNonSpaceCharacter();
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
