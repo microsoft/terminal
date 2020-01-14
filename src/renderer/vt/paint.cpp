@@ -376,10 +376,6 @@ using namespace Microsoft::Console::Types;
         return S_OK;
     }
 
-    // auto lastPaintWrapped = _wrappedRow;
-
-    // RETURN_IF_FAILED(_MoveCursor(coord));
-
     std::wstring unclusteredString;
     unclusteredString.reserve(clusters.size());
     short totalWidth = 0;
@@ -447,14 +443,19 @@ using namespace Microsoft::Console::Types;
                                      (totalWidth - numSpaces) :
                                      totalWidth;
 
-    if (removeSpaces && _wrappedRow.has_value() /* && columnsActual == 0*/)
+    if (cchActual == 0)
     {
-        // If the previous row _exactly_ filled the line, and we're about to
-        // clear _the entire line_, then we actually do want to move the
-        // cursor down.
-        // RETURN_IF_FAILED(_MoveCursor(coord));
+        // If the previous row wrapped, but this line is empty, then we actually
+        // do want to move the cursor down. Otherwise, we'll possibly end up
+        // accidentally erasing the last character from the previous line, as
+        // the cursor is still waiting on that character for the next character
+        // to follow it.
         _wrappedRow = std::nullopt;
+        // TODO:<Before PR>: Write a test that emulates ~/vttests/reflow-120.py
+        // TODO:<Before PR>: Write a test that emulates ~/vttests/reflow-advanced.py
     }
+
+    // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
 
     // Write the actual text string
@@ -468,9 +469,6 @@ using namespace Microsoft::Console::Types;
     // line.
     // Don't do this is the last character we're writing is a space - The last
     // char will always be a space, but if we see that, we shouldn't wrap.
-
-    // TODO: This seems to be off by one char. Resizing cmd.exe, the '.' at the
-    // end of the initial message sometimes gets cut off weirdly.
     if ((_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
     {
         _wrappedRow = coord.Y;
