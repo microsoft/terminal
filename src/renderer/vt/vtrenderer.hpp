@@ -24,6 +24,11 @@ Author(s):
 #include <string>
 #include <functional>
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+class ConptyRoundtripTests;
+#endif
+
 namespace Microsoft::Console::Render
 {
     class VtEngine : public RenderEngineBase, public Microsoft::Console::ITerminalOutputConnection
@@ -223,6 +228,7 @@ namespace Microsoft::Console::Render
 
         friend class VtRendererTest;
         friend class ConptyOutputTests;
+        friend class ::ConptyRoundtripTests;
 #endif
 
         void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);

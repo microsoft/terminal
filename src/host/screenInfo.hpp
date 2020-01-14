@@ -308,5 +308,6 @@ private:
     friend class ScreenBufferTests;
     friend class CommonState;
     friend class ConptyOutputTests;
+    friend class ConptyRoundtripTests;
 #endif
 };

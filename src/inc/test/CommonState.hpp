@@ -38,7 +38,7 @@ public:
 
     CommonState() :
         m_heap(GetProcessHeap()),
-        m_ntstatusTextBufferInfo(STATUS_FAIL_CHECK),
+        m_hrTextBufferInfo(E_FAIL),
         m_pFontInfo(nullptr),
         m_backupTextBufferInfo(),
         m_readHandle(nullptr)
@@ -164,17 +164,17 @@ public:
                                                                                   gci.pCurrentScreenBuffer->GetRenderTarget());
             if (textBuffer.get() == nullptr)
             {
-                m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
+                m_hrTextBufferInfo = E_OUTOFMEMORY;
             }
             else
             {
-                m_ntstatusTextBufferInfo = STATUS_SUCCESS;
+                m_hrTextBufferInfo = S_OK;
             }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
         }
         catch (...)
         {
-            m_ntstatusTextBufferInfo = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            m_hrTextBufferInfo = wil::ResultFromCaughtException();
         }
     }
 
@@ -224,14 +224,14 @@ public:
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
-    [[nodiscard]] NTSTATUS GetTextBufferInfoInitResult()
+    [[nodiscard]] HRESULT GetTextBufferInfoInitResult()
     {
-        return m_ntstatusTextBufferInfo;
+        return m_hrTextBufferInfo;
     }
 
 private:
     HANDLE m_heap;
-    NTSTATUS m_ntstatusTextBufferInfo;
+    HRESULT m_hrTextBufferInfo;
     FontInfo* m_pFontInfo;
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
