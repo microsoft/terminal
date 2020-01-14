@@ -62,11 +62,3 @@
 // OEM_CHARSET rather than the language-specific charset. Use this macro in conjunction with a check against
 // g_fEastAsianSystem or other codepage checks as needed to determine if a font with these charsets should be used.
 #define IS_DBCS_OR_OEM_CHARSET(x) (IS_ANY_DBCS_CHARSET(x) || (x) == OEM_CHARSET)
-
-#ifndef max
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#endif
