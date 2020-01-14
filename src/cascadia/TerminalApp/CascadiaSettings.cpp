@@ -198,8 +198,9 @@ void CascadiaSettings::_ValidateSettings()
     // just use the hardcoded defaults
     _ValidateAllSchemesExist();
 
-    // Ensure all profile's with specified background images have valid files
-    _ValidateBackgroundImages();
+    // Ensure all profile's with specified images resources have valid file path.
+    // This validates icons and background images.
+    _ValidateMediaResources();
 
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
@@ -428,17 +429,20 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 }
 
 // Method Description:
-// - Ensures that all specified background images are valid files existing on the local machine.
-//   This does not verify that the background image file is encoded as an image.
+// - Ensures that all specified images resources (icons and background images) are valid URIs. 
+//   This does not verify that the icon or background image files are encoded as an image.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 // - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
 //   we find any invalid background images.
-void CascadiaSettings::_ValidateBackgroundImages()
+// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
+//   we find any invalid icon images.
+void CascadiaSettings::_ValidateMediaResources()
 {
-    bool invalidImage{ false };
+    bool invalidBackground{ false };
+    bool invalidIcon{ false };
 
     for (auto& profile : _profiles)
     {
@@ -453,14 +457,32 @@ void CascadiaSettings::_ValidateBackgroundImages()
             catch (...)
             {
                 profile.ResetBackgroundImagePath();
-                invalidImage = true;
+                invalidBackground = true;
+            }
+        }
+
+        if (profile.HasIcon())
+        {
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedIconPath() };
+            }
+            catch (...)
+            {
+                profile.ResetIconPath();
+                invalidIcon = true;
             }
         }
     }
 
-    if (invalidImage)
+    if (invalidBackground)
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
+    }
+
+    if (invalidIcon)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidIcon);
     }
 }
 

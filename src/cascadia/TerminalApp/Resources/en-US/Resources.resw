@@ -213,4 +213,7 @@ Temporarily using the Windows Terminal default settings.
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
   </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>Found a profile with an invalid "icon". Defaulting that profile to have no icon. Make sure that when setting an "icon", the value is a valid file path to an image.</value>
+  </data>
 </root>
