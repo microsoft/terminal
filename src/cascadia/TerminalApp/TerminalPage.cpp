@@ -241,7 +241,6 @@ namespace winrt::TerminalApp::implementation
         auto secondaryButtonText = RS_(L"Cancel");
 
         WUX::Controls::ContentDialog dialog;
-        WUX::Controls::CheckBox remember;
         dialog.Title(winrt::box_value(title));
 
         dialog.PrimaryButtonText(primaryButtonText);
