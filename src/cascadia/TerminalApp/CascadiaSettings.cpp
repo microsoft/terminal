@@ -429,7 +429,7 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 }
 
 // Method Description:
-// - Ensures that all specified images resources (icons and background images) are valid URIs. 
+// - Ensures that all specified images resources (icons and background images) are valid URIs.
 //   This does not verify that the icon or background image files are encoded as an image.
 // Arguments:
 // - <none>
