@@ -84,18 +84,9 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
     }
     DWORD bytesAvailable;
     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
-    // "The _open_osfhandle call transfers ownership of the Win32 file handle to the file descriptor."
-    // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/open-osfhandle?view=vs-2019)
-    // so, we detach_from_smart_pointer it -- but...
-    // "File descriptors passed into _fdopen are owned by the returned FILE * stream.
-    // If _fdopen is successful, do not call _close on the file descriptor.
-    // Calling fclose on the returned FILE * also closes the file descriptor."
-    // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fdopen-wfdopen?view=vs-2019
-    FILE* stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
-    auto closeFile = wil::scope_exit([&]() { fclose(stdioPipeHandle); });
-
-    std::wfstream pipe{ stdioPipeHandle };
-
+    std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r") };
+    // don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil
+    // and closing the file handle will cause an error.
     std::wstring wline;
     std::getline(pipe, wline); // remove the header from the output.
     while (pipe.tellp() < bytesAvailable)
