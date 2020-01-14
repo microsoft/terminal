@@ -336,6 +336,11 @@
           "default": " ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?│",
           "description": "Determines the delimiters used in a double click selection.",
           "type": "string"
+        },
+        "confirmCloseAllTabs": {
+          "default": true,
+          "description": " When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation.",
+          "type":"boolean"
         }
       },
       "required": [
