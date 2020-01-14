@@ -13,6 +13,8 @@
 #include <fcntl.h>
 #include "DefaultProfileUtils.h"
 
+static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
+
 using namespace ::TerminalApp;
 
 // Legacy GUIDs:
@@ -97,6 +99,14 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
         {
             std::wstring distName;
             std::getline(wlinestream, distName, L'\r');
+
+            if (distName.substr(0, std::min(distName.size(), DockerDistributionPrefix.size())) == DockerDistributionPrefix)
+            {
+                // Docker for Windows creates some utility distributions to handle Docker commands.
+                // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
+                continue;
+            }
+
             size_t firstChar = distName.find_first_of(L"( ");
             // Some localizations don't have a space between the name and "(Default)"
             // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109

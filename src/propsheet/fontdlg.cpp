@@ -91,7 +91,7 @@ UINT GetItemHeight(const HWND hDlg)
         SelectObject(hDC, hFont);
     }
     ReleaseDC(hDlg, hDC);
-    return max(tm.tmHeight, bmTT.bmHeight);
+    return std::max(tm.tmHeight, bmTT.bmHeight);
 }
 
 // The V1 console doesn't support arbitrary TTF fonts, so only allow the enumeration of all TT fonts in the conditions below:

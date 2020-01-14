@@ -77,6 +77,10 @@ namespace winrt::TerminalApp::implementation
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
 
+        fire_and_forget _LoadErrorsDialogRoutine();
+        fire_and_forget _ShowLoadWarningsDialogRoutine();
+        fire_and_forget _RefreshThemeRoutine();
+
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;

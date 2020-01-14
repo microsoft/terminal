@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define NOMINMAX
+
 // -- WARNING -- LOAD BEARING CODE --
 // This define ABSOLUTELY MUST be included (and equal to 1, or more specifically != 0)
 // prior to the import of Common Controls.

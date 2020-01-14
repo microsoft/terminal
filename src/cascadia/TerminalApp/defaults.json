@@ -7,6 +7,7 @@
     "requestedTheme": "system",
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
+    "tabWidthMode": "equal",
     "snapToGridOnResize": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
     "confirmCloseAllTabs": true,

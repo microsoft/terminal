@@ -204,7 +204,7 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
     {
         // This is a C0 Control Character.
         // This should be translated as Ctrl+(wch+x40)
-        const wchar_t actualChar = wch;
+        wchar_t actualChar = wch;
         bool writeCtrl = true;
 
         short vkey = 0;
@@ -213,7 +213,9 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         switch (wch)
         {
         case L'\b':
-            success = _GenerateKeyFromChar(wch + 0x40, vkey, modifierState);
+            // Process Ctrl+Bksp to delete whole words
+            actualChar = '\x7f';
+            success = _GenerateKeyFromChar(actualChar, vkey, modifierState);
             modifierState = 0;
             break;
         case L'\r':
