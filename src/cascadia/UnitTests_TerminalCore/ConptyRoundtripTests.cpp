@@ -1,5 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// This test class creates an in-proc conpty host as well as a Terminal, to
+// validate that strings written to the conpty create the same resopnse on the
+// terminal end. Tests can be written that validate both the contents of the
+// host buffer as well as the terminal buffer. Everytime that
+// `renderer.PaintFrame()` is called, the tests will validate the expected
+// output, and then flush the output of the VtEngine straight to the Terminal.
 
 #include "precomp.h"
 #include <wextestclass.h>
@@ -122,7 +129,6 @@ class ConptyRoundtripTests
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
-    TEST_METHOD(WriteWrappedLine);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -148,15 +154,10 @@ bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cc
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
     Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
 
-    // try
-    // {
     VERIFY_ARE_EQUAL(first.length(), cch);
     VERIFY_ARE_EQUAL(first, actualString);
-    // }
-    // catch (...)
-    // {
-    //     return false;
-    // }
+
+    // Write the string back to our Terminal
     const auto converted = ConvertToW(CP_UTF8, actualString);
     term->Write(converted);
 
@@ -174,6 +175,36 @@ void ConptyRoundtripTests::_flushFirstFrame()
     expectedOutput.push_back("\x1b[?25h");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+// Function Description:
+// - Helper function to validate that a number of characters in a row are all
+//   the same. Validates that the next end-start characters are all equal to the
+//   provided string. Will move the provided iterator as it validates. The
+//   caller should ensure that `iter` starts where they would like to validate.
+// Arguments:
+// - expectedChar: The character (or characters) we're expecting
+// - iter: a iterator pointing to the cell we'd like to start validating at.
+// - start: the first index in the range we'd like to validate
+// - end: the last index in the range we'd like to validate
+// Return Value:
+// - <none>
+void _verifySpanOfText(const wchar_t* const expectedChar,
+                       TextBufferCellIterator& iter,
+                       const int start,
+                       const int end)
+{
+    for (int x = start; x < end; x++)
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        if (iter->Chars() != expectedChar)
+        {
+            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
+        }
+        VERIFY_ARE_EQUAL(expectedChar, (iter++)->Chars());
+    }
+    Log::Comment(NoThrowString().Format(
+        L"Successfully validated %d characters were '%s'", end - start, expectedChar));
 }
 
 void ConptyRoundtripTests::ConptyOutputTestCanary()
@@ -233,6 +264,7 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
 
     _flushFirstFrame();
 
@@ -240,24 +272,30 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
     hostSm.ProcessString(L"\x1b[2;1H");
     hostSm.ProcessString(L"BBB");
 
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 0 });
-        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-    }
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 1 });
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-    }
+    auto verifyData = [](TextBuffer& tb) {
+        {
+            auto iter = tb.GetCellDataAt({ 0, 0 });
+            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        }
+        {
+            auto iter = tb.GetCellDataAt({ 0, 1 });
+            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        }
+    };
+
+    verifyData(hostTb);
 
     expectedOutput.push_back("AAA");
     expectedOutput.push_back("\r\n");
     expectedOutput.push_back("BBB");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyData(termTb);
 }
 
 void ConptyRoundtripTests::WriteAFewSimpleLines()
@@ -272,6 +310,7 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
 
     _flushFirstFrame();
 
@@ -279,31 +318,34 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     hostSm.ProcessString(L"BBB\n");
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"CCC");
+    auto verifyData = [](TextBuffer& tb) {
+        {
+            auto iter = tb.GetCellDataAt({ 0, 0 });
+            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        }
+        {
+            auto iter = tb.GetCellDataAt({ 0, 1 });
+            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        }
+        {
+            auto iter = tb.GetCellDataAt({ 0, 2 });
+            VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+        }
+        {
+            auto iter = tb.GetCellDataAt({ 0, 3 });
+            VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+        }
+    };
 
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 0 });
-        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-    }
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 1 });
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-    }
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 2 });
-        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-    }
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 3 });
-        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
-        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
-    }
+    verifyData(hostTb);
 
     expectedOutput.push_back("AAA");
     expectedOutput.push_back("\r\n");
@@ -320,79 +362,6 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     expectedOutput.push_back("CCC");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
-}
 
-void _verifySpanOfText(const wchar_t* const expectedChar, TextBufferCellIterator& iter, const int start, const int end)
-{
-    for (int x = start; x < end; x++)
-    {
-        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-        if (iter->Chars() != expectedChar)
-        {
-            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
-        }
-        VERIFY_ARE_EQUAL(expectedChar, (iter++)->Chars());
-    }
-}
-
-void ConptyRoundtripTests::WriteWrappedLine()
-{
-    Log::Comment(NoThrowString().Format(
-        L"Write more lines of outout. We should use \r\n to move the cursor"));
-    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
-
-    auto& g = ServiceLocator::LocateGlobals();
-    auto& renderer = *g.pRender;
-    auto& gci = g.getConsoleInformation();
-    auto& si = gci.GetActiveOutputBuffer();
-    auto& hostSm = si.GetStateMachine();
-    auto& hostTb = si.GetTextBuffer();
-    const auto view = si.GetViewport();
-
-    _flushFirstFrame();
-
-    const std::wstring aWString(view.Width() - 1, L'A');
-    const std::wstring bWString(view.Width() + 1, L'B');
-
-    hostSm.ProcessString(aWString);
-    hostSm.ProcessString(L"\n");
-    hostSm.ProcessString(bWString);
-    hostSm.ProcessString(L"\n");
-
-    Log::Comment(NoThrowString().Format(
-        L"Ensure the buffer contains what we'd expect"));
-    {
-        auto iter = hostTb.GetCellDataAt({ 0, 0 });
-        _verifySpanOfText(L"A", iter, 0, view.Width() - 1);
-        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars(), L"The last char of the line should be a space");
-    }
-    {
-        // Every char in this line should be 'B'
-        auto iter = hostTb.GetCellDataAt({ 0, 1 });
-        _verifySpanOfText(L"B", iter, 0, view.Width());
-    }
-    {
-        // Only the first char should be 'B', the rest should be blank
-        auto iter = hostTb.GetCellDataAt({ 0, 2 });
-        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        _verifySpanOfText(L" ", iter, 1, view.Width());
-    }
-
-    std::string aLine(view.Width() - 1, 'A');
-    aLine += ' ';
-    std::string bLine(view.Width(), 'B');
-
-    // First, the line of 'A's with a space at the end
-    expectedOutput.push_back(aLine);
-    expectedOutput.push_back("\r\n");
-    // Then, the line of all 'B's
-    expectedOutput.push_back(bLine);
-    // No trailing newline here. Instead, onto the next line, another 'B'
-    expectedOutput.push_back("B");
-    // Followed by us using ECH to clear the rest of the spaces in the line.
-    expectedOutput.push_back("\x1b[K");
-    // and finally a newline.
-    expectedOutput.push_back("\r\n");
-
-    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    verifyData(termTb);
 }

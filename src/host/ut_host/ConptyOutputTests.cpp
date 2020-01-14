@@ -104,6 +104,8 @@ class ConptyOutputTests
 
     TEST_METHOD(ConptyOutputTestCanary);
     TEST_METHOD(SimpleWriteOutputTest);
+    TEST_METHOD(WriteTwoLinesUsesNewline);
+    TEST_METHOD(WriteAFewSimpleLines);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -126,15 +128,9 @@ bool ConptyOutputTests::_writeCallback(const char* const pch, size_t const cch)
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
     Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
 
-    // try
-    // {
     VERIFY_ARE_EQUAL(first.length(), cch);
     VERIFY_ARE_EQUAL(first, actualString);
-    // }
-    // catch (...)
-    // {
-    //     return false;
-    // }
+
     return true;
 }
 
@@ -151,16 +147,41 @@ void ConptyOutputTests::_flushFirstFrame()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
 
+// Function Description:
+// - Helper function to validate that a number of characters in a row are all
+//   the same. Validates that the next end-start characters are all equal to the
+//   provided string. Will move the provided iterator as it validates. The
+//   caller should ensure that `iter` starts where they would like to validate.
+// Arguments:
+// - expectedChar: The character (or characters) we're expecting
+// - iter: a iterator pointing to the cell we'd like to start validating at.
+// - start: the first index in the range we'd like to validate
+// - end: the last index in the range we'd like to validate
+// Return Value:
+// - <none>
+void _verifySpanOfText(const wchar_t* const expectedChar,
+                       TextBufferCellIterator& iter,
+                       const int start,
+                       const int end)
+{
+    for (int x = start; x < end; x++)
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        if (iter->Chars() != expectedChar)
+        {
+            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
+        }
+        VERIFY_ARE_EQUAL(expectedChar, (iter++)->Chars());
+    }
+    Log::Comment(NoThrowString().Format(
+        L"Successfully validated %d characters were '%s'", end - start, expectedChar));
+}
+
 void ConptyOutputTests::ConptyOutputTestCanary()
 {
     Log::Comment(NoThrowString().Format(
         L"This is a simple test to make sure that everything is working as expected."));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
-
-    // auto& g = ServiceLocator::LocateGlobals();
-    // auto& renderer = *g.pRender;
-    // auto& gci = g.getConsoleInformation();
-    // auto& currentBuffer = gci.GetActiveOutputBuffer();
 
     _flushFirstFrame();
 }
@@ -168,15 +189,121 @@ void ConptyOutputTests::ConptyOutputTestCanary()
 void ConptyOutputTests::SimpleWriteOutputTest()
 {
     Log::Comment(NoThrowString().Format(
-        L"This is a simple test to make sure that everything is working as expected."));
+        L"Write some simple output, and make sure it gets rendered largely "
+        L"unmodified to the terminal"));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
-    // auto& g = ServiceLocator::LocateGlobals();
-    // auto& renderer = *g.pRender;
-    // auto& gci = g.getConsoleInformation();
-    // auto& currentBuffer = gci.GetActiveOutputBuffer();
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
 
     _flushFirstFrame();
 
     expectedOutput.push_back("Hello World");
+    sm.ProcessString(L"Hello World");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::WriteTwoLinesUsesNewline()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write two lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& tb = si.GetTextBuffer();
+
+    _flushFirstFrame();
+
+    sm.ProcessString(L"AAA");
+    sm.ProcessString(L"\x1b[2;1H");
+    sm.ProcessString(L"BBB");
+
+    {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 1 });
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+    }
+
+    expectedOutput.push_back("AAA");
+    expectedOutput.push_back("\r\n");
+    expectedOutput.push_back("BBB");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::WriteAFewSimpleLines()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write more lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& tb = si.GetTextBuffer();
+
+    _flushFirstFrame();
+
+    sm.ProcessString(L"AAA\n");
+    sm.ProcessString(L"BBB\n");
+    sm.ProcessString(L"\n");
+    sm.ProcessString(L"CCC");
+
+    {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 1 });
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 2 });
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 3 });
+        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+    }
+
+    expectedOutput.push_back("AAA");
+    expectedOutput.push_back("\r\n");
+    expectedOutput.push_back("BBB");
+    expectedOutput.push_back("\r\n");
+    // Here, we're going to emit 3 spaces. The region that got invalidated was a
+    // rectangle from 0,0 to 3,3, so the vt renderer will try to render the
+    // region in between BBB and CCC as well, because it got included in the
+    // rectangle Or() operation.
+    // This behavior should not be seen as binding - if a future optimization
+    // breaks this test, it wouldn't be the worst.
+    expectedOutput.push_back("   ");
+    expectedOutput.push_back("\r\n");
+    expectedOutput.push_back("CCC");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
