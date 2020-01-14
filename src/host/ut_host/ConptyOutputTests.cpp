@@ -105,6 +105,8 @@ class ConptyOutputTests
     TEST_METHOD(ConptyOutputTestCanary);
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
+    TEST_METHOD(WriteAFewSimpleLines);
+    TEST_METHOD(WriteWrappedLine);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -217,6 +219,143 @@ void ConptyOutputTests::WriteTwoLinesUsesNewline()
     expectedOutput.push_back("AAA");
     expectedOutput.push_back("\r\n");
     expectedOutput.push_back("BBB");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::WriteAFewSimpleLines()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write more lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& tb = si.GetTextBuffer();
+
+    _flushFirstFrame();
+
+    sm.ProcessString(L"AAA\n");
+    sm.ProcessString(L"BBB\n");
+    sm.ProcessString(L"\n");
+    sm.ProcessString(L"CCC");
+
+    {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 1 });
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 2 });
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+    }
+    {
+        auto iter = tb.GetCellDataAt({ 0, 3 });
+        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+        VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
+    }
+
+    expectedOutput.push_back("AAA");
+    expectedOutput.push_back("\r\n");
+    expectedOutput.push_back("BBB");
+    expectedOutput.push_back("\r\n");
+    // Here, we're going to emit 3 spaces. The region that got invalidated was a
+    // rectangle from 0,0 to 3,3, so the vt renderer will try to render the
+    // region in between BBB and CCC as well, because it got included in the
+    // rectangle Or() operation.
+    // This behavior should not be seen as binding - if a future optimization
+    // breaks this test, it wouldn't be the worst.
+    expectedOutput.push_back("   ");
+    expectedOutput.push_back("\r\n");
+    expectedOutput.push_back("CCC");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void _verifySpanOfText(const wchar_t* const expectedChar, TextBufferCellIterator& iter, const int start, const int end)
+{
+    for (int x = start; x < end; x++)
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        if (iter->Chars() != expectedChar)
+        {
+            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
+        }
+        VERIFY_ARE_EQUAL(expectedChar, (iter++)->Chars());
+    }
+}
+
+void ConptyOutputTests::WriteWrappedLine()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write more lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& tb = si.GetTextBuffer();
+    const auto view = si.GetViewport();
+
+    _flushFirstFrame();
+
+    const std::wstring aWString(view.Width() - 1, L'A');
+    const std::wstring bWString(view.Width() + 1, L'B');
+
+    sm.ProcessString(aWString);
+    sm.ProcessString(L"\n");
+    sm.ProcessString(bWString);
+    sm.ProcessString(L"\n");
+
+    Log::Comment(NoThrowString().Format(
+        L"Ensure the buffer contains what we'd expect"));
+    {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        _verifySpanOfText(L"A", iter, 0, view.Width() - 1);
+        VERIFY_ARE_EQUAL(L" ", (iter++)->Chars(), L"The last char of the line should be a space");
+    }
+    {
+        // Every char in this line should be 'B'
+        auto iter = tb.GetCellDataAt({ 0, 1 });
+        _verifySpanOfText(L"B", iter, 0, view.Width());
+    }
+    {
+        // Only the first char should be 'B', the rest should be blank
+        auto iter = tb.GetCellDataAt({ 0, 2 });
+        VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
+        _verifySpanOfText(L" ", iter, 1, view.Width());
+    }
+
+    std::string aLine(view.Width() - 1, 'A');
+    aLine += ' ';
+    std::string bLine(view.Width(), 'B');
+
+    // First, the line of 'A's with a space at the end
+    expectedOutput.push_back(aLine);
+    expectedOutput.push_back("\r\n");
+    // Then, the line of all 'B's
+    expectedOutput.push_back(bLine);
+    // No trailing newline here. Instead, onto the next line, another 'B'
+    expectedOutput.push_back("B");
+    // Followed by us using ECH to clear the rest of the spaces in the line.
+    expectedOutput.push_back("\x1b[K");
+    // and finally a newline.
+    expectedOutput.push_back("\r\n");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
