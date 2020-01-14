@@ -13,7 +13,7 @@
     </Flyout.FlyoutPresenterStyle>
     <StackPanel Orientation="Horizontal">
         <StackPanel>
-            <VariableSizedWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" HorizontalAlignment="Center">
+            <VariableSizedWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4" HorizontalAlignment="Center" Margin="0, 3, 0, 0">
                 <VariableSizedWrapGrid.Resources>
                     <Style TargetType="Rectangle">
                         <Setter Property="Width" Value="30"/>
@@ -133,13 +133,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Grid.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="Margin" Value="0, 5, 0, 0"/>
-                    <Setter Property="MinWidth" Value="20"/>
-                    <Setter Property="MinHeight" Value="12"/>
-                </Style>
-            </Grid.Resources>
             <ColorPicker x:Name="customColorPicker" 
                      IsMoreButtonVisible="True"
                      IsColorSliderVisible="False"
@@ -152,7 +145,7 @@
                      Grid.Row="0"
                      >
             </ColorPicker>
-            <Button x:Name="btnOk" Click="CustomColorButton_Click" Grid.Row="1" >Ok</Button>
+            <Button x:Name="btnOk" Click="CustomColorButton_Click" Grid.Row="1" HorizontalAlignment="Center" MinWidth="130" MinHeight="12" Margin="0, 5, 0, 0">Ok</Button>
         </Grid>
     </StackPanel>
 </Flyout>
