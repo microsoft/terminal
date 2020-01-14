@@ -15,6 +15,10 @@ Author(s):
 
 #pragma once
 
+// This includes a lot of common headers needed by both the host and the propsheet
+// including: windows.h, winuser, ntstatus, assert, and the DDK
+#include "HostAndPropsheetIncludes.h"
+
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 

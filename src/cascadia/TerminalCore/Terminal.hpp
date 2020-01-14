@@ -28,6 +28,11 @@ namespace Microsoft::Terminal::Core
     class Terminal;
 }
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+class ConptyRoundtripTests;
+#endif
+
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
@@ -245,4 +250,8 @@ private:
     SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
     void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 #pragma endregion
+
+#ifdef UNIT_TESTING
+    friend class ::ConptyRoundtripTests;
+#endif
 };
