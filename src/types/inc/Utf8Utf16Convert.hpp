@@ -9,6 +9,12 @@ Abstract:
 - Defines classes which hold the status of the current partials handling.
 - Defines functions for converting between UTF-8 and UTF-16 strings.
 
+Tests have been made in order to investigate whether or not own algorithms
+could overcome disadvantages of syscalls. Test results can be read up
+in PR #4093 and the test algorithms are available in src\tools\U8U16Test.
+Based on the results the decision was made to keep using the platform
+functions MultiByteToWideChar and WideCharToMultiByte.
+
 Author(s):
 - Steffen Illhardt (german-one) 2019
 --*/
@@ -73,13 +79,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         size_t _cached{}; // 1 if a high surrogate has been cached, 0 otherwise
     };
 
-    [[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, bool discardInvalids = false) noexcept;
-    [[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, u8state& state, bool discardInvalids = false) noexcept;
-    [[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, bool discardInvalids = false) noexcept;
-    [[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, u16state& state, bool discardInvalids = false) noexcept;
+    [[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out) noexcept;
+    [[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, u8state& state) noexcept;
+    [[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out) noexcept;
+    [[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, u16state& state) noexcept;
 
-    std::wstring u8u16(const std::string_view in, bool discardInvalids = false);
-    std::wstring u8u16(const std::string_view in, u8state& state, bool discardInvalids = false);
-    std::string u16u8(const std::wstring_view in, bool discardInvalids = false);
-    std::string u16u8(const std::wstring_view in, u16state& state, bool discardInvalids = false);
+    std::wstring u8u16(const std::string_view in);
+    std::wstring u8u16(const std::string_view in, u8state& state);
+    std::string u16u8(const std::wstring_view in);
+    std::string u16u8(const std::wstring_view in, u16state& state);
 }
