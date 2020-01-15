@@ -51,6 +51,17 @@ Note that the starting directory of Cygwin is set as it is to make the path
 work. The default directory opened when starting Cygwin will be `$HOME` because
 of the `--login` flag.
 
+## Far Manager
+
+```json
+{
+    "name" : "Far",
+    "commandline" : "cmd.exe /c \"c:\\program files\\far manager\\far.exe\"",
+    "startingDirectory" : "%USERPROFILE%",
+    "useAcrylic" : false
+},
+```
+
 ## Git Bash
 
 Assuming that you've installed Git Bash into `C:/Program Files/Git`:
