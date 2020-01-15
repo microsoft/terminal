@@ -456,20 +456,33 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             // TODO: MSFT 21006766
             // This is not great but I need it demoable. Fix by making a buffer stream writer.
-            if (wch >= 0xD800 && wch <= 0xDFFF)
+            //
+            // If wch is a surrogate character we need to read 2 code units
+            // from the stringView to form a single code point.
+            const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
+            const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
+            const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
+            const auto end = _buffer->Write(it);
+            const auto cellDistance = end.GetCellDistance(it);
+            const auto inputDistance = end.GetInputDistance(it);
+
+            if (inputDistance > 0)
             {
-                const OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
-                const auto end = _buffer->Write(it);
-                const auto cellDistance = end.GetCellDistance(it);
-                i += cellDistance - 1;
+                // If "wch" was a surrogate character, we just consumed 2 code units above.
+                // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
                 proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+                i += inputDistance - 1;
             }
             else
             {
-                const OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
-                const auto end = _buffer->Write(it);
-                const auto cellDistance = end.GetCellDistance(it);
-                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+                // If _WriteBuffer() is called with a consecutive string longer than the viewport/buffer width
+                // the call to _buffer->Write() will refuse to write anything on the current line.
+                // GetInputDistance() thus returns 0, which would in turn cause i to be
+                // decremented by 1 below and force the outer loop to loop forever.
+                // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
+                // With well behaving shells during normal operation this safeguard should normally not be encountered.
+                proposedCursorPosition.X = 0;
+                proposedCursorPosition.Y++;
             }
         }
 
