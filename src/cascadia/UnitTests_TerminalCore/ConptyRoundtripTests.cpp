@@ -255,7 +255,7 @@ void ConptyRoundtripTests::SimpleWriteOutputTest()
 void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
 {
     Log::Comment(NoThrowString().Format(
-        L"Write two lines of outout. We should use \r\n to move the cursor"));
+        L"Write two lines of output. We should use \r\n to move the cursor"));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();

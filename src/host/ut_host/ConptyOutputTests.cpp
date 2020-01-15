@@ -210,7 +210,7 @@ void ConptyOutputTests::SimpleWriteOutputTest()
 void ConptyOutputTests::WriteTwoLinesUsesNewline()
 {
     Log::Comment(NoThrowString().Format(
-        L"Write two lines of outout. We should use \r\n to move the cursor"));
+        L"Write two lines of output. We should use \r\n to move the cursor"));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -249,7 +249,7 @@ void ConptyOutputTests::WriteTwoLinesUsesNewline()
 void ConptyOutputTests::WriteAFewSimpleLines()
 {
     Log::Comment(NoThrowString().Format(
-        L"Write more lines of outout. We should use \r\n to move the cursor"));
+        L"Write more lines of output. We should use \r\n to move the cursor"));
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
