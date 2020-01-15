@@ -56,7 +56,7 @@ of the `--login` flag.
 ```json
 {
     "name" : "Far",
-    "commandline" : "cmd.exe /c \"c:\\program files\\far manager\\far.exe\"",
+    "commandline" : "\"c:\\program files\\far manager\\far.exe\"",
     "startingDirectory" : "%USERPROFILE%",
     "useAcrylic" : false
 },
