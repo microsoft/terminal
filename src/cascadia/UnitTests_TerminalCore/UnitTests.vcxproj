@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)\src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="TerminalBufferTests.cpp" />
     <ClCompile Include="ScreenSizeLimitsTest.cpp" />
     <ClCompile Include="SelectionTest.cpp" />
     <ClCompile Include="InputTest.cpp" />
