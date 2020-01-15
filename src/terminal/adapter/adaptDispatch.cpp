@@ -1316,6 +1316,28 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
 }
 
 // Routine Description:
+// - IND/NEL - Performs a line feed, possibly preceded by carriage return.
+//    Moves the cursor down one line, and possibly also to the leftmost column.
+// Arguments:
+// - lineFeedType - Specify whether a carriage return should be performed as well.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
+{
+    switch (lineFeedType)
+    {
+    case DispatchTypes::LineFeedType::DependsOnMode:
+        return _pConApi->PrivateLineFeed(_pConApi->PrivateGetLineFeedMode());
+    case DispatchTypes::LineFeedType::WithoutReturn:
+        return _pConApi->PrivateLineFeed(false);
+    case DispatchTypes::LineFeedType::WithReturn:
+        return _pConApi->PrivateLineFeed(true);
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - RI - Performs a "Reverse line feed", essentially, the opposite of '\n'.
 //    Moves the cursor up one line, and tries to keep its position in the line
 // Arguments:

@@ -48,6 +48,7 @@ public:
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
     bool SetTopBottomScrollingMargins(const size_t /*topMargin*/, const size_t /*bottomMargin*/) noexcept override { return false; } // DECSTBM
+    bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) noexcept override { return false; } // IND, NEL
     bool ReverseLineFeed() noexcept override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) noexcept override { return false; } // OscWindowTitle
     bool UseAlternateScreenBuffer() noexcept override { return false; } // ASBSET

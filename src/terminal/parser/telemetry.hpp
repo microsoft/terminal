@@ -62,6 +62,8 @@ namespace Microsoft::Console::VirtualTerminal
             IL,
             DL,
             DECSTBM,
+            NEL,
+            IND,
             RI,
             OSCWT,
             HTS,

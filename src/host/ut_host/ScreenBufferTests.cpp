@@ -178,6 +178,8 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
+    TEST_METHOD(LineFeedEscapeSequences);
+
     TEST_METHOD(ScrollLines256Colors);
 
     TEST_METHOD(SetOriginMode);
@@ -4264,6 +4266,8 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     _CommonScrollingSetup();
     // Set the top scroll margin to the top of the screen
     stateMachine.ProcessString(L"\x1b[1;5r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
     // Move to column 5 of line 1, the top of the screen
     stateMachine.ProcessString(L"\x1b[1;5H");
     // Execute a reverse line feed (RI)
@@ -4289,6 +4293,91 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
         VERIFY_ARE_EQUAL(L"6", iter3->Chars());
         VERIFY_ARE_EQUAL(L"7", iter4->Chars());
         VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::LineFeedEscapeSequences()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:withReturn", L"{true, false}")
+    END_TEST_METHOD_PROPERTIES()
+
+    bool withReturn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"withReturn", withReturn));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    std::wstring escapeSequence;
+    if (withReturn)
+    {
+        Log::Comment(L"Testing line feed with carriage return (NEL).");
+        escapeSequence = L"\033E";
+    }
+    else
+    {
+        Log::Comment(L"Testing line feed without carriage return (IND).");
+        escapeSequence = L"\033D";
+    }
+
+    // Set the viewport to a reasonable size.
+    const auto view = Viewport::FromDimensions({ 0, 0 }, { 80, 25 });
+    si.SetViewport(view, true);
+
+    // We'll place the cursor in the center of the line.
+    // If we are performing a line feed with carriage return,
+    // the cursor should move to the leftmost column.
+    const short initialX = view.Width() / 2;
+    const short expectedX = withReturn ? 0 : initialX;
+
+    {
+        Log::Comment(L"Starting at the top of viewport");
+        const short initialY = 0;
+        const short expectedY = initialY + 1;
+        const short expectedViewportTop = si.GetViewport().Top();
+        cursor.SetPosition(COORD{ initialX, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedX, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+    }
+
+    {
+        Log::Comment(L"Starting at the bottom of viewport");
+        const short initialY = si.GetViewport().BottomInclusive();
+        const short expectedY = initialY + 1;
+        const short expectedViewportTop = si.GetViewport().Top() + 1;
+        cursor.SetPosition(COORD{ initialX, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedX, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+    }
+
+    {
+        Log::Comment(L"Starting at the bottom of the scroll margins");
+        // Set the margins to rows 5 to 10.
+        stateMachine.ProcessString(L"\x1b[5;10r");
+        // Make sure we clear the margins on exit so they can't break other tests.
+        auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+        const short initialY = si.GetViewport().Top() + 9;
+        const short expectedY = initialY;
+        const short expectedViewportTop = si.GetViewport().Top();
+        _FillLine(initialY, L'Q', {});
+        cursor.SetPosition(COORD{ initialX, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedX, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+        // Verify the line of Qs has been scrolled up.
+        VERIFY_IS_TRUE(_ValidateLineContains(initialY - 1, L'Q', {}));
+        VERIFY_IS_TRUE(_ValidateLineContains(initialY, L' ', si.GetAttributes()));
     }
 }
 
