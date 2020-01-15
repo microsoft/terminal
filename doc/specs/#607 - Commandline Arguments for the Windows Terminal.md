@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-11-08
-last updated: 2020-01-09
+last updated: 2020-01-15
 issue id: #607
 ---
 
@@ -9,10 +9,10 @@ issue id: #607
 
 ## Abstract
 
-This spec outlines the changes necessary to add support to Windows Terminal to
-support commandline arguments. These arguments can be used to enable customized
-launch scenarios for the Terminal, such as booting directly into a specific
-profile or directory.
+This spec outlines the changes necessary for Windows Terminal to support
+commandline arguments. These arguments can be used to enable customized launch
+scenarios for the Terminal, such as booting directly into a specific profile or
+directory.
 
 ## Inspiration
 
@@ -128,6 +128,7 @@ wt help
 wt --help
 wt -h
 wt -?
+wt /?
 
 # output the list of profiles (user story 5)
 wt list-profiles
@@ -140,7 +141,7 @@ wt version
 wt --version
 wt -v
 
-# Start the default profile in directory "c:/Users/Foo/dev/MyProject" (user story 8)
+# Start the default profile in directory "c:/Users/Foo/dev/MyProject" (user story 9)
 wt new-tab --startingDirectory "c:/Users/Foo/dev/MyProject"
 wt --startingDirectory "c:/Users/Foo/dev/MyProject"
 wt -d "c:/Users/Foo/dev/MyProject"
@@ -148,7 +149,7 @@ wt -d "c:/Users/Foo/dev/MyProject"
 wt -d "c:\Users\Foo\dev\MyProject"
 
 # Runs the user's "Windows Powershell" profile in a new tab in directory
-#  "c:/Users/Foo/dev/MyProject" (user story 2, 8)
+#  "c:/Users/Foo/dev/MyProject" (user story 2, 9)
 wt new-tab --profile "Windows Powershell" --startingDirectory "c:/Users/Foo/dev/MyProject"
 wt --profile "Windows Powershell" --startingDirectory "c:/Users/Foo/dev/MyProject"
 wt -p "Windows Powershell" -d "c:/Users/Foo/dev/MyProject"
@@ -250,13 +251,13 @@ Considerations](#Future-Considerations) for more details.
 
 `help`
 
-Display the help message
+Display the help message.
 
 #### `version`
 
 `version`
 
-Display version info for the Windows Terminal
+Display version info for the Windows Terminal.
 
 #### `open-settings`
 
@@ -326,8 +327,8 @@ vertically or horizontally.
   defaults to the index of the currently focused pane.
 * `-h`, `-v`: Used to indicate which direction to split the pane. `-v` is
   "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
-  omitted, defaults to vertical. If both `-h` and `-v` are provided, defaults to
-  vertical.
+  omitted, defaults to "auto", which splits the current pane in whatever the
+  larger dimension is. If both `-h` and `-v` are provided, defaults to vertical.
 * `--percent,-% split-percentage`: Designates the amount of space that the new
   pane should take as a percentage of the parent's space. If omitted, the pane
   will take 50% by default.
@@ -356,7 +357,7 @@ Moves focus within the currently focused tab to a given pane.
   has a unique index (per-tab) which can be used to identify them. These
   indicies are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane (which is effectively a
-  no-op)
+  no-op).
 
 #### `move-focus`
 
@@ -385,12 +386,12 @@ following:
 * `--startingDirectory,-d starting-directory`: Overrides the value of
   `startingDirectory` of the specified profile, to start in `starting-directory`
   instead.
-* `commandline`: A commadline to replace the default commandline of the selected
-  profile. If the user wants to use a `;` in this commandline, it should be
-  escaped as `\;`.
+* `commandline`: A commandline to replace the default commandline of the
+  selected profile. If the user wants to use a `;` in this commandline, it
+  should be escaped as `\;`.
 
 Fundamentally, there's no reason that _all_ the current profile settings
-couldn't be overriden by commandline arguments. Practicaly, it might be
+couldn't be overridden by commandline arguments. Practically, it might be
 unreasonable to create short form arguments for each and every Profile
 property, but the long form would certainly be reasonable.
 
@@ -447,7 +448,7 @@ to iteratively work towards fulling implementing this funcionality.
     running. As we'll be re-using `ActionAndArgs` for handling startup events,
     we'll need a more generic way of dispatching those events.
 * [x] Add a `SplitPane` `ShortcutAction`, with a single parameter `split`,
-  which accepts either `vertical` or `horizontal`
+  which accepts either `vertical`, `horizontal`, or `auto`.
   - Make sure to convert the legacy `SplitVertical` and `SplitHorizontal` to use
     `SplitPane` with that arg set appropriately.
 * [x] Add a `TerminalParameters` winrt object to `NewTabArgs` and `SplitPane`
@@ -472,7 +473,7 @@ runtimeclass TerminalParameters {
 * [x] Add an optional `"percent"` argument to `SplitPane`, that enables a pane
   to be split with a specified percent of the parent pane.
 * [x] Add support to `TerminalApp` for parsing commandline arguments, and
-  constructing a list of `ActionAndArgs` based on those commands
+  constructing a list of `ActionAndArgs` based on those commands.
   - This will include adding tests that validate a particular commandline
     generates the given sequence of `ActionAndArgs`.
   - This will _not_ include _performing_ those actions, or passing the
@@ -493,7 +494,7 @@ runtimeclass TerminalParameters {
 * [ ] Add support for performing actions passed on the commandline. This
   includes:
   - Passing the commandline into the `TerminalApp` for parsing.
-  - Performing `ActionAndArgs` that are parsed by the Terminal
+  - Performing `ActionAndArgs` that are parsed by the Terminal.
   - At this point, the user should be able to pass the following commands to the
     Terminal:
     - `new-tab`
@@ -507,7 +508,7 @@ runtimeclass TerminalParameters {
   `index`.
   - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
     quicky switch to the i'th `Pane`.
-  - This is in order to support the `-t,--target` parameter of `split-pane`
+  - This is in order to support the `-t,--target` parameter of `split-pane`.
 
 ## Capabilities
 
@@ -557,9 +558,9 @@ means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-ta
 with \`; semicolons```, using ```\`;``` to first escape the semicolon for
 powershell, then the backslash to escape it for `wt`.
 
-Alternatively, the user could chose to escape the semicolons with quotes (either
-single or double), like so: ```wt new-tab ';' split-pane "commandline \; with \;
-semicolons"```.
+Alternatively, the user could choose to escape the semicolons with quotes
+(either single or double), like so: ```wt new-tab ';' split-pane "commandline \;
+with \; semicolons"```.
 
 This would get a little ridiculous when using powershell commands that also have
 semicolons possible escaped within them:
@@ -572,6 +573,15 @@ We've decided that although this behavior is uncomfortable in powershell, there
 doesn't seem to be any option out there that's _less_ painful. This is a
 reasonable option that makes enough logical sense. Users familiar with
 powershell will understand the need to escape commandlines like this.
+
+As noted by @jantari:
+> PowerShell has the --% (stop parsing) operator, which instructs it to stop
+> interpreting anything after it and just pass it on verbatim. So, the
+> semicolon-problem could also be addressed by the following syntax:
+> ```sh
+> # wt.exe still needs to be interpreted by PowerShell as it's a command in PATH, but nothing after it
+> wt.exe --% cmd.exe ; split-pane --target-pane 0 -v -% 30 wsl.exe
+> ```
 
 ### `/SUBSYSTEM:Windows` or `/SUBSYSTEM:Console`?
 
@@ -610,7 +620,7 @@ environment, it's also the least bad option available to us.
 * It's not as bad as forcing the creation of a console window for
   non-commandline launches.
 * There's precedent for this kind of dialog (we're not inventing a new pattern
-  here.)
+  here).
 
 ### What happens if `new-tab` isn't the first command?
 
