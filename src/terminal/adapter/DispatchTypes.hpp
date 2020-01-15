@@ -125,6 +125,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyBar = 6
     };
 
+    enum class LineFeedType : unsigned int
+    {
+        WithReturn,
+        WithoutReturn,
+        DependsOnMode
+    };
+
     constexpr short s_sDECCOLMSetColumns = 132;
     constexpr short s_sDECCOLMResetColumns = 80;
 

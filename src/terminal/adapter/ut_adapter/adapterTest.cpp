@@ -369,6 +369,24 @@ public:
         return _privateSetScrollingRegionResult;
     }
 
+    bool PrivateGetLineFeedMode() const override
+    {
+        Log::Comment(L"PrivateGetLineFeedMode MOCK called...");
+        return _privateGetLineFeedModeResult;
+    }
+
+    bool PrivateLineFeed(const bool withReturn) override
+    {
+        Log::Comment(L"PrivateLineFeed MOCK called...");
+
+        if (_privateLineFeedResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedLineFeedWithReturn, withReturn);
+        }
+
+        return _privateLineFeedResult;
+    }
+
     bool PrivateReverseLineFeed() override
     {
         Log::Comment(L"PrivateReverseLineFeed MOCK called...");
@@ -893,6 +911,9 @@ public:
     bool _privateAllowCursorBlinkingResult = false;
     bool _enable = false; // for cursor blinking
     bool _privateSetScrollingRegionResult = false;
+    bool _privateGetLineFeedModeResult = false;
+    bool _privateLineFeedResult = false;
+    bool _expectedLineFeedWithReturn = false;
     bool _privateReverseLineFeedResult = false;
 
     bool _setConsoleTitleWResult = false;
@@ -2107,6 +2128,32 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
         _testGetSet->_privateSetScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+    }
+
+    TEST_METHOD(LineFeedTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        // All test cases need the LineFeed call to succeed.
+        _testGetSet->_privateLineFeedResult = TRUE;
+
+        Log::Comment(L"Test 1: Line feed without carriage return.");
+        _testGetSet->_expectedLineFeedWithReturn = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
+
+        Log::Comment(L"Test 2: Line feed with carriage return.");
+        _testGetSet->_expectedLineFeedWithReturn = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::WithReturn));
+
+        Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
+        _testGetSet->_privateGetLineFeedModeResult = false;
+        _testGetSet->_expectedLineFeedWithReturn = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+
+        Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
+        _testGetSet->_privateGetLineFeedModeResult = true;
+        _testGetSet->_expectedLineFeedWithReturn = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
     }
 
     TEST_METHOD(TabSetClearTests)

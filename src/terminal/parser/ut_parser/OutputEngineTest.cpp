@@ -677,6 +677,8 @@ public:
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
         _isOriginModeRelative{ false },
+        _lineFeed{ false },
+        _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
@@ -904,6 +906,13 @@ public:
         return true;
     }
 
+    bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept override
+    {
+        _lineFeed = true;
+        _lineFeedType = lineFeedType;
+        return true;
+    }
+
     bool EnableDECCOLMSupport(const bool fEnabled) noexcept override
     {
         _isDECCOLMAllowed = fEnabled;
@@ -950,6 +959,8 @@ public:
     bool _cursorKeysMode;
     bool _cursorBlinking;
     bool _isOriginModeRelative;
+    bool _lineFeed;
+    DispatchTypes::LineFeedType _lineFeedType;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
 
@@ -1780,6 +1791,56 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestLineFeed)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"IND (Index) escape sequence");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'D');
+
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::WithoutReturn, pDispatch->_lineFeedType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"NEL (Next Line) escape sequence");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'E');
+
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::WithReturn, pDispatch->_lineFeedType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"LF (Line Feed) control code");
+        mach.ProcessCharacter(AsciiChars::LF);
+
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::DependsOnMode, pDispatch->_lineFeedType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"FF (Form Feed) control code");
+        mach.ProcessCharacter(AsciiChars::FF);
+
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::DependsOnMode, pDispatch->_lineFeedType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"VT (Vertical Tab) control code");
+        mach.ProcessCharacter(AsciiChars::VT);
+
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::DependsOnMode, pDispatch->_lineFeedType);
 
         pDispatch->ClearState();
     }

@@ -98,6 +98,8 @@ public:
 
     bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) override;
 
+    bool PrivateGetLineFeedMode() const override;
+    bool PrivateLineFeed(const bool withReturn) override;
     bool PrivateReverseLineFeed() override;
 
     bool MoveCursorVertically(const ptrdiff_t lines) override;
