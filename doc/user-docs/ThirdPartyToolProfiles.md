@@ -53,6 +53,8 @@ of the `--login` flag.
 
 ## Far Manager
 
+Assuming that you've installed Far into `c:\Program Files\Far Manager`:
+
 ```json
 {
     "name" : "Far",
