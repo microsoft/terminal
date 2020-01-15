@@ -84,7 +84,8 @@
     "SplitState": {
       "enum": [
         "vertical",
-        "horizontal"
+        "horizontal",
+        "auto"
       ],
       "type": "string"
     },
@@ -214,8 +215,8 @@
             "action": { "type": "string", "pattern": "splitPane" },
             "split": {
               "$ref": "#/definitions/SplitState",
-              "default": "vertical",
-              "description": "The orientation to split the pane in, either vertical (think [|]) or horizontal (think [-])"
+              "default": "auto",
+              "description": "The orientation to split the pane in, either vertical (think [|]), horizontal (think [-]), or auto (splits pane based on remaining space)"
             }
           }
         }
