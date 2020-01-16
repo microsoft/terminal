@@ -547,6 +547,7 @@ namespace winrt::TerminalApp::implementation
         // immediately.
         if (isFirstTab)
         {
+            _tabContent.Children().Clear();
             _tabContent.Children().Append(newTab->GetRootElement());
         }
         else
