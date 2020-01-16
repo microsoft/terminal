@@ -440,7 +440,7 @@ HRESULT VtEngine::RequestCursor() noexcept
 void VtEngine::BeginResizeRequest()
 {
     _inResizeRequest = true;
-    _invalidBeforeResize = _invalidRect;
+    // _invalidBeforeResize = _invalidRect;
 }
 
 // Method Description:
@@ -454,9 +454,9 @@ void VtEngine::BeginResizeRequest()
 void VtEngine::EndResizeRequest()
 {
     _inResizeRequest = false;
-    if (_invalidBeforeResize.has_value())
-    {
-        _invalidRect = _invalidBeforeResize.value();
-        _invalidBeforeResize = std::nullopt;
-    }
+    // if (_invalidBeforeResize.has_value())
+    // {
+    //     _invalidRect = _invalidBeforeResize.value();
+    //     _invalidBeforeResize = std::nullopt;
+    // }
 }
