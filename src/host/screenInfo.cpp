@@ -2176,8 +2176,11 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
         commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
     }
 
-    // force repaint of entire viewport
-    GetRenderTarget().TriggerRedrawAll();
+    if (!gci.IsInVtIoMode())
+    {
+        // force repaint of entire viewport
+        GetRenderTarget().TriggerRedrawAll();
+    }
 
     gci.ConsoleIme.RefreshAreaAttributes();
 

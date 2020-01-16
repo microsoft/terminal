@@ -776,7 +776,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
             context.PostUpdateWindowSize();
-            WriteToScreen(context, context.GetViewport());
+
+            if (!g.getConsoleInformation().IsInVtIoMode())
+            {
+                WriteToScreen(context, context.GetViewport());
+            }
         }
         return S_OK;
     }

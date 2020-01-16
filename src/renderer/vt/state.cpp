@@ -270,10 +270,18 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 
     if (SUCCEEDED(hr))
     {
-        // Viewport is smaller now - just update it all.
-        if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
+        if (oldView.Width() > newView.Width())
         {
+            // Viewport is smaller now - just update it all. We may have
+            // re-wrapped the buffer contents.
             hr = InvalidateAll();
+        }
+        else if (oldView.Height() > newView.Height())
+        {
+            // We shrunk in height. We don't really need to do anything here.
+            // Shrinking in height will remove lines from the top of the buffer
+            // (pushing them into scrollback in the terminal).
+            // hr = InvalidateAll();
         }
         else
         {
@@ -432,6 +440,7 @@ HRESULT VtEngine::RequestCursor() noexcept
 void VtEngine::BeginResizeRequest()
 {
     _inResizeRequest = true;
+    _invalidBeforeResize = _invalidRect;
 }
 
 // Method Description:
@@ -445,4 +454,9 @@ void VtEngine::BeginResizeRequest()
 void VtEngine::EndResizeRequest()
 {
     _inResizeRequest = false;
+    if (_invalidBeforeResize.has_value())
+    {
+        _invalidRect = _invalidBeforeResize.value();
+        _invalidBeforeResize = std::nullopt;
+    }
 }
