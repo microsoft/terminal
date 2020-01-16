@@ -297,15 +297,15 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
                 Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
                 hr = _InvalidCombine(rightOfOldViewport);
             }
-            if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
-            {
-                short left = 0;
-                short top = oldView.BottomExclusive();
-                short right = newView.RightInclusive();
-                short bottom = newView.BottomInclusive();
-                Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                hr = _InvalidCombine(belowOldViewport);
-            }
+            // if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
+            // {
+            //     short left = 0;
+            //     short top = oldView.BottomExclusive();
+            //     short right = newView.RightInclusive();
+            //     short bottom = newView.BottomInclusive();
+            //     Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
+            //     hr = _InvalidCombine(belowOldViewport);
+            // }
         }
     }
     _resized = true;
