@@ -222,6 +222,11 @@ static void _collectPwshExeInDirectory(const std::wstring_view directory, const 
     }
 }
 
+static void _promotePwshFromPath(std::vector<PowerShellInstance>& out)
+{
+    (void)out;
+}
+
 static std::vector<PowerShellInstance> _enumeratePowerShellInstances()
 {
     std::vector<PowerShellInstance> versions;
@@ -235,7 +240,12 @@ static std::vector<PowerShellInstance> _enumeratePowerShellInstances()
     _collectStorePowerShellInstances(versions);
     _collectPwshExeInDirectory(L"%USERPROFILE%\\.dotnet\\tools", PowerShellFlags::Dotnet, versions);
     _collectPwshExeInDirectory(L"%USERPROFILE%\\scoop\\shims", PowerShellFlags::Scoop, versions);
+
     std::sort(versions.rbegin(), versions.rend()); // sort in reverse (best first)
+
+    // Now that we're sorted, promote the one found first in PATH (as the user might want that one by default)
+    _promotePwshFromPath(versions);
+
     return versions;
 }
 
