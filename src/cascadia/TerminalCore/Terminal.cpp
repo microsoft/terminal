@@ -175,43 +175,50 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         return S_FALSE;
     }
-    ////////////////////////////////////////////////////////////////////////////
-    // const auto oldTop = _mutableViewport.Top();
+    const auto increasedHeight = viewportSize.Y > oldDimensions.Y;
 
-    // const short newBufferHeight = viewportSize.Y + _scrollbackLines;
-    // COORD bufferSize{ viewportSize.X, newBufferHeight };
-    // RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
-
-    // auto proposedTop = oldTop;
-    // const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    // const auto proposedBottom = newView.BottomExclusive();
-    // // If the new bottom would be below the bottom of the buffer, then slide the
-    // // top up so that we'll still fit within the buffer.
-    // if (proposedBottom > bufferSize.Y)
-    // {
-    //     proposedTop -= (proposedBottom - bufferSize.Y);
-    // }
-
-    // _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    // _scrollOffset = 0;
-    // _NotifyScrollEvent();
-    ////////////////////////////////////////////////////////////////////////////
+    const auto oldTop = _mutableViewport.Top();
     const auto oldBottom = _mutableViewport.BottomExclusive();
 
     const short newBufferHeight = viewportSize.Y + _scrollbackLines;
     COORD bufferSize{ viewportSize.X, newBufferHeight };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
-    const auto newViewSize = Viewport::FromDimensions({ 0, 0 }, viewportSize);
 
-    auto proposedBottom = oldBottom;
-    if (proposedBottom > bufferSize.Y)
+    if (increasedHeight)
     {
-        proposedBottom = bufferSize.Y;
-        // proposedTop -= (proposedBottom - bufferSize.Y);
-    }
-    short proposedTop = proposedBottom - newViewSize.Height();
+        // If we're increasing the height of the buffer, attempt to "stick" to
+        // the top of the current viewport. "new lines" will get added to the
+        // buffer underneath the current bottom of the viewport.
+        auto proposedTop = oldTop;
+        const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+        const auto proposedBottom = newView.BottomExclusive();
+        // If the new bottom would be below the bottom of the buffer, then slide the
+        // top up so that we'll still fit within the buffer.
+        if (proposedBottom > bufferSize.Y)
+        {
+            proposedTop -= (proposedBottom - bufferSize.Y);
+        }
 
-    _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+        _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    }
+    else
+    {
+        // If we're decreasing the height for the viewport, attempt to "stick"
+        // to the bottom of the current viewport. Lines will be moved into
+        // scrollback.
+        const auto newViewSize = Viewport::FromDimensions({ 0, 0 }, viewportSize);
+
+        auto proposedBottom = oldBottom;
+        if (proposedBottom > bufferSize.Y)
+        {
+            proposedBottom = bufferSize.Y;
+        }
+        short proposedTop = proposedBottom - newViewSize.Height();
+
+        _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    }
+
+
     _scrollOffset = 0;
     _NotifyScrollEvent();
 

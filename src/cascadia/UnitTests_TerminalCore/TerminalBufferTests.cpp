@@ -26,8 +26,7 @@ class TerminalCoreUnitTests::TerminalBufferTests final
 {
     TEST_CLASS(TerminalBufferTests);
 
-    TEST_METHOD(TestResizeDownOneLine);
-    TEST_METHOD(TestResizeDownManyLines);
+    TEST_METHOD(TestResizeHeight);
 
     TEST_METHOD_SETUP(MethodSetup)
     {
@@ -48,13 +47,24 @@ private:
     std::unique_ptr<Terminal> term;
 };
 
-void TerminalBufferTests::TestResizeDownOneLine()
+void TerminalBufferTests::TestResizeHeight()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES()
+    int dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+
     auto& termTb = *term->_buffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
+    VERIFY_ARE_EQUAL(32, initialView.BottomExclusive());
+
+    Log::Comment(NoThrowString().Format(
+        L"Print 50 lines of output, which will scroll the viewport"));
 
     for (auto i = 0; i < 50; i++)
     {
@@ -85,61 +95,21 @@ void TerminalBufferTests::TestResizeDownOneLine()
     };
     verifyBufferContents();
 
-    auto resizeResult = term->UserResize({ 80, 31 });
+    auto resizeResult = term->UserResize({ 80, gsl::narrow_cast<short>(32 + dy) });
     VERIFY_SUCCEEDED(resizeResult);
 
     const auto thirdView = term->GetViewport();
 
-    VERIFY_ARE_EQUAL(50, thirdView.BottomInclusive());
-    VERIFY_ARE_EQUAL(50 - thirdView.Height() + 1, thirdView.Top());
-
-    verifyBufferContents();
-}
-
-void TerminalBufferTests::TestResizeDownManyLines()
-{
-    auto& termTb = *term->_buffer;
-    auto& termSm = *term->_stateMachine;
-    const auto initialView = term->GetViewport();
-
-    VERIFY_ARE_EQUAL(0, initialView.Top());
-
-    for (auto i = 0; i < 50; i++)
+    if (dy > 0)
     {
-        auto wstr = std::wstring(1, static_cast<wchar_t>(L'0' + i));
-        termSm.ProcessString(wstr);
-        termSm.ProcessString(L"\r\n");
+        VERIFY_ARE_EQUAL(50 + dy - thirdView.Height() + 1, thirdView.Top());
+        VERIFY_ARE_EQUAL(50 + dy, thirdView.BottomInclusive());
     }
-
-    const auto secondView = term->GetViewport();
-
-    VERIFY_ARE_EQUAL(50 - initialView.Height() + 1, secondView.Top());
-    VERIFY_ARE_EQUAL(50, secondView.BottomInclusive());
-
-    auto verifyBufferContents = [&termTb]() {
-        for (short row = 0; row < 50; row++)
-        {
-            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-            auto iter = termTb.GetCellDataAt({ 0, row });
-            auto expectedString = std::wstring(1, static_cast<wchar_t>(L'0' + row));
-
-            if (iter->Chars() != expectedString)
-            {
-                Log::Comment(NoThrowString().Format(L"row [%d] was mismatched", row));
-            }
-            VERIFY_ARE_EQUAL(expectedString, (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
-        }
-    };
-    verifyBufferContents();
-
-    auto resizeResult = term->UserResize({ 80, 22 });
-    VERIFY_SUCCEEDED(resizeResult);
-
-    const auto thirdView = term->GetViewport();
-
-    VERIFY_ARE_EQUAL(50, thirdView.BottomInclusive());
-    VERIFY_ARE_EQUAL(50 - thirdView.Height() + 1, thirdView.Top());
+    else if (dy < 0)
+    {
+        VERIFY_ARE_EQUAL(50 - thirdView.Height() + 1, thirdView.Top());
+        VERIFY_ARE_EQUAL(50, thirdView.BottomInclusive());
+    }
 
     verifyBufferContents();
 }
