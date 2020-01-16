@@ -131,7 +131,8 @@ Commands listed below are per the implementation in [`src/cascadia/TerminalApp/A
 - switchToTab7
 - switchToTab8
 - openSettings
-- splitPane
+- splitHorizontal
+- splitHorizontal
 - resizePaneLeft
 - resizePaneRight
 - resizePaneUp
