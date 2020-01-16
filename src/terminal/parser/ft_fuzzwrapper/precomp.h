@@ -14,6 +14,8 @@ Abstract:
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 
+#define NOMINMAX
+
 #include <windows.h>
 
 #include <stdlib.h>
