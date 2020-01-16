@@ -27,7 +27,7 @@ using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::StateMachine;
 // Used by WriteCharsLegacy.
-#define IS_GLYPH_CHAR(wch) (((wch) < L' ') || ((wch) == 0x007F))
+#define IS_GLYPH_CHAR(wch) (((wch) >= L' ') && ((wch) != 0x007F))
 
 constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
@@ -395,7 +395,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 #pragma prefast(suppress : 26019, "Buffer is taken in multiples of 2. Validation is ok.")
             const wchar_t Char = *lpString;
             const wchar_t RealUnicodeChar = *pwchRealUnicode;
-            if (!IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
+            if (IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
                 if (IsGlyphFullWidth(Char))
                 {

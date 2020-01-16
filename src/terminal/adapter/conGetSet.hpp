@@ -61,6 +61,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateAllowCursorBlinking(const bool enable) = 0;
 
         virtual bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) = 0;
+        virtual bool PrivateGetLineFeedMode() const = 0;
+        virtual bool PrivateLineFeed(const bool withReturn) = 0;
         virtual bool PrivateReverseLineFeed() = 0;
         virtual bool SetConsoleTitleW(const std::wstring_view title) = 0;
         virtual bool PrivateUseAlternateScreenBuffer() = 0;

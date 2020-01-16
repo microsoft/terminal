@@ -1348,6 +1348,35 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 }
 
 // Routine Description:
+// - A private API call for performing a line feed, possibly preceded by carriage return.
+//    Moves the cursor down one line, and possibly also to the leftmost column.
+// Parameters:
+// - screenInfo - A pointer to the screen buffer that should perform the line feed.
+// - withReturn - Set to true if a carriage return should be performed as well.
+// Return value:
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
+[[nodiscard]] NTSTATUS DoSrvPrivateLineFeed(SCREEN_INFORMATION& screenInfo, const bool withReturn)
+{
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+
+    // We turn the cursor on before an operation that might scroll the viewport, otherwise
+    // that can result in an old copy of the cursor being left behind on the screen.
+    textBuffer.GetCursor().SetIsOn(true);
+
+    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
+    textBuffer.GetRowByOffset(cursorPosition.Y).GetCharRow().SetWrapForced(false);
+
+    cursorPosition.Y += 1;
+    if (withReturn)
+    {
+        cursorPosition.X = 0;
+    }
+
+    return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
+}
+
+// Routine Description:
 // - A private API call for performing a "Reverse line feed", essentially, the opposite of '\n'.
 //    Moves the cursor up one line, and tries to keep its position in the line
 // Parameters:

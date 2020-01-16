@@ -106,6 +106,8 @@ namespace Microsoft::Console::VirtualTerminal
             HPA_HorizontalPositionAbsolute = L'`',
             VPA_VerticalLinePositionAbsolute = L'd',
             DECSTBM_SetScrollingRegion = L'r',
+            NEL_NextLine = L'E', // Not a CSI, so doesn't overlap with CNL
+            IND_Index = L'D', // Not a CSI, so doesn't overlap with CUB
             RI_ReverseLineFeed = L'M',
             HTS_HorizontalTabSet = L'H', // Not a CSI, so doesn't overlap with CUP
             CHT_CursorForwardTab = L'I',
