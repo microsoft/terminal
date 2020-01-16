@@ -751,17 +751,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
     OutputDebugString(L"\n");
 #endif
 
-    switch (endpoint)
-    {
-    case TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start:
-        _start = range->GetEndpoint(targetEndpoint);
-        break;
-    case TextPatternRangeEndpoint::TextPatternRangeEndpoint_End:
-        _end = range->GetEndpoint(targetEndpoint);
-        break;
-    default:
-        return E_INVALIDARG;
-    }
+    SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::MoveEndpointByRange, &apiMsg);

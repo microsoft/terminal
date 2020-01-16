@@ -959,7 +959,7 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 // - accessibilityMode - when enabled, we continue expanding left until we are at the beginning of a readable word
 // Return Value:
 // - The COORD for the first character on the "word"  (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode) const
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool /*accessibilityMode*/) const
 {
     const auto bufferSize = GetSize();
     COORD result = target;
@@ -978,25 +978,25 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
         --bufferIterator;
     }
 
-    if (accessibilityMode)
-    {
-        // make sure we expand to the beggining of the word
-        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
-        {
-            while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar))
-            {
-                bufferSize.DecrementInBounds(result);
-                --bufferIterator;
-            }
-        }
+    //if (accessibilityMode)
+    //{
+    //    // make sure we expand to the beggining of the word
+    //    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+    //    {
+    //        while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar))
+    //        {
+    //            bufferSize.DecrementInBounds(result);
+    //            --bufferIterator;
+    //        }
+    //    }
 
-        // move back onto word start
-        if (result.X != bufferSize.Left() && _GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
-        {
-            bufferSize.IncrementInBounds(result);
-        }
-    }
-    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    //    // move back onto word start
+    //    if (result.X != bufferSize.Left() && _GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+    //    {
+    //        bufferSize.IncrementInBounds(result);
+    //    }
+    //}
+    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
     {
         // move off of delimiter
         bufferSize.IncrementInBounds(result);
