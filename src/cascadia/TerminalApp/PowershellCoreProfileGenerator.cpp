@@ -26,25 +26,45 @@ namespace
 {
     enum PowerShellFlags
     {
-        // these flags are used as a sort key, so they encode some native ordering
-        Preview = 1 << 0, // preview version
-        WOW = 1 << 1, // non-native (Windows-on-Windows)
-        Store = 1 << 2, // distributed via the store
-        Scoop = 1 << 3, // installed via Scoop
-        Dotnet = 1 << 4, // installed as a dotnet global tool
+        // These flags are used as a sort key, so they encode some native ordering
+        // They are ordered such that the "most important" flags have the largest
+        // impact on the sort space. For example, since we want Preview to be very polar
+        // we give it the highest flag value.
+        // The "ideal" powershell instance has 0 flags (stable, native, Program Files location)
+        //
+        // With this ordering, the sort space ends up being (for PowerShell 6)
+        // (numerically greater values are on the left; this is flipped in the final sort)
+        // <-- Less Valued                                      More Valued -->
+        // |                 All instances of PS 6                 | All PS7  |
+        // |          Preview          |          Stable           | ~~~      |
+        // |  Non-Native | Native      |  Non-Native | Native      | ~~~      |
+        // | Pack | Lega | Pack | Lega | Pack | Lega | Pack | Lega | ~~~      |
+        // (where Pack is a stand-in for store, scoop, dotnet, though they have their own orders)
+        // From this you can determine:
+        // All legacy-installed (program files) native preview versions are _always_
+        // less important than any non-preview (GA) versions.
+
+        // distribution method (choose one)
+        Store = 1 << 0, // distributed via the store
+        Scoop = 1 << 1, // installed via Scoop
+        Dotnet = 1 << 2, // installed as a dotnet global tool
+
+        // native architecutre (choose one)
+        WOWx86 = 1 << 3, // non-native (Windows-on-Windows, x86 variety)
+        WOWARM = 1 << 4, // non-native (Windows-on-Windows, ARM variety)
+
+        // build type (choose one)
+        Preview = 1 << 5, // preview version
     };
     DEFINE_ENUM_FLAG_OPERATORS(PowerShellFlags);
 
     struct PowerShellInstance
     {
-        int majorVersion; // 0 = we don't know
+        int majorVersion; // 0 = we don't know, sort last.
         PowerShellFlags flags;
         std::filesystem::path executablePath;
-        std::wstring iconPath; // not a std::filesystem::path because it could be a URI
 
-        // Total sort order:
-        // 6-preview (wow) < 6-preview (native) < 7-preview (native) < 6 (wow) < 6 (native) < 7 (native)
-        bool operator<(const PowerShellInstance& second) const
+        constexpr bool operator<(const PowerShellInstance& second) const
         {
             if (majorVersion != second.majorVersion)
             {
@@ -52,9 +72,56 @@ namespace
             }
             if (flags != second.flags)
             {
-                return flags > second.flags; // flags are inverted (preview is worse than GA, WOW is worse than native, store is worse than traditional)
+                return flags > second.flags; // flags are inverted because "0" is ideal; see above
             }
             return executablePath < second.executablePath; // fall back to path sorting
+        }
+
+        std::wstring Name() const
+        {
+            std::wstringstream namestream;
+            namestream << L"PowerShell";
+
+            if (WI_IsFlagSet(flags, PowerShellFlags::Store))
+            {
+                if (WI_IsFlagSet(flags, PowerShellFlags::Preview))
+                {
+                    namestream << L" Preview";
+                }
+                namestream << L" (MSIX)";
+            }
+            else if (WI_IsFlagSet(flags, PowerShellFlags::Dotnet))
+            {
+                namestream << L" (.NET Global)";
+            }
+            else if (WI_IsFlagSet(flags, PowerShellFlags::Scoop))
+            {
+                namestream << L" (Scoop)";
+            }
+            else
+            {
+                if (majorVersion < 7)
+                {
+                    namestream << L" Core";
+                }
+                if (majorVersion != 0)
+                {
+                    namestream << L" " << majorVersion;
+                }
+                if (WI_IsFlagSet(flags, PowerShellFlags::Preview))
+                {
+                    namestream << L" Preview";
+                }
+                if (WI_IsFlagSet(flags, PowerShellFlags::WOWx86))
+                {
+                    namestream << L" (x86)";
+                }
+                if (WI_IsFlagSet(flags, PowerShellFlags::WOWARM))
+                {
+                    namestream << L" (ARM)";
+                }
+            }
+            return namestream.str();
         }
     };
 }
@@ -66,7 +133,7 @@ static void _collectTraditionalLayoutPowerShellInstancesInDirectory(std::wstring
     std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
     if (std::filesystem::exists(root))
     {
-        for (auto& versionedDir : std::filesystem::directory_iterator(root))
+        for (const auto& versionedDir : std::filesystem::directory_iterator(root))
         {
             auto versionedPath = versionedDir.path();
             auto executable = versionedPath / PWSH_EXE;
@@ -114,8 +181,8 @@ static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& ou
 
     if (std::filesystem::exists(appExecAliasPath))
     {
+        // App execution aliases for preview powershell
         auto previewPath = appExecAliasPath / POWERSHELL_PREVIEW_PFN;
-        auto gaPath = appExecAliasPath / POWERSHELL_PFN;
         if (std::filesystem::exists(previewPath))
         {
             auto previewPackage = _getStorePackage(POWERSHELL_PREVIEW_PFN);
@@ -127,6 +194,9 @@ static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& ou
                     previewPath / PWSH_EXE });
             }
         }
+
+        // App execution aliases for stable powershell
+        auto gaPath = appExecAliasPath / POWERSHELL_PFN;
         if (std::filesystem::exists(gaPath))
         {
             auto gaPackage = _getStorePackage(POWERSHELL_PFN);
@@ -159,7 +229,7 @@ static std::vector<PowerShellInstance> _enumeratePowerShellInstances()
     for (auto& v : versions)
     {
         // If they came from ProgramFiles(x86), they're not the native architecture.
-        WI_SetFlag(v.flags, PowerShellFlags::WOW);
+        WI_SetFlag(v.flags, PowerShellFlags::WOWx86);
     }
     _collectTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles%\\PowerShell", versions);
     _collectStorePowerShellInstances(versions);
@@ -190,36 +260,7 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
     auto psInstances = _enumeratePowerShellInstances();
     for (const auto& psI : psInstances)
     {
-        std::wstring name = L"PowerShell";
-        if (psI.majorVersion < 7)
-        {
-            name += L" Core";
-        }
-        if (psI.majorVersion != 0)
-        {
-            name += L" " + std::to_wstring(psI.majorVersion);
-        }
-        if (WI_IsFlagSet(psI.flags, PowerShellFlags::Preview))
-        {
-            name += L"-preview";
-        }
-        if (WI_IsFlagSet(psI.flags, PowerShellFlags::Store))
-        {
-            name += L" (Store)";
-        }
-        if (WI_IsFlagSet(psI.flags, PowerShellFlags::Dotnet))
-        {
-            name += L" (.NET Global)";
-        }
-        if (WI_IsFlagSet(psI.flags, PowerShellFlags::Scoop))
-        {
-            name += L" (Scoop)";
-        }
-        if (WI_IsFlagSet(psI.flags, PowerShellFlags::WOW))
-        {
-            name += L" (x86)";
-        }
-
+        auto name = psI.Name();
         auto profile{ CreateDefaultProfile(name) };
         profile.SetCommandline(psI.executablePath.wstring());
         profile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
