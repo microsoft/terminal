@@ -46,7 +46,7 @@ class ConptyRoundtripTests
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        m_state = new CommonState();
+        m_state = std::make_unique<CommonState>();
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
@@ -62,7 +62,7 @@ class ConptyRoundtripTests
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
-        delete m_state;
+        m_state.release();
 
         return true;
     }
@@ -135,7 +135,7 @@ private:
     void _flushFirstFrame();
     std::deque<std::string> expectedOutput;
     std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
-    CommonState* m_state;
+    std::unique_ptr<CommonState> m_state;
 
     DummyRenderTarget emptyRT;
     std::unique_ptr<Terminal> term;
@@ -207,6 +207,47 @@ void _verifySpanOfText(const wchar_t* const expectedChar,
         L"Successfully validated %d characters were '%s'", end - start, expectedChar));
 }
 
+// Function Description:
+// - Helper function to validate that the next characters pointed to by `iter`
+//   are the provided string. Will increment iter as it walks the provided
+//   string of characters. It will leave `iter` on the first character after the
+//   expectedString.
+// Arguments:
+// - expectedString: The characters we're expecting
+// - iter: a iterator pointing to the cell we'd like to start validating at.
+// Return Value:
+// - <none>
+void _verifyExpectedString(std::wstring_view expectedString,
+                           TextBufferCellIterator& iter)
+{
+    for (const auto wch : expectedString)
+    {
+        wchar_t buffer[]{ wch, L'\0' };
+        std::wstring_view view{ buffer, 1 };
+        VERIFY_IS_TRUE(iter, L"Ensure iterator is still valid");
+        VERIFY_ARE_EQUAL(view, (iter++)->Chars(), NoThrowString().Format(L"%s", view.data()));
+    }
+}
+
+// Function Description:
+// - Helper function to validate that the next characters in the buffer at the
+//   given location are the provided string. Will return an iterator on the
+//   first character after the expectedString.
+// Arguments:
+// - tb: the buffer who's content we should check
+// - expectedString: The characters we're expecting
+// - pos: the starting position in the buffer to check the contents of
+// Return Value:
+// - an iterator on the first character after the expectedString.
+TextBufferCellIterator _verifyExpectedString(const TextBuffer& tb,
+                                             std::wstring_view expectedString,
+                                             const COORD pos)
+{
+    auto iter = tb.GetCellDataAt(pos);
+    _verifyExpectedString(expectedString, iter);
+    return iter;
+}
+
 void ConptyRoundtripTests::ConptyOutputTestCanary()
 {
     Log::Comment(NoThrowString().Format(
@@ -237,19 +278,7 @@ void ConptyRoundtripTests::SimpleWriteOutputTest()
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    auto iter = termTb.GetCellDataAt({ 0, 0 });
-    VERIFY_ARE_EQUAL(L"H", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"e", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"l", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"l", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"o", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"W", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"o", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"r", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"l", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L"d", (iter++)->Chars());
-    VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
+    _verifyExpectedString(termTb, L"Hello World ", { 0, 0 });
 }
 
 void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
@@ -273,18 +302,8 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
     hostSm.ProcessString(L"BBB");
 
     auto verifyData = [](TextBuffer& tb) {
-        {
-            auto iter = tb.GetCellDataAt({ 0, 0 });
-            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-        }
-        {
-            auto iter = tb.GetCellDataAt({ 0, 1 });
-            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        }
+        _verifyExpectedString(tb, L"AAA", { 0, 0 });
+        _verifyExpectedString(tb, L"BBB", { 0, 1 });
     };
 
     verifyData(hostTb);
@@ -319,30 +338,10 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"CCC");
     auto verifyData = [](TextBuffer& tb) {
-        {
-            auto iter = tb.GetCellDataAt({ 0, 0 });
-            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"A", (iter++)->Chars());
-        }
-        {
-            auto iter = tb.GetCellDataAt({ 0, 1 });
-            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"B", (iter++)->Chars());
-        }
-        {
-            auto iter = tb.GetCellDataAt({ 0, 2 });
-            VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L" ", (iter++)->Chars());
-        }
-        {
-            auto iter = tb.GetCellDataAt({ 0, 3 });
-            VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
-            VERIFY_ARE_EQUAL(L"C", (iter++)->Chars());
-        }
+        _verifyExpectedString(tb, L"AAA", { 0, 0 });
+        _verifyExpectedString(tb, L"BBB", { 0, 1 });
+        _verifyExpectedString(tb, L"   ", { 0, 2 });
+        _verifyExpectedString(tb, L"CCC", { 0, 3 });
     };
 
     verifyData(hostTb);

@@ -31,7 +31,7 @@ class ConptyOutputTests
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        m_state = new CommonState();
+        m_state = std::make_unique<CommonState>();
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
@@ -47,7 +47,7 @@ class ConptyOutputTests
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
-        delete m_state;
+        m_state.release();
 
         return true;
     }
@@ -112,7 +112,7 @@ private:
     void _flushFirstFrame();
     std::deque<std::string> expectedOutput;
     std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
-    CommonState* m_state;
+    std::unique_ptr<CommonState> m_state;
 };
 
 bool ConptyOutputTests::_writeCallback(const char* const pch, size_t const cch)
