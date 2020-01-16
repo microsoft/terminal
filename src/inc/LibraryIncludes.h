@@ -69,6 +69,9 @@
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
 
+// Chromium Numerics (safe math)
+#include <base/numerics/safe_math.h>
+
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
