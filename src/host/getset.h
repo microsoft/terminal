@@ -35,7 +35,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 [[nodiscard]] NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT& scrollMargins);
 [[nodiscard]] NTSTATUS DoSrvPrivateLineFeed(SCREEN_INFORMATION& screenInfo, const bool withReturn);
 [[nodiscard]] NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo);
-[[nodiscard]] HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
 void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo);
