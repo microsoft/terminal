@@ -1408,67 +1408,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 }
 
 // Routine Description:
-// - A private API call for moving the cursor vertically in the buffer. This is
-//      because the vertical cursor movements in VT are constrained by the
-//      scroll margins, while the absolute positioning is not.
-// Parameters:
-// - screenInfo - a reference to the screen buffer we should move the cursor for
-// - lines - The number of lines to move the cursor. Up is negative, down positive.
-// Return value:
-// - S_OK if handled successfully. Otherwise an appropriate HRESULT for failing to clamp.
-[[nodiscard]] HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
-{
-    auto& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
-    COORD clampedPos = { cursor.GetPosition().X, cursor.GetPosition().Y + lines };
-
-    // Make sure the cursor doesn't move outside the viewport.
-    screenInfo.GetViewport().Clamp(clampedPos);
-
-    // Make sure the cursor stays inside the margins
-    if (screenInfo.AreMarginsSet())
-    {
-        const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-
-        const auto cursorY = cursor.GetPosition().Y;
-
-        const auto lo = margins.Top;
-        const auto hi = margins.Bottom;
-
-        // See microsoft/terminal#2929 - If the cursor is _below_ the top
-        // margin, it should stay below the top margin. If it's _above_ the
-        // bottom, it should stay above the bottom. Cursor movements that stay
-        // outside the margins shouldn't necessarily be affected. For example,
-        // moving up while below the bottom margin shouldn't just jump straight
-        // to the bottom margin. See
-        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
-        // behavior.
-        const bool cursorBelowTop = cursorY >= lo;
-        const bool cursorAboveBottom = cursorY <= hi;
-
-        if (cursorBelowTop)
-        {
-            try
-            {
-                clampedPos.Y = std::max(clampedPos.Y, lo);
-            }
-            CATCH_RETURN();
-        }
-
-        if (cursorAboveBottom)
-        {
-            try
-            {
-                clampedPos.Y = std::min(clampedPos.Y, hi);
-            }
-            CATCH_RETURN();
-        }
-    }
-    cursor.SetPosition(clampedPos);
-
-    return S_OK;
-}
-
-// Routine Description:
 // - A private API call for swapping to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded.

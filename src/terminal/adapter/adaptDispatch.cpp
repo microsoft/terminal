@@ -82,137 +82,6 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 }
 
 // Routine Description:
-// - Generalizes cursor movement for up/down/left/right and next/previous line.
-// Arguments:
-// - dir - Specific direction to move
-// - distance - Magnitude of the move
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t distance) const
-{
-    // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    bool success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
-
-    if (success)
-    {
-        COORD cursor = csbiex.dwCursorPosition;
-
-        // For next/previous line, we unconditionally need to move the X position to the left edge of the viewport.
-        switch (dir)
-        {
-        case CursorDirection::NextLine:
-        case CursorDirection::PrevLine:
-            cursor.X = csbiex.srWindow.Left;
-            break;
-        }
-
-        // Safely convert the UINT magnitude of the move we were given into a short (which is the size the console deals with)
-        SHORT delta = 0;
-        success = SUCCEEDED(SizeTToShort(distance, &delta));
-
-        if (success)
-        {
-            // Prepare our variables for math. All operations are some variation on these two parameters
-            SHORT* pModify = nullptr; // The coordinate X or Y gets modified
-            SHORT boundary = 0; // There is a particular edge of the viewport that is our boundary condition as we approach it.
-
-            // Up and Down modify the Y coordinate. Left and Right modify the X.
-            switch (dir)
-            {
-            case CursorDirection::Up:
-            case CursorDirection::Down:
-            case CursorDirection::NextLine:
-            case CursorDirection::PrevLine:
-                pModify = &cursor.Y;
-                break;
-            case CursorDirection::Left:
-            case CursorDirection::Right:
-                pModify = &cursor.X;
-                break;
-            default:
-                success = false;
-                break;
-            }
-
-            // Moving upward is bounded by top, etc.
-            switch (dir)
-            {
-            case CursorDirection::Up:
-            case CursorDirection::PrevLine:
-                boundary = csbiex.srWindow.Top;
-                break;
-            case CursorDirection::Down:
-            case CursorDirection::NextLine:
-                boundary = csbiex.srWindow.Bottom;
-                break;
-            case CursorDirection::Left:
-                boundary = csbiex.srWindow.Left;
-                break;
-            case CursorDirection::Right:
-                boundary = csbiex.srWindow.Right;
-                break;
-            default:
-                success = false;
-                break;
-            }
-
-            if (success && pModify)
-            {
-                // For up and left, we need to subtract the magnitude of the vector to get the new spot. Right/down = add.
-                // Use safe short subtraction to prevent under/overflow.
-                switch (dir)
-                {
-                case CursorDirection::Up:
-                case CursorDirection::Left:
-                case CursorDirection::PrevLine:
-                    success = SUCCEEDED(ShortSub(*pModify, delta, pModify));
-                    break;
-                case CursorDirection::Down:
-                case CursorDirection::Right:
-                case CursorDirection::NextLine:
-                    success = SUCCEEDED(ShortAdd(*pModify, delta, pModify));
-                    break;
-                }
-
-                if (success)
-                {
-                    // Now apply the boundary condition. Up, Left can't be smaller than their boundary. Top, Right can't be larger.
-                    switch (dir)
-                    {
-                    case CursorDirection::Up:
-                    case CursorDirection::Left:
-                    case CursorDirection::PrevLine:
-                        *pModify = std::max(*pModify, boundary);
-                        break;
-                    case CursorDirection::Down:
-                    case CursorDirection::Right:
-                    case CursorDirection::NextLine:
-                        // For the bottom and right edges, the viewport value is stated to be one outside the rectangle.
-                        *pModify = std::min(*pModify, gsl::narrow<SHORT>(boundary - 1));
-                        break;
-                    default:
-                        success = false;
-                        break;
-                    }
-
-                    if (success)
-                    {
-                        // Finally, attempt to set the adjusted cursor position back into the console.
-                        success = _pConApi->SetConsoleCursorPosition(cursor);
-                    }
-                }
-            }
-        }
-    }
-
-    return success;
-}
-
-// Routine Description:
 // - CUU - Handles cursor upward movement by given distance.
 // CUU and CUD are handled seperately from other CUP sequences, because they are
 //      constrained by the margins.
@@ -225,12 +94,7 @@ bool AdaptDispatch::_CursorMovement(const CursorDirection dir, const size_t dist
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorUp(const size_t distance)
 {
-    SHORT sDelta = 0;
-    if (SUCCEEDED(SizeTToShort(distance, &sDelta)))
-    {
-        return _pConApi->MoveCursorVertically(-sDelta);
-    }
-    return false;
+    return _CursorMovePosition(Offset::Backward(distance), Offset::Unchanged(), true);
 }
 
 // Routine Description:
@@ -246,12 +110,7 @@ bool AdaptDispatch::CursorUp(const size_t distance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorDown(const size_t distance)
 {
-    SHORT sDelta = 0;
-    if (SUCCEEDED(SizeTToShort(distance, &sDelta)))
-    {
-        return _pConApi->MoveCursorVertically(sDelta);
-    }
-    return false;
+    return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), true);
 }
 
 // Routine Description:
@@ -262,7 +121,7 @@ bool AdaptDispatch::CursorDown(const size_t distance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorForward(const size_t distance)
 {
-    return _CursorMovement(CursorDirection::Right, distance);
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), true);
 }
 
 // Routine Description:
@@ -273,7 +132,7 @@ bool AdaptDispatch::CursorForward(const size_t distance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorBackward(const size_t distance)
 {
-    return _CursorMovement(CursorDirection::Left, distance);
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Backward(distance), true);
 }
 
 // Routine Description:
@@ -285,7 +144,7 @@ bool AdaptDispatch::CursorBackward(const size_t distance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorNextLine(const size_t distance)
 {
-    return _CursorMovement(CursorDirection::NextLine, distance);
+    return _CursorMovePosition(Offset::Forward(distance), Offset::Absolute(1), true);
 }
 
 // Routine Description:
@@ -297,18 +156,18 @@ bool AdaptDispatch::CursorNextLine(const size_t distance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorPrevLine(const size_t distance)
 {
-    return _CursorMovement(CursorDirection::PrevLine, distance);
+    return _CursorMovePosition(Offset::Backward(distance), Offset::Absolute(1), true);
 }
 
 // Routine Description:
-// - Generalizes cursor movement to a specific coordinate position
-// - If a parameter is left blank, we will maintain the existing position in that dimension.
+// - Generalizes cursor movement to a specific position, which can be absolute or relative.
 // Arguments:
-// - row - Optional row to move to
-// - column - Optional column to move to
+// - rowOffset - The row to move to
+// - colOffset - The column to move to
+// - clampInMargins - Should the position be clamped within the scrolling margins
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const std::optional<size_t> column) const
+bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const
 {
     bool success = true;
 
@@ -321,81 +180,67 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
 
     if (success)
     {
-        // handle optional parameters. If not specified, keep same cursor position from what we just loaded.
-        size_t rowActual = 0;
-        size_t columnActual = 0;
+        // Calculate the viewport boundaries as inclusive values.
+        // srWindow is exclusive so we need to subtract 1 from the bottom.
+        const int viewportTop = csbiex.srWindow.Top;
+        const int viewportBottom = csbiex.srWindow.Bottom - 1;
 
-        if (row)
-        {
-            if (row.value() != 0)
-            {
-                rowActual = row.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+        // Calculate the absolute margins of the scrolling area.
+        const int topMargin = viewportTop + _scrollMargins.Top;
+        const int bottomMargin = viewportTop + _scrollMargins.Bottom;
+        const bool marginsSet = topMargin < bottomMargin;
 
-                // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
-                // line numbers start at the top margin of the scrolling region, and cannot move below the bottom.
-                if (_isOriginModeRelative && _scrollMargins.Bottom != 0)
-                {
-                    rowActual += _scrollMargins.Top;
-                    rowActual = std::min<decltype(rowActual)>(rowActual, _scrollMargins.Bottom);
-                }
-            }
-            else
-            {
-                success = false; // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-            }
-        }
-        else
+        // For relative movement, the given offsets will be relative to
+        // the current cursor position.
+        int row = csbiex.dwCursorPosition.Y;
+        int col = csbiex.dwCursorPosition.X;
+
+        // But if the row is absolute, it will be relative to the top of the
+        // viewport, or the top margin, depending on the origin mode.
+        if (rowOffset.IsAbsolute)
         {
-            // remember, in VT speak, this is relative to the viewport. not absolute.
-            SHORT diff = 0;
-            success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.Y, csbiex.srWindow.Top, &diff)) && SUCCEEDED(ShortToSizeT(diff, &rowActual));
+            row = _isOriginModeRelative ? topMargin : viewportTop;
         }
 
-        if (success)
+        // And if the column is absolute, it'll be relative to column 0.
+        // Horizontal positions are not affected by the viewport.
+        if (colOffset.IsAbsolute)
         {
-            if (column)
+            col = 0;
+        }
+
+        // Adjust the base position by the given offsets and clamp the results.
+        // The row is constrained within the viewport's vertical boundaries,
+        // while the column is constrained by the buffer width.
+        row = std::clamp(row + rowOffset.Value, viewportTop, viewportBottom);
+        col = std::clamp(col + colOffset.Value, 0, csbiex.dwSize.X - 1);
+
+        // If the operation needs to be clamped inside the margins, or the origin
+        // mode is relative (which always requires margin clamping), then the row
+        // may need to be adjusted further.
+        if (marginsSet && (clampInMargins || _isOriginModeRelative))
+        {
+            // See microsoft/terminal#2929 - If the cursor is _below_ the top
+            // margin, it should stay below the top margin. If it's _above_ the
+            // bottom, it should stay above the bottom. Cursor movements that stay
+            // outside the margins shouldn't necessarily be affected. For example,
+            // moving up while below the bottom margin shouldn't just jump straight
+            // to the bottom margin. See
+            // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
+            // behavior.
+            if (csbiex.dwCursorPosition.Y >= topMargin)
             {
-                if (column.value() != 0)
-                {
-                    columnActual = column.value() - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-                }
-                else
-                {
-                    success = false; // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-                }
+                row = std::max(row, topMargin);
             }
-            else
+            if (csbiex.dwCursorPosition.Y <= bottomMargin)
             {
-                // remember, in VT speak, this is relative to the viewport. not absolute.
-                SHORT diff = 0;
-                success = SUCCEEDED(ShortSub(csbiex.dwCursorPosition.X, csbiex.srWindow.Left, &diff)) && SUCCEEDED(ShortToSizeT(diff, &columnActual));
+                row = std::min(row, bottomMargin);
             }
         }
 
-        if (success)
-        {
-            COORD cursor = csbiex.dwCursorPosition;
-
-            // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
-            success = SUCCEEDED(SizeTToShort(rowActual, &cursor.Y)) && SUCCEEDED(SizeTToShort(columnActual, &cursor.X));
-
-            if (success)
-            {
-                // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-                success = SUCCEEDED(ShortAdd(cursor.Y, csbiex.srWindow.Top, &cursor.Y)) &&
-                          SUCCEEDED(ShortAdd(cursor.X, csbiex.srWindow.Left, &cursor.X));
-
-                if (success)
-                {
-                    // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                    cursor.Y = std::clamp(cursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-                    cursor.X = std::clamp(cursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
-
-                    // Finally, attempt to set the adjusted cursor position back into the console.
-                    success = _pConApi->SetConsoleCursorPosition(cursor);
-                }
-            }
-        }
+        // Finally, attempt to set the adjusted cursor position back into the console.
+        const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
+        success = _pConApi->SetConsoleCursorPosition(newPos);
     }
 
     return success;
@@ -409,7 +254,7 @@ bool AdaptDispatch::_CursorMovePosition(const std::optional<size_t> row, const s
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorHorizontalPositionAbsolute(const size_t column)
 {
-    return _CursorMovePosition(std::nullopt, column);
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(column), false);
 }
 
 // Routine Description:
@@ -420,7 +265,7 @@ bool AdaptDispatch::CursorHorizontalPositionAbsolute(const size_t column)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 {
-    return _CursorMovePosition(line, std::nullopt);
+    return _CursorMovePosition(Offset::Absolute(line), Offset::Unchanged(), false);
 }
 
 // Routine Description:
@@ -432,7 +277,7 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorPosition(const size_t line, const size_t column)
 {
-    return _CursorMovePosition(line, column);
+    return _CursorMovePosition(Offset::Absolute(line), Offset::Absolute(column), false);
 }
 
 // Routine Description:
@@ -458,15 +303,14 @@ bool AdaptDispatch::CursorSaveState()
     if (success)
     {
         // The cursor is given to us by the API as relative to the whole buffer.
-        // But in VT speak, the cursor should be relative to the current viewport. Adjust.
-        COORD const coordCursor = csbiex.dwCursorPosition;
-
-        SMALL_RECT const srViewport = csbiex.srWindow;
+        // But in VT speak, the cursor row should be relative to the current viewport top.
+        COORD coordCursor = csbiex.dwCursorPosition;
+        coordCursor.Y -= csbiex.srWindow.Top;
 
         // VT is also 1 based, not 0 based, so correct by 1.
         auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
-        savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
-        savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
+        savedCursorState.Column = coordCursor.X + 1;
+        savedCursorState.Row = coordCursor.Y + 1;
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
@@ -488,7 +332,7 @@ bool AdaptDispatch::CursorRestoreState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
 
     auto row = savedCursorState.Row;
-    auto col = savedCursorState.Column;
+    const auto col = savedCursorState.Column;
 
     // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
     // we need to make sure the restored position is clamped within the margins.
@@ -500,7 +344,7 @@ bool AdaptDispatch::CursorRestoreState()
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _isOriginModeRelative = false;
-    bool success = _CursorMovePosition(row, col);
+    bool success = CursorPosition(row, col);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
     _isOriginModeRelative = savedCursorState.IsOriginModeRelative;
@@ -851,8 +695,7 @@ bool AdaptDispatch::_CursorPositionReport() const
         // First pull the cursor position relative to the entire buffer out of the console.
         COORD coordCursorPos = csbiex.dwCursorPosition;
 
-        // Now adjust it for its position in respect to the current viewport.
-        coordCursorPos.X -= csbiex.srWindow.Left;
+        // Now adjust it for its position in respect to the current viewport top.
         coordCursorPos.Y -= csbiex.srWindow.Top;
 
         // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.

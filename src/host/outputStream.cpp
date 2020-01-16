@@ -398,23 +398,6 @@ bool ConhostInternalGetSet::PrivateReverseLineFeed()
 }
 
 // Routine Description:
-// - Connects the MoveCursorVertically call directly into our Driver Message servicing call inside Conhost.exe
-//   MoveCursorVertically is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Return Value:
-// - true if successful (see DoSrvMoveCursorVertically). false otherwise.
-bool ConhostInternalGetSet::MoveCursorVertically(const ptrdiff_t lines)
-{
-    SHORT l;
-    if (FAILED(PtrdiffTToShort(lines, &l)))
-    {
-        return false;
-    }
-
-    return SUCCEEDED(DoSrvMoveCursorVertically(_io.GetActiveOutputBuffer(), l));
-}
-
-// Routine Description:
 // - Connects the SetConsoleTitleW API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - title - The null-terminated string to set as the window title
