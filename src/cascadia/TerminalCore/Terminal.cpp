@@ -218,6 +218,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     }
 
+    // if (_resizeTargetViewport.has_value())
+    // {
+    //     _multipleResizes = true;
+    // }
+    // _resizeTargetViewport = _mutableViewport;
+    _resizeCount++;
 
     _scrollOffset = 0;
     _NotifyScrollEvent();
@@ -522,6 +528,15 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 proposedCursorPosition.Y--;
             }
             notifyScroll = true;
+        }
+
+        // If we're expecting another resize, and we're going to move the
+        // viewport down due to output from conpty, _don't_ move the viewport.
+        // We'll get another frame for the new size soon, and moving the
+        // viewport now will result in duplicated output.
+        if (_resizeCount > 0 && proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
+        {
+            proposedCursorPosition.Y = _mutableViewport.BottomInclusive();
         }
 
         // This section is essentially equivalent to `AdjustCursorPosition`

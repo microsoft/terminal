@@ -115,6 +115,11 @@ try
     viewport.Clamp(newPos);
     _buffer->GetCursor().SetPosition(newPos);
 
+    if (x == 0 && y == 0 && _resizeCount > 0)
+    {
+        _resizeCount--;
+    }
+
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
