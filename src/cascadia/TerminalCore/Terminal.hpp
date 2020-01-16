@@ -225,10 +225,6 @@ private:
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we sohould make this behavior controlled by a setting.
 
-    // std::optional<Microsoft::Console::Types::Viewport> _resizeTargetViewport;
-    //  bool _multipleResizes = false;
-    int _resizeCount = 0;
-
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
