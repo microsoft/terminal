@@ -93,8 +93,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateSuppressResizeRepaint() = 0;
         virtual bool IsConsolePty(bool& isPty) const = 0;
 
-        virtual bool MoveCursorVertically(const ptrdiff_t lines) = 0;
-
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;
 

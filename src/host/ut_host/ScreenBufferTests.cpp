@@ -201,6 +201,8 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownOutsideMargins);
     TEST_METHOD(CursorUpDownExactlyAtMargins);
 
+    TEST_METHOD(CursorNextPreviousLine);
+
     TEST_METHOD(CursorSaveRestore);
 
     TEST_METHOD(ScreenAlignmentPattern);
@@ -5382,6 +5384,70 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
     }
 
     stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorNextPreviousLine()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"CNL without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should end up in column 0 of line 15.
+    VERIFY_ARE_EQUAL(COORD({ 0, 15 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should end up in column 0 of line 5.
+    VERIFY_ARE_EQUAL(COORD({ 0, 5 }), cursor.GetPosition());
+
+    // Set the margins to 8:12 (9:13 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[9;13r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+    Log::Comment(L"CNL inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should stop on line 12, the bottom margin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 12 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should stop on line 8, the top margin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 8 }), cursor.GetPosition());
+
+    Log::Comment(L"CNL below bottom");
+    // Starting from column 20 of line 13 (1 below bottom margin).
+    cursor.SetPosition(COORD{ 20, 13 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should end up in column 0 of line 18.
+    VERIFY_ARE_EQUAL(COORD({ 0, 18 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL above top margin");
+    // Starting from column 20 of line 7 (1 above top margin).
+    cursor.SetPosition(COORD{ 20, 7 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should end up in column 0 of line 2.
+    VERIFY_ARE_EQUAL(COORD({ 0, 2 }), cursor.GetPosition());
 }
 
 void ScreenBufferTests::CursorSaveRestore()

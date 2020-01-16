@@ -101,15 +101,6 @@ namespace Microsoft::Console::VirtualTerminal
                                 const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
 
     private:
-        enum class CursorDirection
-        {
-            Up,
-            Down,
-            Left,
-            Right,
-            NextLine,
-            PrevLine
-        };
         enum class ScrollDirection
         {
             Up,
@@ -123,9 +114,18 @@ namespace Microsoft::Console::VirtualTerminal
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
         };
+        struct Offset
+        {
+            int Value;
+            bool IsAbsolute;
+            // VT origin is at 1,1 so we need to subtract 1 from absolute positions.
+            static constexpr Offset Absolute(const size_t value) { return { gsl::narrow_cast<int>(value) - 1, true }; };
+            static constexpr Offset Forward(const size_t value) { return { gsl::narrow_cast<int>(value), false }; };
+            static constexpr Offset Backward(const size_t value) { return { -gsl::narrow_cast<int>(value), false }; };
+            static constexpr Offset Unchanged() { return Forward(0); };
+        };
 
-        bool _CursorMovement(const CursorDirection dir, const size_t distance) const;
-        bool _CursorMovePosition(const std::optional<size_t> row, const std::optional<size_t> column) const;
+        bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const;
         bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
                                     const DispatchTypes::EraseType eraseType,
                                     const size_t lineId) const;
