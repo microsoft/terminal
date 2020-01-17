@@ -64,7 +64,7 @@ private:
     std::string _profileName;
     std::string _startingDirectory;
 
-    // _comamndline will receive the commandline as it's parsed by CLI11
+    // _commandline will receive the commandline as it's parsed by CLI11
     std::vector<std::string> _commandline;
     const Commandline* _currentCommandline{ nullptr };
 

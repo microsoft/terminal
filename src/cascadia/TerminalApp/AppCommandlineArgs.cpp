@@ -217,11 +217,22 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         // _getNewTerminalArgs might reset them while parsing a commandline
         if ((*_horizontalOption || *_verticalOption) && (_splitHorizontal))
         {
-            args->SplitStyle(SplitState::Horizontal);
+            if (_splitHorizontal)
+            {
+                args->SplitStyle(SplitState::Horizontal);
+            }
+            else if (_splitVertical)
+            {
+                args->SplitStyle(SplitState::Horizontal);
+            }
+            else
+            {
+                args->SplitStyle(SplitState::Automatic);
+            }
         }
         else
         {
-            args->SplitStyle(SplitState::Vertical);
+            args->SplitStyle(SplitState::Automatic);
         }
 
         splitPaneActionAndArgs->Args(*args);
@@ -444,7 +455,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
     // Check the string for a delimiter.
     // * If there isn't a delimiter, add the arg to the current commandline.
     // * If there is a delimiter, split the string at that delimiter. Add the
-    //   first part of the string to the current command, ansd start a new
+    //   first part of the string to the current command, and start a new
     //   command with the second bit.
     for (const auto& arg : args)
     {

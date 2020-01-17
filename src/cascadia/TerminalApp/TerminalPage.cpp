@@ -1503,9 +1503,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Attempts to parse a array of commandline args into a list of
+    // - Attempts to parse an array of commandline args into a list of
     //   commands to execute, and then parses these commands. As commands are
-    //   succesfully parsed, they will generate ShortcutAction's for us to be
+    //   succesfully parsed, they will generate ShortcutActions for us to be
     //   able to execute. If we fail to parse any commands, we'll return the
     //   error code from the failure to parse that command, and stop processing
     //   additional commands.

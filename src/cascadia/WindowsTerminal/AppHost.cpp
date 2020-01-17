@@ -92,8 +92,8 @@ void AppHost::_HandleCommandlineArgs()
                 args.emplace_back(elem);
             }
 
-            auto result = _logic.SetStartupCommandline({ args });
-            auto message = _logic.EarlyExitMessage();
+            const auto result = _logic.SetStartupCommandline({ args });
+            const auto message = _logic.EarlyExitMessage();
             if (!message.empty())
             {
                 const auto displayHelp = result == 0;
