@@ -4,6 +4,7 @@
 #pragma once
 
 #include "til/some.h"
+#include "til/numeric.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {

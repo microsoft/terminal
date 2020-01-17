@@ -68,8 +68,11 @@
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
 
+#pragma warning(push)
+#pragma warning(suppress:4100) 
 // Chromium Numerics (safe math)
 #include <base/numerics/safe_math.h>
+#pragma warning(pop)
 
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
