@@ -34,6 +34,7 @@ namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
 };
+class ConptyRoundtripTests;
 #endif
 
 class Microsoft::Terminal::Core::Terminal final :
@@ -256,5 +257,6 @@ private:
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
+    friend class ::ConptyRoundtripTests;
 #endif
 };

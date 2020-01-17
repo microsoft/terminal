@@ -80,8 +80,18 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
-        RETURN_LAST_ERROR_IF(!_pfnTestCallback(str.data(), str.size()));
-        return S_OK;
+        // Try to get the last error. If that wasn't set, then the test probably
+        // doesn't set last error. No matter. We'll just return with E_FAIL
+        // then. This is a unit test, we don't particularily care.
+        const auto succeeded = _pfnTestCallback(str.data(), str.size());
+        auto hr = E_FAIL;
+        if (!succeeded)
+        {
+            const auto err = ::GetLastError();
+            // If there wasn't an error in GLE, just use E_FAIL
+            hr = SUCCEEDED_WIN32(err) ? hr : HRESULT_FROM_WIN32(err);
+        }
+        return succeeded ? S_OK : hr;
     }
 #endif
 
