@@ -100,16 +100,8 @@ void TerminalBufferTests::TestResizeHeight()
 
     const auto thirdView = term->GetViewport();
 
-    if (dy > 0)
-    {
-        VERIFY_ARE_EQUAL(50 + dy - thirdView.Height() + 1, thirdView.Top());
-        VERIFY_ARE_EQUAL(50 + dy, thirdView.BottomInclusive());
-    }
-    else if (dy < 0)
-    {
-        VERIFY_ARE_EQUAL(50 - thirdView.Height() + 1, thirdView.Top());
-        VERIFY_ARE_EQUAL(50, thirdView.BottomInclusive());
-    }
+    VERIFY_ARE_EQUAL(50 - thirdView.Height() + 1, thirdView.Top());
+    VERIFY_ARE_EQUAL(50, thirdView.BottomInclusive());
 
     verifyBufferContents();
 }

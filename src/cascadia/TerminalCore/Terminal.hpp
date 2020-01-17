@@ -33,8 +33,8 @@ namespace Microsoft::Terminal::Core
 namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
+    class ConptyRoundtripTests;
 };
-class ConptyRoundtripTests;
 #endif
 
 class Microsoft::Terminal::Core::Terminal final :
@@ -257,6 +257,6 @@ private:
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
-    friend class ::ConptyRoundtripTests;
+    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

@@ -40,7 +40,13 @@ using namespace Microsoft::Console::Types;
 
 using namespace Microsoft::Terminal::Core;
 
-class ConptyRoundtripTests
+namespace TerminalCoreUnitTests
+{
+    class TerminalBufferTests;
+};
+using namespace TerminalCoreUnitTests;
+
+class TerminalCoreUnitTests::ConptyRoundtripTests final
 {
     static const SHORT TerminalViewWidth = 80;
     static const SHORT TerminalViewHeight = 32;
@@ -81,6 +87,12 @@ class ConptyRoundtripTests
         // Set up some sane defaults
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
+        // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // This doesn't actually set the host into VtIo mode. That gci function
+        // requires the VtIo to actually be initialized, which it wont be in
+        // this case. We should instead add some sort of ut-only method to trick
+        // gci into thinking it's actually in conpty mode.
+
         gci.SetDefaultForegroundColor(INVALID_COLOR);
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
@@ -401,8 +413,8 @@ void ConptyRoundtripTests::TestResizeHeight()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
-        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-1}")
     END_TEST_METHOD_PROPERTIES()
     int dy;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
@@ -414,7 +426,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
-    // auto& hostTb = si.GetTextBuffer();
+    auto& hostTb = si.GetTextBuffer();
     auto& termTb = *term->_buffer;
     // auto& termSm = *term->_stateMachine;
     const auto initialHostView = si.GetViewport();
@@ -461,7 +473,40 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
+    auto verifyHostData = [&hostTb, &si]() {
+        const auto hostView = si.GetViewport();
+        // The last row of the viewport should be empty
+        // The second last row will have '0'+50
+        // The third last row will have '0'+49
+        // ...
+        // The <height> last row will have '0'+(50-height+1)
+        const auto firstChar = static_cast<wchar_t>(L'0' + (50 - hostView.Height() + 1));
+
+        // Don't include the last row of the viewport in this check, since it'll be blank
+        for (short row = 0; row < hostView.Height() - 1; row++)
+        {
+            // SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+            auto iter = hostTb.GetCellDataAt({ 0, row });
+
+            auto expectedString = std::wstring(1, static_cast<wchar_t>(firstChar + row));
+
+            if (iter->Chars() != expectedString)
+            {
+                Log::Comment(NoThrowString().Format(L"row [%d] was mismatched", row));
+            }
+            // VERIFY_ARE_EQUAL(expectedString, (iter++)->Chars(), NoThrowString().Format(L"%s", expectedString.data()));
+            std::wstring actual{ (iter++)->Chars().data(), 1 };
+            Log::Comment(NoThrowString().Format(
+                L"Expected, Actual:\"%s\", \"%s\"", expectedString.data(), actual.data()));
+            // VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+        }
+
+        // Check the last row of the viewport here
+        auto iter = hostTb.GetCellDataAt({ 0, hostView.Height() - 1 });
+        // VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+    };
     // verifyData(hostTb);
+    verifyHostData();
     verifyTermData();
 
     const COORD newViewportSize{ TerminalViewWidth, gsl::narrow_cast<short>(TerminalViewHeight + dy) };
@@ -476,18 +521,25 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     // The Terminal should be stuck on the bottom of the viewport
     const auto thirdTermView = term->GetViewport();
-    if (dy > 0)
-    {
-        VERIFY_ARE_EQUAL(50 + dy - thirdTermView.Height() + 1, thirdTermView.Top());
-        VERIFY_ARE_EQUAL(50 + dy, thirdTermView.BottomInclusive());
-    }
-    else if (dy < 0)
-    {
-        VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
-        VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
-    }
+
+    VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
+    VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
 
     // verifyData(hostTb);
     // verifyData(termTb);
+    verifyHostData();
     verifyTermData();
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    const auto fourthHostView = si.GetViewport();
+    VERIFY_ARE_EQUAL(0, fourthHostView.Top());
+    VERIFY_ARE_EQUAL(newViewportSize.Y, fourthHostView.BottomExclusive());
+
+    // The Terminal should be stuck on the bottom of the viewport
+    const auto fourthTermView = term->GetViewport();
+
+    VERIFY_ARE_EQUAL(50 - fourthTermView.Height() + 1, fourthTermView.Top());
+    VERIFY_ARE_EQUAL(50, fourthTermView.BottomInclusive());
 }
