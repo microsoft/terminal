@@ -281,32 +281,26 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
             // We shrunk in height. We don't really need to do anything here.
             // Shrinking in height will remove lines from the top of the buffer
             // (pushing them into scrollback in the terminal).
-            // hr = InvalidateAll();
         }
-        else
+
+        // At least one of the directions grew.
+        // First try and add everything to the right of the old viewport,
+        //      then everything below where the old viewport ended.
+        else if (oldView.Width() < newView.Width())
         {
-            // At least one of the directions grew.
-            // First try and add everything to the right of the old viewport,
-            //      then everything below where the old viewport ended.
-            if (oldView.Width() < newView.Width())
-            {
-                short left = oldView.RightExclusive();
-                short top = 0;
-                short right = newView.RightInclusive();
-                short bottom = oldView.BottomInclusive();
-                Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                hr = _InvalidCombine(rightOfOldViewport);
-            }
-            // if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
-            // {
-            //     short left = 0;
-            //     short top = oldView.BottomExclusive();
-            //     short right = newView.RightInclusive();
-            //     short bottom = newView.BottomInclusive();
-            //     Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-            //     hr = _InvalidCombine(belowOldViewport);
-            // }
+            short left = oldView.RightExclusive();
+            short top = 0;
+            short right = newView.RightInclusive();
+            short bottom = oldView.BottomInclusive();
+            Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
+            hr = _InvalidCombine(rightOfOldViewport);
         }
+
+        // Otherwise, if oldView.Height() < newView.Height() (the height
+        // increased), don't really do anything here. The text content will
+        // try and stay "stuck" at the bottom of the viewport of the
+        // terminal, and invalidating the bottom here can cause unnecessary
+        // lines to get written to the terminal. See GH#3490.
     }
     _resized = true;
     return hr;
@@ -440,7 +434,6 @@ HRESULT VtEngine::RequestCursor() noexcept
 void VtEngine::BeginResizeRequest()
 {
     _inResizeRequest = true;
-    // _invalidBeforeResize = _invalidRect;
 }
 
 // Method Description:
@@ -454,9 +447,4 @@ void VtEngine::BeginResizeRequest()
 void VtEngine::EndResizeRequest()
 {
     _inResizeRequest = false;
-    // if (_invalidBeforeResize.has_value())
-    // {
-    //     _invalidRect = _invalidBeforeResize.value();
-    //     _invalidBeforeResize = std::nullopt;
-    // }
 }

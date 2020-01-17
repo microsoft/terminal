@@ -109,7 +109,6 @@ namespace Microsoft::Console::Render
 
         Microsoft::Console::Types::Viewport _lastViewport;
         Microsoft::Console::Types::Viewport _invalidRect;
-        std::optional<Microsoft::Console::Types::Viewport> _invalidBeforeResize;
 
         bool _fInvalidRectUsed;
         COORD _lastRealCursor;
