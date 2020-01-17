@@ -412,6 +412,15 @@ bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
 }
 
 // Routine Description:
+// - Sends a notify message to play the "SystemHand" sound event.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateWarningBell()
+{
+    return _io.GetActiveOutputBuffer().SendNotifyBeep();
+}
+
+// Routine Description:
 // - Connects the PrivateReverseLineFeed call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateReverseLineFeed is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.

@@ -46,6 +46,24 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
         // and have _nothing_ happen. Filter the NULs here, so they don't fill the
         // buffer with empty spaces.
         break;
+    case AsciiChars::BEL:
+        _dispatch->WarningBell();
+        // microsoft/terminal#2952
+        // If we're attached to a terminal, let's also pass the BEL through.
+        if (_pfnFlushToTerminal != nullptr)
+        {
+            _pfnFlushToTerminal();
+        }
+        break;
+    case AsciiChars::BS:
+        _dispatch->CursorBackward(1);
+        break;
+    case AsciiChars::TAB:
+        _dispatch->ForwardTab(1);
+        break;
+    case AsciiChars::CR:
+        _dispatch->CarriageReturn();
+        break;
     case AsciiChars::LF:
     case AsciiChars::FF:
     case AsciiChars::VT:
@@ -58,16 +76,6 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     }
 
     _ClearLastChar();
-
-    if (wch == AsciiChars::BEL)
-    {
-        // microsoft/terminal#2952
-        // If we're attached to a terminal, let's also pass the BEL through.
-        if (_pfnFlushToTerminal != nullptr)
-        {
-            _pfnFlushToTerminal();
-        }
-    }
 
     return true;
 }
