@@ -677,8 +677,12 @@ public:
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
         _isOriginModeRelative{ false },
+        _warningBell{ false },
+        _carriageReturn{ false },
         _lineFeed{ false },
         _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
+        _forwardTab{ false },
+        _numTabs{ 0 },
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
@@ -906,10 +910,29 @@ public:
         return true;
     }
 
+    bool WarningBell() noexcept override
+    {
+        _warningBell = true;
+        return true;
+    }
+
+    bool CarriageReturn() noexcept override
+    {
+        _carriageReturn = true;
+        return true;
+    }
+
     bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept override
     {
         _lineFeed = true;
         _lineFeedType = lineFeedType;
+        return true;
+    }
+
+    bool ForwardTab(const size_t numTabs) noexcept override
+    {
+        _forwardTab = true;
+        _numTabs = numTabs;
         return true;
     }
 
@@ -959,8 +982,12 @@ public:
     bool _cursorKeysMode;
     bool _cursorBlinking;
     bool _isOriginModeRelative;
+    bool _warningBell;
+    bool _carriageReturn;
     bool _lineFeed;
     DispatchTypes::LineFeedType _lineFeedType;
+    bool _forwardTab;
+    size_t _numTabs;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
 
@@ -1841,6 +1868,44 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_lineFeed);
         VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::DependsOnMode, pDispatch->_lineFeedType);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestControlCharacters)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"BEL (Warning Bell) control character");
+        mach.ProcessCharacter(AsciiChars::BEL);
+
+        VERIFY_IS_TRUE(pDispatch->_warningBell);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"BS (Back Space) control character");
+        mach.ProcessCharacter(AsciiChars::BS);
+
+        VERIFY_IS_TRUE(pDispatch->_cursorBackward);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_cursorDistance);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"CR (Carriage Return) control character");
+        mach.ProcessCharacter(AsciiChars::CR);
+
+        VERIFY_IS_TRUE(pDispatch->_carriageReturn);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"HT (Horizontal Tab) control character");
+        mach.ProcessCharacter(AsciiChars::TAB);
+
+        VERIFY_IS_TRUE(pDispatch->_forwardTab);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_numTabs);
 
         pDispatch->ClearState();
     }

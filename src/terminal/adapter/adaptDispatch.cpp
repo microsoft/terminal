@@ -1159,6 +1159,30 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
 }
 
 // Routine Description:
+// - BEL - Rings the warning bell.
+//    Causes the terminal to emit an audible tone of brief duration.
+// Arguments:
+// - None
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::WarningBell()
+{
+    return _pConApi->PrivateWarningBell();
+}
+
+// Routine Description:
+// - CR - Performs a carriage return.
+//    Moves the cursor to the leftmost column.
+// Arguments:
+// - None
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::CarriageReturn()
+{
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(1), true);
+}
+
+// Routine Description:
 // - IND/NEL - Performs a line feed, possibly preceded by carriage return.
 //    Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
