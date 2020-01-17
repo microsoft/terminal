@@ -1179,8 +1179,7 @@ bool AdaptDispatch::WarningBell()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CarriageReturn()
 {
-    // TODO: This will need to be rewritten after PR #3628
-    return _CursorMovePosition(std::nullopt, 1);
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(1), true);
 }
 
 // Routine Description:
