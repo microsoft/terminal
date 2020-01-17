@@ -2057,12 +2057,17 @@ void DoSrvPrivateModifyLinesImpl(const size_t count, const bool insert)
         coordDestination.X = 0;
         if (insert)
         {
-            coordDestination.Y = (cursorPosition.Y) + gsl::narrow<short>(count);
+            coordDestination.Y = cursorPosition.Y + base::MakeClampedNum(count);
         }
         else
         {
-            coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
+            coordDestination.Y = (cursorPosition.Y) - base::MakeClampedNum(count);
         }
+
+        // The destination needs to still be inside the buffer.
+        // We will take anything that is "too big" of a line modification and clamp it down to
+        // the maximum modification that is possible in our buffer size.
+        screenInfo.GetBufferSize().Clamp(coordDestination);
 
         // Note the revealed lines are filled with the standard erase attributes.
         LOG_IF_FAILED(DoSrvPrivateScrollRegion(screenInfo,
