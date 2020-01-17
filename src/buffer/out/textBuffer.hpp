@@ -158,7 +158,7 @@ public:
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
 
-    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer);
+    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const bool padTop);
 
 private:
     std::deque<ROW> _storage;

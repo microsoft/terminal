@@ -280,7 +280,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 
     if (SUCCEEDED(hr))
     {
-        if (oldView.Width() > newView.Width())
+        if (oldView.Width() != newView.Width())
         {
             // Viewport is smaller now - just update it all. We may have
             // re-wrapped the buffer contents.
@@ -293,18 +293,18 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
             // (pushing them into scrollback in the terminal).
         }
 
-        // At least one of the directions grew.
-        // First try and add everything to the right of the old viewport,
-        //      then everything below where the old viewport ended.
-        else if (oldView.Width() < newView.Width())
-        {
-            short left = oldView.RightExclusive();
-            short top = 0;
-            short right = newView.RightInclusive();
-            short bottom = oldView.BottomInclusive();
-            Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-            hr = _InvalidCombine(rightOfOldViewport);
-        }
+        // // At least one of the directions grew.
+        // // First try and add everything to the right of the old viewport,
+        // //      then everything below where the old viewport ended.
+        // else if (oldView.Width() < newView.Width())
+        // {
+        //     short left = oldView.RightExclusive();
+        //     short top = 0;
+        //     short right = newView.RightInclusive();
+        //     short bottom = oldView.BottomInclusive();
+        //     Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
+        //     hr = _InvalidCombine(rightOfOldViewport);
+        // }
 
         // Otherwise, if oldView.Height() < newView.Height() (the height
         // increased), don't really do anything here. The text content will

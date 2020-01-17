@@ -1425,10 +1425,22 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const bool isConpty = gci.IsInVtIoMode();
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), isConpty);
 
     if (SUCCEEDED(hr))
     {
+        if (isConpty)
+        {
+            // TODO! Set the virtual top to the spot where we just inserted a
+            // bunch of blank lines.
+
+            // TODO! Something seems to still be invalidating the bottom line,
+            // when you increase the height of the buffer. I dunno how. I need
+            // to debug this.
+        }
+
         Cursor& newCursor = newTextBuffer->GetCursor();
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
         SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
