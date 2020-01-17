@@ -19,14 +19,16 @@
 static constexpr std::wstring_view POWERSHELL_PFN{ L"Microsoft.PowerShell_8wekyb3d8bbwe" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShellPreview_8wekyb3d8bbwe" };
 static constexpr std::wstring_view PWSH_EXE{ L"pwsh.exe" };
-static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.ico" };
-static constexpr std::wstring_view POWERSHELL_PREVIEW_ICON{ L"ms-appx:///ProfileIcons/pwsh-preview.ico" };
+static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.png" };
+static constexpr std::wstring_view POWERSHELL_PREVIEW_ICON{ L"ms-appx:///ProfileIcons/pwsh-preview.png" };
 
 namespace
 {
     enum PowerShellFlags
     {
-        // These flags are used as a sort key, so they encode some native ordering
+        None = 0,
+
+        // These flags are used as a sort key, so they encode some native ordering.
         // They are ordered such that the "most important" flags have the largest
         // impact on the sort space. For example, since we want Preview to be very polar
         // we give it the highest flag value.
@@ -34,27 +36,29 @@ namespace
         //
         // With this ordering, the sort space ends up being (for PowerShell 6)
         // (numerically greater values are on the left; this is flipped in the final sort)
-        // <-- Less Valued                                      More Valued -->
+        //
+        // <-- Less Valued .................................... More Valued -->
         // |                 All instances of PS 6                 | All PS7  |
         // |          Preview          |          Stable           | ~~~      |
         // |  Non-Native | Native      |  Non-Native | Native      | ~~~      |
-        // | Pack | Lega | Pack | Lega | Pack | Lega | Pack | Lega | ~~~      |
-        // (where Pack is a stand-in for store, scoop, dotnet, though they have their own orders)
-        // From this you can determine:
-        // All legacy-installed (program files) native preview versions are _always_
-        // less important than any non-preview (GA) versions.
+        // | Trd  | Pack | Trd  | Pack | Trd  | Pack | Trd  | Pack | ~~~      |
+        // (where Pack is a stand-in for store, scoop, dotnet, though they have their own orders,
+        // and Trd is a stand-in for "Traditional" (Program Files))
+        //
+        // In short, flags with larger magnitudes are pushed further down (therefore valued less)
 
         // distribution method (choose one)
         Store = 1 << 0, // distributed via the store
         Scoop = 1 << 1, // installed via Scoop
         Dotnet = 1 << 2, // installed as a dotnet global tool
+        Traditional = 1 << 3, // installed in traditional Program Files locations
 
         // native architecutre (choose one)
-        WOWx86 = 1 << 3, // non-native (Windows-on-Windows, x86 variety)
         WOWARM = 1 << 4, // non-native (Windows-on-Windows, ARM variety)
+        WOWx86 = 1 << 5, // non-native (Windows-on-Windows, x86 variety)
 
         // build type (choose one)
-        Preview = 1 << 5, // preview version
+        Preview = 1 << 6, // preview version
     };
     DEFINE_ENUM_FLAG_OPERATORS(PowerShellFlags);
 
@@ -77,6 +81,10 @@ namespace
             return executablePath < second.executablePath; // fall back to path sorting
         }
 
+        // Method Description:
+        // - Generates a name, based on flags, for a powershell instance.
+        // Return value:
+        // - the name
         std::wstring Name() const
         {
             std::wstringstream namestream;
@@ -88,15 +96,15 @@ namespace
                 {
                     namestream << L" Preview";
                 }
-                namestream << L" (MSIX)";
+                namestream << L" (msix)";
             }
             else if (WI_IsFlagSet(flags, PowerShellFlags::Dotnet))
             {
-                namestream << L" (.NET Global)";
+                namestream << L" (dotnet global)";
             }
             else if (WI_IsFlagSet(flags, PowerShellFlags::Scoop))
             {
-                namestream << L" (Scoop)";
+                namestream << L" (scoop)";
             }
             else
             {
@@ -128,28 +136,42 @@ namespace
 
 using namespace ::TerminalApp;
 
-static void _collectTraditionalLayoutPowerShellInstancesInDirectory(std::wstring_view directory, std::vector<PowerShellInstance>& out)
+// Function Description:
+// - Finds all powershell instances with the traditional layout under a directory.
+// - The "traditional" directory layout requires that pwsh.exe exist in a versioned directory, as in
+//   ROOT\6\pwsh.exe
+// Arguments:
+// - directory: the directory under which to search
+// - flags: flags to apply to all found instances
+// - out: the list into which to accumulate these instances.
+static void _accumulateTraditionalLayoutPowerShellInstancesInDirectory(std::wstring_view directory, PowerShellFlags flags, std::vector<PowerShellInstance>& out)
 {
-    std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
+    const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
     if (std::filesystem::exists(root))
     {
         for (const auto& versionedDir : std::filesystem::directory_iterator(root))
         {
-            auto versionedPath = versionedDir.path();
-            auto executable = versionedPath / PWSH_EXE;
+            const auto versionedPath = versionedDir.path();
+            const auto executable = versionedPath / PWSH_EXE;
             if (std::filesystem::exists(executable))
             {
-                auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
-                PowerShellFlags flags = preview ? PowerShellFlags::Preview : static_cast<PowerShellFlags>(0);
+                const auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
+                const auto previewFlag = preview ? PowerShellFlags::Preview : PowerShellFlags::None;
                 out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()),
-                                                     flags,
+                                                     PowerShellFlags::Traditional | flags | previewFlag,
                                                      executable });
             }
         }
     }
 }
 
-static winrt::Windows::ApplicationModel::Package _getStorePackage(const std::wstring_view packageFamilyName)
+// Function Description:
+// - Finds the store package, if one exists, for a given package family name
+// Arguments:
+// - packageFamilyName: the package family name
+// Return Value:
+// - a package, or nullptr.
+static winrt::Windows::ApplicationModel::Package _getStorePackage(const std::wstring_view packageFamilyName) noexcept
 try
 {
     winrt::Windows::Management::Deployment::PackageManager packageManager;
@@ -167,7 +189,11 @@ catch (...)
     return nullptr;
 }
 
-static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& out)
+// Function Description:
+// - Finds all powershell instances that have App Execution Aliases in the standard location
+// Arguments:
+// - out: the list into which to accumulate these instances.
+static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>& out)
 {
     wil::unique_cotaskmem_string localAppDataFolder;
     if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, 0, &localAppDataFolder)))
@@ -182,7 +208,7 @@ static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& ou
     if (std::filesystem::exists(appExecAliasPath))
     {
         // App execution aliases for preview powershell
-        auto previewPath = appExecAliasPath / POWERSHELL_PREVIEW_PFN;
+        const auto previewPath = appExecAliasPath / POWERSHELL_PREVIEW_PFN;
         if (std::filesystem::exists(previewPath))
         {
             auto previewPackage = _getStorePackage(POWERSHELL_PREVIEW_PFN);
@@ -196,7 +222,7 @@ static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& ou
         }
 
         // App execution aliases for stable powershell
-        auto gaPath = appExecAliasPath / POWERSHELL_PFN;
+        const auto gaPath = appExecAliasPath / POWERSHELL_PFN;
         if (std::filesystem::exists(gaPath))
         {
             auto gaPackage = _getStorePackage(POWERSHELL_PFN);
@@ -212,45 +238,54 @@ static void _collectStorePowerShellInstances(std::vector<PowerShellInstance>& ou
     }
 }
 
-static void _collectPwshExeInDirectory(const std::wstring_view directory, const PowerShellFlags flags, std::vector<PowerShellInstance>& out)
+// Function Description:
+// - Finds a powershell instance that's just a pwsh.exe in a folder.
+// - This function cannot determine the version number of such a powershell instance.
+// Arguments:
+// - directory: the directory under which to search
+// - flags: flags to apply to all found instances
+// - out: the list into which to accumulate these instances.
+static void _accumulatePwshExeInDirectory(const std::wstring_view directory, const PowerShellFlags flags, std::vector<PowerShellInstance>& out)
 {
-    std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
-    auto pwshPath = root / PWSH_EXE;
+    const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
+    const auto pwshPath = root / PWSH_EXE;
     if (std::filesystem::exists(pwshPath))
     {
-        out.emplace_back(PowerShellInstance{ 0, flags, pwshPath });
+        out.emplace_back(PowerShellInstance{ 0 /* we can't tell */, flags, pwshPath });
     }
 }
 
-static void _promotePwshFromPath(std::vector<PowerShellInstance>& out)
-{
-    (void)out;
-}
-
-static std::vector<PowerShellInstance> _enumeratePowerShellInstances()
+// Function Description:
+// - Builds a comprehensive priority-ordered list of powershell instances.
+// Return value:
+// - a comprehensive priority-ordered list of powershell instances.
+static std::vector<PowerShellInstance> _collectPowerShellInstances()
 {
     std::vector<PowerShellInstance> versions;
-    _collectTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles(x86)%\\PowerShell", versions);
-    for (auto& v : versions)
-    {
-        // If they came from ProgramFiles(x86), they're not the native architecture.
-        WI_SetFlag(v.flags, PowerShellFlags::WOWx86);
-    }
-    _collectTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles%\\PowerShell", versions);
-    _collectStorePowerShellInstances(versions);
-    _collectPwshExeInDirectory(L"%USERPROFILE%\\.dotnet\\tools", PowerShellFlags::Dotnet, versions);
-    _collectPwshExeInDirectory(L"%USERPROFILE%\\scoop\\shims", PowerShellFlags::Scoop, versions);
+
+    _accumulateTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles%\\PowerShell", PowerShellFlags::None, versions);
+
+#if defined(_M_AMD64) || defined(_M_ARM64) // No point in looking for WOW if we're not somewhere it exists
+    _accumulateTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles(x86)%\\PowerShell", PowerShellFlags::WOWx86, versions);
+#endif
+
+#if defined(_M_ARM64) // no point in looking for WOA if we're not on ARM64
+    _accumulateTraditionalLayoutPowerShellInstancesInDirectory(L"%ProgramFiles(Arm)%\\PowerShell", PowerShellFlags::WOWARM, versions);
+#endif
+
+    _accumulateStorePowerShellInstances(versions);
+
+    _accumulatePwshExeInDirectory(L"%USERPROFILE%\\.dotnet\\tools", PowerShellFlags::Dotnet, versions);
+    _accumulatePwshExeInDirectory(L"%USERPROFILE%\\scoop\\shims", PowerShellFlags::Scoop, versions);
 
     std::sort(versions.rbegin(), versions.rend()); // sort in reverse (best first)
-
-    // Now that we're sorted, promote the one found first in PATH (as the user might want that one by default)
-    _promotePwshFromPath(versions);
 
     return versions;
 }
 
 // Legacy GUIDs:
 //   - PowerShell Core       574e775e-4f2a-5b96-ac1e-a2962a402336
+static constexpr GUID PowershellCoreGuid{ 0x574e775e, 0x4f2a, 0x5b96, { 0xac, 0x1e, 0xa2, 0x96, 0x2a, 0x40, 0x23, 0x36 } };
 
 std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
 {
@@ -267,7 +302,7 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
 {
     std::vector<TerminalApp::Profile> profiles;
 
-    auto psInstances = _enumeratePowerShellInstances();
+    auto psInstances = _collectPowerShellInstances();
     for (const auto& psI : psInstances)
     {
         auto name = psI.Name();
@@ -282,11 +317,12 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
 
     if (profiles.size() > 0)
     {
-        // Give the first ("best") profile the official "PowerShell Core" GUID.
-        // This will turn the anchored default profile into "PowerShell Core Latest Non-Preview for Native Architecture"
-        // (or the closest approximation thereof).
+        // Give the first ("algorithmically best") profile the official, and original, "PowerShell Core" GUID.
+        // This will turn the anchored default profile into "PowerShell Core Latest for Native Architecture through Store"
+        // (or the closest approximation thereof). It may choose a preview instance as the "best" if it is a higher version.
         auto firstProfile = profiles.begin();
-        firstProfile->SetGuid(Microsoft::Console::Utils::GuidFromString(L"{574e775e-4f2a-5b96-ac1e-a2962a402336}"));
+        firstProfile->SetGuid(PowershellCoreGuid);
+        firstProfile->SetName(L"PowerShell");
     }
 
     return profiles;
