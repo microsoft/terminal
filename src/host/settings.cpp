@@ -953,9 +953,13 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     if (_fScreenReversed)
+    {
         return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
     else
+    {
         return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
 }
 
 // Method Description:
@@ -969,9 +973,13 @@ COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexce
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     if (_fScreenReversed)
+    {
         return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
     else
+    {
         return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+    }
 }
 
 bool Settings::GetCopyColor() const noexcept
