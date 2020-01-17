@@ -61,6 +61,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateAllowCursorBlinking(const bool enable) = 0;
 
         virtual bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) = 0;
+        virtual bool PrivateWarningBell() = 0;
         virtual bool PrivateGetLineFeedMode() const = 0;
         virtual bool PrivateLineFeed(const bool withReturn) = 0;
         virtual bool PrivateReverseLineFeed() = 0;
@@ -92,8 +93,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool PrivateSuppressResizeRepaint() = 0;
         virtual bool IsConsolePty(bool& isPty) const = 0;
-
-        virtual bool MoveCursorVertically(const ptrdiff_t lines) = 0;
 
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;
