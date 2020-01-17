@@ -198,6 +198,10 @@ void CascadiaSettings::_ValidateSettings()
     // just use the hardcoded defaults
     _ValidateAllSchemesExist();
 
+    // Ensure all profile's with specified images resources have valid file path.
+    // This validates icons and background images.
+    _ValidateMediaResources();
+
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
@@ -421,6 +425,64 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     if (foundInvalidScheme)
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
+    }
+}
+
+// Method Description:
+// - Ensures that all specified images resources (icons and background images) are valid URIs.
+//   This does not verify that the icon or background image files are encoded as an image.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
+//   we find any invalid background images.
+// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
+//   we find any invalid icon images.
+void CascadiaSettings::_ValidateMediaResources()
+{
+    bool invalidBackground{ false };
+    bool invalidIcon{ false };
+
+    for (auto& profile : _profiles)
+    {
+        if (profile.HasBackgroundImage())
+        {
+            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+            // This covers file paths on the machine, app data, URLs, and other resource paths.
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedBackgroundImagePath() };
+            }
+            catch (...)
+            {
+                profile.ResetBackgroundImagePath();
+                invalidBackground = true;
+            }
+        }
+
+        if (profile.HasIcon())
+        {
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedIconPath() };
+            }
+            catch (...)
+            {
+                profile.ResetIconPath();
+                invalidIcon = true;
+            }
+        }
+    }
+
+    if (invalidBackground)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
+    }
+
+    if (invalidIcon)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidIcon);
     }
 }
 

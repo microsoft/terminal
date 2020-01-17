@@ -23,7 +23,9 @@ namespace TerminalApp
     {
         MissingDefaultProfile = 0,
         DuplicateProfile = 1,
-        UnknownColorScheme = 2
+        UnknownColorScheme = 2,
+        InvalidBackgroundImage = 3,
+        InvalidIcon = 4
     };
 
     // SettingsLoadWarnings are scenarios where the settings had invalid state

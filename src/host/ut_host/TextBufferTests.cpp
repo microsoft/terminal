@@ -149,7 +149,7 @@ class TextBufferTests
 
 void TextBufferTests::TestBufferCreate()
 {
-    VERIFY_SUCCESS_NTSTATUS(m_state->GetTextBufferInfoInitResult());
+    VERIFY_SUCCEEDED(m_state->GetTextBufferInfoInitResult());
 }
 
 TextBuffer& TextBufferTests::GetTbi()
