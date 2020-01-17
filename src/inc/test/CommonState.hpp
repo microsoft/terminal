@@ -81,16 +81,19 @@ public:
         }
     }
 
-    void PrepareGlobalScreenBuffer()
+    void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
+                                   const short viewHeight = s_csWindowHeight,
+                                   const short bufferWidth = s_csBufferWidth,
+                                   const short bufferHeight = s_csBufferHeight)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordWindowSize;
-        coordWindowSize.X = s_csWindowWidth;
-        coordWindowSize.Y = s_csWindowHeight;
+        coordWindowSize.X = viewWidth;
+        coordWindowSize.Y = viewHeight;
 
         COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = s_csBufferWidth;
-        coordScreenBufferSize.Y = s_csBufferHeight;
+        coordScreenBufferSize.X = bufferWidth;
+        coordScreenBufferSize.Y = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -143,12 +146,14 @@ public:
         gci.SetCookedReadData(nullptr);
     }
 
-    void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false)
+    void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false,
+                                  const short bufferWidth = s_csBufferWidth,
+                                  const short bufferHeight = s_csBufferHeight)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = s_csBufferWidth;
-        coordScreenBufferSize.Y = s_csBufferHeight;
+        coordScreenBufferSize.X = bufferWidth;
+        coordScreenBufferSize.Y = bufferHeight;
 
         UINT uiCursorSize = 12;
 

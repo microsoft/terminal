@@ -42,6 +42,9 @@ using namespace Microsoft::Terminal::Core;
 
 class ConptyRoundtripTests
 {
+    static const SHORT TerminalViewWidth = 80;
+    static const SHORT TerminalViewHeight = 32;
+
     TEST_CLASS(ConptyRoundtripTests);
 
     TEST_CLASS_SETUP(ClassSetup)
@@ -50,7 +53,7 @@ class ConptyRoundtripTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
 
         return true;
@@ -71,7 +74,7 @@ class ConptyRoundtripTests
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ CommonState::s_csBufferWidth, CommonState::s_csBufferHeight }, 0, emptyRT);
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, emptyRT);
 
         // STEP 2: Set up the Conpty
 
@@ -82,7 +85,7 @@ class ConptyRoundtripTests
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
-        m_state->PrepareNewTextBufferInfo(true);
+        m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
@@ -105,6 +108,8 @@ class ConptyRoundtripTests
 
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+
+        _pConApi = std::make_unique<ConhostInternalGetSet>(gci);
 
         expectedOutput.clear();
 
@@ -129,13 +134,18 @@ class ConptyRoundtripTests
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+    TEST_METHOD(TestResizeHeight);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
+    void _resizeConpty(const unsigned short sx, const unsigned short sy);
     std::deque<std::string> expectedOutput;
     std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
     std::unique_ptr<CommonState> m_state;
+    std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+
+    bool _checkConptyOutput{ true };
 
     DummyRenderTarget emptyRT;
     std::unique_ptr<Terminal> term;
@@ -144,18 +154,27 @@ private:
 bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cch)
 {
     std::string actualString = std::string(pch, cch);
-    VERIFY_IS_GREATER_THAN(expectedOutput.size(),
-                           static_cast<size_t>(0),
-                           NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size()));
 
-    std::string first = expectedOutput.front();
-    expectedOutput.pop_front();
+    if (_checkConptyOutput)
+    {
+        VERIFY_IS_GREATER_THAN(expectedOutput.size(),
+                               static_cast<size_t>(0),
+                               NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size()));
 
-    Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
-    Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
+        std::string first = expectedOutput.front();
+        expectedOutput.pop_front();
 
-    VERIFY_ARE_EQUAL(first.length(), cch);
-    VERIFY_ARE_EQUAL(first, actualString);
+        Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
+        Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
+
+        VERIFY_ARE_EQUAL(first.length(), cch);
+        VERIFY_ARE_EQUAL(first, actualString);
+    }
+    else
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Writing \"%hs\" to Terminal", actualString.c_str()));
+    }
 
     // Write the string back to our Terminal
     const auto converted = ConvertToW(CP_UTF8, actualString);
@@ -175,6 +194,19 @@ void ConptyRoundtripTests::_flushFirstFrame()
     expectedOutput.push_back("\x1b[?25h");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
+                                         const unsigned short sy)
+{
+    // Largely taken from implementation in PtySignalInputThread::_InputThread
+    if (DispatchCommon::s_ResizeWindow(*_pConApi, sx, sy))
+    {
+        // Instead of going through the VtIo to suppress the resize repaint,
+        // just call the method directly on the renderer. This is implemented in
+        // VtIo::SuppressResizeRepaint
+        VERIFY_SUCCEEDED(_pVtRenderEngine->SuppressResizeRepaint());
+    }
 }
 
 // Function Description:
@@ -363,4 +395,99 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::TestResizeHeight()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1}")
+    END_TEST_METHOD_PROPERTIES()
+    int dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+
+    _checkConptyOutput = false;
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    // auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    // auto& termSm = *term->_stateMachine;
+    const auto initialHostView = si.GetViewport();
+    const auto initialTermView = term->GetViewport();
+
+    VERIFY_ARE_EQUAL(0, initialHostView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight, initialHostView.BottomExclusive());
+    VERIFY_ARE_EQUAL(0, initialTermView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight, initialTermView.BottomExclusive());
+
+    Log::Comment(NoThrowString().Format(
+        L"Print 50 lines of output, which will scroll the viewport"));
+
+    for (auto i = 0; i < 50; i++)
+    {
+        auto wstr = std::wstring(1, static_cast<wchar_t>(L'0' + i));
+        hostSm.ProcessString(wstr);
+        hostSm.ProcessString(L"\r\n");
+    }
+
+    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    const auto secondHostView = si.GetViewport();
+    VERIFY_ARE_EQUAL(0, secondHostView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight, secondHostView.BottomExclusive());
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    const auto secondTermView = term->GetViewport();
+    VERIFY_ARE_EQUAL(50 - initialTermView.Height() + 1, secondTermView.Top());
+    VERIFY_ARE_EQUAL(50, secondTermView.BottomInclusive());
+
+    auto verifyTermData = [&termTb]() {
+        for (short row = 0; row < 50; row++)
+        {
+            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+            auto iter = termTb.GetCellDataAt({ 0, row });
+            auto expectedString = std::wstring(1, static_cast<wchar_t>(L'0' + row));
+
+            if (iter->Chars() != expectedString)
+            {
+                Log::Comment(NoThrowString().Format(L"row [%d] was mismatched", row));
+            }
+            VERIFY_ARE_EQUAL(expectedString, (iter++)->Chars());
+            VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+        }
+    };
+    // verifyData(hostTb);
+    verifyTermData();
+
+    const COORD newViewportSize{ TerminalViewWidth, gsl::narrow_cast<short>(TerminalViewHeight + dy) };
+    auto resizeResult = term->UserResize(newViewportSize);
+    VERIFY_SUCCEEDED(resizeResult);
+    _resizeConpty(newViewportSize.X, newViewportSize.Y);
+
+    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    const auto thirdHostView = si.GetViewport();
+    VERIFY_ARE_EQUAL(0, thirdHostView.Top());
+    VERIFY_ARE_EQUAL(newViewportSize.Y, thirdHostView.BottomExclusive());
+
+    // The Terminal should be stuck on the bottom of the viewport
+    const auto thirdTermView = term->GetViewport();
+    if (dy > 0)
+    {
+        VERIFY_ARE_EQUAL(50 + dy - thirdTermView.Height() + 1, thirdTermView.Top());
+        VERIFY_ARE_EQUAL(50 + dy, thirdTermView.BottomInclusive());
+    }
+    else if (dy < 0)
+    {
+        VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
+        VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
+    }
+
+    // verifyData(hostTb);
+    // verifyData(termTb);
+    verifyTermData();
 }
