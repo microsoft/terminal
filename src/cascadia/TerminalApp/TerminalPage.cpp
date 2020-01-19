@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
-    //   that more than 1 tab is opend, and once the user clicks the OK button, remove
+    //   that more than 1 tab is opened, and once the user clicks the OK button, remove
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
