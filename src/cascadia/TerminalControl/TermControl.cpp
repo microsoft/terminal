@@ -1998,7 +1998,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
             {
-                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
+                // std::stod internally calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
