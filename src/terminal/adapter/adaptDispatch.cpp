@@ -470,7 +470,7 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // Arguments:
 // - count - The number of characters to delete
 // Return Value:
-// - True if handled successfuly. False otherwise.
+// - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeleteCharacter(const size_t count)
 {
     return _InsertDeleteHelper(count, false);
@@ -748,7 +748,7 @@ bool AdaptDispatch::_CursorPositionReport() const
 // Arguments:
 // - reply - The reply string to transmit back to the input stream
 // Return Value:
-// - True if the string was converted to input events and placed into the console input buffer successfuly. False otherwise.
+// - True if the string was converted to input events and placed into the console input buffer successfully. False otherwise.
 bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 {
     bool success = false;
