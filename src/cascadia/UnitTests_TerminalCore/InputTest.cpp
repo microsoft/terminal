@@ -59,7 +59,7 @@ namespace TerminalCoreUnitTests
     void InputTest::AltSpace()
     {
         // Make sure we don't handle Alt+Space. The system will use this to
-        // bring up the system menu for restore, min/maximimize, size, move,
+        // bring up the system menu for restore, min/maximize, size, move,
         // close
         VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed));
     }
