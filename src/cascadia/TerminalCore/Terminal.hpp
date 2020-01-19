@@ -225,7 +225,7 @@ private:
     //      _visibleTop as well.
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
-    //      Either way, we sohould make this behavior controlled by a setting.
+    //      Either way, we should make this behavior controlled by a setting.
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;

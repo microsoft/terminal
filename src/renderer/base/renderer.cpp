@@ -212,7 +212,7 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // Routine Description:
 // - Called when the cursor has moved in the buffer. Allows for RenderEngines to
 //      differentiate between cursor movements and other invalidates.
-//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT
+//   Visual Renderers (ex GDI) should invalidate the position, while the VT
 //      engine ignores this. See MSFT:14711161.
 // Arguments:
 // - pcoord: The buffer-space position of the cursor.

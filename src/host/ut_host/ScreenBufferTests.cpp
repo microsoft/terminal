@@ -5768,7 +5768,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     Log::Comment(L"Margins should not be set.");
     VERIFY_IS_FALSE(si.AreMarginsSet());
 
-    Log::Comment(L"Cursor position shold be moved to home.");
+    Log::Comment(L"Cursor position should be moved to home.");
     auto homePosition = COORD{ 0, viewportStart };
     VERIFY_ARE_EQUAL(homePosition, cursor.GetPosition());
 

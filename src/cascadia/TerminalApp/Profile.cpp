@@ -936,7 +936,7 @@ CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - true iff the profile chould be hidden from the list of profiles.
+// - true iff the profile should be hidden from the list of profiles.
 bool Profile::IsHidden() const noexcept
 {
     return _hidden;
