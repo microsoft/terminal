@@ -232,7 +232,7 @@ void CascadiaSettings::_ValidateProfilesExist()
 // Method Description:
 // - Walks through each profile, and ensures that they had a GUID set at some
 //   point. If the profile did _not_ have a GUID ever set for it, generate a
-//   temporary runtime GUID for it. This valitation does not add any warnnings.
+//   temporary runtime GUID for it. This validation does not add any warnnings.
 void CascadiaSettings::_ValidateProfilesHaveGuid()
 {
     for (auto& profile : _profiles)
