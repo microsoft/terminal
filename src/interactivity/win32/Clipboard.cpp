@@ -32,7 +32,7 @@ void Clipboard::Copy(bool fAlsoCopyFormatting)
 {
     try
     {
-        // registry settings may tell us to always copy the color/formating
+        // registry settings may tell us to always copy the color/formatting
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         fAlsoCopyFormatting = fAlsoCopyFormatting || gci.GetCopyColor();
 
