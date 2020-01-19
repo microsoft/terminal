@@ -172,7 +172,7 @@ namespace winrt::TerminalApp::implementation
         _root->ShowDialog({ this, &AppLogic::_ShowDialog });
 
         // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overriden to false no matter what the preference is.
+        // so this setting is overridden to false no matter what the preference is.
         if (_isUwp)
         {
             _settings->GlobalSettings().SetShowTabsInTitlebar(false);
