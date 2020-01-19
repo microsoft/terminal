@@ -113,7 +113,7 @@ using namespace Microsoft::Console::Types;
         rc.right = rc.left + pcs->cx;
         rc.bottom = rc.top + pcs->cy;
 
-        // Find nearest montitor.
+        // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
 
         // This API guarantees that dpix and dpiy will be equal, but neither is an optional parameter so give two UINTs.

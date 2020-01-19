@@ -211,7 +211,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     long adjustedWidth = 0;
     if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
     {
-        // Find nearest montitor.
+        // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
         // Get nearest monitor information
