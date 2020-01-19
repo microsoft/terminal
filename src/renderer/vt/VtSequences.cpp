@@ -54,7 +54,7 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
@@ -100,7 +100,7 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to erase the remainer of the line starting
+// - Formats and writes a sequence to erase the remainder of the line starting
 //      from the cursor position.
 // Arguments:
 // - <none>
