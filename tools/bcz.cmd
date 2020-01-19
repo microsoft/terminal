@@ -116,7 +116,7 @@ if "%_MSBUILD_TARGET%" == "Build" (
 ) else if "%_MSBUILD_TARGET%" == "Clean,Build" (
     set __MSBUILD_TARGET=%__PROJECT_NAME%:Rebuild
 )
-rem This statement will propogate our internal variables up to the calling
+rem This statement will propagate our internal variables up to the calling
 rem scope. Because they're all on one line, the value of our local variables
 rem will be evaluated before we endlocal
 endlocal & set "PROJECT_NAME=%__PROJECT_NAME%" & set "_MSBUILD_TARGET=%__MSBUILD_TARGET%"

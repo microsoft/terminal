@@ -521,7 +521,7 @@ namespace winrt::TerminalApp::implementation
         auto weakTab = make_weak(newTabImpl);
 
         // When the tab's active pane changes, we'll want to lookup a new icon
-        // for it, and possibly propogate the title up to the window.
+        // for it, and possibly propagate the title up to the window.
         newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };

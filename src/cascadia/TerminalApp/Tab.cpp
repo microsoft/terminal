@@ -295,7 +295,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
     {
-        // NOTE: This _must_ be called on the root pane, so that it can propogate
+        // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->ResizeContent(newSize);
     }
@@ -309,7 +309,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
     {
-        // NOTE: This _must_ be called on the root pane, so that it can propogate
+        // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->ResizePane(direction);
     }
@@ -323,7 +323,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     {
-        // NOTE: This _must_ be called on the root pane, so that it can propogate
+        // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->NavigateFocus(direction);
     }
