@@ -1438,7 +1438,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //   performance guarantees aren't exactly stellar)
         // - The STL doesn't have a simple string search/replace method.
         //   This fact is lamentable.
-        // - This line-ending converstion is intentionally fairly
+        // - This line-ending conversion is intentionally fairly
         //   conservative, to avoid stripping out lone \n characters
         //   where they could conceivably be intentional.
 
