@@ -15,7 +15,7 @@ Author(s):
 
 #include "..\inc\IConsoleControl.hpp"
 
-// Uncomment to build publically targeted scenarios.
+// Uncomment to build publicly targeted scenarios.
 //#define CON_USERPRIVAPI_INDIRECT
 
 // Used by TranslateMessageEx to purposefully return false to certain WM_KEYDOWN/WM_CHAR messages

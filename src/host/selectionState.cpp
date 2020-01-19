@@ -211,7 +211,7 @@ SMALL_RECT Selection::GetSelectionRectangle() const noexcept
 }
 
 // Routine Description:
-// - Gets the publically facing set of selection flags.
+// - Gets the publicly facing set of selection flags.
 //   Strips out any internal flags in use.
 // Arguments:
 // - none
