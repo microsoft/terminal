@@ -21,6 +21,8 @@ namespace winrt::TerminalApp::implementation
         void Content(IInspectable content);
 
         void SetWindowVisualState(WindowVisualState visualState);
+        void SetMinMaxControlColors(const winrt::Windows::UI::Color& minMaxForegroundColor, const winrt::Windows::UI::Color& minMaxHoverColor);
+        void ClearMinMaxControlColors();
 
         void Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
 

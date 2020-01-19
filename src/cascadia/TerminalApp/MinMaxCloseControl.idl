@@ -10,6 +10,7 @@ namespace TerminalApp
         MinMaxCloseControl();
 
         void SetWindowVisualState(WindowVisualState visualState);
+        void RefreshButtons();
 
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;

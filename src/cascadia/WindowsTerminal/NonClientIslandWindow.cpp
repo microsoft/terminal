@@ -7,6 +7,7 @@
 #include "NonClientIslandWindow.h"
 #include "../types/inc/ThemeUtils.h"
 #include "../types/inc/utils.hpp"
+#include <winrt/Windows.UI.Popups.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -109,6 +110,51 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _titlebar.Content(content);
+}
+
+// Method Description:
+// - Set the background of the "titlebar area" of our window to the given color
+// Arguments:
+// - color: the new color to use as the titlebar background color
+// - minMaxForeground: the foreground color for the min max buttons
+// - minMaxHover: the hover color for the min max buttons
+// Return Value:
+// - <none>
+void NonClientIslandWindow::SetTitlebarColor(const winrt::Windows::UI::Color& color, const winrt::Windows::UI::Color& minMaxForeground, const winrt::Windows::UI::Color& minMaxHover)
+{
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush brush{ color };
+    _titlebar.Background(brush);
+    _titlebar.SetMinMaxControlColors(minMaxForeground, minMaxHover);
+
+    // for whatever reason I need to re-invalidate the whole window,
+    // otherwise only the area underneath the tab row and the min/max control
+    // gets its color changed
+    ::RedrawWindow(_window.get(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+}
+
+// Method Description:
+// - Clears the background of the "titlebar area" of our window
+// Arguments:
+// - color: if no matching color is found in the resources, this one
+// will be used instead
+// Return Value:
+// - <none>
+void NonClientIslandWindow::ClearTitlebarColor(const winrt::Windows::UI::Color& color)
+{
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush brush{ color };
+    const auto res = Application::Current().Resources();
+    const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+    if (res.HasKey(tabViewBackgroundKey))
+    {
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
+        brush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+    }
+    _titlebar.Background(brush);
+    _titlebar.ClearMinMaxControlColors();
+    // for whatever reason I need to re-invalidate the whole window,
+    // otherwise only the area underneath the tab row and the min/max control
+    // gets its color changed
+    ::RedrawWindow(_window.get(), NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 }
 
 // Method Description:

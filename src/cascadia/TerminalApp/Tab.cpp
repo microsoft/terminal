@@ -7,6 +7,7 @@
 #include "Tab.h"
 #include "Tab.g.cpp"
 #include "Utils.h"
+#include "ColorHelper.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -473,7 +474,7 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->ClosePane();
+                tab->_rootPane->Close();
             }
         });
 
@@ -509,6 +510,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // Returns the tab color, if any
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The tab's color, if any
+    std::optional<winrt::Windows::UI::Color> Tab::GetTabColor()
+    {
+        return _tabColor;
+    }
+
+    // Method Description:
     // - Sets the tab background color to the color chosen by the user
     // - Sets the tab foreground color depending on the luminance of
     // the background color
@@ -529,25 +541,11 @@ namespace winrt::TerminalApp::implementation
             Media::SolidColorBrush selectedTabBrush{};
             Media::SolidColorBrush deselectedTabBrush{};
             Media::SolidColorBrush fontBrush{};
-
-            // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-            float c[] = { color.R / 255.f, color.G / 255.f, color.B / 255.f };
-            for (int i = 0; i < 3; i++)
-            {
-                if (c[i] <= 0.03928)
-                {
-                    c[i] = c[i] / 12.92f;
-                }
-                else
-                {
-                    c[i] = std::pow((c[i] + 0.055f) / 1.055f, 2.4f);
-                }
-            }
-
+            Media::SolidColorBrush hoverTabBrush{};
             // calculate the luminance of the current color and select a font
             // color based on that
-            auto luminance = 0.2126f * c[0] + 0.7152f * c[1] + 0.0722f * c[2];
-            if (luminance > 0.179)
+            // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
+            if (TerminalApp::ColorHelper::IsBrightColor(color))
             {
                 fontBrush.Color(winrt::Windows::UI::Colors::Black());
             }
@@ -556,21 +554,24 @@ namespace winrt::TerminalApp::implementation
                 fontBrush.Color(winrt::Windows::UI::Colors::White());
             }
 
+            hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
             selectedTabBrush.Color(color);
 
             // currently if a tab has a custom color, a deselected state is
             // signified by using the same color with a bit ot transparency
-            auto deselectedTabColor = color;
-            deselectedTabColor.A = 64;
-            deselectedTabBrush.Color(deselectedTabColor);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), selectedTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), selectedTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
             tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
+            tab->_tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
 
             tab->_RefreshVisualState();
+
+            tab->_tabColor.emplace(color);
+            tab->_colorSelected(color);
         });
     }
 
@@ -598,6 +599,8 @@ namespace winrt::TerminalApp::implementation
                 L"TabViewItemHeaderForeground",
                 L"TabViewItemHeaderForegroundSelected",
                 L"TabViewItemHeaderForegroundPointerOver",
+                L"TabViewItemHeaderBackgroundPressed",
+                L"TabViewItemHeaderForegroundPressed"
             };
 
             // simply clear any of the colors in the tab's dict
@@ -611,6 +614,8 @@ namespace winrt::TerminalApp::implementation
             }
 
             tab->_RefreshVisualState();
+            tab->_tabColor.reset();
+            tab->_colorCleared();
         });
     }
 
@@ -636,4 +641,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(Tab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+    DEFINE_EVENT(Tab, ColorCleared, _colorCleared, winrt::delegate<>);
 }

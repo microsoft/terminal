@@ -45,9 +45,13 @@ namespace winrt::TerminalApp::implementation
         void Shutdown();
         void ClosePane();
 
+        std::optional<winrt::Windows::UI::Color> GetTabColor();
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+        DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
@@ -57,6 +61,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _activePane{ nullptr };
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
+        std::optional<winrt::Windows::UI::Color> _tabColor{};
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };

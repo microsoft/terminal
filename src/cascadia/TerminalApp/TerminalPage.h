@@ -11,6 +11,7 @@
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 #include "AppCommandlineArgs.h"
+#include "TabColorChangedEventArgs.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -20,6 +21,25 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    struct TabColorChangedEventArgs :
+        public TabColorChangedEventArgsT<TabColorChangedEventArgs>
+    {
+    public:
+        TabColorChangedEventArgs(winrt::Windows::UI::Color titleBarColor, winrt::Windows::UI::Color minMaxForegroundColor, winrt::Windows::UI::Color minMaxHoverColor) :
+            _titleBarColor(titleBarColor),
+            _minMaxForegroundColor(minMaxForegroundColor),
+            _minMaxHoverColor(minMaxHoverColor) {}
+
+        winrt::Windows::UI::Color TitleBarColor() { return _titleBarColor; };
+        winrt::Windows::UI::Color MinMaxForegroundColor() { return _minMaxForegroundColor; };
+        winrt::Windows::UI::Color MinMaxHoverColor() { return _minMaxHoverColor; };
+
+    private:
+        winrt::Windows::UI::Color _titleBarColor;
+        winrt::Windows::UI::Color _minMaxForegroundColor;
+        winrt::Windows::UI::Color _minMaxHoverColor;
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -48,6 +68,8 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarColor, _setTitleBarColorHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabColorChangedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ClearTitleBarColor, _clearTitleBarColorHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Color);
 
     private:
         // If you add controls here, but forget to null them either here or in
@@ -147,6 +169,11 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 
         void _ToggleFullscreen();
+
+        void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
+        void _ClearNonClientAreaColors();
+        void _SetTabRowColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
+        void _ClearTabRowColor();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

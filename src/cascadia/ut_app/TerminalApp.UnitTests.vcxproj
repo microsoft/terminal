@@ -12,9 +12,8 @@
     <!-- We'll manage our own OutDir/IntDir -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
   <PropertyGroup>
-  <!-- Manually change our outdir to be in a subdirectory. We don't really want
+    <!-- Manually change our outdir to be in a subdirectory. We don't really want
     to put our output in the bin root, because if we do, we'll copy
     TerminalApp.winmd to the bin root, and then every subsequent mdmerge step
     (in _any_ cppwinrt project) will automatically try to pick up
@@ -23,17 +22,15 @@
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="precomp.h" />
   </ItemGroup>
-
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="ColorHelperTests.cpp" />
     <ClCompile Include="JsonTests.cpp" />
     <ClCompile Include="DynamicProfileTests.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -44,22 +41,21 @@
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\TerminalApp\ColorHelper.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
   </ItemGroup>
-
   <!-- ========================= Globals ======================== -->
-
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -67,7 +63,6 @@
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <PropertyGroup>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
@@ -75,25 +70,22 @@
   <ItemGroup>
     <Manifest Include="TerminalApp.Unit.Tests.manifest" />
   </ItemGroup>
-
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
-
   <PropertyGroup>
-    <_CppWinrtBinRoot>&quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\&quot;</_CppWinrtBinRoot>
+    <_CppWinrtBinRoot>"$(OpenConsoleDir)$(Platform)\$(Configuration)\"</_CppWinrtBinRoot>
     <!-- From Microsoft.UI.Xaml.targets -->
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+    <_MUXBinRoot>"$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\runtimes\win10-$(Native-Platform)\native\"</_MUXBinRoot>
   </PropertyGroup>
-
   <ItemDefinitionGroup>
     <PreBuildEvent>
       <!-- Manually copy the Windows Terminal manifest to our project directory,
       so we only need to have one version for the entire solution. -->
       <Command>
-        (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.manifest&quot; &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest*&quot; )
+        (xcopy /Y "$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.manifest" "$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest*" )
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -111,14 +103,12 @@
       -->
       <Command>
         echo OutDir=$(OutDir)
-        (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
-        (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
+        (xcopy /Y "$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest" "$(OutDir)\TerminalApp.Unit.Tests.manifest*" )
+        (xcopy /Y "$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml" "$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*" )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
   <!-- Import this set of targets that fixes a VS bug that manifests when using
   the TerminalAppLib project -->
   <Import Project="../TerminalApp/FixVisualStudioBug.targets" />
-
 </Project>

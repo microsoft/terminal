@@ -30,6 +30,10 @@ private:
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
+    void _SetTitleBarColor(const winrt::Windows::Foundation::IInspectable& sender,
+                           const winrt::TerminalApp::TabColorChangedEventArgs& args);
+    void _ClearTitleBarColor(const winrt::Windows::Foundation::IInspectable& sender,
+                             const winrt::Windows::UI::Color& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
     void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,

@@ -15,6 +15,7 @@
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
+#include "ColorHelper.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -893,6 +894,30 @@ namespace winrt::TerminalApp::implementation
                 page->_UpdateTitle(*tab);
             }
         });
+
+        // react on color changed events
+        hostingTab.ColorSelected([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }](auto&& color) {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab && tab->IsFocused())
+            {
+                page->_SetNonClientAreaColors(color);
+            }
+        });
+
+        hostingTab.ColorCleared([weakTab{ hostingTab.get_weak() }, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab && tab->IsFocused())
+            {
+                page->_ClearNonClientAreaColors();
+            }
+        });
+
+        // remove any colors left by other colored tabs
+        _ClearTabRowColor();
     }
 
     // Method Description:
@@ -1445,6 +1470,15 @@ namespace winrt::TerminalApp::implementation
                     _tabContent.Children().Append(tab->GetRootElement());
 
                     tab->SetFocused(true);
+                    std::optional<Windows::UI::Color> color = tab->GetTabColor();
+                    if (color.has_value())
+                    {
+                        _SetNonClientAreaColors(color.value());
+                    }
+                    else
+                    {
+                        _ClearNonClientAreaColors();
+                    }
                     _titleChangeHandlers(*this, Title());
                 }
                 CATCH_LOG();
@@ -1690,12 +1724,179 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - tab: the projected type of a Tab
     // Return Value:
-    // - a com_ptr to the implementation type of the Tab
+    // - a com_ptr to the implementation type of the Tab    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const
     winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const
     {
         winrt::com_ptr<Tab> tabImpl;
         tabImpl.copy_from(winrt::get_self<Tab>(tab));
         return tabImpl;
+    }
+
+    // Method Description:
+    // - Sets the tab split button color when a new tab color is selected
+    // - Sets the tab row color when a new tab color is selected
+    // Arguments:
+    // - color: The color of the newly selected tab, used to properly calculate
+    //          the foreground color of the split button (to match the font
+    //          color of the tab)
+    // - accentColor: the actual color we are going to use to paint the tab row and
+    //                split button, so that there is some contrast between the tab
+    //                and the non-client are behind it
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetTabRowColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
+    {
+        bool IsBrightColor = ColorHelper::IsBrightColor(color);
+        bool isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
+        winrt::Windows::UI::Color pressedColor{};
+        winrt::Windows::UI::Color hoverColor{};
+        winrt::Windows::UI::Color foregroundColor{};
+        const float hoverColorAdjustment = 5.f;
+        const float pressedColorAdjustment = 7.f;
+
+        if (IsBrightColor)
+        {
+            foregroundColor = winrt::Windows::UI::Colors::Black();
+        }
+        else
+        {
+            foregroundColor = winrt::Windows::UI::Colors::White();
+        }
+
+        if (isLightAccentColor)
+        {
+            hoverColor = ColorHelper::Darken(accentColor, hoverColorAdjustment);
+            pressedColor = ColorHelper::Darken(accentColor, pressedColorAdjustment);
+        }
+        else
+        {
+            hoverColor = ColorHelper::Lighten(accentColor, hoverColorAdjustment);
+            pressedColor = ColorHelper::Lighten(accentColor, pressedColorAdjustment);
+        }
+
+        Media::SolidColorBrush backgroundBrush{ accentColor };
+        Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
+        Media::SolidColorBrush backgroundPressedBrush{ pressedColor };
+        Media::SolidColorBrush foregroundBrush{ foregroundColor };
+
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackground"), backgroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPointerOver"), backgroundHoverBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
+
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+
+        _newTabButton.Background(backgroundBrush);
+        _newTabButton.Foreground(foregroundBrush);
+
+        TabRow().TabView().Background(backgroundBrush);
+    }
+
+    // Method Description:
+    // - Clears the tab split button color to a system color
+    //   (or white if none is found) when the tab's color is cleared
+    // - Clears the tab row color to a system color
+    //   (or white if none is found) when the tab's color is cleared
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ClearTabRowColor()
+    {
+        winrt::hstring keys[] = {
+            L"SplitButtonBackground",
+            L"SplitButtonBackgroundPointerOver",
+            L"SplitButtonBackgroundPressed",
+            L"SplitButtonForeground",
+            L"SplitButtonForegroundPointerOver",
+            L"SplitButtonForegroundPressed"
+        };
+
+        // simply clear any of the colors in the split button's dict
+        for (auto keyString : keys)
+        {
+            auto key = winrt::box_value(keyString);
+            if (_newTabButton.Resources().HasKey(key))
+            {
+                _newTabButton.Resources().Remove(key);
+            }
+        }
+
+        const auto res = Application::Current().Resources();
+
+        const auto defaultBackgroundKey = winrt::box_value(L"TabViewItemHeaderBackground");
+        const auto defaultForegroundKey = winrt::box_value(L"SystemControlForegroundBaseHighBrush");
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
+        winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
+
+        if (res.HasKey(defaultBackgroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultBackgroundKey);
+            backgroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            backgroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Black() };
+        }
+
+        if (res.HasKey(defaultForegroundKey))
+        {
+            winrt::Windows::Foundation::IInspectable obj = res.Lookup(defaultForegroundKey);
+            foregroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            foregroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::White() };
+        }
+
+        _newTabButton.Background(backgroundBrush);
+        _newTabButton.Foreground(foregroundBrush);
+
+        TabRow().TabView().Background(backgroundBrush);
+    }
+
+    // Method Description:
+    // - Sets the tab split button color when a new tab color is selected
+    // - Sets the tab row color when a new tab color is selected
+    // - Sets the title bar color when a new tab color is selected
+    // Arguments:
+    // - selectedTabColor: The color of the newly selected tab
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor)
+    {
+        Windows::UI::Color accentColor{}, minMaxForegroundColor{}, minMaxHoverColor{};
+
+        if (ColorHelper::IsBrightColor(selectedTabColor))
+        {
+            minMaxForegroundColor = winrt::Windows::UI::Colors::Black();
+            minMaxHoverColor = winrt::Windows::UI::Colors::DarkGray();
+        }
+        else
+        {
+            minMaxForegroundColor = winrt::Windows::UI::Colors::White();
+            minMaxHoverColor = winrt::Windows::UI::Colors::LightGray();
+        }
+        minMaxHoverColor.A = 128;
+        accentColor = ColorHelper::GetAccentColor(selectedTabColor);
+        auto colorArgs = winrt::make_self<TabColorChangedEventArgs>(accentColor, minMaxForegroundColor, minMaxHoverColor);
+        _SetTabRowColor(selectedTabColor, accentColor);
+        _setTitleBarColorHandlers(*this, *colorArgs);
+    }
+
+    // Method Description:
+    // - Clears the tab split button color when the tab's color is cleared
+    // - Clears the tab row color when the tab's color is cleared
+    // - Clears the title bar color when when the tab's color is cleared
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ClearNonClientAreaColors()
+    {
+        _ClearTabRowColor();
+        _clearTitleBarColorHandlers(*this, Windows::UI::Colors::White());
     }
 
     // -------------------------------- WinRT Events ---------------------------------
@@ -1706,4 +1907,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, UIElement);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, WUX::Controls::ContentDialog);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarColor, _setTitleBarColorHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::TabColorChangedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ClearTitleBarColor, _clearTitleBarColorHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Color);
 }

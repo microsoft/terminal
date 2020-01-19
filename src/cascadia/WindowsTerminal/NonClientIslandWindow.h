@@ -43,6 +43,8 @@ public:
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
+    void SetTitlebarColor(const winrt::Windows::UI::Color& color, const winrt::Windows::UI::Color& minMaxForeground, const winrt::Windows::UI::Color& minMaxHover);
+    void ClearTitlebarColor(const winrt::Windows::UI::Color& color);
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
