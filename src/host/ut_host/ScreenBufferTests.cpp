@@ -455,7 +455,7 @@ void ScreenBufferTests::TestClearTabStops()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    Log::Comment(L"Clear non-existant tab stops.");
+    Log::Comment(L"Clear nonexistent tab stops.");
     {
         screenInfo.ClearTabStops();
         VERIFY_IS_TRUE(screenInfo._tabStops.empty());
@@ -478,7 +478,7 @@ void ScreenBufferTests::TestClearTabStop()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    Log::Comment(L"Try to clear nonexistant list.");
+    Log::Comment(L"Try to clear nonexistent list.");
     {
         screenInfo.ClearTabStop(0);
 
@@ -493,7 +493,7 @@ void ScreenBufferTests::TestClearTabStop()
         VERIFY_IS_TRUE(screenInfo._tabStops.empty());
     }
 
-    Log::Comment(L"Allocate 1 list item and clear non-existant.");
+    Log::Comment(L"Allocate 1 list item and clear nonexistent.");
     {
         screenInfo._tabStops.push_back(0);
 
@@ -548,7 +548,7 @@ void ScreenBufferTests::TestClearTabStop()
         screenInfo._tabStops.clear();
     }
 
-    Log::Comment(L"Allocate many (5) list items and clear non-existant item.");
+    Log::Comment(L"Allocate many (5) list items and clear nonexistent item.");
     {
         std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
         screenInfo._tabStops = inputData;
