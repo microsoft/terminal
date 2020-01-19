@@ -301,7 +301,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
 }
 
 // Routine Description:
-// - Copies the given string onto the global system clipboard in the sepcified format
+// - Copies the given string onto the global system clipboard in the specified format
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
