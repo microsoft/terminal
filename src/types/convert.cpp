@@ -597,7 +597,7 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
              (0xffd2 <= wch && wch <= 0xffd7) ||
              (0xffda <= wch && wch <= 0xffdc))
     {
-        /* Halfwidth Hangule variants */
+        /* Halfwidth Hangul variants */
         return CodepointWidth::Narrow;
     }
     else if (0xffe0 <= wch && wch <= 0xffe6)
