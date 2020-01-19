@@ -762,7 +762,7 @@ DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const std::basic_string
 // Method Description:
 // - Determines if a set of parameters indicates a modified keypress
 // Arguments:
-// - paramCount - the nummber of parameters we've collected in this sequence
+// - paramCount - the number of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
 bool InputStateMachineEngine::_IsModified(const size_t paramCount) noexcept
