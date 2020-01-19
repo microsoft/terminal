@@ -283,7 +283,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         // then make sure code page value when East Asian environment.
         // If code page value does not the same to OEMCP and any EA's code page then
         // we are override code page value to OEMCP on default console property.
-        // Because, East Asian environment has limitation that doesn not switch to
+        // Because, East Asian environment has limitation that does not switch to
         // another EA's code page by the SetConsoleCP/SetConsoleOutputCP.
         //
         // Compare of pwszConsoleTitle and L"" has limit to default property of console.
