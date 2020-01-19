@@ -457,7 +457,7 @@ std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveIn
             if (_IsValidMultiByteSequence(&pInputChars[currentByteInput], cb - currentByteInput))
             {
                 const unsigned int sequenceSize = _Utf8SequenceSize(pInputChars[currentByteInput]);
-                // min is to guard against static analyis possible buffer overflow
+                // min is to guard against static analysis possible buffer overflow
                 const unsigned int limit = std::min(sequenceSize, cb - currentByteInput);
                 for (unsigned int i = 0; i < limit; ++i)
                 {
