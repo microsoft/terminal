@@ -520,7 +520,7 @@ would `openDefaultSettings`, and we could bind that to
 ### How does this work with the settings UI?
 
 If we only have one version of the settings models (Globals, Profiles,
-ColorShemes, Keybindings) at runtime, and the user changes one of the settings
+ColorSchemes, Keybindings) at runtime, and the user changes one of the settings
 with the settings UI, how can we tell that settings changed?
 
 Fortunately, this should be handled cleanly by the algorithm proposed above, in
