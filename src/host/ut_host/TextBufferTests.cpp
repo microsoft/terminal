@@ -1862,13 +1862,13 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
-    const auto bbutton = L"\xD83C\xDD71";
-    position = bbutton;
+    const auto bButton = L"\xD83C\xDD71";
+    position = bButton;
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(bbutton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
     const SHORT delta = _buffer->GetFirstRowIndex() - pos.Y;
@@ -1884,7 +1884,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const auto shouldBeEmojiText = *_buffer->GetTextDataAt(newPos);
 
     VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
-    VERIFY_ARE_EQUAL(String(bbutton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
 }
 
 // This tests that when buffer storage rows are rotated around during a scroll buffer operation,
