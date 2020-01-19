@@ -8,7 +8,7 @@ Module Name:
 Abstract:
 - This is the interface for a VT state machine language
     The terminal handles input sequences and output sequences differently,
-    almost as two seperate grammars. This enables different grammars to leverage
+    almost as two separate grammars. This enables different grammars to leverage
     the existing VT parsing.
 */
 #pragma once

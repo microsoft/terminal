@@ -28,7 +28,7 @@ Revision History:
 - From components of output.h/.c
   by Therese Stowell (ThereseS) 1990-1991
 - Pulled into its own file from textBuffer.hpp/cpp (AustDi, 2017)
-- Moved the colors into their own seperate abstraction. (migrie Nov 2018)
+- Moved the colors into their own separate abstraction. (migrie Nov 2018)
 --*/
 
 #pragma once

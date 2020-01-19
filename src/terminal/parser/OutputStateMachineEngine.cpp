@@ -1603,7 +1603,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
-//  This is kept seperate from the input version, as there may be
+//  This is kept separate from the input version, as there may be
 //      codes that are supported in one direction but not the other.
 // Arguments:
 // - parameters - The parameters to parse

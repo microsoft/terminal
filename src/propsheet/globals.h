@@ -5,7 +5,7 @@
 //     globals.h
 //
 // Abstract:
-//     One seperate container for many of the global variables in the propsheet
+//     One separate container for many of the global variables in the propsheet
 //
 // Author:
 //     Mike Griese (mikegr) 2016-Oct

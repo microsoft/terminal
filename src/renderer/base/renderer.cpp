@@ -543,7 +543,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // Routine Description:
 // - Paint helper to copy the primary console buffer text onto the screen.
 // - This portion primarily handles figuring the current viewport, comparing it/trimming it versus the invalid portion of the frame, and queuing up, row by row, which pieces of text need to be further processed.
-// - See also: Helper functions that seperate out each complexity of text rendering.
+// - See also: Helper functions that separate out each complexity of text rendering.
 // Arguments:
 // - <none>
 // Return Value:

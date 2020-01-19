@@ -1593,7 +1593,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     seqCb = 2;
 
     Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as seperate strings."));
+        L"Using DoWriteConsole, write \\b \\b as separate strings."));
 
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
@@ -1604,7 +1604,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
     Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as seperate strings."));
+        L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
         wchar_t* str = L"a";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));

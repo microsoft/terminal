@@ -83,7 +83,7 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 
 // Routine Description:
 // - CUU - Handles cursor upward movement by given distance.
-// CUU and CUD are handled seperately from other CUP sequences, because they are
+// CUU and CUD are handled separately from other CUP sequences, because they are
 //      constrained by the margins.
 // See: https://vt100.net/docs/vt510-rm/CUU.html
 //  "The cursor stops at the top margin. If the cursor is already above the top
@@ -99,7 +99,7 @@ bool AdaptDispatch::CursorUp(const size_t distance)
 
 // Routine Description:
 // - CUD - Handles cursor downward movement by given distance
-// CUU and CUD are handled seperately from other CUP sequences, because they are
+// CUU and CUD are handled separately from other CUP sequences, because they are
 //      constrained by the margins.
 // See: https://vt100.net/docs/vt510-rm/CUD.html
 //  "The cursor stops at the bottom margin. If the cursor is already above the
@@ -855,7 +855,7 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 // Routine Description:
 // - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
 // DECCOLM also clear the screen (like a CSI 2 J sequence), while DECSCPP just sets the width.
-// (DECCOLM will do this seperately of this function)
+// (DECCOLM will do this separately of this function)
 // Arguments:
 // - columns - Number of columns
 // Return Value:
@@ -1894,7 +1894,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
-//  This is kept seperate from the input version, as there may be
+//  This is kept separate from the input version, as there may be
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform

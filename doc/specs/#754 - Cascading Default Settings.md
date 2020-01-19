@@ -678,7 +678,7 @@ generators _must_ be enabled to use the dynamic profiles.
   a WinRT interface that extensions could implement, and be triggered just like
   other dynamic profile generators.
 * **Multiple settings files** - This could enable us to place color schemes into
-  a seperate file (like `colorschemes.json`) and put keybindings into their own
+  a separate file (like `colorschemes.json`) and put keybindings into their own
   file as well, and reduce the number of settings in the user's `profiles.json`.
   It's unclear if this is something that we need quite yet, but the same
   layering functionality that enables this scenario could also enable more than

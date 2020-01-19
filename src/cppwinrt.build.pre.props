@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <!-- These settings tell MsBuild to treat the project as a "Universal Windows"
-       application. This includes doing things like creating a seperate
+       application. This includes doing things like creating a separate
        subdirectory for our binary output, and making sure that a wapproj looks
        at the winmd we build to generate type info.
        In general, cppwinrt projects all want this.

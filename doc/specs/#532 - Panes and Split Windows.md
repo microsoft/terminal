@@ -53,7 +53,7 @@ When a pane is a parent, its two children are either split vertically or
 horizontally. Parent nodes don't have a terminal of their own, they merely
 display the terminals of their children.
 
- * If a Pane is split vertically, the two panes are seperated by a vertical
+ * If a Pane is split vertically, the two panes are separated by a vertical
    split, as to appear side-by-side. Think `[|]`
  * If a Pane is split horizontally, the two panes are split by a horizontal
    separator, and appear above/below one another. Think `[-]`.
