@@ -439,7 +439,7 @@ std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
 //     see http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Extended-coordinates
 // Parameters:
 // - position - The windows coordinates (top,left = 0,0) of the mouse event
-// - button - the message to decode. WM_MOUSERMOVE is used for mouse hovers with no buttons pressed.
+// - button - the message to decode. WM_MOUSEMOVE is used for mouse hovers with no buttons pressed.
 // - isDown - true iff a mouse button was pressed.
 // - isHover - true if the sequence is generated in response to a mouse hover
 // - modifierKeyState - the modifier keys pressed with this button
