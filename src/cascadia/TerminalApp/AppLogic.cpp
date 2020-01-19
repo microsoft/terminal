@@ -398,7 +398,7 @@ namespace winrt::TerminalApp::implementation
     //   default size, which is provided in IslandWindow::MakeWindow.
     // Arguments:
     // - defaultInitialX: the system default x coordinate value
-    // - defaultInitialY: the system defualt y coordinate value
+    // - defaultInitialY: the system default y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
     winrt::Windows::Foundation::Point AppLogic::GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY)

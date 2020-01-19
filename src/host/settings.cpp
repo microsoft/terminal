@@ -537,7 +537,7 @@ void Settings::SetPopupFillAttribute(const WORD wPopupFillAttribute)
 
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
     // This prevents us from accidentally inverting everything or suddenly drawing lines
-    // everywhere by defualt.
+    // everywhere by default.
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
