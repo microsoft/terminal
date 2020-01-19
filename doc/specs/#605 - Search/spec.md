@@ -50,7 +50,7 @@ We will create a `SearchBoxControl` Xaml `UserControl` element. When a search pr
 
 Above is the `SearchBoxControl` in dark theme and light theme.
   - The two buttons with up/down arrows controls the search direction, Each button will be styled to indicate which search direction is currently selected. 
-  - The button with a "Aa" icon, if pressed, means that we are searching case-sensitivily. 
+  - The button with a "Aa" icon, if pressed, means that we are searching case-sensitivity. 
   - The current style puts all elements - the `X` button, the text box and the search pattern control buttons on one single line. This ensures that the `SearchBoxControl` won't be too high and block terminal text. This is similar with VSCode. Another possible layout style is to put elements in multiple layers. This will occupy more lines, but the search dialog will narrower. Considering that there is not many elements, we do not need multiple layers. 
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
