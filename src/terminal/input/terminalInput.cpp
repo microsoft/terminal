@@ -185,7 +185,7 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 6> s_simpleModifedKeyMapping{
+static constexpr std::array<TermKeyMap, 6> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
     TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
     TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
@@ -314,7 +314,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         //      maybe it's in the other map of modified keys with sequences that
         //      don't need editing before sending.
         const auto match2 = _searchKeyMapping(keyEvent,
-                                              { s_simpleModifedKeyMapping.data(), s_simpleModifedKeyMapping.size() });
+                                              { s_simpleModifiedKeyMapping.data(), s_simpleModifiedKeyMapping.size() });
         if (match2)
         {
             // This mapping doesn't need to be changed at all.
