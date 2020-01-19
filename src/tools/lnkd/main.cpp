@@ -57,7 +57,7 @@ void DumpV2Properties(_In_ IShellLink* pslConsole)
         }
         else
         {
-            wprintf(L"ERROR: Unable to retreive value of PKEY_Console_ForceV2. (HRESULT: 0x%08x)\n", hr);
+            wprintf(L"ERROR: Unable to retrieve value of PKEY_Console_ForceV2. (HRESULT: 0x%08x)\n", hr);
         }
 
         BOOL fWrapText;
@@ -68,7 +68,7 @@ void DumpV2Properties(_In_ IShellLink* pslConsole)
         }
         else
         {
-            wprintf(L"ERROR: Unable to retreive value of PKEY_Console_WrapText. (HRESULT: 0x%08x)\n", hr);
+            wprintf(L"ERROR: Unable to retrieve value of PKEY_Console_WrapText. (HRESULT: 0x%08x)\n", hr);
         }
 
         BOOL fFilterOnPaste;
@@ -79,7 +79,7 @@ void DumpV2Properties(_In_ IShellLink* pslConsole)
         }
         else
         {
-            wprintf(L"ERROR: Unable to retreive value of PKEY_Console_FilterOnPaste. (HRESULT: 0x%08x)\n", hr);
+            wprintf(L"ERROR: Unable to retrieve value of PKEY_Console_FilterOnPaste. (HRESULT: 0x%08x)\n", hr);
         }
 
         BOOL fCtrlKeyShortcutsDisabled;
@@ -90,7 +90,7 @@ void DumpV2Properties(_In_ IShellLink* pslConsole)
         }
         else
         {
-            wprintf(L"ERROR: Unable to retreive value of PKEY_Console_CtrlKeyShortcutsDisabled. (HRESULT: 0x%08x)\n", hr);
+            wprintf(L"ERROR: Unable to retrieve value of PKEY_Console_CtrlKeyShortcutsDisabled. (HRESULT: 0x%08x)\n", hr);
         }
 
         BOOL fLineSelection;
@@ -101,7 +101,7 @@ void DumpV2Properties(_In_ IShellLink* pslConsole)
         }
         else
         {
-            wprintf(L"ERROR: Unable to retreive value of PKEY_Console_LineSelection. (HRESULT: 0x%08x)\n", hr);
+            wprintf(L"ERROR: Unable to retrieve value of PKEY_Console_LineSelection. (HRESULT: 0x%08x)\n", hr);
         }
 
         BYTE bWindowTransparency;
@@ -112,7 +112,7 @@ void DumpV2Properties(_In_ IShellLink* pslConsole)
         }
         else
         {
-            wprintf(L"ERROR: Unable to retreive value of PKEY_Console_WindowTransparency. (HRESULT: 0x%08x)\n", hr);
+            wprintf(L"ERROR: Unable to retrieve value of PKEY_Console_WindowTransparency. (HRESULT: 0x%08x)\n", hr);
         }
 
         pPropStoreLnk->Release();

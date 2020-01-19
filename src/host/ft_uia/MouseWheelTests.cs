@@ -40,7 +40,7 @@ namespace Conhost.UIA.Tests
                     IntPtr handle = app.GetStdOutHandle();
                     Verify.IsNotNull(handle, "Ensure we have the output handle.");
 
-                    Log.Comment("Set up the window so the buffer is larger than the window. Retreive existing properties then set the viewport to smaller than the buffer.");
+                    Log.Comment("Set up the window so the buffer is larger than the window. Retrieve existing properties then set the viewport to smaller than the buffer.");
 
                     WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX info = app.GetScreenBufferInfo(handle);
 

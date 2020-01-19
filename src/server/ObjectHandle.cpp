@@ -135,7 +135,7 @@ bool ConsoleHandleData::IsWriteShared() const
 }
 
 // Routine Description:
-// - Retieves the properly typed Input Buffer from the Handle.
+// - Retrieves the properly typed Input Buffer from the Handle.
 // Arguments:
 // - amRequested - Access that the client would like for manipulating the buffer
 // - ppInputBuffer - On success, filled with the referenced Input Buffer object
@@ -155,7 +155,7 @@ bool ConsoleHandleData::IsWriteShared() const
 }
 
 // Routine Description:
-// - Retieves the properly typed Screen Buffer from the Handle.
+// - Retrieves the properly typed Screen Buffer from the Handle.
 // Arguments:
 // - amRequested - Access that the client would like for manipulating the buffer
 // - ppInputBuffer - On success, filled with the referenced Screen Buffer object
