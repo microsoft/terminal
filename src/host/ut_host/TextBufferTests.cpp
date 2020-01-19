@@ -1543,7 +1543,7 @@ void TextBufferTests::TestBackspaceStrings()
 
 void TextBufferTests::TestBackspaceStringsAPI()
 {
-    // Pretty much the same as the above test, but explicitly DOESNT use the
+    // Pretty much the same as the above test, but explicitly DOESN'T use the
     //  state machine.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
