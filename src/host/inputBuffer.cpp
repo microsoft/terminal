@@ -716,7 +716,7 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
 }
 
 // Routine Description:
-// - checks two KeyEvents to see if they're similiar enough to be coalesced
+// - checks two KeyEvents to see if they're similar enough to be coalesced
 // Arguments:
 // - a - the first KeyEvent
 // - b - the other KeyEvent
