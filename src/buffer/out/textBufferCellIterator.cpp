@@ -17,7 +17,7 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Creates a new read-only iterator to seek through cell data stored within a screen buffer
 // Arguments:
-// - buffer - Text buffer to seek throught
+// - buffer - Text buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
 TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos) :
     TextBufferCellIterator(buffer, pos, buffer.GetSize())
