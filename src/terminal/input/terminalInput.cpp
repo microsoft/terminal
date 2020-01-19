@@ -444,7 +444,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
             if (!keyHandled)
             {
                 // For perf optimization, filter out any typically printable Virtual Keys (e.g. A-Z)
-                // This is in lieu of an O(1) sparse table or other such less-maintanable methods.
+                // This is in lieu of an O(1) sparse table or other such less-maintainable methods.
                 // VK_CANCEL is an exception and we want to send the associated uChar as is.
                 if ((keyEvent.GetVirtualKeyCode() < '0' || keyEvent.GetVirtualKeyCode() > 'Z') &&
                     keyEvent.GetVirtualKeyCode() != VK_CANCEL)
