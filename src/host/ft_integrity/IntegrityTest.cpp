@@ -13,7 +13,7 @@ static PCWSTR c_pwszLowIntegrity = L"Low Integrity";
 static PCWSTR c_pwszMedIntegrity = L"Medium Integrity";
 static PCWSTR c_pwszHighIntegrity = L"High Integrity";
 static PCWSTR c_pwszSysIntegrity = L"System Integrity";
-static PCWSTR c_pwszUnkIntegrity = L"UNKNOWN INTEGIRTY";
+static PCWSTR c_pwszUnkIntegrity = L"UNKNOWN INTEGRITY";
 
 static void s_ExpandAnyEnvStrings(_Inout_ std::unique_ptr<wchar_t[]>& cmdline)
 {
