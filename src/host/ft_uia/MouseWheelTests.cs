@@ -125,7 +125,7 @@ namespace Conhost.UIA.Tests
                 case ScrollDir.Horizontal:
                     // Scrolling "negative" horizontally is pushing the wheel left which makes lines move left.
                     // This means that if you scroll left, before = 3 and after = 0. 0 - 3 = -3.
-                    // The - sign of the detal here then aligns with the left = negative rule.
+                    // The - sign of the delta here then aligns with the left = negative rule.
                     deltaActual = afterScroll.srWindow.Left - beforeScroll.srWindow.Left;
                     break;
                 default:
