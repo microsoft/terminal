@@ -28,7 +28,7 @@ Other terminal emulators like ConEmu have a similar feature.
         * This enum attempts to encompass all potential connection states, even those which do not make sense for a local terminal.
         * The wide variety of values will be useful to indicate state changes in a user interface.
         * `NotConnected`: All new connections will start out in this state
-        * `Connecting`: The connection has been initated, but has not yet completed connecting.
+        * `Connecting`: The connection has been initiated, but has not yet completed connecting.
         * `Connected`: The connection is active.
         * `Closing`: The connection is being closed (usually by request).
         * `Closed`: The connection has been closed, either by request or from the remote end terminating successfully.
