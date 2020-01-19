@@ -6,7 +6,7 @@ Module Name:
 - IIoProvider.hpp
 
 Abstract:
-- Provides an abstraction for aquiring the active input and output objects of
+- Provides an abstraction for acquiring the active input and output objects of
     the console.
 
 Author(s):
