@@ -1236,7 +1236,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Calculates the appropriate size to snap to in the gived direction, for
+    // - Calculates the appropriate size to snap to in the given direction, for
     //   the given dimension. If the global setting `snapToGridOnResize` is set
     //   to `false`, this will just immediately return the provided dimension,
     //   effectively disabling snapping.
