@@ -196,7 +196,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 // - Resizes the conpty
 // Arguments:
 // - hSignal: A signal pipe as returned by CreateConPty.
-// - size: The new dimenstions of the conpty, in characters.
+// - size: The new dimensions of the conpty, in characters.
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the resize message to the pty.
