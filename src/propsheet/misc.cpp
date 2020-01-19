@@ -678,7 +678,7 @@ int
     }
 
     /*
-     * reject non-TT fonts that are virtical font
+     * reject non-TT fonts that are vertical font
      */
     if ((nFontType != TRUETYPE_FONTTYPE) &&
         (ptszFace[0] == TEXT('@')))
