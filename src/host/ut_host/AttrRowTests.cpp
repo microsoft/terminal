@@ -117,7 +117,7 @@ class AttrRowTests
         if (sChainLeftover > 0)
         {
             // If we had a leftover, then this chain is one longer than we expected (the default length)
-            // So use it as the index (because indicies start at 0)
+            // So use it as the index (because indices start at 0)
             TextAttributeRun* pRun = &pChain->_list[_sDefaultChainLength];
 
             pRun->SetAttributes(_DefaultChainAttr);
