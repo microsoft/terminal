@@ -580,7 +580,7 @@
         },
         "hidden": {
           "default": false,
-          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file.",
+          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.",
           "type": "boolean"
         },
         "historySize": {

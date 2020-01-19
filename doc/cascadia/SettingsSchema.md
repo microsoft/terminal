@@ -44,7 +44,7 @@ Properties listed below are specific to each unique profile.
 | `fontFace` | Optional | String | `Consolas` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
-| `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file. |
+| `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
 | `historySize` | Optional | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |
 | `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `padding` | Optional | String | `8, 8, 8, 8` | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
