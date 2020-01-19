@@ -194,7 +194,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
 
 // For some reason, the console API *ALWAYS* says it needs enough space as if we were copying Unicode,
 // even if the final result will be ANSI.
-// Therefore, if we're mathing based on a char size buffer, multiple the expected result by 2.
+// Therefore, if we're matching based on a char size buffer, multiple the expected result by 2.
 #pragma warning(suppress : 4127) // This is a constant, but conditionally compiled twice so we need the check.
         if (1 == sizeof(TCH))
         {
