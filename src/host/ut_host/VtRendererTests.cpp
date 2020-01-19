@@ -572,7 +572,7 @@ void VtRendererTest::Xterm256TestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 2 }));
 
         Log::Comment(NoThrowString().Format(
-            L"----move into the line to test some other sequnces----"));
+            L"----move into the line to test some other sequences----"));
         qExpectedInput.push_back("\x1b[2;8H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 7, 1 }));
 
@@ -988,7 +988,7 @@ void VtRendererTest::XtermTestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 2 }));
 
         Log::Comment(NoThrowString().Format(
-            L"----move into the line to test some other sequnces----"));
+            L"----move into the line to test some other sequences----"));
         qExpectedInput.push_back("\x1b[2;8H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 7, 1 }));
 
