@@ -75,7 +75,7 @@ public:
     // Arguments:
     // - defaultFgIndex: the BYTE to use as the index for the foreground, should
     //      the foreground not be a legacy style attribute.
-    // - defaultBgIndex: the BYTE to use as the index for the backgound, should
+    // - defaultBgIndex: the BYTE to use as the index for the background, should
     //      the background not be a legacy style attribute.
     // Return Value:
     // - a WORD with legacy-style attributes for this textattribute.
