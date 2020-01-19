@@ -193,7 +193,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Handler for CompositionStarted event by CoreEditContext responsible
-    //   for making internal TSFInputControl controls visisble.
+    //   for making internal TSFInputControl controls visible.
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
     // - args: CoreTextCompositionStartedEventArgs. Not used in method.
@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Handler for CompositionCompleted event by CoreEditContext responsible
-    //   for making internal TSFInputControl controls visisble.
+    //   for making internal TSFInputControl controls visible.
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
     // - args: CoreTextCompositionCompletedEventArgs. Not used in method.
