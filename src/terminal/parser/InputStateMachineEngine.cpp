@@ -707,7 +707,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - rgusParams - the set of parameters to get the modifier state from.
 // - cParams - the number of elements in rgusParams
 // Return Value:
-// - the INPUT_RECORD comaptible modifier state.
+// - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
 {
     // Both Cursor keys and generic keys keep their modifiers in the same index.
