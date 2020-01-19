@@ -1763,7 +1763,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                         fgColorIndex = nextColorIndex++;
                     }
 
-                    contentBuilder << "\\highglight" << bkColorIndex
+                    contentBuilder << "\\highlight" << bkColorIndex
                                    << "\\cf" << fgColorIndex
                                    << " ";
                 }
