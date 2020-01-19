@@ -161,7 +161,7 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
 //      Scrolling mode, this will return our Y dimension as only extending up to
 //      the _virtualBottom. The height of the returned viewport would then be
 //      (number of lines in scrollback) + (number of lines in viewport).
-//   If we're not in teminal scrolling mode, this will return our normal buffer
+//   If we're not in terminal scrolling mode, this will return our normal buffer
 //      size.
 // Arguments:
 // - <none>
@@ -2306,7 +2306,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
 //      understand will be written to the pTtyConnection passed in here.
 // Arguments:
-// - pTtyConnection: This is a TerminaOutputConnection that we can write the
+// - pTtyConnection: This is a TerminalOutputConnection that we can write the
 //      sequence we didn't understand to.
 // Return Value:
 // - <none>

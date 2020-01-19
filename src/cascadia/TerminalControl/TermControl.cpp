@@ -647,7 +647,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
 
         // TODO:GH#3927 - Make it possible to hot-reload this setting. Right
-        // here, the setting will only be used when the Temrinal is initialized.
+        // here, the setting will only be used when the Terminal is initialized.
         dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
 
         THROW_IF_FAILED(dxEngine->Enable());
@@ -1231,7 +1231,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            // This is a scroll event that wasn't initiated by the termnial
+            // This is a scroll event that wasn't initiated by the terminal
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             this->ScrollViewport(static_cast<int>(newValue));
         }
