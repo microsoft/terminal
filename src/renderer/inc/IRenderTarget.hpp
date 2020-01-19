@@ -6,7 +6,7 @@ Module Name:
 - IRenderTarget.hpp
 
 Abstract:
-- This serves as the entry point for console rendering activites.
+- This serves as the entry point for console rendering activities.
 
 Author(s):
 - Michael Niksa (MiNiksa) 17-Nov-2015
