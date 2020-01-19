@@ -299,7 +299,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 // Routine Description:
 // - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character, with the added
-//      information that we're executing it from the Escsape state.
+//      information that we're executing it from the Escape state.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
