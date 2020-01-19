@@ -507,7 +507,7 @@ runtimeclass TerminalParameters {
 * [ ] Add a `ShortcutAction` for `FocusPane`, which accepts a single parameter
   `index`.
   - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
-    quicky switch to the i'th `Pane`.
+    quickly switch to the i'th `Pane`.
   - This is in order to support the `-t,--target` parameter of `split-pane`.
 
 ## Capabilities
