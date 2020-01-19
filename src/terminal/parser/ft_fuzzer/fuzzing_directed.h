@@ -266,7 +266,7 @@ namespace fuzz
         static BYTE GetRandom(__in BYTE tMin, __in BYTE tMax)
         {
             std::mt19937 engine(m_rd()); // Mersenne twister MT19937
-            // BYTE is unsiged, so we want to also use an unsigned type to avoid sign
+            // BYTE is unsigned, so we want to also use an unsigned type to avoid sign
             // extension of tMin and tMax.
             std::uniform_int_distribution<unsigned short> distribution(tMin, tMax);
             auto generator = std::bind(distribution, engine);
