@@ -8,7 +8,7 @@
     not try to read it.
 
     Upstream problem report:
-    https://developercommunity.visualstudio.com/content/problem/629524/static-library-reference-causes-there-was-a-proble.html
+    https://developercommunity.visualstudio.com/content/problem/629524/static-library-reference-causes-there-was-a-problem.html
   -->
   <Target Name="_RemoveTerminalAppLibImplementationFromReference" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup>
