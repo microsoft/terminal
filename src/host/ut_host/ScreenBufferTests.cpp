@@ -5698,7 +5698,7 @@ void ScreenBufferTests::CursorSaveRestore()
     // Set margins and restore state.
     stateMachine.ProcessString(L"\x1b[20;25r");
     stateMachine.ProcessString(restoreCursor);
-    // Verfify Y position is clamped inside the top margin
+    // Verify Y position is clamped inside the top margin
     VERIFY_ARE_EQUAL(COORD({ 5, 19 }), cursor.GetPosition());
 
     Log::Comment(L"Clamp inside bottom margin.");
@@ -5711,7 +5711,7 @@ void ScreenBufferTests::CursorSaveRestore()
     // Set margins and restore state.
     stateMachine.ProcessString(L"\x1b[1;10r");
     stateMachine.ProcessString(restoreCursor);
-    // Verfify Y position is clamped inside the top margin
+    // Verify Y position is clamped inside the top margin
     VERIFY_ARE_EQUAL(COORD({ 5, 9 }), cursor.GetPosition());
 
     // Reset origin mode and margins.
