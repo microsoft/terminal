@@ -459,7 +459,7 @@ void Alias::s_ClearCmdExeAliases()
     LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer.value().data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-    // Each of the alises will be made up of the source, a separator, the target, then a null character.
+    // Each of the aliases will be made up of the source, a separator, the target, then a null character.
     // They are of the form "Source=Target" when returned.
     size_t const cchNull = 1;
 
