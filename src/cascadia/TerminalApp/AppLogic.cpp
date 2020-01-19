@@ -322,7 +322,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Triggered when the application is fiished loading. If we failed to load
+    // - Triggered when the application is finished loading. If we failed to load
     //   the settings, then this will display the error dialog. This is done
     //   here instead of when loading the settings, because we need our UI to be
     //   visible to display the dialog, and when we're loading the settings,
