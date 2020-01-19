@@ -191,7 +191,7 @@ private:
         std::unique_ptr<LayoutSizeNode> secondChild;
 
         // These two fields hold next possible snapped values of firstChild and
-        // secondChild. Although that could be calculated from these fields themself,
+        // secondChild. Although that could be calculated from these fields themselves,
         // it would be wasteful as we have to know these values more often than for
         // simple increment. Hence we cache that here.
         std::unique_ptr<LayoutSizeNode> nextFirstChild;
