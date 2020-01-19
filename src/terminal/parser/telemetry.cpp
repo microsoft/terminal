@@ -226,6 +226,8 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DSR], "DSR"),
                                       TraceLoggingUInt32(_uiTimesUsed[DA], "DA"),
                                       TraceLoggingUInt32(_uiTimesUsed[VPA], "VPA"),
+                                      TraceLoggingUInt32(_uiTimesUsed[HPR], "HPR"),
+                                      TraceLoggingUInt32(_uiTimesUsed[VPR], "VPR"),
                                       TraceLoggingUInt32(_uiTimesUsed[ICH], "ICH"),
                                       TraceLoggingUInt32(_uiTimesUsed[DCH], "DCH"),
                                       TraceLoggingUInt32(_uiTimesUsed[IL], "IL"),

@@ -44,6 +44,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorPrevLine(const size_t distance) override; // CPL
         bool CursorHorizontalPositionAbsolute(const size_t column) override; // CHA
         bool VerticalLinePositionAbsolute(const size_t line) override; // VPA
+        bool HorizontalPositionRelative(const size_t distance) override; // HPR
+        bool VerticalPositionRelative(const size_t distance) override; // VPR
         bool CursorPosition(const size_t line, const size_t column) override; // CUP
         bool CursorSaveState() override; // DECSC
         bool CursorRestoreState() override; // DECRC
