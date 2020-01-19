@@ -160,7 +160,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Method Description:
 // - Writes a wstring to the tty, encoded as "utf-8" where characters that are
 //      outside the ASCII range are encoded as '?'
-//   This mainly exists to maintain compatability with the inbox telnet client.
+//   This mainly exists to maintain compatibility with the inbox telnet client.
 //   This is one implementation of the WriteTerminalW method.
 // Arguments:
 // - wstr - wstring of text to be written
