@@ -38,7 +38,7 @@ $files | ForEach-Object {
     $InProcessServer = $appxPrototypeData.CreateNode("element", "InProcessServer", $rootNS)
     $Path = $appxPrototypeData.CreateNode("element", "Path", $rootNS)
 
-    # You need to stash the result here, otherwise a blank line will be echod to
+    # You need to stash the result here, otherwise a blank line will be echoed to
     # the console.
     $placeholder = $Path.InnerText = $_.name
 
