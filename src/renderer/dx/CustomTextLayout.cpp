@@ -812,7 +812,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 }
 #pragma endregion
 
-#pragma region internal methods for mimicing text analyzer pattern but for font fallback
+#pragma region internal methods for mimicking text analyzer pattern but for font fallback
 // Routine Description:
 // - Mimics an IDWriteTextAnalyser but for font fallback calculations.
 // Arguments:
