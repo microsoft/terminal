@@ -294,7 +294,7 @@ ConsoleProcessHandle* ConsoleProcessList::GetFirstProcess() const
 // Routine Description:
 // - Requests that the OS change the process priority for the console and all attached client processes
 // Arguments:
-// - fForeground - True if console is in foreground and related processes should be prioritied. False if they can be backgrounded/deprioritized.
+// - fForeground - True if console is in foreground and related processes should be prioritised. False if they can be backgrounded/deprioritized.
 // Return Value:
 // - <none>
 // - NOTE: Will attempt to request a change, but it's non fatal if it doesn't work. Failures will be logged to debug channel.
