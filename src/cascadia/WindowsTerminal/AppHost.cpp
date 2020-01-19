@@ -129,7 +129,7 @@ void AppHost::Initialize()
 
     if (_useNonClientArea)
     {
-        // Register our callbar for when the app's non-client content changes.
+        // Register our callback for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
         _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
