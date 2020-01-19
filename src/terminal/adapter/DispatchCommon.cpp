@@ -16,7 +16,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - width: The new width of the window, in columns
 // - height: The new height of the window, in rows
 // Return Value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
                                     const size_t width,
                                     const size_t height)
@@ -72,7 +72,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
 // Arguments:
 // - conApi: The ConGetSet implementation to call back into.
 // Return Value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 {
     return conApi.PrivateRefreshWindow();
@@ -86,7 +86,7 @@ bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 // Arguments:
 // - conApi: The ConGetSet implementation to call back into.
 // Return Value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool DispatchCommon::s_SuppressResizeRepaint(ConGetSet& conApi)
 {
     return conApi.PrivateSuppressResizeRepaint();
