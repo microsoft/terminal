@@ -228,7 +228,7 @@ pane. This could be solved a number of ways. There could be keyboard shortcuts
 for swapping the positions of tabs, or a shortcut for both "zooming" a tab
 (temporarily making it the full size) or even popping a pane out to it's own
 tab. Additionally, a right-click menu option could be added to do the
-aformentioned actions. Discoverability of these two actions is not as high as
+aforementioned actions. Discoverability of these two actions is not as high as
 just dragging a tab from one pane to another; however, it's believed that panes
 are more of a power-user scenario, and power users will not necessarily be
 turned off by the feature's discoverability.

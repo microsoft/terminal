@@ -285,7 +285,7 @@
   to reference its winmd, but very specifically with the
   CopyLocalSatelliteAssemblies and Private properties set to false, as to not
   have projects including us double-including MUX's .winmd. The following blob
-  is taken straight from the MUX build targets, with the afformentioned
+  is taken straight from the MUX build targets, with the aforementioned
   changes.-->
   <PropertyGroup>
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
