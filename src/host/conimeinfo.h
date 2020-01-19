@@ -31,7 +31,7 @@ class SCREEN_INFORMATION;
 class ConsoleImeInfo final
 {
 public:
-    // IME compositon string information
+    // IME composition string information
     // There is one "composition string" per line that must be rendered on the screen
     std::vector<ConversionAreaInfo> ConvAreaCompStr;
 
