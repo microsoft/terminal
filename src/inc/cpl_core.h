@@ -8,7 +8,7 @@
 *         the messages discussed below.
 *      2) If the applet needs to save information in CONTROL.INI minimize
 *         clutter by using the application name [MMCPL.appletname].
-*      3) If the applet is refrenced in CONTROL.INI under [MMCPL] use
+*      3) If the applet is referenced in CONTROL.INI under [MMCPL] use
 *         the following form:
 *              ...
 *              [MMCPL]
