@@ -283,7 +283,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         else if (iStart > 0 && iStart == iEnd)
         {
             // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
-            // where we are curretly at.
+            // where we are currently at.
             size_t lowerBound = 0;
             size_t upperBound = 0;
             for (size_t i = 0; i < _list.size(); i++)
