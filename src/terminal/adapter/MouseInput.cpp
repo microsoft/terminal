@@ -628,7 +628,7 @@ void MouseInput::UseMainScreenBuffer() noexcept
 // Routine Description:
 // - Returns true if we should translate the input event (button, sScrollDelta)
 //      into an alternate scroll event instead of the default scroll event,
-//      dependiong on if alternate scroll mode is enabled and we're in the alternate buffer.
+//      depending on if alternate scroll mode is enabled and we're in the alternate buffer.
 // Parameters:
 // - button: The mouse event code of the input event
 // - delta: The scroll wheel delta of the input event
