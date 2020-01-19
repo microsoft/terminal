@@ -80,7 +80,7 @@ More data reading and calculation will be included in Terminal Launch process, w
 
 ## Potential Issues
 
-We need to consider multi-monitor scenario. If the user has multiple monitors, we must guarantee that the Terminal could be iniitalized as expected. We can keep an eye on the feedbacks of this feature from the community.
+We need to consider multi-monitor scenario. If the user has multiple monitors, we must guarantee that the Terminal could be initialized as expected. We can keep an eye on the feedbacks of this feature from the community.
 
 ## Future considerations
 

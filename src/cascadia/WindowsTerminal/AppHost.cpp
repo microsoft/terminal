@@ -202,7 +202,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 {
     launchMode = _logic.GetLaunchMode();
 
-    // Acquire the actual intial position
+    // Acquire the actual initial position
     winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
     proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
     proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);

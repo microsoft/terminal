@@ -111,7 +111,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     // Initialize the xaml content. This must be called AFTER the
-    // WindowsXamlManager is initalized.
+    // WindowsXamlManager is initialized.
     host.Initialize();
 
     MSG message;
