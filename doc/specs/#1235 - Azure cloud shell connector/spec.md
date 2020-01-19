@@ -53,7 +53,7 @@ This feature will not impact reliability of Windows Terminal.
 
 ### Compatibility
 
-With the implementation being mostly decoupled from the Windows Terminal app itself, no existing code/behaviours should break due to this feature. 
+With the implementation being mostly decoupled from the Windows Terminal app itself, no existing code/behaviors should break due to this feature. 
 
 ### Performance, Power, and Efficiency
 

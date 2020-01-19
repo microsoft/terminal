@@ -48,7 +48,7 @@ Other terminal emulators like ConEmu have a similar feature.
 
 ### Application and Settings
 
-1. The existing `closeOnExit` profile key will be replaced with an enumerated string key supporting the following values (behaviours):
+1. The existing `closeOnExit` profile key will be replaced with an enumerated string key supporting the following values (behaviors):
     * `always` - a tab or pane hosting this profile will always be closed when the launched connection reaches a terminal state.
     * `graceful` - a tab or pane hosting this profile will be closed if and only if the launched connection reaches the `Closed` terminal state.
     * `never` - a tab or pane hosting this profile will not automatically close.
