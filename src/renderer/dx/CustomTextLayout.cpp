@@ -256,7 +256,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // need more glyphs than codepoints if they are decomposed into separate
         // glyphs, or fewer glyphs than codepoints if multiple are substituted
         // into a single glyph. In any case, the shaping process will need some
-        // room to apply those rules to even make that determintation.
+        // room to apply those rules to even make that determination.
 
         if (textLength > maxGlyphCount)
         {
