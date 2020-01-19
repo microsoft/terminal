@@ -345,7 +345,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a read lock on the terminal.
+// - Acquire a read lock on the terminal.
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
@@ -355,7 +355,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a write lock on the terminal.
+// - Acquire a write lock on the terminal.
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
