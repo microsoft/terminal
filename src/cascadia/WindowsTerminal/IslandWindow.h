@@ -49,7 +49,7 @@ public:
         TerminalApp to have TerminalApp handle the ChangeViewport call.
         (See IslandWindow::SetCreateCallback as an example of a similar
         pattern we're using today.) That way, if someone else were trying
-        to resuse this, they could have their own AppHost (or TerminalApp
+        to reuse this, they could have their own AppHost (or TerminalApp
         equivalent) handle the ChangeViewport call their own way.
         */
         return;
