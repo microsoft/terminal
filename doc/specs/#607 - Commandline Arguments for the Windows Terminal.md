@@ -549,7 +549,7 @@ itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
 we've been caught in before, so extensive testing will be necessary to make sure
 this works as expected.
 
-Painfully, powershell uses `;` as a seperator between commands as well. So, if
+Painfully, powershell uses `;` as a separator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
 the user would need to also escape those semicolons for powershell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab

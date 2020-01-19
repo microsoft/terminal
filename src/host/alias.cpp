@@ -325,11 +325,11 @@ static std::wstring aliasesSeparator(L"=");
         // Each of the aliases will be made up of the source, a separator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
         size_t const cchNull = 1;
-        size_t cchSeperator = aliasesSeparator.size();
+        size_t cchSeparator = aliasesSeparator.size();
         // If we're counting how much multibyte space will be needed, trial convert the separator before we add.
         if (!countInUnicode)
         {
-            cchSeperator = GetALengthFromW(codepage, aliasesSeparator);
+            cchSeparator = GetALengthFromW(codepage, aliasesSeparator);
         }
 
         // Find without creating.
@@ -352,7 +352,7 @@ static std::wstring aliasesSeparator(L"=");
 
                 // Accumulate all sizes to the final string count.
                 RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
-                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSeperator, &cchNeeded));
+                RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSeparator, &cchNeeded));
                 RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
                 RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
             }

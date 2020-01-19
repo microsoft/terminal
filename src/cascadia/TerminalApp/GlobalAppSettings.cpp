@@ -383,7 +383,7 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
 // Method Description:
 // - Helper function for converting the initial position string into
 //   2 coordinate values. We allow users to only provide one coordinate,
-//   thus, we use comma as the separater:
+//   thus, we use comma as the separator:
 //   (100, 100): standard input string
 //   (, 100), (100, ): if a value is missing, we set this value as a default
 //   (,): both x and y are set to default
