@@ -161,7 +161,7 @@ class AttrRowTests
     // - Packs an array of words representing attributes into the more compact storage form used by the row.
     // Arguments:
     // - rgAttrs - Array of words representing the attribute associated with each character position in the row.
-    // - cRowLength - Length of preceeding array.
+    // - cRowLength - Length of preceding array.
     // - outAttrRun - reference to unique_ptr that will contain packed attr run on success.
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
