@@ -955,7 +955,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
     case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
