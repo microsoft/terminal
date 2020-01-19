@@ -270,7 +270,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 // Function Description:
 // - This closes each of the members of a PseudoConsole, and HeapFree's the
 //      memory allocated to it. This should be used to cleanup any
-//      PseudoConosles that were created with CreatePseudoConsole.
+//      PseudoConsoles that were created with CreatePseudoConsole.
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
 // Return Value:
