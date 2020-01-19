@@ -413,7 +413,7 @@ class AttrRowTests
         {
             ch1 = rgch1Options[iCh1Option];
 
-            UINT const uiMaxCh1Length = uiTestRunLength - 1; // leave at least 1 space for the second piece of the inser trun.
+            UINT const uiMaxCh1Length = uiTestRunLength - 1; // leave at least 1 space for the second piece of the insert run.
             for (UINT iCh1Length = 1; iCh1Length <= uiMaxCh1Length; iCh1Length++)
             {
                 uiChar1Length = iCh1Length;
