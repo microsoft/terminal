@@ -202,6 +202,7 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownExactlyAtMargins);
 
     TEST_METHOD(CursorNextPreviousLine);
+    TEST_METHOD(CursorPositionRelative);
 
     TEST_METHOD(CursorSaveRestore);
 
@@ -5448,6 +5449,80 @@ void ScreenBufferTests::CursorNextPreviousLine()
     stateMachine.ProcessString(L"\x1b[5F");
     // We should end up in column 0 of line 2.
     VERIFY_ARE_EQUAL(COORD({ 0, 2 }), cursor.GetPosition());
+}
+
+void ScreenBufferTests::CursorPositionRelative()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"HPR without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 5 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[5a");
+    // We should end up in column 25.
+    VERIFY_ARE_EQUAL(COORD({ 25, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[5e");
+    // We should end up on line 15.
+    VERIFY_ARE_EQUAL(COORD({ 20, 15 }), cursor.GetPosition());
+
+    // Enable DECLRMM margin mode (future proofing for when we support it)
+    stateMachine.ProcessString(L"\x1b[?69h");
+    // Set horizontal margins to 18:22 (19:23 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[19;23s");
+    // Set vertical margins to 8:12 (9:13 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[9;13r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
+
+    Log::Comment(L"HPR inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 5 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[5a");
+    // We should end up in column 25 (outside the right margin).
+    VERIFY_ARE_EQUAL(COORD({ 25, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[5e");
+    // We should end up on line 15 (outside the bottom margin).
+    VERIFY_ARE_EQUAL(COORD({ 20, 15 }), cursor.GetPosition());
+
+    Log::Comment(L"HPR to end of line");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 9999 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[9999a");
+    // We should end up in the rightmost column.
+    const auto screenWidth = si.GetBufferSize().Width();
+    VERIFY_ARE_EQUAL(COORD({ screenWidth - 1, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR to bottom of screen");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 9999 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[9999e");
+    // We should end up on the last line.
+    const auto screenHeight = si.GetViewport().Height();
+    VERIFY_ARE_EQUAL(COORD({ 20, screenHeight - 1 }), cursor.GetPosition());
 }
 
 void ScreenBufferTests::CursorSaveRestore()
