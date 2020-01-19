@@ -491,7 +491,7 @@ void OutputTests::WriteBackspaceTest()
     // Get output buffer information.
     const auto hOut = GetStdOutputHandle();
     Log::Comment(NoThrowString().Format(
-        L"Outputing \"\\b \\b\" should behave the same as \"\b\", \" \", \"\b\" in seperate WriteConsoleW calls."));
+        L"Outputting \"\\b \\b\" should behave the same as \"\b\", \" \", \"\b\" in seperate WriteConsoleW calls."));
 
     DWORD n = 0;
     CONSOLE_SCREEN_BUFFER_INFO csbi = { 0 };
