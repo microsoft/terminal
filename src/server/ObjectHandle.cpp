@@ -53,7 +53,7 @@ ConsoleHandleData::~ConsoleHandleData()
 void ConsoleHandleData::Initialize(const ULONG ulHandleType,
                                    PVOID const pvClientPointer)
 {
-    // This can only be used once and it's an erorr if we try to initialize after it's been done.
+    // This can only be used once and it's an error if we try to initialize after it's been done.
     THROW_HR_IF(E_NOT_VALID_STATE, _ulHandleType != HandleType::NotReady);
 
     // We can't be initialized into the "not ready" state. Only constructed that way.
