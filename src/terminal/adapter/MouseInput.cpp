@@ -642,7 +642,7 @@ bool MouseInput::_ShouldSendAlternateScroll(const unsigned int button, const sho
 }
 
 // Routine Description:
-// - Sends a sequence to the input coresponding to cursor up / down depending on the sScrollDelta.
+// - Sends a sequence to the input corresponding to cursor up / down depending on the sScrollDelta.
 // Parameters:
 // - delta: The scroll wheel delta of the input event
 // Return value:
