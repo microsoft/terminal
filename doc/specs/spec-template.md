@@ -37,7 +37,7 @@ issue id: <github issue id>
 
 ### Reliability
 
-[comment]: # Will the proposed change improve reliabilty? If not, why make the change?
+[comment]: # Will the proposed change improve reliability? If not, why make the change?
 
 ### Compatibility
 
