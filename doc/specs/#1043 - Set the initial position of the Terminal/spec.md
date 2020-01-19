@@ -84,7 +84,7 @@ We need to consider multi-monitor scenario. If the user has multiple monitors, w
 
 ## Future considerations
 
-For now, this feature only allows the user to set initial positon and choose whether to maximize the window when launch. In the future, we may consider follow-up features like:
+For now, this feature only allows the user to set initial position and choose whether to maximize the window when launch. In the future, we may consider follow-up features like:
 
 1. Save the position of the Terminal on exit, and restore the position on the next launch. This could be a true/false feature that users could choose to set.
 

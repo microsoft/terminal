@@ -3506,7 +3506,7 @@ void ScreenBufferTests::InsertChars()
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
     VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L" ", expectedFillAttr),
-                   L"One space should be inserted with standard erase attributes at the cursor postion.");
+                   L"One space should be inserted with standard erase attributes at the cursor position.");
 
     Log::Comment(
         L"Test 3: Inserting at the exact beginning of the line. Same line structure. "
@@ -3665,7 +3665,7 @@ void ScreenBufferTests::DeleteChars()
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
     VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L" ", expectedFillAttr),
-                   L"One character should be erased with standard erase attributes at the cursor postion.");
+                   L"One character should be erased with standard erase attributes at the cursor position.");
 
     Log::Comment(
         L"Test 3: Deleting at the exact beginning of the line. Same line structure. "

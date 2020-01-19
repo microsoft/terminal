@@ -1620,7 +1620,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Update the postion and size of the scrollbar to match the given
+    // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   The change will be actually handled in _ScrollbarChangeHandler.
     //   This should be done on the UI thread. Make sure the caller is calling
@@ -1644,7 +1644,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Update the postion and size of the scrollbar to match the given
+    // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
     //      registered an event handler for us.
