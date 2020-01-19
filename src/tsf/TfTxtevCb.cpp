@@ -117,7 +117,7 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext* pInputContext, TfEditCookie
             {
                 //
                 // if the start position of the track composition range is not
-                // the beggining of IC,
+                // the beginning of IC,
                 // the composition has been changed since we put it.
                 //
                 if (lResult != 0)
@@ -128,7 +128,7 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext* pInputContext, TfEditCookie
                 {
                     //
                     // if the start position of the track composition range is not
-                    // the beggining of IC,
+                    // the beginning of IC,
                     // the composition has been changed since we put it.
                     //
                     //
