@@ -121,7 +121,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtSetColorTable);
 
-    TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
+    TEST_METHOD(ResizeTraditionalDoesNotDoubleFreeAttrRows);
 
     TEST_METHOD(ResizeCursorUnchanged);
 
@@ -1584,7 +1584,7 @@ void ScreenBufferTests::VtSetColorTable()
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 }
 
-void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
+void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
 {
     // there is not much to verify here, this test passes if the console doesn't crash.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

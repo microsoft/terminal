@@ -104,7 +104,7 @@ class HistoryTests
         VERIFY_ARE_EQUAL(s_BufferSize, history->GetNumberOfCommands(), L"Ensure that we still have full commands after freeing and reallocating, same app name, different handle ID");
     }
 
-    TEST_METHOD(TooManyAppsDoesntTakeList)
+    TEST_METHOD(TooManyAppsDoesNotTakeList)
     {
         Log::Comment(L"Fill up the number of buffers and each history list to the max.");
         for (size_t i = 0; i < s_NumberOfBuffers; i++)
