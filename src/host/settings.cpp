@@ -943,7 +943,7 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 }
 
 // Method Description:
-// - Get the foregroud color of a particular text attribute, using our color
+// - Get the foreground color of a particular text attribute, using our color
 //      table, and our configured default attributes.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground color of.
