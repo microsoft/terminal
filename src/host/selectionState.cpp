@@ -98,7 +98,7 @@ bool Selection::IsAreaSelected() const
 }
 
 // Routine Description:
-// - Determines whether mark mode specifically started this selction.
+// - Determines whether mark mode specifically started this selection.
 // Arguments:
 // - <none>
 // Return Value:
