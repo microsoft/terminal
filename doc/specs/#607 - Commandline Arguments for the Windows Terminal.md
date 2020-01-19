@@ -440,7 +440,7 @@ developed, to make the initialization of many commands as seamless as possible.
 As this is a very complex feature, there will need to be a number of steps taken
 in the codebase to enable this functionality in a way that users are expecting.
 The following is a suggestion of the individual changelists that could be made
-to iteratively work towards fulling implementing this funcionality.
+to iteratively work towards fulling implementing this functionality.
 
 * [x] Refactor `ShortcutAction` dispatching into its own class
   - Right now, the `AppKeyBindings` is responsible for triggering all
