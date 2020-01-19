@@ -1599,7 +1599,7 @@ void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
 
 void ScreenBufferTests::ResizeCursorUnchanged()
 {
-    // Created for MSFT:19863799. Make sure whewn we resize the buffer, the
+    // Created for MSFT:19863799. Make sure when we resize the buffer, the
     //      cursor looks the same as it did before.
 
     BEGIN_TEST_METHOD_PROPERTIES()
