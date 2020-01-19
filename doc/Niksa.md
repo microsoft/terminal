@@ -33,7 +33,7 @@ Also, I'm happy to discuss this with you until you're utterly sick of reading it
 
 If I had to take an educated guess as to what is making us faster than pretty much any other application on Windows at putting your text on the screen... I would say it is because that is literally our only job! Also probably because we are using darn near the oldest and lowest level APIs that Windows has to accomplish this work.
 
-Pretty much everything else you've listed has some sort of layer or framework involved, or many, many layers and frameworks, when you start talking about Electron and Javascript. We don't. 
+Pretty much everything else you've listed has some sort of layer or framework involved, or many, many layers and frameworks, when you start talking about Electron and JavaScript. We don't. 
 
 We have one bare, super un-special window with no additional controls attached to it. We get our keys fed into us from just barely above the kernel given that we're processing them from window messages and not from some sort of eventing framework common to pretty much any other more complicated UI framework than ours (WPF, WinForms, UWP, Electron). And we dump our text straight onto the window surface using GDI's [PolyTextOut](https://docs.microsoft.com/en-us/windows/desktop/api/wingdi/nf-wingdi-polytextoutw) with no frills. 
 
