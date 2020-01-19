@@ -1291,7 +1291,7 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
 }
 
 // Routine Description:
-// - Returns true if the engine should dispatch on the last charater of a string
+// - Returns true if the engine should dispatch on the last character of a string
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.

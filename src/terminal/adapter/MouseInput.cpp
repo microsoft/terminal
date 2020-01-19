@@ -234,7 +234,7 @@ static constexpr COORD _winToVTCoord(const COORD coordWinCoordinate) noexcept
 
 // Routine Description:
 // - Encodes the given value as a default (or utf-8) encoding value.
-//     32 is added so that the value 0 can be emitted as the printable characher ' '.
+//     32 is added so that the value 0 can be emitted as the printable character ' '.
 // Parameters:
 // - sCoordinateValue - the value to encode.
 // Return value:
