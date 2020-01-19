@@ -279,7 +279,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
                                   newPos.Height(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
-    // Refresh the dpi of HWND becuase the dpi where the window will launch may be different
+    // Refresh the dpi of HWND because the dpi where the window will launch may be different
     // at this time
     _window->RefreshCurrentDPI();
 

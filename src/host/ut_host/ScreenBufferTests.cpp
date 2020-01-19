@@ -5355,7 +5355,7 @@ void ScreenBufferTests::CursorUpDownOutsideMargins()
     // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
     // * writes out Y
 
-    // This test is different becasue the end location of the vertical movement
+    // This test is different because the end location of the vertical movement
     // should not be within the margins at all. We should not clamp this
     // movement to be within the margins.
 
@@ -5409,7 +5409,7 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
     // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
     // * writes out 4
 
-    // This test is different becasue the starting location for these scroll
+    // This test is different because the starting location for these scroll
     // operations is _exactly_ on the margins
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
