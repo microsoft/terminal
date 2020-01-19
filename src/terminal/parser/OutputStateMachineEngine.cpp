@@ -286,7 +286,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Arguments:
 // - wch - Character to dispatch.
 // - intermediates - Intermediate characters in the sequence
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,

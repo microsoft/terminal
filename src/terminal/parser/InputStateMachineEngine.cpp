@@ -302,7 +302,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Arguments:
 // - wch - Character to dispatch.
 // - intermediates - Intermediate characters in the sequence
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
@@ -434,7 +434,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
@@ -1082,7 +1082,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
 // Arguments:
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // - line - Receives the Y/Line/Row position
 // - column - Receives the X/Column position
 // Return Value:
