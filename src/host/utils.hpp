@@ -6,7 +6,7 @@ Module Name:
 - utils.hpp
 
 Abstract:
-- This moduile contains utility math functions that help perform calculations elsewhere in the console
+- This module contains utility math functions that help perform calculations elsewhere in the console
 
 Author(s):
 - Paul Campbell (PaulCam)     2014
