@@ -36,7 +36,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 }
 
 // Routine Description:
-// - Sets this engine to disabled to prevent presentation from occuring
+// - Sets this engine to disabled to prevent presentation from occurring
 // Arguments:
 // - <none>
 // Return Value:

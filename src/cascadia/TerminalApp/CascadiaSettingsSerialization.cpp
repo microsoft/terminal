@@ -722,7 +722,7 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
             // that two instances of the app will try and move the settings file
             // simultaneously. We don't know what might happen in that scenario,
             // but we're also not sure how to safely lock the file to prevent
-            // that from ocurring.
+            // that from occurring.
             THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
                                           pathToSettingsFile.c_str()));
 

@@ -300,7 +300,7 @@ namespace Conhost.UIA.Tests
 
                     Globals.WaitForTimeout(); // must wait after mouse operation. No good waiters since we have no UI objects
 
-                    flagsExpected |= WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_SELECTION_IN_PROGRESS; // a selection is occuring
+                    flagsExpected |= WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_SELECTION_IN_PROGRESS; // a selection is occurring
                     flagsExpected |= WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_MOUSE_SELECTION; // it's a "Select" mode not "Mark" mode selection
                     flagsExpected |= WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_MOUSE_DOWN; // the mouse is still down
                     flagsExpected |= WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_SELECTION_NOT_EMPTY; // mouse selections are never empty. minimum 1x1
