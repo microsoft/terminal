@@ -1835,7 +1835,7 @@ void TextBufferTests::ResizeTraditional()
             }
             else
             {
-                Log::Comment(L"This position is below our ouriginal write area. It should have filled blank lines (space lines) with the default fill color.");
+                Log::Comment(L"This position is below our original write area. It should have filled blank lines (space lines) with the default fill color.");
                 // Otherwise, we use the default.
                 VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
                 VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());

@@ -520,7 +520,7 @@ CConversionArea* CConsoleTSF::CreateConversionArea()
     if (pEditSession)
     {
         // The composition could have been finalized because of a caret move, therefore it must be
-        // inserted synchronously while at the orignal caret position.(TF_ES_SYNC is ok for a nested RO session).
+        // inserted synchronously while at the original caret position.(TF_ES_SYNC is ok for a nested RO session).
         _spITfInputContext->RequestEditSession(_tid, pEditSession, TF_ES_READ | TF_ES_SYNC, &hr);
         if (FAILED(hr))
         {
