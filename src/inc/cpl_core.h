@@ -149,7 +149,7 @@ typedef LPNEWCPLINFOA LPNEWCPLINFO;
 
 
 #define CPL_NEWINQUIRE    8
-/*  Same as CPL_INQUIRE execpt lParam2 is a pointer to a NEWCPLINFO struct. */
+/*  Same as CPL_INQUIRE except lParam2 is a pointer to a NEWCPLINFO struct. */
 /*  The return value is ignored. */
 /*  A CPL should NOT respond to the CPL_NEWINQURE message unless CPL_DYNAMIC_RES */
 /*  is used in CPL_INQUIRE.  CPLs which respond to CPL_NEWINQUIRE cannot be cached */
