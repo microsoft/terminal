@@ -131,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         _root = winrt::make_self<TerminalPage>();
     }
 
-    // Method Decscription:
+    // Method Description:
     // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
     // Arguments:
     // - <none> - reports internal state
