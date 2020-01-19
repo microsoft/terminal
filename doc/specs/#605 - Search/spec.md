@@ -106,7 +106,7 @@ This feature only launches in need. It does not impact the performance of Termin
                                                               
 1. If the terminal window is not wide enough for the search box to be visible, the buttons on the right of the `TextBox` will become invisible, but the `TextBox` is still visible and the window could not be narrower than the `TextBox`. This is similar to the behavior of other editors. Please see the image below:
    ![SearchBox width not enough](images/SearchBoxControlNoEnoughWidth.png)
-2. If the terminal window is not high enough for the search box to be visible, the whole terminal screen, inlcuding the `SearchBoxControl` can disappear. This is similar to the behavior of other editors.
+2. If the terminal window is not high enough for the search box to be visible, the whole terminal screen, including the `SearchBoxControl` can disappear. This is similar to the behavior of other editors.
 
 ## Future considerations
 
