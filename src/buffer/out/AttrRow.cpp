@@ -503,7 +503,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
             else
             {
                 // If the color didn't match, then we just need to copy the piece we skipped and adjust
-                // its length for the discrepency in columns not yet covered by the final/new run.
+                // its length for the discrepancy in columns not yet covered by the final/new run.
 
                 // Move forward to a blank spot in the new run
                 pNewRunPos++;
