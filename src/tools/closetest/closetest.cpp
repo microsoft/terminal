@@ -47,7 +47,7 @@ The test demonstrates how it can be necessary to click the console's Close
 button multiple times to kill all the processes in the console, even though no
 new processes start during the test.
 OBSERVATIONS:
-Aftering closing a console, Windows delivers a CTRL_CLOSE_EVENT event to each
+After closing a console, Windows delivers a CTRL_CLOSE_EVENT event to each
 attached process, giving it 5 seconds to handle it before terminating the
 process.  If a process-to-signal has already died, Windows apparently aborts
 the signaling process, so all the other processes remain.
