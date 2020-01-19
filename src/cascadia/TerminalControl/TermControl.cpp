@@ -654,10 +654,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderEngine = std::move(dxEngine);
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
-        auto onRecieveOutputFn = [this](const hstring str) {
+        auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
         };
-        _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
+        _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
@@ -711,13 +711,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
-        //      before the CharacterRecieved, so we can't easily get characters
+        //      before the CharacterReceived, so we can't easily get characters
         //      first, then fallback to getting keys from vkeys.
         // TODO: This apparently handles keys and characters correctly, though
         //      I'd keep an eye on it, and test more.
         // I presume that the characters that aren't translated by terminalInput
         //      just end up getting ignored, and the rest of the input comes
-        //      through CharacterRecieved.
+        //      through CharacterReceived.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
         // These two handlers _must_ be on this, not _root.
@@ -873,7 +873,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
-        // of it and sending us a CharacterRecieved event.
+        // of it and sending us a CharacterReceived event.
         const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers) : true;
 
         if (_cursorTimer.has_value())
@@ -2256,7 +2256,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                        DragEventArgs const& e)
     {
-        // Make sure to set the AcceptedOperation, so that we can later recieve the path in the Drop event
+        // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
         e.AcceptedOperation(winrt::Windows::ApplicationModel::DataTransfer::DataPackageOperation::Copy);
 
         // Sets custom UI text

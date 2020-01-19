@@ -385,20 +385,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 return 0;
             }
 
-            if (!_recievedFirstByte)
+            if (!_receivedFirstByte)
             {
                 const auto now = std::chrono::high_resolution_clock::now();
                 const std::chrono::duration<double> delta = now - _startTime;
 
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
                 TraceLoggingWrite(g_hTerminalConnectionProvider,
-                                  "RecievedFirstByte",
-                                  TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
+                                  "ReceivedFirstByte",
+                                  TraceLoggingDescription("An event emitted when the connection receives the first byte"),
                                   TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
                                   TraceLoggingFloat64(delta.count(), "Duration"),
                                   TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                   TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-                _recievedFirstByte = true;
+                _receivedFirstByte = true;
             }
 
             // Pass the output to our registered event handlers

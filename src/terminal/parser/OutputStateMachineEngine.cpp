@@ -1333,7 +1333,7 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 // - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
-// - value - recieves the int value of the char
+// - value - receives the int value of the char
 // Return Value:
 // - true iff the character is a hex character.
 bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
@@ -1396,7 +1396,7 @@ static constexpr bool _isHexNumber(const wchar_t wch) noexcept
 //          where <color> is one or two hex digits, upper or lower case.
 // Arguments:
 // - string - The string containing the color spec string to parse.
-// - rgb - recieves the color that we parsed
+// - rgb - receives the color that we parsed
 // Return Value:
 // - True if a color was successfully parsed
 bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
@@ -1504,8 +1504,8 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
 //          where <color> is two hex digits
 // Arguments:
 // - string - the Osc String to parse
-// - tableIndex - recieves the table index
-// - rgb - recieves the color that we parsed in the format: 0x00BBGGRR
+// - tableIndex - receives the table index
+// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
@@ -1579,7 +1579,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 //          where <color> is two hex digits
 // Arguments:
 // - string - the Osc String to parse
-// - rgb - recieves the color that we parsed in the format: 0x00BBGGRR
+// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,

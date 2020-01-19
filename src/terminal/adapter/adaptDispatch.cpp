@@ -533,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
 // - ECH - Erase Characters from the current cursor position, by replacing
 //     them with a space. This will only erase characters in the current line,
 //     and won't wrap to the next. The attributes of any erased positions
-//     recieve the currently selected attributes.
+//     receive the currently selected attributes.
 // Arguments:
 // - numChars - The number of characters to erase.
 // Return Value:

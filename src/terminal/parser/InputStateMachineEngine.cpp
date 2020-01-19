@@ -798,8 +798,8 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 // Arguments:
 // - wch: the wchar_t representing whether the button was pressed or released
 // - parameters: the wchar_t to get the mapped vkey of. Represents the direction of the button (down vs up)
-// - buttonState: Recieves the button state for the record
-// - eventFlags: Recieves the special mouse events for the record
+// - buttonState: Receives the button state for the record
+// - eventFlags: Receives the special mouse events for the record
 // Return Value:
 // true iff we were able to synthesize buttonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
@@ -902,7 +902,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
 // Arguments:
 // - parameters: an array of shorts where the first is the identifier of the key
 //      we're looking for.
-// - vkey: Recieves the vkey
+// - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_t> parameters, short& vkey) const
@@ -929,7 +929,7 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
 // - Gets the Vkey from the CSI codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - vkey: Recieves the vkey
+// - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey) const
@@ -950,7 +950,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey)
 // - Gets the Vkey from the SS3 codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - pVkey: Recieves the vkey
+// - pVkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) const
@@ -971,8 +971,8 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) co
 // - Gets the Vkey and modifier state that's associated with a particular char.
 // Arguments:
 // - wch: the wchar_t to get the vkey and modifier state of.
-// - vkey: Recieves the vkey
-// - modifierState: Recieves the modifier state
+// - vkey: Receives the vkey
+// - modifierState: Receives the modifier state
 // Return Value:
 // <none>
 bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,

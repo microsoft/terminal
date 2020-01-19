@@ -43,7 +43,7 @@ namespace TerminalApp::JsonUtils
     // Arguments:
     // - json: The json object to search for the given key
     // - key: The key to look for in the json object
-    // - target: the optional object to recieve the value from json
+    // - target: the optional object to receive the value from json
     // - conversion: a std::function<T(const Json::Value&)> which can be used to
     //   convert the Json::Value to the appropriate type.
     // Return Value:

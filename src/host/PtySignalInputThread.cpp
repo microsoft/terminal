@@ -60,7 +60,7 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 
 // Method Description:
 // - Tell us that there's a client attached to the console, so we can actually
-//      do something with the messages we recieve now. Before this is set, there
+//      do something with the messages we receive now. Before this is set, there
 //      is no guarantee that a client has attached, so most parts of the console
 //      (in and screen buffers) haven't yet been initialized.
 // Arguments:

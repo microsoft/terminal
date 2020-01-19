@@ -97,7 +97,7 @@ using namespace Microsoft::Console::Render;
 //      force a repaint before the buffer contents are lost. The VT renderer
 //      needs to be able to render all text before it's lost, so we return true.
 // Arguments:
-// - Recieves a bool indicating if we should force the repaint.
+// - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
@@ -124,7 +124,7 @@ using namespace Microsoft::Console::Render;
 //      to force a repaint before the buffer contents are lost. The VT renderer
 //      needs to be able to render all text before it's lost, so we return true.
 // Arguments:
-// - Recieves a bool indicating if we should force the repaint.
+// - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
