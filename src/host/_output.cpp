@@ -173,7 +173,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         std::wstring_view writtenView(wideChars);
         writtenView = writtenView.substr(0, wideCharsWritten);
 
-        // Look over written wide chars to find equilalent count of ascii chars so we can properly report back
+        // Look over written wide chars to find equivalent count of ascii chars so we can properly report back
         // how many elements were actually written
         used = GetALengthFromW(codepage, writtenView);
     }
