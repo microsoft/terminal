@@ -220,7 +220,7 @@ INT_PTR WINAPI ScreenSizeDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPa
             return TRUE;
 
         case PSN_SETACTIVE:
-            // When page becomes active, ensure that window and screen size box availablility
+            // When page becomes active, ensure that window and screen size box availability
             // is updated based on the Word Wrap status.
             g_fInScreenSizeSETACTIVE = TRUE;
             if (g_fForceV2 && gpStateInfo->fWrapText)
