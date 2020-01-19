@@ -549,7 +549,7 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(1)._source.value());
         VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(2)._source.value());
         VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings._profiles.at(3)._source.value());
-        // settings._profiles.at(4) does not have a soruce
+        // settings._profiles.at(4) does not have a source
         VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0)._name);
         VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings._profiles.at(2)._name);
