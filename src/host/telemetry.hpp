@@ -152,7 +152,7 @@ private:
     // Index for the currently connected process.
     size_t _iProcessConnectedCurrently;
     // An array of indexes into the _wchProcessFileNames array, which point to the individual process names.
-    size_t _rgiProccessFileNameIndex[c_iMaxProcessesConnected];
+    size_t _rgiProcessFileNameIndex[c_iMaxProcessesConnected];
     // Number of times each process has connected to the console.
     unsigned int _rguiProcessFileNamesCount[c_iMaxProcessesConnected];
     // To speed up searching the Process Names, create an alphabetically sorted index.
