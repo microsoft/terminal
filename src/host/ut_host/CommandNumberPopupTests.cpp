@@ -104,7 +104,7 @@ class CommandNumberPopupTests
     TEST_METHOD(CanDismissAllPopups)
     {
         Log::Comment(L"that that all popups are dismissed when CommandNumberPopup is dismissed");
-        // CommanNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
+        // CommandNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
         // popups when exiting
         // function to simulate user pressing escape key
         Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
