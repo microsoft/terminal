@@ -447,7 +447,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 // Routine Description:
 // - This routine reads the connection information from a 'connect' IO, validates it and stores them in an internal format.
-// - N.B. The internal informat contains information not sent by clients in their connect IOs and intialized by other routines.
+// - N.B. The internal connection contains information not sent by clients in their connect IOs and intialized by other routines.
 // Arguments:
 // - Server - Supplies a handle to the console server.
 // - Message - Supplies the message representing the connect IO.
