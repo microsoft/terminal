@@ -537,7 +537,7 @@ This change should not regress any existing behaviors.
 
 ### Performance, Power, and Efficiency
 
-This change should not particularily impact startup time or any of these other categories.
+This change should not particularly impact startup time or any of these other categories.
 
 ## Potential Issues
 

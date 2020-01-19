@@ -82,7 +82,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     {
         // Try to get the last error. If that wasn't set, then the test probably
         // doesn't set last error. No matter. We'll just return with E_FAIL
-        // then. This is a unit test, we don't particularily care.
+        // then. This is a unit test, we don't particularly care.
         const auto succeeded = _pfnTestCallback(str.data(), str.size());
         auto hr = E_FAIL;
         if (!succeeded)
