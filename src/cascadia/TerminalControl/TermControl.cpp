@@ -1992,8 +1992,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //  or we hit max number of allowable values (= 4) for the bounding rectangle
         // Non-numeral values detected will default to 0
         // std::getline will not throw exception unless flags are set on the wstringstream
-        // std::stod will throw invalid_argument expection if the input is an invalid double value
-        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
+        // std::stod will throw invalid_argument exception if the input is an invalid double value
+        // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
         try
         {
             for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
