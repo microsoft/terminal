@@ -211,7 +211,7 @@ static constexpr bool _isOscIndicator(const wchar_t wch) noexcept
 // Routine Description:
 // - Determines if a character is a delimiter between two parameters in a "operating system control sequence"
 //   This occurs in the middle of a control sequence after escape and OscIndicator have been recognized,
-//   after the paramater indicating which OSC action to take.
+//   after the parameter indicating which OSC action to take.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
