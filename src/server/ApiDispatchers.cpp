@@ -192,7 +192,7 @@
     }
 
     // We must return the number of records in the message payload (to alert the client)
-    // as well as in the message headers (below in SetReplyInfomration) to alert the driver.
+    // as well as in the message headers (below in SetReplyInformation) to alert the driver.
     LOG_IF_FAILED(SizeTToULong(outEvents.size(), &a->NumRecords));
 
     size_t cbWritten;
