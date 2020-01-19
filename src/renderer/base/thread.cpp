@@ -200,7 +200,7 @@ void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     // the active application letting it know that it has lost focus;
     // 3.1 ConIoSrv waits for a reply from the client application;
     // 3.2 Meanwhile, the active application receives the focus event and calls
-    // the method this methed, waiting for the current paint operation to
+    // this method, waiting for the current paint operation to
     // finish.
     //
     // This means that the new application is waiting on the connection request
