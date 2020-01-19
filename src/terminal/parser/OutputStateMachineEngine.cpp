@@ -712,7 +712,7 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
-// - true if we handled the dsipatch.
+// - true if we handled the dispatch.
 bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const size_t parameter,
                                                  const std::wstring_view string)
