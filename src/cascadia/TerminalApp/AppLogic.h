@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the AppLogic.
         // ALSO: If you add any UIElements as roots here, make sure they're
-        // updated in _AppLogiclyTheme. The root currently is _root.
+        // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
