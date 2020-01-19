@@ -54,7 +54,7 @@ BOOL CheckNum(HWND hDlg, UINT Item)
     TCHAR szNum[5];
     BOOL fSigned;
 
-    // The window position corrdinates can be signed, nothing else.
+    // The window position coordinates can be signed, nothing else.
     if (Item == IDD_WINDOW_POSX || Item == IDD_WINDOW_POSY)
     {
         fSigned = TRUE;
