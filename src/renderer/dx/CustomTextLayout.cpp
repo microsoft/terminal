@@ -232,7 +232,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Shapes a single run of text into glyphs.
         // Alternately, you could iteratively interleave shaping and line
         // breaking to reduce the number glyphs held onto at once. It's simpler
-        // for this demostration to just do shaping and line breaking as two
+        // for this demonstration to just do shaping and line breaking as two
         // separate processes, but realize that this does have the consequence that
         // certain advanced fonts containing line specific features (like Gabriola)
         // will shape as if the line is not broken.
