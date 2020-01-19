@@ -92,7 +92,7 @@ This feature should not introduce any new security issues.
 ### Reliability
 
 1. The key input of Terminal command line and the search box should be separated. Search box should not block interaction with the command line when it is open. 
-2. The search box should not block too much text. The search box only occupies one line, so it won't have big impact on the readibility of the terminal output. 
+2. The search box should not block too much text. The search box only occupies one line, so it won't have big impact on the readability of the terminal output. 
 
 ### Compatibility
 
