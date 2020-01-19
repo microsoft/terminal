@@ -203,8 +203,8 @@ public:
         const auto scale = GetCurrentDpiScale();
         // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
         const auto logicalWidth = (physicalSize.cx / scale) + 0.5f;
-        const auto logicalHeigth = (physicalSize.cy / scale) + 0.5f;
-        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeigth);
+        const auto logicalHeight = (physicalSize.cy / scale) + 0.5f;
+        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeight);
     }
 
     winrt::Windows::Foundation::Size GetLogicalSize() const noexcept
