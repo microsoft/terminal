@@ -16,12 +16,16 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    struct SomeViewports;
+    class Viewport;
+
+    using SomeViewports = til::some<Viewport, 4>;
 
     class Viewport final
     {
     public:
         ~Viewport() {}
+        constexpr Viewport() noexcept :
+            _sr({ 0, 0, -1, -1 }){};
         Viewport(const Viewport& other) noexcept;
         Viewport(Viewport&&) = default;
         Viewport& operator=(const Viewport&) & = default;
@@ -124,28 +128,6 @@ namespace Microsoft::Console::Types
 #if UNIT_TESTING
         friend class ViewportTests;
 #endif
-    };
-
-    struct SomeViewports final
-    {
-        unsigned char used{ 0 };
-        std::array<Viewport, 4> viewports{ Viewport::Empty(), Viewport::Empty(), Viewport::Empty(), Viewport::Empty() };
-
-        // These two methods are to make this vaguely look like a std::vector.
-
-        // Size is the number of viewports that are valid inside this structure
-        size_t size() const noexcept { return used; }
-
-        // At retrieves a viewport at a particular index. If you retrieve beyond the valid size(),
-        // it will throw std::out_of_range
-        const Viewport& at(size_t index) const
-        {
-            if (index >= used)
-            {
-                throw std::out_of_range("Access attempted beyond valid size.");
-            }
-            return viewports.at(index);
-        }
     };
 }
 

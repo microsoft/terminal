@@ -18,7 +18,7 @@ Viewport::Viewport(const Viewport& other) noexcept :
 
 Viewport Viewport::Empty() noexcept
 {
-    return Viewport({ 0, 0, -1, -1 });
+    return Viewport();
 }
 
 Viewport Viewport::FromInclusive(const SMALL_RECT sr) noexcept
@@ -895,6 +895,7 @@ Viewport Viewport::ToOrigin() const noexcept
 //   that was covered by `main` before the regional area of `removeMe` was taken out.
 // - You must check that each viewport .IsValid() before using it.
 [[nodiscard]] SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& removeMe) noexcept
+try
 {
     SomeViewports result;
 
@@ -907,7 +908,7 @@ Viewport Viewport::ToOrigin() const noexcept
     if (!intersection.IsValid())
     {
         // Just put the original rectangle into the results and return early.
-        result.viewports.at(result.used++) = original;
+        result.push_back(original);
     }
     // If the original rectangle matches the intersection, there is nothing to return.
     else if (original != intersection)
@@ -1003,27 +1004,28 @@ Viewport Viewport::ToOrigin() const noexcept
 
         if (top.IsValid())
         {
-            result.viewports.at(result.used++) = top;
+            result.push_back(top);
         }
 
         if (bottom.IsValid())
         {
-            result.viewports.at(result.used++) = bottom;
+            result.push_back(bottom);
         }
 
         if (left.IsValid())
         {
-            result.viewports.at(result.used++) = left;
+            result.push_back(left);
         }
 
         if (right.IsValid())
         {
-            result.viewports.at(result.used++) = right;
+            result.push_back(right);
         }
     }
 
     return result;
 }
+CATCH_FAIL_FAST()
 
 // Method Description:
 // - Returns true if the rectangle described by this Viewport has internal space
