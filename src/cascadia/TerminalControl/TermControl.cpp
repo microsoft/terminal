@@ -336,7 +336,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Initialize our font information.
-        const auto* fontFace = _settings.FontFace().c_str();
+        const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
@@ -649,7 +649,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onRecieveOutputFn = [this](const hstring str) {
-            _terminal->Write(str.c_str());
+            _terminal->Write(str);
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
 
@@ -1457,7 +1457,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Make sure we have a non-zero font size
             const auto newSize = std::max(gsl::narrow<short>(fontSize), static_cast<short>(1));
-            const auto* fontFace = _settings.FontFace().c_str();
+            const auto fontFace = _settings.FontFace();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
@@ -1810,7 +1810,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
     {
         // Initialize our font information.
-        const auto* fontFace = settings.FontFace().c_str();
+        const auto fontFace = settings.FontFace();
         const short fontHeight = gsl::narrow<short>(settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
