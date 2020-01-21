@@ -11,8 +11,7 @@ namespace TerminalApp
         MaximizedMode,
     };
 
-    [default_interface] runtimeclass AppLogic
-    {
+    [default_interface] runtimeclass AppLogic {
         AppLogic();
 
         // For your own sanity, it's better to do setup outside the ctor.
@@ -38,6 +37,8 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+
+        void WriteInput(String inputSequence);
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;

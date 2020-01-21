@@ -100,6 +100,9 @@ void AppHost::Initialize()
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
     _window->SetContent(_logic.GetRoot());
+
+    _window->FilePathDropped({ this, &AppHost::_WritePathInput });
+
     _window->OnAppInitialized();
 }
 
@@ -272,4 +275,28 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::TerminalApp::ToggleFullscreenEventArgs&)
 {
     _window->ToggleFullscreen();
+}
+
+// Method Description:
+// - Called when a file is drag-and-dropped onto the Terminal window. We'll send
+//   the path as typed input to the terminal that's active in the app.
+// -  If the path has a space in it, we'll wrap the path in double-qoutes,
+//    similar to how conhost currently does.
+// Arguments:
+// - path: The path of the file being dropped to the Terminal window
+// Return Value:
+// - <none>
+void AppHost::_WritePathInput(const winrt::hstring& path)
+{
+    const bool addQuotes = (wcschr(path.c_str(), L' ') != nullptr);
+    if (addQuotes)
+    {
+        _logic.WriteInput(L"\"");
+    }
+
+    _logic.WriteInput(path);
+    if (addQuotes)
+    {
+        _logic.WriteInput(L"\"");
+    }
 }

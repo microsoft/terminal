@@ -51,17 +51,18 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-                              L"Windows Terminal",
-                              WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              nullptr,
-                              nullptr,
-                              wc.hInstance,
-                              this));
+    WINRT_VERIFY(CreateWindowEx(WS_EX_ACCEPTFILES,
+                                wc.lpszClassName,
+                                L"Windows Terminal",
+                                WS_OVERLAPPEDWINDOW,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                CW_USEDEFAULT,
+                                nullptr,
+                                nullptr,
+                                wc.hInstance,
+                                this));
 
     WINRT_ASSERT(_window);
 }
@@ -292,7 +293,11 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             return 0; // eat the message
         }
     }
-
+    case WM_DROPFILES:
+    {
+        _HandleDrop(reinterpret_cast<HDROP>(wparam));
+        return 0;
+    }
     case WM_NCLBUTTONDOWN:
     case WM_NCLBUTTONUP:
     case WM_NCMBUTTONDOWN:
@@ -569,6 +574,35 @@ void IslandWindow::_ApplyWindowSize()
                                          newSize.right - newSize.left,
                                          newSize.bottom - newSize.top,
                                          SWP_FRAMECHANGED));
+}
+
+// Method Description:
+// - Attempts to get the path of a file that's been dragged onto the window, and
+//   raises our FilePathDropped event if a file path was dropped onto the
+//   window.
+// Arguments:
+// - dropHandle: the HDROP from the WM_DROPFILES window message
+// Return Value:
+// - <none>
+void IslandWindow::_HandleDrop(const HDROP dropHandle)
+{
+    // https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-dragqueryfilea
+    // If the index value is between zero and the total number of dropped files,
+    //   and the lpszFile buffer address is NULL, the return value is the required
+    //   size, in characters, of the buffer, **not including the terminating null
+    //   character**
+    const unsigned int requiredSize = DragQueryFile(dropHandle, 0, nullptr, 0);
+    if (requiredSize > 0)
+    {
+        const auto requiredBufferSize = requiredSize + 1;
+        auto path = std::make_unique<wchar_t[]>(requiredBufferSize);
+        const auto result = DragQueryFile(dropHandle, 0, path.get(), requiredBufferSize);
+        if (result > 0)
+        {
+            winrt::hstring hstr{ path.get() };
+            _FilePathDroppedHandlers(hstr);
+        }
+    }
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

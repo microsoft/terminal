@@ -1389,6 +1389,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - inputSequence: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
+    void TermControl::WriteInput(const winrt::hstring& inputSequence)
+    {
+        _connection.WriteInput(inputSequence);
+    }
+
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
