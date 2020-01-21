@@ -199,6 +199,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalSettings", "src\cascadia\TerminalSettings\TerminalSettings.vcxproj", "{CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_TerminalCore", "src\cascadia\UnitTests_TerminalCore\UnitTests.vcxproj", "{2C2BEEF4-9333-4D05-B12A-1905CBF112F9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{06EC74CB-9A12-429C-B551-8562EC954747} = {06EC74CB-9A12-429C-B551-8562EC954747}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Internal", "src\internal\internal.vcxproj", "{EF3E32A7-5FF6-42B4-B6E2-96CD7D033F00}"
 EndProject
