@@ -306,8 +306,13 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // convert to wide chars and call W version
-    const auto wchs = ConvertToW(gci.OutputCP, { &character, 1 });
+    std::wstring wchs{};
+    try
+    {
+        // convert to wide chars and call W version
+        wchs = ConvertToW(gci.OutputCP, { &character, 1 });
+    }
+    CATCH_RETURN();
 
     LOG_HR_IF(E_UNEXPECTED, wchs.size() > 1);
 
