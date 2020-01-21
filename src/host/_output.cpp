@@ -304,6 +304,9 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                    const COORD startingCoordinate,
                                                                    size_t& cellsModified) noexcept
 {
+    // Incase ConvertToW throws causing an early return, set modified cells to 0.
+    cellsModified = 0;
+
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     std::wstring wchs{};
