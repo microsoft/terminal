@@ -1425,7 +1425,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     short cursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool isConpty = gci.IsInVtIoMode();
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), isConpty);
 
@@ -1443,10 +1443,11 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         // down, so that it stays in the same position relative to the bottom
         // that it was before.
 
-        If we padded lines onto the top of the buffer, because we if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
+        if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
         {
             const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
             cursorHeightInViewportBefore += diff;
+            gci.GetVtIo()->SetVirtualTop(diff);
         }
 
         Cursor& newCursor = newTextBuffer->GetCursor();

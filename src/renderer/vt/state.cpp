@@ -37,7 +37,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _lastViewport(initialViewport),
     _invalidRect(Viewport::Empty()),
     _fInvalidRectUsed(false),
-    // _lastRealCursor({ 0 }),
     _lastText({ 0 }),
     _scrollDelta({ 0 }),
     _quickReturn(false),
@@ -402,6 +401,11 @@ bool VtEngine::_AllIsInvalid() const
     // Prevent us from clearing the entire viewport on the first paint
     _firstPaint = false;
     return S_OK;
+}
+
+void VtEngine::SetVirtualTop(const short virtualTop) noexcept
+{
+    _virtualTop = std::max(_virtualTop, virtualTop);
 }
 
 void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)

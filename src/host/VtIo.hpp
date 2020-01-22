@@ -38,6 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void BeginResize();
         void EndResize();
+        void SetVirtualTop(const short virtualTop) noexcept;
 
 #ifdef UNIT_TESTING
         void EnableConptyModeForTests();

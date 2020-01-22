@@ -413,9 +413,11 @@ void ConptyRoundtripTests::TestResizeHeight()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
     END_TEST_METHOD_PROPERTIES()
-    int dy;
+    int dx, dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
 
     _checkConptyOutput = false;
@@ -516,7 +518,11 @@ void ConptyRoundtripTests::TestResizeHeight()
     verifyHostData(*hostTb);
     verifyTermData(*termTb);
 
-    const COORD newViewportSize{ TerminalViewWidth, gsl::narrow_cast<short>(TerminalViewHeight + dy) };
+    const COORD newViewportSize{
+        gsl::narrow_cast<short>(TerminalViewWidth + dx),
+        gsl::narrow_cast<short>(TerminalViewHeight + dy)
+    };
+
     auto resizeResult = term->UserResize(newViewportSize);
     VERIFY_SUCCEEDED(resizeResult);
     _resizeConpty(newViewportSize.X, newViewportSize.Y);
