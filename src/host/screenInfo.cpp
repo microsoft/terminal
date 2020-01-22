@@ -1423,7 +1423,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     }
 
     // Save cursor's relative height versus the viewport
-    SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
+    short cursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool isConpty = gci.IsInVtIoMode();
@@ -1431,8 +1431,11 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (SUCCEEDED(hr))
     {
-        if (isConpty)
+        // if (isConpty)
+        if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
         {
+            const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
+            cursorHeightInViewportBefore += diff;
             // TODO! Set the virtual top to the spot where we just inserted a
             // bunch of blank lines.
 
@@ -1443,9 +1446,9 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
         Cursor& newCursor = newTextBuffer->GetCursor();
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-        SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
+        const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
-        coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+        coordCursorHeightDiff.Y = cursorHeightInViewportAfter - cursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
         _textBuffer.swap(newTextBuffer);

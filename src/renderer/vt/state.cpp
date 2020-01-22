@@ -37,7 +37,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _lastViewport(initialViewport),
     _invalidRect(Viewport::Empty()),
     _fInvalidRectUsed(false),
-    _lastRealCursor({ 0 }),
+    // _lastRealCursor({ 0 }),
     _lastText({ 0 }),
     _scrollDelta({ 0 }),
     _quickReturn(false),
@@ -305,7 +305,13 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
         //     Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
         //     hr = _InvalidCombine(rightOfOldViewport);
         // }
-
+        if (oldView.Height() < newView.Height())
+        {
+            // We grew in height. We inserted empty lines at the top of the
+            // buffer. The cursor is now _actually_ lower (larger Y/row value)
+            // than it was before.
+            _lastText.Y += gsl::narrow_cast<short>(newView.Height() - oldView.Height());
+        }
         // Otherwise, if oldView.Height() < newView.Height() (the height
         // increased), don't really do anything here. The text content will
         // try and stay "stuck" at the bottom of the viewport of the
