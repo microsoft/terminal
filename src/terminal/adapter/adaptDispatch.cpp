@@ -269,6 +269,30 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 }
 
 // Routine Description:
+// - HPR - Handles cursor forward movement by given distance
+// - Unlike CUF, this is not constrained by margin settings.
+// Arguments:
+// - distance - Distance to move
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
+{
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), false);
+}
+
+// Routine Description:
+// - VPR - Handles cursor downward movement by given distance
+// - Unlike CUD, this is not constrained by margin settings.
+// Arguments:
+// - distance - Distance to move
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
+{
+    return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), false);
+}
+
+// Routine Description:
 // - CUP - Moves the cursor to an exact X/Column and Y/Row/Line coordinate position.
 // Arguments:
 // - line - Specific Y/Row/Line position to move to

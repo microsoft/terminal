@@ -660,6 +660,8 @@ public:
         _cursorPreviousLine{ false },
         _cursorHorizontalPositionAbsolute{ false },
         _verticalLinePositionAbsolute{ false },
+        _horizontalPositionRelative{ false },
+        _verticalPositionRelative{ false },
         _cursorPosition{ false },
         _cursorSave{ false },
         _cursorLoad{ false },
@@ -748,6 +750,20 @@ public:
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
+        return true;
+    }
+
+    bool HorizontalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    {
+        _horizontalPositionRelative = true;
+        _cursorDistance = uiDistance;
+        return true;
+    }
+
+    bool VerticalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    {
+        _verticalPositionRelative = true;
+        _cursorDistance = uiDistance;
         return true;
     }
 
@@ -965,6 +981,8 @@ public:
     bool _cursorPreviousLine;
     bool _cursorHorizontalPositionAbsolute;
     bool _verticalLinePositionAbsolute;
+    bool _horizontalPositionRelative;
+    bool _verticalPositionRelative;
     bool _cursorPosition;
     bool _cursorSave;
     bool _cursorLoad;
@@ -1096,6 +1114,10 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, true, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
+        TestCsiCursorMovement(L'a', uiDistance, true, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'e', uiDistance, true, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, true, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'P', uiDistance, true, &pDispatch->_deleteCharacter, mach, *pDispatch);
@@ -1126,6 +1148,10 @@ class StateMachineExternalTest final
         TestCsiCursorMovement(L'`', uiDistance, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, false, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'a', uiDistance, false, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'e', uiDistance, false, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, false, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();

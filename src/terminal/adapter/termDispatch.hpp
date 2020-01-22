@@ -32,6 +32,8 @@ public:
     bool CursorPrevLine(const size_t /*distance*/) noexcept override { return false; } // CPL
     bool CursorHorizontalPositionAbsolute(const size_t /*column*/) noexcept override { return false; } // CHA
     bool VerticalLinePositionAbsolute(const size_t /*line*/) noexcept override { return false; } // VPA
+    bool HorizontalPositionRelative(const size_t /*distance*/) noexcept override { return false; } // HPR
+    bool VerticalPositionRelative(const size_t /*distance*/) noexcept override { return false; } // VPR
     bool CursorPosition(const size_t /*line*/, const size_t /*column*/) noexcept override { return false; } // CUP
     bool CursorSaveState() noexcept override { return false; } // DECSC
     bool CursorRestoreState() noexcept override { return false; } // DECRC
