@@ -85,6 +85,11 @@ class ConptyOutputTests
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
 
+        // Manually set the console into conpty mode. We're not actually going
+        // to set up the pipes for conpty, but we want the console to behave
+        // like it would in conpty mode.
+        gci.GetVtIo()->EnableConptyModeForTests();
+
         expectedOutput.clear();
 
         return true;

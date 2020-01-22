@@ -88,13 +88,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
 
-        gci.GetVtIo()->EnableConptyModeForTests();
-        // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // This doesn't actually set the host into VtIo mode. That gci function
-        // requires the VtIo to actually be initialized, which it wont be in
-        // this case. We should instead add some sort of ut-only method to trick
-        // gci into thinking it's actually in conpty mode.
-
         gci.SetDefaultForegroundColor(INVALID_COLOR);
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
@@ -124,6 +117,11 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
 
         _pConApi = std::make_unique<ConhostInternalGetSet>(gci);
+
+        // Manually set the console into conpty mode. We're not actually going
+        // to set up the pipes for conpty, but we want the console to behave
+        // like it would in conpty mode.
+        gci.GetVtIo()->EnableConptyModeForTests();
 
         expectedOutput.clear();
 
@@ -416,7 +414,6 @@ void ConptyRoundtripTests::TestResizeHeight()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-1}")
     END_TEST_METHOD_PROPERTIES()
     int dy;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
@@ -430,7 +427,6 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto& hostSm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
     auto* termTb = term->_buffer.get();
-    // auto& termSm = *term->_stateMachine;
     const auto initialHostView = si.GetViewport();
     const auto initialTermView = term->GetViewport();
 
@@ -483,6 +479,11 @@ void ConptyRoundtripTests::TestResizeHeight()
         // ...
         // The <height> last row will have '0'+(50-height+1)
         const auto firstChar = static_cast<wchar_t>(L'0' + (50 - hostView.Height() + 1));
+
+        // If we increased the height of the buffer, then we're going to insert
+        // pad the top of the buffer with blank lines, to keep the real content
+        // we had at the bottom of the buffer.
+        // In that case, check for the first lines to be filled with spaces.
         const short firstRowWithChars = gsl::narrow_cast<short>(resizeDy > 0 ? resizeDy : 0);
         if (resizeDy > 0)
         {
@@ -496,7 +497,6 @@ void ConptyRoundtripTests::TestResizeHeight()
         // Don't include the last row of the viewport in this check, since it'll be blank
         for (short row = firstRowWithChars; row < hostView.Height() - 1; row++)
         {
-            // SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = hostTb.GetCellDataAt({ 0, row });
 
             auto expectedString = std::wstring(1, static_cast<wchar_t>(firstChar + row));
@@ -507,21 +507,12 @@ void ConptyRoundtripTests::TestResizeHeight()
             }
             VERIFY_ARE_EQUAL(expectedString, (iter++)->Chars(), NoThrowString().Format(L"%s", expectedString.data()));
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
-
-            // std::wstring actual{ (iter++)->Chars().data(), 1 };
-            // Log::Comment(NoThrowString().Format(
-            //     L"Expected, Actual:\"%s\", \"%s\"", expectedString.data(), actual.data()));
         }
 
         // Check the last row of the viewport here
         auto iter = hostTb.GetCellDataAt({ 0, hostView.Height() - 1 });
         VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
-
-        // std::wstring actual{ (iter++)->Chars().data(), 1 };
-        // Log::Comment(NoThrowString().Format(
-        //     L"Expected, Actual:\"%s\", \"%s\"", L" ", actual.data()));
     };
-    // verifyData(hostTb);
     verifyHostData(*hostTb);
     verifyTermData(*termTb);
 
@@ -544,8 +535,6 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
     VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
 
-    // verifyData(hostTb);
-    // verifyData(termTb);
     verifyHostData(*hostTb, dy);
     verifyTermData(*termTb);
 

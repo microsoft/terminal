@@ -1431,17 +1431,12 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (SUCCEEDED(hr))
     {
-        // if (isConpty)
         if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
         {
             const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
             cursorHeightInViewportBefore += diff;
             // TODO! Set the virtual top to the spot where we just inserted a
             // bunch of blank lines.
-
-            // TODO! Something seems to still be invalidating the bottom line,
-            // when you increase the height of the buffer. I dunno how. I need
-            // to debug this.
         }
 
         Cursor& newCursor = newTextBuffer->GetCursor();
