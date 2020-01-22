@@ -231,7 +231,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
 
     if (_backgroundImageOpacity)
