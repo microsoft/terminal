@@ -1706,7 +1706,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())),
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
                                                                    winrt::to_hstring(htmlData),
                                                                    winrt::to_hstring(rtfData));
         _clipboardCopyHandlers(*this, *copyArgs);
