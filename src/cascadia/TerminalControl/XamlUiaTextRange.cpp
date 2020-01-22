@@ -24,6 +24,18 @@ namespace XamlAutomation
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    // EmptyObject is our equivalent of UIAutomationCore::UiaGetReservedNotSupportedValue()
+    // This retrieves a value that is interpreted as "not supported".
+    class EmptyObject : public winrt::implements<EmptyObject, IInspectable>
+    {
+    public:
+        static IInspectable GetInstance()
+        {
+            static auto eo = make_self<EmptyObject>();
+            return eo.as<IInspectable>();
+        }
+    };
+
     XamlAutomation::ITextRangeProvider XamlUiaTextRange::Clone() const
     {
         UIA::ITextRangeProvider* pReturn;
@@ -88,7 +100,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            return nullptr;
+            // We _need_ to return an empty object here.
+            // Returning nullptr is an improper implementation of it being unsupported.
+            return EmptyObject::GetInstance();//*EmptyObject::GetInstance();
         }
     }
 
