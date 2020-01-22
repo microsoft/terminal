@@ -1292,6 +1292,35 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
+// - A private API call for changing the screen mode between normal and reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Parameters:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return value:
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate error code.
+[[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode)
+{
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetScreenReversed(reverseMode);
+
+        if (g.pRender)
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return STATUS_SUCCESS;
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+}
+
+// Routine Description:
 // - A private API call for making the cursor visible or not. Does not modify
 //      blinking state.
 // Parameters:
