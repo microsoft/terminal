@@ -121,7 +121,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         // Manually set the console into conpty mode. We're not actually going
         // to set up the pipes for conpty, but we want the console to behave
         // like it would in conpty mode.
-        gci.GetVtIo()->EnableConptyModeForTests();
+        g.EnableConptyModeForTests();
 
         expectedOutput.clear();
 
@@ -525,6 +525,7 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     auto resizeResult = term->UserResize(newViewportSize);
     VERIFY_SUCCEEDED(resizeResult);
+    // DebugBreak();
     _resizeConpty(newViewportSize.X, newViewportSize.Y);
     // After we resize, make sure to get the new textBuffers
     hostTb = &si.GetTextBuffer();

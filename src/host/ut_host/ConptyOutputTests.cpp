@@ -88,7 +88,7 @@ class ConptyOutputTests
         // Manually set the console into conpty mode. We're not actually going
         // to set up the pipes for conpty, but we want the console to behave
         // like it would in conpty mode.
-        gci.GetVtIo()->EnableConptyModeForTests();
+        g.EnableConptyModeForTests();
 
         expectedOutput.clear();
 
