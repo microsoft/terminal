@@ -1431,12 +1431,22 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (SUCCEEDED(hr))
     {
-        if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
+        // GH#3490 - In conpty mode, we want to pad new lines into to the top of
+        // the buffer when we increase the buffer height. Terminals typically
+        // keep the buffer contents "stuck" to the bottom of the viewport when
+        // they increase in height, moving lines from the scrollback into the
+        // viewport. We don't have a scrollback at all in conpty mode, but we
+        // can still keep the content we have at the bottom by inserting new
+        // lines at the top.
+        //
+        // When that happens, make sure to move our relative cursor position
+        // down, so that it stays in the same position relative to the bottom
+        // that it was before.
+
+        If we padded lines onto the top of the buffer, because we if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
         {
             const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
             cursorHeightInViewportBefore += diff;
-            // TODO! Set the virtual top to the spot where we just inserted a
-            // bunch of blank lines.
         }
 
         Cursor& newCursor = newTextBuffer->GetCursor();
