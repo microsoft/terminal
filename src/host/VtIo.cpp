@@ -206,6 +206,13 @@ bool VtIo::IsUsingVt() const
     return _objectsCreated;
 }
 
+#ifdef UNIT_TESTING
+void VtIo::EnableConptyModeForTests()
+{
+    _objectsCreated = true;
+}
+#endif
+
 // Routine Description:
 //  Potentially starts this VtIo's input thread and render engine.
 //      If the VtIo hasn't yet been given pipes, then this function will

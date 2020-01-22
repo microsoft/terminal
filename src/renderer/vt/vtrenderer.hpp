@@ -119,7 +119,7 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::Viewport _invalidRect;
 
         bool _fInvalidRectUsed;
-        COORD _lastRealCursor;
+        // COORD _lastRealCursor;
         COORD _lastText;
         COORD _scrollDelta;
 

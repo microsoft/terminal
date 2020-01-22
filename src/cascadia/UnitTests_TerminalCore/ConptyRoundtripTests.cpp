@@ -87,6 +87,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         // Set up some sane defaults
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
+
+        gci.GetVtIo()->EnableConptyModeForTests();
         // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // This doesn't actually set the host into VtIo mode. That gci function
         // requires the VtIo to actually be initialized, which it wont be in
@@ -426,8 +428,8 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
-    auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_buffer.get();
     // auto& termSm = *term->_stateMachine;
     const auto initialHostView = si.GetViewport();
     const auto initialTermView = term->GetViewport();
@@ -458,7 +460,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(50 - initialTermView.Height() + 1, secondTermView.Top());
     VERIFY_ARE_EQUAL(50, secondTermView.BottomInclusive());
 
-    auto verifyTermData = [&termTb]() {
+    auto verifyTermData = [](TextBuffer& termTb) {
         for (short row = 0; row < 50; row++)
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
@@ -473,7 +475,7 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
-    auto verifyHostData = [&hostTb, &si]() {
+    auto verifyHostData = [&si](TextBuffer& hostTb, const int resizeDy = 0) {
         const auto hostView = si.GetViewport();
         // The last row of the viewport should be empty
         // The second last row will have '0'+50
@@ -481,9 +483,18 @@ void ConptyRoundtripTests::TestResizeHeight()
         // ...
         // The <height> last row will have '0'+(50-height+1)
         const auto firstChar = static_cast<wchar_t>(L'0' + (50 - hostView.Height() + 1));
+        const short firstRowWithChars = gsl::narrow_cast<short>(resizeDy > 0 ? resizeDy : 0);
+        if (resizeDy > 0)
+        {
+            for (short row = 0; row < firstRowWithChars; row++)
+            {
+                auto iter = hostTb.GetCellDataAt({ 0, row });
+                VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+            }
+        }
 
         // Don't include the last row of the viewport in this check, since it'll be blank
-        for (short row = 0; row < hostView.Height() - 1; row++)
+        for (short row = firstRowWithChars; row < hostView.Height() - 1; row++)
         {
             // SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = hostTb.GetCellDataAt({ 0, row });
@@ -494,25 +505,33 @@ void ConptyRoundtripTests::TestResizeHeight()
             {
                 Log::Comment(NoThrowString().Format(L"row [%d] was mismatched", row));
             }
-            // VERIFY_ARE_EQUAL(expectedString, (iter++)->Chars(), NoThrowString().Format(L"%s", expectedString.data()));
-            std::wstring actual{ (iter++)->Chars().data(), 1 };
-            Log::Comment(NoThrowString().Format(
-                L"Expected, Actual:\"%s\", \"%s\"", expectedString.data(), actual.data()));
-            // VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+            VERIFY_ARE_EQUAL(expectedString, (iter++)->Chars(), NoThrowString().Format(L"%s", expectedString.data()));
+            VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+
+            // std::wstring actual{ (iter++)->Chars().data(), 1 };
+            // Log::Comment(NoThrowString().Format(
+            //     L"Expected, Actual:\"%s\", \"%s\"", expectedString.data(), actual.data()));
         }
 
         // Check the last row of the viewport here
         auto iter = hostTb.GetCellDataAt({ 0, hostView.Height() - 1 });
-        // VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+        VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+
+        // std::wstring actual{ (iter++)->Chars().data(), 1 };
+        // Log::Comment(NoThrowString().Format(
+        //     L"Expected, Actual:\"%s\", \"%s\"", L" ", actual.data()));
     };
     // verifyData(hostTb);
-    verifyHostData();
-    verifyTermData();
+    verifyHostData(*hostTb);
+    verifyTermData(*termTb);
 
     const COORD newViewportSize{ TerminalViewWidth, gsl::narrow_cast<short>(TerminalViewHeight + dy) };
     auto resizeResult = term->UserResize(newViewportSize);
     VERIFY_SUCCEEDED(resizeResult);
     _resizeConpty(newViewportSize.X, newViewportSize.Y);
+    // After we resize, make sure to get the new textBuffers
+    hostTb = &si.GetTextBuffer();
+    termTb = term->_buffer.get();
 
     // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
     const auto thirdHostView = si.GetViewport();
@@ -527,8 +546,8 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     // verifyData(hostTb);
     // verifyData(termTb);
-    verifyHostData();
-    verifyTermData();
+    verifyHostData(*hostTb, dy);
+    verifyTermData(*termTb);
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
