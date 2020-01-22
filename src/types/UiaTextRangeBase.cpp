@@ -9,9 +9,9 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::UiaTextRangeBaseTracing;
 
 // toggle these for additional logging in a debug build
-#define _DEBUG 1
-#define UIATEXTRANGE_DEBUG_MSGS 1
-//#undef UIATEXTRANGE_DEBUG_MSGS
+//#define _DEBUG 1
+//#define UIATEXTRANGE_DEBUG_MSGS 1
+#undef UIATEXTRANGE_DEBUG_MSGS
 
 IdType UiaTextRangeBase::id = 1;
 
@@ -1065,7 +1065,8 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         nextPos = resultPos;
         switch (moveDirection)
         {
-        case MovementDirection::Forward: {
+        case MovementDirection::Forward:
+        {
             if (nextPos == bufferEnd)
             {
                 fSuccess = false;
@@ -1082,7 +1083,8 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             }
             break;
         }
-        case MovementDirection::Backward: {
+        case MovementDirection::Backward:
+        {
             if (nextPos == bufferOrigin)
             {
                 fSuccess = false;
@@ -1142,7 +1144,8 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         auto nextPos = resultPos;
         switch (moveDirection)
         {
-        case MovementDirection::Forward: {
+        case MovementDirection::Forward:
+        {
             // can't move past end
             if (nextPos.Y >= bufferSize.BottomInclusive())
             {
@@ -1162,7 +1165,8 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             }
             break;
         }
-        case MovementDirection::Backward: {
+        case MovementDirection::Backward:
+        {
             // can't move past top
             if (!allowBottomExclusive && nextPos.Y == bufferSize.Top())
             {
@@ -1219,7 +1223,8 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     auto target = GetEndpoint(endpoint);
     switch (moveDirection)
     {
-    case MovementDirection::Forward: {
+    case MovementDirection::Forward:
+    {
         const auto documentEnd = bufferSize.EndInclusive();
         if (preventBufferEnd || target == documentEnd)
         {
@@ -1232,7 +1237,8 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         }
         break;
     }
-    case MovementDirection::Backward: {
+    case MovementDirection::Backward:
+    {
         const auto documentBegin = bufferSize.Origin();
         if (target == documentBegin)
         {

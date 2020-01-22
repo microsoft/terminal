@@ -202,7 +202,7 @@ class UiaTextRangeTests
         Log::Comment(L"For a degenerate range, comparing _start and _end should return 0");
         VERIFY_IS_TRUE(utr1->IsDegenerate());
         THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_Start, utr1.Get(), TextPatternRangeEndpoint_End, &comparison));
-        
+
         Log::Comment(L"_start and _end should match");
         THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_Start, utr2.Get(), TextPatternRangeEndpoint_Start, &comparison));
         VERIFY_IS_TRUE(comparison == 0);

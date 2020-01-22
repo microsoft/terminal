@@ -138,7 +138,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
             const auto start = foundLocation.first;
             const auto end = foundLocation.second;
             const auto bufferSize = _pData->GetTextBuffer().GetSize();
-            
+
             // make sure what was found is within the bounds of the current range
             if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end) < 0) ||
                 (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))

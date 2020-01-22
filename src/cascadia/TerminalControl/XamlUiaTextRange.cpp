@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // We _need_ to return an empty object here.
             // Returning nullptr is an improper implementation of it being unsupported.
-            return EmptyObject::GetInstance();//*EmptyObject::GetInstance();
+            return EmptyObject::GetInstance();
         }
     }
 
