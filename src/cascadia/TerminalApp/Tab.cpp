@@ -166,6 +166,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
+            IconPath(_lastIconPath);
             _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
         }
     }
@@ -199,6 +200,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
+            Title(text);
             _tabViewItem.Header(winrt::box_value(text));
         }
     }

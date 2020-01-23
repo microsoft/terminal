@@ -115,12 +115,12 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryCreateTab()
     {
-        // If you leave the Tab shared_ptr owned by the RunOnUIThread lambda, it
+        // If you leave the Tab ptr owned by the RunOnUIThread lambda, it
         // will crash when the test tears down. Not totally clear why, but make
         // sure it's owned outside the lambda
-        /*winrt::TerminalApp::Tab*/
+        winrt::com_ptr<winrt::TerminalApp::implementation::Tab> newTab{ nullptr };
 
-        auto result = RunOnUIThread([]() {
+        auto result = RunOnUIThread([&newTab]() {
             // Try creating all of:
             // 1. one of our pure c++ types (Profile)
             // 2. one of our c++winrt types (TerminalSettings, EchoConnection)
@@ -135,7 +135,7 @@ namespace TerminalAppLocalTests
             winrt::Microsoft::Terminal::TerminalControl::TermControl term{ settings, conn };
             VERIFY_IS_NOT_NULL(term);
 
-            auto newTab = winrt::make_self<winrt::TerminalApp::implementation::Tab>(profileGuid, term);
+            newTab = winrt::make_self<winrt::TerminalApp::implementation::Tab>(profileGuid, term);
             VERIFY_IS_NOT_NULL(newTab);
         });
 
