@@ -539,8 +539,10 @@ void ConptyRoundtripTests::TestResizeHeight()
     // The Terminal should be stuck on the bottom of the viewport
     const auto thirdTermView = term->GetViewport();
 
-    VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
-    VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
+    // VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
+    // VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
+    VERIFY_ARE_EQUAL(secondTermView.Top(), thirdTermView.Top());
+    VERIFY_ARE_EQUAL(50 + dy, thirdTermView.BottomInclusive());
 
     verifyHostData(*hostTb, dy);
     verifyTermData(*termTb);
@@ -555,6 +557,8 @@ void ConptyRoundtripTests::TestResizeHeight()
     // The Terminal should be stuck on the bottom of the viewport
     const auto fourthTermView = term->GetViewport();
 
-    VERIFY_ARE_EQUAL(50 - fourthTermView.Height() + 1, fourthTermView.Top());
-    VERIFY_ARE_EQUAL(50, fourthTermView.BottomInclusive());
+    // VERIFY_ARE_EQUAL(50 - fourthTermView.Height() + 1, fourthTermView.Top());
+    // VERIFY_ARE_EQUAL(50, fourthTermView.BottomInclusive());
+    VERIFY_ARE_EQUAL(secondTermView.Top(), fourthTermView.Top());
+    VERIFY_ARE_EQUAL(50 + dy, fourthTermView.BottomInclusive());
 }
