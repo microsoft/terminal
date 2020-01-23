@@ -162,6 +162,10 @@ _CompileShader(
     std::string target,
     std::string entry = "main")
 {
+#ifdef __INSIDE_WINDOWS
+    THROW_HR(E_UNEXPECTED);
+    return 0;
+#else
     Microsoft::WRL::ComPtr<ID3DBlob> code{};
     Microsoft::WRL::ComPtr<ID3DBlob> error{};
 
@@ -190,6 +194,7 @@ _CompileShader(
     }
 
     return code;
+#endif
 }
 
 // Routine Description:
