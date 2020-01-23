@@ -753,15 +753,19 @@ namespace winrt::TerminalApp::implementation
     // - tabIndex: the index of the tab to be removed
     void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
+        // Removing the tab from the collection should destroy its control and disconnect its connection,
+        // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
+        auto iterator = _tabs.begin() + tabIndex;
+        (*iterator)->Shutdown();
+
+        _tabs.erase(iterator);
+        _tabView.TabItems().RemoveAt(tabIndex);
+
         // To close the window here, we need to close the hosting window.
-        if (_tabs.size() == 1)
+        if (_tabs.size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-
-        // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndex);
-        _tabView.TabItems().RemoveAt(tabIndex);
 
         auto focusedTabIndex = _GetFocusedTabIndex();
         if (gsl::narrow_cast<int>(tabIndex) == focusedTabIndex)
