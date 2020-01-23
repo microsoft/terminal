@@ -287,14 +287,14 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
         }
         else if (oldView.Height() < newView.Height())
         {
-            // We grew in height. We inserted empty lines at the top of the
-            // buffer. The cursor is now _actually_ lower (larger Y/row value)
-            // than it was before.
-            _lastText.Y += gsl::narrow_cast<short>(newView.Height() - oldView.Height());
-            // The text content will try and stay "stuck" at the bottom of the
-            // viewport of the terminal, and invalidating the bottom here can
-            // cause unnecessary lines to get written to the terminal. See
-            // GH#3490.
+            // // We grew in height. We inserted empty lines at the top of the
+            // // buffer. The cursor is now _actually_ lower (larger Y/row value)
+            // // than it was before.
+            // _lastText.Y += gsl::narrow_cast<short>(newView.Height() - oldView.Height());
+            // // The text content will try and stay "stuck" at the bottom of the
+            // // viewport of the terminal, and invalidating the bottom here can
+            // // cause unnecessary lines to get written to the terminal. See
+            // // GH#3490.
         }
         else if (oldView.Height() > newView.Height())
         {

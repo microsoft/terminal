@@ -1425,9 +1425,9 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     short cursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const bool isConpty = gci.IsInVtIoMode();
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), isConpty);
+    // auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // const bool isConpty = gci.IsInVtIoMode();
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), false, false);
 
     if (SUCCEEDED(hr))
     {
@@ -1443,12 +1443,12 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         // down, so that it stays in the same position relative to the bottom
         // that it was before.
 
-        if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
-        {
-            const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
-            cursorHeightInViewportBefore += diff;
-            gci.GetVtIo()->SetVirtualTop(diff);
-        }
+        // if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
+        // {
+        //     const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
+        //     cursorHeightInViewportBefore += diff;
+        //     gci.GetVtIo()->SetVirtualTop(diff);
+        // }
 
         Cursor& newCursor = newTextBuffer->GetCursor();
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
