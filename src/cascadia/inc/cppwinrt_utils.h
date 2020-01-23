@@ -107,6 +107,9 @@ public:                                               \
 private:                                              \
     type _##name{ __VA_ARGS__ };
 
+// Use this macro to quickly implement both the getter and setter for an observable property.
+// This is similar to the GETSET_PROPERTY macro above, except this will also raise a
+// PropertyChanged event with the name of the property that has changed inside of the settter.
 #define DEFINE_OBSERVABLE_GETSET_PROPERTY(type, name, event)                       \
 public:                                                                            \
     type name() { return _##name; };                                               \
