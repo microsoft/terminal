@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
-        std::vector<std::shared_ptr<Tab>> _tabs;
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab> _tabs;
 
         bool _isFullscreen{ false };
 
@@ -87,15 +87,15 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
         void _RegisterActionCallbacks();
 
-        void _UpdateTitle(std::shared_ptr<Tab> tab);
-        void _UpdateTabIcon(std::shared_ptr<Tab> tab);
+        void _UpdateTitle(winrt::TerminalApp::Tab tab);
+        void _UpdateTabIcon(winrt::TerminalApp::Tab tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, winrt::TerminalApp::Tab hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const int tabIndex);

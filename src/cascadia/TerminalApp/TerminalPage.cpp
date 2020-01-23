@@ -39,7 +39,7 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{}
+        _tabs{ winrt::single_threaded_observable_vector<winrt::TerminalApp::Tab>() }
     {
         InitializeComponent();
     }
@@ -81,9 +81,9 @@ namespace winrt::TerminalApp::implementation
                 if (from.has_value() && to.has_value() && to != from)
                 {
                     auto& tabs{ page->_tabs };
-                    auto tab = tabs.at(from.value());
-                    tabs.erase(tabs.begin() + from.value());
-                    tabs.insert(tabs.begin() + to.value(), tab);
+                    auto tab = tabs.GetAt(from.value());
+                    tabs.RemoveAt(from.value());
+                    tabs.InsertAt(to.value(), tab);
                 }
 
                 page->_rearranging = false;
@@ -411,8 +411,8 @@ namespace winrt::TerminalApp::implementation
         const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
         _CreateNewTabFromSettings(profileGuid, settings);
-
-        const int tabCount = static_cast<int>(_tabs.size());
+        
+        const int tabCount = static_cast<int>(_tabs.Size());
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
                                         newTerminalArgs.Profile().empty());
@@ -449,20 +449,22 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
-        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
+        auto newTabProjection = winrt::make<Tab>(profileGuid, term);
+        _tabs.Append(newTabProjection);
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(term, newTab);
+        _RegisterTerminalEvents(term, newTabProjection);
 
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
-        std::weak_ptr<Tab> weakTabPtr = newTab;
+        auto weakTab = make_weak(newTabProjection);
 
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        newTab->ActivePaneChanged([weakTabPtr, weakThis{ get_weak() }]() {
+        auto newTabImpl = winrt::get_self<implementation::Tab>(newTabProjection);
+        newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
-            auto tab{ weakTabPtr.lock() };
+            auto tab{ weakTab.get() };
 
             if (page && tab)
             {
@@ -474,20 +476,20 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        auto tabViewItem = newTab->GetTabViewItem();
+        auto tabViewItem = newTabImpl->GetTabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 
         // Set this tab's icon to the icon from the user's profile
         const auto* const profile = _settings->FindProfile(profileGuid);
         if (profile != nullptr && profile->HasIcon())
         {
-            newTab->UpdateIcon(profile->GetExpandedIconPath());
+            newTabImpl->UpdateIcon(profile->GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+        newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (auto page{ weakThis.get() })
             {
                 page->_RemoveOnCloseRoutine(tabViewItem, page);
@@ -658,12 +660,14 @@ namespace winrt::TerminalApp::implementation
     //   TitleChanged event.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
+    void TerminalPage::_UpdateTitle(winrt::TerminalApp::Tab tab)
     {
-        auto newTabTitle = tab->GetActiveTitle();
+        auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+
+        auto newTabTitle = tabImpl->GetActiveTitle();
 
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+            tabImpl->IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
@@ -674,20 +678,21 @@ namespace winrt::TerminalApp::implementation
     //   tab's icon to that icon.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTabIcon(std::shared_ptr<Tab> tab)
+    void TerminalPage::_UpdateTabIcon(winrt::TerminalApp::Tab tab)
     {
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+        const auto lastFocusedProfileOpt = tabImpl->GetFocusedProfile();
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
             const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
+                tabImpl->UpdateIcon(matchingProfile->GetExpandedIconPath());
             }
             else
             {
-                tab->UpdateIcon({});
+                tabImpl->UpdateIcon({});
             }
         }
     }
@@ -708,7 +713,7 @@ namespace winrt::TerminalApp::implementation
         // show the tab bar.
         const bool isVisible = (!_isFullscreen) &&
                                (_settings->GlobalSettings().GetShowTabsInTitlebar() ||
-                                (_tabs.size() > 1) ||
+                                (_tabs.Size() > 1) ||
                                 _settings->GlobalSettings().GetAlwaysShowTabs());
 
         // collapse/show the tabs themselves
@@ -724,7 +729,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_DuplicateTabViewItem()
     {
         const int& focusedTabIndex = _GetFocusedTabIndex();
-        const auto& _tab = _tabs.at(focusedTabIndex);
+        const auto& _tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
 
         const auto& profileGuid = _tab->GetFocusedProfile();
         if (profileGuid.has_value())
@@ -754,19 +759,19 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
         // To close the window here, we need to close the hosting window.
-        if (_tabs.size() == 1)
+        if (_tabs.Size() == 1)
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndex);
+        _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
 
         auto focusedTabIndex = _GetFocusedTabIndex();
         if (gsl::narrow_cast<int>(tabIndex) == focusedTabIndex)
         {
-            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.Size());
             if (focusedTabIndex >= tabCount)
             {
                 focusedTabIndex = tabCount - 1;
@@ -789,8 +794,10 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
+    void TerminalPage::_RegisterTerminalEvents(TermControl term, winrt::TerminalApp::Tab hostingTab)
     {
+        auto tabImpl = winrt::get_self<implementation::Tab>(hostingTab);
+
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
         term.CopyToClipboard({ this, &TerminalPage::_CopyToClipboardHandler });
@@ -799,15 +806,15 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
-        hostingTab->BindEventHandlers(term);
+        tabImpl->BindEventHandlers(term);
 
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
-        std::weak_ptr<Tab> weakTabPtr = hostingTab;
+        auto weakTab = make_weak(hostingTab);
 
-        term.TitleChanged([weakTabPtr, weakThis{ get_weak() }](auto newTitle) {
+        term.TitleChanged([weakTab, weakThis{ get_weak() }](auto newTitle) {
             auto page{ weakThis.get() };
-            auto tab{ weakTabPtr.lock() };
+            auto tab{ weakTab.get() };
 
             if (page && tab)
             {
@@ -824,7 +831,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        auto tabCount = _tabs.size();
+        auto tabCount = _tabs.Size();
         // Wraparound math. By adding tabCount and then calculating modulo tabCount,
         // we clamp the values to the range [0, tabCount) while still supporting moving
         // leftward from 0 to tabCount - 1.
@@ -839,7 +846,7 @@ namespace winrt::TerminalApp::implementation
     // true iff we were able to select that tab index, false otherwise
     bool TerminalPage::_SelectTab(const int tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
+        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.Size()))
         {
             _SetFocusedTabIndex(tabIndex);
             return true;
@@ -858,13 +865,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_MoveFocus(const Direction& direction)
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();
-        _tabs[focusedTabIndex]->NavigateFocus(direction);
+        auto focusedTab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
+        focusedTab->NavigateFocus(direction);
     }
 
     winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
+        auto focusedTab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
         return focusedTab->GetActiveTerminalControl();
     }
 
@@ -895,7 +903,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            auto tab = _tabs.at(tabIndex);
+            auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(tabIndex));
             _tabView.SelectedItem(tab->GetTabViewItem());
         }
     }
@@ -915,7 +923,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CloseFocusedPane()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        auto focusedTab{ winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex)) };
         focusedTab->ClosePane();
     }
 
@@ -924,7 +932,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.size() > 1)
+        if (_tabs.Size() > 1)
         {
             _ShowCloseWarningDialog();
         }
@@ -939,7 +947,7 @@ namespace winrt::TerminalApp::implementation
     //   on its own when the last tab is closed.
     void TerminalPage::_CloseAllTabs()
     {
-        while (!_tabs.empty())
+        while (_tabs.Size() != 0)
         {
             _RemoveTabViewItemByIndex(0);
         }
@@ -954,7 +962,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_Scroll(int delta)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        _tabs[focusedTabIndex]->Scroll(delta);
+        auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
+        tab->Scroll(delta);
     }
 
     // Method Description:
@@ -981,9 +990,10 @@ namespace winrt::TerminalApp::implementation
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
         const int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
+        auto tabProj = _tabs.GetAt(focusedTabIndex);
+        auto tabImpl = winrt::get_self<implementation::Tab>(tabProj);
 
-        const auto canSplit = focusedTab->CanSplitPane(splitType);
+        const auto canSplit = tabImpl->CanSplitPane(splitType);
 
         if (!canSplit)
         {
@@ -993,9 +1003,9 @@ namespace winrt::TerminalApp::implementation
         TermControl newControl{ controlSettings, controlConnection };
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, focusedTab);
+        _RegisterTerminalEvents(newControl, tabProj);
 
-        focusedTab->SplitPane(splitType, realGuid, newControl);
+        tabImpl->SplitPane(splitType, realGuid, newControl);
     }
 
     // Method Description:
@@ -1009,7 +1019,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ResizePane(const Direction& direction)
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();
-        _tabs[focusedTabIndex]->ResizePane(direction);
+        auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
+        tab->ResizePane(direction);
     }
 
     // Method Description:
@@ -1026,7 +1037,9 @@ namespace winrt::TerminalApp::implementation
         const auto focusedTabIndex = _GetFocusedTabIndex();
         const auto control = _GetActiveControl();
         const auto termHeight = control.GetViewHeight();
-        _tabs[focusedTabIndex]->Scroll(termHeight * delta);
+
+        auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
+        tab->Scroll(termHeight * delta);
     }
 
     // Method Description:
@@ -1136,7 +1149,8 @@ namespace winrt::TerminalApp::implementation
         if (_settings->GlobalSettings().SnapToGridOnResize())
         {
             const auto focusedTabIndex = _GetFocusedTabIndex();
-            return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+            auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(focusedTabIndex));
+            return tab->CalcSnappedDimension(widthOrHeight, dimension);
         }
         else
         {
@@ -1317,14 +1331,15 @@ namespace winrt::TerminalApp::implementation
             // Unfocus all the tabs.
             for (auto tab : _tabs)
             {
-                tab->SetFocused(false);
+                auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+                tabImpl->SetFocused(false);
             }
 
             if (selectedIndex >= 0)
             {
                 try
                 {
-                    auto tab = _tabs.at(selectedIndex);
+                    auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(selectedIndex));
 
                     _tabContent.Children().Clear();
                     _tabContent.Children().Append(tab->GetRootElement());
@@ -1348,9 +1363,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
         const auto newSize = e.NewSize();
-        for (auto& tab : _tabs)
+        for (auto tab : _tabs)
         {
-            tab->ResizeContent(newSize);
+            auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+            tabImpl->ResizeContent(newSize);
         }
     }
 
@@ -1400,15 +1416,16 @@ namespace winrt::TerminalApp::implementation
             const GUID profileGuid = profile.GetGuid();
             const auto settings = _settings->BuildSettings(profileGuid);
 
-            for (auto& tab : _tabs)
+            for (auto tab : _tabs)
             {
                 // Attempt to reload the settings of any panes with this profile
-                tab->UpdateSettings(settings, profileGuid);
+                auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+                tabImpl->UpdateSettings(settings, profileGuid);
             }
         }
 
         // Update the icon of the tab for the currently focused profile in that tab.
-        for (auto& tab : _tabs)
+        for (auto tab : _tabs)
         {
             _UpdateTabIcon(tab);
             _UpdateTitle(tab);
