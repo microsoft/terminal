@@ -37,6 +37,7 @@ public:
     winrt::hstring GetActiveTitle() const;
     void SetTabText(const winrt::hstring& text);
 
+    void Shutdown();
     void ClosePane();
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
