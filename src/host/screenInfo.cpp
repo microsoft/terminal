@@ -1455,7 +1455,6 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = cursorHeightInViewportAfter - cursorHeightInViewportBefore;
-
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
         _textBuffer.swap(newTextBuffer);

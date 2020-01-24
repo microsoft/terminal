@@ -19,7 +19,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    // _previousLineWrapped(false),
+    _previousLineWrapped(false),
     _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
@@ -235,8 +235,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
 
-    _trace.TraceMoveCursor(coord);
-
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -250,15 +248,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            bool previousLineWrapped = false;
-            if (_wrappedRow.has_value())
+            if (_previousLineWrapped)
             {
-                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
-            }
-
-            if (previousLineWrapped)
-            {
-                _trace.TraceWrapped();
                 hr = S_OK;
             }
             else
@@ -307,9 +298,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         _newBottomLine = false;
     }
     _deferredCursorPos = INVALID_COORDS;
-
-    _wrappedRow = std::nullopt;
-
     return hr;
 }
 
