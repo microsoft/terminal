@@ -1425,8 +1425,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     short cursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    // auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // const bool isConpty = gci.IsInVtIoMode();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const bool isConpty = gci.IsInVtIoMode();
     HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), false, false);
 
     if (SUCCEEDED(hr))
@@ -1458,6 +1458,27 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
         _textBuffer.swap(newTextBuffer);
+    }
+
+    if (isConpty)
+    {
+        // Loop through all the rows of the old buffer and reprint them into the new buffer
+        // for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
+        auto bottom = std::max(_textBuffer->GetCursor().GetPosition().Y,
+                               std::min(_viewport.BottomInclusive(),
+                                        _textBuffer->GetLastNonSpaceCharacter().Y));
+        bool foundWrappedLine = false;
+        for (short y = _viewport.Top(); y <= bottom; y++)
+        {
+            // Fetch the row and its "right" which is the last printable character.
+            const ROW& row = _textBuffer->GetRowByOffset(y);
+            const CharRow& charRow = row.GetCharRow();
+            if (foundWrappedLine || charRow.WasWrapForced())
+            {
+                foundWrappedLine = true;
+                _renderTarget.TriggerRedraw(Viewport::FromDimensions({ 0, y }, _viewport.Width(), 1));
+            }
+        }
     }
 
     return NTSTATUS_FROM_HRESULT(hr);

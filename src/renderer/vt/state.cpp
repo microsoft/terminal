@@ -279,30 +279,30 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 
     if (SUCCEEDED(hr))
     {
-        if (oldView.Width() != newView.Width())
-        {
-            // Viewport is a different width now - just update it all. We may
-            // have re-wrapped the buffer contents.
-            hr = InvalidateAll();
-        }
-        else if (oldView.Height() < newView.Height())
-        {
-            // // We grew in height. We inserted empty lines at the top of the
-            // // buffer. The cursor is now _actually_ lower (larger Y/row value)
-            // // than it was before.
-            // _lastText.Y += gsl::narrow_cast<short>(newView.Height() - oldView.Height());
-            // // The text content will try and stay "stuck" at the bottom of the
-            // // viewport of the terminal, and invalidating the bottom here can
-            // // cause unnecessary lines to get written to the terminal. See
-            // // GH#3490.
-        }
-        else if (oldView.Height() > newView.Height())
-        {
-            // We shrunk in height. We don't really need to do anything here.
-            // Shrinking in height will remove lines from the top of the buffer
-            // (pushing them into scrollback in the terminal).
-            // The cursor will stay in the same relative position.
-        }
+        // if (oldView.Width() != newView.Width())
+        // {
+        //     // Viewport is a different width now - just update it all. We may
+        //     // have re-wrapped the buffer contents.
+        //     hr = InvalidateAll();
+        // }
+        // else if (oldView.Height() < newView.Height())
+        // {
+        //     // // We grew in height. We inserted empty lines at the top of the
+        //     // // buffer. The cursor is now _actually_ lower (larger Y/row value)
+        //     // // than it was before.
+        //     // _lastText.Y += gsl::narrow_cast<short>(newView.Height() - oldView.Height());
+        //     // // The text content will try and stay "stuck" at the bottom of the
+        //     // // viewport of the terminal, and invalidating the bottom here can
+        //     // // cause unnecessary lines to get written to the terminal. See
+        //     // // GH#3490.
+        // }
+        // else if (oldView.Height() > newView.Height())
+        // {
+        //     // We shrunk in height. We don't really need to do anything here.
+        //     // Shrinking in height will remove lines from the top of the buffer
+        //     // (pushing them into scrollback in the terminal).
+        //     // The cursor will stay in the same relative position.
+        // }
     }
     _resized = true;
     return hr;

@@ -413,15 +413,16 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
 
 void ConptyRoundtripTests::TestResizeHeight()
 {
+    // This test class is _60_ tests to ensure that resizing the terminal works
+    // with conpty correctly. There's a lot of min/maxing in expressions here,
+    // to account for the sheer number of cases here, and that we have to handle
+    // both resizing larger and smaller all in one test.
+
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
-        // TEST_METHOD_PROPERTY(L"Data:dx", L"{0}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 1}")
         TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50, 200}")
-        // TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50}")
     END_TEST_METHOD_PROPERTIES()
     int dx, dy;
     int printedRows;
@@ -452,13 +453,15 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     for (auto i = 0; i < printedRows; i++)
     {
+        // This looks insane, but this expression is carefully crafted to give
+        // us only printable characters, starting with `!` (0n33).
+        // Similar statements are used elsewhere throughout this test.
         auto wstr = std::wstring(1, static_cast<wchar_t>((i) % 93) + 33);
-        // Log::Comment(NoThrowString().Format(L"Writing \"%s\\r\\n\" to conpty", wstr.c_str()));
         hostSm.ProcessString(wstr);
         hostSm.ProcessString(L"\r\n");
     }
 
-    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty doesn't have a scrollback, it's view's origin is always 0,0
     const auto secondHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, secondHostView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight, secondHostView.BottomExclusive());
@@ -466,20 +469,20 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     const auto secondTermView = term->GetViewport();
+    // If we've printed more lines than the height of the buffer, then we're
+    // expecting the viewport to have moved down. Otherwise, the terminal's
+    // viewport will stay at 0,0.
     const auto expectedTerminalViewBottom = std::max(std::min(gsl::narrow_cast<short>(printedRows + 1),
                                                               term->GetBufferHeight()),
                                                      term->GetViewport().Height());
 
-    // VERIFY_ARE_EQUAL(std::max(0, expectedTerminalViewBottom - initialTermView.Height() + 1), secondTermView.Top());
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom, secondTermView.BottomExclusive());
-    // VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height() + 1, secondTermView.Top());
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height(), secondTermView.Top());
 
     auto verifyTermData = [&expectedTerminalViewBottom, &printedRows, this, &initialTerminalBufferHeight](TextBuffer& termTb, const int resizeDy = 0) {
-        // for (short row = 0; row < expectedTerminalViewBottom; row++)
-        short row = 0;
-        // const auto numLostRows = std::max(0, printedRows - term->GetBufferHeight() + 1);
-        // const auto numLostRows = std::max(0, printedRows - initialTerminalBufferHeight + 1);
+        // Some number of lines of text were lost from the scrollback. The
+        // number of lines lost will be determined by whichever of the initial
+        // or current buffer is smaller.
         const auto numLostRows = std::max(0,
                                           printedRows - std::min(term->GetTextBuffer().GetSize().Height(), initialTerminalBufferHeight) + 1);
 
@@ -487,9 +490,9 @@ void ConptyRoundtripTests::TestResizeHeight()
                                            expectedTerminalViewBottom) -
                                   1 + std::min(resizeDy, 0);
 
-        for (; row < rowsWithText; row++)
+        for (short row = 0; row < rowsWithText; row++)
         {
-            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+            // SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = termTb.GetCellDataAt({ 0, row });
             const wchar_t expectedChar = static_cast<wchar_t>((row + numLostRows) % 93) + 33;
 
@@ -540,6 +543,7 @@ void ConptyRoundtripTests::TestResizeHeight()
         // be blank. We'll check it in the below loop.
         for (; row < rowsWithText; row++)
         {
+            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = hostTb.GetCellDataAt({ 0, row });
 
             const auto expectedChar = static_cast<wchar_t>(((firstChar + row) % 93) + 33);
@@ -556,11 +560,12 @@ void ConptyRoundtripTests::TestResizeHeight()
         // Check that the remaining rows in the viewport are empty.
         for (; row < hostView.Height(); row++)
         {
+            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = hostTb.GetCellDataAt({ 0, row });
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
-    // DebugBreak();
+
     verifyHostData(*hostTb);
     verifyTermData(*termTb);
 
@@ -606,4 +611,8 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     VERIFY_ARE_EQUAL(secondTermView.Top(), fourthTermView.Top());
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, fourthTermView.BottomExclusive());
+
+    verifyHostData(*hostTb, dy);
+    // Note that at this point, nothing should have changed with the Terminal.
+    verifyTermData(*termTb, dy);
 }
