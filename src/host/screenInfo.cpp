@@ -1477,6 +1477,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
             if (foundWrappedLine || charRow.WasWrapForced())
             {
                 foundWrappedLine = true;
+                _renderTarget.TriggerRedraw(Viewport::FromDimensions({ 0, y }, _viewport.Width(), 1));
             }
         }
     }
