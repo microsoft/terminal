@@ -473,31 +473,32 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
-    auto verifyHostData = [&si](TextBuffer& hostTb, const int resizeDy = 0) {
+    auto verifyHostData = [&si, &initialHostView](TextBuffer& hostTb, const int resizeDy = 0) {
         const auto hostView = si.GetViewport();
+
+        const short originalViewHeight = gsl::narrow_cast<short>(resizeDy < 0 ?
+                                                                     initialHostView.Height() + resizeDy :
+                                                                     initialHostView.Height());
+
         // The last row of the viewport should be empty
         // The second last row will have '0'+50
         // The third last row will have '0'+49
         // ...
         // The <height> last row will have '0'+(50-height+1)
-        const auto firstChar = static_cast<wchar_t>(L'0' + (50 - hostView.Height() + 1));
+        // const auto firstChar = static_cast<wchar_t>(L'0' + (50 - hostView.Height() + 1));
+        // const auto firstChar = static_cast<wchar_t>(L'0' + (50 - initialHostView.Height() + 1));
+        const auto firstChar = static_cast<wchar_t>(L'0' + (50 - originalViewHeight + 1));
 
         // If we increased the height of the buffer, then we're going to insert
         // pad the top of the buffer with blank lines, to keep the real content
         // we had at the bottom of the buffer.
         // In that case, check for the first lines to be filled with spaces.
-        const short firstRowWithChars = gsl::narrow_cast<short>(resizeDy > 0 ? resizeDy : 0);
-        if (resizeDy > 0)
-        {
-            for (short row = 0; row < firstRowWithChars; row++)
-            {
-                auto iter = hostTb.GetCellDataAt({ 0, row });
-                VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
-            }
-        }
+        // const short firstRowWithChars = gsl::narrow_cast<short>(resizeDy > 0 ? resizeDy : 0);
+        const short firstRowWithChars = gsl::narrow_cast<short>(0);
 
         // Don't include the last row of the viewport in this check, since it'll be blank
-        for (short row = firstRowWithChars; row < hostView.Height() - 1; row++)
+        short row = firstRowWithChars;
+        for (; row < originalViewHeight - 1; row++)
         {
             auto iter = hostTb.GetCellDataAt({ 0, row });
 
@@ -511,9 +512,18 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
 
-        // Check the last row of the viewport here
-        auto iter = hostTb.GetCellDataAt({ 0, hostView.Height() - 1 });
-        VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+        // // Check the last row of the viewport here
+        // auto iter = hostTb.GetCellDataAt({ 0, hostView.Height() - 1 });
+        // VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+
+        // if (resizeDy > 0)
+        {
+            for (; row < hostView.Height(); row++)
+            {
+                auto iter = hostTb.GetCellDataAt({ 0, row });
+                VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
+            }
+        }
     };
     verifyHostData(*hostTb);
     verifyTermData(*termTb);
