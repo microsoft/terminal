@@ -162,6 +162,50 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
+
+        _root.AllowDrop(true);
+        _root.Drop({ get_weak(), &TermControl::_DragDropHandler });
+    }
+
+    winrt::fire_and_forget TermControl::_DoDragDrop(Windows::UI::Xaml::DragEventArgs const e)
+    {
+        if (e.DataView().Contains(Windows::ApplicationModel::DataTransfer::StandardDataFormats::StorageItems()))
+        {
+            auto f = e.DataView();
+            auto g = f.GetStorageItemsAsync();
+            //auto items = co_await g.get();
+            auto items = co_await g;
+            // auto items = f.GetStorageItemsAsync;
+            if (items.Size() > 0)
+            {
+                for (auto item : items)
+                {
+                    auto n = item.Name();
+
+                    WriteInput(n);
+                }
+                // for (auto appFile : items.OfType<StorageFile>().Select(storageFile => new AppFile { Name = storageFile.Name, File = storageFile }))
+                // {
+                //     this.Files.Add(appFile);
+                // }
+            }
+        }
+        // e;
+
+        // // Dispatch a call to the UI thread to apply the new settings to the
+        // // terminal.
+        // co_await winrt::resume_foreground(_root.Dispatcher());
+    }
+
+    void TermControl::_DragDropHandler(Windows::Foundation::IInspectable const& sender,
+                                       Windows::UI::Xaml::DragEventArgs const& e)
+    {
+        e;
+        sender;
+        auto a = 0;
+        a++;
+        a;
+        _DoDragDrop(e);
     }
 
     // Method Description:

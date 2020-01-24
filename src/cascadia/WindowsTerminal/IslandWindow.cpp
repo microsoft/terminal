@@ -293,11 +293,11 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             return 0; // eat the message
         }
     }
-    case WM_DROPFILES:
-    {
-        _HandleDrop(reinterpret_cast<HDROP>(wparam));
-        return 0;
-    }
+    // case WM_DROPFILES:
+    // {
+    //     _HandleDrop(reinterpret_cast<HDROP>(wparam));
+    //     return 0;
+    // }
     case WM_NCLBUTTONDOWN:
     case WM_NCLBUTTONUP:
     case WM_NCMBUTTONDOWN:
