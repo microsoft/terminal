@@ -476,6 +476,21 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto verifyHostData = [&si, &initialHostView](TextBuffer& hostTb, const int resizeDy = 0) {
         const auto hostView = si.GetViewport();
 
+        // In the host, there are two regions we're interested in:
+
+        // 1. the first section of the buffer with the output in it. Before
+        //    we're resized, this will be filled with one character on each row.
+        // 2. The second area below the first that's empty (filled with spaces).
+        //    Initially, this is only one row.
+        // After we resize, different things will happen.
+        // * If we decrease the height of the buffer, the characters in the
+        //   buffer will all move _up_ the same number of rows. We'll want to
+        //   only check the first initialView+dy rows for characters.
+        // * If we increase the height, rows will be added at the bottom. We'll
+        //   want to check the initial viewport height for the original
+        //   characters, but then we'll want to look for more blank rows at the
+        //   bottom. The characters in the initial viewport won't have moved.
+
         const short originalViewHeight = gsl::narrow_cast<short>(resizeDy < 0 ?
                                                                      initialHostView.Height() + resizeDy :
                                                                      initialHostView.Height());
@@ -485,19 +500,11 @@ void ConptyRoundtripTests::TestResizeHeight()
         // The third last row will have '0'+49
         // ...
         // The <height> last row will have '0'+(50-height+1)
-        // const auto firstChar = static_cast<wchar_t>(L'0' + (50 - hostView.Height() + 1));
-        // const auto firstChar = static_cast<wchar_t>(L'0' + (50 - initialHostView.Height() + 1));
         const auto firstChar = static_cast<wchar_t>(L'0' + (50 - originalViewHeight + 1));
 
-        // If we increased the height of the buffer, then we're going to insert
-        // pad the top of the buffer with blank lines, to keep the real content
-        // we had at the bottom of the buffer.
-        // In that case, check for the first lines to be filled with spaces.
-        // const short firstRowWithChars = gsl::narrow_cast<short>(resizeDy > 0 ? resizeDy : 0);
-        const short firstRowWithChars = gsl::narrow_cast<short>(0);
-
-        // Don't include the last row of the viewport in this check, since it'll be blank
-        short row = firstRowWithChars;
+        short row = 0;
+        // Don't include the last row of the viewport in this check, since it'll
+        // be blank. We'll check it in the below loop.
         for (; row < originalViewHeight - 1; row++)
         {
             auto iter = hostTb.GetCellDataAt({ 0, row });
@@ -512,17 +519,11 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
 
-        // // Check the last row of the viewport here
-        // auto iter = hostTb.GetCellDataAt({ 0, hostView.Height() - 1 });
-        // VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
-
-        // if (resizeDy > 0)
+        // Check that the remaining rows in the viewport are empty.
+        for (; row < hostView.Height(); row++)
         {
-            for (; row < hostView.Height(); row++)
-            {
-                auto iter = hostTb.GetCellDataAt({ 0, row });
-                VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
-            }
+            auto iter = hostTb.GetCellDataAt({ 0, row });
+            VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
     verifyHostData(*hostTb);
@@ -533,10 +534,11 @@ void ConptyRoundtripTests::TestResizeHeight()
         gsl::narrow_cast<short>(TerminalViewHeight + dy)
     };
 
+    Log::Comment(NoThrowString().Format(L"Resize the Terminal and conpty here"));
     auto resizeResult = term->UserResize(newViewportSize);
     VERIFY_SUCCEEDED(resizeResult);
-    // DebugBreak();
     _resizeConpty(newViewportSize.X, newViewportSize.Y);
+
     // After we resize, make sure to get the new textBuffers
     hostTb = &si.GetTextBuffer();
     termTb = term->_buffer.get();
@@ -546,17 +548,17 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(0, thirdHostView.Top());
     VERIFY_ARE_EQUAL(newViewportSize.Y, thirdHostView.BottomExclusive());
 
-    // The Terminal should be stuck on the bottom of the viewport
+    // The Terminal should be stuck to the top of the viewport.
     const auto thirdTermView = term->GetViewport();
 
-    // VERIFY_ARE_EQUAL(50 - thirdTermView.Height() + 1, thirdTermView.Top());
-    // VERIFY_ARE_EQUAL(50, thirdTermView.BottomInclusive());
     VERIFY_ARE_EQUAL(secondTermView.Top(), thirdTermView.Top());
     VERIFY_ARE_EQUAL(50 + dy, thirdTermView.BottomInclusive());
 
     verifyHostData(*hostTb, dy);
+    // Note that at this point, nothing should have changed with the Terminal.
     verifyTermData(*termTb);
 
+    Log::Comment(NoThrowString().Format(L"Paint a frame to update the Terminal"));
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
@@ -564,11 +566,9 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(0, fourthHostView.Top());
     VERIFY_ARE_EQUAL(newViewportSize.Y, fourthHostView.BottomExclusive());
 
-    // The Terminal should be stuck on the bottom of the viewport
+    // The Terminal should be stuck to the top of the viewport.
     const auto fourthTermView = term->GetViewport();
 
-    // VERIFY_ARE_EQUAL(50 - fourthTermView.Height() + 1, fourthTermView.Top());
-    // VERIFY_ARE_EQUAL(50, fourthTermView.BottomInclusive());
     VERIFY_ARE_EQUAL(secondTermView.Top(), fourthTermView.Top());
     VERIFY_ARE_EQUAL(50 + dy, fourthTermView.BottomInclusive());
 }

@@ -175,67 +175,44 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         return S_FALSE;
     }
-    // const short dy = gsl::narrow_cast<short>(viewportSize.Y - oldDimensions.Y);
+
     const auto dy = viewportSize.Y - oldDimensions.Y;
-    // const bool resizeDown = viewportSize.Y < oldDimensions.Y;
-    // const bool changedWidth = viewportSize.X != oldDimensions.X;
-    const bool resizeDown = false;
-    if (resizeDown)
-    // if (resizeDown && !changedWidth)
+
+    // We're going to attempt to "stick to the top" of where the old viewport was.
+    const auto oldTop = _mutableViewport.Top();
+
+    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
+    COORD bufferSize{ viewportSize.X, newBufferHeight };
+    RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+
+    // However conpty resizes a little oddly - if the height decreased, and
+    // there were blank lines at the bottom, those lines will get trimmed.
+    // If there's not blank lines, then the top will get "shifted down",
+    // moving the top line into scrollback.
+
+    // If the final position in the buffer is on the bottom row of the new
+    // viewport, then we're going to need to move the top down. Otherwise,
+    // move the bottom up.
+    const COORD cOldCursorPos = _buffer->GetCursor().GetPosition();
+    const COORD cOldLastChar = _buffer->GetLastNonSpaceCharacter();
+
+    const auto maxRow = std::max(cOldLastChar.Y, cOldCursorPos.Y);
+
+    const bool beforeLastRow = maxRow < bufferSize.Y - 1; // -1? 0?
+    const auto adjustment = beforeLastRow ? 0 : std::max(0, -dy);
+
+    auto proposedTop = oldTop + adjustment;
+
+    const auto newView = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+    const auto proposedBottom = newView.BottomExclusive();
+    // If the new bottom would be below the bottom of the buffer, then slide the
+    // top up so that we'll still fit within the buffer.
+    if (proposedBottom > bufferSize.Y)
     {
-        // stick to bottom
-        const auto oldTop = _mutableViewport.Top();
-        const auto oldBottom = _mutableViewport.BottomExclusive();
-
-        const short newBufferHeight = viewportSize.Y + _scrollbackLines;
-        COORD bufferSize{ viewportSize.X, newBufferHeight };
-        RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
-
-        // Attempt to "stick" to the bottom of the current viewport. Lines will be
-        // moved into scrollback.
-        const auto newViewSize = Viewport::FromDimensions({ 0, 0 }, viewportSize);
-
-        auto proposedBottom = oldBottom;
-        if (proposedBottom > bufferSize.Y)
-        {
-            proposedBottom = bufferSize.Y;
-        }
-        short proposedTop = proposedBottom - newViewSize.Height();
-
-        _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+        proposedTop -= (proposedBottom - bufferSize.Y);
     }
-    else // <---- We're always doing this for now
-    {
-        // stick to top
-        const auto oldTop = _mutableViewport.Top();
 
-        const short newBufferHeight = viewportSize.Y + _scrollbackLines;
-        COORD bufferSize{ viewportSize.X, newBufferHeight };
-        RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
-
-        const COORD cOldCursorPos = _buffer->GetCursor().GetPosition();
-        const COORD cOldLastChar = _buffer->GetLastNonSpaceCharacter();
-        const auto maxRow = std::max(cOldLastChar.Y, cOldCursorPos.Y);
-        const bool beforeLastRow = maxRow < bufferSize.Y - 1; // -1? 0?
-        const auto adjustment = beforeLastRow ? 0 : std::max(0, -dy);
-
-        // auto proposedTop = oldTop;
-        // auto proposedTop = oldTop + std::max(0, -dy);
-        auto proposedTop = oldTop + adjustment;
-
-        const auto newView = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
-        const auto proposedBottom = newView.BottomExclusive();
-        // If the new bottom would be below the bottom of the buffer, then slide the
-        // top up so that we'll still fit within the buffer.
-        if (proposedBottom > bufferSize.Y)
-        {
-            proposedTop -= (proposedBottom - bufferSize.Y);
-        }
-
-        _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
-        // _scrollOffset = 0;
-        // _NotifyScrollEvent();
-    }
+    _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
 
     _scrollOffset = 0;
     _NotifyScrollEvent();
