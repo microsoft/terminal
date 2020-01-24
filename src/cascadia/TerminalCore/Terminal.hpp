@@ -4,6 +4,7 @@
 #pragma once
 
 #include <conattrs.hpp>
+#include <winrt/Microsoft.Terminal.Settings.h>
 
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
@@ -158,27 +159,9 @@ public:
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
 
-    enum class Direction
-    {
-        Left,
-        Right,
-        Up,
-        Down
-    };
-    enum class SelectionExpansionMode
-    {
-        Cell,
-        Word,
-        Line,
-        Viewport,
-        Buffer
-    };
-    enum class SelectionTarget
-    {
-        End,
-        Start
-    };
-    void MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, SelectionTarget target = SelectionTarget::End);
+    void MoveSelectionAnchor(winrt::Microsoft::Terminal::Settings::Direction dir,
+                             winrt::Microsoft::Terminal::Settings::SelectionExpansionMode mode,
+                             winrt::Microsoft::Terminal::Settings::SelectionTarget target = winrt::Microsoft::Terminal::Settings::SelectionTarget::End);
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
@@ -216,7 +199,7 @@ private:
     bool _copyOnSelect;
     SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
-    SelectionExpansionMode _multiClickSelectionMode;
+    winrt::Microsoft::Terminal::Settings::SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
 
     std::shared_mutex _readWriteLock;
@@ -263,8 +246,8 @@ private:
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
     SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
     SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
-    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
-    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
+    COORD _ExpandWordSelectionLeft(const COORD position) const;
+    COORD _ExpandWordSelectionRight(const COORD position) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
     std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
@@ -272,10 +255,10 @@ private:
     void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 
     // These methods are used by Keyboard Selection
-    void _UpdateAnchorByCell(Direction dir, COORD& anchor);
-    void _UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionTarget target = SelectionTarget::End);
-    void _UpdateAnchorByViewport(Direction dir, COORD& anchor);
-    void _UpdateAnchorByBuffer(Direction dir, COORD& anchor);
+    void _UpdateAnchorByCell(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
+    void _UpdateAnchorByWord(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor, winrt::Microsoft::Terminal::Settings::SelectionTarget target = winrt::Microsoft::Terminal::Settings::SelectionTarget::End);
+    void _UpdateAnchorByViewport(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
+    void _UpdateAnchorByBuffer(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
 #pragma endregion
 
 #ifdef UNIT_TESTING

@@ -19,8 +19,15 @@ namespace Microsoft.Terminal.Settings
     {
         Cell = 0,
         Word,
+        Line,
         Viewport,
         Buffer
+    };
+
+    enum SelectionAnchorTarget
+    {
+        End = 0,
+        Start
     };
 
     enum SplitState

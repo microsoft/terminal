@@ -135,8 +135,8 @@ void Terminal::_ExpandSelectionRow(SMALL_RECT& selectionRow) const
     // expand selection for Double/Triple Click
     if (_multiClickSelectionMode == SelectionExpansionMode::Word)
     {
-        selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
-        selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
+        selectionRow.Left = _ExpandWordSelectionLeft({ selectionRow.Left, row }).X;
+        selectionRow.Right = _ExpandWordSelectionRight({ selectionRow.Right, row }).X;
     }
     else if (_multiClickSelectionMode == SelectionExpansionMode::Line)
     {
@@ -245,13 +245,13 @@ void Terminal::DoubleClickSelection(const COORD position)
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
-    _selectionAnchor = _ExpandDoubleClickSelectionLeft(positionWithOffsets);
+    _selectionAnchor = _ExpandWordSelectionLeft(positionWithOffsets);
     THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_selectionAnchor.Y));
     _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
-    _endSelectionPosition = _ExpandDoubleClickSelectionRight(positionWithOffsets);
+    _endSelectionPosition = _ExpandWordSelectionRight(positionWithOffsets);
     THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_endSelectionPosition.Y));
 
     _selectionActive = true;
@@ -362,7 +362,7 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 // - position: buffer coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
-COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
+COORD Terminal::_ExpandWordSelectionLeft(const COORD position) const
 {
     // force position to be within bounds
 #pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
@@ -379,7 +379,7 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 // - position: buffer coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
-COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
+COORD Terminal::_ExpandWordSelectionRight(const COORD position) const
 {
     // force position to be within bounds
 #pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
@@ -457,12 +457,12 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
     auto visibleEndIndex = std::max(0, _mutableViewport.BottomInclusive() - _scrollOffset);
     if (positionWithOffsets.Y < _VisibleStartIndex())
     {
-        _scrollOffset = _ViewStartIndex() - positionWithOffsets.Y;
+        _scrollOffset = ViewStartIndex() - positionWithOffsets.Y;
         notifyScroll = true;
     }
     else if (positionWithOffsets.Y > visibleEndIndex)
     {
-        _scrollOffset = std::max(0, _ViewStartIndex() - positionWithOffsets.Y);
+        _scrollOffset = std::max(0, ViewStartIndex() - positionWithOffsets.Y);
         notifyScroll = true;
     }
 
@@ -473,7 +473,7 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
     }
 
     // update internal state of selection anchor and vertical offset
-    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(ViewStartIndex()), &positionWithOffsets.Y));
     if (target == SelectionTarget::Start)
     {
         _selectionAnchor = positionWithOffsets;
@@ -482,7 +482,7 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
     {
         _endSelectionPosition = positionWithOffsets;
     }
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 }
 
 // Method Description:
@@ -541,7 +541,7 @@ void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionTarget
             // get on new run, before expanding left
             bufferViewport.DecrementInBounds(anchor);
         }
-        anchor = _ExpandDoubleClickSelectionLeft(anchor);
+        anchor = _ExpandWordSelectionLeft(anchor);
         if (comparison > 0)
         {
             // get off of run, after expanding left
@@ -557,7 +557,7 @@ void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionTarget
             // get on new run, before expanding left
             bufferViewport.IncrementInBounds(anchor);
         }
-        anchor = _ExpandDoubleClickSelectionRight(anchor);
+        anchor = _ExpandWordSelectionRight(anchor);
         if (comparison < 0)
         {
             // get off of run, after expanding left
