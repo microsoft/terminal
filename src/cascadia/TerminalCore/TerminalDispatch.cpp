@@ -74,10 +74,39 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType) noexcept
+try
+{
+    switch (lineFeedType)
+    {
+    case DispatchTypes::LineFeedType::DependsOnMode:
+        // There is currently no need for mode-specific line feeds in the Terminal,
+        // so for now we just treat them as a line feed without carriage return.
+    case DispatchTypes::LineFeedType::WithoutReturn:
+        Execute(L'\n');
+        return true;
+    case DispatchTypes::LineFeedType::WithReturn:
+        Execute(L'\r');
+        Execute(L'\n');
+        return true;
+    default:
+        return false;
+    }
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool TerminalDispatch::EraseCharacters(const size_t numChars) noexcept
 try
 {
     return _terminalApi.EraseCharacters(numChars);
+}
+CATCH_LOG_RETURN_FALSE()
+
+bool TerminalDispatch::CarriageReturn() noexcept
+try
+{
+    const auto cursorPos = _terminalApi.GetCursorPosition();
+    return _terminalApi.SetCursorPosition(0, cursorPos.Y);
 }
 CATCH_LOG_RETURN_FALSE()
 

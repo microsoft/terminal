@@ -151,8 +151,12 @@ Renderer::~Renderer()
 
 void Renderer::_NotifyPaintFrame()
 {
-    // The thread will provide throttling for us.
-    _pThread->NotifyPaint();
+    // If we're running in the unittests, we might not have a render thread.
+    if (_pThread)
+    {
+        // The thread will provide throttling for us.
+        _pThread->NotifyPaint();
+    }
 }
 
 // Routine Description:

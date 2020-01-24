@@ -53,6 +53,7 @@ public:
     void UpdateBorderWithClosedNeightbour(std::shared_ptr<LeafPane> closedNeightbour,
                                           const winrt::TerminalApp::Direction& neightbourDirection);
     void Close();
+    void Shutdown();
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(Splitted, _SplittedHandlers, winrt::delegate<std::shared_ptr<ParentPane>>);

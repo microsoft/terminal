@@ -364,6 +364,14 @@ void LeafPane::Close()
 }
 
 // Method Description:
+// - Prepare this pane to be removed from the UI hierarchy by closing all controls
+//   and connections beneath it.
+void LeafPane::Shutdown()
+{
+    _control.Close();
+}
+
+// Method Description:
 // - Called when our attached control is closed. Triggers listeners to our close event.
 // Arguments:
 // - <none>

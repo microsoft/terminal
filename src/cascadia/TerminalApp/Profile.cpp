@@ -848,6 +848,14 @@ void Profile::SetIconPath(std::wstring_view path)
 }
 
 // Method Description:
+// - Resets the std::optional holding the icon file path string.
+//   HasIcon() will return false after the execution of this function.
+void Profile::ResetIconPath()
+{
+    _icon.reset();
+}
+
+// Method Description:
 // - Returns this profile's icon path, if one is set. Otherwise returns the
 //   empty string. This method will expand any environment variables in the
 //   path, if there are any.
@@ -878,6 +886,14 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
     }
 
     return result;
+}
+
+// Method Description:
+// - Resets the std::optional holding the background image file path string.
+//   HasBackgroundImage() will return false after the execution of this function.
+void Profile::ResetBackgroundImagePath()
+{
+    _backgroundImage.reset();
 }
 
 // Method Description:
