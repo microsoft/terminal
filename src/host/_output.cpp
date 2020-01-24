@@ -312,8 +312,10 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     std::wstring wchs{};
     try
     {
+        // convert character into c-string to form a null terminated string_view around
+        const char tempBuffer[]{ character, '\0' };
         // convert to wide chars and call W version
-        wchs = ConvertToW(gci.OutputCP, { &character, 1 });
+        wchs = ConvertToW(gci.OutputCP, { tempBuffer, 2 });
     }
     CATCH_RETURN();
 
