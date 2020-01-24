@@ -199,6 +199,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const auto maxRow = std::max(cOldLastChar.Y, cOldCursorPos.Y);
 
     const bool beforeLastRow = maxRow < bufferSize.Y - 1; // -1? 0?
+    // const bool beforeLastRow = maxRow < bufferSize.Y; // -1? 0?
     const auto adjustment = beforeLastRow ? 0 : std::max(0, -dy);
 
     auto proposedTop = oldTop + adjustment;

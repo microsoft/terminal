@@ -157,7 +157,9 @@ private:
     std::unique_ptr<CommonState> m_state;
     std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
 
-    bool _checkConptyOutput{ true };
+    // Tests can set these variables how they link to configure the behavior of the test harness.
+    bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected
+    bool _logConpty{ false }; // If true, the test class will log all the output from conpty. Helpful for debugging.
 
     DummyRenderTarget emptyRT;
     std::unique_ptr<Terminal> term;
@@ -182,7 +184,7 @@ bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cc
         VERIFY_ARE_EQUAL(first.length(), cch);
         VERIFY_ARE_EQUAL(first, actualString);
     }
-    else
+    else if (_logConpty)
     {
         Log::Comment(NoThrowString().Format(
             L"Writing \"%hs\" to Terminal", actualString.c_str()));
@@ -416,9 +418,10 @@ void ConptyRoundtripTests::TestResizeHeight()
         // TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
         TEST_METHOD_PROPERTY(L"Data:dx", L"{0}")
         // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
-        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
-        // TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50, 200}")
-        TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50}")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 1}")
+        TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50, 200}")
+        // TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50}")
     END_TEST_METHOD_PROPERTIES()
     int dx, dy;
     int printedRows;
@@ -437,6 +440,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto* termTb = term->_buffer.get();
     const auto initialHostView = si.GetViewport();
     const auto initialTermView = term->GetViewport();
+    const auto initialTerminalBufferHeight = term->GetTextBuffer().GetSize().Height();
 
     VERIFY_ARE_EQUAL(0, initialHostView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight, initialHostView.BottomExclusive());
@@ -448,7 +452,8 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     for (auto i = 0; i < printedRows; i++)
     {
-        auto wstr = std::wstring(1, static_cast<wchar_t>(L'0' + i));
+        auto wstr = std::wstring(1, static_cast<wchar_t>((i) % 93) + 33);
+        // Log::Comment(NoThrowString().Format(L"Writing \"%s\\r\\n\" to conpty", wstr.c_str()));
         hostSm.ProcessString(wstr);
         hostSm.ProcessString(L"\r\n");
     }
@@ -461,7 +466,6 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     const auto secondTermView = term->GetViewport();
-
     const auto expectedTerminalViewBottom = std::max(std::min(gsl::narrow_cast<short>(printedRows + 1),
                                                               term->GetBufferHeight()),
                                                      term->GetViewport().Height());
@@ -471,14 +475,25 @@ void ConptyRoundtripTests::TestResizeHeight()
     // VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height() + 1, secondTermView.Top());
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height(), secondTermView.Top());
 
-    auto verifyTermData = [&expectedTerminalViewBottom, &printedRows](TextBuffer& termTb) {
+    auto verifyTermData = [&expectedTerminalViewBottom, &printedRows, this, &initialTerminalBufferHeight](TextBuffer& termTb, const int resizeDy = 0) {
         // for (short row = 0; row < expectedTerminalViewBottom; row++)
         short row = 0;
-        for (; row < printedRows; row++)
+        // const auto numLostRows = std::max(0, printedRows - term->GetBufferHeight() + 1);
+        // const auto numLostRows = std::max(0, printedRows - initialTerminalBufferHeight + 1);
+        const auto numLostRows = std::max(0,
+                                          printedRows - std::min(term->GetTextBuffer().GetSize().Height(), initialTerminalBufferHeight) + 1);
+
+        const auto rowsWithText = std::min(gsl::narrow_cast<short>(printedRows),
+                                           expectedTerminalViewBottom) -
+                                  1 + std::min(resizeDy, 0);
+
+        for (; row < rowsWithText; row++)
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = termTb.GetCellDataAt({ 0, row });
-            auto expectedString = std::wstring(1, static_cast<wchar_t>(L'0' + row));
+            const wchar_t expectedChar = static_cast<wchar_t>((row + numLostRows) % 93) + 33;
+
+            auto expectedString = std::wstring(1, expectedChar);
 
             if (iter->Chars() != expectedString)
             {
@@ -516,9 +531,9 @@ void ConptyRoundtripTests::TestResizeHeight()
         // The third last row will have '0'+49
         // ...
         // The <height> last row will have '0'+(50-height+1)
-        const auto firstChar = static_cast<wchar_t>(L'0' + (scrolled ?
-                                                                (printedRows - originalViewHeight + 1) :
-                                                                0));
+        const auto firstChar = static_cast<wchar_t>(scrolled ?
+                                                        (printedRows - originalViewHeight + 1) :
+                                                        0);
 
         short row = 0;
         // Don't include the last row of the viewport in this check, since it'll
@@ -527,7 +542,8 @@ void ConptyRoundtripTests::TestResizeHeight()
         {
             auto iter = hostTb.GetCellDataAt({ 0, row });
 
-            auto expectedString = std::wstring(1, static_cast<wchar_t>(firstChar + row));
+            const auto expectedChar = static_cast<wchar_t>(((firstChar + row) % 93) + 33);
+            auto expectedString = std::wstring(1, static_cast<wchar_t>(expectedChar));
 
             if (iter->Chars() != expectedString)
             {
@@ -544,6 +560,7 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
+    // DebugBreak();
     verifyHostData(*hostTb);
     verifyTermData(*termTb);
 
@@ -574,7 +591,7 @@ void ConptyRoundtripTests::TestResizeHeight()
 
     verifyHostData(*hostTb, dy);
     // Note that at this point, nothing should have changed with the Terminal.
-    verifyTermData(*termTb);
+    verifyTermData(*termTb, dy);
 
     Log::Comment(NoThrowString().Format(L"Paint a frame to update the Terminal"));
     VERIFY_SUCCEEDED(renderer.PaintFrame());
