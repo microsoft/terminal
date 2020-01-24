@@ -413,12 +413,18 @@ void ConptyRoundtripTests::TestResizeHeight()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
-        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        // TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{0}")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
+        // TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50, 200}")
+        TEST_METHOD_PROPERTY(L"Data:printedRows", L"{1, 10, 50}")
     END_TEST_METHOD_PROPERTIES()
     int dx, dy;
+    int printedRows;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"printedRows", printedRows), L"Number of rows of text to print");
 
     _checkConptyOutput = false;
 
@@ -440,7 +446,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     Log::Comment(NoThrowString().Format(
         L"Print 50 lines of output, which will scroll the viewport"));
 
-    for (auto i = 0; i < 50; i++)
+    for (auto i = 0; i < printedRows; i++)
     {
         auto wstr = std::wstring(1, static_cast<wchar_t>(L'0' + i));
         hostSm.ProcessString(wstr);
@@ -455,11 +461,20 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     const auto secondTermView = term->GetViewport();
-    VERIFY_ARE_EQUAL(50 - initialTermView.Height() + 1, secondTermView.Top());
-    VERIFY_ARE_EQUAL(50, secondTermView.BottomInclusive());
 
-    auto verifyTermData = [](TextBuffer& termTb) {
-        for (short row = 0; row < 50; row++)
+    const auto expectedTerminalViewBottom = std::max(std::min(gsl::narrow_cast<short>(printedRows + 1),
+                                                              term->GetBufferHeight()),
+                                                     term->GetViewport().Height());
+
+    // VERIFY_ARE_EQUAL(std::max(0, expectedTerminalViewBottom - initialTermView.Height() + 1), secondTermView.Top());
+    VERIFY_ARE_EQUAL(expectedTerminalViewBottom, secondTermView.BottomExclusive());
+    // VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height() + 1, secondTermView.Top());
+    VERIFY_ARE_EQUAL(expectedTerminalViewBottom - initialTermView.Height(), secondTermView.Top());
+
+    auto verifyTermData = [&expectedTerminalViewBottom, &printedRows](TextBuffer& termTb) {
+        // for (short row = 0; row < expectedTerminalViewBottom; row++)
+        short row = 0;
+        for (; row < printedRows; row++)
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = termTb.GetCellDataAt({ 0, row });
@@ -473,7 +488,7 @@ void ConptyRoundtripTests::TestResizeHeight()
             VERIFY_ARE_EQUAL(L" ", (iter)->Chars());
         }
     };
-    auto verifyHostData = [&si, &initialHostView](TextBuffer& hostTb, const int resizeDy = 0) {
+    auto verifyHostData = [&si, &initialHostView, &printedRows](TextBuffer& hostTb, const int resizeDy = 0) {
         const auto hostView = si.GetViewport();
 
         // In the host, there are two regions we're interested in:
@@ -494,18 +509,21 @@ void ConptyRoundtripTests::TestResizeHeight()
         const short originalViewHeight = gsl::narrow_cast<short>(resizeDy < 0 ?
                                                                      initialHostView.Height() + resizeDy :
                                                                      initialHostView.Height());
-
+        const auto rowsWithText = std::min(originalViewHeight - 1, printedRows);
+        const bool scrolled = printedRows > initialHostView.Height();
         // The last row of the viewport should be empty
         // The second last row will have '0'+50
         // The third last row will have '0'+49
         // ...
         // The <height> last row will have '0'+(50-height+1)
-        const auto firstChar = static_cast<wchar_t>(L'0' + (50 - originalViewHeight + 1));
+        const auto firstChar = static_cast<wchar_t>(L'0' + (scrolled ?
+                                                                (printedRows - originalViewHeight + 1) :
+                                                                0));
 
         short row = 0;
         // Don't include the last row of the viewport in this check, since it'll
         // be blank. We'll check it in the below loop.
-        for (; row < originalViewHeight - 1; row++)
+        for (; row < rowsWithText; row++)
         {
             auto iter = hostTb.GetCellDataAt({ 0, row });
 
@@ -552,7 +570,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     const auto thirdTermView = term->GetViewport();
 
     VERIFY_ARE_EQUAL(secondTermView.Top(), thirdTermView.Top());
-    VERIFY_ARE_EQUAL(50 + dy, thirdTermView.BottomInclusive());
+    VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, thirdTermView.BottomExclusive());
 
     verifyHostData(*hostTb, dy);
     // Note that at this point, nothing should have changed with the Terminal.
@@ -570,5 +588,5 @@ void ConptyRoundtripTests::TestResizeHeight()
     const auto fourthTermView = term->GetViewport();
 
     VERIFY_ARE_EQUAL(secondTermView.Top(), fourthTermView.Top());
-    VERIFY_ARE_EQUAL(50 + dy, fourthTermView.BottomInclusive());
+    VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, fourthTermView.BottomExclusive());
 }
