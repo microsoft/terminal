@@ -219,24 +219,6 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     try
     {
         TextAttribute useThisAttr(attribute);
-
-        // Here we're being a little clever -
-        // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
-        // because their first call to GetScreenBufferInfo returned a legacy attr.
-        // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-        // This could create a scenario where someone emitted RGB with VT,
-        // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-        // they had set.
-        if (screenBuffer.InVTMode())
-        {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            auto bufferLegacy = gci.GenerateLegacyAttributes(screenBuffer.GetAttributes());
-            if (bufferLegacy == attribute)
-            {
-                useThisAttr = TextAttribute(screenBuffer.GetAttributes());
-            }
-        }
-
         const OutputCellIterator it(useThisAttr, lengthToWrite);
         const auto done = screenBuffer.Write(it, startingCoordinate);
 

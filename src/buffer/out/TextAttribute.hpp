@@ -156,6 +156,8 @@ public:
     bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
+    void SetStandardErase() noexcept;
+
     constexpr bool IsRgb() const noexcept
     {
         return _foreground.IsRgb() || _background.IsRgb();

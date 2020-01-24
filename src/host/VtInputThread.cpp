@@ -38,13 +38,12 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
-    THROW_IF_NULL_ALLOC(pGetSet.get());
 
-    auto engine = std::make_unique<InputStateMachineEngine>(new InteractDispatch(pGetSet.release()), inheritCursor);
-    THROW_IF_NULL_ALLOC(engine.get());
+    auto dispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
 
-    _pInputStateMachine = std::make_unique<StateMachine>(engine.release());
-    THROW_IF_NULL_ALLOC(_pInputStateMachine.get());
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
+
+    _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
 }
 
 // Method Description:
@@ -77,7 +76,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
         {
             return S_FALSE;
         }
-        _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
+        _pInputStateMachine->ProcessString({ pwsSequence.get(), cchSequence });
     }
     CATCH_RETURN();
 

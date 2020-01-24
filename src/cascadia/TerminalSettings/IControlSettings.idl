@@ -40,5 +40,6 @@ namespace Microsoft.Terminal.Settings
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 
         UInt32 SelectionBackground;
+        Boolean RetroTerminalEffect;
     };
 }

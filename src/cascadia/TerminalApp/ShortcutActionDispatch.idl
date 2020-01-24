@@ -62,6 +62,7 @@ namespace TerminalApp
         MoveFocusUp, // Legacy
         MoveFocusDown, // Legacy
         MoveSelectionAnchor,
+        Find,
         ToggleFullscreen,
         OpenSettings
     };
@@ -98,6 +99,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ScrollDownPage;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> OpenSettings;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ResizePane;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> Find;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> MoveFocus;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, ActionEventArgs> ToggleFullscreen;
     }

@@ -266,3 +266,12 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 {
     return _background.IsDefault();
 }
+
+// Routine Description:
+// - Resets the meta and extended attributes, which is what the VT standard
+//      requires for most erasing and filling operations.
+void TextAttribute::SetStandardErase() noexcept
+{
+    SetExtendedAttributes(ExtendedAttributes::Normal);
+    SetMetaAttributes(0);
+}

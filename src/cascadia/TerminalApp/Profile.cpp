@@ -83,6 +83,9 @@ static constexpr std::string_view ImageAlignmentTopRight{ "topRight" };
 static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
+// Terminal effects
+static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
+
 Profile::Profile() :
     Profile(std::nullopt)
 {
@@ -120,7 +123,8 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _backgroundImage{},
     _backgroundImageOpacity{},
     _backgroundImageStretchMode{},
-    _backgroundImageAlignment{}
+    _backgroundImageAlignment{},
+    _retroTerminalEffect{}
 {
 }
 
@@ -138,7 +142,7 @@ bool Profile::HasSource() const noexcept
     return _source.has_value();
 }
 
-GUID Profile::GetGuid() const noexcept
+GUID Profile::GetGuid() const
 {
     // This can throw if we never had our guid set to a legitimate value.
     THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");
@@ -246,6 +250,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         const auto imageVerticalAlignment = std::get<VerticalAlignment>(_backgroundImageAlignment.value());
         terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
+    }
+
+    if (_retroTerminalEffect)
+    {
+        terminalSettings.RetroTerminalEffect(_retroTerminalEffect.value());
     }
 
     return terminalSettings;
@@ -362,6 +371,11 @@ Json::Value Profile::ToJson() const
     }
 
     root[JsonKey(CloseOnExitKey)] = _SerializeCloseOnExitMode(_closeOnExitMode).data();
+
+    if (_retroTerminalEffect)
+    {
+        root[JsonKey(RetroTerminalEffectKey)] = _retroTerminalEffect.value();
+    }
 
     return root;
 }
@@ -572,6 +586,18 @@ std::tuple<HorizontalAlignment, VerticalAlignment> Profile::_ConvertJsonToAlignm
 }
 
 // Method Description:
+// - Helper function to convert a json value into a bool.
+//   Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - A bool
+bool Profile::_ConvertJsonToBool(const Json::Value& json)
+{
+    return json.asBool();
+}
+
+// Method Description:
 // - Layer values from the given json object on top of the existing properties
 //   of this object. For any keys we're expecting to be able to parse in the
 //   given object, we'll parse them and replace our settings with values from
@@ -714,6 +740,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetOptionalValue(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode, &Profile::_ConvertJsonToStretchMode);
 
     JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
+
+    JsonUtils::GetOptionalValue(json, RetroTerminalEffectKey, _retroTerminalEffect, Profile::_ConvertJsonToBool);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
@@ -820,6 +848,14 @@ void Profile::SetIconPath(std::wstring_view path)
 }
 
 // Method Description:
+// - Resets the std::optional holding the icon file path string.
+//   HasIcon() will return false after the execution of this function.
+void Profile::ResetIconPath()
+{
+    _icon.reset();
+}
+
+// Method Description:
 // - Returns this profile's icon path, if one is set. Otherwise returns the
 //   empty string. This method will expand any environment variables in the
 //   path, if there are any.
@@ -850,6 +886,14 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
     }
 
     return result;
+}
+
+// Method Description:
+// - Resets the std::optional holding the background image file path string.
+//   HasBackgroundImage() will return false after the execution of this function.
+void Profile::ResetBackgroundImagePath()
+{
+    _backgroundImage.reset();
 }
 
 // Method Description:
@@ -1299,4 +1343,9 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     JsonUtils::GetOptionalString(json, SourceKey, source);
 
     return Profile::_GenerateGuidForProfile(name, source);
+}
+
+void Profile::SetRetroTerminalEffect(bool value) noexcept
+{
+    _retroTerminalEffect = value;
 }

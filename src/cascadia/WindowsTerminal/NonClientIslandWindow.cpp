@@ -328,38 +328,31 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return ret;
     }
 
-    auto newTop = originalTop;
-
+    // When we're fullscreen, we have the WS_POPUP size so we don't have to
+    // worry about borders so the default frame will be fine.
     if (_fullscreen)
     {
-        // When we're fullscreen, we don't actually want to have any borders at
-        // all. This will remove them for us. Otherrwise, we'll have the
-        // transparent "grab handle" borders appear on the sides of the window
-        // when fullscreen, and we won't really be "fullscreen".
-        params->rgrc[0].left = params->lppos->x;
-        params->rgrc[0].top = params->lppos->y;
-        params->rgrc[0].right = params->lppos->cx;
-        params->rgrc[0].bottom = params->lppos->cy;
+        return 0;
     }
-    else
+
+    auto newTop = originalTop;
+
+    // WM_NCCALCSIZE is called before WM_SIZE
+    _UpdateMaximizedState();
+
+    if (_isMaximized)
     {
-        // WM_NCCALCSIZE is called before WM_SIZE
-        _UpdateMaximizedState();
-
-        if (_isMaximized)
-        {
-            // When a window is maximized, its size is actually a little bit more
-            // than the monitor's work area. The window is positioned and sized in
-            // such a way that the resize handles are outside of the monitor and
-            // then the window is clipped to the monitor so that the resize handle
-            // do not appear because you don't need them (because you can't resize
-            // a window when it's maximized unless you restore it).
-            newTop += _GetResizeHandleHeight();
-        }
-
-        // only modify the top of the frame to remove the title bar
-        params->rgrc[0].top = newTop;
+        // When a window is maximized, its size is actually a little bit more
+        // than the monitor's work area. The window is positioned and sized in
+        // such a way that the resize handles are outside of the monitor and
+        // then the window is clipped to the monitor so that the resize handle
+        // do not appear because you don't need them (because you can't resize
+        // a window when it's maximized unless you restore it).
+        newTop += _GetResizeHandleHeight();
     }
+
+    // only modify the top of the frame to remove the title bar
+    params->rgrc[0].top = newTop;
 
     return 0;
 }
@@ -403,6 +396,32 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     }
 
     return HTCAPTION;
+}
+
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+{
+    const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
+    RECT islandFrame{};
+
+    // If we failed to get the correct window size for whatever reason, log
+    // the error and go on. We'll use whatever the control proposed as the
+    // size of our window, which will be at least close.
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
+
+    islandFrame.top = -topBorderVisibleHeight;
+
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+
+    return {
+        islandFrame.right - islandFrame.left,
+        islandFrame.bottom - islandFrame.top + titleBarHeight
+    };
 }
 
 // Method Description:

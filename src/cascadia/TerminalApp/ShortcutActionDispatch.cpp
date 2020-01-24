@@ -185,6 +185,11 @@ namespace winrt::TerminalApp::implementation
             _AdjustFontSizeHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::Find:
+        {
+            _FindHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ResetFontSize:
         {
             _ResetFontSizeHandlers(*this, *eventArgs);

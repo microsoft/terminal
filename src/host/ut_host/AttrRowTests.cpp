@@ -498,6 +498,135 @@ class AttrRowTests
         }
     }
 
+    TEST_METHOD(TestReverseIteratorWalkFromMiddle)
+    {
+        // GH #3409, walking backwards through color range runs out of bounds
+        // We're going to create an attribute row with assorted colors and varying lengths
+        // just like the row of text on the Ubuntu prompt line that triggered this bug being found.
+        // Then we're going to walk backwards through the iterator like a selection-expand-to-left
+        // operation and ensure we don't run off the bounds.
+
+        // walk the chain, from index, stepSize at a time
+        // ensure we don't crash
+        auto testWalk = [](ATTR_ROW* chain, size_t index, int stepSize) {
+            // move to starting index
+            auto iter = chain->cbegin();
+            iter += index;
+
+            // Now walk backwards in a loop until 0.
+            while (iter)
+            {
+                iter -= stepSize;
+            }
+
+            Log::Comment(L"We made it through without crashing!");
+        };
+
+        // take one step of size stepSize on the chain
+        // index is where we start from
+        // expectedAttribute is what we expect to read here
+        auto verifyStep = [](ATTR_ROW* chain, size_t index, int stepSize, TextAttribute expectedAttribute) {
+            // move to starting index
+            auto iter = chain->cbegin();
+            iter += index;
+
+            // Now step backwards
+            iter -= stepSize;
+
+            VERIFY_ARE_EQUAL(expectedAttribute, *iter);
+        };
+
+        Log::Comment(L"Reverse iterate through ubuntu prompt");
+        {
+            // Create attr row representing a buffer that's 121 wide.
+            auto chain = std::make_unique<ATTR_ROW>(121, _DefaultAttr);
+
+            // The repro case had 4 chain segments.
+            chain->_list.resize(4);
+
+            // The color 10 went for the first 18.
+            chain->_list[0].SetAttributes(TextAttribute(0xA));
+            chain->_list[0].SetLength(18);
+
+            // Default color for the next 1
+            chain->_list[1].SetAttributes(TextAttribute());
+            chain->_list[1].SetLength(1);
+
+            // Color 12 for the next 29
+            chain->_list[2].SetAttributes(TextAttribute(0xC));
+            chain->_list[2].SetLength(29);
+
+            // Then default color to end the run
+            chain->_list[3].SetAttributes(TextAttribute());
+            chain->_list[3].SetLength(73);
+
+            // The sum of the lengths should be 121.
+            VERIFY_ARE_EQUAL(chain->_cchRowWidth, chain->_list[0]._cchLength + chain->_list[1]._cchLength + chain->_list[2]._cchLength + chain->_list[3]._cchLength);
+
+            auto index = chain->_list[0].GetLength();
+            auto stepSize = 1;
+            testWalk(chain.get(), index, stepSize);
+        }
+
+        Log::Comment(L"Reverse iterate across a text run in the chain");
+        {
+            // Create attr row representing a buffer that's 3 wide.
+            auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
+
+            // The repro case had 3 chain segments.
+            chain->_list.resize(3);
+
+            // The color 10 went for the first 1.
+            chain->_list[0].SetAttributes(TextAttribute(0xA));
+            chain->_list[0].SetLength(1);
+
+            // The color 11 for the next 1
+            chain->_list[1].SetAttributes(TextAttribute(0xB));
+            chain->_list[1].SetLength(1);
+
+            // Color 12 for the next 1
+            chain->_list[2].SetAttributes(TextAttribute(0xC));
+            chain->_list[2].SetLength(1);
+
+            // The sum of the lengths should be 3.
+            VERIFY_ARE_EQUAL(chain->_cchRowWidth, chain->_list[0]._cchLength + chain->_list[1]._cchLength + chain->_list[2]._cchLength);
+
+            // on 'ABC', step from B to A
+            auto index = 1;
+            auto stepSize = 1;
+            verifyStep(chain.get(), index, stepSize, TextAttribute(0xA));
+        }
+
+        Log::Comment(L"Reverse iterate across two text runs in the chain");
+        {
+            // Create attr row representing a buffer that's 3 wide.
+            auto chain = std::make_unique<ATTR_ROW>(3, _DefaultAttr);
+
+            // The repro case had 3 chain segments.
+            chain->_list.resize(3);
+
+            // The color 10 went for the first 1.
+            chain->_list[0].SetAttributes(TextAttribute(0xA));
+            chain->_list[0].SetLength(1);
+
+            // The color 11 for the next 1
+            chain->_list[1].SetAttributes(TextAttribute(0xB));
+            chain->_list[1].SetLength(1);
+
+            // Color 12 for the next 1
+            chain->_list[2].SetAttributes(TextAttribute(0xC));
+            chain->_list[2].SetLength(1);
+
+            // The sum of the lengths should be 3.
+            VERIFY_ARE_EQUAL(chain->_cchRowWidth, chain->_list[0]._cchLength + chain->_list[1]._cchLength + chain->_list[2]._cchLength);
+
+            // on 'ABC', step from C to A
+            auto index = 2;
+            auto stepSize = 2;
+            verifyStep(chain.get(), index, stepSize, TextAttribute(0xA));
+        }
+    }
+
     TEST_METHOD(TestSetAttrToEnd)
     {
         const WORD wTestAttr = FOREGROUND_BLUE | BACKGROUND_GREEN;

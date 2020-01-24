@@ -82,6 +82,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         DECCKM_CursorKeysMode = 1,
         DECCOLM_SetNumberOfColumns = 3,
+        DECSCNM_ScreenMode = 5,
         DECOM_OriginMode = 6,
         ATT610_StartCursorBlink = 12,
         DECTCEM_TextCursorEnableMode = 25,
@@ -123,6 +124,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyUnderline = 4,
         BlinkingBar = 5,
         SteadyBar = 6
+    };
+
+    enum class LineFeedType : unsigned int
+    {
+        WithReturn,
+        WithoutReturn,
+        DependsOnMode
     };
 
     constexpr short s_sDECCOLMSetColumns = 132;

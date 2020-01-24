@@ -18,4 +18,5 @@ Author(s):
 
 static constexpr std::wstring_view WslGeneratorNamespace{ L"Windows.Terminal.Wsl" };
 static constexpr std::wstring_view AzureGeneratorNamespace{ L"Windows.Terminal.Azure" };
+static constexpr std::wstring_view TelnetGeneratorNamespace{ L"Windows.Terminal.Telnet" };
 static constexpr std::wstring_view PowershellCoreGeneratorNamespace{ L"Windows.Terminal.PowershellCore" };

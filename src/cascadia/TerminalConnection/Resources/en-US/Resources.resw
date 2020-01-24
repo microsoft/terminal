@@ -214,4 +214,7 @@
     <comment>The first argument is the hexadecimal error code. The second is the process name.
 If this resource spans multiple lines, it will not be displayed properly. Yeah.</comment>
   </data>
+  <data name="TelnetInternetOrServerIssue" xml:space="preserve">
+    <value>Could not connect to telnet server.</value>
+  </data>
 </root>

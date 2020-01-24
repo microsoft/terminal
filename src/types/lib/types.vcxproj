@@ -47,6 +47,7 @@
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\IUiaData.h" />
+    <ClInclude Include="..\IUiaEventDispatcher.h" />
     <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenInfoUiaProviderBase.h" />
