@@ -104,7 +104,6 @@ namespace Microsoft::Console::Render
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
         void BeginResizeRequest();
         void EndResizeRequest();
-        void SetVirtualTop(const short virtualTop) noexcept;
 
     protected:
         wil::unique_hfile _hFile;

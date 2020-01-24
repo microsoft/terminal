@@ -446,11 +446,3 @@ void VtIo::EndResize()
         _pVtRenderEngine->EndResizeRequest();
     }
 }
-
-void VtIo::SetVirtualTop(const short virtualTop) noexcept
-{
-    if (_pVtRenderEngine)
-    {
-        _pVtRenderEngine->SetVirtualTop(virtualTop);
-    }
-}

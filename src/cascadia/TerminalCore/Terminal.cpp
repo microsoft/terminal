@@ -189,6 +189,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // there were blank lines at the bottom, those lines will get trimmed.
     // If there's not blank lines, then the top will get "shifted down",
     // moving the top line into scrollback.
+    // See GH#3490 for more details.
 
     // If the final position in the buffer is on the bottom row of the new
     // viewport, then we're going to need to move the top down. Otherwise,

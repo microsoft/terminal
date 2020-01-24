@@ -277,33 +277,12 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
 
-    if (SUCCEEDED(hr))
-    {
-        // if (oldView.Width() != newView.Width())
-        // {
-        //     // Viewport is a different width now - just update it all. We may
-        //     // have re-wrapped the buffer contents.
-        //     hr = InvalidateAll();
-        // }
-        // else if (oldView.Height() < newView.Height())
-        // {
-        //     // // We grew in height. We inserted empty lines at the top of the
-        //     // // buffer. The cursor is now _actually_ lower (larger Y/row value)
-        //     // // than it was before.
-        //     // _lastText.Y += gsl::narrow_cast<short>(newView.Height() - oldView.Height());
-        //     // // The text content will try and stay "stuck" at the bottom of the
-        //     // // viewport of the terminal, and invalidating the bottom here can
-        //     // // cause unnecessary lines to get written to the terminal. See
-        //     // // GH#3490.
-        // }
-        // else if (oldView.Height() > newView.Height())
-        // {
-        //     // We shrunk in height. We don't really need to do anything here.
-        //     // Shrinking in height will remove lines from the top of the buffer
-        //     // (pushing them into scrollback in the terminal).
-        //     // The cursor will stay in the same relative position.
-        // }
-    }
+    // GH#3490 - When the viewport width changed, don't do anything extra here.
+    // If the buffer had areas that were invalid due to the resize, then the
+    // buffer will have triggered it's own invalidations for what it knows is
+    // invalid. Previously, we'd invalidate everything if the width changed,
+    // because we couldn't be sure if lines were reflowed.
+
     _resized = true;
     return hr;
 }
@@ -401,11 +380,6 @@ bool VtEngine::_AllIsInvalid() const
     // Prevent us from clearing the entire viewport on the first paint
     _firstPaint = false;
     return S_OK;
-}
-
-void VtEngine::SetVirtualTop(const short virtualTop) noexcept
-{
-    _virtualTop = std::max(_virtualTop, virtualTop);
 }
 
 void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)

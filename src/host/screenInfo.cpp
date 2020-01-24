@@ -1427,29 +1427,11 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool isConpty = gci.IsInVtIoMode();
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), false, false);
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
+    const bool widthChanged = coordNewScreenSize.X != _textBuffer->GetSize().Width();
 
     if (SUCCEEDED(hr))
     {
-        // GH#3490 - In conpty mode, we want to pad new lines into to the top of
-        // the buffer when we increase the buffer height. Terminals typically
-        // keep the buffer contents "stuck" to the bottom of the viewport when
-        // they increase in height, moving lines from the scrollback into the
-        // viewport. We don't have a scrollback at all in conpty mode, but we
-        // can still keep the content we have at the bottom by inserting new
-        // lines at the top.
-        //
-        // When that happens, make sure to move our relative cursor position
-        // down, so that it stays in the same position relative to the bottom
-        // that it was before.
-
-        // if (isConpty && _textBuffer->GetSize().Height() < newTextBuffer->GetSize().Height())
-        // {
-        //     const short diff = newTextBuffer->GetSize().Height() - _textBuffer->GetSize().Height();
-        //     cursorHeightInViewportBefore += diff;
-        //     gci.GetVtIo()->SetVirtualTop(diff);
-        // }
-
         Cursor& newCursor = newTextBuffer->GetCursor();
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
         const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
@@ -1460,13 +1442,18 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         _textBuffer.swap(newTextBuffer);
     }
 
-    if (isConpty)
+    // GH#3490 - In conpty mode, We want to invalidate all of the viewport that
+    // might have been below any wrapped lines, up until the last character of
+    // the buffer. Lines that were wrapped may have been re-wrapped during this
+    // resize, so we want them repainted to the terminal. We don't want to just
+    // invalidate everything though - if there were blank lines at the bottom,
+    // those can just be ignored.
+    if (isConpty && widthChanged)
     {
         // Loop through all the rows of the old buffer and reprint them into the new buffer
-        // for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
-        auto bottom = std::max(_textBuffer->GetCursor().GetPosition().Y,
-                               std::min(_viewport.BottomInclusive(),
-                                        _textBuffer->GetLastNonSpaceCharacter().Y));
+        const auto bottom = std::max(_textBuffer->GetCursor().GetPosition().Y,
+                                     std::min(_viewport.BottomInclusive(),
+                                              _textBuffer->GetLastNonSpaceCharacter().Y));
         bool foundWrappedLine = false;
         for (short y = _viewport.Top(); y <= bottom; y++)
         {

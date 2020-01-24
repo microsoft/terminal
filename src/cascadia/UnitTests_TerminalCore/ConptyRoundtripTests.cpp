@@ -449,7 +449,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(TerminalViewHeight, initialTermView.BottomExclusive());
 
     Log::Comment(NoThrowString().Format(
-        L"Print 50 lines of output, which will scroll the viewport"));
+        L"Print %d lines of output, which will scroll the viewport", printedRows));
 
     for (auto i = 0; i < printedRows; i++)
     {
@@ -492,7 +492,7 @@ void ConptyRoundtripTests::TestResizeHeight()
 
         for (short row = 0; row < rowsWithText; row++)
         {
-            // SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             auto iter = termTb.GetCellDataAt({ 0, row });
             const wchar_t expectedChar = static_cast<wchar_t>((row + numLostRows) % 93) + 33;
 
