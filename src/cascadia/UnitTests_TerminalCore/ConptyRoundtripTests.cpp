@@ -613,6 +613,5 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, fourthTermView.BottomExclusive());
 
     verifyHostData(*hostTb, dy);
-    // Note that at this point, nothing should have changed with the Terminal.
     verifyTermData(*termTb, dy);
 }
