@@ -291,7 +291,7 @@
           "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or 'system'.",
           "maximum": 999,
           "minimum": 0,
-          "type": "integer"
+          "type": ["integer", "string"]
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",

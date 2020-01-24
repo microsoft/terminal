@@ -359,6 +359,25 @@ void Pane::Close()
 }
 
 // Method Description:
+// - Prepare this pane to be removed from the UI hierarchy by closing all controls
+//   and connections beneath it.
+void Pane::Shutdown()
+{
+    // Lock the create/close lock so that another operation won't concurrently
+    // modify our tree
+    std::unique_lock lock{ _createCloseLock };
+    if (_IsLeaf())
+    {
+        _control.Close();
+    }
+    else
+    {
+        _firstChild->Shutdown();
+        _secondChild->Shutdown();
+    }
+}
+
+// Method Description:
 // - Get the root UIElement of this pane. There may be a single TermControl as a
 //   child, or an entire tree of grids and panes as children of this element.
 // Arguments:

@@ -75,6 +75,9 @@
     <ProjectReference Include="..\..\internal\internal.vcxproj">
       <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
+      <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MockTermSettings.h" />
