@@ -161,7 +161,7 @@ public:
 
     void MoveSelectionAnchor(winrt::Microsoft::Terminal::Settings::Direction dir,
                              winrt::Microsoft::Terminal::Settings::SelectionExpansionMode mode,
-                             winrt::Microsoft::Terminal::Settings::SelectionTarget target = winrt::Microsoft::Terminal::Settings::SelectionTarget::End);
+                             winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget target = winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget::End);
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
@@ -256,7 +256,7 @@ private:
 
     // These methods are used by Keyboard Selection
     void _UpdateAnchorByCell(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
-    void _UpdateAnchorByWord(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor, winrt::Microsoft::Terminal::Settings::SelectionTarget target = winrt::Microsoft::Terminal::Settings::SelectionTarget::End);
+    void _UpdateAnchorByWord(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor, winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget target = winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget::End);
     void _UpdateAnchorByViewport(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
     void _UpdateAnchorByBuffer(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
 #pragma endregion

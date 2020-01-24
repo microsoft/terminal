@@ -426,10 +426,10 @@ void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
 // - mode: the selection expansion mode that the selection anchor will adhere to
 // Return Value:
 // - <none>
-void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, SelectionTarget target)
+void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, SelectionAnchorTarget target)
 {
     // convert to buffer coordinates
-    COORD positionWithOffsets = ((target == SelectionTarget::Start) ? _selectionAnchor : _endSelectionPosition);
+    COORD positionWithOffsets = ((target == SelectionAnchorTarget::Start) ? _selectionAnchor : _endSelectionPosition);
     positionWithOffsets.Y += _selectionVerticalOffset;
 
     switch (mode)
@@ -474,7 +474,7 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
 
     // update internal state of selection anchor and vertical offset
     THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(ViewStartIndex()), &positionWithOffsets.Y));
-    if (target == SelectionTarget::Start)
+    if (target == SelectionAnchorTarget::Start)
     {
         _selectionAnchor = positionWithOffsets;
     }
@@ -521,11 +521,11 @@ void Terminal::_UpdateAnchorByCell(Direction dir, COORD& anchor)
 // - dir: the direction that the selection anchor will attempt to move to
 // Return Value:
 // - <none>
-void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionTarget target)
+void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionAnchorTarget target)
 {
     // we need this to be able to compare it later
     // NOTE: if target = START --> return END; else return START
-    COORD otherSelectionAnchor = ((target == SelectionTarget::Start) ? _endSelectionPosition : _selectionAnchor);
+    COORD otherSelectionAnchor = ((target == SelectionAnchorTarget::Start) ? _endSelectionPosition : _selectionAnchor);
     otherSelectionAnchor.Y += _selectionVerticalOffset;
 
     auto bufferViewport = _buffer->GetSize();
