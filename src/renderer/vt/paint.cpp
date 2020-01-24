@@ -376,8 +376,6 @@ using namespace Microsoft::Console::Types;
         return S_OK;
     }
 
-    RETURN_IF_FAILED(_MoveCursor(coord));
-
     std::wstring unclusteredString;
     unclusteredString.reserve(clusters.size());
     short totalWidth = 0;
@@ -445,9 +443,36 @@ using namespace Microsoft::Console::Types;
                                      (totalWidth - numSpaces) :
                                      totalWidth;
 
+    if (cchActual == 0)
+    {
+        // If the previous row wrapped, but this line is empty, then we actually
+        // do want to move the cursor down. Otherwise, we'll possibly end up
+        // accidentally erasing the last character from the previous line, as
+        // the cursor is still waiting on that character for the next character
+        // to follow it.
+        _wrappedRow = std::nullopt;
+        // TODO:<Before PR>: Write a test that emulates ~/vttests/reflow-120.py
+        // TODO:<Before PR>: Write a test that emulates ~/vttests/reflow-advanced.py
+    }
+
+    // Move the cursor to the start of this run.
+    RETURN_IF_FAILED(_MoveCursor(coord));
+
     // Write the actual text string
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
+
+    // If we've written text to the last column of the viewport, then mark
+    // that we've wrapped this line. The next time we attempt to move the
+    // cursor, if we're trying to move it to the start of the next line,
+    // we'll remember that this line was wrapped, and not manually break the
+    // line.
+    // Don't do this is the last character we're writing is a space - The last
+    // char will always be a space, but if we see that, we shouldn't wrap.
+    if ((_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
+    {
+        _wrappedRow = coord.Y;
+    }
 
     // Update our internal tracker of the cursor's position.
     // See MSFT:20266233

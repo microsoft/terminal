@@ -1455,6 +1455,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = cursorHeightInViewportAfter - cursorHeightInViewportBefore;
+
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
         _textBuffer.swap(newTextBuffer);
@@ -1476,7 +1477,6 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
             if (foundWrappedLine || charRow.WasWrapForced())
             {
                 foundWrappedLine = true;
-                _renderTarget.TriggerRedraw(Viewport::FromDimensions({ 0, y }, _viewport.Width(), 1));
             }
         }
     }
