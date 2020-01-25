@@ -6,7 +6,6 @@
 #include "ConptyConnection.g.h"
 #include "ConnectionStateHolder.h"
 #include "../inc/cppwinrt_utils.h"
-#include "../../types/inc/Utf8Utf16Convert.hpp"
 
 #include <conpty-static.h>
 

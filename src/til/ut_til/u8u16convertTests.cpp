@@ -3,12 +3,6 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "../../inc/consoletaeftemplates.hpp"
-
-#include "../inc/Utf8Utf16Convert.hpp"
-
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Foundation.Collections.h>
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
