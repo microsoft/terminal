@@ -6,6 +6,7 @@
 #include "unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 // Method Description:
 // - Helper to determine the selected region of the buffer. Used for rendering.
