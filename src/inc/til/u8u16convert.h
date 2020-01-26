@@ -76,7 +76,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         return S_OK;
                     }
 
-                    return S_FALSE; // the partial is given back
+                    return S_FALSE; // the partial is populated
                 }
 
                 auto backIter = in.end() - 1;
@@ -93,7 +93,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             // If the Lead Byte indicates that the last bytes in the string is a partial UTF-8 code point then cache them:
                             //  Use the bitmask at index `sequenceLen`. Compare the result with the operand having the same index. If they
                             //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
-                            //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion to hstring.
+                            //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion into a UTF-16 string.
                             if ((*backIter & _cmpMasks.at(sequenceLen)) != _cmpOperands.at(sequenceLen))
                             {
                                 std::move(backIter, in.end(), _utfPartials.begin());
@@ -106,7 +106,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     }
                 }
 
-                // give back the part of the string that contains complete code points only
+                // populate the part of the string that contains complete code points only
                 _buffer.append(in, 0u, remainingLength);
                 out = _buffer;
 
@@ -169,10 +169,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         return S_OK;
                     }
 
-                    return S_FALSE; // the high surrogate is given back
+                    return S_FALSE; // the high surrogate is populated
                 }
 
-                if (in.back() >= 0xD800u && in.back() <= 0xDBFFu) // range of high surrogates
+                // cache the last value in the string if it is in the range of high surrogates
+                if (in.back() >= 0xD800u && in.back() <= 0xDBFFu)
                 {
                     _utfPartials.front() = in.back();
                     --remainingLength;
@@ -183,7 +184,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     _partialsLen = 0u;
                 }
 
-                // give back the part of the string that contains complete code points only
+                // populate the part of the string that contains complete code points only
                 _buffer.append(in, 0u, remainingLength);
                 out = _buffer;
 
@@ -245,19 +246,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _Utf8BitMasks::IsLeadByteThreeByteSequence,
         };
 
-        std::basic_string<charT> _buffer;
+        std::basic_string<charT> _buffer; // buffer to which the poulated string_view refers
         std::array<charT, 4> _utfPartials; // buffer for code units of a partial code point that have to be cached
         size_t _partialsLen{}; // number of cached code units
     };
 
-    // make clear what string type the state is for
+    // make clear what incoming string type the state is for
     typedef u8u16state<char> u8state;
     typedef u8u16state<wchar_t> u16state;
 
     // Routine Description:
     // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.
     // Arguments:
-    // - in - string_view of the UTF-8 string to be converted
+    // - in - UTF-8 string to be converted
     // - out - reference to the resulting UTF-16 string
     // Return Value:
     // - S_OK          - the conversion succeded
@@ -303,7 +304,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // - Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
     // Arguments:
-    // - in - string_view of the UTF-8 string to be converted
+    // - in - UTF-8 string to be converted
     // - out - reference to the resulting UTF-16 string
     // - state - reference to a til::u8state class holding the status of the current partials handling
     // Return Value:
@@ -323,7 +324,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // - Takes a UTF-16 string and performs the conversion to UTF-8. NOTE: The function relies on getting complete UTF-16 characters at the string boundaries.
     // Arguments:
-    // - in - wstring_view of the UTF-16 string to be converted
+    // - in - UTF-16 string to be converted
     // - out - reference to the resulting UTF-8 string
     // Return Value:
     // - S_OK          - the conversion succeded
@@ -372,7 +373,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // - Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
     // Arguments:
-    // - in - string_view of the UTF-16 string to be converted
+    // - in - UTF-16 string to be converted
     // - out - reference to the resulting UTF-8 string
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
@@ -392,7 +393,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.
     // Arguments:
-    // - in - string_view of the UTF-8 string to be converted
+    // - in - UTF-8 string to be converted
     // Return Value:
     // - the resulting UTF-16 string
     // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
@@ -408,7 +409,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
     // Arguments:
-    // - in - string_view of the UTF-8 string to be converted
+    // - in - UTF-8 string to be converted
     // - state - reference to a til::u8state class holding the status of the current partials handling
     // Return Value:
     // - the resulting UTF-16 string
@@ -425,7 +426,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // - Takes a UTF-16 string and performs the conversion to UTF-8. NOTE: The function relies on getting complete UTF-16 characters at the string boundaries.
     // Arguments:
-    // - in - string_view of the UTF-16 string to be converted
+    // - in - UTF-16 string to be converted
     // Return Value:
     // - the resulting UTF-8 string
     // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
@@ -441,7 +442,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Routine Description:
     // Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
     // Arguments:
-    // - in - string_view of the UTF-16 string to be converted
+    // - in - UTF-16 string to be converted
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
     // - the resulting UTF-8 string
