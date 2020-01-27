@@ -2065,7 +2065,7 @@ void TextBufferTests::GetWordStart()
 
         // tests for second line of text
         { {  0, 1 },     {{ 0, 1 },       { 0, 1 }} },
-        { {  1, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  1, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
         { {  3, 1 },     {{ 2, 1 },       { 2, 1 }} },
         { {  5, 1 },     {{ 2, 1 },       { 2, 1 }} },
@@ -2085,11 +2085,11 @@ void TextBufferTests::GetWordStart()
         COORD result;
 
         // Test with accessibilityMode = false
-        result = _buffer->GetWordStart(test.startPos, delimiters, false);
+        result = _buffer->GetWordStart(test.startPos, delimiters, /*accessibilityMode*/ false);
         VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
 
         // Test with accessibilityMode = true
-        result = _buffer->GetWordStart(test.startPos, delimiters, true);
+        result = _buffer->GetWordStart(test.startPos, delimiters, /*accessibilityMode*/ true);
         VERIFY_ARE_EQUAL(test.expected.accessibilityModeEnabled, result);
     }
 }
@@ -2133,10 +2133,10 @@ void TextBufferTests::GetWordEnd()
         { { 1,   0 },   {{  3, 0 },       {  5, 0 }} },
         { { 3,   0 },   {{  3, 0 },       {  5, 0 }} },
         { { 4,   0 },   {{  4, 0 },       {  5, 0 }} },
-        { { 5,   0 },   {{  9, 0 },       {  0, 1 }} },
-        { { 6,   0 },   {{  9, 0 },       {  0, 1 }} },
-        { {20,   0 },   {{ 79, 0 },       {  0, 1 }} },
-        { {79,   0 },   {{ 79, 0 },       {  0, 1 }} },
+        { { 5,   0 },   {{  9, 0 },       {  2, 1 }} },
+        { { 6,   0 },   {{  9, 0 },       {  2, 1 }} },
+        { {20,   0 },   {{ 79, 0 },       {  2, 1 }} },
+        { {79,   0 },   {{ 79, 0 },       {  2, 1 }} },
 
         // tests for second line of text
         { {  0, 1 },     {{ 1, 1 },       {  2, 1 }} },
@@ -2146,10 +2146,10 @@ void TextBufferTests::GetWordEnd()
         { {  5, 1 },     {{ 5, 1 },       {  9, 1 }} },
         { {  6, 1 },     {{ 8, 1 },       {  9, 1 }} },
         { {  7, 1 },     {{ 8, 1 },       {  9, 1 }} },
-        { {  9, 1 },     {{13, 1 },       {  0, 2 }} },
-        { { 10, 1 },     {{13, 1 },       {  0, 2 }} },
-        { { 20, 1 },     {{79, 1 },       {  0, 2 }} },
-        { { 79, 1 },     {{79, 1 },       {  0, 2 }} },
+        { {  9, 1 },     {{13, 1 },       {  0, 9001 }} },
+        { { 10, 1 },     {{13, 1 },       {  0, 9001 }} },
+        { { 20, 1 },     {{79, 1 },       {  0, 9001 }} },
+        { { 79, 1 },     {{79, 1 },       {  0, 9001 }} },
     };
     // clang-format off
 
@@ -2160,11 +2160,11 @@ void TextBufferTests::GetWordEnd()
         COORD result;
 
         // Test with accessibilityMode = false
-        result = _buffer->GetWordEnd(test.startPos, delimiters, false);
+        result = _buffer->GetWordEnd(test.startPos, delimiters, /*accessibilityMode*/ false);
         VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
 
         // Test with accessibilityMode = true
-        result = _buffer->GetWordEnd(test.startPos, delimiters, true);
+        result = _buffer->GetWordEnd(test.startPos, delimiters, /*accessibilityMode*/ true);
         VERIFY_ARE_EQUAL(test.expected.accessibilityModeEnabled, result);
     }
 }

@@ -311,8 +311,8 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         else if (unit <= TextUnit::TextUnit_Word)
         {
             // expand to word
-            _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-            _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
+            _start = buffer.GetWordStart(_start, _wordDelimiters, /*accessibilityMode*/ true);
+            _end = buffer.GetWordEnd(_start, _wordDelimiters, /*accessibilityMode*/ true);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
@@ -523,7 +523,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
             {
                 currentScreenInfoRow = _start.Y + i;
                 const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-                if (1) //row.GetCharRow().ContainsText())
+                if (row.GetCharRow().ContainsText())
                 {
                     const size_t rowRight = row.GetCharRow().MeasureRight();
                     size_t startIndex = 0;
@@ -1055,6 +1055,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const auto bufferSize = buffer.GetSize();
     const auto bufferOrigin = bufferSize.Origin();
     const auto bufferEnd = bufferSize.EndInclusive();
+    const auto lastCharPos = buffer.GetLastNonSpaceCharacter();
 
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
@@ -1071,7 +1072,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             {
                 fSuccess = false;
             }
-            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters))
+            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, lastCharPos))
             {
                 resultPos = nextPos;
                 *pAmountMoved += 1;

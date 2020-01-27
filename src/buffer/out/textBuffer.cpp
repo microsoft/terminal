@@ -958,8 +958,8 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 // - wordDelimiters - what characters are we considering for the separation of words
 // - accessibilityMode - when enabled, we continue expanding left until we are at the beginning of a readable word
 // Return Value:
-// - The COORD for the first character on the "word"  (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool /*accessibilityMode*/) const
+// - The COORD for the first character on the "word" (inclusive)
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode) const
 {
     const auto bufferSize = GetSize();
     COORD result = target;
@@ -971,35 +971,64 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     }
 
     auto bufferIterator = GetTextDataAt(result);
-    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
-    while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+
+    if (accessibilityMode)
     {
-        bufferSize.DecrementInBounds(result);
-        --bufferIterator;
+        bool stayAtOrigin = false;
+
+        // ignore left boundary. Continue until readable text found
+        while (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+        {
+            if (bufferSize.DecrementInBounds(result))
+            {
+                --bufferIterator;
+            }
+            else
+            {
+                // first char in buffer is a DelimiterChar or ControlChar
+                // we can't move any further back
+                stayAtOrigin = true;
+                break;
+            }
+        }
+
+        // make sure we expand to the left boundary or the beginning of the word
+        while (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+        {
+            if (bufferSize.DecrementInBounds(result))
+            {
+                --bufferIterator;
+            }
+            else
+            {
+                // first char in buffer is a RegularChar
+                // we can't move any further back
+                break;
+            }
+        }
+
+        // move off of delimiter and onto word start
+        if (!stayAtOrigin && _GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+        {
+            bufferSize.IncrementInBounds(result);
+        }
     }
-
-    //if (accessibilityMode)
-    //{
-    //    // make sure we expand to the beggining of the word
-    //    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
-    //    {
-    //        while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar))
-    //        {
-    //            bufferSize.DecrementInBounds(result);
-    //            --bufferIterator;
-    //        }
-    //    }
-
-    //    // move back onto word start
-    //    if (result.X != bufferSize.Left() && _GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
-    //    {
-    //        bufferSize.IncrementInBounds(result);
-    //    }
-    //}
-    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    else
     {
-        // move off of delimiter
-        bufferSize.IncrementInBounds(result);
+        const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+
+        // expand left until we hit the left boundary or a different delimiter class
+        while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+        {
+            bufferSize.DecrementInBounds(result);
+            --bufferIterator;
+        }
+
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+        {
+            // move off of delimiter
+            bufferSize.IncrementInBounds(result);
+        }
     }
 
     return result;
@@ -1015,74 +1044,115 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
 // - The COORD for the last character on the "word" (inclusive)
 const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode) const
 {
+    // Consider a buffer with this text in it:
+    // "  word   other  "
+    // In selection (accessibilityMode = false),
+    //  a "word" is defined as the range between two delimiters
+    //  so the words in the example include ["  ", "word", "   ", "other", "  "]
+    // In accessibility (accessibilityMode = true),
+    //  a "word" includes the delimiters after a range of readable characters
+    //  so the words in the example include ["word   ", "other  "]
+    // NOTE: the end anchor (this one) is exclusive
+
     const auto bufferSize = GetSize();
     COORD result = target;
-
-    // can't expand right
-    if (target.X == bufferSize.RightInclusive())
-    {
-        if (accessibilityMode)
-        {
-            // NOTE: this may be out of bounds. We don't care in accessibility mode
-            return { bufferSize.Left(), target.Y + 1 };
-        }
-        else
-        {
-            return result;
-        }
-    }
-
     auto bufferIterator = GetTextDataAt(result);
-    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
-    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
-    {
-        bufferSize.IncrementInBounds(result);
-        ++bufferIterator;
-    }
 
     if (accessibilityMode)
     {
-        // make sure we expand to the beginning of the NEXT word
-        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+        // ignore right boundary. Continue through readable text found
+        while (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
         {
-            while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar))
+            if (bufferSize.IncrementInBounds(result, true))
             {
-                bufferSize.IncrementInBounds(result);
                 ++bufferIterator;
+            }
+            else
+            {
+                // last char in buffer is a RegularChar
+                // we can't move any further forward
+                break;
             }
         }
 
-        // handle being at the right boundary
-        if (result.X == bufferSize.RightInclusive())
+        // make sure we expand to the beginning of the NEXT word
+        while (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
         {
-            bufferSize.IncrementInBounds(result);
+            if (bufferSize.IncrementInBounds(result, true))
+            {
+                ++bufferIterator;
+            }
+            else
+            {
+                // we are at the EndInclusive COORD
+                // this signifies that we must include the last char in the buffer
+                // but the position of the COORD points to nothing
+                break;
+            }
         }
     }
-    else if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    else
     {
-        // move off of delimiter
-        bufferSize.DecrementInBounds(result);
+        // can't expand right
+        if (target.X == bufferSize.RightInclusive())
+        {
+            return result;
+        }
+
+        const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+
+        // expand right until we hit the right boundary or a different delimiter class
+        while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+        {
+            bufferSize.IncrementInBounds(result);
+            ++bufferIterator;
+        }
+
+        if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+        {
+            // move off of delimiter
+            bufferSize.DecrementInBounds(result);
+        }
     }
 
     return result;
 }
 
-bool TextBuffer::MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) const
+// Method Description:
+// - Update pos to be the position of the first character of the next word. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// - lastCharPos - the position of the last nonspace character in the text buffer (to improve performance)
+// Return Value:
+// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
+// - pos - The COORD for the first character on the "word" (inclusive)
+bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const
 {
     auto copy = pos;
-    auto bufferSize = GetSize();
+    const auto bufferSize = GetSize();
 
     auto text = GetTextDataAt(copy)->data();
     auto delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+
     // started on a word, continue until the end of the word
     while (delimiterClass == DelimiterClass::RegularChar)
     {
         if (!bufferSize.IncrementInBounds(copy))
         {
+            // last char in buffer is a RegularChar
+            // thus there is no next word
             return false;
         }
         text = GetTextDataAt(copy)->data();
         delimiterClass = _GetDelimiterClass(text, wordDelimiters);
+    }
+
+    // we are already on/past the last RegularChar
+    //const auto lastCharPos = GetLastNonSpaceCharacter();
+    if (bufferSize.CompareInBounds(copy, lastCharPos) >= 0)
+    {
+        return false;
     }
 
     // on whitespace, continue until the beginning of the next word
@@ -1090,6 +1160,8 @@ bool TextBuffer::MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) co
     {
         if (!bufferSize.IncrementInBounds(copy))
         {
+            // last char in buffer is a DelimiterChar or ControlChar
+            // there is no next word
             return false;
         }
         text = GetTextDataAt(copy)->data();
@@ -1101,6 +1173,14 @@ bool TextBuffer::MoveToNextWord(COORD& pos, std::wstring_view wordDelimiters) co
     return true;
 }
 
+// Method Description:
+// - Update pos to be the position of the first character of the previous word. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// - wordDelimiters - what characters are we considering for the separation of words
+// Return Value:
+// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
+// - pos - The COORD for the first character on the "word" (inclusive)
 bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const
 {
     auto copy = pos;
@@ -1108,22 +1188,27 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 
     auto text = GetTextDataAt(copy)->data();
     auto delimiterClass = _GetDelimiterClass(text, wordDelimiters);
-    // started on a word, continue until the beginning of the word
-    while (delimiterClass == DelimiterClass::RegularChar)
+
+    // started on whitespace/delimiter, continue until the end of the previous word
+    while (delimiterClass != DelimiterClass::RegularChar)
     {
         if (!bufferSize.DecrementInBounds(copy))
         {
+            // first char in buffer is a DelimiterChar or ControlChar
+            // there is no previous word
             return false;
         }
         text = GetTextDataAt(copy)->data();
         delimiterClass = _GetDelimiterClass(text, wordDelimiters);
     }
 
-    // on whitespace, continue until the end of the previous word
-    while (delimiterClass != DelimiterClass::RegularChar)
+    // on a word, continue until the beginning of the word
+    while (delimiterClass == DelimiterClass::RegularChar)
     {
         if (!bufferSize.DecrementInBounds(copy))
         {
+            // first char in buffer is a RegularChar
+            // there is no previous word
             return false;
         }
         text = GetTextDataAt(copy)->data();

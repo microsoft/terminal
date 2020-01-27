@@ -31,8 +31,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         static IInspectable GetInstance()
         {
-            static auto eo = make_self<EmptyObject>();
-            return eo.as<IInspectable>();
+            static auto empty = make_self<EmptyObject>();
+            return *empty;
         }
     };
 
@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO GitHub #605: Search functionality
         // we need to wrap this around the UiaTextRange FindText() function
         // but right now it returns E_NOTIMPL, so let's just return nullptr for now.
-        throw winrt::hresult_not_implemented();
+        return nullptr;
     }
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
