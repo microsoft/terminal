@@ -72,6 +72,24 @@ For example, here's a sample of the default keybindings:
 
 ```
 
+### Unbinding keys
+
+If you ever come across a key binding that you're unhappy with, it's possible to
+easily change the keybindings. For example, vim uses <kbd>Ctrl+^</kbd> as a
+binding for "switch to previous buffer", which conflicts with the Terminal's
+default keybinding for "open a new tab with the sixth profile". If you'd like to
+unbind that keybinding, and allow the keystroke to fall through to vim, you can
+add the following to your keybindings:
+
+```json
+{
+    "command" : null, "keys" : ["ctrl+shift+6"]
+},
+```
+
+This will _unbind_ <kbd>Ctrl+Shift+6</kbd>, allowing vim to use the keystroke
+instead of the terminal.
+
 ## Profiles
 
 A profile contains the settings applied when a new WT tab is opened. Each

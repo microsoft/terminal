@@ -29,6 +29,7 @@ namespace TerminalAppLocalTests
     class ProfileTests;
     class ColorSchemeTests;
     class KeyBindingsTests;
+    class TabTests;
 };
 namespace TerminalAppUnitTests
 {
@@ -114,10 +115,12 @@ private:
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
+    void _ValidateMediaResources();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;
     friend class TerminalAppLocalTests::KeyBindingsTests;
+    friend class TerminalAppLocalTests::TabTests;
     friend class TerminalAppUnitTests::DynamicProfileTests;
 };

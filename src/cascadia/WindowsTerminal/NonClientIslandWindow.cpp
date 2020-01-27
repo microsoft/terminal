@@ -399,6 +399,32 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 }
 
 // Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+{
+    const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
+    RECT islandFrame{};
+
+    // If we failed to get the correct window size for whatever reason, log
+    // the error and go on. We'll use whatever the control proposed as the
+    // size of our window, which will be at least close.
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
+
+    islandFrame.top = -topBorderVisibleHeight;
+
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+
+    return {
+        islandFrame.right - islandFrame.left,
+        islandFrame.bottom - islandFrame.top + titleBarHeight
+    };
+}
+
+// Method Description:
 // - Updates the borders of our window frame, using DwmExtendFrameIntoClientArea.
 // Arguments:
 // - <none>

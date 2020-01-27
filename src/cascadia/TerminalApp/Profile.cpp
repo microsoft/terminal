@@ -185,12 +185,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     terminalSettings.FontSize(_fontSize);
     terminalSettings.Padding(_padding);
 
-    terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
+    terminalSettings.Commandline(_commandline);
 
     if (_startingDirectory)
     {
         const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
-        terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
+        terminalSettings.StartingDirectory(evaluatedDirectory);
     }
 
     // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
@@ -231,7 +231,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
 
     if (_backgroundImageOpacity)
@@ -848,6 +848,14 @@ void Profile::SetIconPath(std::wstring_view path)
 }
 
 // Method Description:
+// - Resets the std::optional holding the icon file path string.
+//   HasIcon() will return false after the execution of this function.
+void Profile::ResetIconPath()
+{
+    _icon.reset();
+}
+
+// Method Description:
 // - Returns this profile's icon path, if one is set. Otherwise returns the
 //   empty string. This method will expand any environment variables in the
 //   path, if there are any.
@@ -878,6 +886,14 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
     }
 
     return result;
+}
+
+// Method Description:
+// - Resets the std::optional holding the background image file path string.
+//   HasBackgroundImage() will return false after the execution of this function.
+void Profile::ResetBackgroundImagePath()
+{
+    _backgroundImage.reset();
 }
 
 // Method Description:

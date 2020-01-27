@@ -123,7 +123,7 @@ public:
 
     void Reset();
 
-    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
     UnicodeStorage& GetUnicodeStorage() noexcept;
@@ -159,6 +159,8 @@ public:
                               const int fontHeightPoints,
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
+
+    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer);
 
 private:
     std::deque<ROW> _storage;

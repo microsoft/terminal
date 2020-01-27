@@ -11,12 +11,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct EchoConnection : EchoConnectionT<EchoConnection>
     {
-        EchoConnection();
+        EchoConnection() noexcept;
 
-        void Start();
+        void Start() noexcept;
         void WriteInput(hstring const& data);
-        void Resize(uint32_t rows, uint32_t columns);
-        void Close();
+        void Resize(uint32_t rows, uint32_t columns) noexcept;
+        void Close() noexcept;
 
         ConnectionState State() const noexcept { return ConnectionState::Connected; }
 

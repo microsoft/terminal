@@ -178,8 +178,11 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
+    TEST_METHOD(LineFeedEscapeSequences);
+
     TEST_METHOD(ScrollLines256Colors);
 
+    TEST_METHOD(SetScreenMode);
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
@@ -198,6 +201,9 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownAcrossMargins);
     TEST_METHOD(CursorUpDownOutsideMargins);
     TEST_METHOD(CursorUpDownExactlyAtMargins);
+
+    TEST_METHOD(CursorNextPreviousLine);
+    TEST_METHOD(CursorPositionRelative);
 
     TEST_METHOD(CursorSaveRestore);
 
@@ -341,7 +347,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: RI from below top of viewport");
 
-    stateMachine.ProcessString(L"foo\nfoo", 7);
+    stateMachine.ProcessString(L"foo\nfoo");
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
     VERIFY_ARE_EQUAL(viewport.Top(), 0);
@@ -362,7 +368,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: RI from top of viewport");
     cursor.SetPosition({ 0, 0 });
-    stateMachine.ProcessString(L"123456789", 9);
+    stateMachine.ProcessString(L"123456789");
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 0);
@@ -762,7 +768,7 @@ void ScreenBufferTests::EraseAllTests()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
 
-    stateMachine.ProcessString(L"foo", 3);
+    stateMachine.ProcessString(L"foo");
     COORD originalRelativePosition = { 3, 0 };
     VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
     VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
@@ -784,7 +790,7 @@ void ScreenBufferTests::EraseAllTests()
     ////////////////////////////////////////////////////////////////////////
     Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
 
-    stateMachine.ProcessString(L"bar\nbar\nbar", 11);
+    stateMachine.ProcessString(L"bar\nbar\nbar");
     viewport = si._viewport;
     originalRelativePosition = cursor.GetPosition();
     viewport.ConvertToOrigin(&originalRelativePosition);
@@ -814,7 +820,7 @@ void ScreenBufferTests::EraseAllTests()
 
     cursor.SetPosition({ 0, 275 });
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 220 }, true));
-    stateMachine.ProcessString(L"bar\nbar\nbar", 11);
+    stateMachine.ProcessString(L"bar\nbar\nbar");
     viewport = si._viewport;
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 277);
@@ -855,19 +861,19 @@ void ScreenBufferTests::OutputNULTest()
 
     Log::Comment(NoThrowString().Format(
         L"Writing a single NUL"));
-    stateMachine.ProcessString(L"\0", 1);
+    stateMachine.ProcessString({ L"\0", 1 });
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
 
     Log::Comment(NoThrowString().Format(
         L"Writing many NULs"));
-    stateMachine.ProcessString(L"\0\0\0\0\0\0\0\0", 8);
+    stateMachine.ProcessString({ L"\0\0\0\0\0\0\0\0", 8 });
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
 
     Log::Comment(NoThrowString().Format(
         L"Testing a single NUL followed by real text"));
-    stateMachine.ProcessString(L"\0foo", 4);
+    stateMachine.ProcessString({ L"\0foo", 4 });
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
 
@@ -877,7 +883,7 @@ void ScreenBufferTests::OutputNULTest()
 
     Log::Comment(NoThrowString().Format(
         L"Writing NULs in between other strings"));
-    stateMachine.ProcessString(L"\0foo\0bar\0", 9);
+    stateMachine.ProcessString({ L"\0foo\0bar\0", 9 });
     VERIFY_ARE_EQUAL(6, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
 }
@@ -909,8 +915,7 @@ void ScreenBufferTests::VtResize()
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,30"));
 
-    std::wstring sequence = L"\x1b[8;30;80t";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(L"\x1b[8;30;80t");
 
     auto newSbHeight = si.GetBufferSize().Height();
     auto newSbWidth = si.GetBufferSize().Width();
@@ -932,8 +937,7 @@ void ScreenBufferTests::VtResize()
         L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
         L" The viewport should be w,h=80,40"));
 
-    sequence = L"\x1b[8;40;80t";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(L"\x1b[8;40;80t");
 
     newSbHeight = si.GetBufferSize().Height();
     newSbWidth = si.GetBufferSize().Width();
@@ -955,8 +959,7 @@ void ScreenBufferTests::VtResize()
         L" The Screen buffer height should remain unchanged, but the width should be 90 columns"
         L" The viewport should be w,h=90,40"));
 
-    sequence = L"\x1b[8;40;90t";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(L"\x1b[8;40;90t");
 
     newSbHeight = si.GetBufferSize().Height();
     newSbWidth = si.GetBufferSize().Width();
@@ -978,8 +981,7 @@ void ScreenBufferTests::VtResize()
         L" The Screen buffer height should remain unchanged, but the width should be 12 columns"
         L" The viewport should be w,h=12,12"));
 
-    sequence = L"\x1b[8;12;12t";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(L"\x1b[8;12;12t");
 
     newSbHeight = si.GetBufferSize().Height();
     newSbWidth = si.GetBufferSize().Width();
@@ -1000,8 +1002,7 @@ void ScreenBufferTests::VtResize()
         L"Write '\x1b[8;0;0t'"
         L" Nothing should change"));
 
-    sequence = L"\x1b[8;0;0t";
-    stateMachine.ProcessString(&sequence[0], sequence.length());
+    stateMachine.ProcessString(L"\x1b[8;0;0t");
 
     newSbHeight = si.GetBufferSize().Height();
     newSbWidth = si.GetBufferSize().Width();
@@ -1054,8 +1055,7 @@ void ScreenBufferTests::VtResizeComprehensive()
         expectedViewWidth,
         expectedViewHeight));
 
-    std::wstring sequence = ss.str();
-    stateMachine.ProcessString(sequence);
+    stateMachine.ProcessString(ss.str());
 
     auto newViewHeight = si.GetViewport().Height();
     auto newViewWidth = si.GetViewport().Width();
@@ -1210,29 +1210,24 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
         L"Move the cursor to 2,2, then execute a soft reset.\n"
         L"The cursor should not move."));
 
-    std::wstring seq = L"\x1b[2;2H";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[2;2H");
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
 
-    seq = L"\x1b[!p";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[!p");
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
         L"Set some margins. The cursor should move home."));
 
-    seq = L"\x1b[2;10r";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[2;10r");
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
 
     Log::Comment(NoThrowString().Format(
         L"Move the cursor to 2,2, then execute a soft reset.\n"
         L"The cursor should not move, even though there are margins."));
-    seq = L"\x1b[2;2H";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[2;2H");
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
-    seq = L"\x1b[!p";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[!p");
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
 
     Log::Comment(
@@ -1273,16 +1268,13 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
 
     Log::Comment(NoThrowString().Format(L"Begin by clearing the screen."));
 
-    std::wstring seq = L"\x1b[2J";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[m";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[2J");
+    stateMachine.ProcessString(L"\x1b[m");
 
     Log::Comment(NoThrowString().Format(
         L"Set the margins to 2, 5, then emit 10 'X\\n' strings. "
         L"Each time, check that rows 0-10 have default attributes in their entire row."));
-    seq = L"\x1b[2;5r";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[2;5r");
     // Make sure we clear the margins to not screw up another test.
     auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
@@ -1290,10 +1282,8 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
     {
         Log::Comment(NoThrowString().Format(
             L"Iteration:%d", iteration));
-        seq = L"X";
-        stateMachine.ProcessString(seq);
-        seq = L"\n";
-        stateMachine.ProcessString(seq);
+        stateMachine.ProcessString(L"X");
+        stateMachine.ProcessString(L"\n");
 
         const COORD cursorPos = cursor.GetPosition();
 
@@ -1339,10 +1329,8 @@ void ScreenBufferTests::VtNewlinePastViewport()
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition(COORD({ 0, 0 }));
 
-    std::wstring seq = L"\x1b[m";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[2J";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[m");
+    stateMachine.ProcessString(L"\x1b[2J");
 
     const TextAttribute defaultAttrs{};
 
@@ -1365,8 +1353,7 @@ void ScreenBufferTests::VtNewlinePastViewport()
     auto expectedFillAttr = fillAttr;
     expectedFillAttr.SetStandardErase();
 
-    seq = L"\n";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\n");
 
     const auto viewport = si.GetViewport();
     Log::Comment(NoThrowString().Format(
@@ -1415,10 +1402,8 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition(COORD({ 0, 0 }));
 
-    std::wstring seq = L"\x1b[m";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[2J";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[m");
+    stateMachine.ProcessString(L"\x1b[2J");
 
     const TextAttribute defaultAttrs{};
 
@@ -1444,8 +1429,7 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     auto expectedFillAttr = fillAttr;
     expectedFillAttr.SetStandardErase();
 
-    seq = L"\n";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\n");
 
     const auto viewport = si.GetViewport();
     Log::Comment(NoThrowString().Format(
@@ -1521,96 +1505,79 @@ void ScreenBufferTests::VtSetColorTable()
     Log::Comment(NoThrowString().Format(
         L"Process some valid sequences for setting the table"));
 
-    std::wstring seq = L"\x1b]4;0;rgb:1/1/1\x7";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;0;rgb:1/1/1\x7");
     VERIFY_ARE_EQUAL(RGB(1, 1, 1), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
 
-    seq = L"\x1b]4;1;rgb:1/23/1\x7";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;1;rgb:1/23/1\x7");
     VERIFY_ARE_EQUAL(RGB(1, 0x23, 1), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
 
-    seq = L"\x1b]4;2;rgb:1/23/12\x7";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;2;rgb:1/23/12\x7");
     VERIFY_ARE_EQUAL(RGB(1, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
 
-    seq = L"\x1b]4;3;rgb:12/23/12\x7";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;3;rgb:12/23/12\x7");
     VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
 
-    seq = L"\x1b]4;4;rgb:ff/a1/1b\x7";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;4;rgb:ff/a1/1b\x7");
     VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(4)));
 
-    seq = L"\x1b]4;5;rgb:ff/a1/1b\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:ff/a1/1b\x1b\\");
     VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"Try a bunch of invalid sequences."));
     Log::Comment(NoThrowString().Format(
         L"First start by setting an entry to a known value to compare to."));
-    seq = L"\x1b]4;5;rgb:9/9/9\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:9/9/9\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"));
-    seq = L"\x1b]4;5;rgb:/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many characters in a component"));
-    seq = L"\x1b]4;5;rgb:111/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:111/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
-        L"invalid: too many componenets"));
-    seq = L"\x1b]4;5;rgb:1/1/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+        L"invalid: too many components"));
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:1/1/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no second component"));
-    seq = L"\x1b]4;5;rgb:1//1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:1//1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no components"));
-    seq = L"\x1b]4;5;rgb://\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb://\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no third component"));
-    seq = L"\x1b]4;5;rgb:1/11/\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:1/11/\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: rgbi is not a supported color space"));
-    seq = L"\x1b]4;5;rgbi:1/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;rgbi:1/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: cmyk is not a supported color space"));
-    seq = L"\x1b]4;5;cmyk:1/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;cmyk:1/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no table index should do nothing"));
-    seq = L"\x1b]4;;rgb:1/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;;rgb:1/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: need to specify a color space"));
-    seq = L"\x1b]4;5;1/1/1\x1b\\";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b]4;5;1/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 }
 
@@ -1690,8 +1657,7 @@ void ScreenBufferTests::ResizeAltBuffer()
 
     Log::Comment(NoThrowString().Format(
         L"Switch to alt buffer"));
-    std::wstring seq = L"\x1b[?1049h";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[?1049h");
 
     VERIFY_IS_FALSE(si._IsAltBuffer());
     VERIFY_IS_NOT_NULL(si._psiAlternateBuffer);
@@ -1708,8 +1674,7 @@ void ScreenBufferTests::ResizeAltBuffer()
 
     Log::Comment(NoThrowString().Format(
         L"Switch back from buffer"));
-    seq = L"\x1b[?1049l";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[?1049l");
     VERIFY_IS_FALSE(si._IsAltBuffer());
     VERIFY_IS_NULL(si._psiAlternateBuffer);
 }
@@ -1744,8 +1709,7 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
 
     Log::Comment(NoThrowString().Format(
         L"Switch to alt buffer"));
-    std::wstring seq = L"\x1b[?1049h";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[?1049h");
 
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
     VERIFY_IS_NOT_NULL(mainBuffer._psiAlternateBuffer);
@@ -1797,12 +1761,10 @@ void ScreenBufferTests::VtEraseAllPersistCursor()
         L"Move the cursor to 2,2, then execute a Erase All.\n"
         L"The cursor should not move relative to the viewport."));
 
-    std::wstring seq = L"\x1b[2;2H";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[2;2H");
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
 
-    seq = L"\x1b[2J";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[2J");
 
     auto newViewport = si._viewport;
     COORD expectedCursor = { 1, 1 };
@@ -1827,13 +1789,11 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"The viewport should be full of dark_red on bright_blue"));
 
     auto expectedAttr = TextAttribute(XtermToLegacy(1, 12));
-    std::wstring seq = L"\x1b[31;104m";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[31;104m");
 
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 
-    seq = L"\x1b[2J";
-    stateMachine.ProcessString(&seq[0], seq.length());
+    stateMachine.ProcessString(L"\x1b[2J");
 
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 
@@ -2165,35 +2125,23 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     Log::Comment(NoThrowString().Format(L"  The fifth with bright-green on dark-blue"));
     Log::Comment(NoThrowString().Format(L"  The sixth with bright-green on default-bg"));
 
-    std::wstring seq = L"\x1b[m"; // Reset to defaults
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[m"); // Reset to defaults
+    stateMachine.ProcessString(L"X");
 
-    seq = L"\x1b[92;44m"; // bright-green on dark-blue
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[92;44m"); // bright-green on dark-blue
+    stateMachine.ProcessString(L"X");
 
-    seq = L"\x1b[39m"; // reset fg
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[39m"); // reset fg
+    stateMachine.ProcessString(L"X");
 
-    seq = L"\x1b[49m"; // reset bg
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[49m"); // reset bg
+    stateMachine.ProcessString(L"X");
 
-    seq = L"\x1b[92;44m"; // bright-green on dark-blue
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[92;44m"); // bright-green on dark-blue
+    stateMachine.ProcessString(L"X");
 
-    seq = L"\x1b[49m"; // reset bg
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[49m"); // reset bg
+    stateMachine.ProcessString(L"X");
 
     // See the log comment above for description of these values.
     TextAttribute expectedDefaults{};
@@ -2356,16 +2304,11 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     Log::Comment(NoThrowString().Format(L"  The second with reversed attrs"));
     Log::Comment(NoThrowString().Format(L"  The third after resetting the attrs back"));
 
-    std::wstring seq = L"X";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[7m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[27m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(L"\x1b[7m");
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(L"\x1b[27m");
+    stateMachine.ProcessString(L"X");
 
     TextAttribute expectedDefaults{ gci.GetFillAttribute() };
     expectedDefaults.SetDefaultBackground();
@@ -2426,13 +2369,9 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
 
-    std::wstring seq = L"\x1b[m";
-    stateMachine.ProcessString(seq);
-    seq = L"XX";
-    stateMachine.ProcessString(seq);
-
-    seq = UNICODE_BACKSPACE;
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[m");
+    stateMachine.ProcessString(L"XX");
+    stateMachine.ProcessString({ &UNICODE_BACKSPACE, 1 });
 
     TextAttribute expectedDefaults{};
     expectedDefaults.SetDefaultBackground();
@@ -2493,8 +2432,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
 
-    std::wstring seq = L"\x1b[m";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[m");
 
     if (writeSingly)
     {
@@ -2564,12 +2502,10 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     Log::Comment(NoThrowString().Format(L"Write 3 X's, move to the left, then delete-char the second."));
     Log::Comment(NoThrowString().Format(L"This emulates editing the prompt line on bash"));
 
-    std::wstring seq = L"\x1b[m";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[m");
     Log::Comment(NoThrowString().Format(
         L"Clear the screen - make sure the line is filled with the current attributes."));
-    seq = L"\x1b[2J";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[2J");
 
     const auto viewport = si.GetViewport();
     const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
@@ -2591,12 +2527,9 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     Log::Comment(NoThrowString().Format(
         L"Print 'XXX', move the cursor left 2, delete a character."));
 
-    seq = L"XXX";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[2D";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[P";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"XXX");
+    stateMachine.ProcessString(L"\x1b[2D");
+    stateMachine.ProcessString(L"\x1b[P");
 
     COORD expectedCursor{ 1, 1 }; // We're expecting y=1, because the 2J above
         // should have moved the viewport down a line.
@@ -2639,10 +2572,8 @@ void ScreenBufferTests::SetGlobalColorTable()
     const COLORREF testColor = RGB(0x11, 0x22, 0x33);
     VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
 
-    std::wstring seq = L"\x1b[41m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[41m");
+    stateMachine.ProcessString(L"X");
     COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
     {
@@ -2668,10 +2599,8 @@ void ScreenBufferTests::SetGlobalColorTable()
 
     Log::Comment(NoThrowString().Format(
         L"Print one X in red, should be the original red color"));
-    seq = L"\x1b[41m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[41m");
+    stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
     {
         const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
@@ -2683,12 +2612,10 @@ void ScreenBufferTests::SetGlobalColorTable()
     }
 
     Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
-    seq = L"\x1b]4;1;rgb:11/22/33\x07";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]4;1;rgb:11/22/33\x07");
     Log::Comment(NoThrowString().Format(
         L"Print another X, both should be the new \"red\" color"));
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(COORD({ 2, 0 }), altCursor.GetPosition());
     {
         const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
@@ -2711,8 +2638,7 @@ void ScreenBufferTests::SetGlobalColorTable()
 
     Log::Comment(NoThrowString().Format(
         L"Print another X, both should be the new \"red\" color"));
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(COORD({ 2, 0 }), mainCursor.GetPosition());
     {
         const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
@@ -2752,10 +2678,8 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     const COLORREF testColor = RGB(0x11, 0x22, 0x33);
     VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
 
-    std::wstring seq = L"\x1b[48;5;123m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[48;5;123m");
+    stateMachine.ProcessString(L"X");
     COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
     {
@@ -2781,10 +2705,8 @@ void ScreenBufferTests::SetColorTableThreeDigits()
 
     Log::Comment(NoThrowString().Format(
         L"Print one X in red, should be the original red color"));
-    seq = L"\x1b[48;5;123m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[48;5;123m");
+    stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
     {
         const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
@@ -2796,16 +2718,13 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     }
 
     Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
-    seq = L"\x1b]4;123;rgb:11/22/33\x07";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]4;123;rgb:11/22/33\x07");
     Log::Comment(NoThrowString().Format(
         L"Print another X, it should be the new \"red\" color"));
     // TODO MSFT:20105972 -
     // You shouldn't need to manually update the attributes again.
-    seq = L"\x1b[48;5;123m";
-    stateMachine.ProcessString(seq);
-    seq = L"X";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[48;5;123m");
+    stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(COORD({ 2, 0 }), altCursor.GetPosition());
     {
         const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
@@ -2839,8 +2758,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
-    std::wstring seq = L"\x1b]10;rgb:33/66/99\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]10;rgb:33/66/99\x1b\\");
 
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
@@ -2848,8 +2766,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     Log::Comment(L"Valid Hexadecimal Notation");
     originalColor = newColor;
     testColor = RGB(0xff, 0xff, 0xff);
-    seq = L"\x1b]10;rgb:ff/ff/ff\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]10;rgb:ff/ff/ff\x1b\\");
 
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
@@ -2857,8 +2774,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     Log::Comment(L"Invalid Decimal Notation");
     originalColor = newColor;
     testColor = RGB(153, 102, 51);
-    seq = L"\x1b]10;rgb:153/102/51\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]10;rgb:153/102/51\x1b\\");
 
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
@@ -2867,8 +2783,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
 
     Log::Comment(L"Invalid syntax");
     testColor = RGB(153, 102, 51);
-    seq = L"\x1b]10;99/66/33\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]10;99/66/33\x1b\\");
 
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
@@ -2897,8 +2812,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
-    std::wstring seq = L"\x1b]11;rgb:33/66/99\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]11;rgb:33/66/99\x1b\\");
 
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
@@ -2906,8 +2820,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     Log::Comment(L"Valid Hexadecimal Notation");
     originalColor = newColor;
     testColor = RGB(0xff, 0xff, 0xff);
-    seq = L"\x1b]11;rgb:ff/ff/ff\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]11;rgb:ff/ff/ff\x1b\\");
 
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
@@ -2915,8 +2828,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     Log::Comment(L"Invalid Decimal Notation");
     originalColor = newColor;
     testColor = RGB(153, 102, 51);
-    seq = L"\x1b]11;rgb:153/102/51\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]11;rgb:153/102/51\x1b\\");
 
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
@@ -2925,8 +2837,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
 
     Log::Comment(L"Invalid Syntax");
     testColor = RGB(153, 102, 51);
-    seq = L"\x1b]11;99/66/33\x1b\\";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b]11;99/66/33\x1b\\");
 
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
@@ -2995,10 +2906,9 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
     VERIFY_IS_GREATER_THAN(mainView.Width(), (dx + numCharsToDelete));
 
-    std::wstring seq = L"X";
     for (int x = 0; x < mainView.Width(); x++)
     {
-        stateMachine.ProcessString(seq);
+        stateMachine.ProcessString(L"X");
     }
 
     VERIFY_ARE_EQUAL(COORD({ mainView.Width() - 1, 0 }), mainCursor.GetPosition());
@@ -3009,9 +2919,8 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
 
     mainCursor.SetPosition({ mainView.Width() - static_cast<short>(dx), 0 });
     std::wstringstream ss;
-    ss << L"\x1b[" << numCharsToDelete << L"P";
-    seq = ss.str(); // Delete N chars
-    stateMachine.ProcessString(seq);
+    ss << L"\x1b[" << numCharsToDelete << L"P"; // Delete N chars
+    stateMachine.ProcessString(ss.str());
 
     Log::Comment(NoThrowString().Format(
         L"row_f=[%s]",
@@ -3066,8 +2975,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleFirstCase()
     VERIFY_ARE_EQUAL(newBufferWidth, mainView.Width());
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
 
-    std::wstring seq = L"ABCDEFG";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"ABCDEFG");
 
     VERIFY_ARE_EQUAL(COORD({ 7, 0 }), mainCursor.GetPosition());
     // Place the cursor on the 'D'
@@ -3077,8 +2985,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleFirstCase()
     // Delete 3 chars - [D, E, F]
     std::wstringstream ss;
     ss << L"\x1b[" << 3 << L"P";
-    seq = ss.str();
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(ss.str());
 
     Log::Comment(NoThrowString().Format(L"after =[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
 
@@ -3128,8 +3035,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleSecondCase()
     VERIFY_ARE_EQUAL(newBufferWidth, mainView.Width());
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
 
-    std::wstring seq = L"ABCDEFG";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"ABCDEFG");
 
     VERIFY_ARE_EQUAL(COORD({ 7, 0 }), mainCursor.GetPosition());
 
@@ -3141,8 +3047,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleSecondCase()
     // Delete 4 chars - [C, D, E, F]
     std::wstringstream ss;
     ss << L"\x1b[" << 4 << L"P";
-    seq = ss.str();
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(ss.str());
 
     Log::Comment(NoThrowString().Format(L"after =[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
 
@@ -4030,17 +3935,12 @@ void _CommonScrollingSetup()
     const auto view = Viewport::FromDimensions({ 0, 0 }, { oldView.Width(), 6 });
     si.SetViewport(view, true);
     cursor.SetPosition({ 0, 0 });
-    std::wstring seq = L"A";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"A");
     cursor.SetPosition({ 0, 5 });
-    seq = L"B";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[2;5r";
-    stateMachine.ProcessString(seq);
-    seq = L"\x1b[2;1H";
-    stateMachine.ProcessString(seq);
-    seq = L"1\n2\n3\n4";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"B");
+    stateMachine.ProcessString(L"\x1b[2;5r");
+    stateMachine.ProcessString(L"\x1b[2;1H");
+    stateMachine.ProcessString(L"1\n2\n3\n4");
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -4064,8 +3964,7 @@ void _CommonScrollingSetup()
         VERIFY_ARE_EQUAL(L"B", iter5->Chars());
     }
 
-    seq = L"\n5\n6\n7\n";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\n5\n6\n7\n");
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -4105,8 +4004,7 @@ void ScreenBufferTests::ScrollUpInMargins()
     auto& cursor = si.GetTextBuffer().GetCursor();
 
     // Execute a Scroll Up command
-    std::wstring seq = L"\x1b[S";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[S");
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -4145,8 +4043,7 @@ void ScreenBufferTests::ScrollDownInMargins()
     auto& cursor = si.GetTextBuffer().GetCursor();
 
     // Execute a Scroll Down command
-    std::wstring seq = L"\x1b[T";
-    stateMachine.ProcessString(seq);
+    stateMachine.ProcessString(L"\x1b[T");
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -4373,6 +4270,8 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     _CommonScrollingSetup();
     // Set the top scroll margin to the top of the screen
     stateMachine.ProcessString(L"\x1b[1;5r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
     // Move to column 5 of line 1, the top of the screen
     stateMachine.ProcessString(L"\x1b[1;5H");
     // Execute a reverse line feed (RI)
@@ -4398,6 +4297,91 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
         VERIFY_ARE_EQUAL(L"6", iter3->Chars());
         VERIFY_ARE_EQUAL(L"7", iter4->Chars());
         VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::LineFeedEscapeSequences()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:withReturn", L"{true, false}")
+    END_TEST_METHOD_PROPERTIES()
+
+    bool withReturn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"withReturn", withReturn));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    std::wstring escapeSequence;
+    if (withReturn)
+    {
+        Log::Comment(L"Testing line feed with carriage return (NEL).");
+        escapeSequence = L"\033E";
+    }
+    else
+    {
+        Log::Comment(L"Testing line feed without carriage return (IND).");
+        escapeSequence = L"\033D";
+    }
+
+    // Set the viewport to a reasonable size.
+    const auto view = Viewport::FromDimensions({ 0, 0 }, { 80, 25 });
+    si.SetViewport(view, true);
+
+    // We'll place the cursor in the center of the line.
+    // If we are performing a line feed with carriage return,
+    // the cursor should move to the leftmost column.
+    const short initialX = view.Width() / 2;
+    const short expectedX = withReturn ? 0 : initialX;
+
+    {
+        Log::Comment(L"Starting at the top of viewport");
+        const short initialY = 0;
+        const short expectedY = initialY + 1;
+        const short expectedViewportTop = si.GetViewport().Top();
+        cursor.SetPosition(COORD{ initialX, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedX, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+    }
+
+    {
+        Log::Comment(L"Starting at the bottom of viewport");
+        const short initialY = si.GetViewport().BottomInclusive();
+        const short expectedY = initialY + 1;
+        const short expectedViewportTop = si.GetViewport().Top() + 1;
+        cursor.SetPosition(COORD{ initialX, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedX, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+    }
+
+    {
+        Log::Comment(L"Starting at the bottom of the scroll margins");
+        // Set the margins to rows 5 to 10.
+        stateMachine.ProcessString(L"\x1b[5;10r");
+        // Make sure we clear the margins on exit so they can't break other tests.
+        auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+        const short initialY = si.GetViewport().Top() + 9;
+        const short expectedY = initialY;
+        const short expectedViewportTop = si.GetViewport().Top();
+        _FillLine(initialY, L'Q', {});
+        cursor.SetPosition(COORD{ initialX, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedX, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+        // Verify the line of Qs has been scrolled up.
+        VERIFY_IS_TRUE(_ValidateLineContains(initialY - 1, L'Q', {}));
+        VERIFY_IS_TRUE(_ValidateLineContains(initialY, L' ', si.GetAttributes()));
     }
 }
 
@@ -4438,7 +4422,7 @@ void ScreenBufferTests::ScrollLines256Colors()
     auto& cursor = si.GetTextBuffer().GetCursor();
 
     TextAttribute expectedAttr{ si.GetAttributes() };
-    std::wstring sgrSeq = L"\x1b[48;5;2m";
+    std::wstring_view sgrSeq = L"\x1b[48;5;2m";
     if (colorStyle == Use16Color)
     {
         expectedAttr.SetBackground(gci.GetColorTableEntry(2));
@@ -4466,7 +4450,7 @@ void ScreenBufferTests::ScrollLines256Colors()
     stateMachine.ProcessString(L"\x1b[H");
 
     // Insert/Delete/Reverse Index 10 lines
-    std::wstring scrollSeq = L"";
+    std::wstring_view scrollSeq = L"";
     if (scrollType == InsertLines)
     {
         scrollSeq = L"\x1b[10L";
@@ -4516,6 +4500,34 @@ void ScreenBufferTests::ScrollLines256Colors()
         VERIFY_ARE_EQUAL(expectedAttr, iter01->TextAttr());
         VERIFY_ARE_EQUAL(expectedAttr, iter02->TextAttr());
     }
+}
+
+void ScreenBufferTests::SetScreenMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    const auto rgbForeground = RGB(12, 34, 56);
+    const auto rgbBackground = RGB(78, 90, 12);
+    const auto testAttr = TextAttribute{ rgbForeground, rgbBackground };
+
+    Log::Comment(L"By default the screen mode is normal.");
+    VERIFY_IS_FALSE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
+
+    Log::Comment(L"When DECSCNM is set, background and foreground colors are switched.");
+    stateMachine.ProcessString(L"\x1B[?5h");
+    VERIFY_IS_TRUE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupBackgroundColor(testAttr));
+
+    Log::Comment(L"When DECSCNM is reset, the colors are normal again.");
+    stateMachine.ProcessString(L"\x1B[?5l");
+    VERIFY_IS_FALSE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
 }
 
 void ScreenBufferTests::SetOriginMode()
@@ -5402,6 +5414,144 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
     }
 
     stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorNextPreviousLine()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"CNL without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should end up in column 0 of line 15.
+    VERIFY_ARE_EQUAL(COORD({ 0, 15 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should end up in column 0 of line 5.
+    VERIFY_ARE_EQUAL(COORD({ 0, 5 }), cursor.GetPosition());
+
+    // Set the margins to 8:12 (9:13 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[9;13r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+    Log::Comment(L"CNL inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should stop on line 12, the bottom margin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 12 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should stop on line 8, the top margin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 8 }), cursor.GetPosition());
+
+    Log::Comment(L"CNL below bottom");
+    // Starting from column 20 of line 13 (1 below bottom margin).
+    cursor.SetPosition(COORD{ 20, 13 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should end up in column 0 of line 18.
+    VERIFY_ARE_EQUAL(COORD({ 0, 18 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL above top margin");
+    // Starting from column 20 of line 7 (1 above top margin).
+    cursor.SetPosition(COORD{ 20, 7 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should end up in column 0 of line 2.
+    VERIFY_ARE_EQUAL(COORD({ 0, 2 }), cursor.GetPosition());
+}
+
+void ScreenBufferTests::CursorPositionRelative()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"HPR without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 5 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[5a");
+    // We should end up in column 25.
+    VERIFY_ARE_EQUAL(COORD({ 25, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[5e");
+    // We should end up on line 15.
+    VERIFY_ARE_EQUAL(COORD({ 20, 15 }), cursor.GetPosition());
+
+    // Enable DECLRMM margin mode (future proofing for when we support it)
+    stateMachine.ProcessString(L"\x1b[?69h");
+    // Set horizontal margins to 18:22 (19:23 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[19;23s");
+    // Set vertical margins to 8:12 (9:13 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[9;13r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
+
+    Log::Comment(L"HPR inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 5 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[5a");
+    // We should end up in column 25 (outside the right margin).
+    VERIFY_ARE_EQUAL(COORD({ 25, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[5e");
+    // We should end up on line 15 (outside the bottom margin).
+    VERIFY_ARE_EQUAL(COORD({ 20, 15 }), cursor.GetPosition());
+
+    Log::Comment(L"HPR to end of line");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 9999 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[9999a");
+    // We should end up in the rightmost column.
+    const auto screenWidth = si.GetBufferSize().Width();
+    VERIFY_ARE_EQUAL(COORD({ screenWidth - 1, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR to bottom of screen");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 9999 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[9999e");
+    // We should end up on the last line.
+    const auto screenHeight = si.GetViewport().Height();
+    VERIFY_ARE_EQUAL(COORD({ 20, screenHeight - 1 }), cursor.GetPosition());
 }
 
 void ScreenBufferTests::CursorSaveRestore()
