@@ -458,7 +458,7 @@ namespace winrt::TerminalApp::implementation
         const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
         _CreateNewTabFromSettings(profileGuid, settings);
-        
+
         const int tabCount = static_cast<int>(_tabs.Size());
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
