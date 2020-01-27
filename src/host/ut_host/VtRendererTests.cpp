@@ -1343,15 +1343,15 @@ void VtRendererTest::TestResize()
         VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
     });
 
-    // Resize the viewport to 120x30
-    // Everything should be invalidated, and a resize message sent.
+    // Resize the viewport to 120x30. A resize message should be sent.
+    // GH#3490: Not everything will be invalidated here. The console host will
+    //   determine which lines need to be invalidated for us.
     const auto newView = Viewport::FromDimensions({ 0, 0 }, { 120, 30 });
     qExpectedInput.push_back("\x1b[8;30;120t");
 
     VERIFY_SUCCEEDED(engine->UpdateViewport(newView.ToInclusive()));
 
     TestPaint(*engine, [&]() {
-        VERIFY_ARE_EQUAL(newView, engine->_invalidRect);
         VERIFY_IS_FALSE(engine->_firstPaint);
         VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
     });

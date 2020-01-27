@@ -195,7 +195,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // viewport, then we're going to need to move the top down. Otherwise,
     // move the bottom up.
     const COORD cOldCursorPos = _buffer->GetCursor().GetPosition();
-    const COORD cOldLastChar = _buffer->GetLastNonSpaceCharacter();
+    COORD cOldLastChar = cOldCursorPos;
+    try
+    {
+        cOldLastChar = _buffer->GetLastNonSpaceCharacter();
+    }
+    CATCH_LOG();
 
     const auto maxRow = std::max(cOldLastChar.Y, cOldCursorPos.Y);
 
