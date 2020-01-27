@@ -718,6 +718,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> actions)
+    {
+        if (_root)
+        {
+            return _root->SetStartupCommandline(actions);
+        }
+        return 0;
+    }
+
+    winrt::hstring AppLogic::EarlyExitMessage()
+    {
+        if (_root)
+        {
+            return _root->EarlyExitMessage();
+        }
+        return { L"" };
+    }
+
     // Method Description:
     // - Writes the given sequence as input to the active terminal connection,
     //   if there is one. Otherwise does nothing.
