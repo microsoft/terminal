@@ -488,7 +488,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
-        const bool isFirstTab = _tabs.empty();
+        const bool isFirstTab = _tabs.Size() == 0;
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -552,7 +552,7 @@ namespace winrt::TerminalApp::implementation
         if (isFirstTab)
         {
             _tabContent.Children().Clear();
-            _tabContent.Children().Append(newTab->GetRootElement());
+            _tabContent.Children().Append(newTabImpl->GetRootElement());
         }
         else
         {
@@ -821,14 +821,15 @@ namespace winrt::TerminalApp::implementation
     {
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
-        auto iterator = _tabs.begin() + tabIndex;
-        (*iterator)->Shutdown();
+        winrt::com_ptr<Tab> shutdownTab;
+        shutdownTab.copy_from(winrt::get_self<implementation::Tab>(_tabs.GetAt(tabIndex)));
+        shutdownTab->Shutdown();
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
 
         // To close the window here, we need to close the hosting window.
-        if (_tabs.size() == 0)
+        if (_tabs.Size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
@@ -1397,7 +1398,8 @@ namespace winrt::TerminalApp::implementation
             // Unfocus all the tabs.
             for (auto tab : _tabs)
             {
-                auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+                winrt::com_ptr<Tab> tabImpl;
+                tabImpl.copy_from(winrt::get_self<implementation::Tab>(tab));
                 tabImpl->SetFocused(false);
             }
 
@@ -1405,12 +1407,13 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    auto tab = winrt::get_self<implementation::Tab>(_tabs.GetAt(selectedIndex));
+                    winrt::com_ptr<Tab> tabImpl;
+                    tabImpl.copy_from(winrt::get_self<implementation::Tab>(_tabs.GetAt(selectedIndex)));
 
                     _tabContent.Children().Clear();
-                    _tabContent.Children().Append(tab->GetRootElement());
+                    _tabContent.Children().Append(tabImpl->GetRootElement());
 
-                    tab->SetFocused(true);
+                    tabImpl->SetFocused(true);
                     _titleChangeHandlers(*this, Title());
                 }
                 CATCH_LOG();
@@ -1431,7 +1434,8 @@ namespace winrt::TerminalApp::implementation
         const auto newSize = e.NewSize();
         for (auto tab : _tabs)
         {
-            auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+            winrt::com_ptr<Tab> tabImpl;
+            tabImpl.copy_from(winrt::get_self<implementation::Tab>(tab));
             tabImpl->ResizeContent(newSize);
         }
     }
@@ -1485,7 +1489,8 @@ namespace winrt::TerminalApp::implementation
             for (auto tab : _tabs)
             {
                 // Attempt to reload the settings of any panes with this profile
-                auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+                winrt::com_ptr<Tab> tabImpl;
+                tabImpl.copy_from(winrt::get_self<implementation::Tab>(tab));
                 tabImpl->UpdateSettings(settings, profileGuid);
             }
         }
@@ -1493,6 +1498,8 @@ namespace winrt::TerminalApp::implementation
         // Update the icon of the tab for the currently focused profile in that tab.
         for (auto tab : _tabs)
         {
+            winrt::com_ptr<Tab> tabImpl;
+            tabImpl.copy_from(winrt::get_self<implementation::Tab>(tab));
             _UpdateTabIcon(tab);
             _UpdateTitle(tab);
         }

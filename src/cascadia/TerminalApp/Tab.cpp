@@ -325,19 +325,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Closes the currently focused pane in this tab. If it's the last pane in
-    //   this tab, our Closed event will be fired (at a later time) for anyone
-    //   registered as a handler of our close event.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void Tab::ClosePane()
-    {
-        _activePane->Close();
-    }
-
-    // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
     //   of Panes in this tab. We'll add events too:
