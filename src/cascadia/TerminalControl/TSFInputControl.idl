@@ -27,5 +27,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         void NotifyFocusEnter();
         void NotifyFocusLeave();
+
+        void Close();
     }
 }

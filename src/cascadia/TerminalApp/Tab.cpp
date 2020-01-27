@@ -246,7 +246,7 @@ namespace winrt::TerminalApp::implementation
     void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
     {
         auto [first, second] = _activePane->Split(splitType, profile, control);
-
+        _activePane = first;
         _AttachEventHandlersToControl(control);
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
@@ -302,6 +302,26 @@ namespace winrt::TerminalApp::implementation
         // NOTE: This _must_ be called on the root pane, so that it can propogate
         // throughout the entire tree.
         _rootPane->NavigateFocus(direction);
+    }
+
+    // Method Description:
+    // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
+    void Tab::Shutdown()
+    {
+        _rootPane->Shutdown();
+    }
+
+    // Method Description:
+    // - Closes the currently focused pane in this tab. If it's the last pane in
+    //   this tab, our Closed event will be fired (at a later time) for anyone
+    //   registered as a handler of our close event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ClosePane()
+    {
+        _activePane->Close();
     }
 
     // Method Description:
