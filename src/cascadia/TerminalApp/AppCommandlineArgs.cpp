@@ -213,6 +213,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         // _getNewTerminalArgs MUST be called before parsing any other options,
         // as it might clear those options while finding the commandline
         args->TerminalArgs(_getNewTerminalArgs(_newPaneCommand));
+        args->SplitStyle(SplitState::Automatic);
         // Make sure to use the `Option`s here to check if they were set -
         // _getNewTerminalArgs might reset them while parsing a commandline
         if ((*_horizontalOption || *_verticalOption) && (_splitHorizontal))
@@ -225,14 +226,6 @@ void AppCommandlineArgs::_buildSplitPaneParser()
             {
                 args->SplitStyle(SplitState::Horizontal);
             }
-            else
-            {
-                args->SplitStyle(SplitState::Automatic);
-            }
-        }
-        else
-        {
-            args->SplitStyle(SplitState::Automatic);
         }
 
         splitPaneActionAndArgs->Args(*args);
@@ -337,7 +330,7 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     //    string, and add them to the commandline for the NewTerminalArgs.
     if (*subcommand.commandlineOption)
     {
-        auto opts = subcommand.subcommand->parse_order(); // const std::vector<Option*>&
+        const std::vector<CLI::Option*>& opts = subcommand.subcommand->parse_order();
         auto foundCommandlineStart = false;
         for (auto opt : opts)
         {
