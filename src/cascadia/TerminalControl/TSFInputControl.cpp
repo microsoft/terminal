@@ -267,7 +267,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
 
-            args.Request().Text(winrt::to_hstring(textRequested.c_str()));
+            args.Request().Text(textRequested);
         }
         CATCH_LOG();
     }
@@ -318,7 +318,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
-                text.c_str());
+                text);
 
             _textBlock.Text(_inputBuffer);
 
