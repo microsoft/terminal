@@ -483,6 +483,13 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 // With well behaving shells during normal operation this safeguard should normally not be encountered.
                 proposedCursorPosition.X = 0;
                 proposedCursorPosition.Y++;
+
+                // Try the character again.
+                // TODO/DANGER: Does this actually work? The above comment seems
+                // to mention the i-=1, but there was no such line here. This is
+                // _scary_. Perhaps this was never hit before we had conpty
+                // wrapping?
+                i--;
             }
         }
 
