@@ -72,7 +72,6 @@ public:
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
-    WINRT_CALLBACK(FilePathDropped, winrt::delegate<winrt::hstring>);
 
 protected:
     void ForceResize()
@@ -102,5 +101,4 @@ protected:
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
-    void _HandleDrop(const HDROP dropHandle);
 };

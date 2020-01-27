@@ -32,5 +32,4 @@ private:
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
     void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::TerminalApp::ToggleFullscreenEventArgs& arg);
-    void _WritePathInput(const winrt::hstring& input);
 };
