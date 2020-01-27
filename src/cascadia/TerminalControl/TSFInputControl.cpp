@@ -59,23 +59,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // set the input scope to Text because this control is for any text.
         _editContext.InputScope(Core::CoreTextInputScope::Text);
 
-        _editContext.TextRequested({ this, &TSFInputControl::_textRequestedHandler });
+        _textRequestedRevoker = _editContext.TextRequested(winrt::auto_revoke, { this, &TSFInputControl::_textRequestedHandler });
 
-        _editContext.SelectionRequested({ this, &TSFInputControl::_selectionRequestedHandler });
+        _selectionRequestedRevoker = _editContext.SelectionRequested(winrt::auto_revoke, { this, &TSFInputControl::_selectionRequestedHandler });
 
-        _editContext.FocusRemoved({ this, &TSFInputControl::_focusRemovedHandler });
+        _focusRemovedRevoker = _editContext.FocusRemoved(winrt::auto_revoke, { this, &TSFInputControl::_focusRemovedHandler });
 
-        _editContext.TextUpdating({ this, &TSFInputControl::_textUpdatingHandler });
+        _textUpdatingRevoker = _editContext.TextUpdating(winrt::auto_revoke, { this, &TSFInputControl::_textUpdatingHandler });
 
-        _editContext.SelectionUpdating({ this, &TSFInputControl::_selectionUpdatingHandler });
+        _selectionUpdatingRevoker = _editContext.SelectionUpdating(winrt::auto_revoke, { this, &TSFInputControl::_selectionUpdatingHandler });
 
-        _editContext.FormatUpdating({ this, &TSFInputControl::_formatUpdatingHandler });
+        _formatUpdatingRevoker = _editContext.FormatUpdating(winrt::auto_revoke, { this, &TSFInputControl::_formatUpdatingHandler });
 
-        _editContext.LayoutRequested({ this, &TSFInputControl::_layoutRequestedHandler });
+        _layoutRequestedRevoker = _editContext.LayoutRequested(winrt::auto_revoke, { this, &TSFInputControl::_layoutRequestedHandler });
 
-        _editContext.CompositionStarted({ this, &TSFInputControl::_compositionStartedHandler });
+        _compositionStartedRevoker = _editContext.CompositionStarted(winrt::auto_revoke, { this, &TSFInputControl::_compositionStartedHandler });
 
-        _editContext.CompositionCompleted({ this, &TSFInputControl::_compositionCompletedHandler });
+        _compositionCompletedRevoker = _editContext.CompositionCompleted(winrt::auto_revoke, { this, &TSFInputControl::_compositionCompletedHandler });
+    }
+
+    // Method Description:
+    // - Prepares this TSFInputControl to be removed from the UI hierarchy.
+    void TSFInputControl::Close()
+    {
+        // Explicitly disconnect the LayoutRequested handler -- it can cause problems during application teardown.
+        // See GH#4159 for more info.
+        _layoutRequestedRevoker.revoke();
     }
 
     // Method Description:

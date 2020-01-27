@@ -660,6 +660,8 @@ public:
         _cursorPreviousLine{ false },
         _cursorHorizontalPositionAbsolute{ false },
         _verticalLinePositionAbsolute{ false },
+        _horizontalPositionRelative{ false },
+        _verticalPositionRelative{ false },
         _cursorPosition{ false },
         _cursorSave{ false },
         _cursorLoad{ false },
@@ -676,9 +678,14 @@ public:
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
+        _isScreenModeReversed{ false },
         _isOriginModeRelative{ false },
+        _warningBell{ false },
+        _carriageReturn{ false },
         _lineFeed{ false },
         _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
+        _forwardTab{ false },
+        _numTabs{ 0 },
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
@@ -744,6 +751,20 @@ public:
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
+        return true;
+    }
+
+    bool HorizontalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    {
+        _horizontalPositionRelative = true;
+        _cursorDistance = uiDistance;
+        return true;
+    }
+
+    bool VerticalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    {
+        _verticalPositionRelative = true;
+        _cursorDistance = uiDistance;
         return true;
     }
 
@@ -837,6 +858,9 @@ public:
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
+        case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+            fSuccess = SetScreenMode(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
@@ -900,9 +924,27 @@ public:
         return true;
     }
 
+    bool SetScreenMode(const bool reverseMode) noexcept override
+    {
+        _isScreenModeReversed = reverseMode;
+        return true;
+    }
+
     bool SetOriginMode(const bool fRelativeMode) noexcept override
     {
         _isOriginModeRelative = fRelativeMode;
+        return true;
+    }
+
+    bool WarningBell() noexcept override
+    {
+        _warningBell = true;
+        return true;
+    }
+
+    bool CarriageReturn() noexcept override
+    {
+        _carriageReturn = true;
         return true;
     }
 
@@ -910,6 +952,13 @@ public:
     {
         _lineFeed = true;
         _lineFeedType = lineFeedType;
+        return true;
+    }
+
+    bool ForwardTab(const size_t numTabs) noexcept override
+    {
+        _forwardTab = true;
+        _numTabs = numTabs;
         return true;
     }
 
@@ -942,6 +991,8 @@ public:
     bool _cursorPreviousLine;
     bool _cursorHorizontalPositionAbsolute;
     bool _verticalLinePositionAbsolute;
+    bool _horizontalPositionRelative;
+    bool _verticalPositionRelative;
     bool _cursorPosition;
     bool _cursorSave;
     bool _cursorLoad;
@@ -958,9 +1009,14 @@ public:
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
+    bool _isScreenModeReversed;
     bool _isOriginModeRelative;
+    bool _warningBell;
+    bool _carriageReturn;
     bool _lineFeed;
     DispatchTypes::LineFeedType _lineFeedType;
+    bool _forwardTab;
+    size_t _numTabs;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
 
@@ -1069,6 +1125,10 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, true, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
+        TestCsiCursorMovement(L'a', uiDistance, true, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'e', uiDistance, true, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, true, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'P', uiDistance, true, &pDispatch->_deleteCharacter, mach, *pDispatch);
@@ -1099,6 +1159,10 @@ class StateMachineExternalTest final
         TestCsiCursorMovement(L'`', uiDistance, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, false, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'a', uiDistance, false, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'e', uiDistance, false, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, false, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
@@ -1233,6 +1297,25 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[?3l");
         VERIFY_ARE_EQUAL(pDispatch->_windowWidth, static_cast<size_t>(DispatchTypes::s_sDECCOLMResetColumns));
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestScreenMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?5h");
+        VERIFY_IS_TRUE(pDispatch->_isScreenModeReversed);
+
+        pDispatch->ClearState();
+        pDispatch->_isScreenModeReversed = true;
+
+        mach.ProcessString(L"\x1b[?5l");
+        VERIFY_IS_FALSE(pDispatch->_isScreenModeReversed);
 
         pDispatch->ClearState();
     }
@@ -1841,6 +1924,44 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_lineFeed);
         VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::DependsOnMode, pDispatch->_lineFeedType);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestControlCharacters)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"BEL (Warning Bell) control character");
+        mach.ProcessCharacter(AsciiChars::BEL);
+
+        VERIFY_IS_TRUE(pDispatch->_warningBell);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"BS (Back Space) control character");
+        mach.ProcessCharacter(AsciiChars::BS);
+
+        VERIFY_IS_TRUE(pDispatch->_cursorBackward);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_cursorDistance);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"CR (Carriage Return) control character");
+        mach.ProcessCharacter(AsciiChars::CR);
+
+        VERIFY_IS_TRUE(pDispatch->_carriageReturn);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"HT (Horizontal Tab) control character");
+        mach.ProcessCharacter(AsciiChars::TAB);
+
+        VERIFY_IS_TRUE(pDispatch->_forwardTab);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_numTabs);
 
         pDispatch->ClearState();
     }

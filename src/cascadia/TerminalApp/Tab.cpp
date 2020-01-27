@@ -299,6 +299,13 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 }
 
 // Method Description:
+// - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
+void Tab::Shutdown()
+{
+    _rootPane->Shutdown();
+}
+
+// Method Description:
 // - Closes the currently focused pane in this tab. If it's the last pane in
 //   this tab, our Closed event will be fired (at a later time) for anyone
 //   registered as a handler of our close event.

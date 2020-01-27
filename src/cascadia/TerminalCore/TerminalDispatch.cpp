@@ -102,6 +102,14 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::CarriageReturn() noexcept
+try
+{
+    const auto cursorPos = _terminalApi.GetCursorPosition();
+    return _terminalApi.SetCursorPosition(0, cursorPos.Y);
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool TerminalDispatch::SetWindowTitle(std::wstring_view title) noexcept
 try
 {

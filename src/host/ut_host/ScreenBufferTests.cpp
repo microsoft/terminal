@@ -182,6 +182,7 @@ class ScreenBufferTests
 
     TEST_METHOD(ScrollLines256Colors);
 
+    TEST_METHOD(SetScreenMode);
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
@@ -200,6 +201,9 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownAcrossMargins);
     TEST_METHOD(CursorUpDownOutsideMargins);
     TEST_METHOD(CursorUpDownExactlyAtMargins);
+
+    TEST_METHOD(CursorNextPreviousLine);
+    TEST_METHOD(CursorPositionRelative);
 
     TEST_METHOD(CursorSaveRestore);
 
@@ -4498,6 +4502,34 @@ void ScreenBufferTests::ScrollLines256Colors()
     }
 }
 
+void ScreenBufferTests::SetScreenMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    const auto rgbForeground = RGB(12, 34, 56);
+    const auto rgbBackground = RGB(78, 90, 12);
+    const auto testAttr = TextAttribute{ rgbForeground, rgbBackground };
+
+    Log::Comment(L"By default the screen mode is normal.");
+    VERIFY_IS_FALSE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
+
+    Log::Comment(L"When DECSCNM is set, background and foreground colors are switched.");
+    stateMachine.ProcessString(L"\x1B[?5h");
+    VERIFY_IS_TRUE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupBackgroundColor(testAttr));
+
+    Log::Comment(L"When DECSCNM is reset, the colors are normal again.");
+    stateMachine.ProcessString(L"\x1B[?5l");
+    VERIFY_IS_FALSE(gci.IsScreenReversed());
+    VERIFY_ARE_EQUAL(rgbForeground, gci.LookupForegroundColor(testAttr));
+    VERIFY_ARE_EQUAL(rgbBackground, gci.LookupBackgroundColor(testAttr));
+}
+
 void ScreenBufferTests::SetOriginMode()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -5382,6 +5414,144 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
     }
 
     stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorNextPreviousLine()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"CNL without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should end up in column 0 of line 15.
+    VERIFY_ARE_EQUAL(COORD({ 0, 15 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should end up in column 0 of line 5.
+    VERIFY_ARE_EQUAL(COORD({ 0, 5 }), cursor.GetPosition());
+
+    // Set the margins to 8:12 (9:13 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[9;13r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+
+    Log::Comment(L"CNL inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should stop on line 12, the bottom margin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 12 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should stop on line 8, the top margin.
+    VERIFY_ARE_EQUAL(COORD({ 0, 8 }), cursor.GetPosition());
+
+    Log::Comment(L"CNL below bottom");
+    // Starting from column 20 of line 13 (1 below bottom margin).
+    cursor.SetPosition(COORD{ 20, 13 });
+    // Move down 5 lines (CNL).
+    stateMachine.ProcessString(L"\x1b[5E");
+    // We should end up in column 0 of line 18.
+    VERIFY_ARE_EQUAL(COORD({ 0, 18 }), cursor.GetPosition());
+
+    Log::Comment(L"CPL above top margin");
+    // Starting from column 20 of line 7 (1 above top margin).
+    cursor.SetPosition(COORD{ 20, 7 });
+    // Move up 5 lines (CPL).
+    stateMachine.ProcessString(L"\x1b[5F");
+    // We should end up in column 0 of line 2.
+    VERIFY_ARE_EQUAL(COORD({ 0, 2 }), cursor.GetPosition());
+}
+
+void ScreenBufferTests::CursorPositionRelative()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"HPR without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 5 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[5a");
+    // We should end up in column 25.
+    VERIFY_ARE_EQUAL(COORD({ 25, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR without margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[5e");
+    // We should end up on line 15.
+    VERIFY_ARE_EQUAL(COORD({ 20, 15 }), cursor.GetPosition());
+
+    // Enable DECLRMM margin mode (future proofing for when we support it)
+    stateMachine.ProcessString(L"\x1b[?69h");
+    // Set horizontal margins to 18:22 (19:23 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[19;23s");
+    // Set vertical margins to 8:12 (9:13 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[9;13r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
+
+    Log::Comment(L"HPR inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 5 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[5a");
+    // We should end up in column 25 (outside the right margin).
+    VERIFY_ARE_EQUAL(COORD({ 25, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR inside margins");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 5 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[5e");
+    // We should end up on line 15 (outside the bottom margin).
+    VERIFY_ARE_EQUAL(COORD({ 20, 15 }), cursor.GetPosition());
+
+    Log::Comment(L"HPR to end of line");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move forward 9999 columns (HPR).
+    stateMachine.ProcessString(L"\x1b[9999a");
+    // We should end up in the rightmost column.
+    const auto screenWidth = si.GetBufferSize().Width();
+    VERIFY_ARE_EQUAL(COORD({ screenWidth - 1, 10 }), cursor.GetPosition());
+
+    Log::Comment(L"VPR to bottom of screen");
+    // Starting from column 20 of line 10.
+    cursor.SetPosition(COORD{ 20, 10 });
+    // Move down 9999 lines (VPR).
+    stateMachine.ProcessString(L"\x1b[9999e");
+    // We should end up on the last line.
+    const auto screenHeight = si.GetViewport().Height();
+    VERIFY_ARE_EQUAL(COORD({ 20, screenHeight - 1 }), cursor.GetPosition());
 }
 
 void ScreenBufferTests::CursorSaveRestore()

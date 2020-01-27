@@ -38,6 +38,8 @@ public:
     virtual bool CursorPrevLine(const size_t distance) = 0; // CPL
     virtual bool CursorHorizontalPositionAbsolute(const size_t column) = 0; // CHA
     virtual bool VerticalLinePositionAbsolute(const size_t line) = 0; // VPA
+    virtual bool HorizontalPositionRelative(const size_t distance) = 0; // HPR
+    virtual bool VerticalPositionRelative(const size_t distance) = 0; // VPR
     virtual bool CursorPosition(const size_t line, const size_t column) = 0; // CUP
     virtual bool CursorSaveState() = 0; // DECSC
     virtual bool CursorRestoreState() = 0; // DECRC
@@ -52,8 +54,11 @@ public:
     virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
+    virtual bool SetScreenMode(const bool reverseMode) = 0; //DECSCNM
     virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
     virtual bool SetTopBottomScrollingMargins(const size_t topMargin, const size_t bottomMargin) = 0; // DECSTBM
+    virtual bool WarningBell() = 0; // BEL
+    virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle

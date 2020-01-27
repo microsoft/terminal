@@ -46,6 +46,24 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
         // and have _nothing_ happen. Filter the NULs here, so they don't fill the
         // buffer with empty spaces.
         break;
+    case AsciiChars::BEL:
+        _dispatch->WarningBell();
+        // microsoft/terminal#2952
+        // If we're attached to a terminal, let's also pass the BEL through.
+        if (_pfnFlushToTerminal != nullptr)
+        {
+            _pfnFlushToTerminal();
+        }
+        break;
+    case AsciiChars::BS:
+        _dispatch->CursorBackward(1);
+        break;
+    case AsciiChars::TAB:
+        _dispatch->ForwardTab(1);
+        break;
+    case AsciiChars::CR:
+        _dispatch->CarriageReturn();
+        break;
     case AsciiChars::LF:
     case AsciiChars::FF:
     case AsciiChars::VT:
@@ -58,16 +76,6 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     }
 
     _ClearLastChar();
-
-    if (wch == AsciiChars::BEL)
-    {
-        // microsoft/terminal#2952
-        // If we're attached to a terminal, let's also pass the BEL through.
-        if (_pfnFlushToTerminal != nullptr)
-        {
-            _pfnFlushToTerminal();
-        }
-    }
 
     return true;
 }
@@ -315,6 +323,8 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case VTActionCodes::CHA_CursorHorizontalAbsolute:
         case VTActionCodes::HPA_HorizontalPositionAbsolute:
         case VTActionCodes::VPA_VerticalLinePositionAbsolute:
+        case VTActionCodes::HPR_HorizontalPositionRelative:
+        case VTActionCodes::VPR_VerticalPositionRelative:
         case VTActionCodes::ICH_InsertCharacter:
         case VTActionCodes::DCH_DeleteCharacter:
         case VTActionCodes::ECH_EraseCharacters:
@@ -408,6 +418,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             case VTActionCodes::VPA_VerticalLinePositionAbsolute:
                 success = _dispatch->VerticalLinePositionAbsolute(distance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
+                break;
+            case VTActionCodes::HPR_HorizontalPositionRelative:
+                success = _dispatch->HorizontalPositionRelative(distance);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
+                break;
+            case VTActionCodes::VPR_VerticalPositionRelative:
+                success = _dispatch->VerticalPositionRelative(distance);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
                 break;
             case VTActionCodes::CUP_CursorPosition:
             case VTActionCodes::HVP_HorizontalVerticalPosition:

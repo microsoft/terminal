@@ -105,6 +105,8 @@ namespace Microsoft::Console::VirtualTerminal
             DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceeded by a CSI, and DL is.
             HPA_HorizontalPositionAbsolute = L'`',
             VPA_VerticalLinePositionAbsolute = L'd',
+            HPR_HorizontalPositionRelative = L'a',
+            VPR_VerticalPositionRelative = L'e',
             DECSTBM_SetScrollingRegion = L'r',
             NEL_NextLine = L'E', // Not a CSI, so doesn't overlap with CNL
             IND_Index = L'D', // Not a CSI, so doesn't overlap with CUB
