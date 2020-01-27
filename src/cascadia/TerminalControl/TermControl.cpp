@@ -761,6 +761,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _connection.Start();
         _initializedTerminal = true;
+        _InitializedHandlers(*this, nullptr);
         return true;
     }
 
@@ -1733,6 +1734,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
+
+            _tsfInputControl.Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.
 
             if (auto localConnection{ std::exchange(_connection, nullptr) })
             {

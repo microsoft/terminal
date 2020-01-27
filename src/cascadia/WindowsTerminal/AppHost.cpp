@@ -5,6 +5,9 @@
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
+#include "../types/inc/User32Utils.hpp"
+
+#include "resource.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -22,6 +25,10 @@ AppHost::AppHost() noexcept :
     _logic = _app.Logic(); // get a ref to app's logic
 
     _useNonClientArea = _logic.GetShowTabsInTitlebar();
+
+    // If there were commandline args to our process, try and process them here.
+    // Do this before AppLogic::Create, otherwise this will have no effect
+    _HandleCommandlineArgs();
 
     if (_useNonClientArea)
     {
@@ -54,6 +61,55 @@ AppHost::~AppHost()
     _window = nullptr;
     _app.Close();
     _app = nullptr;
+}
+
+// Method Description:
+// - Retrieve any commandline args passed on the commandline, and pass them to
+//   the app logic for processing.
+// - If the logic determined there's an error while processing that commandline,
+//   display a message box to the user with the text of the error, and exit.
+//    * We display a message box because we're a Win32 application (not a
+//      console app), and the shell has undoubtedly returned to the foreground
+//      of the console. Text emitted here might mix unexpectedly with output
+//      from the shell process.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_HandleCommandlineArgs()
+{
+    if (auto commandline{ GetCommandLineW() })
+    {
+        int argc = 0;
+
+        // Get the argv, and turn them into a hstring array to pass to the app.
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+        if (argv)
+        {
+            std::vector<winrt::hstring> args;
+            for (auto& elem : wil::make_range(argv.get(), argc))
+            {
+                args.emplace_back(elem);
+            }
+
+            const auto result = _logic.SetStartupCommandline({ args });
+            const auto message = _logic.EarlyExitMessage();
+            if (!message.empty())
+            {
+                const auto displayHelp = result == 0;
+                const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
+                const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
+                // TODO:GH#4134: polish this dialog more, to make the text more
+                // like msiexec /?
+                MessageBoxW(nullptr,
+                            message.data(),
+                            GetStringResource(messageTitle).data(),
+                            MB_OK | messageIcon);
+
+                ExitProcess(result);
+            }
+        }
+    }
 }
 
 // Method Description:
