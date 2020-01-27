@@ -73,14 +73,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         throw winrt::hresult_not_implemented();
     }
 
-    XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindText(winrt::hstring /*text*/,
-                                                                  bool /*searchBackward*/,
-                                                                  bool /*ignoreCase*/)
+    XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindText(winrt::hstring text,
+                                                                  bool searchBackward,
+                                                                  bool ignoreCase)
     {
-        // TODO GitHub #605: Search functionality
-        // we need to wrap this around the UiaTextRange FindText() function
-        // but right now it returns E_NOTIMPL, so let's just return nullptr for now.
-        return nullptr;
+        UIA::ITextRangeProvider* pReturn;
+        BSTR bs = SysAllocStringLen(text.data(), text.size());
+
+        THROW_IF_FAILED(_uiaProvider->FindText(bs, searchBackward, ignoreCase, &pReturn));
+
+        auto xutr = winrt::make_self<XamlUiaTextRange>(pReturn, _parentProvider);
+        return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const

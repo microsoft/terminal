@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "UiaTextRangeBase.hpp"
 #include "ScreenInfoUiaProviderBase.h"
+#include "..\buffer\out\search.h"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::UiaTextRangeBaseTracing;
@@ -348,6 +349,56 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttrib
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindAttribute, nullptr);
     return E_NOTIMPL;
+}
+
+IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
+                                          _In_ BOOL searchBackward,
+                                          _In_ BOOL ignoreCase,
+                                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
+{
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+    try
+    {
+        const std::wstring wstr{ text, SysStringLen(text) };
+        const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+
+        auto searchDirection = Search::Direction::Forward;
+        auto searchAnchor = _start;
+        if (searchBackward)
+        {
+            searchDirection = Search::Direction::Backward;
+            searchAnchor = _end;
+        }
+
+        Search searcher{ *_pData, wstr, searchDirection, sensitivity, searchAnchor };
+
+        HRESULT hr = S_OK;
+        if (searcher.FindNext())
+        {
+            const auto foundLocation = searcher.GetFoundLocation();
+            const auto start = foundLocation.first;
+            const auto end = foundLocation.second;
+            const auto bufferSize = _pData->GetTextBuffer().GetSize();
+
+            // make sure what was found is within the bounds of the current range
+            if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end) < 0) ||
+                (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
+            {
+                hr = Clone(ppRetVal);
+                if (SUCCEEDED(hr))
+                {
+                    UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+                    range._start = start;
+                    range._end = end;
+                }
+            }
+        }
+        return hr;
+    }
+    CATCH_RETURN();
 }
 
 IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
