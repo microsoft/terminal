@@ -330,59 +330,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // Only act on a delayed EOL if we didn't move the cursor to a different position from where the EOL was marked.
             if (coordDelayedAt.X == CursorPosition.X && coordDelayedAt.Y == CursorPosition.Y)
             {
-                bool fDoEolWrap = false;
+                CursorPosition.X = 0;
+                CursorPosition.Y++;
 
-                if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP))
-                {
-                    // Correct if it's a printable character and whoever called us still understands/wants delayed EOL wrap.
-                    if (*lpString >= UNICODE_SPACE)
-                    {
-                        fDoEolWrap = true;
-                    }
-                    else if (*lpString == UNICODE_BACKSPACE)
-                    {
-                        // if we have an active wrap and a backspace comes in, process it by moving the cursor
-                        // back one cell position unless it's already at the start of a row.
-                        *pcb += sizeof(WCHAR);
-                        lpString++;
-                        pwchRealUnicode++;
-                        if (CursorPosition.X != 0)
-                        {
-                            --CursorPosition.X;
-                            Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
-                            CursorPosition = cursor.GetPosition();
-                        }
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Uh oh, we've hit a consumer that doesn't know about delayed end of lines. To rectify this, just quickly jump
-                    // forward to the next line as if we had done it earlier, then let everything else play out normally.
-                    fDoEolWrap = true;
-                }
+                Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
-                if (fDoEolWrap)
-                {
-                    CursorPosition.X = 0;
-                    CursorPosition.Y++;
-
-                    Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
-
-                    CursorPosition = cursor.GetPosition();
-                }
-            }
-        }
-
-        if (screenInfo.InVTMode())
-        {
-            // if we're at the beginning of a row and we get a backspace and told to limit backspacing, skip it
-            if (*lpString == UNICODE_BACKSPACE && CursorPosition.X == 0 && WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE))
-            {
-                *pcb += sizeof(wchar_t);
-                ++lpString;
-                ++pwchRealUnicode;
-                continue;
+                CursorPosition = cursor.GetPosition();
             }
         }
 
@@ -449,28 +402,23 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     goto EndWhile;
                     break;
                 case UNICODE_TAB:
-                    if (screenInfo.InVTMode())
+                {
+                    const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
+                    XPosition = (SHORT)(XPosition + TabSize);
+                    if (XPosition >= coordScreenBufferSize.X)
                     {
                         goto EndWhile;
                     }
-                    else
-                    {
-                        const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
-                        XPosition = (SHORT)(XPosition + TabSize);
-                        if (XPosition >= coordScreenBufferSize.X || WI_IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
-                        {
-                            goto EndWhile;
-                        }
 
-                        for (ULONG j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
-                        {
-                            *LocalBufPtr = UNICODE_SPACE;
-                            LocalBufPtr++;
-                        }
+                    for (ULONG j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
+                    {
+                        *LocalBufPtr = UNICODE_SPACE;
+                        LocalBufPtr++;
                     }
 
                     pwchBuffer++;
                     break;
+                }
                 case UNICODE_LINEFEED:
                 case UNICODE_CARRIAGERETURN:
                     goto EndWhile;
@@ -753,52 +701,40 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         case UNICODE_TAB:
         {
-            // if VT-style tabs are set, then handle them the VT way, including not inserting spaces.
-            // just move the cursor to the next tab stop.
-            if (screenInfo.InVTMode())
+            const size_t TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
+            CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
+
+            // move cursor forward to next tab stop.  fill space with blanks.
+            // we get here when the tab extends beyond the right edge of the
+            // window.  if the tab goes wraps the line, set the cursor to the first
+            // position in the next line.
+            pwchBuffer++;
+
+            TempNumSpaces += TabSize;
+            size_t NumChars = 0;
+            if (CursorPosition.X >= coordScreenBufferSize.X)
             {
-                const COORD cCursorOld = cursor.GetPosition();
-                CursorPosition = screenInfo.GetForwardTab(cCursorOld);
+                NumChars = gsl::narrow<size_t>(coordScreenBufferSize.X - cursor.GetPosition().X);
+                CursorPosition.X = 0;
+                CursorPosition.Y = cursor.GetPosition().Y + 1;
+
+                // since you just tabbed yourself past the end of the row, set the wrap
+                textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(true);
             }
             else
             {
-                const size_t TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
-                CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
-
-                // move cursor forward to next tab stop.  fill space with blanks.
-                // we get here when the tab extends beyond the right edge of the
-                // window.  if the tab goes wraps the line, set the cursor to the first
-                // position in the next line.
-                pwchBuffer++;
-
-                TempNumSpaces += TabSize;
-                size_t NumChars = 0;
-                if (CursorPosition.X >= coordScreenBufferSize.X)
-                {
-                    NumChars = gsl::narrow<size_t>(coordScreenBufferSize.X - cursor.GetPosition().X);
-                    CursorPosition.X = 0;
-                    CursorPosition.Y = cursor.GetPosition().Y + 1;
-
-                    // since you just tabbed yourself past the end of the row, set the wrap
-                    textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(true);
-                }
-                else
-                {
-                    NumChars = gsl::narrow<size_t>(CursorPosition.X - cursor.GetPosition().X);
-                    CursorPosition.Y = cursor.GetPosition().Y;
-                }
-
-                if (!WI_IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
-                {
-                    try
-                    {
-                        const OutputCellIterator it(UNICODE_SPACE, Attributes, NumChars);
-                        const auto done = screenInfo.Write(it, cursor.GetPosition());
-                        NumChars = done.GetCellDistance(it);
-                    }
-                    CATCH_LOG();
-                }
+                NumChars = gsl::narrow<size_t>(CursorPosition.X - cursor.GetPosition().X);
+                CursorPosition.Y = cursor.GetPosition().Y;
             }
+
+            try
+            {
+                const OutputCellIterator it(UNICODE_SPACE, Attributes, NumChars);
+                const auto done = screenInfo.Write(it, cursor.GetPosition());
+                NumChars = done.GetCellDistance(it);
+            }
+            CATCH_LOG();
+
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
