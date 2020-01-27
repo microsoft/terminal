@@ -1572,11 +1572,15 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
     short const cOldColsTotal = oldBuffer.GetSize().Width();
+    short const newCols = newBuffer.GetSize().Width();
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
 
     HRESULT hr = S_OK;
+
+    std::optional<short> firstWrapChangedRow{ std::nullopt };
+
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
     {
@@ -1609,6 +1613,13 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
             }
         }
 
+        if (!firstWrapChangedRow.has_value() &&
+            ((iRight > newCols) ||
+             charRow.WasWrapForced()))
+        {
+            firstWrapChangedRow = newCursor.GetPosition().Y;
+        }
+
         // Loop through every character in the current row (up to
         // the "right" boundary, which is one past the final valid
         // character)
@@ -1635,6 +1646,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
             }
             CATCH_RETURN();
         }
+
+        // bool manuallyNewlined = false;
+
         if (SUCCEEDED(hr))
         {
             // If we didn't have a full row to copy, insert a new
@@ -1656,6 +1670,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
                 if (iOldRow < cOldRowsTotal - 1)
                 {
                     hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
+                    // manuallyNewlined = true;
                 }
                 else
                 {
@@ -1689,11 +1704,20 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
                         if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).GetCharRow().WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
+                            // manuallyNewlined = true;
                         }
                     }
                 }
             }
         }
+
+        // if (SUCCEEDED(hr))
+        // {
+        //     if (manuallyNewlined && charRow.WasWrapForced() && !firstWrapChangedRow)
+        //     {
+
+        //     }
+        // }
     }
     if (SUCCEEDED(hr))
     {
@@ -1760,6 +1784,16 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
 
         // Set size back to real size as it will be taking over the rendering duties.
         newCursor.SetSize(ulSize);
+    }
+
+    if (SUCCEEDED(hr) && firstWrapChangedRow.has_value())
+    {
+        const short invalidTop = firstWrapChangedRow.value();
+        const COORD newLastChar = newBuffer.GetLastNonSpaceCharacter();
+        const short newRowsTotal = newLastChar.Y + 1;
+
+        newBuffer._renderTarget.TriggerRedraw(
+            Viewport::FromInclusive({ 0, invalidTop, newCols, newRowsTotal }));
     }
 
     newCursor.EndDeferDrawing();
