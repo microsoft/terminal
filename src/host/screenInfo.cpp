@@ -1425,7 +1425,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    HRESULT hr = TextBuffer::ReflowBuffer(*_textBuffer.get(), *newTextBuffer.get());
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
 
     if (SUCCEEDED(hr))
     {

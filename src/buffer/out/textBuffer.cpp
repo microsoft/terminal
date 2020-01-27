@@ -1243,26 +1243,6 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
             for (size_t col = 0; col < rows.text.at(row).length(); col++)
             {
-                // do not include \r nor \n as they don't have attributes
-                // and are not HTML friendly. For line break use '<BR>' instead.
-                const bool isLastCharInRow =
-                    col == rows.text.at(row).length() - 1 ||
-                    rows.text.at(row).at(col + 1) == '\r' ||
-                    rows.text.at(row).at(col + 1) == '\n';
-
-                bool colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
-                {
-                    fgColor = rows.FgAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
-                {
-                    bkColor = rows.BkAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col >= startOffset)
                     {
@@ -1289,6 +1269,27 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                     }
                 };
 
+                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
+                {
+                    // do not include \r nor \n as they don't have color attributes
+                    // and are not HTML friendly. For line break use '<BR>' instead.
+                    writeAccumulatedChars(false);
+                    break;
+                }
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                {
+                    fgColor = rows.FgAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                {
+                    bkColor = rows.BkAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
                 if (colorChanged)
                 {
                     writeAccumulatedChars(false);
@@ -1310,10 +1311,10 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
                 hasWrittenAnyText = true;
 
-                if (isLastCharInRow)
+                // if this is the last character in the row, flush the whole row
+                if (col == rows.text.at(row).length() - 1)
                 {
                     writeAccumulatedChars(true);
-                    break;
                 }
             }
         }
@@ -1430,24 +1431,6 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 
             for (size_t col = 0; col < rows.text.at(row).length(); ++col)
             {
-                const bool isLastCharInRow =
-                    col == rows.text.at(row).length() - 1 ||
-                    rows.text.at(row).at(col + 1) == '\r' ||
-                    rows.text.at(row).at(col + 1) == '\n';
-
-                bool colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
-                {
-                    fgColor = rows.FgAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
-                {
-                    bkColor = rows.BkAttr.at(row).at(col);
-                    colorChanged = true;
-                }
-
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col >= startOffset)
                     {
@@ -1469,6 +1452,27 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                         startOffset = col;
                     }
                 };
+
+                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
+                {
+                    // do not include \r nor \n as they don't have color attributes.
+                    // For line break use \line instead.
+                    writeAccumulatedChars(false);
+                    break;
+                }
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                {
+                    fgColor = rows.FgAttr.at(row).at(col);
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                {
+                    bkColor = rows.BkAttr.at(row).at(col);
+                    colorChanged = true;
+                }
 
                 if (colorChanged)
                 {
@@ -1513,10 +1517,10 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                                    << " ";
                 }
 
-                if (isLastCharInRow)
+                // if this is the last character in the row, flush the whole row
+                if (col == rows.text.at(row).length() - 1)
                 {
                     writeAccumulatedChars(true);
-                    break;
                 }
             }
         }
@@ -1552,7 +1556,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - newBuffer - the text buffer to copy the contents TO
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
-HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
+HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1563,8 +1567,8 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
     // the new buffer.
-    COORD cOldCursorPos = oldCursor.GetPosition();
-    COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
+    const COORD cOldCursorPos = oldCursor.GetPosition();
+    const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
     short const cOldColsTotal = oldBuffer.GetSize().Width();
@@ -1579,7 +1583,7 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const CharRow& charRow = row.GetCharRow();
-        short iRight = static_cast<short>(charRow.MeasureRight());
+        short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
@@ -1682,7 +1686,7 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
                     const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newBuffer.GetRowByOffset(coordNewCursor.Y - 1).GetCharRow().WasWrapForced())
+                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).GetCharRow().WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
                         }
@@ -1708,7 +1712,7 @@ HRESULT TextBuffer::ReflowBuffer(TextBuffer& oldBuffer, TextBuffer& newBuffer)
             // get the number of newlines and spaces between the old end of text and the old cursor,
             //   then advance that many newlines and chars
             int iNewlines = cOldCursorPos.Y - cOldLastChar.Y;
-            int iIncrements = cOldCursorPos.X - cOldLastChar.X;
+            const int iIncrements = cOldCursorPos.X - cOldLastChar.X;
             const COORD cNewLastChar = newBuffer.GetLastNonSpaceCharacter();
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
