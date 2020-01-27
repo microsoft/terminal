@@ -103,6 +103,9 @@ class ConptyRoundtripTests
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         _pVtRenderEngine->SetTestCallback(pfn);
 
+        // TODO: configure the OutputStateMachine's _pfnFlushToTerminal
+        // Use OutputStateMachineEngine::SetTerminalConnection
+
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
 
@@ -129,6 +132,7 @@ class ConptyRoundtripTests
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+    TEST_METHOD(PassthroughClearScrollback);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -363,4 +367,71 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::PassthroughClearScrollback()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write more lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    // auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    const auto hostView = si.GetViewport();
+    for (auto i = 0; i < 2 * hostView.Height(); i++)
+    {
+        hostSm.ProcessString(L"X\n");
+
+        expectedOutput.push_back("X");
+        expectedOutput.push_back("\r\n");
+    }
+
+    // hostSm.ProcessString(L"AAA\n");
+    // hostSm.ProcessString(L"BBB\n");
+    // hostSm.ProcessString(L"\n");
+    // hostSm.ProcessString(L"CCC");
+    // auto verifyData = [](TextBuffer& tb) {
+    //     _verifyExpectedString(tb, L"AAA", { 0, 0 });
+    //     _verifyExpectedString(tb, L"BBB", { 0, 1 });
+    //     _verifyExpectedString(tb, L"   ", { 0, 2 });
+    //     _verifyExpectedString(tb, L"CCC", { 0, 3 });
+    // };
+
+    // verifyData(hostTb);
+
+    // expectedOutput.push_back("AAA");
+    // expectedOutput.push_back("\r\n");
+    // expectedOutput.push_back("BBB");
+    // expectedOutput.push_back("\r\n");
+    // // Here, we're going to emit 3 spaces. The region that got invalidated was a
+    // // rectangle from 0,0 to 3,3, so the vt renderer will try to render the
+    // // region in between BBB and CCC as well, because it got included in the
+    // // rectangle Or() operation.
+    // // This behavior should not be seen as binding - if a future optimization
+    // // breaks this test, it wouldn't be the worst.
+    // expectedOutput.push_back("   ");
+    // expectedOutput.push_back("\r\n");
+    // expectedOutput.push_back("CCC");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // verifyData(termTb);
+
+    const auto termFirstView = term->GetViewport();
+    for (short y = 0; y < 2 * termFirstView.Height(); y++)
+    {
+        _verifyExpectedString(termTb, L"X  ", { 0, y });
+    }
+
+    // TODO: Make sure that a \e[3J comes through conpty here and clears the terminal scrollback.
+
+    // This might need my other branch tbh
 }
