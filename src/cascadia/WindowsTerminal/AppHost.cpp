@@ -156,7 +156,6 @@ void AppHost::Initialize()
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
     _window->SetContent(_logic.GetRoot());
-
     _window->OnAppInitialized();
 }
 

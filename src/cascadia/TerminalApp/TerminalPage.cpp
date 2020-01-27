@@ -1614,19 +1614,6 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
-    // Method Description:
-    // - Writes the given sequence as input to the active terminal connection,
-    //   if there is one. Otherwise does nothing.
-    // Arguments:
-    // - inputSequence: the string of characters to write to the terminal connection.
-    // Return Value:
-    // - <none>
-    void TerminalPage::WriteInput(const winrt::hstring& inputSequence)
-    {
-        const auto termControl = _GetActiveControl();
-        termControl.WriteInput(inputSequence);
-    }
-
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

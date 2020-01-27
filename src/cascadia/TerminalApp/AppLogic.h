@@ -41,8 +41,6 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
-        void WriteInput(const winrt::hstring& inputSequence);
-
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
 
