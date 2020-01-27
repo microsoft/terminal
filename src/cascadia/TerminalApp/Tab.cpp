@@ -390,5 +390,4 @@ namespace winrt::TerminalApp::implementation
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
-    DEFINE_EVENT(Tab, PropertyChanged, _PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 }

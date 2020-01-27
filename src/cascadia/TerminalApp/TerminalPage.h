@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, winrt::TerminalApp::Tab hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, winrt::com_ptr<Tab> hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const int tabIndex);

@@ -452,8 +452,11 @@ namespace winrt::TerminalApp::implementation
         auto newTabProjection = winrt::make<Tab>(profileGuid, term);
         _tabs.Append(newTabProjection);
 
+        winrt::com_ptr<Tab> newTabImpl;
+        newTabImpl.copy_from(winrt::get_self<implementation::Tab>(newTabProjection));
+
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(term, newTabProjection);
+        _RegisterTerminalEvents(term, newTabImpl);
 
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
@@ -461,7 +464,6 @@ namespace winrt::TerminalApp::implementation
 
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        auto newTabImpl = winrt::get_self<implementation::Tab>(newTabProjection);
         newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -662,12 +664,13 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(winrt::TerminalApp::Tab tab)
     {
-        auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+        winrt::com_ptr<Tab> newTabImpl;
+        newTabImpl.copy_from(winrt::get_self<implementation::Tab>(tab));
 
-        auto newTabTitle = tabImpl->GetActiveTitle();
+        auto newTabTitle = newTabImpl->GetActiveTitle();
 
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tabImpl->IsFocused())
+            newTabImpl->IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
@@ -680,7 +683,9 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTabIcon(winrt::TerminalApp::Tab tab)
     {
-        auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+        winrt::com_ptr<Tab> tabImpl;
+        tabImpl.copy_from(winrt::get_self<implementation::Tab>(tab));
+
         const auto lastFocusedProfileOpt = tabImpl->GetFocusedProfile();
         if (lastFocusedProfileOpt.has_value())
         {
@@ -794,10 +799,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTerminalEvents(TermControl term, winrt::TerminalApp::Tab hostingTab)
+    void TerminalPage::_RegisterTerminalEvents(TermControl term, winrt::com_ptr<Tab> hostingTab)
     {
-        auto tabImpl = winrt::get_self<implementation::Tab>(hostingTab);
-
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
         term.CopyToClipboard({ this, &TerminalPage::_CopyToClipboardHandler });
@@ -806,11 +809,11 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
-        tabImpl->BindEventHandlers(term);
+        hostingTab->BindEventHandlers(term);
 
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
-        auto weakTab = make_weak(hostingTab);
+        auto weakTab = make_weak(hostingTab.as<winrt::TerminalApp::Tab>());
 
         term.TitleChanged([weakTab, weakThis{ get_weak() }](auto newTitle) {
             auto page{ weakThis.get() };
@@ -991,7 +994,9 @@ namespace winrt::TerminalApp::implementation
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto tabProj = _tabs.GetAt(focusedTabIndex);
-        auto tabImpl = winrt::get_self<implementation::Tab>(tabProj);
+
+        winrt::com_ptr<Tab> tabImpl;
+        tabImpl.copy_from(winrt::get_self<implementation::Tab>(tabProj));
 
         const auto canSplit = tabImpl->CanSplitPane(splitType);
 
@@ -1003,7 +1008,7 @@ namespace winrt::TerminalApp::implementation
         TermControl newControl{ controlSettings, controlConnection };
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, tabProj);
+        _RegisterTerminalEvents(newControl, tabImpl);
 
         tabImpl->SplitPane(splitType, realGuid, newControl);
     }

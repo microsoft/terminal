@@ -46,9 +46,9 @@ namespace winrt::TerminalApp::implementation
             WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
             DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 
-            DECLARE_EVENT(PropertyChanged, _PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-            DEFINE_OBSERVABLE_GETSET_PROPERTY(hstring, Title, _PropertyChanged);
-            DEFINE_OBSERVABLE_GETSET_PROPERTY(hstring, IconPath, _PropertyChanged);
+            WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+            OBSERVABLE_GETSET_PROPERTY(hstring, Title, _PropertyChangedHandlers);
+            OBSERVABLE_GETSET_PROPERTY(hstring, IconPath, _PropertyChangedHandlers);
 
         private:
             std::shared_ptr<Pane> _rootPane{ nullptr };
