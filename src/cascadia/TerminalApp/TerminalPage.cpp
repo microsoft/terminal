@@ -124,10 +124,57 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
+
         _UpdateTabWidthMode();
-        _OpenNewTab(nullptr);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
+
+        // Actually start the terminal.
+        if (_appArgs.GetStartupActions().empty())
+        {
+            _OpenNewTab(nullptr);
+        }
+        else
+        {
+            _appArgs.ValidateStartupCommands();
+
+            // This will kick off a chain of events to perform each startup
+            // action. As each startup action is completed, the next will be
+            // fired.
+            _ProcessNextStartupAction();
+        }
+    }
+
+    // Method Description:
+    // - Process the next startup action in our list of startup actions. When
+    //   that action is complete, fire the next (if there are any more).
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    fire_and_forget TerminalPage::_ProcessNextStartupAction()
+    {
+        // If there are no actions left, do nothing.
+        if (_appArgs.GetStartupActions().empty())
+        {
+            return;
+        }
+
+        // Get the next action to be processed
+        auto nextAction = _appArgs.GetStartupActions().front();
+        _appArgs.GetStartupActions().pop_front();
+
+        auto weakThis{ get_weak() };
+
+        // Handle it on the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        if (auto page{ weakThis.get() })
+        {
+            page->_actionDispatch->DoAction(nextAction);
+
+            // Kick off the next action to be handled (if necessary)
+            page->_ProcessNextStartupAction();
+        }
     }
 
     // Method Description:
@@ -441,6 +488,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
+        const bool isFirstTab = _tabs.empty();
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -494,12 +542,20 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // This is one way to set the tab's selected background color.
-        //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-
-        // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
-        // Xaml control to the Xaml root.
-        _tabView.SelectedItem(tabViewItem);
+        // If this is the first tab, we don't need to kick off the event to get
+        // the tab's content added to the root of the page. just do it
+        // immediately.
+        if (isFirstTab)
+        {
+            _tabContent.Children().Clear();
+            _tabContent.Children().Append(newTab->GetRootElement());
+        }
+        else
+        {
+            // This kicks off TabView::SelectionChanged, in response to which
+            // we'll attach the terminal's Xaml control to the Xaml root.
+            _tabView.SelectedItem(tabViewItem);
+        }
     }
 
     // Method Description:
@@ -868,7 +924,7 @@ namespace winrt::TerminalApp::implementation
     winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
+        auto focusedTab = _tabs.at(focusedTabIndex);
         return focusedTab->GetActiveTerminalControl();
     }
 
@@ -1432,6 +1488,72 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Sets the initial commandline to process on startup, and attempts to
+    //   parse it. Commands will be parsed into a list of ShortcutActions that
+    //   will be processed on TerminalPage::Create().
+    // - This function will have no effective result after Create() is called.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see TerminalPage::_ParseArgs)
+    int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
+    {
+        return _ParseArgs(args);
+    }
+
+    // Method Description:
+    // - Attempts to parse an array of commandline args into a list of
+    //   commands to execute, and then parses these commands. As commands are
+    //   succesfully parsed, they will generate ShortcutActions for us to be
+    //   able to execute. If we fail to parse any commands, we'll return the
+    //   error code from the failure to parse that command, and stop processing
+    //   additional commands.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0 if the commandline was successfully parsed
+    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
+    {
+        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
+
+        for (auto& cmdBlob : commands)
+        {
+            // On one hand, it seems like we should be able to have one
+            // AppCommandlineArgs for parsing all of them, and collect the
+            // results one at a time.
+            //
+            // On the other hand, re-using a CLI::App seems to leave state from
+            // previous parsings around, so we could get mysterious behavior
+            // where one command affects the values of the next.
+            //
+            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
+            // > If that option is not given, CLI11 will not touch the initial
+            // > value. This allows you to set up defaults by simply setting
+            // > your value beforehand.
+            //
+            // So we pretty much need the to either manually reset the state
+            // each command, or build new ones.
+            const auto result = _appArgs.ParseCommand(cmdBlob);
+
+            // If this succeeded, result will be 0. Otherwise, the caller should
+            // exit(result), to exit the program.
+            if (result != 0)
+            {
+                return result;
+            }
+        }
+
+        // If all the args were successfully parsed, we'll have some commands
+        // built in _appArgs, which we'll use when the application starts up.
+        return 0;
+    }
+
+    // Method Description:
     // - This is the method that App will call when the titlebar
     //   has been clicked. It dismisses any open flyouts.
     // Arguments:
@@ -1474,6 +1596,22 @@ namespace winrt::TerminalApp::implementation
         _isFullscreen = !_isFullscreen;
 
         _UpdateTabView();
+    }
+
+    // Method Description:
+    // - If there were any errors parsing the commandline that was used to
+    //   initialize the terminal, this will return a string containing that
+    //   message. If there were no errors, this message will be blank.
+    // - If the user requested help on any command (using --help), this will
+    //   contain the help message.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the help text or error message for the providied commandline, if one
+    //   exists, otherwise the empty string.
+    winrt::hstring TerminalPage::EarlyExitMessage()
+    {
+        return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -63,3 +63,7 @@ Abstract:
 TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 #include <telemetry\ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
+
+// For commandline argument processing
+#include <shellapi.h>
+#include <processenv.h>

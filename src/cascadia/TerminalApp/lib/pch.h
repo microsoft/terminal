@@ -36,6 +36,7 @@
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 #include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
@@ -57,6 +58,13 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <json.h>
 
 #include <shellapi.h>
-#include <filesystem>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+
+#include <CLI11/CLI11.hpp>
+
+// TODO:GH#4155 - This macro can be used to identify strings that need to
+// be localized in the future, but aren't localized currently due to some build
+// system restrictions, mainly due to breaking our unittests. All of these
+// strings should eventually be moved to Resources.resw.
+#define NEEDS_LOC(x) (x)
