@@ -293,11 +293,13 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                            _startingDirectory,
                                                                            NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
 
-    // This construction (where we store command and arguments separately, with the "positionals_at_end" option turned on) allows us to
-    // support "wt new-tab -d wsl -d Ubuntu" without CLI11 thinking that we've specified -d twice.
-    // There's an alternate construction where we make all subcommands "prefix commands", which lets us get all remaining non-option args
-    // provided at the end, but that doesn't support "wt new-tab -- wsl -d Ubuntu -- sleep 10" because the first -- breaks out of the subcommand
-    // (instead of the subcommand options).
+    // This construction (where we store command and arguments separately, with the
+    // "positionals_at_end" option turned on) allows us to support "wt new-tab -d wsl -d Ubuntu"
+    // without CLI11 thinking that we've specified -d twice.
+    // There's an alternate construction where we make all subcommands "prefix commands",
+    // which lets us get all remaining non-option args provided at the end, but that
+    // doesn't support "wt new-tab -- wsl -d Ubuntu -- sleep 10" because the first
+    // -- breaks out of the subcommand (instead of the subcommand options).
     // See https://github.com/CLIUtils/CLI11/issues/417 for more info.
     subcommand.commandlineOption = subcommand.subcommand->add_option("command", _command, NEEDS_LOC("An option command, with arguments, to be spawned in the new tab or pane"));
     subcommand.subcommand->add_option("arguments", _commandArguments);
