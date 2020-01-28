@@ -115,11 +115,15 @@ using namespace Microsoft::Console::Types;
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                 const COORD coord,
-                                                const bool /*trimLeft*/) noexcept
+                                                const bool /*trimLeft*/,
+                                                const bool /*lineWrapped*/) noexcept
 {
     return VtEngine::_PaintAsciiBufferLine(clusters, coord);
 }
@@ -369,7 +373,8 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
-                                                     const COORD coord) noexcept
+                                                     const COORD coord,
+                                                     const bool lineWrapped) noexcept
 {
     if (coord.Y < _virtualTop)
     {
@@ -469,7 +474,8 @@ using namespace Microsoft::Console::Types;
     // line.
     // Don't do this is the last character we're writing is a space - The last
     // char will always be a space, but if we see that, we shouldn't wrap.
-    if ((_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
+    if (lineWrapped &&
+        (_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
     {
         _wrappedRow = coord.Y;
     }

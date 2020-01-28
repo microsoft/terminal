@@ -485,13 +485,19 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 proposedCursorPosition.Y++;
 
                 // Try the character again.
-                // TODO/DANGER: Does this actually work? The above comment seems
-                // to mention the i-=1, but there was no such line here. This is
-                // _scary_. Perhaps this was never hit before we had conpty
-                // wrapping?
                 i--;
 
                 // Mark the line we're currently on as wrapped
+
+                // TODO: GH#780 - This should really be a _deferred_ newline. If
+                // the next character to come in is a newline or a cursor
+                // movement or anything, then we should _not_ wrap this line
+                // here.
+                //
+                // This is more WriteCharsLegacy2ElectricBoogaloo work. I'm
+                // leaving it like this for now - it'll break for lines that
+                // _exactly_ wrap, but we can't re-wrap lines now anyways, so it
+                // doesn't matter.
                 _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(true);
             }
         }

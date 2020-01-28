@@ -427,15 +427,19 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                    const COORD coord,
-                                                   const bool /*trimLeft*/) noexcept
+                                                   const bool /*trimLeft*/,
+                                                   const bool lineWrapped) noexcept
 {
     return _fUseAsciiOnly ?
                VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintUtf8BufferLine(clusters, coord, lineWrapped);
 }
 
 // Method Description:
