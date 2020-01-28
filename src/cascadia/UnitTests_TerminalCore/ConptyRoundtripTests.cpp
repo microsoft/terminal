@@ -149,6 +149,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
 
+    TEST_METHOD(TestWrappingALongString);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -339,4 +341,59 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::TestWrappingALongString()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+    _checkConptyOutput = false;
+
+    const auto initialTermView = term->GetViewport();
+
+    const std::wstring test100CharsString{
+        LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~!"#$%&)"
+    };
+
+    const auto charsToWrite = test100CharsString.size();
+    VERIFY_ARE_EQUAL(100u, charsToWrite);
+
+    VERIFY_ARE_EQUAL(0, initialTermView.Top());
+    VERIFY_ARE_EQUAL(32, initialTermView.BottomExclusive());
+
+    hostSm.ProcessString(test100CharsString);
+
+    const auto secondView = term->GetViewport();
+
+    VERIFY_ARE_EQUAL(0, secondView.Top());
+    VERIFY_ARE_EQUAL(32, secondView.BottomExclusive());
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor wrapped to the second line
+        VERIFY_ARE_EQUAL(charsToWrite % initialTermView.Width(), cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+
+        // Verify that we marked the 0th row as _wrapped_
+        const auto& row0 = tb.GetRowByOffset(0);
+        VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+
+        const auto& row1 = tb.GetRowByOffset(1);
+        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+
+        TestUtils::VerifyExpectedString(tb, test100CharsString, { 0, 0 });
+    };
+
+    verifyBuffer(hostTb);
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb);
 }
