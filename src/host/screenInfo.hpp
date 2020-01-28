@@ -50,6 +50,14 @@ Revision History:
 #include "../types/IConsoleWindow.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
+
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
@@ -308,6 +316,6 @@ private:
     friend class ScreenBufferTests;
     friend class CommonState;
     friend class ConptyOutputTests;
-    friend class ConptyRoundtripTests;
+    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };
