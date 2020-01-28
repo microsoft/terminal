@@ -23,12 +23,14 @@
         "copyTextWithoutNewlines",
         "decreaseFontSize",
         "duplicateTab",
+        "find",
         "increaseFontSize",
         "moveFocus",
         "moveFocusDown",
         "moveFocusLeft",
         "moveFocusRight",
         "moveFocusUp",
+        "moveSelectionAnchor",
         "newTab",
         "newTabProfile0",
         "newTabProfile1",
@@ -67,8 +69,17 @@
         "switchToTab6",
         "switchToTab7",
         "switchToTab8",
-        "toggleFullscreen",
-        "find"
+        "toggleFullscreen"
+      ],
+      "type": "string"
+    },
+    "SelectionExpansionMode": {
+      "enum": [
+        "cell",
+        "word",
+        "line",
+        "viewport",
+        "buffer"
       ],
       "type": "string"
     },
@@ -223,6 +234,28 @@
       ],
       "required": [ "split" ]
     },
+    "MoveSelectionAnchorAction": {
+      "description": "Arguments corresponding to a Move Selection Anchor Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties":
+            { "action": { "type": "string", "pattern": "moveSelectionAnchor" },
+            "direction": {
+              "$ref": "#/definitions/Direction",
+              "default": "left",
+              "description": "The direction to move the selection anchor in"
+            },
+            "expansionMode": {
+              "$ref": "#/definitions/SelectionExpansionMode",
+              "default": "cell",
+              "description": "The unit of expansion that the selection anchor moves by"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -234,6 +267,7 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/MoveSelectionAnchorAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SplitPaneAction" }
             ]

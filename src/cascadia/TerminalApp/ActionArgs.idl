@@ -14,23 +14,6 @@ namespace TerminalApp
         IActionArgs ActionArgs { get; };
     };
 
-    enum Direction
-    {
-        None = 0,
-        Left,
-        Right,
-        Up,
-        Down
-    };
-
-    enum SplitState
-    {
-        Automatic = -1,
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
-    };
-
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;

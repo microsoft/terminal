@@ -4,7 +4,6 @@
 #pragma once
 
 #include <conattrs.hpp>
-#include <winrt/Microsoft.Terminal.Settings.h>
 
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
@@ -159,9 +158,29 @@ public:
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
 
-    void MoveSelectionAnchor(winrt::Microsoft::Terminal::Settings::Direction dir,
-                             winrt::Microsoft::Terminal::Settings::SelectionExpansionMode mode,
-                             winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget target = winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget::End);
+    enum class Direction
+    {
+        Left,
+        Right,
+        Up,
+        Down
+    };
+    enum class SelectionExpansionMode
+    {
+        Cell,
+        Word,
+        Line,
+        Viewport,
+        Buffer
+    };
+    enum class SelectionAnchorTarget
+    {
+        End,
+        Start
+    };
+    void MoveSelectionAnchor(Direction dir,
+                             SelectionExpansionMode mode,
+                             SelectionAnchorTarget target = SelectionAnchorTarget::End);
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
@@ -199,7 +218,7 @@ private:
     bool _copyOnSelect;
     SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
-    winrt::Microsoft::Terminal::Settings::SelectionExpansionMode _multiClickSelectionMode;
+    SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
 
     std::shared_mutex _readWriteLock;
@@ -255,10 +274,10 @@ private:
     void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 
     // These methods are used by Keyboard Selection
-    void _UpdateAnchorByCell(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
-    void _UpdateAnchorByWord(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor, winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget target = winrt::Microsoft::Terminal::Settings::SelectionAnchorTarget::End);
-    void _UpdateAnchorByViewport(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
-    void _UpdateAnchorByBuffer(winrt::Microsoft::Terminal::Settings::Direction dir, COORD& anchor);
+    void _UpdateAnchorByCell(Direction dir, COORD& anchor);
+    void _UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionAnchorTarget target = SelectionAnchorTarget::End);
+    void _UpdateAnchorByViewport(Direction dir, COORD& anchor);
+    void _UpdateAnchorByBuffer(Direction dir, COORD& anchor);
 #pragma endregion
 
 #ifdef UNIT_TESTING

@@ -140,6 +140,7 @@ Commands listed below are per the implementation in [`src/cascadia/TerminalApp/A
 - moveFocusRight
 - moveFocusUp
 - moveFocusDown
+- moveSelectionAnchor
 - toggleFullscreen
 - find
 

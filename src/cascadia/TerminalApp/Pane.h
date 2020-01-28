@@ -132,7 +132,7 @@ private:
     LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
-    winrt::TerminalApp::SplitState _convertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
+    winrt::Microsoft::Terminal::Settings::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::SplitState& splitType) const;
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.

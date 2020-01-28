@@ -1184,8 +1184,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             break;
         case Settings::Direction::None:
         default:
-            // TODO CARLOS
-            // Probably throw a warning here or something
             return false;
         }
 

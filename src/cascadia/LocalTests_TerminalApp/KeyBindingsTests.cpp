@@ -436,7 +436,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::None, realArgs.SplitStyle());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
@@ -445,7 +445,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
