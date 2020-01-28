@@ -76,36 +76,36 @@ steps:
     configuration: '$(BuildConfiguration)'
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
-- task: VSTest@2
-  displayName: 'Run Feature Tests (x64 only)'
-  inputs:
-    testAssemblyVer2: |
-      $(BUILD.SOURCESDIRECTORY)\**\*feature.test*.dll
-      !**\obj\**
-    runSettingsFile: '$(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings'
-    codeCoverageEnabled: true
-    runInParallel: False
-    testRunTitle: 'Console Feature Tests'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+# - task: VSTest@2
+  # displayName: 'Run Feature Tests (x64 only)'
+  # inputs:
+    # testAssemblyVer2: |
+      # $(BUILD.SOURCESDIRECTORY)\**\*feature.test*.dll
+      # !**\obj\**
+    # runSettingsFile: '$(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings'
+    # codeCoverageEnabled: true
+    # runInParallel: False
+    # testRunTitle: 'Console Feature Tests'
+    # platform: '$(BuildPlatform)'
+    # configuration: '$(BuildConfiguration)'
+  # condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
-- task: CopyFiles@2
-  displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
-  inputs:
-    Contents: |
-     **/*.appx
-     **/*.msix
-     **/*.appxsym
-     !**/Microsoft.VCLibs*.appx
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
-    OverWrite: true
-    flattenFolders: true
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+# - task: CopyFiles@2
+  # displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
+  # inputs:
+    # Contents: |
+     # **/*.appx
+     # **/*.msix
+     # **/*.appxsym
+     # !**/Microsoft.VCLibs*.appx
+    # TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
+    # OverWrite: true
+    # flattenFolders: true
+  # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact (appx) (Non-PR builds only)'
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
-    ArtifactName: 'appx-$(BuildConfiguration)'
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+# - task: PublishBuildArtifacts@1
+  # displayName: 'Publish Artifact (appx) (Non-PR builds only)'
+  # inputs:
+    # PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
+    # ArtifactName: 'appx-$(BuildConfiguration)'
+  # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
