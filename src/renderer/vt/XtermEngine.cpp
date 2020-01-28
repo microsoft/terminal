@@ -235,7 +235,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
 
-    _trace.TraceMoveCursor(coord);
+    _trace.TraceMoveCursor(_lastText, coord);
 
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {

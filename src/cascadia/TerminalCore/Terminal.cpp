@@ -490,6 +490,9 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 // _scary_. Perhaps this was never hit before we had conpty
                 // wrapping?
                 i--;
+
+                // Mark the line we're currently on as wrapped
+                _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(true);
             }
         }
 

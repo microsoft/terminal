@@ -29,7 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceString(const std::string_view& str) const;
         void TraceInvalidate(const Microsoft::Console::Types::Viewport view) const;
         void TraceLastText(const COORD lastText) const;
-        void TraceMoveCursor(const COORD pos) const;
+        void TraceMoveCursor(const COORD lastText, const COORD cursor) const;
         void TraceWrapped() const;
         void TraceInvalidateAll(const Microsoft::Console::Types::Viewport view) const;
         void TraceTriggerCircling(const bool newFrame) const;
