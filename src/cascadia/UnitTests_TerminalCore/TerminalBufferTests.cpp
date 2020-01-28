@@ -23,10 +23,6 @@ namespace TerminalCoreUnitTests
 };
 using namespace TerminalCoreUnitTests;
 
-const static std::wstring test100CharsString{
-    LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~!"#$%&)"
-};
-
 class TerminalCoreUnitTests::TerminalBufferTests final
 {
     TEST_CLASS(TerminalBufferTests);
@@ -81,7 +77,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = test100CharsString.size();
+    const auto charsToWrite = TestUtils::Test100CharsString.size();
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
     VERIFY_ARE_EQUAL(32, initialView.BottomExclusive());
@@ -110,7 +106,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
     const auto& row1 = termTb.GetRowByOffset(1);
     VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
 
-    TestUtils::VerifyExpectedString(termTb, test100CharsString, { 0, 0 });
+    TestUtils::VerifyExpectedString(termTb, TestUtils::Test100CharsString, { 0, 0 });
 }
 
 void TerminalBufferTests::TestWrappingALongString()
@@ -120,13 +116,13 @@ void TerminalBufferTests::TestWrappingALongString()
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = test100CharsString.size();
+    const auto charsToWrite = TestUtils::Test100CharsString.size();
     VERIFY_ARE_EQUAL(100u, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
     VERIFY_ARE_EQUAL(32, initialView.BottomExclusive());
 
-    termSm.ProcessString(test100CharsString);
+    termSm.ProcessString(TestUtils::Test100CharsString);
 
     const auto secondView = term->GetViewport();
 
@@ -144,5 +140,5 @@ void TerminalBufferTests::TestWrappingALongString()
     const auto& row1 = termTb.GetRowByOffset(1);
     VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
 
-    TestUtils::VerifyExpectedString(termTb, test100CharsString, { 0, 0 });
+    TestUtils::VerifyExpectedString(termTb, TestUtils::Test100CharsString, { 0, 0 });
 }

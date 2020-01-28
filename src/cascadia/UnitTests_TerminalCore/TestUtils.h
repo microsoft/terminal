@@ -21,6 +21,10 @@ namespace TerminalCoreUnitTests
 class TerminalCoreUnitTests::TestUtils
 {
 public:
+    static constexpr std::wstring_view Test100CharsString{
+        LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~!"#$%&)"
+    };
+
     // Function Description:
     // - Helper function to validate that a number of characters in a row are all
     //   the same. Validates that the next end-start characters are all equal to the
