@@ -39,6 +39,10 @@ namespace Microsoft::Console::VirtualTerminal
         void BeginResize();
         void EndResize();
 
+#ifdef UNIT_TESTING
+        void EnableConptyModeForTests();
+#endif
+
     private:
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
