@@ -284,7 +284,7 @@
         },
         "initialPosition": {
           "$ref": "#/definitions/Coordinates",
-          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If launchMode is set to maximized, the window will be maximized on the monitor specified by those coordinates."
+          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If `launchMode` is set to `maximized`, the window will be maximized on the monitor specified by those coordinates."
         },
         "initialRows": {
           "default": 30,
