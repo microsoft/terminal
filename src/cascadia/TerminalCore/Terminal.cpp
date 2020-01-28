@@ -414,7 +414,6 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
-    const Viewport bufferSize = _buffer->GetSize();
 
     // Defer the cursor drawing while we are iterating the string, for a better performance.
     // We can not waste time displaying a cursor event when we know more text is coming right behind it.
@@ -425,7 +424,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         const auto wch = stringView.at(i);
         const COORD cursorPosBefore = cursor.GetPosition();
         COORD proposedCursorPosition = cursorPosBefore;
-        bool notifyScroll = false;
 
         if (wch == UNICODE_LINEFEED)
         {
@@ -465,43 +463,53 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
         }
 
-        // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
-        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
-        if (newRows > 0)
-        {
-            for (auto dy = 0; dy < newRows; dy++)
-            {
-                _buffer->IncrementCircularBuffer();
-                proposedCursorPosition.Y--;
-            }
-            notifyScroll = true;
-        }
-
-        // This section is essentially equivalent to `AdjustCursorPosition`
-        // Update Cursor Position
-        cursor.SetPosition(proposedCursorPosition);
-
-        const COORD cursorPosAfter = cursor.GetPosition();
-
-        // Move the viewport down if the cursor moved below the viewport.
-        if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
-        {
-            const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
-            if (newViewTop != _mutableViewport.Top())
-            {
-                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
-                notifyScroll = true;
-            }
-        }
-
-        if (notifyScroll)
-        {
-            _buffer->GetRenderTarget().TriggerRedrawAll();
-            _NotifyScrollEvent();
-        }
+        _AdjustCursorPosition(proposedCursorPosition);
     }
 
     cursor.EndDeferDrawing();
+}
+
+void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
+{
+#pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
+    auto proposedCursorPosition = proposedPosition;
+    auto& cursor = _buffer->GetCursor();
+    const Viewport bufferSize = _buffer->GetSize();
+    bool notifyScroll = false;
+
+    // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
+    const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
+    if (newRows > 0)
+    {
+        for (auto dy = 0; dy < newRows; dy++)
+        {
+            _buffer->IncrementCircularBuffer();
+            proposedCursorPosition.Y--;
+        }
+        notifyScroll = true;
+    }
+
+    // Update Cursor Position
+    cursor.SetPosition(proposedCursorPosition);
+
+    const COORD cursorPosAfter = cursor.GetPosition();
+
+    // Move the viewport down if the cursor moved below the viewport.
+    if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+    {
+        const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+        if (newViewTop != _mutableViewport.Top())
+        {
+            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
+            notifyScroll = true;
+        }
+    }
+
+    if (notifyScroll)
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _NotifyScrollEvent();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

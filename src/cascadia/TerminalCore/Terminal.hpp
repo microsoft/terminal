@@ -230,6 +230,8 @@ private:
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
+    void _AdjustCursorPosition(const COORD proposedPosition);
+
     void _NotifyScrollEvent() noexcept;
 
 #pragma region TextSelection
