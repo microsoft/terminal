@@ -455,13 +455,12 @@ void Terminal::MoveSelectionAnchor(Direction dir, SelectionExpansionMode mode, S
 
     // scroll if necessary
     bool notifyScroll = false;
-    auto visibleEndIndex = std::max(0, _mutableViewport.BottomInclusive() - _scrollOffset);
     if (positionWithOffsets.Y < _VisibleStartIndex())
     {
         _scrollOffset = ViewStartIndex() - positionWithOffsets.Y;
         notifyScroll = true;
     }
-    else if (positionWithOffsets.Y > visibleEndIndex)
+    else if (positionWithOffsets.Y > _VisibleEndIndex())
     {
         _scrollOffset = std::max(0, ViewStartIndex() - positionWithOffsets.Y);
         notifyScroll = true;
@@ -529,8 +528,8 @@ void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionAnchor
     COORD otherSelectionAnchor = ((target == SelectionAnchorTarget::Start) ? _endSelectionPosition : _selectionAnchor);
     otherSelectionAnchor.Y += _selectionVerticalOffset;
 
-    auto bufferViewport = _buffer->GetSize();
-    auto comparison = bufferViewport.CompareInBounds(anchor, otherSelectionAnchor);
+    const auto bufferViewport = _buffer->GetSize();
+    const auto comparison = bufferViewport.CompareInBounds(anchor, otherSelectionAnchor);
     switch (dir)
     {
     case Direction::Up:
@@ -580,7 +579,7 @@ void Terminal::_UpdateAnchorByWord(Direction dir, COORD& anchor, SelectionAnchor
 // - <none>
 void Terminal::_UpdateAnchorByViewport(Direction dir, COORD& anchor)
 {
-    auto bufferViewport = _buffer->GetSize();
+    const auto bufferViewport = _buffer->GetSize();
     switch (dir)
     {
     case Direction::Up:
@@ -618,7 +617,7 @@ void Terminal::_UpdateAnchorByViewport(Direction dir, COORD& anchor)
 // - <none>
 void Terminal::_UpdateAnchorByBuffer(Direction dir, COORD& anchor)
 {
-    auto bufferViewport = _buffer->GetSize();
+    const auto bufferViewport = _buffer->GetSize();
     switch (dir)
     {
     case Direction::Up:
