@@ -20,7 +20,7 @@ pr:
       - tools/*
 
 variables:
-  - name: runCodesignValidationInjection
+  - name: runCodesignValidationInjectionBG
     value: false
 
 #     0.0.yyMM.dd##
