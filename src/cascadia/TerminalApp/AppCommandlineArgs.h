@@ -64,8 +64,10 @@ private:
     std::string _profileName;
     std::string _startingDirectory;
 
-    // _commandline will receive the commandline as it's parsed by CLI11
-    std::vector<std::string> _commandline;
+    // _command and _commandArguments will contain the first and subsequent parts of the command line with which we'll be spawning a new terminal
+    std::optional<std::string> _command;
+    std::vector<std::string> _commandArguments;
+
     const Commandline* _currentCommandline{ nullptr };
 
     bool _splitVertical{ false };
