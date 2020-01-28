@@ -10,7 +10,7 @@
       "format": "color"
     },
     "Coordinates": {
-      "pattern": "^(?!-?\\d+-\\d+$)(-?\\d+)?,?(-?\\d+)?$",
+      "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
     "ProfileGuid": {
