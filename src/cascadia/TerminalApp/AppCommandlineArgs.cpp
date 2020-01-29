@@ -293,16 +293,14 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                            _startingDirectory,
                                                                            NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
 
-    // This construction (where we store command and arguments separately, with the
-    // "positionals_at_end" option turned on) allows us to support "wt new-tab -d wsl -d Ubuntu"
+    // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
     // which lets us get all remaining non-option args provided at the end, but that
     // doesn't support "wt new-tab -- wsl -d Ubuntu -- sleep 10" because the first
     // -- breaks out of the subcommand (instead of the subcommand options).
     // See https://github.com/CLIUtils/CLI11/issues/417 for more info.
-    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _command, NEEDS_LOC("An option command, with arguments, to be spawned in the new tab or pane"));
-    subcommand.subcommand->add_option("arguments", _commandArguments);
+    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _commandline, NEEDS_LOC("An optional command, with arguments, to be spawned in the new tab or pane"));
     subcommand.subcommand->positionals_at_end(true);
 }
 
@@ -316,15 +314,11 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
 
-    if (_command.has_value())
+    if (!_commandline.empty())
     {
         std::ostringstream cmdlineBuffer;
 
-        // It's easier to prepend the command to the arg list to get the same escaping behavior.
-        std::deque<std::string> argsAndCommand{ _commandArguments.cbegin(), _commandArguments.cend() };
-        argsAndCommand.emplace_front(_command.value());
-
-        for (const auto& arg : argsAndCommand)
+        for (const auto& arg : _commandline)
         {
             if (cmdlineBuffer.tellp() != 0)
             {
@@ -385,8 +379,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 {
     _profileName.clear();
     _startingDirectory.clear();
-    _command.reset();
-    _commandArguments.clear();
+    _commandline.clear();
 
     _splitVertical = false;
     _splitHorizontal = false;

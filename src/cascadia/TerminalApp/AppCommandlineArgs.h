@@ -64,9 +64,8 @@ private:
     std::string _profileName;
     std::string _startingDirectory;
 
-    // _command and _commandArguments will contain the first and subsequent parts of the command line with which we'll be spawning a new terminal
-    std::optional<std::string> _command;
-    std::vector<std::string> _commandArguments;
+    // _commandline will contain the command line with which we'll be spawning a new terminal
+    std::vector<std::string> _commandline;
 
     const Commandline* _currentCommandline{ nullptr };
 
