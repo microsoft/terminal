@@ -106,33 +106,33 @@ For commands with actions:
 <br>
 `{ "command": { "action": "commandName", "actionName": "actionArguments" }, "keys": ["modifiers+keys"] }`
 
-| Command | Action | Action Arguments |
-| ------- | ------ | ---------------- |
-| closePane | | |
-| closeTab | | |
-| closeWindow | | |
-| copy | `trimWhitespace` | boolean |
-| decreaseFontSize | `delta` | integer |
-| duplicateTab | | |
-| find | | |
-| increaseFontSize | `delta` | integer |
-| moveFocus | `direction` | `left`, `right`, `up`, `down` |
-| newTab | `commandLine`<br>`startingDirectory`<br>`tabTitle`<br>`index`<br>`profile` | string<br>string<br>string<br>integer<br>string |
-| nextTab | | |
-| openNewTabDropdown | | |
-| openSettings | | |
-| paste | | |
-| prevTab | | |
-| resetFontSize | | |
-| resizePane | `direction` | `left`, `right`, `up`, `down` |
-| scrollDown | | |
-| scrollUp | | |
-| scrollUpPage | | |
-| scrollDownPage | | |
-| splitPane | `split`<br>`commandLine`<br>`startingDirectory`<br>`tabTitle`<br>`index`<br>`profile` | `vertical`, `horizontal`, `auto`<br>string<br>string<br>string<br>integer<br>string |
-| switchToTab | `index` | integer |
-| toggleFullscreen | | |
-| unbound | | |
+| Command | Command Description | Action | Action Arguments | Action Desciption |
+| ------- | ------------------- | ------ | ---------------- | ----------------- |
+| closePane | Close the active pane. | | | |
+| closeTab | Close the current tab. | | | |
+| closeWindow | Close the current window and all tabs within it. | | | |
+| copy | Make a duplicate of the selected content. | `trimWhitespace` | boolean | |
+| decreaseFontSize | Make the text smaller by one delta. | `delta` | integer | |
+| duplicateTab | Make a copy and open the current tab. | | | |
+| find | Open the search dialog box. | | | |
+| increaseFontSize | Make the text larger by one delta. | `delta` | integer | |
+| moveFocus | Focus on a different pane depending on direction. | `direction` | `left`, `right`, `up`, `down` | |
+| newTab | Create a new tab. | `commandLine`<br>`startingDirectory`<br>`tabTitle`<br>`index`<br>`profile` | string<br>string<br>string<br>integer<br>string | |
+| nextTab | Open the tab to the right of the current one. | | | |
+| openNewTabDropdown | Open the dropdown menu. | | | |
+| openSettings | Open the settings file. | | | |
+| paste | Insert the content saved on the clipboard into the selected space. | | | |
+| prevTab | Open the tab to the left of the current one. | | | |
+| resetFontSize | Reset the text size to the default value. | | | |
+| resizePane | Change the size of the active pane. | `direction` | `left`, `right`, `up`, `down` | |
+| scrollDown | Move the screen down. | | | |
+| scrollUp | Move the screen up. | | | |
+| scrollUpPage | Move the screen up a whole page. | | | |
+| scrollDownPage | Move the screen down a whole page. | | | |
+| splitPane | Separate the active pane into two. | `split`<br>`commandLine`<br>`startingDirectory`<br>`tabTitle`<br>`index`<br>`profile` | `vertical`, `horizontal`, `auto`<br>string<br>string<br>string<br>integer<br>string | |
+| switchToTab | Open a specific tab dependending on index. | `index` | integer | |
+| toggleFullscreen | Switch between fullscreen and default window sizes. | | | |
+| unbound | Unbind the associated keys from any command. | | | |
 
 ### Accepted Modifiers and Keys
 
