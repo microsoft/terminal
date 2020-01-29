@@ -202,8 +202,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
-    //   Name, version, getting started link, documentation link, and release
-    //   Notes link.
+    //   Name, version, getting started link, documentation link, release
+    //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
         const auto title = RS_(L"AboutTitleText");
@@ -211,9 +211,11 @@ namespace winrt::TerminalApp::implementation
         const auto gettingStartedLabel = RS_(L"GettingStartedLabelText");
         const auto documentationLabel = RS_(L"DocumentationLabelText");
         const auto releaseNotesLabel = RS_(L"ReleaseNotesLabelText");
+        const auto privacyPolicyLabel = RS_(L"PrivacyPolicyLabelText");
         const auto gettingStartedUriValue = RS_(L"GettingStartedUriValue");
         const auto documentationUriValue = RS_(L"DocumentationUriValue");
         const auto releaseNotesUriValue = RS_(L"ReleaseNotesUriValue");
+        const auto privacyPolicyUriValue = RS_(L"PrivacyPolicyUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -221,26 +223,32 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
         winrt::Windows::UI::Xaml::Documents::Run releaseNotes;
+        winrt::Windows::UI::Xaml::Documents::Run privacyPolicy;
         winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
         winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
         winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink privacyPolicyLink;
         std::wstringstream aboutTextStream;
 
         gettingStarted.Text(gettingStartedLabel);
         documentation.Text(documentationLabel);
         releaseNotes.Text(releaseNotesLabel);
+        privacyPolicy.Text(privacyPolicyLabel);
 
         winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
         winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
         winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
+        winrt::Windows::Foundation::Uri privacyPolicyUri{ privacyPolicyUriValue };
 
         gettingStartedLink.NavigateUri(gettingStartedUri);
         documentationLink.NavigateUri(documentationUri);
         releaseNotesLink.NavigateUri(releaseNotesUri);
+        privacyPolicyLink.NavigateUri(privacyPolicyUri);
 
         gettingStartedLink.Inlines().Append(gettingStarted);
         documentationLink.Inlines().Append(documentation);
         releaseNotesLink.Inlines().Append(releaseNotes);
+        privacyPolicyLink.Inlines().Append(privacyPolicy);
 
         // Format our about text. It will look like the following:
         // <Display Name>
@@ -248,6 +256,7 @@ namespace winrt::TerminalApp::implementation
         // Getting Started
         // Documentation
         // Release Notes
+        // Privacy Policy
 
         aboutTextStream << packageName.c_str() << L"\n";
 
@@ -264,6 +273,7 @@ namespace winrt::TerminalApp::implementation
         aboutTextBlock.Inlines().Append(gettingStartedLink);
         aboutTextBlock.Inlines().Append(documentationLink);
         aboutTextBlock.Inlines().Append(releaseNotesLink);
+        aboutTextBlock.Inlines().Append(privacyPolicyLink);
         aboutTextBlock.IsTextSelectionEnabled(true);
 
         WUX::Controls::ContentDialog dialog;

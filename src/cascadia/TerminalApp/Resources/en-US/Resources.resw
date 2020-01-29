@@ -180,6 +180,10 @@ Temporarily using the Windows Terminal default settings.
     <value>Release Notes
 </value>
   </data>
+  <data name="PrivacyPolicyLabelText" xml:space="preserve">
+    <value>Privacy Policy
+</value>
+  </data>
   <data name="DocumentationUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-documentation</value>
   </data>
@@ -188,6 +192,9 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="ReleaseNotesUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-release-notes</value>
+  </data>
+  <data name="PrivacyPolicyUriValue" xml:space="preserve">
+    <value>https://aka.ms/terminal-privacy-policy</value>
   </data>
   <data name="FeedbackUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-feedback</value>
