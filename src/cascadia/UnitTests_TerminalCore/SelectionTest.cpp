@@ -44,6 +44,22 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selection, expected);
         }
 
+        void ValidateMultiRowSelection(Terminal& term, std::vector<SMALL_RECT> expected)
+        {
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            VERIFY_ARE_EQUAL(selectionRects.size(), expected.size());
+            const auto viewport = term.GetViewport();
+
+            // Validate selection area
+            for (size_t i = 0; i < selectionRects.size(); ++i)
+            {
+                auto selection = viewport.ConvertToOrigin(selectionRects.at(i)).ToInclusive();
+                VERIFY_ARE_EQUAL(selection, expected.at(i));
+            }
+        }
+
         TEST_METHOD(SelectUnit)
         {
             Terminal term;
@@ -715,6 +731,165 @@ namespace TerminalCoreUnitTests
 
             // single cell selection should now be allowed
             VERIFY_IS_TRUE(term.IsSelectionActive());
+        }
+
+        TEST_METHOD(KeyboardSelection_MoveByCell)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            auto resetState = [&]() {
+                const auto start = COORD{ 3, 10 };
+                const auto end = COORD{ 7, 10 };
+                term.SetSelectionAnchor(start);
+                term.SetEndSelectionPosition(end);
+                ValidateSingleRowSelection(term, { 3, 10, 7, 10 });
+            };
+
+            // Left
+            {
+                resetState();
+                Log::Comment(L"Move end by cell to the left");
+                term.MoveSelectionAnchor(Terminal::Direction::Left,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateSingleRowSelection(term, { 3, 10, 6, 10 });
+
+                Log::Comment(L"Move start by cell to the left");
+                term.MoveSelectionAnchor(Terminal::Direction::Left,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 2, 10, 6, 10 });
+            }
+
+            // Right
+            {
+                resetState();
+                Log::Comment(L"Move end by cell to the right");
+                term.MoveSelectionAnchor(Terminal::Direction::Right,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateSingleRowSelection(term, { 3, 10, 8, 10 });
+
+                Log::Comment(L"Move start by cell to the right");
+                term.MoveSelectionAnchor(Terminal::Direction::Right,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 4, 10, 8, 10 });
+            }
+
+            // Up
+            {
+                resetState();
+                Log::Comment(L"Move end by cell up");
+                term.MoveSelectionAnchor(Terminal::Direction::Up,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateMultiRowSelection(term, { { 7, 9, 99, 9 }, { 0, 10, 3, 10 } });
+
+                Log::Comment(L"Move start by cell up");
+                term.MoveSelectionAnchor(Terminal::Direction::Up,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 3, 9, 7, 9 });
+            }
+
+            // Down
+            {
+                resetState();
+                Log::Comment(L"Move end by cell down");
+                term.MoveSelectionAnchor(Terminal::Direction::Down,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateMultiRowSelection(term, { { 3, 10, 99, 10 }, { 0, 11, 7, 11 } });
+
+                Log::Comment(L"Move start by cell down");
+                term.MoveSelectionAnchor(Terminal::Direction::Down,
+                                         Terminal::SelectionExpansionMode::Cell,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 3, 11, 7, 11 });
+            }
+        }
+
+        TEST_METHOD(KeyboardSelection_MoveByWord)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            auto resetState = [&]() {
+                const auto start = COORD{ 3, 10 };
+                const auto end = COORD{ 7, 10 };
+                term.SetSelectionAnchor(start);
+                term.SetEndSelectionPosition(end);
+                ValidateSingleRowSelection(term, { 3, 10, 7, 10 });
+            };
+
+            // Left
+            {
+                resetState();
+                Log::Comment(L"Move end by word to the left");
+                term.MoveSelectionAnchor(Terminal::Direction::Left,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::End);
+                DebugBreak();
+                ValidateSingleRowSelection(term, { 0, 10, 7, 10 });
+
+                Log::Comment(L"Move start by word to the left");
+                term.MoveSelectionAnchor(Terminal::Direction::Left,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 0, 10, 0, 10 });
+            }
+
+            // Right
+            {
+                resetState();
+                Log::Comment(L"Move end by word to the right");
+                term.MoveSelectionAnchor(Terminal::Direction::Right,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateSingleRowSelection(term, { 3, 10, 99, 10 });
+
+                Log::Comment(L"Move start by word to the right");
+                term.MoveSelectionAnchor(Terminal::Direction::Right,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 99, 10, 99, 10 });
+            }
+
+            // Up
+            {
+                resetState();
+                Log::Comment(L"Move end by word up");
+                term.MoveSelectionAnchor(Terminal::Direction::Up,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateMultiRowSelection(term, { { 0, 9, 99, 9 }, { 0, 10, 3, 10 } });
+
+                Log::Comment(L"Move start by word up");
+                term.MoveSelectionAnchor(Terminal::Direction::Up,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 0, 9, 99, 9 });
+            }
+
+            // Down
+            {
+                resetState();
+                Log::Comment(L"Move end by word down");
+                term.MoveSelectionAnchor(Terminal::Direction::Down,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::End);
+                ValidateMultiRowSelection(term, { { 3, 10, 99, 10 }, { 0, 11, 99, 11 } });
+
+                Log::Comment(L"Move start by word down");
+                term.MoveSelectionAnchor(Terminal::Direction::Down,
+                                         Terminal::SelectionExpansionMode::Word,
+                                         Terminal::SelectionAnchorTarget::Start);
+                ValidateSingleRowSelection(term, { 0, 11, 99, 11 });
+            }
         }
     };
 }
