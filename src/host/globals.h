@@ -69,6 +69,10 @@ public:
 
     ApiRoutines api;
 
+#ifdef UNIT_TESTING
+    void EnableConptyModeForTests();
+#endif
+
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
 };

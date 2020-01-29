@@ -30,7 +30,11 @@ namespace Microsoft::Terminal::Core
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
-class ConptyRoundtripTests;
+namespace TerminalCoreUnitTests
+{
+    class TerminalBufferTests;
+    class ConptyRoundtripTests;
+};
 #endif
 
 class Microsoft::Terminal::Core::Terminal final :
@@ -252,6 +256,7 @@ private:
 #pragma endregion
 
 #ifdef UNIT_TESTING
-    friend class ::ConptyRoundtripTests;
+    friend class TerminalCoreUnitTests::TerminalBufferTests;
+    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };
