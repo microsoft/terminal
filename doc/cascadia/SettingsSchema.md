@@ -97,8 +97,12 @@ Properties listed below are specific to each custom key binding.
 Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp).
 
 Keybindings can be structured in the following manners:
+
+For commands without actions:
 <br>
 `{ "command": "commandName", "keys": [ "modifiers+keys" ] }`
+
+For commands with actions:
 <br>
 `{ "command": { "action": "commandName", "actionName": "actionArguments" }, "keys": ["modifiers+keys"] }`
 
@@ -136,11 +140,13 @@ Keybindings can be structured in the following manners:
 `Ctrl+`, `Shift+`, `Alt+`
 
 #### Keys
-- `f1 - f24`, `a-z`, `0-9`
-- ``` ` ```, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/`
-- `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus`
-- `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert`
-- `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply`
+| Type | Keys |
+| ---- | ---- |
+| Function and Alphanumeric Keys | `f1-f24`, `a-z`, `0-9` |
+| Symbols | ``` ` ```, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/` |
+| Arrow Keys | `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus` |
+| Action Keys | `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert` |
+| Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).

@@ -216,7 +216,6 @@ winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
     bool serializedSuccessfully = false;
     const auto modifiers = chord.Modifiers();
     const auto vkey = chord.Vkey();
-    std::wstring str{ L"" };
 
     std::wstring buffer{ L"" };
 
