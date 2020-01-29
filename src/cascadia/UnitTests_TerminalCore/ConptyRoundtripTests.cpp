@@ -149,6 +149,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
 
+    TEST_METHOD(DelayEOLWrap);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -339,4 +341,57 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::DelayEOLWrap()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    for (auto i = 0; i < TerminalViewWidth; i++)
+    {
+        hostSm.ProcessString(L"A");
+    }
+
+    auto verifyData0 = [](TextBuffer& tb) {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter, 0, 80);
+    };
+
+    verifyData0(hostTb);
+
+    expectedOutput.push_back(std::string(80, 'A'));
+
+    // TODO:GH#405 - When conpty wrapped lines lands, this will behave
+    // differently, but this has been verified to test it's current behavior,
+    // and this change works even with conpty wrapped lines.
+
+    expectedOutput.push_back("\x1b[1;80H");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyData0(termTb);
+
+    hostSm.ProcessString(L"\b");
+    hostSm.ProcessString(L" ");
+
+    auto verifyData1 = [](TextBuffer& tb) {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter, 0, 79);
+    };
+    verifyData1(hostTb);
+
+    // expectedOutput.push_back("\x1b[1;79H");
+    expectedOutput.push_back("\b");
+    expectedOutput.push_back(" ");
+    // expectedOutput.push_back("\x1b[1;80H");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    verifyData1(termTb);
 }
