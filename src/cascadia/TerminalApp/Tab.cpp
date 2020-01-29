@@ -32,6 +32,34 @@ namespace winrt::TerminalApp::implementation
         _MakeTabViewItem();
     }
 
+    hstring Tab::Title()
+    {
+        return _Title;
+    }
+
+    void Tab::Title(const hstring& value)
+    {
+        if (_Title != value)
+        {
+            const_cast<hstring&>(_Title) = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Title" });
+        }
+    }
+
+    hstring Tab::IconPath()
+    {
+        return _IconPath;
+    }
+
+    void Tab::IconPath(const hstring& value)
+    {
+        if (_IconPath != value)
+        {
+            const_cast<hstring&>(_IconPath) = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IconPath" });
+        }
+    }
+
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};

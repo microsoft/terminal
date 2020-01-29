@@ -44,12 +44,12 @@ namespace winrt::TerminalApp::implementation
         void Shutdown();
         void ClosePane();
 
-        WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
-        DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+        hstring Title();
+        hstring IconPath();
 
+        WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(hstring, Title, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(hstring, IconPath, _PropertyChangedHandlers);
+        DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -58,6 +58,12 @@ namespace winrt::TerminalApp::implementation
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
+
+        const winrt::hstring _Title{};
+        void Title(const hstring& value);
+
+        const winrt::hstring _IconPath{};
+        void IconPath(const hstring& value);
 
         void _MakeTabViewItem();
         void _Focus();
