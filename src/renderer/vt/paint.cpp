@@ -461,9 +461,14 @@ using namespace Microsoft::Console::Types;
     //      we'll determine that we need to emit a \b to put the cursor in the
     //      right position. This is wrong, and will cause us to move the cursor
     //      back one character more than we wanted.
-    if (_lastText.X < _lastViewport.RightInclusive())
+    if (_lastText.X < _lastViewport.RightExclusive())
     {
         _lastText.X += static_cast<short>(columnsActual);
+    }
+
+    if (_lastText.X >= _lastViewport.RightInclusive())
+    {
+        _delayedEolWrap = true;
     }
 
     short sNumSpaces;
