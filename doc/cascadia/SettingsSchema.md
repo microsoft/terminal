@@ -90,69 +90,57 @@ Properties listed below are specific to each custom key binding.
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+| `action` | Optional | String | Adds additional functionality to certain commands. |
 
-### Implemented Commands
+### Implemented Commands and Actions
 
-Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp)
+Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp).
 
-- copy
-- copyTextWithoutNewlines
-- paste
-- newTab
-- openNewTabDropdown
-- duplicateTab
-- newTabProfile0
-- newTabProfile1
-- newTabProfile2
-- newTabProfile3
-- newTabProfile4
-- newTabProfile5
-- newTabProfile6
-- newTabProfile7
-- newTabProfile8
-- closeWindow
-- closeTab
-- closePane
-- switchToTab
-- nextTab
-- prevTab
-- increaseFontSize
-- decreaseFontSize
-- resetFontSize
-- scrollUp
-- scrollDown
-- scrollUpPage
-- scrollDownPage
-- switchToTab0
-- switchToTab1
-- switchToTab2
-- switchToTab3
-- switchToTab4
-- switchToTab5
-- switchToTab6
-- switchToTab7
-- switchToTab8
-- openSettings
-- splitPane
-- resizePaneLeft
-- resizePaneRight
-- resizePaneUp
-- resizePaneDown
-- moveFocusLeft
-- moveFocusRight
-- moveFocusUp
-- moveFocusDown
-- toggleFullscreen
-- find
+Keybindings can be structured in the following manners:
+<br>
+`{ "command": "commandName", "keys": [ "modifiers+keys" ] }`
+<br>
+`{ "command": { "action": "commandName", "actionName": "actionArguments" }, "keys": ["modifiers+keys"] }`
 
-## Example Keys
-- ctrl+1
-- ctrl+plus
-- alt+-
-- shift+numpad_1
-- ctrL+shift+numpad_plus
-- ctrl+pgdn
-- ctrl+alt+shift+pgup
+| Command | Action | Action Arguments |
+| ------- | ------ | ---------------- |
+| closePane | | |
+| closeTab | | |
+| closeWindow | | |
+| copy | `trimWhitespace` | boolean |
+| decreaseFontSize | `delta` | integer |
+| duplicateTab | | |
+| find | | |
+| increaseFontSize | `delta` | integer |
+| moveFocus | `direction` | `left`, `right`, `up`, `down` |
+| newTab | `commandLine`<br>`startingDirectory`<br>`tabTitle`<br>`index`<br>`profile` | string<br>string<br>string<br>integer<br>string |
+| nextTab | | |
+| openNewTabDropdown | | |
+| openSettings | | |
+| paste | | |
+| prevTab | | |
+| resetFontSize | | |
+| resizePane | `direction` | `left`, `right`, `up`, `down` |
+| scrollDown | | |
+| scrollUp | | |
+| scrollUpPage | | |
+| scrollDownPage | | |
+| splitPane | `split`<br>`commandLine`<br>`startingDirectory`<br>`tabTitle`<br>`index`<br>`profile` | `vertical`, `horizontal`, `auto`<br>string<br>string<br>string<br>integer<br>string |
+| switchToTab | `index` | integer |
+| toggleFullscreen | | |
+| unbound | | |
+
+### Accepted Modifiers and Keys
+
+#### Modifiers
+`Ctrl+`, `Shift+`, `Alt+`
+
+#### Keys
+- `f1 - f24`, `a-z`, `0-9`
+- ``` ` ```, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/`
+- `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus`
+- `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert`
+- `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply`
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
