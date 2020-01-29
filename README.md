@@ -13,7 +13,7 @@ Related repositories include:
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
-## Installing and running Windows Terminal
+## Installin and running Windows Terminal
 
 > 👉 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
 
