@@ -8,9 +8,15 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
-#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
+#include "AppCommandlineArgs.h"
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
 
 namespace winrt::TerminalApp::implementation
 {
@@ -29,7 +35,12 @@ namespace winrt::TerminalApp::implementation
 
         void TitlebarClicked();
 
+        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
         void CloseWindow();
+
+        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
+        winrt::hstring EarlyExitMessage();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -62,6 +73,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        int _ParseArgs(winrt::array_view<const hstring>& args);
+        fire_and_forget _ProcessNextStartupAction();
+
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
 
@@ -82,6 +97,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTitle(std::shared_ptr<Tab> tab);
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
         void _UpdateTabView();
+        void _UpdateTabWidthMode();
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
@@ -94,10 +110,12 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         int _GetFocusedTabIndex() const;
-        void _SetFocusedTabIndex(int tabIndex);
+        winrt::fire_and_forget _SetFocusedTabIndex(int tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();
+
+        winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
@@ -107,9 +125,9 @@ namespace winrt::TerminalApp::implementation
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
-        void _CopyToClipboardHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData);
-        void _PasteFromClipboardHandler(const IInspectable& sender,
-                                        const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
+        winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
+        winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
+                                                          const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
         static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
@@ -122,7 +140,9 @@ namespace winrt::TerminalApp::implementation
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
 
-        void _RefreshUIForSettingsReload();
+        void _Find();
+
+        winrt::fire_and_forget _RefreshUIForSettingsReload();
 
         void _ToggleFullscreen();
 
@@ -148,9 +168,12 @@ namespace winrt::TerminalApp::implementation
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
         void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleFind(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
+
+        friend class TerminalAppLocalTests::TabTests;
     };
 }
 

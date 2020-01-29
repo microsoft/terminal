@@ -108,14 +108,17 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 }
 
 // Method Description:
-// - Get the current anchor position
+// - Get the current anchor position relative to the whole text buffer
 // Arguments:
 // - None
 // Return Value:
 // - None
 const COORD Terminal::GetSelectionAnchor() const
 {
-    return _selectionAnchor;
+    COORD selectionAnchorPos{ _selectionAnchor };
+    THROW_IF_FAILED(ShortAdd(selectionAnchorPos.Y, _selectionVerticalOffset, &selectionAnchorPos.Y));
+
+    return selectionAnchorPos;
 }
 
 // Method Description:
@@ -237,18 +240,19 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::DoubleClickSelection(const COORD position)
 {
+#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = _ConvertToBufferCell(position);
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
     _selectionAnchor = _ExpandDoubleClickSelectionLeft(positionWithOffsets);
-    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_selectionAnchor.Y));
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_selectionAnchor.Y));
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
     _endSelectionPosition = _ExpandDoubleClickSelectionRight(positionWithOffsets);
-    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_endSelectionPosition.Y));
+    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_endSelectionPosition.Y));
 
     _selectionActive = true;
     _multiClickSelectionMode = SelectionExpansionMode::Word;
@@ -279,7 +283,7 @@ void Terminal::SetSelectionAnchor(const COORD position)
 
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     _selectionActive = true;
     _allowSingleCharSelection = (_copyOnSelect) ? false : true;
@@ -302,7 +306,7 @@ void Terminal::SetEndSelectionPosition(const COORD position)
 
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
-    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
 
     if (_copyOnSelect && !_IsSingleCellSelection())
     {
@@ -361,6 +365,7 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
     // force position to be within bounds
+#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = position;
     _buffer->GetSize().Clamp(positionWithOffsets);
 
@@ -377,6 +382,7 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
     // force position to be within bounds
+#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
     COORD positionWithOffsets = position;
     _buffer->GetSize().Clamp(positionWithOffsets);
 
@@ -396,7 +402,7 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
     _buffer->GetSize().Clamp(positionWithOffsets);
 
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
-    THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;
 }
 

@@ -3,9 +3,13 @@
 
 #include "pch.h"
 
-#include "../TerminalApp/ColorScheme.h"
+#include "../TerminalApp/TerminalPage.h"
+#include "../TerminalApp/MinMaxCloseControl.h"
+#include "../TerminalApp/TabRowControl.h"
+#include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/Tab.h"
 #include "../CppWinrtTailored.h"
+#include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -19,7 +23,7 @@ namespace TerminalAppLocalTests
     // an updated TAEF that will let us install framework packages when the test
     // package is deployed. Until then, these tests won't deploy in CI.
 
-    class TabTests
+    class TabTests : public JsonTestClass
     {
         // For this set of tests, we need to activate some XAML content. For
         // release builds, the application runs as a centennial application,
@@ -34,18 +38,26 @@ namespace TerminalAppLocalTests
 
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
-            TEST_CLASS_PROPERTY(L"UAP:Host", L"Xaml")
-            TEST_CLASS_PROPERTY(L"UAP:WaitForXamlWindowActivation", L"true")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         // These four tests act as canary tests. If one of them fails, then they
         // can help you identify if something much lower in the stack has
         // failed.
         TEST_METHOD(EnsureTestsActivate);
-        TEST_METHOD(TryCreateLocalWinRTType);
+        TEST_METHOD(TryCreateSettingsType);
+        TEST_METHOD(TryCreateConnectionType);
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
+
+        TEST_METHOD(CreateSimpleTerminalXamlType);
+        TEST_METHOD(CreateTerminalMuxXamlType);
+
+        TEST_CLASS_SETUP(ClassSetup)
+        {
+            InitializeJsonReader();
+            return true;
+        }
     };
 
     void TabTests::EnsureTestsActivate()
@@ -56,7 +68,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(true);
     }
 
-    void TabTests::TryCreateLocalWinRTType()
+    void TabTests::TryCreateSettingsType()
     {
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
@@ -66,6 +78,17 @@ namespace TerminalAppLocalTests
         settings.FontSize(oldFontSize + 5);
         auto newFontSize = settings.FontSize();
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
+    }
+
+    void TabTests::TryCreateConnectionType()
+    {
+        // Verify we can create a WinRT type we authored
+        // Just creating it is enough to know that everything is working.
+        winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+        VERIFY_IS_NOT_NULL(conn);
+        // We're doing this test seperately from the TryCreateSettingsType test,
+        // to ensure both dependent binaries (TemrinalSettings and
+        // TerminalConnection) both work individually.
     }
 
     void TabTests::TryCreateXamlObjects()
@@ -116,6 +139,28 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(newTab);
         });
 
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::CreateSimpleTerminalXamlType()
+    {
+        winrt::com_ptr<winrt::TerminalApp::implementation::MinMaxCloseControl> mmcc{ nullptr };
+
+        auto result = RunOnUIThread([&mmcc]() {
+            mmcc = winrt::make_self<winrt::TerminalApp::implementation::MinMaxCloseControl>();
+            VERIFY_IS_NOT_NULL(mmcc);
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::CreateTerminalMuxXamlType()
+    {
+        winrt::com_ptr<winrt::TerminalApp::implementation::TabRowControl> tabRowControl{ nullptr };
+
+        auto result = RunOnUIThread([&tabRowControl]() {
+            tabRowControl = winrt::make_self<winrt::TerminalApp::implementation::TabRowControl>();
+            VERIFY_IS_NOT_NULL(tabRowControl);
+        });
         VERIFY_SUCCEEDED(result);
     }
 

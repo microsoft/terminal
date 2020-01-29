@@ -59,7 +59,7 @@ public:
 
 private:
     wchar_t _ApplySensitivity(const wchar_t wch) const noexcept;
-    bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
+    bool _FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
     bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept;
     void _UpdateNextPosition();
 

@@ -29,10 +29,12 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
+    void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void ToggleFullscreen();
 
@@ -87,8 +89,10 @@ protected:
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
     std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
+    std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
+    [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
 
     bool _fullscreen{ false };
     RECT _fullscreenWindowSize;
@@ -97,7 +101,4 @@ protected:
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
-
-    // See _SetIsFullscreen for details on this method.
-    virtual bool _ShouldUpdateStylesOnFullscreen() const { return true; };
 };

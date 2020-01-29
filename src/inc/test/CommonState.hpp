@@ -38,7 +38,7 @@ public:
 
     CommonState() :
         m_heap(GetProcessHeap()),
-        m_ntstatusTextBufferInfo(STATUS_FAIL_CHECK),
+        m_hrTextBufferInfo(E_FAIL),
         m_pFontInfo(nullptr),
         m_backupTextBufferInfo(),
         m_readHandle(nullptr)
@@ -81,16 +81,19 @@ public:
         }
     }
 
-    void PrepareGlobalScreenBuffer()
+    void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
+                                   const short viewHeight = s_csWindowHeight,
+                                   const short bufferWidth = s_csBufferWidth,
+                                   const short bufferHeight = s_csBufferHeight)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordWindowSize;
-        coordWindowSize.X = s_csWindowWidth;
-        coordWindowSize.Y = s_csWindowHeight;
+        coordWindowSize.X = viewWidth;
+        coordWindowSize.Y = viewHeight;
 
         COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = s_csBufferWidth;
-        coordScreenBufferSize.Y = s_csBufferHeight;
+        coordScreenBufferSize.X = bufferWidth;
+        coordScreenBufferSize.Y = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -143,35 +146,40 @@ public:
         gci.SetCookedReadData(nullptr);
     }
 
-    void PrepareNewTextBufferInfo()
+    void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false,
+                                  const short bufferWidth = s_csBufferWidth,
+                                  const short bufferHeight = s_csBufferHeight)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = s_csBufferWidth;
-        coordScreenBufferSize.Y = s_csBufferHeight;
+        coordScreenBufferSize.X = bufferWidth;
+        coordScreenBufferSize.Y = bufferHeight;
 
         UINT uiCursorSize = 12;
+
+        auto initialAttributes = useDefaultAttributes ? gci.GetDefaultAttributes() :
+                                                        TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY };
 
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);
         try
         {
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
-                                                                                  TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY },
+                                                                                  initialAttributes,
                                                                                   uiCursorSize,
                                                                                   gci.pCurrentScreenBuffer->GetRenderTarget());
             if (textBuffer.get() == nullptr)
             {
-                m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
+                m_hrTextBufferInfo = E_OUTOFMEMORY;
             }
             else
             {
-                m_ntstatusTextBufferInfo = STATUS_SUCCESS;
+                m_hrTextBufferInfo = S_OK;
             }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
         }
         catch (...)
         {
-            m_ntstatusTextBufferInfo = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            m_hrTextBufferInfo = wil::ResultFromCaughtException();
         }
     }
 
@@ -221,14 +229,14 @@ public:
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
-    [[nodiscard]] NTSTATUS GetTextBufferInfoInitResult()
+    [[nodiscard]] HRESULT GetTextBufferInfoInitResult()
     {
-        return m_ntstatusTextBufferInfo;
+        return m_hrTextBufferInfo;
     }
 
 private:
     HANDLE m_heap;
-    NTSTATUS m_ntstatusTextBufferInfo;
+    HRESULT m_hrTextBufferInfo;
     FontInfo* m_pFontInfo;
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;

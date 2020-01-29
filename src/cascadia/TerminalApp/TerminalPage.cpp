@@ -63,10 +63,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // weak_ptr to this TerminalPage object lambda capturing
-        auto weakThis{ get_weak() };
-
-        _tabView.TabDragStarting([weakThis](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
                 page->_rearranging = true;
@@ -75,7 +72,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _tabView.TabDragCompleted([weakThis](auto&& /*o*/, auto&& /*a*/) {
+        _tabView.TabDragCompleted([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
                 auto& from{ page->_rearrangeFrom };
@@ -116,7 +113,7 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         //Event Bindings (Early)
-        _newTabButton.Click([weakThis](auto&&, auto&&) {
+        _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
                 page->_OpenNewTab(nullptr);
@@ -127,9 +124,57 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
-        _OpenNewTab(nullptr);
+
+        _UpdateTabWidthMode();
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
+
+        // Actually start the terminal.
+        if (_appArgs.GetStartupActions().empty())
+        {
+            _OpenNewTab(nullptr);
+        }
+        else
+        {
+            _appArgs.ValidateStartupCommands();
+
+            // This will kick off a chain of events to perform each startup
+            // action. As each startup action is completed, the next will be
+            // fired.
+            _ProcessNextStartupAction();
+        }
+    }
+
+    // Method Description:
+    // - Process the next startup action in our list of startup actions. When
+    //   that action is complete, fire the next (if there are any more).
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    fire_and_forget TerminalPage::_ProcessNextStartupAction()
+    {
+        // If there are no actions left, do nothing.
+        if (_appArgs.GetStartupActions().empty())
+        {
+            return;
+        }
+
+        // Get the next action to be processed
+        auto nextAction = _appArgs.GetStartupActions().front();
+        _appArgs.GetStartupActions().pop_front();
+
+        auto weakThis{ get_weak() };
+
+        // Handle it on the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        if (auto page{ weakThis.get() })
+        {
+            page->_actionDispatch->DoAction(nextAction);
+
+            // Kick off the next action to be handled (if necessary)
+            page->_ProcessNextStartupAction();
+        }
     }
 
     // Method Description:
@@ -322,9 +367,7 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            auto weakThis{ get_weak() };
-
-            profileMenuItem.Click([profileIndex, weakThis](auto&&, auto&&) {
+            profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
                     auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
@@ -431,6 +474,13 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
+    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
+    {
+        co_await winrt::resume_foreground(page->_tabView.Dispatcher());
+
+        page->_RemoveTabViewItem(tabViewItem);
+    }
+
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
@@ -438,6 +488,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
+        const bool isFirstTab = _tabs.empty();
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -454,11 +505,10 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = newTab;
-        auto weakThis{ get_weak() };
 
         // When the tab's active pane changes, we'll want to lookup a new icon
         // for it, and possibly propogate the title up to the window.
-        newTab->ActivePaneChanged([weakTabPtr, weakThis]() {
+        newTab->ActivePaneChanged([weakTabPtr, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTabPtr.lock() };
 
@@ -485,24 +535,27 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, weakThis](auto&& /*s*/, auto&& /*e*/) {
+        newTab->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
             if (auto page{ weakThis.get() })
             {
-                page->_tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, weakThis]() {
-                    if (auto page{ weakThis.get() })
-                    {
-                        page->_RemoveTabViewItem(tabViewItem);
-                    }
-                });
+                page->_RemoveOnCloseRoutine(tabViewItem, page);
             }
         });
 
-        // This is one way to set the tab's selected background color.
-        //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-
-        // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
-        // Xaml control to the Xaml root.
-        _tabView.SelectedItem(tabViewItem);
+        // If this is the first tab, we don't need to kick off the event to get
+        // the tab's content added to the root of the page. just do it
+        // immediately.
+        if (isFirstTab)
+        {
+            _tabContent.Children().Clear();
+            _tabContent.Children().Append(newTab->GetRootElement());
+        }
+        else
+        {
+            // This kicks off TabView::SelectionChanged, in response to which
+            // we'll attach the terminal's Xaml control to the Xaml root.
+            _tabView.SelectedItem(tabViewItem);
+        }
     }
 
     // Method Description:
@@ -630,7 +683,6 @@ namespace winrt::TerminalApp::implementation
         // Hook up the ShortcutActionDispatch object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         // there's an actual keychord for them.
-
         _actionDispatch->OpenNewTabDropdown({ this, &TerminalPage::_HandleOpenNewTabDropdown });
         _actionDispatch->DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
         _actionDispatch->CloseTab({ this, &TerminalPage::_HandleCloseTab });
@@ -651,6 +703,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         _actionDispatch->CopyText({ this, &TerminalPage::_HandleCopyText });
         _actionDispatch->AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
+        _actionDispatch->Find({ this, &TerminalPage::_HandleFind });
         _actionDispatch->ResetFontSize({ this, &TerminalPage::_HandleResetFontSize });
         _actionDispatch->ToggleFullscreen({ this, &TerminalPage::_HandleToggleFullscreen });
     }
@@ -693,6 +746,13 @@ namespace winrt::TerminalApp::implementation
                 tab->UpdateIcon({});
             }
         }
+    }
+
+    // Method Description:
+    // - Handle changes to the tab width set by the user
+    void TerminalPage::_UpdateTabWidthMode()
+    {
+        _tabView.TabWidthMode(_settings->GlobalSettings().GetTabWidthMode());
     }
 
     // Method Description:
@@ -749,15 +809,19 @@ namespace winrt::TerminalApp::implementation
     // - tabIndex: the index of the tab to be removed
     void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
+        // Removing the tab from the collection should destroy its control and disconnect its connection,
+        // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
+        auto iterator = _tabs.begin() + tabIndex;
+        (*iterator)->Shutdown();
+
+        _tabs.erase(iterator);
+        _tabView.TabItems().RemoveAt(tabIndex);
+
         // To close the window here, we need to close the hosting window.
-        if (_tabs.size() == 1)
+        if (_tabs.size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-
-        // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndex);
-        _tabView.TabItems().RemoveAt(tabIndex);
 
         auto focusedTabIndex = _GetFocusedTabIndex();
         if (gsl::narrow_cast<int>(tabIndex) == focusedTabIndex)
@@ -800,9 +864,8 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        auto weakThis{ get_weak() };
 
-        term.TitleChanged([weakTabPtr, weakThis](auto newTitle) {
+        term.TitleChanged([weakTabPtr, weakThis{ get_weak() }](auto newTitle) {
             auto page{ weakThis.get() };
             auto tab{ weakTabPtr.lock() };
 
@@ -861,7 +924,7 @@ namespace winrt::TerminalApp::implementation
     winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
+        auto focusedTab = _tabs.at(focusedTabIndex);
         return focusedTab->GetActiveTerminalControl();
     }
 
@@ -882,18 +945,19 @@ namespace winrt::TerminalApp::implementation
         return -1;
     }
 
-    void TerminalPage::_SetFocusedTabIndex(int tabIndex)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(int tabIndex)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
-        auto tab = _tabs.at(tabIndex);
         auto weakThis{ get_weak() };
-        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, weakThis]() {
-            if (auto page{ weakThis.get() })
-            {
-                page->_tabView.SelectedItem(tab->GetTabViewItem());
-            }
-        });
+
+        co_await winrt::resume_foreground(_tabView.Dispatcher());
+
+        if (auto page{ weakThis.get() })
+        {
+            auto tab = _tabs.at(tabIndex);
+            _tabView.SelectedItem(tab->GetTabViewItem());
+        }
     }
 
     // Method Description:
@@ -1122,41 +1186,60 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Calculates the appropriate size to snap to in the gived direction, for
+    //   the given dimension. If the global setting `snapToGridOnResize` is set
+    //   to `false`, this will just immediately return the provided dimension,
+    //   effectively disabling snapping.
+    // - See Pane::CalcSnappedDimension
+    float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    {
+        if (_settings->GlobalSettings().SnapToGridOnResize())
+        {
+            const auto focusedTabIndex = _GetFocusedTabIndex();
+            return _tabs[focusedTabIndex]->CalcSnappedDimension(widthOrHeight, dimension);
+        }
+        else
+        {
+            return dimension;
+        }
+    }
+
+    // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
     //   terminal control raises it's CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
-    void TerminalPage::_CopyToClipboardHandler(const IInspectable& /*sender*/,
-                                               const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData)
+    winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
+                                                                 const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData)
     {
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
-            DataPackage dataPack = DataPackage();
-            dataPack.RequestedOperation(DataPackageOperation::Copy);
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
 
-            // copy text to dataPack
-            dataPack.SetText(copiedData.Text());
+        DataPackage dataPack = DataPackage();
+        dataPack.RequestedOperation(DataPackageOperation::Copy);
 
-            // copy html to dataPack
-            const auto htmlData = copiedData.Html();
-            if (!htmlData.empty())
-            {
-                dataPack.SetHtmlFormat(htmlData);
-            }
+        // copy text to dataPack
+        dataPack.SetText(copiedData.Text());
 
-            // copy rtf data to dataPack
-            const auto rtfData = copiedData.Rtf();
-            if (!rtfData.empty())
-            {
-                dataPack.SetRtf(rtfData);
-            }
+        // copy html to dataPack
+        const auto htmlData = copiedData.Html();
+        if (!htmlData.empty())
+        {
+            dataPack.SetHtmlFormat(htmlData);
+        }
 
-            try
-            {
-                Clipboard::SetContent(dataPack);
-                Clipboard::Flush();
-            }
-            CATCH_LOG();
-        });
+        // copy rtf data to dataPack
+        const auto rtfData = copiedData.Rtf();
+        if (!rtfData.empty())
+        {
+            dataPack.SetRtf(rtfData);
+        }
+
+        try
+        {
+            Clipboard::SetContent(dataPack);
+            Clipboard::Flush();
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1165,12 +1248,12 @@ namespace winrt::TerminalApp::implementation
     //   data with it's PasteFromClipboard event.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    void TerminalPage::_PasteFromClipboardHandler(const IInspectable& /*sender*/,
-                                                  const PasteFromClipboardEventArgs& eventArgs)
+    winrt::fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
+                                                                    const PasteFromClipboardEventArgs eventArgs)
     {
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
-            TerminalPage::PasteFromClipboard(eventArgs);
-        });
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+
+        TerminalPage::PasteFromClipboard(eventArgs);
     }
 
     // Function Description:
@@ -1364,7 +1447,7 @@ namespace winrt::TerminalApp::implementation
     //   This includes update the settings of all the tabs according
     //   to their profiles, update the title and icon of each tab, and
     //   finally create the tab flyout
-    void TerminalPage::_RefreshUIForSettingsReload()
+    winrt::fire_and_forget TerminalPage::_RefreshUIForSettingsReload()
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
@@ -1392,14 +1475,82 @@ namespace winrt::TerminalApp::implementation
         }
 
         auto weakThis{ get_weak() };
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-            // repopulate the new tab button's flyout with entries for each
-            // profile, which might have changed
-            if (auto page{ weakThis.get() })
+
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // repopulate the new tab button's flyout with entries for each
+        // profile, which might have changed
+        if (auto page{ weakThis.get() })
+        {
+            _UpdateTabWidthMode();
+            _CreateNewTabFlyout();
+        }
+    }
+
+    // Method Description:
+    // - Sets the initial commandline to process on startup, and attempts to
+    //   parse it. Commands will be parsed into a list of ShortcutActions that
+    //   will be processed on TerminalPage::Create().
+    // - This function will have no effective result after Create() is called.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see TerminalPage::_ParseArgs)
+    int32_t TerminalPage::SetStartupCommandline(winrt::array_view<const hstring> args)
+    {
+        return _ParseArgs(args);
+    }
+
+    // Method Description:
+    // - Attempts to parse an array of commandline args into a list of
+    //   commands to execute, and then parses these commands. As commands are
+    //   succesfully parsed, they will generate ShortcutActions for us to be
+    //   able to execute. If we fail to parse any commands, we'll return the
+    //   error code from the failure to parse that command, and stop processing
+    //   additional commands.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0 if the commandline was successfully parsed
+    int TerminalPage::_ParseArgs(winrt::array_view<const hstring>& args)
+    {
+        auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
+
+        for (auto& cmdBlob : commands)
+        {
+            // On one hand, it seems like we should be able to have one
+            // AppCommandlineArgs for parsing all of them, and collect the
+            // results one at a time.
+            //
+            // On the other hand, re-using a CLI::App seems to leave state from
+            // previous parsings around, so we could get mysterious behavior
+            // where one command affects the values of the next.
+            //
+            // From https://cliutils.github.io/CLI11/book/chapters/options.html:
+            // > If that option is not given, CLI11 will not touch the initial
+            // > value. This allows you to set up defaults by simply setting
+            // > your value beforehand.
+            //
+            // So we pretty much need the to either manually reset the state
+            // each command, or build new ones.
+            const auto result = _appArgs.ParseCommand(cmdBlob);
+
+            // If this succeeded, result will be 0. Otherwise, the caller should
+            // exit(result), to exit the program.
+            if (result != 0)
             {
-                page->_CreateNewTabFlyout();
+                return result;
             }
-        });
+        }
+
+        // If all the args were successfully parsed, we'll have some commands
+        // built in _appArgs, which we'll use when the application starts up.
+        return 0;
     }
 
     // Method Description:
@@ -1418,6 +1569,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called when the user tries to do a search using keybindings.
+    //   This will tell the current focused terminal control to create
+    //   a search box and enable find process.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_Find()
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.CreateSearchBoxControl();
+    }
+
+    // Method Description:
     // - Toggles fullscreen mode. Hides the tab row, and raises our
     //   ToggleFullscreen event.
     // Arguments:
@@ -1431,6 +1596,22 @@ namespace winrt::TerminalApp::implementation
         _isFullscreen = !_isFullscreen;
 
         _UpdateTabView();
+    }
+
+    // Method Description:
+    // - If there were any errors parsing the commandline that was used to
+    //   initialize the terminal, this will return a string containing that
+    //   message. If there were no errors, this message will be blank.
+    // - If the user requested help on any command (using --help), this will
+    //   contain the help message.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the help text or error message for the providied commandline, if one
+    //   exists, otherwise the empty string.
+    winrt::hstring TerminalPage::EarlyExitMessage()
+    {
+        return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
     // -------------------------------- WinRT Events ---------------------------------

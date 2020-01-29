@@ -59,23 +59,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // set the input scope to Text because this control is for any text.
         _editContext.InputScope(Core::CoreTextInputScope::Text);
 
-        _editContext.TextRequested({ this, &TSFInputControl::_textRequestedHandler });
+        _textRequestedRevoker = _editContext.TextRequested(winrt::auto_revoke, { this, &TSFInputControl::_textRequestedHandler });
 
-        _editContext.SelectionRequested({ this, &TSFInputControl::_selectionRequestedHandler });
+        _selectionRequestedRevoker = _editContext.SelectionRequested(winrt::auto_revoke, { this, &TSFInputControl::_selectionRequestedHandler });
 
-        _editContext.FocusRemoved({ this, &TSFInputControl::_focusRemovedHandler });
+        _focusRemovedRevoker = _editContext.FocusRemoved(winrt::auto_revoke, { this, &TSFInputControl::_focusRemovedHandler });
 
-        _editContext.TextUpdating({ this, &TSFInputControl::_textUpdatingHandler });
+        _textUpdatingRevoker = _editContext.TextUpdating(winrt::auto_revoke, { this, &TSFInputControl::_textUpdatingHandler });
 
-        _editContext.SelectionUpdating({ this, &TSFInputControl::_selectionUpdatingHandler });
+        _selectionUpdatingRevoker = _editContext.SelectionUpdating(winrt::auto_revoke, { this, &TSFInputControl::_selectionUpdatingHandler });
 
-        _editContext.FormatUpdating({ this, &TSFInputControl::_formatUpdatingHandler });
+        _formatUpdatingRevoker = _editContext.FormatUpdating(winrt::auto_revoke, { this, &TSFInputControl::_formatUpdatingHandler });
 
-        _editContext.LayoutRequested({ this, &TSFInputControl::_layoutRequestedHandler });
+        _layoutRequestedRevoker = _editContext.LayoutRequested(winrt::auto_revoke, { this, &TSFInputControl::_layoutRequestedHandler });
 
-        _editContext.CompositionStarted({ this, &TSFInputControl::_compositionStartedHandler });
+        _compositionStartedRevoker = _editContext.CompositionStarted(winrt::auto_revoke, { this, &TSFInputControl::_compositionStartedHandler });
 
-        _editContext.CompositionCompleted({ this, &TSFInputControl::_compositionCompletedHandler });
+        _compositionCompletedRevoker = _editContext.CompositionCompleted(winrt::auto_revoke, { this, &TSFInputControl::_compositionCompletedHandler });
+    }
+
+    // Method Description:
+    // - Prepares this TSFInputControl to be removed from the UI hierarchy.
+    void TSFInputControl::Close()
+    {
+        // Explicitly disconnect the LayoutRequested handler -- it can cause problems during application teardown.
+        // See GH#4159 for more info.
+        _layoutRequestedRevoker.revoke();
     }
 
     // Method Description:
@@ -104,7 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_editContext != nullptr)
         {
-            // _editContext.NotifyFocusLeave(); TODO GitHub #3645: Enabling causes IME to no longer show up, need to determine if required
+            _editContext.NotifyFocusLeave();
         }
     }
 
@@ -209,23 +218,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            const auto hstr = to_hstring(_inputBuffer.c_str());
-
             // call event handler with data handled by parent
-            _compositionCompletedHandlers(hstr);
+            _compositionCompletedHandlers(_inputBuffer);
 
             // clear the buffer for next round
+            const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
             _inputBuffer.clear();
             _textBlock.Text(L"");
 
-            // tell the input server that we've cleared the buffer
-            CoreTextRange emptyTextRange;
-            emptyTextRange.StartCaretPosition = 0;
-            emptyTextRange.EndCaretPosition = 0;
-
             // indicate text is now 0
-            _editContext.NotifyTextChanged(emptyTextRange, 0, emptyTextRange);
-            _editContext.NotifySelectionChanged(emptyTextRange);
+            _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
 
             // hide the controls until composition starts again
             _canvas.Visibility(Visibility::Collapsed);
@@ -265,7 +267,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
 
-            args.Request().Text(winrt::to_hstring(textRequested.c_str()));
+            args.Request().Text(textRequested);
         }
         CATCH_LOG();
     }
@@ -316,7 +318,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
-                text.c_str());
+                text);
 
             _textBlock.Text(_inputBuffer);
 

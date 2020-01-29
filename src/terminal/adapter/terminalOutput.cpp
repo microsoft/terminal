@@ -8,18 +8,10 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-TerminalOutput::TerminalOutput()
-{
-}
-
-TerminalOutput::~TerminalOutput()
-{
-}
-
 // We include a full table so all we have to do is the lookup.
 // The tables only ever change the values x20 - x7f, hence why the table starts at \x20
 // From http://vt100.net/docs/vt220-rm/table2-4.html
-const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters]{
+static constexpr std::array<wchar_t, 96> s_decSpecialGraphicsTranslations{
     L'\x20',
     L'\x21',
     L'\x22',
@@ -118,13 +110,13 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\x7f' // L'\x7f',   -> DEL
 };
 
-bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
+bool TerminalOutput::DesignateCharset(const wchar_t newCharset) noexcept
 {
     bool result = false;
-    if (wchNewCharset == DispatchTypes::VTCharacterSets::DEC_LineDrawing ||
-        wchNewCharset == DispatchTypes::VTCharacterSets::USASCII)
+    if (newCharset == DispatchTypes::VTCharacterSets::DEC_LineDrawing ||
+        newCharset == DispatchTypes::VTCharacterSets::USASCII)
     {
-        _wchCurrentCharset = wchNewCharset;
+        _currentCharset = newCharset;
         result = true;
     }
     return result;
@@ -136,37 +128,35 @@ bool TerminalOutput::DesignateCharset(const wchar_t wchNewCharset)
 // - <none>
 // Return Value:
 // - True if the current charset is not USASCII
-bool TerminalOutput::NeedToTranslate() const
+bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return _wchCurrentCharset != DispatchTypes::VTCharacterSets::USASCII;
+    return _currentCharset != DispatchTypes::VTCharacterSets::USASCII;
 }
 
-const wchar_t* TerminalOutput::_GetTranslationTable() const
+const std::wstring_view TerminalOutput::_GetTranslationTable() const noexcept
 {
-    const wchar_t* pwchTranslation = nullptr;
-    switch (_wchCurrentCharset)
+    switch (_currentCharset)
     {
     case DispatchTypes::VTCharacterSets::DEC_LineDrawing:
-        pwchTranslation = TerminalOutput::s_rgDECSpecialGraphicsTranslations;
-        break;
+        return { s_decSpecialGraphicsTranslations.data(), s_decSpecialGraphicsTranslations.size() };
     }
-    return pwchTranslation;
+    return {};
 }
 
-wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
+wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     wchar_t wchFound = wch;
-    if (_wchCurrentCharset == DispatchTypes::VTCharacterSets::USASCII ||
+    if (_currentCharset == DispatchTypes::VTCharacterSets::USASCII ||
         wch < '\x5f' || wch > '\x7f') // filter out the region we know is unchanged
     {
         ; // do nothing, these are the same as default.
     }
     else
     {
-        const wchar_t* pwchTranslationTable = _GetTranslationTable();
-        if (pwchTranslationTable != nullptr)
+        const auto translationTable = _GetTranslationTable();
+        if (!translationTable.empty())
         {
-            wchFound = (pwchTranslationTable[wch - '\x20']);
+            wchFound = translationTable.at(wch - '\x20');
         }
     }
     return wchFound;
