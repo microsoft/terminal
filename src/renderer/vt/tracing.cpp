@@ -241,3 +241,17 @@ void RenderTracing::TraceWrapped() const
 #else
 #endif UNIT_TESTING
 }
+
+void RenderTracing::TracePaintCursor(const COORD coordCursor) const
+{
+#ifndef UNIT_TESTING
+    const auto cursorPosString = _CoordToString(coordCursor);
+    const auto cursorPos = cursorPosString.c_str();
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TracePaintCursor",
+                      TraceLoggingString(cursorPos),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+    UNREFERENCED_PARAMETER(coordCursor);
+#endif UNIT_TESTING
+}

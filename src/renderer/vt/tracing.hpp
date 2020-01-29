@@ -31,6 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceLastText(const COORD lastText) const;
         void TraceMoveCursor(const COORD lastText, const COORD cursor) const;
         void TraceWrapped() const;
+        void TracePaintCursor(const COORD coordCursor) const;
         void TraceInvalidateAll(const Microsoft::Console::Types::Viewport view) const;
         void TraceTriggerCircling(const bool newFrame) const;
         void TraceStartPaint(const bool quickReturn,
