@@ -286,16 +286,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ShowCloseWarningDialog()
     {
         auto title = RS_(L"CloseWindowWarningTitle");
-        auto closeButtonText = RS_(L"CloseAll");
-        auto primaryButtonText = RS_(L"Cancel");
+        auto primaryButtonText = RS_(L"CloseAll");
+        auto closeButtonText = RS_(L"Cancel");
 
         WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
 
         dialog.CloseButtonText(closeButtonText);
         dialog.PrimaryButtonText(primaryButtonText);
-        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
-        auto token = dialog.CloseButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Primary);
+        auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
 
         _showDialogHandlers(*this, dialog);
     }
