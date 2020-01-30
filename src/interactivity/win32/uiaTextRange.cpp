@@ -29,7 +29,7 @@ HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         for (const auto& rect : rectangles)
         {
             const auto start = rect.Origin();
-            const auto end = rect.EndInclusive();
+            const auto end = rect.EndExclusive();
 
             ComPtr<UiaTextRange> range;
             RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, wordDelimiters));

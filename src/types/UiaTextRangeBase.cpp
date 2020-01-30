@@ -519,7 +519,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
                                                       _end.Y - _start.Y + static_cast<SHORT>(1);
             const SHORT lastRowInRange = _start.Y + totalRowsInRange - static_cast<SHORT>(1);
 
-            ScreenInfoRow currentScreenInfoRow = 0;
+            SHORT currentScreenInfoRow = 0;
             for (SHORT i = 0; i < totalRowsInRange; ++i)
             {
                 currentScreenInfoRow = _start.Y + i;
@@ -529,12 +529,12 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
                     const size_t rowRight = row.GetCharRow().MeasureRight();
                     size_t startIndex = 0;
                     size_t endIndex = rowRight;
-                    if (currentScreenInfoRow == static_cast<ScreenInfoRow>(_start.Y))
+                    if (currentScreenInfoRow == _start.Y)
                     {
                         startIndex = _start.X;
                     }
 
-                    if (currentScreenInfoRow == static_cast<ScreenInfoRow>(_end.Y))
+                    if (currentScreenInfoRow == _end.Y)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
                         endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));

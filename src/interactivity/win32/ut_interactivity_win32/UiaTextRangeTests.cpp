@@ -320,7 +320,7 @@ class UiaTextRangeTests
             { TextUnit_Document,
               TextUnitBoundaries{
                   { 0, 0 },
-                  _pTextBuffer->GetSize().EndInclusive() } }
+                  _pTextBuffer->GetSize().EndExclusive() } }
         };
 
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
