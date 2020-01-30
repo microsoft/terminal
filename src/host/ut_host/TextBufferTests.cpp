@@ -146,8 +146,8 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
 
-    TEST_METHOD(GetWordStart);
-    TEST_METHOD(GetWordEnd);
+    void WriteLinesToBuffer(std::vector<std::wstring> text, TextBuffer& buffer);
+    TEST_METHOD(GetWordBoundaries);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2018,7 +2018,17 @@ void TextBufferTests::TestBurrito()
     VERIFY_IS_FALSE(afterBurritoIter);
 }
 
-void TextBufferTests::GetWordStart()
+void TextBufferTests::WriteLinesToBuffer(std::vector<std::wstring> text, TextBuffer& buffer)
+{
+    for (auto row = 0; row < text.size(); ++row)
+    {
+        auto line = text[row];
+        OutputCellIterator iter{ line };
+        buffer.WriteLine(iter, { 0, gsl::narrow<SHORT>(row) });
+    }
+}
+
+void TextBufferTests::GetWordBoundaries()
 {
     COORD bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
@@ -2026,14 +2036,9 @@ void TextBufferTests::GetWordStart()
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
     // Setup: Write lines of text to the buffer
-    const std::array<std::wstring, 2> text = { L"word other",
-                                               L"  more   words" };
-    for (size_t row = 0; row < text.size(); ++row)
-    {
-        auto line = text[row];
-        OutputCellIterator iter{ line };
-        _buffer->WriteLine(iter, { 0, gsl::narrow<SHORT>(row) });
-    }
+    const std::vector<std::wstring> text = { L"word other",
+                                             L"  more   words" };
+    WriteLinesToBuffer(text, *_buffer);
 
     // Test Data:
     // - COORD - starting position
@@ -2051,6 +2056,7 @@ void TextBufferTests::GetWordStart()
         ExpectedResult expected;
     };
 
+    // Set testData for GetWordStart tests
     // clang-format off
     std::vector<Test> testData = {
         // tests for first line of text
@@ -2076,95 +2082,57 @@ void TextBufferTests::GetWordStart()
         { { 20, 1 },     {{14, 1 },       { 9, 1 }} },
         { { 79, 1 },     {{14, 1 },       { 9, 1 }} },
     };
-    // clang-format off
+    // clang-format on
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:accessibilityMode", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool accessibilityMode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"accessibilityMode", accessibilityMode), L"Get accessibility mode variant");
 
     const std::wstring_view delimiters = L" ";
-    for (auto test : testData)
+    for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
-        COORD result;
-
-        // Test with accessibilityMode = false
-        result = _buffer->GetWordStart(test.startPos, delimiters, /*accessibilityMode*/ false);
-        VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
-
-        // Test with accessibilityMode = true
-        result = _buffer->GetWordStart(test.startPos, delimiters, /*accessibilityMode*/ true);
-        VERIFY_ARE_EQUAL(test.expected.accessibilityModeEnabled, result);
-    }
-}
-
-void TextBufferTests::GetWordEnd()
-{
-    COORD bufferSize{ 80, 9001 };
-    UINT cursorSize = 12;
-    TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
-
-    // Setup: Write lines of text to the buffer
-    const std::array<std::wstring,2> text = { L"word other",
-                                  L"  more   words" };
-    for (auto row = 0; row < text.size(); ++row)
-    {
-        auto line = text[row];
-        OutputCellIterator iter{ line };
-        _buffer->WriteLine(iter, { 0, gsl::narrow<SHORT>(row) });
+        const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
+        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        VERIFY_ARE_EQUAL(expected, result);
     }
 
-    // Test Data:
-    // - COORD - starting position
-    // - COORD - expected result (accessibilityMode = false)
-    // - COORD - expected result (accessibilityMode = true)
-    struct ExpectedResult
-    {
-        COORD accessibilityModeDisabled;
-        COORD accessibilityModeEnabled;
-    };
-
-    struct Test
-    {
-        COORD startPos;
-        ExpectedResult expected;
-    };
-
-    std::vector<Test> testData = {
+    // Update testData for GetWordEnd tests
+    // clang-format off
+    testData = {
         // tests for first line of text
-        { { 0,   0 },   {{  3, 0 },       {  5, 0 }} },
-        { { 1,   0 },   {{  3, 0 },       {  5, 0 }} },
-        { { 3,   0 },   {{  3, 0 },       {  5, 0 }} },
-        { { 4,   0 },   {{  4, 0 },       {  5, 0 }} },
-        { { 5,   0 },   {{  9, 0 },       {  2, 1 }} },
-        { { 6,   0 },   {{  9, 0 },       {  2, 1 }} },
-        { {20,   0 },   {{ 79, 0 },       {  2, 1 }} },
-        { {79,   0 },   {{ 79, 0 },       {  2, 1 }} },
+        { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 1, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 3, 0 }, { { 3, 0 }, { 5, 0 } } },
+        { { 4, 0 }, { { 4, 0 }, { 5, 0 } } },
+        { { 5, 0 }, { { 9, 0 }, { 2, 1 } } },
+        { { 6, 0 }, { { 9, 0 }, { 2, 1 } } },
+        { { 20, 0 }, { { 79, 0 }, { 2, 1 } } },
+        { { 79, 0 }, { { 79, 0 }, { 2, 1 } } },
 
         // tests for second line of text
-        { {  0, 1 },     {{ 1, 1 },       {  2, 1 }} },
-        { {  1, 1 },     {{ 1, 1 },       {  2, 1 }} },
-        { {  2, 1 },     {{ 5, 1 },       {  9, 1 }} },
-        { {  3, 1 },     {{ 5, 1 },       {  9, 1 }} },
-        { {  5, 1 },     {{ 5, 1 },       {  9, 1 }} },
-        { {  6, 1 },     {{ 8, 1 },       {  9, 1 }} },
-        { {  7, 1 },     {{ 8, 1 },       {  9, 1 }} },
-        { {  9, 1 },     {{13, 1 },       {  0, 9001 }} },
-        { { 10, 1 },     {{13, 1 },       {  0, 9001 }} },
-        { { 20, 1 },     {{79, 1 },       {  0, 9001 }} },
-        { { 79, 1 },     {{79, 1 },       {  0, 9001 }} },
+        { { 0, 1 }, { { 1, 1 }, { 2, 1 } } },
+        { { 1, 1 }, { { 1, 1 }, { 2, 1 } } },
+        { { 2, 1 }, { { 5, 1 }, { 9, 1 } } },
+        { { 3, 1 }, { { 5, 1 }, { 9, 1 } } },
+        { { 5, 1 }, { { 5, 1 }, { 9, 1 } } },
+        { { 6, 1 }, { { 8, 1 }, { 9, 1 } } },
+        { { 7, 1 }, { { 8, 1 }, { 9, 1 } } },
+        { { 9, 1 }, { { 13, 1 }, { 0, 9001 } } },
+        { { 10, 1 }, { { 13, 1 }, { 0, 9001 } } },
+        { { 20, 1 }, { { 79, 1 }, { 0, 9001 } } },
+        { { 79, 1 }, { { 79, 1 }, { 0, 9001 } } },
     };
-    // clang-format off
+    // clang-format on
 
-    const std::wstring_view delimiters = L" ";
-    for (auto test : testData)
+    for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
-        COORD result;
-
-        // Test with accessibilityMode = false
-        result = _buffer->GetWordEnd(test.startPos, delimiters, /*accessibilityMode*/ false);
-        VERIFY_ARE_EQUAL(test.expected.accessibilityModeDisabled, result);
-
-        // Test with accessibilityMode = true
-        result = _buffer->GetWordEnd(test.startPos, delimiters, /*accessibilityMode*/ true);
-        VERIFY_ARE_EQUAL(test.expected.accessibilityModeEnabled, result);
+        COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
+        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        VERIFY_ARE_EQUAL(expected, result);
     }
 }

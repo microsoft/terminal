@@ -1100,7 +1100,6 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             else
             {
                 resultPos = bufferOrigin;
-                (*pAmountMoved)--;
             }
             break;
         }
