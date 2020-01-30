@@ -745,56 +745,7 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
 
     if (!hFile)
     {
-        // GH#1770 - Now that we're _not_ roaming our settings, do a quick check
-        // to see if there's a file in the Roaming App data folder. If there is
-        // a file there, but not in the LocalAppData, it's likely the user is
-        // upgrading from a version of the terminal from before this change.
-        // We'll try moving the file from the Roaming app data folder to the
-        // local appdata folder.
-
-        const auto pathToRoamingSettingsFile{ CascadiaSettings::GetSettingsPath(true) };
-        wil::unique_hfile hRoamingFile{ CreateFileW(pathToRoamingSettingsFile.c_str(),
-                                                    GENERIC_READ,
-                                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                    nullptr,
-                                                    OPEN_EXISTING,
-                                                    FILE_ATTRIBUTE_NORMAL,
-                                                    nullptr) };
-
-        if (hRoamingFile)
-        {
-            // Close the file handle, move it, and re-open the file in its new location.
-            hRoamingFile.reset();
-
-            // Note: We're unsure if this is unsafe. Theoretically it's possible
-            // that two instances of the app will try and move the settings file
-            // simultaneously. We don't know what might happen in that scenario,
-            // but we're also not sure how to safely lock the file to prevent
-            // that from occurring.
-            THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
-                                          pathToSettingsFile.c_str()));
-
-            hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
-                                    GENERIC_READ,
-                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    nullptr,
-                                    OPEN_EXISTING,
-                                    FILE_ATTRIBUTE_NORMAL,
-                                    nullptr));
-
-            // hFile shouldn't be INVALID. That's unexpected - We just moved the
-            // file, we should be able to open it. Throw the error so we can get
-            // some information here.
-            THROW_LAST_ERROR_IF(!hFile);
-        }
-        else
-        {
-            // If the roaming file didn't exist, and the local file doesn't exist,
-            //      that's fine. Just log the error and return nullopt - we'll
-            //      create the defaults.
-            LOG_LAST_ERROR();
-            return std::nullopt;
-        }
+        return std::nullopt;
     }
 
     return _ReadFile(hFile.get());
@@ -834,17 +785,13 @@ std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
 // - <none>
 // Return Value:
 // - the full path to the settings file
-std::wstring CascadiaSettings::GetSettingsPath(const bool useRoamingPath)
+std::wstring CascadiaSettings::GetSettingsPath()
 {
     wil::unique_cotaskmem_string localAppDataFolder;
     // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
     // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
     // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
-    const auto knowFolderId = useRoamingPath ? FOLDERID_RoamingAppData : FOLDERID_LocalAppData;
-    if (FAILED(SHGetKnownFolderPath(knowFolderId, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder)))
-    {
-        THROW_LAST_ERROR();
-    }
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder));
 
     std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
 

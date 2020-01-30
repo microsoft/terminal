@@ -66,7 +66,7 @@ public:
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 
-    static std::wstring GetSettingsPath(const bool useRoamingPath = false);
+    static std::wstring GetSettingsPath();
     static std::wstring GetDefaultSettingsPath();
 
     std::optional<GUID> FindGuid(const std::wstring& profileName) const noexcept;
