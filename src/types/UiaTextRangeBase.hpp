@@ -115,7 +115,7 @@ namespace Microsoft::Console::Types
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
-        const COORD GetEndpoint(TextPatternRangeEndpoint endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start) const noexcept;
+        const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
         bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
 
@@ -180,18 +180,8 @@ namespace Microsoft::Console::Types
         // between the provider and the client
         IdType _id;
 
-        // measure units in the form [_start, _end]. _start
-        // may be a bigger number than _end if the range
-        // wraps around the end of the text buffer.
-        //
-        // In this scenario, _start <= _end
-        // 0 ............... N (text buffer line indices)
-        //      s-----e        (_start to _end)
-        //
-        // In this scenario, _start >= end
-        // 0 ............... N (text buffer line indices)
-        //   ---e     s-----   (_start to _end)
-        //
+        // measure units in the form [_start, _end).
+        // These are in the TextBuffer coordinate space.
         // NOTE: _start is inclusive, but _end is exclusive
         COORD _start;
         COORD _end;
@@ -199,7 +189,7 @@ namespace Microsoft::Console::Types
         RECT _getTerminalRect() const;
 
         virtual const COORD _getScreenFontSize() const;
-        const unsigned int _getViewportHeight(const SMALL_RECT viewport) noexcept;
+        const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
 
         void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
 

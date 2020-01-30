@@ -200,6 +200,10 @@ private:
         RegularChar
     };
     DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept;
+    const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

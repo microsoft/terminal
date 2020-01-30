@@ -138,12 +138,14 @@ COORD Viewport::Origin() const noexcept
 }
 
 // Method Description:
-// - For Accessibility, get a coord representing the end of this viewport in inclusive terms.
+// - For Accessibility, get a COORD representing the end of this viewport in exclusive terms.
+// - This is needed to represent an exclusive endpoint in UiaTextRange that includes the last
+//    COORD's text in the buffer at (RightInclusive(), BottomInclusive())
 // Arguments:
 // - <none>
 // Return Value:
 // - the coordinates of this viewport's end.
-COORD Viewport::EndInclusive() const noexcept
+COORD Viewport::EndExclusive() const noexcept
 {
     return { Left(), BottomExclusive() };
 }

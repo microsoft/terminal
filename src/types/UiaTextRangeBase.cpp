@@ -112,7 +112,7 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     // get row that point resides in
     const RECT windowRect = _getTerminalRect();
     const SMALL_RECT viewport = _pData->GetViewport().ToInclusive();
-    SHORT row = 0;
+    short row = 0;
     if (clientPoint.y <= windowRect.top)
     {
         row = viewport.Top;
@@ -129,7 +129,6 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
         const COORD currentFontSize = _getScreenFontSize();
         row = gsl::narrow<SHORT>(clientPoint.y / static_cast<LONG>(currentFontSize.Y)) + viewport.Top;
     }
-    // TODO CARLOS: double check that viewport.Top returns the correct text buffer position
     _start = { 0, row };
     _end = _start;
 }
@@ -141,7 +140,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a) noex
     _start = a._start;
     _end = a._end;
     _pData = a._pData;
-    _wordDelimiters = a._wordDelimiters.c_str();
+    _wordDelimiters = a._wordDelimiters;
 
     _id = id;
     ++id;
@@ -186,15 +185,19 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     {
     case TextPatternRangeEndpoint::TextPatternRangeEndpoint_End:
         _end = val;
+        // if end is before start...
         if (bufferSize.CompareInBounds(_end, _start, true) < 0)
         {
+            // make this range degenerate at end
             _start = _end;
         }
         break;
     case TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start:
         _start = val;
+        // if start is after end...
         if (bufferSize.CompareInBounds(_start, _end, true) > 0)
         {
+            // make this range degenerate at start
             _end = _start;
         }
         break;
@@ -235,8 +238,8 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
     const UiaTextRangeBase* other = static_cast<UiaTextRangeBase*>(pRange);
     if (other)
     {
-        *pRetVal = !!(_start == other->GetEndpoint(TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start) &&
-                      _end == other->GetEndpoint(TextPatternRangeEndpoint::TextPatternRangeEndpoint_End) &&
+        *pRetVal = (_start == other->GetEndpoint(TextPatternRangeEndpoint_Start) &&
+                      _end == other->GetEndpoint(TextPatternRangeEndpoint_End) &&
                       IsDegenerate() == other->IsDegenerate());
     }
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
@@ -301,7 +304,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
     {
         const auto& buffer = _pData->GetTextBuffer();
         const auto bufferSize = buffer.GetSize();
-        const auto bufferEnd = bufferSize.EndInclusive();
+        const auto bufferEnd = bufferSize.EndExclusive();
 
         if (unit == TextUnit::TextUnit_Character)
         {
@@ -318,14 +321,13 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         {
             // expand to line
             _start.X = 0;
-            _end.X = 0;
-            RETURN_IF_FAILED(ShortAdd(_start.Y, static_cast<SHORT>(1), &_end.Y));
+            _end.X = base::ClampAdd(_start.Y, 1);
         }
         else
         {
             // expand to document
             _start = bufferSize.Origin();
-            _end = bufferSize.EndInclusive();
+            _end = bufferSize.EndExclusive();
         }
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
@@ -366,7 +368,6 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttr
     return S_OK;
 }
 
-// TODO CARLOS: Completely rewrite this. this will be a bit of a pain :/
 IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     _pData->LockConsole();
@@ -389,7 +390,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
         const auto viewportOrigin = viewport.Origin();
-        const auto viewportEnd = viewport.EndInclusive();
+        const auto viewportEnd = viewport.EndExclusive();
 
         // startAnchor: the earliest COORD we will get a bounding rect for
         auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
@@ -513,13 +514,13 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
 
             // if _end is at 0, we ignore that row because _end is exclusive
             const auto& buffer = _pData->GetTextBuffer();
-            const unsigned int totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
+            const SHORT totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
                                                       _end.Y - _start.Y :
-                                                      _end.Y - _start.Y + 1;
-            const auto lastRowInRange = _start.Y + totalRowsInRange - 1;
+                                                      _end.Y - _start.Y + static_cast<SHORT>(1);
+            const SHORT lastRowInRange = _start.Y + totalRowsInRange - static_cast<SHORT>(1);
 
             ScreenInfoRow currentScreenInfoRow = 0;
-            for (unsigned int i = 0; i < totalRowsInRange; ++i)
+            for (SHORT i = 0; i < totalRowsInRange; ++i)
             {
                 currentScreenInfoRow = _start.Y + i;
                 const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
@@ -907,7 +908,7 @@ const COORD UiaTextRangeBase::_getScreenFontSize() const
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport height
-const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewport) noexcept
+const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewport) const noexcept
 {
     FAIL_FAST_IF(!(viewport.Bottom >= viewport.Top));
     // + 1 because COORD is inclusive on both sides so subtracting top
@@ -997,24 +998,24 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
 
-    bool fSuccess = true;
+    bool success = true;
     auto target = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && fSuccess)
+    while (abs(*pAmountMoved) < abs(moveCount) && success)
     {
         switch (moveDirection)
         {
         case MovementDirection::Forward:
-            fSuccess = bufferSize.IncrementInBounds(target, allowBottomExclusive);
-            if (fSuccess)
+            success = bufferSize.IncrementInBounds(target, allowBottomExclusive);
+            if (success)
             {
-                *pAmountMoved += 1;
+                (*pAmountMoved)++;
             }
             break;
         case MovementDirection::Backward:
-            fSuccess = bufferSize.DecrementInBounds(target, allowBottomExclusive);
-            if (fSuccess)
+            success = bufferSize.DecrementInBounds(target, allowBottomExclusive);
+            if (success)
             {
-                *pAmountMoved -= 1;
+                (*pAmountMoved)--;
             }
             break;
         default:
@@ -1054,14 +1055,14 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const auto& buffer = _pData->GetTextBuffer();
     const auto bufferSize = buffer.GetSize();
     const auto bufferOrigin = bufferSize.Origin();
-    const auto bufferEnd = bufferSize.EndInclusive();
+    const auto bufferEnd = bufferSize.EndExclusive();
     const auto lastCharPos = buffer.GetLastNonSpaceCharacter();
 
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
 
-    bool fSuccess = true;
-    while (abs(*pAmountMoved) < abs(moveCount) && fSuccess)
+    bool success = true;
+    while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         nextPos = resultPos;
         switch (moveDirection)
@@ -1070,17 +1071,17 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
             if (nextPos == bufferEnd)
             {
-                fSuccess = false;
+                success = false;
             }
             else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, lastCharPos))
             {
                 resultPos = nextPos;
-                *pAmountMoved += 1;
+                (*pAmountMoved)++;
             }
             else if (allowBottomExclusive)
             {
                 resultPos = bufferEnd;
-                *pAmountMoved += 1;
+                (*pAmountMoved)++;
             }
             break;
         }
@@ -1088,17 +1089,17 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
             if (nextPos == bufferOrigin)
             {
-                fSuccess = false;
+                success = false;
             }
             else if (buffer.MoveToPreviousWord(nextPos, _wordDelimiters))
             {
                 resultPos = nextPos;
-                *pAmountMoved -= 1;
+                (*pAmountMoved)--;
             }
             else
             {
                 resultPos = bufferOrigin;
-                *pAmountMoved -= 1;
+                (*pAmountMoved)--;
             }
             break;
         }
@@ -1150,7 +1151,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             // can't move past end
             if (nextPos.Y >= bufferSize.BottomInclusive())
             {
-                if (preventBufferEnd || nextPos == bufferSize.EndInclusive())
+                if (preventBufferEnd || nextPos == bufferSize.EndExclusive())
                 {
                     fSuccess = false;
                     break;
@@ -1162,7 +1163,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             if (fSuccess)
             {
                 resultPos = nextPos;
-                *pAmountMoved += 1;
+                (*pAmountMoved)++;
             }
             break;
         }
@@ -1182,7 +1183,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             {
                 nextPos.X = bufferSize.Left();
                 resultPos = nextPos;
-                *pAmountMoved -= 1;
+                (*pAmountMoved)--;
             }
             break;
         }
@@ -1226,7 +1227,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     {
     case MovementDirection::Forward:
     {
-        const auto documentEnd = bufferSize.EndInclusive();
+        const auto documentEnd = bufferSize.EndExclusive();
         if (preventBufferEnd || target == documentEnd)
         {
             return;
@@ -1234,7 +1235,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         else
         {
             SetEndpoint(endpoint, documentEnd);
-            *pAmountMoved += 1;
+            (*pAmountMoved)++;
         }
         break;
     }
@@ -1248,7 +1249,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         else
         {
             SetEndpoint(endpoint, documentBegin);
-            *pAmountMoved -= 1;
+            (*pAmountMoved)--;
         }
         break;
     }
