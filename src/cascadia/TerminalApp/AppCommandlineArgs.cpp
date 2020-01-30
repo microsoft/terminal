@@ -164,7 +164,7 @@ void AppCommandlineArgs::_buildParser()
 // - <none>
 void AppCommandlineArgs::_buildNewTabParser()
 {
-    _newTabCommand.subcommand = _app.add_subcommand("new-tab", winrt::to_string(RS_(L"CmdNewTabDesc")));
+    _newTabCommand.subcommand = _app.add_subcommand("new-tab", RS_A(L"CmdNewTabDesc"));
     _addNewTerminalArgs(_newTabCommand);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -192,14 +192,14 @@ void AppCommandlineArgs::_buildNewTabParser()
 // - <none>
 void AppCommandlineArgs::_buildSplitPaneParser()
 {
-    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", winrt::to_string(RS_(L"CmdSplitPaneDesc")));
+    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", RS_A(L"CmdSplitPaneDesc"));
     _addNewTerminalArgs(_newPaneCommand);
     _horizontalOption = _newPaneCommand.subcommand->add_flag("-H,--horizontal",
                                                              _splitHorizontal,
-                                                             winrt::to_string(RS_(L"CmdSplitPaneHorizontalArgDesc")));
+                                                             RS_A(L"CmdSplitPaneHorizontalArgDesc"));
     _verticalOption = _newPaneCommand.subcommand->add_flag("-V,--vertical",
                                                            _splitVertical,
-                                                           winrt::to_string(RS_(L"CmdSplitPaneVerticalArgDesc")));
+                                                           RS_A(L"CmdSplitPaneVerticalArgDesc"));
     _verticalOption->excludes(_horizontalOption);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -242,14 +242,14 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 // - <none>
 void AppCommandlineArgs::_buildFocusTabParser()
 {
-    _focusTabCommand = _app.add_subcommand("focus-tab", winrt::to_string(RS_(L"CmdFocusTabDesc")));
-    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, winrt::to_string(RS_(L"CmdFocusTabTargetArgDesc")));
+    _focusTabCommand = _app.add_subcommand("focus-tab", RS_A(L"CmdFocusTabDesc"));
+    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, RS_A(L"CmdFocusTabTargetArgDesc"));
     auto* nextOpt = _focusTabCommand->add_flag("-n,--next",
                                                _focusNextTab,
-                                               winrt::to_string(RS_(L"CmdFocusTabNextArgDesc")));
+                                               RS_A(L"CmdFocusTabNextArgDesc"));
     auto* prevOpt = _focusTabCommand->add_flag("-p,--previous",
                                                _focusPrevTab,
-                                               winrt::to_string(RS_(L"CmdFocusTabPrevArgDesc")));
+                                               RS_A(L"CmdFocusTabPrevArgDesc"));
     nextOpt->excludes(prevOpt);
     indexOpt->excludes(prevOpt);
     indexOpt->excludes(nextOpt);
@@ -289,10 +289,10 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
 {
     subcommand.profileNameOption = subcommand.subcommand->add_option("-p,--profile",
                                                                      _profileName,
-                                                                     winrt::to_string(RS_(L"CmdProfileArgDesc")));
+                                                                     RS_A(L"CmdProfileArgDesc"));
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
-                                                                           winrt::to_string(RS_(L"CmdStartingDirArgDesc")));
+                                                                           RS_A(L"CmdStartingDirArgDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
@@ -301,7 +301,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     // doesn't support "wt new-tab -- wsl -d Ubuntu -- sleep 10" because the first
     // -- breaks out of the subcommand (instead of the subcommand options).
     // See https://github.com/CLIUtils/CLI11/issues/417 for more info.
-    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _commandline, winrt::to_string(RS_(L"CmdCommandArgDesc")));
+    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _commandline, RS_A(L"CmdCommandArgDesc"));
     subcommand.subcommand->positionals_at_end(true);
 }
 
