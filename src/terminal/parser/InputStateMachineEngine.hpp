@@ -23,39 +23,49 @@ Author(s):
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    enum class CsiActionCodes : wchar_t
+    {
+        ArrowUp = L'A',
+        ArrowDown = L'B',
+        ArrowRight = L'C',
+        ArrowLeft = L'D',
+        Home = L'H',
+        End = L'F',
+        MouseDown = L'M',
+        MouseUp = L'm',
+        Generic = L'~', // Used for a whole bunch of possible keys
+        CSI_F1 = L'P',
+        CSI_F2 = L'Q',
+        CSI_F3 = L'R', // Both F3 and DSR are on R.
+        // DSR_DeviceStatusReportResponse = L'R',
+        CSI_F4 = L'S',
+        DTTERM_WindowManipulation = L't',
+        CursorBackTab = L'Z',
+    };
+
+    enum CsiMouseButtonCodes : unsigned short
+    {
+        Left = 0,
+        Middle = 1,
+        Right = 2,
+        Released = 3,
+        ScrollForward = 4,
+        ScrollBack = 5,
+    };
+
+    constexpr unsigned short CsiMouseModifierCode_Drag = 32;
+
+    enum CsiMouseModifierCodes : unsigned short
+    {
+        Shift = 4,
+        Meta = 8,
+        Ctrl = 16,
+        Drag = 32,
+    };
+
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        enum CsiEndCodes : wchar_t
-        {
-            MOUSE_DOWN = L'M',
-            MOUSE_UP = L'm',
-        };
-
-        enum CsiMouseButtonCodes : unsigned short
-        {
-            Left = 0,
-            Middle = 1,
-            Right = 2,
-            Released = 3,
-            ScrollForward = 4,
-            ScrollBack = 5,
-            Button6 = 6,
-            Button7 = 7,
-            Button8 = 8,
-            Button9 = 9,
-            Button10 = 10,
-            Button11 = 11,
-        };
-
-        enum CsiMouseModifierCodes : unsigned short
-        {
-            Shift = 4,
-            Meta = 8,
-            Ctrl = 16,
-            Drag = 32,
-        };
-
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
@@ -103,7 +113,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
         bool _IsModified(const size_t paramCount) noexcept;
-        DWORD _GetModifier(const size_t parameter, bool SGRMode = false) noexcept;
+        DWORD _GetModifier(const size_t parameter) noexcept;
+        DWORD _GetSGRModifier(const size_t parameter) noexcept;
 
         bool _UpdateSGRMouseButtonState(const wchar_t wch,
                                         const std::basic_string_view<size_t> parameters,
@@ -137,6 +148,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
                             size_t& line,
                             size_t& column) const noexcept;
+        bool _GetSGRXYPosition(const std::basic_string_view<size_t> parameters,
+                               size_t& line,
+                               size_t& column) const noexcept;
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
     };

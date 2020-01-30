@@ -206,16 +206,16 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    std::wstring GenerateSgrMouseSequence(const InputStateMachineEngine::CsiMouseButtonCodes button,
+    std::wstring GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                           const unsigned short modifiers,
                                           const COORD position,
-                                          const InputStateMachineEngine::CsiEndCodes direction);
+                                          const CsiActionCodes direction);
 
     // SGR_PARAMS serves as test input
     // - the state of the buttons (constructed via InputStateMachineEngine::CsiActionMouseCodes)
     // - the {x,y} position of the event on the viewport where the top-left is {1,1}
-    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
-    typedef std::tuple<InputStateMachineEngine::CsiMouseButtonCodes, unsigned short, COORD, InputStateMachineEngine::CsiEndCodes> SGR_PARAMS;
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
+    typedef std::tuple<CsiMouseButtonCodes, unsigned short, COORD, CsiActionCodes> SGR_PARAMS;
 
     // MOUSE_EVENT_PARAMS serves as expected output
     // - dwButtonState
@@ -581,9 +581,8 @@ void InputEngineTest::RoundTripTest()
         terminalInput.HandleKey(inputKey.get());
     }
 
-    // TODO CARLOS: This test fails. I should probably file an issue to track this or fix it now...
-    //              Yeah... I'm just gonna file an issue.
-    //VerifyExpectedInputDrained();
+    // TODO GH #4405: This test fails.
+    // VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::WindowManipulationTest()
@@ -951,13 +950,13 @@ void InputEngineTest::AltBackspaceEnterTest()
 // - button - the state of the buttons (constructed via InputStateMachineEngine::CsiActionMouseCodes)
 // - modifiers - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
 // - position - the {x,y} position of the event on the viewport where the top-left is {1,1}
-// - direction - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
+// - direction - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 // Return Value:
 // - the SGR VT sequence
-std::wstring InputEngineTest::GenerateSgrMouseSequence(const InputStateMachineEngine::CsiMouseButtonCodes button,
+std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                                        const unsigned short modifiers,
                                                        const COORD position,
-                                                       const InputStateMachineEngine::CsiEndCodes direction)
+                                                       const CsiActionCodes direction)
 {
     // we first need to convert "button" and "modifiers" into an 8 bit sequence
     unsigned int actionCode = 0;
@@ -1015,7 +1014,7 @@ void InputEngineTest::SGRMouseTest_ButtonClick()
     // - the state of the buttons (constructed via InputStateMachineEngine::CsiMouseButtonCodes)
     // - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
     // - the {x,y} position of the event on the viewport where the top-left is {1,1}
-    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 
     // MOUSE_EVENT_PARAMS serves as expected output
     // - dwButtonState
@@ -1026,15 +1025,15 @@ void InputEngineTest::SGRMouseTest_ButtonClick()
     // clang-format off
     // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
-        //  TEST INPUT                                                                                                                     EXPECTED OUTPUT
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, 0, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, 0, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },           { 0, 0, { 0, 0 }, 0 } },
+        //  TEST INPUT                                                                     EXPECTED OUTPUT
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
 
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Middle, 0, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },       { FROM_LEFT_2ND_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Middle, 0, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },         { 0, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseDown },       { FROM_LEFT_2ND_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, 0 } },
 
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, 0, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, 0, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { 0, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseUp },          { 0, 0, { 0, 0 }, 0 } },
     };
     // clang-format on
 
@@ -1047,7 +1046,7 @@ void InputEngineTest::SGRMouseTest_Modifiers()
     // - the state of the buttons (constructed via InputStateMachineEngine::CsiMouseButtonCodes)
     // - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
     // - the {x,y} position of the event on the viewport where the top-left is {1,1}
-    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 
     // MOUSE_EVENT_PARAMS serves as expected output
     // - dwButtonState
@@ -1058,15 +1057,15 @@ void InputEngineTest::SGRMouseTest_Modifiers()
     // clang-format off
     // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
-        //  TEST INPUT                                                                                                                                                                        EXPECTED OUTPUT
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, InputStateMachineEngine::CsiMouseModifierCodes::Shift, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { FROM_LEFT_1ST_BUTTON_PRESSED, SHIFT_PRESSED, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, InputStateMachineEngine::CsiMouseModifierCodes::Shift, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { 0, SHIFT_PRESSED, { 0, 0 }, 0 } },
+        //  TEST INPUT                                                                                               EXPECTED OUTPUT
+        {   { CsiMouseButtonCodes::Left, CsiMouseModifierCodes::Shift, { 1, 1 }, CsiActionCodes::MouseDown },        { FROM_LEFT_1ST_BUTTON_PRESSED, SHIFT_PRESSED, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Left, CsiMouseModifierCodes::Shift, { 1, 1 }, CsiActionCodes::MouseUp },          { 0, SHIFT_PRESSED, { 0, 0 }, 0 } },
 
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Middle, InputStateMachineEngine::CsiMouseModifierCodes::Meta, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },       { FROM_LEFT_2ND_BUTTON_PRESSED, LEFT_ALT_PRESSED, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Middle, InputStateMachineEngine::CsiMouseModifierCodes::Meta, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },         { 0, LEFT_ALT_PRESSED, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Middle, CsiMouseModifierCodes::Meta, { 1, 1 }, CsiActionCodes::MouseDown },       { FROM_LEFT_2ND_BUTTON_PRESSED, LEFT_ALT_PRESSED, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Middle, CsiMouseModifierCodes::Meta, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, LEFT_ALT_PRESSED, { 0, 0 }, 0 } },
 
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, InputStateMachineEngine::CsiMouseModifierCodes::Ctrl, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { RIGHTMOST_BUTTON_PRESSED, LEFT_CTRL_PRESSED, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, InputStateMachineEngine::CsiMouseModifierCodes::Ctrl, { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { 0, LEFT_CTRL_PRESSED, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, CsiMouseModifierCodes::Ctrl, { 1, 1 }, CsiActionCodes::MouseDown },        { RIGHTMOST_BUTTON_PRESSED, LEFT_CTRL_PRESSED, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, CsiMouseModifierCodes::Ctrl, { 1, 1 }, CsiActionCodes::MouseUp },          { 0, LEFT_CTRL_PRESSED, { 0, 0 }, 0 } },
     };
     // clang-format on
 
@@ -1079,7 +1078,7 @@ void InputEngineTest::SGRMouseTest_Movement()
     // - the state of the buttons (constructed via InputStateMachineEngine::CsiMouseButtonCodes)
     // - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
     // - the {x,y} position of the event on the viewport where the top-left is {1,1}
-    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiEndCodes)
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 
     // MOUSE_EVENT_PARAMS serves as expected output
     // - dwButtonState
@@ -1090,18 +1089,18 @@ void InputEngineTest::SGRMouseTest_Movement()
     // clang-format off
     // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
-        //  TEST INPUT                                                                                                                                                                        EXPECTED OUTPUT
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, 0,                                                    { 1, 1 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, InputStateMachineEngine::CsiMouseModifierCodes::Drag, { 1, 2 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 1 }, MOUSE_MOVED } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, InputStateMachineEngine::CsiMouseModifierCodes::Drag, { 2, 2 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { RIGHTMOST_BUTTON_PRESSED, 0, { 1, 1 }, MOUSE_MOVED } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, 0,                                                    { 2, 2 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { 0, 0, { 1, 1 }, 0 } },
+        //  TEST INPUT                                                                                               EXPECTED OUTPUT
+        {   { CsiMouseButtonCodes::Right, 0,                           { 1, 1 }, CsiActionCodes::MouseDown },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, CsiMouseModifierCodes::Drag, { 1, 2 }, CsiActionCodes::MouseDown },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 1 }, MOUSE_MOVED } },
+        {   { CsiMouseButtonCodes::Right, CsiMouseModifierCodes::Drag, { 2, 2 }, CsiActionCodes::MouseDown },        { RIGHTMOST_BUTTON_PRESSED, 0, { 1, 1 }, MOUSE_MOVED } },
+        {   { CsiMouseButtonCodes::Right, 0,                           { 2, 2 }, CsiActionCodes::MouseUp },          { 0, 0, { 1, 1 }, 0 } },
 
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left,  0,                                                    { 2, 2 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 1, 1 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, 0,                                                    { 2, 2 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED, 0, { 1, 1 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, InputStateMachineEngine::CsiMouseModifierCodes::Drag,  { 2, 3 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED, 0, { 1, 2 }, MOUSE_MOVED } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, InputStateMachineEngine::CsiMouseModifierCodes::Drag,  { 3, 3 }, InputStateMachineEngine::CsiEndCodes::MOUSE_DOWN },        { FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED, 0, { 2, 2 }, MOUSE_MOVED } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Left, 0,                                                     { 3, 3 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { RIGHTMOST_BUTTON_PRESSED, 0, { 2, 2 }, 0 } },
-        {   { InputStateMachineEngine::CsiMouseButtonCodes::Right, 0,                                                    { 3, 3 }, InputStateMachineEngine::CsiEndCodes::MOUSE_UP },          { 0, 0, { 2, 2 }, 0 } },
+        {   { CsiMouseButtonCodes::Left,  0,                           { 2, 2 }, CsiActionCodes::MouseDown },        { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 1, 1 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, 0,                           { 2, 2 }, CsiActionCodes::MouseDown },        { FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED, 0, { 1, 1 }, 0 } },
+        {   { CsiMouseButtonCodes::Left, CsiMouseModifierCodes::Drag,  { 2, 3 }, CsiActionCodes::MouseDown },        { FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED, 0, { 1, 2 }, MOUSE_MOVED } },
+        {   { CsiMouseButtonCodes::Left, CsiMouseModifierCodes::Drag,  { 3, 3 }, CsiActionCodes::MouseDown },        { FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED, 0, { 2, 2 }, MOUSE_MOVED } },
+        {   { CsiMouseButtonCodes::Left, 0,                            { 3, 3 }, CsiActionCodes::MouseUp },          { RIGHTMOST_BUTTON_PRESSED, 0, { 2, 2 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, 0,                           { 3, 3 }, CsiActionCodes::MouseUp },          { 0, 0, { 2, 2 }, 0 } },
     };
     // clang-format on
 

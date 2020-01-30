@@ -25,6 +25,10 @@ const short VT_SHIFT = 1;
 const short VT_ALT = 2;
 const short VT_CTRL = 4;
 
+// The assumed values for SGR Mouse Scroll Wheel deltas
+constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
+constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
+
 const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 
 // For reference, the equivalent INPUT_RECORD values are:
@@ -37,24 +41,6 @@ const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 // SCROLLLOCK_ON       0x0040
 // CAPSLOCK_ON         0x0080
 // ENHANCED_KEY        0x0100
-
-enum class CsiActionCodes : wchar_t
-{
-    ArrowUp = L'A',
-    ArrowDown = L'B',
-    ArrowRight = L'C',
-    ArrowLeft = L'D',
-    Home = L'H',
-    End = L'F',
-    Generic = L'~', // Used for a whole bunch of possible keys
-    CSI_F1 = L'P',
-    CSI_F2 = L'Q',
-    CSI_F3 = L'R', // Both F3 and DSR are on R.
-    // DSR_DeviceStatusReportResponse = L'R',
-    CSI_F4 = L'S',
-    DTTERM_WindowManipulation = L't',
-    CursorBackTab = L'Z',
-};
 
 enum CsiIntermediateCodes : wchar_t
 {
@@ -410,14 +396,15 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             DWORD buttonState = 0;
             DWORD eventFlags = 0;
             modifierState = _GetSGRMouseModifierState(parameters);
-            success = _GetXYPosition(parameters, row, col);
+            success = _GetSGRXYPosition(parameters, row, col);
             success = _UpdateSGRMouseButtonState(wch, parameters, buttonState, eventFlags) && success;
-            return _WriteMouseEvent(col, row, buttonState, modifierState, eventFlags) && success;
+            success = success && _WriteMouseEvent(col, row, buttonState, modifierState, eventFlags);
         }
         default:
             success = false;
             break;
         }
+        return success;
     }
     switch (static_cast<CsiActionCodes>(wch))
     {
@@ -822,12 +809,19 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
 DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const std::basic_string_view<size_t> parameters) noexcept
 {
     DWORD modifiers = 0;
-    if (!parameters.empty())
+    if (parameters.size() == 3)
     {
-        // first two bits are something else
-        // 3rd through 5th are of interest
-        const size_t modifierSequence = til::at(parameters, 0) >> 2;
-        modifiers = _GetModifier(modifierSequence, /*SGRMode*/ true);
+        // The first parameter of mouse events is encoded as the following two bytes:
+        // BBDM'MMBB
+        // Where each of the bits mean the following
+        //   BB__'__BB - which button was pressed/released
+        //   MMM - Control, Alt, Shift state (respectively)
+        //   D - flag signifying a drag event
+        // This retrieves the modifier state from bits [5..3] ('M' above)
+        const auto modifierParam = til::at(parameters, 0);
+        WI_SetFlagIf(modifiers, SHIFT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Shift));
+        WI_SetFlagIf(modifiers, LEFT_ALT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Meta));
+        WI_SetFlagIf(modifiers, LEFT_CTRL_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Ctrl));
     }
     return modifiers;
 }
@@ -852,16 +846,12 @@ bool InputStateMachineEngine::_IsModified(const size_t paramCount) noexcept
 // - modifierParam - the VT modifier value to convert
 // Return Value:
 // - The equivalent INPUT_RECORD modifier value.
-DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam, bool SGRMode) noexcept
+DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 {
-    auto vtParam = modifierParam;
+    // VT Modifiers are 1+(modifier flags)
+    const auto vtParam = modifierParam - 1;
     DWORD modifierState = 0;
-    if (!SGRMode)
-    {
-        // VT Modifiers are 1+(modifier flags)
-        vtParam = modifierParam - 1;
-        WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
-    }
+    WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
     WI_SetFlagIf(modifierState, SHIFT_PRESSED, WI_IsFlagSet(vtParam, VT_SHIFT));
     WI_SetFlagIf(modifierState, LEFT_ALT_PRESSED, WI_IsFlagSet(vtParam, VT_ALT));
     WI_SetFlagIf(modifierState, LEFT_CTRL_PRESSED, WI_IsFlagSet(vtParam, VT_CTRL));
@@ -871,7 +861,7 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam, bool SGR
 // Method Description:
 // - Synthesize the button state for the Mouse Input Record from an SGR VT Sequence
 // - Here, we refer to and maintain the global state of our mouse.
-// - Mouse wheel events are added at the end no keep them out of the global state
+// - Mouse wheel events are added at the end to keep them out of the global state
 // Arguments:
 // - wch: the wchar_t representing whether the button was pressed or released
 // - parameters: the wchar_t to get the mapped vkey of. Represents the direction of the button (down vs up)
@@ -884,13 +874,25 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
                                                          DWORD& buttonState,
                                                          DWORD& eventFlags)
 {
+    if (parameters.empty())
+    {
+        return false;
+    }
+
+    // Starting with the state from the last mouse event we received
     buttonState = _mouseButtonState;
     eventFlags = 0;
     bool success = true;
 
-    // We don't care about the middle 4 bits. So let's contatenate the top 2 bits and the bottom 2 bits from the 8 bit value
-    // The remaining bits represent which button had a change in state
-    const auto buttonID = (til::at(parameters, 0) & 0x3) | (til::at(parameters, 0) & 0xC0);
+    // The first parameter of mouse events is encoded as the following two bytes:
+    // BBDM'MMBB
+    // Where each of the bits mean the following
+    //   BB__'__BB - which button was pressed/released
+    //   MMM - Control, Alt, Shift state (respectively)
+    //   D - flag signifying a drag event
+    // This retrieves the 2 MSBs and concatenates them to the 2 LSBs to create BBBB in binary
+    // This represents which button had a change in state
+    const auto buttonID = (til::at(parameters, 0) & 0x3) | ((til::at(parameters, 0) & 0xC0) >> 3);
 
     // Step 1: Translate which button was affected
     DWORD buttonFlag = 0;
@@ -905,26 +907,20 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     case CsiMouseButtonCodes::Middle:
         buttonFlag = FROM_LEFT_2ND_BUTTON_PRESSED;
         break;
-    case CsiMouseButtonCodes::Button6:
-    case CsiMouseButtonCodes::Button7:
-    case CsiMouseButtonCodes::Button8:
-    case CsiMouseButtonCodes::Button9:
-    case CsiMouseButtonCodes::Button10:
-    case CsiMouseButtonCodes::Button11:
     default:
         success = false;
         break;
     }
 
     // Step 2: Decide whether to set or clear that button's bit
-    // NOTE: WI_SetFlag/WI_ClearFlag can't be used herebecause buttonFlag would have to be a compile-time constant
-    switch (wch)
+    // NOTE: WI_SetFlag/WI_ClearFlag can't be used here because buttonFlag would have to be a compile-time constant
+    switch (static_cast<CsiActionCodes>(wch))
     {
-    case CsiEndCodes::MOUSE_DOWN:
+    case CsiActionCodes::MouseDown:
         // set flag
         buttonState |= buttonFlag;
         break;
-    case CsiEndCodes::MOUSE_UP:
+    case CsiActionCodes::MouseUp:
         // clear flag
         buttonState &= (~buttonFlag);
         break;
@@ -940,9 +936,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     {
         // set high word to proper scroll direction
         // scroll intensity is assumed to be constant value
-        DWORD hi_word = static_cast<DWORD>(-128) << 4;
-        buttonState |= hi_word;
-
+        buttonState |= SCROLL_DELTA_BACKWARD;
         eventFlags |= MOUSE_WHEELED;
         break;
     }
@@ -950,9 +944,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     {
         // set high word to proper scroll direction
         // scroll intensity is assumed to be constant value
-        DWORD hi_word = static_cast<DWORD>(128) << 4;
-        buttonState |= hi_word;
-
+        buttonState |= SCROLL_DELTA_FORWARD;
         eventFlags |= MOUSE_WHEELED;
         break;
     }
@@ -1187,9 +1179,44 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
         line = til::at(parameters, 0);
         column = til::at(parameters, 1);
     }
-    else if (parameters.size() == 3)
+    else
     {
-        // If there are exactly 3 parameters, assume SGR Sequence and use them.
+        success = false;
+    }
+
+    // Distances of 0 should be changed to 1.
+    if (line == 0)
+    {
+        line = DefaultLine;
+    }
+
+    if (column == 0)
+    {
+        column = DefaultColumn;
+    }
+
+    return success;
+}
+
+// Routine Description:
+// - Retrieves an X/Y coordinate pair for an SGR Mouse sequence from the parameter pool stored during Param actions.
+// Arguments:
+// - parameters - set of numeric parameters collected while pasring the sequence.
+// - line - Receives the Y/Line/Row position
+// - column - Receives the X/Column position
+// Return Value:
+// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
+bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<size_t> parameters,
+                                                size_t& line,
+                                                size_t& column) const noexcept
+{
+    bool success = true;
+    line = DefaultLine;
+    column = DefaultColumn;
+
+    // SGR Mouse sequences have exactly 3 parameters
+    if (parameters.size() == 3)
+    {
         column = til::at(parameters, 1);
         line = til::at(parameters, 2);
     }
