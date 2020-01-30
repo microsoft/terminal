@@ -1554,9 +1554,14 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // Arguments:
 // - oldBuffer - the text buffer to copy the contents FROM
 // - newBuffer - the text buffer to copy the contents TO
+// - lastCharacterViewport - Optional. If the caller knows that the last
+//   nonspace character is in a particular Viewport, the caller can provide this
+//   parameter as an optimization, as opposed to searching the entire buffer.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
-HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const std::optional<Viewport> lastCharacterViewport)
+HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
+                           TextBuffer& newBuffer,
+                           const std::optional<Viewport> lastCharacterViewport)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
