@@ -76,7 +76,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
-        void WriteInput(const winrt::hstring& hstr);
 
         winrt::fire_and_forget SwapChainChanged();
 

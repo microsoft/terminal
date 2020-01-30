@@ -1399,14 +1399,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Writes the given sequence as input to the active terminal connection,
     // Arguments:
-    // - inputSequence: the string of characters to write to the terminal connection.
+    // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::WriteInput(const winrt::hstring& inputSequence)
-    {
-        _connection.WriteInput(inputSequence);
-    }
-
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
@@ -2185,21 +2180,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 for (auto item : items)
                 {
-                    const auto fullPath = item.Path();
+                    std::wstring fullPath{ item.Path() };
                     const auto containsSpaces = std::find(fullPath.begin(),
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
 
                     auto lock = _terminal->LockForWriting();
+
                     if (containsSpaces)
                     {
-                        WriteInput(L"\"");
+                        fullPath.insert(0, L"\"");
+                        fullPath += L"\"";
                     }
-                    WriteInput(fullPath);
-                    if (containsSpaces)
-                    {
-                        WriteInput(L"\"");
-                    }
+
+                    _SendInputToConnection(fullPath);
                 }
             }
         }
@@ -2208,7 +2202,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Synchronous handler for the "Drop" event. We'll dispatch the async
     //   _DoDragDrop method to handle this, because getting information about
-    //   the file that was potentially dropped onto us muts be done off the UI
+    //   the file that was potentially dropped onto us must be done off the UI
     //   thread.
     // Arguments:
     // - e: The DragEventArgs from the Drop event
@@ -2227,7 +2221,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   appearance of the drag-drop UI, by removing the preview and setting a
     //   custom caption. For more information, see
     //   https://docs.microsoft.com/en-us/windows/uwp/design/input/drag-and-drop#customize-the-ui
-    // Arguments:
     // Arguments:
     // - e: The DragEventArgs from the DragOver event
     // Return Value:
