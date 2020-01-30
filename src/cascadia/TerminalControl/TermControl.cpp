@@ -2167,6 +2167,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   root, we'll try to get the path of the file dropped onto us, and write
     //   the full path of the file to our terminal connection. Like conhost, if
     //   the path contains a space, we'll wrap the path in quotes.
+    // - Unlike conhost, if multiple files are dropped onto the terminal, we'll
+    //   write all the paths to the terminal, separated by spaces.
     // Arguments:
     // - e: The DragEventArgs from the Drop event
     // Return Value:
@@ -2178,8 +2180,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto items = co_await e.DataView().GetStorageItemsAsync();
             if (items.Size() > 0)
             {
+                std::wstring allPaths;
                 for (auto item : items)
                 {
+                    // Join the paths with spaces
+                    if (!allPaths.empty())
+                    {
+                        allPaths += L" ";
+                    }
+
                     std::wstring fullPath{ item.Path() };
                     const auto containsSpaces = std::find(fullPath.begin(),
                                                           fullPath.end(),
@@ -2193,8 +2202,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                         fullPath += L"\"";
                     }
 
-                    _SendInputToConnection(fullPath);
+                    allPaths += fullPath;
                 }
+                _SendInputToConnection(allPaths);
             }
         }
     }
