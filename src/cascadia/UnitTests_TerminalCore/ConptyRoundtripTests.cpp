@@ -44,7 +44,7 @@ using namespace Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
-    class TerminalBufferTests;
+    class ConptyRoundtripTests;
 };
 using namespace TerminalCoreUnitTests;
 
@@ -126,6 +126,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         g.EnableConptyModeForTests();
 
         expectedOutput.clear();
+        _checkConptyOutput = true;
+        _logConpty = false;
 
         return true;
     }
@@ -148,6 +150,11 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+
+    TEST_METHOD(TestWrappingALongString);
+    TEST_METHOD(TestAdvancedWrapping);
+    TEST_METHOD(TestExactWrappingWithoutSpaces);
+    TEST_METHOD(TestExactWrappingWithSpaces);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -339,4 +346,255 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::TestWrappingALongString()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+    _checkConptyOutput = false;
+
+    const auto initialTermView = term->GetViewport();
+
+    const auto charsToWrite = TestUtils::Test100CharsString.size();
+    VERIFY_ARE_EQUAL(100u, charsToWrite);
+
+    VERIFY_ARE_EQUAL(0, initialTermView.Top());
+    VERIFY_ARE_EQUAL(32, initialTermView.BottomExclusive());
+
+    hostSm.ProcessString(TestUtils::Test100CharsString);
+
+    const auto secondView = term->GetViewport();
+
+    VERIFY_ARE_EQUAL(0, secondView.Top());
+    VERIFY_ARE_EQUAL(32, secondView.BottomExclusive());
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor wrapped to the second line
+        VERIFY_ARE_EQUAL(charsToWrite % initialTermView.Width(), cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+
+        // Verify that we marked the 0th row as _wrapped_
+        const auto& row0 = tb.GetRowByOffset(0);
+        VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+
+        const auto& row1 = tb.GetRowByOffset(1);
+        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+
+        TestUtils::VerifyExpectedString(tb, TestUtils::Test100CharsString, { 0, 0 });
+    };
+
+    verifyBuffer(hostTb);
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb);
+}
+
+void ConptyRoundtripTests::TestAdvancedWrapping()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    const auto initialTermView = term->GetViewport();
+
+    _flushFirstFrame();
+
+    const auto charsToWrite = TestUtils::Test100CharsString.size();
+    VERIFY_ARE_EQUAL(100u, charsToWrite);
+
+    hostSm.ProcessString(TestUtils::Test100CharsString);
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"          ");
+    hostSm.ProcessString(L"1234567890");
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor wrapped to the second line
+        VERIFY_ARE_EQUAL(2, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(20, cursor.GetPosition().X);
+
+        // Verify that we marked the 0th row as _wrapped_
+        const auto& row0 = tb.GetRowByOffset(0);
+        VERIFY_IS_TRUE(row0.GetCharRow().WasWrapForced());
+
+        const auto& row1 = tb.GetRowByOffset(1);
+        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+
+        TestUtils::VerifyExpectedString(tb, TestUtils::Test100CharsString, { 0, 0 });
+        TestUtils::VerifyExpectedString(tb, L"          1234567890", { 0, 2 });
+    };
+
+    verifyBuffer(hostTb);
+
+    // First write the first 80 characters from the string
+    expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
+    // Without line breaking, write the remaining 20 chars
+    expectedOutput.push_back(R"(qrstuvwxyz{|}~!"#$%&)");
+    // Clear the rest of row 1
+    expectedOutput.push_back("\x1b[K");
+    // This is the hard line break
+    expectedOutput.push_back("\r\n");
+    // Now write row 2 of the buffer
+    expectedOutput.push_back("          1234567890");
+    // and clear everything after the text, because the buffer is empty.
+    expectedOutput.push_back("\x1b[K");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb);
+}
+
+void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
+{
+    // This test (and TestExactWrappingWitSpaces) reveals a bug in the old
+    // implementation.
+    //
+    // If a line _exactly_ wraps to the next line, we can't tell if the line
+    // should really wrap, or manually break. The client app is writing a line
+    // that's exactly the width of the buffer that manually linebreaked at the
+    // end of the line, followed by another line.
+    //
+    // With the old PaintBufferLine interface, there's no way to know if this
+    // case is because the line wrapped or not. Hence, the addition of the
+    // `lineWrapped` parameter
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    const auto initialTermView = term->GetViewport();
+
+    _flushFirstFrame();
+
+    const auto charsToWrite = initialTermView.Width();
+    VERIFY_ARE_EQUAL(80, charsToWrite);
+
+    for (auto i = 0; i < charsToWrite; i++)
+    {
+        // This is a handy way of just printing the printable characters that
+        // _aren't_ the space character.
+        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        hostSm.ProcessCharacter(wch);
+    }
+
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"1234567890");
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor wrapped to the second line
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(10, cursor.GetPosition().X);
+
+        // TODO: GH#780 - In the Terminal, neither line should be wrapped.
+        // Unfortunately, until WriteCharsLegacy2ElectricBoogaloo is complete,
+        // the Terminal will still treat the first line as wrapped.
+
+        // // Verify that we marked the 0th row as _wrapped_
+        // const auto& row0 = tb.GetRowByOffset(0);
+        // VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
+
+        // const auto& row1 = tb.GetRowByOffset(1);
+        // VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+
+        TestUtils::VerifyExpectedString(tb, LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)", { 0, 0 });
+        TestUtils::VerifyExpectedString(tb, L"1234567890", { 0, 1 });
+    };
+
+    verifyBuffer(hostTb);
+
+    // First write the first 80 characters from the string
+    expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
+
+    // This is the hard line break
+    expectedOutput.push_back("\r\n");
+    // Now write row 2 of the buffer
+    expectedOutput.push_back("1234567890");
+    // and clear everything after the text, because the buffer is empty.
+    expectedOutput.push_back("\x1b[K");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb);
+}
+
+void ConptyRoundtripTests::TestExactWrappingWithSpaces()
+{
+    // This test is also explained by the comment at the top of TestExactWrappingWithoutSpaces
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    const auto initialTermView = term->GetViewport();
+
+    _flushFirstFrame();
+
+    const auto charsToWrite = initialTermView.Width();
+    VERIFY_ARE_EQUAL(80, charsToWrite);
+
+    for (auto i = 0; i < charsToWrite; i++)
+    {
+        // This is a handy way of just printing the printable characters that
+        // _aren't_ the space character.
+        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        hostSm.ProcessCharacter(wch);
+    }
+
+    hostSm.ProcessString(L"\n");
+    hostSm.ProcessString(L"          ");
+    hostSm.ProcessString(L"1234567890");
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto& cursor = tb.GetCursor();
+        // Verify the cursor wrapped to the second line
+        VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+        VERIFY_ARE_EQUAL(20, cursor.GetPosition().X);
+
+        // TODO: GH#780 - In the Terminal, neither line should be wrapped.
+        // Unfortunately, until WriteCharsLegacy2ElectricBoogaloo is complete,
+        // the Terminal will still treat the first line as wrapped.
+
+        // // Verify that we marked the 0th row as _wrapped_
+        // const auto& row0 = tb.GetRowByOffset(0);
+        // VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
+
+        // const auto& row1 = tb.GetRowByOffset(1);
+        // VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+
+        TestUtils::VerifyExpectedString(tb, LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)", { 0, 0 });
+        TestUtils::VerifyExpectedString(tb, L"          1234567890", { 0, 1 });
+    };
+
+    verifyBuffer(hostTb);
+
+    // First write the first 80 characters from the string
+    expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
+
+    // This is the hard line break
+    expectedOutput.push_back("\r\n");
+    // Now write row 2 of the buffer
+    expectedOutput.push_back("          1234567890");
+    // and clear everything after the text, because the buffer is empty.
+    expectedOutput.push_back("\x1b[K");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb);
 }

@@ -260,7 +260,8 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                      const COORD coord,
-                                                     const bool /*trimLeft*/) noexcept
+                                                     const bool /*trimLeft*/,
+                                                     const bool /*lineWrapped*/) noexcept
 {
     try
     {
