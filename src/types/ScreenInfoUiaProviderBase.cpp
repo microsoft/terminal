@@ -352,11 +352,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     }
 
     // stuff each visible line in the safearray
-    for (SHORT i = 0; i < rowCount; ++i)
+    for (short i = 0; i < rowCount; ++i)
     {
         // end is exclusive so add 1
-        const COORD start { viewport.Left(), viewport.Top() + i };
-        const COORD end { start.X, start.Y + 1 };
+        const COORD start{ viewport.Left(), viewport.Top() + i };
+        const COORD end{ start.X, start.Y + 1 };
 
         HRESULT hr = S_OK;
         WRL::ComPtr<UiaTextRangeBase> range;

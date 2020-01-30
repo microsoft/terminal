@@ -1105,7 +1105,6 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
     }
 }
 
-
 // Method Description:
 // - Helper method for GetWordEnd(). Get the COORD for the beginning of the next READABLE word
 // Arguments:

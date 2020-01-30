@@ -239,8 +239,8 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
     if (other)
     {
         *pRetVal = (_start == other->GetEndpoint(TextPatternRangeEndpoint_Start) &&
-                      _end == other->GetEndpoint(TextPatternRangeEndpoint_End) &&
-                      IsDegenerate() == other->IsDegenerate());
+                    _end == other->GetEndpoint(TextPatternRangeEndpoint_End) &&
+                    IsDegenerate() == other->IsDegenerate());
     }
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
@@ -314,14 +314,15 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
         else if (unit <= TextUnit::TextUnit_Word)
         {
             // expand to word
-            _start = buffer.GetWordStart(_start, _wordDelimiters, /*accessibilityMode*/ true);
-            _end = buffer.GetWordEnd(_start, _wordDelimiters, /*accessibilityMode*/ true);
+            _start = buffer.GetWordStart(_start, _wordDelimiters, true);
+            _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
             // expand to line
             _start.X = 0;
-            _end.X = base::ClampAdd(_start.Y, 1);
+            _end.X = 0;
+            _end.Y = base::ClampAdd(_start.Y, 1);
         }
         else
         {
@@ -411,12 +412,11 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         // _end is exclusive, let's be inclusive so we don't have to think about it anymore for bounding rects
         bufferSize.DecrementInBounds(endAnchor, true);
 
-        if (IsDegenerate())
+        if (IsDegenerate() || bufferSize.CompareInBounds(_start, viewportEnd, true) > 0 || bufferSize.CompareInBounds(_end, viewportOrigin, true) < 0)
         {
-            _getBoundingRect(_start, _start, coords);
-        }
-        else if (bufferSize.CompareInBounds(_start, viewportEnd, true) > 0 || bufferSize.CompareInBounds(_end, viewportOrigin, true) < 0)
-        {
+            // An empty array is returned for a degenerate (empty) text range or for a text range
+            // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
+
             // Remember, start cannot be past end, so
             //   if start is past the viewport end,
             //   or end is past the viewport origin
@@ -515,8 +515,8 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
             // if _end is at 0, we ignore that row because _end is exclusive
             const auto& buffer = _pData->GetTextBuffer();
             const SHORT totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
-                                                      _end.Y - _start.Y :
-                                                      _end.Y - _start.Y + static_cast<SHORT>(1);
+                                               _end.Y - _start.Y :
+                                               _end.Y - _start.Y + static_cast<SHORT>(1);
             const SHORT lastRowInRange = _start.Y + totalRowsInRange - static_cast<SHORT>(1);
 
             SHORT currentScreenInfoRow = 0;
@@ -811,11 +811,11 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
         const auto oldViewport = _pData->GetViewport().ToInclusive();
         const auto viewportHeight = _getViewportHeight(oldViewport);
         // range rows
-        const auto startScreenInfoRow = _start.Y;
-        const auto endScreenInfoRow = _end.Y;
+        const base::ClampedNumeric<short> startScreenInfoRow = _start.Y;
+        const base::ClampedNumeric<short> endScreenInfoRow = _end.Y;
         // screen buffer rows
-        const auto topRow = 0;
-        const auto bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
+        const base::ClampedNumeric<short> topRow = 0;
+        const base::ClampedNumeric<short> bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
 
         SMALL_RECT newViewport = oldViewport;
 
@@ -827,15 +827,15 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
             if (startScreenInfoRow + viewportHeight <= bottomRow)
             {
                 // we can align to the top
-                newViewport.Top = gsl::narrow<SHORT>(startScreenInfoRow);
-                newViewport.Bottom = gsl::narrow<SHORT>(startScreenInfoRow + viewportHeight - 1);
+                newViewport.Top = startScreenInfoRow;
+                newViewport.Bottom = startScreenInfoRow + viewportHeight - 1;
             }
             else
             {
                 // we can align to the top so we'll just move the viewport
                 // to the bottom of the screen buffer
-                newViewport.Bottom = gsl::narrow<SHORT>(bottomRow);
-                newViewport.Top = gsl::narrow<SHORT>(bottomRow - viewportHeight + 1);
+                newViewport.Bottom = bottomRow;
+                newViewport.Top = bottomRow - viewportHeight + 1;
             }
         }
         else
@@ -845,20 +845,20 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
             if (static_cast<unsigned int>(endScreenInfoRow) >= viewportHeight)
             {
                 // we can align to bottom
-                newViewport.Bottom = gsl::narrow<SHORT>(endScreenInfoRow);
-                newViewport.Top = gsl::narrow<SHORT>(endScreenInfoRow - viewportHeight + 1);
+                newViewport.Bottom = endScreenInfoRow;
+                newViewport.Top = endScreenInfoRow - viewportHeight + 1;
             }
             else
             {
                 // we can't align to bottom so we'll move the viewport to
                 // the top of the screen buffer
-                newViewport.Top = gsl::narrow<SHORT>(topRow);
-                newViewport.Bottom = gsl::narrow<SHORT>(topRow + viewportHeight - 1);
+                newViewport.Top = topRow;
+                newViewport.Bottom = topRow + viewportHeight - 1;
             }
         }
 
-        FAIL_FAST_IF(!(newViewport.Top >= gsl::narrow<SHORT>(topRow)));
-        FAIL_FAST_IF(!(newViewport.Bottom <= gsl::narrow<SHORT>(bottomRow)));
+        FAIL_FAST_IF(!(newViewport.Top >= topRow));
+        FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
         FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
 
         _ChangeViewport(newViewport);
@@ -938,21 +938,22 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
     // startAnchor is converted to the viewport coordinate space
     auto startCoord = startAnchor;
     viewport.ConvertToOrigin(&startCoord);
-    topLeft.x = startCoord.X * currentFontSize.X;
-    topLeft.y = startCoord.Y * currentFontSize.Y;
+    topLeft.x = base::ClampMul<long, long>(startCoord.X, currentFontSize.X);
+    topLeft.y = base::ClampMul<long, long>(startCoord.Y, currentFontSize.Y);
 
     if (IsDegenerate())
     {
-        bottomRight.x = (startCoord.X) * currentFontSize.X;
-        bottomRight.y = (startCoord.Y + 1) * currentFontSize.Y;
+        // An empty array is returned for a degenerate (empty) text range or for a text range
+        // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
+        return;
     }
     else
     {
         // endAnchor is converted to the viewport coordinate space
         auto endCoord = endAnchor;
         viewport.ConvertToOrigin(&endCoord);
-        bottomRight.x = (endCoord.X + 1) * currentFontSize.X;
-        bottomRight.y = (endCoord.Y + 1) * currentFontSize.Y;
+        bottomRight.x = base::ClampMul<long, long>(endCoord.X, currentFontSize.X);
+        bottomRight.y = base::ClampMul<long, long>(base::ClampAdd(endCoord.Y, 1), currentFontSize.Y);
     }
 
     // convert the coords to be relative to the screen instead of
@@ -960,8 +961,8 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
     _TranslatePointToScreen(&topLeft);
     _TranslatePointToScreen(&bottomRight);
 
-    const LONG width = bottomRight.x - topLeft.x;
-    const LONG height = bottomRight.y - topLeft.y;
+    const long width = base::ClampSub(bottomRight.x, topLeft.x);
+    const long height = base::ClampSub(bottomRight.y, topLeft.y);
 
     // insert the coords
     coords.push_back(topLeft.x);

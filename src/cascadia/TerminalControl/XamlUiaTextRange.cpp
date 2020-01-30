@@ -5,6 +5,10 @@
 #include "XamlUiaTextRange.h"
 #include "UiaTextRange.hpp"
 
+// the same as COR_E_NOTSUPPORTED
+// we don't want to import the CLR headers to get it
+#define XAML_E_NOT_SUPPORTED 0x80131515L
+
 namespace UIA
 {
     using ::ITextRangeProvider;
@@ -24,18 +28,6 @@ namespace XamlAutomation
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    // EmptyObject is our equivalent of UIAutomationCore::UiaGetReservedNotSupportedValue()
-    // This retrieves a value that is interpreted as "not supported".
-    class EmptyObject : public winrt::implements<EmptyObject, IInspectable>
-    {
-    public:
-        static IInspectable GetInstance()
-        {
-            static auto empty = make_self<EmptyObject>();
-            return *empty;
-        }
-    };
-
     XamlAutomation::ITextRangeProvider XamlUiaTextRange::Clone() const
     {
         UIA::ITextRangeProvider* pReturn;
@@ -100,9 +92,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            // We _need_ to return an empty object here.
+            // We _need_ to return XAML_E_NOT_SUPPORTED here.
             // Returning nullptr is an improper implementation of it being unsupported.
-            return EmptyObject::GetInstance();
+            winrt::throw_hresult(XAML_E_NOT_SUPPORTED);
         }
     }
 
