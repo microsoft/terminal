@@ -40,7 +40,7 @@ const FontInfo& Terminal::GetFontInfo() noexcept
     //      by this method.
     // We could very likely replace this with just an IsRasterFont method
     //      (which would return false)
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
+    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
     return _fakeFontInfo;
 }
 #pragma warning(pop)

@@ -169,7 +169,7 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
-    _window->UpdateTitle(newTitle.c_str());
+    _window->UpdateTitle(newTitle);
 }
 
 // Method Description:

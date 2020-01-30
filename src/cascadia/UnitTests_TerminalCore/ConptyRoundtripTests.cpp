@@ -27,6 +27,8 @@ class InputBuffer; // This for some reason needs to be fwd-decl'd
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 
+#include "TestUtils.h"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -40,8 +42,17 @@ using namespace Microsoft::Console::Types;
 
 using namespace Microsoft::Terminal::Core;
 
-class ConptyRoundtripTests
+namespace TerminalCoreUnitTests
 {
+    class TerminalBufferTests;
+};
+using namespace TerminalCoreUnitTests;
+
+class TerminalCoreUnitTests::ConptyRoundtripTests final
+{
+    static const SHORT TerminalViewWidth = 80;
+    static const SHORT TerminalViewHeight = 32;
+
     TEST_CLASS(ConptyRoundtripTests);
 
     TEST_CLASS_SETUP(ClassSetup)
@@ -50,7 +61,7 @@ class ConptyRoundtripTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
 
         return true;
@@ -71,18 +82,19 @@ class ConptyRoundtripTests
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ CommonState::s_csBufferWidth, CommonState::s_csBufferHeight }, 0, emptyRT);
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, emptyRT);
 
         // STEP 2: Set up the Conpty
 
         // Set up some sane defaults
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
+
         gci.SetDefaultForegroundColor(INVALID_COLOR);
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
-        m_state->PrepareNewTextBufferInfo(true);
+        m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
@@ -105,6 +117,13 @@ class ConptyRoundtripTests
 
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+
+        _pConApi = std::make_unique<ConhostInternalGetSet>(gci);
+
+        // Manually set the console into conpty mode. We're not actually going
+        // to set up the pipes for conpty, but we want the console to behave
+        // like it would in conpty mode.
+        g.EnableConptyModeForTests();
 
         expectedOutput.clear();
 
@@ -133,9 +152,15 @@ class ConptyRoundtripTests
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
+    void _resizeConpty(const unsigned short sx, const unsigned short sy);
     std::deque<std::string> expectedOutput;
     std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
     std::unique_ptr<CommonState> m_state;
+    std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+
+    // Tests can set these variables how they link to configure the behavior of the test harness.
+    bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected
+    bool _logConpty{ false }; // If true, the test class will log all the output from conpty. Helpful for debugging.
 
     DummyRenderTarget emptyRT;
     std::unique_ptr<Terminal> term;
@@ -144,18 +169,27 @@ private:
 bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cch)
 {
     std::string actualString = std::string(pch, cch);
-    VERIFY_IS_GREATER_THAN(expectedOutput.size(),
-                           static_cast<size_t>(0),
-                           NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size()));
 
-    std::string first = expectedOutput.front();
-    expectedOutput.pop_front();
+    if (_checkConptyOutput)
+    {
+        VERIFY_IS_GREATER_THAN(expectedOutput.size(),
+                               static_cast<size_t>(0),
+                               NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", TestUtils::ReplaceEscapes(actualString).c_str(), expectedOutput.size()));
 
-    Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
-    Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
+        std::string first = expectedOutput.front();
+        expectedOutput.pop_front();
 
-    VERIFY_ARE_EQUAL(first.length(), cch);
-    VERIFY_ARE_EQUAL(first, actualString);
+        Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", TestUtils::ReplaceEscapes(first).c_str()));
+        Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", TestUtils::ReplaceEscapes(actualString).c_str()));
+
+        VERIFY_ARE_EQUAL(first.length(), cch);
+        VERIFY_ARE_EQUAL(first, actualString);
+    }
+    else if (_logConpty)
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Writing \"%hs\" to Terminal", TestUtils::ReplaceEscapes(actualString).c_str()));
+    }
 
     // Write the string back to our Terminal
     const auto converted = ConvertToW(CP_UTF8, actualString);
@@ -177,75 +211,17 @@ void ConptyRoundtripTests::_flushFirstFrame()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
 
-// Function Description:
-// - Helper function to validate that a number of characters in a row are all
-//   the same. Validates that the next end-start characters are all equal to the
-//   provided string. Will move the provided iterator as it validates. The
-//   caller should ensure that `iter` starts where they would like to validate.
-// Arguments:
-// - expectedChar: The character (or characters) we're expecting
-// - iter: a iterator pointing to the cell we'd like to start validating at.
-// - start: the first index in the range we'd like to validate
-// - end: the last index in the range we'd like to validate
-// Return Value:
-// - <none>
-void _verifySpanOfText(const wchar_t* const expectedChar,
-                       TextBufferCellIterator& iter,
-                       const int start,
-                       const int end)
+void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
+                                         const unsigned short sy)
 {
-    for (int x = start; x < end; x++)
+    // Largely taken from implementation in PtySignalInputThread::_InputThread
+    if (DispatchCommon::s_ResizeWindow(*_pConApi, sx, sy))
     {
-        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-        if (iter->Chars() != expectedChar)
-        {
-            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
-        }
-        VERIFY_ARE_EQUAL(expectedChar, (iter++)->Chars());
+        // Instead of going through the VtIo to suppress the resize repaint,
+        // just call the method directly on the renderer. This is implemented in
+        // VtIo::SuppressResizeRepaint
+        VERIFY_SUCCEEDED(_pVtRenderEngine->SuppressResizeRepaint());
     }
-    Log::Comment(NoThrowString().Format(
-        L"Successfully validated %d characters were '%s'", end - start, expectedChar));
-}
-
-// Function Description:
-// - Helper function to validate that the next characters pointed to by `iter`
-//   are the provided string. Will increment iter as it walks the provided
-//   string of characters. It will leave `iter` on the first character after the
-//   expectedString.
-// Arguments:
-// - expectedString: The characters we're expecting
-// - iter: a iterator pointing to the cell we'd like to start validating at.
-// Return Value:
-// - <none>
-void _verifyExpectedString(std::wstring_view expectedString,
-                           TextBufferCellIterator& iter)
-{
-    for (const auto wch : expectedString)
-    {
-        wchar_t buffer[]{ wch, L'\0' };
-        std::wstring_view view{ buffer, 1 };
-        VERIFY_IS_TRUE(iter, L"Ensure iterator is still valid");
-        VERIFY_ARE_EQUAL(view, (iter++)->Chars(), NoThrowString().Format(L"%s", view.data()));
-    }
-}
-
-// Function Description:
-// - Helper function to validate that the next characters in the buffer at the
-//   given location are the provided string. Will return an iterator on the
-//   first character after the expectedString.
-// Arguments:
-// - tb: the buffer who's content we should check
-// - expectedString: The characters we're expecting
-// - pos: the starting position in the buffer to check the contents of
-// Return Value:
-// - an iterator on the first character after the expectedString.
-TextBufferCellIterator _verifyExpectedString(const TextBuffer& tb,
-                                             std::wstring_view expectedString,
-                                             const COORD pos)
-{
-    auto iter = tb.GetCellDataAt(pos);
-    _verifyExpectedString(expectedString, iter);
-    return iter;
 }
 
 void ConptyRoundtripTests::ConptyOutputTestCanary()
@@ -278,7 +254,7 @@ void ConptyRoundtripTests::SimpleWriteOutputTest()
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    _verifyExpectedString(termTb, L"Hello World ", { 0, 0 });
+    TestUtils::VerifyExpectedString(termTb, L"Hello World ", { 0, 0 });
 }
 
 void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
@@ -302,8 +278,8 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
     hostSm.ProcessString(L"BBB");
 
     auto verifyData = [](TextBuffer& tb) {
-        _verifyExpectedString(tb, L"AAA", { 0, 0 });
-        _verifyExpectedString(tb, L"BBB", { 0, 1 });
+        TestUtils::VerifyExpectedString(tb, L"AAA", { 0, 0 });
+        TestUtils::VerifyExpectedString(tb, L"BBB", { 0, 1 });
     };
 
     verifyData(hostTb);
@@ -338,10 +314,10 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"CCC");
     auto verifyData = [](TextBuffer& tb) {
-        _verifyExpectedString(tb, L"AAA", { 0, 0 });
-        _verifyExpectedString(tb, L"BBB", { 0, 1 });
-        _verifyExpectedString(tb, L"   ", { 0, 2 });
-        _verifyExpectedString(tb, L"CCC", { 0, 3 });
+        TestUtils::VerifyExpectedString(tb, L"AAA", { 0, 0 });
+        TestUtils::VerifyExpectedString(tb, L"BBB", { 0, 1 });
+        TestUtils::VerifyExpectedString(tb, L"   ", { 0, 2 });
+        TestUtils::VerifyExpectedString(tb, L"CCC", { 0, 3 });
     };
 
     verifyData(hostTb);

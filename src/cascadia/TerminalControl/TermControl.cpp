@@ -62,8 +62,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
         _lastMouseClick{},
@@ -342,7 +342,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Initialize our font information.
-        const auto* fontFace = _settings.FontFace().c_str();
+        const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
@@ -655,7 +655,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onRecieveOutputFn = [this](const hstring str) {
-            _terminal->Write(str.c_str());
+            _terminal->Write(str);
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
 
@@ -1475,7 +1475,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Make sure we have a non-zero font size
             const auto newSize = std::max(gsl::narrow<short>(fontSize), static_cast<short>(1));
-            const auto* fontFace = _settings.FontFace().c_str();
+            const auto fontFace = _settings.FontFace();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
@@ -1724,7 +1724,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), gsl::narrow<winrt::hstring::size_type>(textData.size())),
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
                                                                    winrt::to_hstring(htmlData),
                                                                    winrt::to_hstring(rtfData));
         _clipboardCopyHandlers(*this, *copyArgs);
@@ -1828,7 +1828,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
     {
         // Initialize our font information.
-        const auto* fontFace = settings.FontFace().c_str();
+        const auto fontFace = settings.FontFace();
         const short fontHeight = gsl::narrow<short>(settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up

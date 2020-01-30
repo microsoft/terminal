@@ -26,7 +26,10 @@ Author(s):
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
-class ConptyRoundtripTests;
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
 #endif
 
 namespace Microsoft::Console::Render
@@ -226,7 +229,7 @@ namespace Microsoft::Console::Render
 
         friend class VtRendererTest;
         friend class ConptyOutputTests;
-        friend class ConptyRoundtripTests;
+        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 
         void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);
