@@ -60,7 +60,6 @@ namespace Microsoft::Console::Render
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;
         const bool _fUseAsciiOnly;
-        bool _previousLineWrapped;
         bool _usingUnderLine;
         bool _needToDisableCursor;
         bool _lastCursorIsVisible;
