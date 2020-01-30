@@ -196,6 +196,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(message));
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
 
         _showDialogHandlers(*this, dialog);
     }
@@ -270,6 +271,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(aboutTextBlock);
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
 
         _showDialogHandlers(*this, dialog);
     }
@@ -292,6 +294,7 @@ namespace winrt::TerminalApp::implementation
 
         dialog.CloseButtonText(closeButtonText);
         dialog.PrimaryButtonText(primaryButtonText);
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
         auto token = dialog.CloseButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
 
         _showDialogHandlers(*this, dialog);
