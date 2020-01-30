@@ -589,7 +589,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Retrieve the cell information iterator limited to just this line we want to redraw.
             auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
-            // TODO: calculate if two things are true:
+            // Calculate if two things are true:
             // 1. this row wrapped
             // 2. We're painting the last col of the row.
             // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.

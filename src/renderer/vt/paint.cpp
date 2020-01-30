@@ -458,8 +458,6 @@ using namespace Microsoft::Console::Types;
         // the cursor is still waiting on that character for the next character
         // to follow it.
         _wrappedRow = std::nullopt;
-        // TODO:<Before PR>: Write a test that emulates ~/vttests/reflow-120.py
-        // TODO:<Before PR>: Write a test that emulates ~/vttests/reflow-advanced.py
     }
 
     // Move the cursor to the start of this run.

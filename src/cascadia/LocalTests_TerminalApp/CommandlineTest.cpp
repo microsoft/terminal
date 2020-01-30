@@ -44,6 +44,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ParseSplitPaneIntoArgs);
         TEST_METHOD(ParseComboCommandlineIntoArgs);
         TEST_METHOD(ParseFocusTabArgs);
+        TEST_METHOD(ParseArgumentsWithParsingTerminators);
 
         TEST_METHOD(ParseNoCommandIsNewTab);
 
@@ -930,8 +931,7 @@ namespace TerminalAppLocalTests
     {
         Log::Comment(NoThrowString().Format(
             L"Check what happens when the user typos a subcommand. It should "
-            L"be treated as a commandline, unless other args are present that "
-            L"the new-tab subcommand doesn't understand"));
+            L"be treated as a commandline"));
 
         {
             AppCommandlineArgs appArgs{};
@@ -971,21 +971,69 @@ namespace TerminalAppLocalTests
                 L"Pass a flag that would be accepted by split-pane, but isn't accepted by new-tab"));
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"slpit-pane", L"-H" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
-            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
-            VERIFY_ARE_EQUAL(1u, commandlines.size());
-            VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
-            VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
 
-            for (auto& cmdBlob : commandlines)
-            {
-                const auto result = appArgs.ParseCommand(cmdBlob);
-                Log::Comment(NoThrowString().Format(
-                    L"Exit Message:\n%hs",
-                    appArgs._exitMessage.c_str()));
-                VERIFY_ARE_NOT_EQUAL(0, result);
-                VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
-            }
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(L"slpit-pane -H", myArgs.TerminalArgs().Commandline());
+        }
+    }
+
+    void CommandlineTest::ParseArgumentsWithParsingTerminators()
+    {
+        { // one parsing terminator, new-tab command
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"-d", L"C:\\", L"--", L"wsl", L"-d", L"Alpine" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(L"wsl -d Alpine", myArgs.TerminalArgs().Commandline());
+            VERIFY_ARE_EQUAL(L"C:\\", myArgs.TerminalArgs().StartingDirectory());
+        }
+        { // two parsing terminators, new-tab command
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"new-tab", L"-d", L"C:\\", L"--", L"wsl", L"-d", L"Alpine", L"--", L"sleep", L"10" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(L"wsl -d Alpine -- sleep 10", myArgs.TerminalArgs().Commandline());
+            VERIFY_ARE_EQUAL(L"C:\\", myArgs.TerminalArgs().StartingDirectory());
+        }
+        { // two parsing terminators, *no* command
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-d", L"C:\\", L"--", L"wsl", L"-d", L"Alpine", L"--", L"sleep", L"10" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_ARE_EQUAL(L"wsl -d Alpine -- sleep 10", myArgs.TerminalArgs().Commandline());
+            VERIFY_ARE_EQUAL(L"C:\\", myArgs.TerminalArgs().StartingDirectory());
         }
     }
 }

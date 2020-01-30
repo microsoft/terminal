@@ -44,7 +44,7 @@ using namespace Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
-    class TerminalBufferTests;
+    class ConptyRoundtripTests;
 };
 using namespace TerminalCoreUnitTests;
 
@@ -181,13 +181,13 @@ bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cc
     {
         VERIFY_IS_GREATER_THAN(expectedOutput.size(),
                                static_cast<size_t>(0),
-                               NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size()));
+                               NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", TestUtils::ReplaceEscapes(actualString).c_str(), expectedOutput.size()));
 
         std::string first = expectedOutput.front();
         expectedOutput.pop_front();
 
-        Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
-        Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
+        Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", TestUtils::ReplaceEscapes(first).c_str()));
+        Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", TestUtils::ReplaceEscapes(actualString).c_str()));
 
         VERIFY_ARE_EQUAL(first.length(), cch);
         VERIFY_ARE_EQUAL(first, actualString);
@@ -195,7 +195,7 @@ bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cc
     else if (_logConpty)
     {
         Log::Comment(NoThrowString().Format(
-            L"Writing \"%hs\" to Terminal", actualString.c_str()));
+            L"Writing \"%hs\" to Terminal", TestUtils::ReplaceEscapes(actualString).c_str()));
     }
 
     // Write the string back to our Terminal
