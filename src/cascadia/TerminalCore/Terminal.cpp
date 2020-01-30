@@ -180,9 +180,41 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     const short newBufferHeight = viewportSize.Y + _scrollbackLines;
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-    RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
 
-    auto proposedTop = oldTop;
+    // First allocate a new text buffer to take the place of the current one.
+    std::unique_ptr<TextBuffer> newTextBuffer;
+    try
+    {
+        newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
+                                                     _buffer->GetCurrentAttributes(),
+                                                     0,
+                                                     _buffer->GetRenderTarget()); // temporarily set size to 0 so it won't render.
+    }
+    CATCH_RETURN();
+
+    // Save cursor's relative height versus the viewport
+    SHORT const sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
+
+    // RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+    RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(), *newTextBuffer.get(), _mutableViewport));
+
+    // auto proposedTop = oldTop;
+    // const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    // const auto proposedBottom = newView.BottomExclusive();
+    // // If the new bottom would be below the bottom of the buffer, then slide the
+    // // top up so that we'll still fit within the buffer.
+    // if (proposedBottom > bufferSize.Y)
+    // {
+    //     proposedTop -= (proposedBottom - bufferSize.Y);
+    // }
+
+    auto& newCursor = newTextBuffer->GetCursor();
+    // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+    const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
+    const short cursorHeightDiff = cursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+    // LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+
+    auto proposedTop = static_cast<short>(oldTop + cursorHeightDiff);
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
     // If the new bottom would be below the bottom of the buffer, then slide the
@@ -193,6 +225,9 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+
+    _buffer.swap(newTextBuffer);
+
     _scrollOffset = 0;
     _NotifyScrollEvent();
 

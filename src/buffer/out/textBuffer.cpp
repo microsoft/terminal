@@ -1556,7 +1556,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - newBuffer - the text buffer to copy the contents TO
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
-HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
+HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const std::optional<Viewport> lastCharacterViewport)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1568,7 +1568,15 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
     // place the new cursor back on the equivalent character in
     // the new buffer.
     const COORD cOldCursorPos = oldCursor.GetPosition();
-    const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
+    COORD cOldLastChar;
+    if (lastCharacterViewport.has_value())
+    {
+        cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport.value());
+    }
+    else
+    {
+        cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
+    }
 
     short const cOldRowsTotal = cOldLastChar.Y + 1;
     short const cOldColsTotal = oldBuffer.GetSize().Width();
