@@ -83,12 +83,9 @@ try
         // There is currently no need for mode-specific line feeds in the Terminal,
         // so for now we just treat them as a line feed without carriage return.
     case DispatchTypes::LineFeedType::WithoutReturn:
-        Execute(L'\n');
-        return true;
+        return _terminalApi.CursorLineFeed(false);
     case DispatchTypes::LineFeedType::WithReturn:
-        Execute(L'\r');
-        Execute(L'\n');
-        return true;
+        return _terminalApi.CursorLineFeed(true);
     default:
         return false;
     }

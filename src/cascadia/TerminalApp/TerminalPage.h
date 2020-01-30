@@ -8,9 +8,9 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
-#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
+#include "AppCommandlineArgs.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -38,6 +38,9 @@ namespace winrt::TerminalApp::implementation
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         void CloseWindow();
+
+        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
+        winrt::hstring EarlyExitMessage();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
@@ -69,6 +72,10 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo;
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
+
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        int _ParseArgs(winrt::array_view<const hstring>& args);
+        fire_and_forget _ProcessNextStartupAction();
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();

@@ -53,6 +53,10 @@ public:
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
+#ifdef UNIT_TESTING
+    void EnableConptyModeForTests();
+#endif
+
     static const std::wstring_view VT_MODE_ARG;
     static const std::wstring_view HEADLESS_ARG;
     static const std::wstring_view SERVER_HANDLE_ARG;
