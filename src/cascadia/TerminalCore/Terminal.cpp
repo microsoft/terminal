@@ -192,39 +192,109 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
     CATCH_RETURN();
 
-    // Save cursor's relative height versus the viewport
-    SHORT const sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
-
     // RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
     RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(), *newTextBuffer.get(), _mutableViewport));
 
-    // auto proposedTop = oldTop;
-    // const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    // const auto proposedBottom = newView.BottomExclusive();
-    // // If the new bottom would be below the bottom of the buffer, then slide the
-    // // top up so that we'll still fit within the buffer.
-    // if (proposedBottom > bufferSize.Y)
-    // {
-    //     proposedTop -= (proposedBottom - bufferSize.Y);
-    // }
-
-    auto& newCursor = newTextBuffer->GetCursor();
-    // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-    const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
-    const short cursorHeightDiff = cursorHeightInViewportAfter - sCursorHeightInViewportBefore;
-    // LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
-
-    auto proposedTop = static_cast<short>(oldTop + cursorHeightDiff);
-    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    const auto proposedBottom = newView.BottomExclusive();
-    // If the new bottom would be below the bottom of the buffer, then slide the
-    // top up so that we'll still fit within the buffer.
-    if (proposedBottom > bufferSize.Y)
+    // OLD WAY OF FINDING NEW TERMINAL VIEWPORT
     {
-        proposedTop -= (proposedBottom - bufferSize.Y);
+        // auto proposedTop = oldTop;
+        // const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+        // const auto proposedBottom = newView.BottomExclusive();
+        // // If the new bottom would be below the bottom of the buffer, then slide the
+        // // top up so that we'll still fit within the buffer.
+        // if (proposedBottom > bufferSize.Y)
+        // {
+        //     proposedTop -= (proposedBottom - bufferSize.Y);
+        // }
+        // _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     }
 
-    _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    // SCREENINFO WAY OF FINDING NEW TERMINAL VIEWPORT
+    {
+        // // Save cursor's relative height versus the viewport
+        // SHORT const sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
+        // auto& newCursor = newTextBuffer->GetCursor();
+        // // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+        // const short cursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
+        // const short cursorHeightDiff = cursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+        // // LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+
+        // auto proposedTop = static_cast<short>(oldTop + cursorHeightDiff);
+        // const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+        // const auto proposedBottom = newView.BottomExclusive();
+        // // If the new bottom would be below the bottom of the buffer, then slide the
+        // // top up so that we'll still fit within the buffer.
+        // if (proposedBottom > bufferSize.Y)
+        // {
+        //     proposedTop -= (proposedBottom - bufferSize.Y);
+        // }
+
+        // _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+
+    }
+
+    // #4354 way of doing things
+    {
+
+        // const auto dy = viewportSize.Y - oldDimensions.Y;
+        // const COORD cOldCursorPos = _buffer->GetCursor().GetPosition();
+        // COORD cOldLastChar = cOldCursorPos;
+        // try
+        // {
+        //     cOldLastChar = _buffer->GetLastNonSpaceCharacter();
+        // }
+        // CATCH_LOG();
+
+        // const auto maxRow = std::max(cOldLastChar.Y, cOldCursorPos.Y);
+
+        // const bool beforeLastRow = maxRow < bufferSize.Y - 1;
+        // const auto adjustment = beforeLastRow ? 0 : std::max(0, -dy);
+
+        // auto proposedTop = oldTop + adjustment;
+
+        // const auto newView = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+        // const auto proposedBottom = newView.BottomExclusive();
+        // // If the new bottom would be below the bottom of the buffer, then slide the
+        // // top up so that we'll still fit within the buffer.
+        // if (proposedBottom > bufferSize.Y)
+        // {
+        //     proposedTop -= (proposedBottom - bufferSize.Y);
+        // }
+
+        // _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+    }
+
+    // Attempt No. 4
+    {
+        const auto dy = viewportSize.Y - oldDimensions.Y;
+        const COORD cOldCursorPos = _buffer->GetCursor().GetPosition();
+        COORD cOldLastChar = cOldCursorPos;
+        try
+        {
+            cOldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
+        }
+        CATCH_LOG();
+
+        const auto maxRow = std::max(cOldLastChar.Y, cOldCursorPos.Y);
+
+        // const bool beforeLastRow = maxRow < bufferSize.Y - 1;
+        const bool beforeLastRowOfView = maxRow < _mutableViewport.BottomInclusive();
+        // const auto adjustment = beforeLastRow ? 0 : std::max(0, -dy);
+        const auto adjustment = beforeLastRowOfView ? 0 : std::max(0, -dy);
+
+        auto proposedTop = oldTop + adjustment;
+
+        const auto newView = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+        const auto proposedBottom = newView.BottomExclusive();
+        // If the new bottom would be below the bottom of the buffer, then slide the
+        // top up so that we'll still fit within the buffer.
+        if (proposedBottom > bufferSize.Y)
+        {
+            proposedTop -= (proposedBottom - bufferSize.Y);
+        }
+
+        _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+    }
 
     _buffer.swap(newTextBuffer);
 
