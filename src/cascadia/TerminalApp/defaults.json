@@ -10,6 +10,7 @@
     "tabWidthMode": "equal",
     "snapToGridOnResize": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+    "confirmCloseAllTabs": true,
 
     "profiles":
     [

@@ -997,7 +997,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.size() > 1)
+        if (_tabs.size() > 1 && _settings->GlobalSettings().GetConfirmCloseAllTabs())
         {
             _ShowCloseWarningDialog();
         }
