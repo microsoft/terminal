@@ -1292,6 +1292,35 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
+// - A private API call for changing the screen mode between normal and reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Parameters:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return value:
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate error code.
+[[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode)
+{
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetScreenReversed(reverseMode);
+
+        if (g.pRender)
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return STATUS_SUCCESS;
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+}
+
+// Routine Description:
 // - A private API call for making the cursor visible or not. Does not modify
 //      blinking state.
 // Parameters:
@@ -1312,7 +1341,14 @@ void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noe
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable)
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(!fEnable);
+
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
 }
 
 // Routine Description:

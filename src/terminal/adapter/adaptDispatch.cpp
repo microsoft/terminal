@@ -269,6 +269,30 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 }
 
 // Routine Description:
+// - HPR - Handles cursor forward movement by given distance
+// - Unlike CUF, this is not constrained by margin settings.
+// Arguments:
+// - distance - Distance to move
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
+{
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), false);
+}
+
+// Routine Description:
+// - VPR - Handles cursor downward movement by given distance
+// - Unlike CUD, this is not constrained by margin settings.
+// Arguments:
+// - distance - Distance to move
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
+{
+    return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), false);
+}
+
+// Routine Description:
 // - CUP - Moves the cursor to an exact X/Column and Y/Row/Line coordinate position.
 // Arguments:
 // - line - Specific Y/Row/Line position to move to
@@ -916,6 +940,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
+    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        success = SetScreenMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
@@ -1060,6 +1087,18 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
     return _pConApi->DeleteLines(distance);
+}
+
+// Routine Description:
+// - DECSCNM - Sets the screen mode to either normal or reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetScreenMode(const bool reverseMode)
+{
+    return _pConApi->PrivateSetScreenMode(reverseMode);
 }
 
 // Routine Description:
@@ -1456,6 +1495,12 @@ bool AdaptDispatch::HardReset()
     if (success)
     {
         success = _EraseScrollback();
+    }
+
+    // Set the DECSCNM screen mode back to normal.
+    if (success)
+    {
+        success = SetScreenMode(false);
     }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
