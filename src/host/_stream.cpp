@@ -1038,11 +1038,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         read = 0;
         waiter.reset();
 
-        bool fLeadByteCaptured = false;
-        bool fLeadByteConsumed = false;
+        bool leadByteCaptured{ false };
+        bool leadByteConsumed{ false };
 
         LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         if (buffer.size() == 0)
         {
@@ -1054,15 +1054,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         // Convert our input parameters to Unicode
         std::wstring wstr{};
         static til::u8state u8State{};
-
-        SCREEN_INFORMATION& ScreenInfo = context.GetActiveBuffer();
-        wchar_t* pwchBuffer;
-        size_t cchBuffer;
+        SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
         if (codepage == CP_UTF8)
         {
             RETURN_IF_FAILED(til::u8u16(buffer, wstr, u8State));
-            pwchBuffer = wstr.data();
-            cchBuffer = wstr.length();
             read = buffer.size();
         }
         else
@@ -1071,116 +1066,103 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // we discard partials that might still be cached.
             u8State.reset();
 
-            NTSTATUS Status = STATUS_SUCCESS;
-            PWCHAR TransBuffer;
-            PWCHAR TransBufferOriginalLocation;
-            DWORD Length;
-            ULONG dbcsNumBytes = 0;
-            ULONG BufPtrNumBytes = 0;
-            const char* BufPtr = buffer.data();
+            ULONG dbcsNumBytes{};
+            ULONG bufPtrNumBytes{};
+            const char* bufPtr = buffer.data();
 
-            // (cchTextBufferLength + 2) I think because we might be shoving another unicode char
-            // from ScreenInfo->WriteConsoleDbcsLeadByte in front
-            TransBuffer = new WCHAR[buffer.size() + 2];
-            RETURN_IF_NULL_ALLOC(TransBuffer);
-            ZeroMemory(TransBuffer, sizeof(WCHAR) * (buffer.size() + 2));
+            // (buffer.size() + 2) I think because we might be shoving another unicode char
+            // from screenInfo->WriteConsoleDbcsLeadByte in front
+            wstr.clear();
+            wstr.resize(buffer.size() + 2);
 
-            TransBufferOriginalLocation = TransBuffer;
+            PWCHAR transBuffer = wstr.data();
 
-            unsigned int uiTextBufferLength;
-            RETURN_IF_FAILED(SizeTToUInt(buffer.size(), &uiTextBufferLength));
+            unsigned int textBufferLength{};
+            RETURN_IF_FAILED(SizeTToUInt(buffer.size(), &textBufferLength));
 
-            if (!ScreenInfo.WriteConsoleDbcsLeadByte[0] || *(PUCHAR)BufPtr < (UCHAR)' ')
+            if (!screenInfo.WriteConsoleDbcsLeadByte[0] || *(PUCHAR)bufPtr < (UCHAR)' ')
             {
                 dbcsNumBytes = 0;
-                BufPtrNumBytes = uiTextBufferLength;
+                bufPtrNumBytes = textBufferLength;
             }
             else if (buffer.size())
             {
                 // there was a portion of a dbcs character stored from a previous
-                // call so we take the 2nd half from BufPtr[0], put them together
-                // and write the wide char to TransBuffer[0]
-                ScreenInfo.WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
+                // call so we take the 2nd half from bufPtr[0], put them together
+                // and write the wide char to transBuffer[0]
+                screenInfo.WriteConsoleDbcsLeadByte[1] = *(PCHAR)bufPtr;
 
                 try
                 {
-                    const std::string_view leadByte(reinterpret_cast<const char* const>(ScreenInfo.WriteConsoleDbcsLeadByte),
-                                                    ARRAYSIZE(ScreenInfo.WriteConsoleDbcsLeadByte));
+                    const std::string_view leadByte(reinterpret_cast<const char* const>(screenInfo.WriteConsoleDbcsLeadByte),
+                                                    ARRAYSIZE(screenInfo.WriteConsoleDbcsLeadByte));
 
                     const std::wstring converted = ConvertToW(gci.OutputCP, leadByte);
 
                     FAIL_FAST_IF(converted.size() != 1);
                     dbcsNumBytes = sizeof(wchar_t);
-                    TransBuffer[0] = converted.at(0);
-                    BufPtr++;
+                    transBuffer[0] = converted.at(0);
+                    bufPtr++;
                 }
                 catch (...)
                 {
-                    Status = STATUS_UNSUCCESSFUL;
                     dbcsNumBytes = 0;
                 }
 
                 // this looks weird to be always incrementing even if the conversion failed, but this is the
                 // original behavior so it's left unchanged.
-                TransBuffer++;
-                BufPtrNumBytes = uiTextBufferLength - 1;
+                transBuffer++;
+                bufPtrNumBytes = textBufferLength - 1;
 
                 // Note that we used a stored lead byte from a previous call in order to complete this write
                 // Use this to offset the "number of bytes consumed" calculation at the end by -1 to account
                 // for using a byte we had internally, not off the stream.
-                fLeadByteConsumed = true;
+                leadByteConsumed = true;
             }
             else
             {
-                // nothing in ScreenInfo->WriteConsoleDbcsLeadByte and nothing in BufPtr
-                BufPtrNumBytes = 0;
+                // nothing in screenInfo->WriteConsoleDbcsLeadByte and nothing in bufPtr
+                bufPtrNumBytes = 0;
             }
 
-            ScreenInfo.WriteConsoleDbcsLeadByte[0] = 0;
+            screenInfo.WriteConsoleDbcsLeadByte[0] = 0;
 
-            // if the last byte in BufPtr is a lead byte for the current code page,
+            // if the last byte in bufPtr is a lead byte for the current code page,
             // save it for the next time this function is called and we can piece it
             // back together then
-            __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
-            if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci.OutputCPInfo))
+            __analysis_assume(bufPtrNumBytes <= textBufferLength);
+            if (bufPtrNumBytes && CheckBisectStringA((PCHAR)bufPtr, bufPtrNumBytes, &gci.OutputCPInfo))
             {
-                ScreenInfo.WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
-                BufPtrNumBytes--;
+                screenInfo.WriteConsoleDbcsLeadByte[0] = *((PCHAR)bufPtr + bufPtrNumBytes - 1);
+                bufPtrNumBytes--;
 
                 // Note that we captured a lead byte during this call, but won't actually draw it until later.
                 // Use this to offset the "number of bytes consumed" calculation at the end by +1 to account
                 // for taking a byte off the stream.
-                fLeadByteCaptured = true;
+                leadByteCaptured = true;
             }
 
-            if (BufPtrNumBytes != 0)
+            if (bufPtrNumBytes != 0)
             {
-                // convert the remaining bytes in BufPtr to wide chars
-                Length = sizeof(WCHAR) * MultiByteToWideChar(gci.OutputCP,
-                                                             0,
-                                                             (LPCCH)BufPtr,
-                                                             BufPtrNumBytes,
-                                                             TransBuffer,
-                                                             BufPtrNumBytes);
-
-                if (Length == 0)
-                {
-                    Status = STATUS_UNSUCCESSFUL;
-                }
-                BufPtrNumBytes = Length;
+                // convert the remaining bytes in bufPtr to wide chars
+                bufPtrNumBytes = sizeof(WCHAR) * MultiByteToWideChar(gci.OutputCP,
+                                                                     0,
+                                                                     (LPCCH)bufPtr,
+                                                                     bufPtrNumBytes,
+                                                                     transBuffer,
+                                                                     bufPtrNumBytes);
             }
 
-            pwchBuffer = TransBufferOriginalLocation;
-            cchBuffer = (gsl::narrow_cast<size_t>(dbcsNumBytes) + BufPtrNumBytes) / sizeof(wchar_t);
+            wstr.resize((gsl::narrow_cast<size_t>(dbcsNumBytes) + bufPtrNumBytes) / sizeof(wchar_t));
         }
 
         // Make the W version of the call
-        size_t cchBufferRead;
+        size_t bufferRead{};
 
         // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
         std::unique_ptr<WriteData> writeDataWaiter;
 
-        HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, { pwchBuffer, cchBuffer }, cchBufferRead, writeDataWaiter);
+        HRESULT const hr = WriteConsoleWImplHelper(screenInfo, wstr, bufferRead, writeDataWaiter);
 
         // If there is no waiter, process the byte count now.
         if (nullptr == writeDataWaiter.get())
@@ -1189,32 +1171,32 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // For UTF-8 conversions, we've already returned this information above.
             if (CP_UTF8 != codepage)
             {
-                size_t cchTextBufferRead = 0;
+                size_t textBufferRead{};
 
                 // Start by counting the number of A bytes we used in printing our W string to the screen.
                 try
                 {
-                    cchTextBufferRead = GetALengthFromW(codepage, { pwchBuffer, cchBufferRead });
+                    textBufferRead = GetALengthFromW(codepage, { wstr.data(), bufferRead });
                 }
                 CATCH_LOG();
 
                 // If we captured a byte off the string this time around up above, it means we didn't feed
                 // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
                 // in the count we just made. Add +1 to compensate.
-                if (fLeadByteCaptured)
+                if (leadByteCaptured)
                 {
-                    cchTextBufferRead++;
+                    textBufferRead++;
                 }
 
                 // If we consumed an internally-stored lead byte this time around up above, it means that we
                 // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
                 // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
-                if (fLeadByteConsumed)
+                if (leadByteConsumed)
                 {
-                    cchTextBufferRead--;
+                    textBufferRead--;
                 }
 
-                read = cchTextBufferRead;
+                read = textBufferRead;
             }
         }
         else
@@ -1225,19 +1207,13 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             {
                 // For non-UTF8 codepages, save the lead byte captured/consumed data so we can +1 or -1 the final decoded count
                 // in the WaitData::Notify method later.
-                writeDataWaiter->SetLeadByteAdjustmentStatus(fLeadByteCaptured, fLeadByteConsumed);
+                writeDataWaiter->SetLeadByteAdjustmentStatus(leadByteCaptured, leadByteConsumed);
             }
             else
             {
                 // For UTF8 codepages, just remember the consumption count from the UTF-8 parser.
                 writeDataWaiter->SetUtf8ConsumedCharacters(read);
             }
-        }
-
-        // Free remaining data
-        if (codepage != CP_UTF8)
-        {
-            delete[] pwchBuffer;
         }
 
         // Give back the waiter now that we're done with tinkering with it.
@@ -1269,7 +1245,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     try
     {
         LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         std::unique_ptr<WriteData> writeDataWaiter;
         RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, writeDataWaiter));
