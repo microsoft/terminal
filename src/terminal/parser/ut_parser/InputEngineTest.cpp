@@ -258,6 +258,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(SGRMouseTest_ButtonClick);
     TEST_METHOD(SGRMouseTest_Modifiers);
     TEST_METHOD(SGRMouseTest_Movement);
+    TEST_METHOD(SGRMouseTest_Scroll);
 
     friend class TestInteractDispatch;
 };
@@ -528,6 +529,7 @@ void InputEngineTest::RoundTripTest()
     Log::Result(WEX::Logging::TestResults::Skipped);
     return;
 
+    /*
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
@@ -586,6 +588,7 @@ void InputEngineTest::RoundTripTest()
     }
 
     VerifyExpectedInputDrained();
+    */
 }
 
 void InputEngineTest::WindowManipulationTest()
@@ -1026,7 +1029,6 @@ void InputEngineTest::SGRMouseTest_ButtonClick()
     // - eventFlags
 
     // clang-format off
-    // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                     EXPECTED OUTPUT
         {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
@@ -1058,7 +1060,6 @@ void InputEngineTest::SGRMouseTest_Modifiers()
     // - eventFlags
 
     // clang-format off
-    // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                                               EXPECTED OUTPUT
         {   { CsiMouseButtonCodes::Left, CsiMouseModifierCodes::Shift, { 1, 1 }, CsiActionCodes::MouseDown },        { FROM_LEFT_1ST_BUTTON_PRESSED, SHIFT_PRESSED, { 0, 0 }, 0 } },
@@ -1090,7 +1091,6 @@ void InputEngineTest::SGRMouseTest_Movement()
     // - eventFlags
 
     // clang-format off
-    // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                                               EXPECTED OUTPUT
         {   { CsiMouseButtonCodes::Right, 0,                           { 1, 1 }, CsiActionCodes::MouseDown },        { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
@@ -1107,5 +1107,30 @@ void InputEngineTest::SGRMouseTest_Movement()
     };
     // clang-format on
 
+    VerifySGRMouseData(testData);
+}
+
+void InputEngineTest::SGRMouseTest_Scroll()
+{
+    // SGR_PARAMS serves as test input
+    // - the state of the buttons (constructed via InputStateMachineEngine::CsiMouseButtonCodes)
+    // - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
+    // - the {x,y} position of the event on the viewport where the top-left is {1,1}
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
+
+    // MOUSE_EVENT_PARAMS serves as expected output
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
+
+    // clang-format off
+    // NOTE: scrolling events do NOT send a mouse up event
+    const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
+        //  TEST INPUT                                                                             EXPECTED OUTPUT
+        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED } },
+        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED } },
+    };
+    // clang-format on
     VerifySGRMouseData(testData);
 }

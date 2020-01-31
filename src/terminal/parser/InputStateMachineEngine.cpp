@@ -805,7 +805,7 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
                                                          const std::basic_string_view<size_t> parameters,
                                                          DWORD& buttonState,
-                                                         DWORD& eventFlags)
+                                                         DWORD& eventFlags) noexcept
 {
     if (parameters.empty())
     {
@@ -829,6 +829,8 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     const auto buttonID = (sgrEncoding & 0x3) | ((sgrEncoding & 0xC0) >> 4);
 
     // Step 1: Translate which button was affected
+    // NOTE: if scrolled, having buttonFlag = 0 means
+    //       we don't actually update the buttonState
     DWORD buttonFlag = 0;
     switch (buttonID)
     {
@@ -841,31 +843,6 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     case CsiMouseButtonCodes::Middle:
         buttonFlag = FROM_LEFT_2ND_BUTTON_PRESSED;
         break;
-    default:
-        // no detectable buttonID, so we can't update the state
-        return false;
-    }
-
-    // Step 2: Decide whether to set or clear that button's bit
-    // NOTE: WI_SetFlag/WI_ClearFlag can't be used here because buttonFlag would have to be a compile-time constant
-    switch (static_cast<CsiActionCodes>(wch))
-    {
-    case CsiActionCodes::MouseDown:
-        // set flag
-        buttonState |= buttonFlag;
-        break;
-    case CsiActionCodes::MouseUp:
-        // clear flag
-        buttonState &= (~buttonFlag);
-        break;
-    default:
-        // no detectable change of state, so we can't update the state
-        return false;
-    }
-
-    // Step 3: append the mouse wheel data to out param
-    switch (buttonID)
-    {
     case CsiMouseButtonCodes::ScrollBack:
     {
         // set high word to proper scroll direction
@@ -883,16 +860,36 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
         break;
     }
     default:
-        break;
+        // no detectable buttonID, so we can't update the state
+        return false;
     }
 
-    // Step 4: check if mouse moved
+    // Step 2: Decide whether to set or clear that button's bit
+    // NOTE: WI_SetFlag/WI_ClearFlag can't be used here because buttonFlag would have to be a compile-time constant
+    switch (static_cast<CsiActionCodes>(wch))
+    {
+    case CsiActionCodes::MouseDown:
+        // set flag
+        // NOTE: scroll events have buttonFlag = 0
+        //       so this intentionally does nothing
+        buttonState |= buttonFlag;
+        break;
+    case CsiActionCodes::MouseUp:
+        // clear flag
+        buttonState &= (~buttonFlag);
+        break;
+    default:
+        // no detectable change of state, so we can't update the state
+        return false;
+    }
+
+    // Step 3: check if mouse moved
     if (WI_IsFlagSet(sgrEncoding, CsiMouseModifierCodes::Drag))
     {
         eventFlags |= MOUSE_MOVED;
     }
 
-    // Step 5: update internal state before returning, even if we couldn't fully understand this
+    // Step 4: update internal state before returning, even if we couldn't fully understand this
     // only take LOWORD here because HIWORD is reserved for mouse wheel delta and release events for the wheel buttons are not reported
     _mouseButtonState = LOWORD(buttonState);
 

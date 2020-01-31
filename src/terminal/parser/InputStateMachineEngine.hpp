@@ -185,7 +185,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _UpdateSGRMouseButtonState(const wchar_t wch,
                                         const std::basic_string_view<size_t> parameters,
                                         DWORD& buttonState,
-                                        DWORD& eventFlags);
+                                        DWORD& eventFlags) noexcept;
         bool _GetGenericVkey(const std::basic_string_view<size_t> parameters,
                              short& vkey) const;
         bool _GetCursorKeysVkey(const wchar_t wch, short& vkey) const;
