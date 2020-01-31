@@ -102,7 +102,7 @@ For commands without actions:
 <br>
 `{ "command": "commandName", "keys": [ "modifiers+key" ] }`
 
-For commands with actions:
+For commands with arguments:
 <br>
 `{ "command": { "action": "commandName", "argument": "value" }, "keys": ["modifiers+key"] }`
 
