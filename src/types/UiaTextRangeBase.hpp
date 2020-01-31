@@ -33,34 +33,6 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
-// The UiaTextRangeBase deals with several data structures that have
-// similar semantics. In order to keep the information from these data
-// structures separated, each structure has its own naming for a
-// row.
-//
-// There is the generic Row, which does not know which data structure
-// the row came from.
-//
-// There is the ViewportRow, which is a 0-indexed row value from the
-// viewport. The top row of the viewport is at 0, rows below the top
-// row increase in value and rows above the top row get increasingly
-// negative.
-//
-// ScreenInfoRow is a row from the screen info data structure. They
-// start at 0 at the top of screen info buffer. Their positions do not
-// change but their associated row in the text buffer does change each
-// time a new line is written.
-//
-// TextBufferRow is a row from the text buffer. It is not a ROW
-// struct, but rather the index of a row. This is also 0-indexed. A
-// TextBufferRow with a value of 0 does not necessarily refer to the
-// top row of the console.
-
-typedef int Row;
-typedef int ViewportRow;
-typedef unsigned int ScreenInfoRow;
-typedef unsigned int TextBufferRow;
-
 typedef unsigned long long IdType;
 
 // A Column is a row agnostic value that refers to the column an
