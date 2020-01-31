@@ -79,12 +79,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                   bool ignoreCase)
     {
         UIA::ITextRangeProvider* pReturn;
-        const auto bs = wil::make_bstr(text.c_str());
+        const auto queryText = wil::make_bstr(text.c_str());
 
-        THROW_IF_FAILED(_uiaProvider->FindText(bs.get(), searchBackward, ignoreCase, &pReturn));
+        THROW_IF_FAILED(_uiaProvider->FindText(queryText.get(), searchBackward, ignoreCase, &pReturn));
 
         auto xutr = winrt::make_self<XamlUiaTextRange>(pReturn, _parentProvider);
-        return xutr.as<XamlAutomation::ITextRangeProvider>();
+        return *xutr;
     }
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const

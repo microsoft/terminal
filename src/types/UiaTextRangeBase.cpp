@@ -354,7 +354,7 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttrib
 IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
                                           _In_ BOOL searchBackward,
                                           _In_ BOOL ignoreCase,
-                                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
+                                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
@@ -362,7 +362,8 @@ IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
     *ppRetVal = nullptr;
     try
     {
-        const std::wstring wstr{ text, SysStringLen(text) };
+        const std::wstring queryText{ text };
+        const auto bufferSize = _pData->GetTextBuffer().GetSize();
         const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
 
         auto searchDirection = Search::Direction::Forward;
@@ -370,15 +371,17 @@ IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
         if (searchBackward)
         {
             searchDirection = Search::Direction::Backward;
+
+            // we need to convert the end to inclusive
+            // because Search operates with an inclusive COORD
             searchAnchor = _end;
+            bufferSize.DecrementInBounds(searchAnchor, true);
         }
 
-        Search searcher{ *_pData, wstr, searchDirection, sensitivity, searchAnchor };
+        Search searcher{ *_pData, queryText, searchDirection, sensitivity, searchAnchor };
 
-        HRESULT hr = S_OK;
         if (searcher.FindNext())
         {
-            const auto bufferSize = _pData->GetTextBuffer().GetSize();
             const auto foundLocation = searcher.GetFoundLocation();
             const auto start = foundLocation.first;
 
@@ -387,19 +390,16 @@ IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
             bufferSize.IncrementInBounds(end, true);
 
             // make sure what was found is within the bounds of the current range
-            if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end) < 0) ||
+            if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end, true) < 0) ||
                 (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
             {
-                hr = Clone(ppRetVal);
-                if (SUCCEEDED(hr))
-                {
-                    UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-                    range._start = start;
-                    range._end = end;
-                }
+                RETURN_IF_FAILED(Clone(ppRetVal));
+                UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+                range._start = start;
+                range._end = end;
             }
         }
-        return hr;
+        return S_OK;
     }
     CATCH_RETURN();
 }
