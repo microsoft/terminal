@@ -2178,15 +2178,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
         }
 
-        try
-        {
-            auto terminalSettings = settings->BuildSettings(guid3);
-            VERIFY_IS_TRUE(false, L"This call to BuildSettings should fail");
-        }
-        catch (...)
-        {
-            VERIFY_IS_TRUE(true, L"This call to BuildSettings successfully failed");
-        }
+        VERIFY_THROWS(auto terminalSettings = settings->BuildSettings(guid3), wil::ResultException, L"This call to BuildSettings should fail");
 
         try
         {
