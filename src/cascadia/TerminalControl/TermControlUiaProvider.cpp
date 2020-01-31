@@ -141,16 +141,15 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                const Endpoint start,
-                                                const Endpoint end,
-                                                const bool degenerate,
+                                                const COORD start,
+                                                const COORD end,
                                                 const std::wstring_view wordDelimiters,
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
     UiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, degenerate, wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }
