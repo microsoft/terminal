@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
+#include <LibraryResources.h>
 
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
@@ -163,7 +164,7 @@ void AppCommandlineArgs::_buildParser()
 // - <none>
 void AppCommandlineArgs::_buildNewTabParser()
 {
-    _newTabCommand.subcommand = _app.add_subcommand("new-tab", NEEDS_LOC("Create a new tab"));
+    _newTabCommand.subcommand = _app.add_subcommand("new-tab", RS_A(L"CmdNewTabDesc"));
     _addNewTerminalArgs(_newTabCommand);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -191,14 +192,14 @@ void AppCommandlineArgs::_buildNewTabParser()
 // - <none>
 void AppCommandlineArgs::_buildSplitPaneParser()
 {
-    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", NEEDS_LOC("Create a new pane"));
+    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", RS_A(L"CmdSplitPaneDesc"));
     _addNewTerminalArgs(_newPaneCommand);
     _horizontalOption = _newPaneCommand.subcommand->add_flag("-H,--horizontal",
                                                              _splitHorizontal,
-                                                             NEEDS_LOC("Create the new pane as a horizontal split (think [-])"));
+                                                             RS_A(L"CmdSplitPaneHorizontalArgDesc"));
     _verticalOption = _newPaneCommand.subcommand->add_flag("-V,--vertical",
                                                            _splitVertical,
-                                                           NEEDS_LOC("Create the new pane as a vertical split (think [|])"));
+                                                           RS_A(L"CmdSplitPaneVerticalArgDesc"));
     _verticalOption->excludes(_horizontalOption);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -241,14 +242,14 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 // - <none>
 void AppCommandlineArgs::_buildFocusTabParser()
 {
-    _focusTabCommand = _app.add_subcommand("focus-tab", NEEDS_LOC("Move focus to another tab"));
-    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, NEEDS_LOC("Move focus the tab at the given index"));
+    _focusTabCommand = _app.add_subcommand("focus-tab", RS_A(L"CmdFocusTabDesc"));
+    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, RS_A(L"CmdFocusTabTargetArgDesc"));
     auto* nextOpt = _focusTabCommand->add_flag("-n,--next",
                                                _focusNextTab,
-                                               NEEDS_LOC("Move focus to the next tab"));
+                                               RS_A(L"CmdFocusTabNextArgDesc"));
     auto* prevOpt = _focusTabCommand->add_flag("-p,--previous",
                                                _focusPrevTab,
-                                               NEEDS_LOC("Move focus to the previous tab"));
+                                               RS_A(L"CmdFocusTabPrevArgDesc"));
     nextOpt->excludes(prevOpt);
     indexOpt->excludes(prevOpt);
     indexOpt->excludes(nextOpt);
@@ -288,10 +289,10 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
 {
     subcommand.profileNameOption = subcommand.subcommand->add_option("-p,--profile",
                                                                      _profileName,
-                                                                     NEEDS_LOC("Open with the given profile. Accepts either the name or guid of a profile"));
+                                                                     RS_A(L"CmdProfileArgDesc"));
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
-                                                                           NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
+                                                                           RS_A(L"CmdStartingDirArgDesc"));
 
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
@@ -300,7 +301,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     // doesn't support "wt new-tab -- wsl -d Ubuntu -- sleep 10" because the first
     // -- breaks out of the subcommand (instead of the subcommand options).
     // See https://github.com/CLIUtils/CLI11/issues/417 for more info.
-    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _commandline, NEEDS_LOC("An optional command, with arguments, to be spawned in the new tab or pane"));
+    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _commandline, RS_A(L"CmdCommandArgDesc"));
     subcommand.subcommand->positionals_at_end(true);
 }
 

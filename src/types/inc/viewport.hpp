@@ -57,20 +57,21 @@ namespace Microsoft::Console::Types
         SHORT Height() const noexcept;
         SHORT Width() const noexcept;
         COORD Origin() const noexcept;
+        COORD EndExclusive() const noexcept;
         COORD Dimensions() const noexcept;
 
         bool IsInBounds(const Viewport& other) const noexcept;
-        bool IsInBounds(const COORD& pos) const noexcept;
+        bool IsInBounds(const COORD& pos, bool allowEndExclusive = false) const noexcept;
 
         void Clamp(COORD& pos) const;
         Viewport Clamp(const Viewport& other) const noexcept;
 
         bool MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept;
-        bool IncrementInBounds(COORD& pos) const noexcept;
+        bool IncrementInBounds(COORD& pos, bool allowEndExclusive = false) const noexcept;
         bool IncrementInBoundsCircular(COORD& pos) const noexcept;
-        bool DecrementInBounds(COORD& pos) const noexcept;
+        bool DecrementInBounds(COORD& pos, bool allowEndExclusive = false) const noexcept;
         bool DecrementInBoundsCircular(COORD& pos) const noexcept;
-        int CompareInBounds(const COORD& first, const COORD& second) const noexcept;
+        int CompareInBounds(const COORD& first, const COORD& second, bool allowEndExclusive = false) const noexcept;
 
         enum class XWalk
         {
@@ -90,8 +91,8 @@ namespace Microsoft::Console::Types
             const YWalk y;
         };
 
-        bool WalkInBounds(COORD& pos, const WalkDir dir) const noexcept;
-        bool WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcept;
+        bool WalkInBounds(COORD& pos, const WalkDir dir, bool allowEndExclusive = false) const noexcept;
+        bool WalkInBoundsCircular(COORD& pos, const WalkDir dir, bool allowEndExclusive = false) const noexcept;
         COORD GetWalkOrigin(const WalkDir dir) const noexcept;
         static WalkDir DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept;
 
