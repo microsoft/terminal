@@ -23,6 +23,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 // for unit tests so instead we'll use this one. We don't care about
 // it not doing anything for its implementation because it is not used
 // during the unit tests below.
+
 class DummyElementProvider final : public IRawElementProviderSimple
 {
 public:
@@ -79,6 +80,32 @@ class UiaTextRangeTests
     UiaTextRange* _range;
     IUiaData* _pUiaData;
 
+    struct ExpectedResult
+    {
+        int moveAmt;
+        COORD start;
+        COORD end;
+    };
+
+    struct MoveTest
+    {
+        std::wstring comment;
+        COORD start;
+        COORD end;
+        int moveAmt;
+        ExpectedResult expected;
+    };
+
+    struct MoveEndpointTest
+    {
+        std::wstring comment;
+        COORD start;
+        COORD end;
+        int moveAmt;
+        TextPatternRangeEndpoint endpoint;
+        ExpectedResult expected;
+    };
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -100,17 +127,9 @@ class UiaTextRangeTests
             auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
-                cell.Char() = L'a';
+                cell.Char() = L' ';
             }
         }
-
-        // set up default range
-        Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&_range,
-                                                        _pUiaData,
-                                                        &_dummyProvider,
-                                                        0,
-                                                        0,
-                                                        false);
 
         return true;
     }
@@ -129,1518 +148,935 @@ class UiaTextRangeTests
         return true;
     }
 
-    const size_t _getRowWidth() const
-    {
-        const CharRow& charRow = _pTextBuffer->_GetFirstRow().GetCharRow();
-        return charRow.MeasureRight() - charRow.MeasureLeft();
-    }
-
     TEST_METHOD(DegenerateRangesDetected)
     {
+        const auto bufferSize = _pTextBuffer->GetSize();
+        const auto origin = bufferSize.Origin();
+
         // make a degenerate range and verify that it reports degenerate
         Microsoft::WRL::ComPtr<UiaTextRange> degenerate;
-        Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&degenerate,
-                                                        _pUiaData,
-                                                        &_dummyProvider,
-                                                        20,
-                                                        19,
-                                                        true);
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&degenerate,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        origin,
+                                                                        origin));
         VERIFY_IS_TRUE(degenerate->IsDegenerate());
-        VERIFY_ARE_EQUAL(0u, degenerate->_rowCountInRange(_pUiaData));
         VERIFY_ARE_EQUAL(degenerate->_start, degenerate->_end);
 
         // make a non-degenerate range and verify that it reports as such
-        Microsoft::WRL::ComPtr<UiaTextRange> notDegenerate1;
-        Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&notDegenerate1,
-                                                        _pUiaData,
-                                                        &_dummyProvider,
-                                                        20,
-                                                        20,
-                                                        false);
-        VERIFY_IS_FALSE(notDegenerate1->IsDegenerate());
-        VERIFY_ARE_EQUAL(1u, notDegenerate1->_rowCountInRange(_pUiaData));
+        const COORD end = { origin.X + 1, origin.Y };
+        Microsoft::WRL::ComPtr<UiaTextRange> notDegenerate;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&notDegenerate,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        origin,
+                                                                        end));
+        VERIFY_IS_FALSE(notDegenerate->IsDegenerate());
+        VERIFY_ARE_NOT_EQUAL(notDegenerate->_start, notDegenerate->_end);
     }
 
-    TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)
+    TEST_METHOD(CompareRange)
     {
-        // check a viewport that's one line tall
-        SMALL_RECT viewport;
-        viewport.Top = 0;
-        viewport.Bottom = 0;
+        const auto bufferSize = _pTextBuffer->GetSize();
+        const auto origin = bufferSize.Origin();
 
-        VERIFY_IS_TRUE(_range->_isScreenInfoRowInViewport(0, viewport));
-        VERIFY_IS_FALSE(_range->_isScreenInfoRowInViewport(1, viewport));
+        Microsoft::WRL::ComPtr<UiaTextRange> utr1;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr1,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        origin,
+                                                                        origin));
 
-        // check a slightly larger viewport
-        viewport.Bottom = 5;
-        for (auto i = 0; i <= viewport.Bottom; ++i)
-        {
-            VERIFY_IS_TRUE(_range->_isScreenInfoRowInViewport(i, viewport),
-                           NoThrowString().Format(L"%d should be in viewport", i));
-        }
-        VERIFY_IS_FALSE(_range->_isScreenInfoRowInViewport(viewport.Bottom + 1, viewport));
+        // utr2 initialized to have the same start/end as utr1
+        Microsoft::WRL::ComPtr<ITextRangeProvider> utr2;
+        THROW_IF_FAILED(utr1->Clone(&utr2));
+
+        BOOL comparison;
+        Log::Comment(L"_start and _end should match");
+        THROW_IF_FAILED(utr1->Compare(utr2.Get(), &comparison));
+        VERIFY_IS_TRUE(comparison);
+
+        // utr2 redefined to have different end from utr1
+        const COORD end = { origin.X + 2, origin.Y };
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr2,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        origin,
+                                                                        end));
+
+        Log::Comment(L"_end is different");
+        THROW_IF_FAILED(utr1->Compare(utr2.Get(), &comparison));
+        VERIFY_IS_FALSE(comparison);
     }
 
-    TEST_METHOD(CanTranslateScreenInfoRowToViewport)
+    TEST_METHOD(CompareEndpoints)
     {
-        const int totalRows = _pTextBuffer->TotalRowCount();
+        const auto bufferSize = _pTextBuffer->GetSize();
+        const auto origin = bufferSize.Origin();
 
-        SMALL_RECT viewport;
-        viewport.Top = 0;
-        viewport.Bottom = 10;
+        Microsoft::WRL::ComPtr<UiaTextRange> utr1;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr1,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        origin,
+                                                                        origin));
 
-        std::vector<std::pair<int, int>> viewportSizes = {
-            { 0, 10 }, // viewport at top
-            { 2, 10 }, // shifted viewport
-            { totalRows - 5, totalRows + 3 } // viewport with 0th row
-        };
+        Microsoft::WRL::ComPtr<ITextRangeProvider> utr2;
+        THROW_IF_FAILED(utr1->Clone(&utr2));
 
-        for (auto it = viewportSizes.begin(); it != viewportSizes.end(); ++it)
+        int comparison;
+        Log::Comment(L"For a degenerate range, comparing _start and _end should return 0");
+        VERIFY_IS_TRUE(utr1->IsDegenerate());
+        THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_Start, utr1.Get(), TextPatternRangeEndpoint_End, &comparison));
+
+        Log::Comment(L"_start and _end should match");
+        THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_Start, utr2.Get(), TextPatternRangeEndpoint_Start, &comparison));
+        VERIFY_IS_TRUE(comparison == 0);
+        THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_End, utr2.Get(), TextPatternRangeEndpoint_End, &comparison));
+        VERIFY_IS_TRUE(comparison == 0);
+
+        // utr2 redefined to have different end from utr1
+        const COORD end = { origin.X + 2, origin.Y };
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr2,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        origin,
+                                                                        end));
+
+        Log::Comment(L"_start should match");
+        THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_Start, utr2.Get(), TextPatternRangeEndpoint_Start, &comparison));
+        VERIFY_IS_TRUE(comparison == 0);
+
+        Log::Comment(L"_start and end should be 2 units apart. Sign depends on order of comparison.");
+        THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_End, utr2.Get(), TextPatternRangeEndpoint_End, &comparison));
+        VERIFY_IS_TRUE(comparison == -2);
+        THROW_IF_FAILED(utr2->CompareEndpoints(TextPatternRangeEndpoint_End, utr1.Get(), TextPatternRangeEndpoint_End, &comparison));
+        VERIFY_IS_TRUE(comparison == 2);
+    }
+
+    TEST_METHOD(ExpandToEnclosingUnit)
+    {
+        // Let's start by filling the text buffer with something useful:
+        for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
-            viewport.Top = static_cast<SHORT>(it->first);
-            viewport.Bottom = static_cast<SHORT>(it->second);
-            for (int i = viewport.Top; _range->_isScreenInfoRowInViewport(i, viewport); ++i)
+            ROW& row = _pTextBuffer->GetRowByOffset(i);
+            auto& charRow = row.GetCharRow();
+            for (size_t j = 0; j < charRow.size(); ++j)
             {
-                VERIFY_ARE_EQUAL(i - viewport.Top, _range->_screenInfoRowToViewportRow(i, viewport));
+                // every 5th cell is a space, otherwise a letter
+                // this is used to simulate words
+                CharRowCellReference cell = charRow.GlyphAt(j);
+                if (j % 5 == 0)
+                {
+                    cell = L" ";
+                }
+                else
+                {
+                    cell = L"x";
+                }
             }
         }
 
-        // ScreenInfoRows that are above the viewport return a
-        // negative value
-        viewport.Top = 5;
-        viewport.Bottom = 10;
+        // According to https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-implementingtextandtextrange#manipulating-a-text-range-by-text-unit
+        // there are 9 examples of how ExpandToEnclosingUnit should behave. See the diagram there for reference.
+        // Some of the relevant text has been copied below...
+        // 1-2) If the text range starts at the beginning of a text unit
+        //      and ends at the beginning of, or before, the next text unit
+        //      boundary, the ending endpoint is moved to the next text unit boundary
+        // 3-4) If the text range starts at the beginning of a text unit
+        //      and ends at, or after, the next unit boundary,
+        //      the ending endpoint stays or is moved backward to
+        //      the next unit boundary after the starting endpoint
+        // NOTE: If there is more than one text unit boundary between
+        //       the starting and ending endpoints, the ending endpoint
+        //       is moved backward to the next unit boundary after
+        //       the starting endpoint, resulting in a text range that is
+        //       one text unit in length.
+        // 5-8) If the text range starts in a middle of the text unit,
+        //      the starting endpoint is moved backward to the beginning
+        //      of the text unit, and the ending endpoint is moved forward
+        //      or backward, as necessary, to the next unit boundary
+        //      after the starting endpoint
+        // 9) (same as 1) If the text range starts and ends at the beginning of
+        //     a text unit boundary, the ending endpoint is moved to the next text unit boundary
 
-        VERIFY_ARE_EQUAL(-1, _range->_screenInfoRowToViewportRow(4, viewport));
-        VERIFY_ARE_EQUAL(-2, _range->_screenInfoRowToViewportRow(3, viewport));
-    }
+        // We will abstract these tests so that we can define the beginning and end of a text unit boundary,
+        // based on the text unit we are testing
+        constexpr TextUnit supportedUnits[] = { TextUnit_Character, TextUnit_Word, TextUnit_Line, TextUnit_Document };
 
-    TEST_METHOD(CanTranslateEndpointToTextBufferRow)
-    {
-        const auto rowWidth = _getRowWidth();
-        for (auto i = 0; i < 300; ++i)
-        {
-            VERIFY_ARE_EQUAL(i / rowWidth, _range->_endpointToTextBufferRow(_pUiaData, i));
-        }
-    }
-
-    TEST_METHOD(CanTranslateTextBufferRowToEndpoint)
-    {
-        const auto rowWidth = _getRowWidth();
-        for (unsigned int i = 0; i < 5; ++i)
-        {
-            VERIFY_ARE_EQUAL(i * rowWidth, _range->_textBufferRowToEndpoint(_pUiaData, i));
-            // make sure that the translation is reversible
-            VERIFY_ARE_EQUAL(i, _range->_endpointToTextBufferRow(_pUiaData, _range->_textBufferRowToEndpoint(_pUiaData, i)));
-        }
-    }
-
-    TEST_METHOD(CanTranslateTextBufferRowToScreenInfoRow)
-    {
-        const auto rowWidth = _getRowWidth();
-        for (unsigned int i = 0; i < 5; ++i)
-        {
-            VERIFY_ARE_EQUAL(i, _range->_textBufferRowToScreenInfoRow(_pUiaData, _range->_screenInfoRowToTextBufferRow(_pUiaData, i)));
-        }
-    }
-
-    TEST_METHOD(CanTranslateEndpointToColumn)
-    {
-        const auto rowWidth = _getRowWidth();
-        for (auto i = 0; i < 300; ++i)
-        {
-            const auto column = i % rowWidth;
-            VERIFY_ARE_EQUAL(column, _range->_endpointToColumn(_pUiaData, i));
-        }
-    }
-
-    TEST_METHOD(CanGetTotalRows)
-    {
-        const auto totalRows = _pTextBuffer->TotalRowCount();
-        VERIFY_ARE_EQUAL(totalRows,
-                         _range->_getTotalRows(_pUiaData));
-    }
-
-    TEST_METHOD(CanGetRowWidth)
-    {
-        const auto rowWidth = _getRowWidth();
-        VERIFY_ARE_EQUAL(rowWidth, _range->_getRowWidth(_pUiaData));
-    }
-
-    TEST_METHOD(CanNormalizeRow)
-    {
-        const int totalRows = _pTextBuffer->TotalRowCount();
-        std::vector<std::pair<unsigned int, unsigned int>> rowMappings = {
-            { 0, 0 },
-            { totalRows / 2, totalRows / 2 },
-            { totalRows - 1, totalRows - 1 },
-            { totalRows, 0 },
-            { totalRows + 1, 1 },
-            { -1, totalRows - 1 }
+        auto toString = [&](TextUnit unit) {
+            // if a format is not supported, it goes to the next largest text unit
+            switch (unit)
+            {
+            case TextUnit_Character:
+                return L"Character";
+            case TextUnit_Format:
+            case TextUnit_Word:
+                return L"Word";
+            case TextUnit_Line:
+                return L"Line";
+            case TextUnit_Paragraph:
+            case TextUnit_Page:
+            case TextUnit_Document:
+                return L"Document";
+            default:
+                throw E_INVALIDARG;
+            }
         };
 
-        for (auto it = rowMappings.begin(); it != rowMappings.end(); ++it)
+        struct TextUnitBoundaries
         {
-            VERIFY_ARE_EQUAL(static_cast<int>(it->second), _range->_normalizeRow(_pUiaData, it->first));
+            COORD start;
+            COORD end;
+        };
+
+        const std::map<TextUnit, TextUnitBoundaries> textUnitBoundaries = {
+            { TextUnit_Character,
+              TextUnitBoundaries{
+                  { 0, 0 },
+                  { 1, 0 } } },
+            { TextUnit_Word,
+              TextUnitBoundaries{
+                  { 1, 0 },
+                  { 6, 0 } } },
+            { TextUnit_Line,
+              TextUnitBoundaries{
+                  { 0, 0 },
+                  { 0, 1 } } },
+            { TextUnit_Document,
+              TextUnitBoundaries{
+                  { 0, 0 },
+                  _pTextBuffer->GetSize().EndExclusive() } }
+        };
+
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        auto verifyExpansion = [&](TextUnit textUnit, COORD utrStart, COORD utrEnd) {
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr,
+                                                                            _pUiaData,
+                                                                            &_dummyProvider,
+                                                                            utrStart,
+                                                                            utrEnd));
+            THROW_IF_FAILED(utr->ExpandToEnclosingUnit(textUnit));
+
+            const auto boundaries = textUnitBoundaries.at(textUnit);
+            VERIFY_ARE_EQUAL(utr->GetEndpoint(TextPatternRangeEndpoint_Start), boundaries.start);
+            VERIFY_ARE_EQUAL(utr->GetEndpoint(TextPatternRangeEndpoint_End), boundaries.end);
+        };
+
+        for (auto textUnit : supportedUnits)
+        {
+            const auto boundaries = textUnitBoundaries.at(textUnit);
+
+            // Test 1
+            Log::Comment(NoThrowString().Format(L"%s - Test 1", toString(textUnit)));
+            verifyExpansion(textUnit, boundaries.start, boundaries.start);
+
+            // Test 2 (impossible for TextUnit_Character)
+            if (textUnit != TextUnit_Character)
+            {
+                Log::Comment(NoThrowString().Format(L"%s - Test 2", toString(textUnit)));
+                const COORD end = { boundaries.start.X + 1, boundaries.start.Y };
+                verifyExpansion(textUnit, boundaries.start, end);
+            }
+
+            // Test 3
+            Log::Comment(NoThrowString().Format(L"%s - Test 3", toString(textUnit)));
+            verifyExpansion(textUnit, boundaries.start, boundaries.end);
+
+            // Test 4 (impossible for TextUnit_Character and TextUnit_Document)
+            if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
+            {
+                Log::Comment(NoThrowString().Format(L"%s - Test 4", toString(textUnit)));
+                const COORD end = { boundaries.end.X + 1, boundaries.end.Y };
+                verifyExpansion(textUnit, boundaries.start, end);
+            }
+
+            // Test 5 (impossible for TextUnit_Character)
+            if (textUnit != TextUnit_Character)
+            {
+                Log::Comment(NoThrowString().Format(L"%s - Test 5", toString(textUnit)));
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                verifyExpansion(textUnit, start, start);
+            }
+
+            // Test 6 (impossible for TextUnit_Character)
+            if (textUnit != TextUnit_Character)
+            {
+                Log::Comment(NoThrowString().Format(L"%s - Test 6", toString(textUnit)));
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                const COORD end = { start.X + 1, start.Y };
+                verifyExpansion(textUnit, start, end);
+            }
+
+            // Test 7 (impossible for TextUnit_Character)
+            if (textUnit != TextUnit_Character)
+            {
+                Log::Comment(NoThrowString().Format(L"%s - Test 7", toString(textUnit)));
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                verifyExpansion(textUnit, start, boundaries.end);
+            }
+
+            // Test 8 (impossible for TextUnit_Character and TextUnit_Document)
+            if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
+            {
+                Log::Comment(NoThrowString().Format(L"%s - Test 8", toString(textUnit)));
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                const COORD end = { boundaries.end.X + 1, boundaries.end.Y };
+                verifyExpansion(textUnit, start, end);
+            }
         }
     }
 
-    TEST_METHOD(CanGetViewportHeight)
+    TEST_METHOD(MoveEndpointByRange)
     {
-        SMALL_RECT viewport;
-        viewport.Top = 0;
-        viewport.Bottom = 0;
+        const COORD start{ 0, 1 };
+        const COORD end{ 1, 2 };
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr,
+                                                                        _pUiaData,
+                                                                        &_dummyProvider,
+                                                                        start,
+                                                                        end));
 
-        // Viewports are inclusive, so Top == Bottom really means 1 row
-        VERIFY_ARE_EQUAL(1u, _range->_getViewportHeight(viewport));
+        const auto bufferSize = _pTextBuffer->GetSize();
+        const auto origin = bufferSize.Origin();
+        Microsoft::WRL::ComPtr<UiaTextRange> target;
 
-        // make the viewport 10 rows tall
-        viewport.Top = 3;
-        viewport.Bottom = 12;
-        VERIFY_ARE_EQUAL(10u, _range->_getViewportHeight(viewport));
-    }
-
-    TEST_METHOD(CanGetViewportWidth)
-    {
-        SMALL_RECT viewport;
-        viewport.Left = 0;
-        viewport.Right = 0;
-
-        // Viewports are inclusive, Left == Right is really 1 column
-        VERIFY_ARE_EQUAL(1u, _range->_getViewportWidth(viewport));
-
-        // test a more normal size
-        viewport.Right = 300;
-        VERIFY_ARE_EQUAL(viewport.Right + 1u, _range->_getViewportWidth(viewport));
-    }
-
-    TEST_METHOD(CanCompareScreenCoords)
-    {
-        const std::vector<std::tuple<ScreenInfoRow, Column, ScreenInfoRow, Column, int>> testData = {
-            { 0, 0, 0, 0, 0 },
-            { 5, 0, 5, 0, 0 },
-            { 2, 3, 2, 3, 0 },
-            { 0, 6, 0, 6, 0 },
-            { 1, 5, 2, 5, -1 },
-            { 5, 4, 7, 3, -1 },
-            { 3, 4, 3, 5, -1 },
-            { 2, 0, 1, 9, 1 },
-            { 4, 5, 4, 3, 1 }
+        auto resetTargetUTR = [&]() {
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&target,
+                                                                            _pUiaData,
+                                                                            &_dummyProvider,
+                                                                            origin,
+                                                                            origin));
         };
 
-        for (auto data : testData)
+        Log::Comment(L"Move target's end to utr1's start");
         {
-            VERIFY_ARE_EQUAL(std::get<4>(data),
-                             UiaTextRange::_compareScreenCoords(_pUiaData,
-                                                                std::get<0>(data),
-                                                                std::get<1>(data),
-                                                                std::get<2>(data),
-                                                                std::get<3>(data)));
+            resetTargetUTR();
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_End,
+                                                        utr.Get(),
+                                                        TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), origin);
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_Start));
+        }
+
+        Log::Comment(L"Move target's start/end to utr1's start/end respectively");
+        {
+            resetTargetUTR();
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_End,
+                                                        utr.Get(),
+                                                        TextPatternRangeEndpoint_End));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), origin);
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_End));
+
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_Start,
+                                                        utr.Get(),
+                                                        TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), utr->GetEndpoint(TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_End));
+        }
+
+        Log::Comment(L"(Clone utr1) Collapse onto itself");
+        {
+            // Move start to end
+            ComPtr<ITextRangeProvider> temp;
+            THROW_IF_FAILED(utr->Clone(&temp));
+            target = static_cast<UiaTextRange*>(temp.Get());
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_Start,
+                                                        target.Get(),
+                                                        TextPatternRangeEndpoint_End));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), utr->GetEndpoint(TextPatternRangeEndpoint_End));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_End));
+
+            // Move end to start
+            THROW_IF_FAILED(utr->Clone(&temp));
+            target = static_cast<UiaTextRange*>(temp.Get());
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_End,
+                                                        target.Get(),
+                                                        TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), utr->GetEndpoint(TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_Start));
+        }
+
+        Log::Comment(L"Cross endpoints (force degenerate range)");
+        {
+            // move start past end
+            resetTargetUTR();
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_Start,
+                                                        utr.Get(),
+                                                        TextPatternRangeEndpoint_End));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), utr->GetEndpoint(TextPatternRangeEndpoint_End));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_End));
+            VERIFY_IS_TRUE(target->IsDegenerate());
+
+            // move end past start
+            THROW_IF_FAILED(target->MoveEndpointByRange(TextPatternRangeEndpoint_End,
+                                                        utr.Get(),
+                                                        TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_Start), utr->GetEndpoint(TextPatternRangeEndpoint_Start));
+            VERIFY_ARE_EQUAL(target->GetEndpoint(TextPatternRangeEndpoint_End), utr->GetEndpoint(TextPatternRangeEndpoint_Start));
+            VERIFY_IS_TRUE(target->IsDegenerate());
         }
     }
 
     TEST_METHOD(CanMoveByCharacter)
     {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     Endpoint, // start
-                                     Endpoint // end
-                                     >> testData =
+        const std::vector<MoveTest> testData
         {
-            {
+            MoveTest{
                 L"can't move backward from (0, 0)",
-                {
-                    0, 0,
-                    0, 2,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                { 0, 0 },
+                { 2, 0 },
                 -1,
-                0,
-                0u,
-                0u
+                {
+                    0,
+                    {0,0},
+                    {2,0}
+                }
             },
 
-            {
+            MoveTest{
                 L"can move backward within a row",
+                { 1, 0 },
+                { 2, 0 },
+                -1,
                 {
-                    0, 1,
-                    0, 2,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                -1,
-                0u,
-                0u
+                    -1,
+                    {0, 0},
+                    {1, 0}
+                }
             },
 
-            {
+            MoveTest{
                 L"can move forward in a row",
+                { 1, 2 },
+                { 5, 4 },
+                5,
                 {
-                    2, 1,
-                    4, 5,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 2) + 6,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 2) + 6
+                    5,
+                    {6,2},
+                    {7,2}
+                }
             },
 
-            {
+            MoveTest{
                 L"can't move past the last column in the last row",
-                {
-                    bottomRow, lastColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                { lastColumnIndex, bottomRow },
+                { lastColumnIndex, bottomRow },
                 5,
-                0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex
+                {
+                    0,
+                    { lastColumnIndex, bottomRow },
+                    { lastColumnIndex, bottomRow },
+                }
             },
 
-            {
+            MoveTest{
                 L"can move to a new row when necessary when moving forward",
+                { lastColumnIndex, 0 },
+                { lastColumnIndex, 0 },
+                5,
                 {
-                    topRow, lastColumnIndex,
-                    topRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + 4,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + 4
+                    5,
+                    {4 , 0 + 1},
+                    {5 , 0 + 1}
+                }
             },
 
-            {
+            MoveTest{
                 L"can move to a new row when necessary when moving backward",
+                { 0, 0 + 1 },
+                { lastColumnIndex, 0 + 1 },
+                -5,
                 {
-                    topRow + 1, firstColumnIndex,
-                    topRow + 1, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -5,
-                -5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + (lastColumnIndex - 4),
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + (lastColumnIndex - 4)
+                    -5,
+                    {lastColumnIndex - 4, 0},
+                    {lastColumnIndex - 3, 0}
+                }
             }
         };
         // clang-format on
 
-        for (auto data : testData)
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (const auto& test : testData)
         {
-            Log::Comment(std::get<0>(data).c_str());
+            Log::Comment(test.comment.data());
             int amountMoved;
-            std::pair<Endpoint, Endpoint> newEndpoints = UiaTextRange::_moveByCharacter(_pUiaData,
-                                                                                        std::get<2>(data),
-                                                                                        std::get<1>(data),
-                                                                                        &amountMoved);
 
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
-            VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
-        }
-    }
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, test.start, test.end));
+            utr->Move(TextUnit::TextUnit_Character, test.moveAmt, &amountMoved);
 
-    TEST_METHOD(CanMoveByWord_EmptyBuffer)
-    {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
-
-        // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     Endpoint, // start
-                                     Endpoint // end
-                                     >> testData =
-        {
-            {
-                L"can't move backward from (0, 0)",
-                {
-                    0, 0,
-                    0, 2,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                0,
-                0u,
-                lastColumnIndex
-            },
-
-            {
-                L"can move backward within a row",
-                {
-                    0, 1,
-                    0, 2,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                -1,
-                0u,
-                lastColumnIndex
-            },
-
-            {
-                L"can move forward in a row",
-                {
-                    2, 1,
-                    4, 5,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 8),
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, 8) + lastColumnIndex
-            },
-
-            {
-                L"can't move past the last column in the last row",
-                {
-                    bottomRow, lastColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow),
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex
-            },
-
-            {
-                L"can move to a new row when necessary when moving forward",
-                {
-                    topRow, lastColumnIndex,
-                    topRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5),
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5) + lastColumnIndex
-            },
-
-            {
-                L"can move to a new row when necessary when moving backward",
-                {
-                    topRow + 1, firstColumnIndex,
-                    topRow + 1, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -5,
-                -2,
-                0u,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
-            }
-        };
-        // clang-format on
-
-        for (auto data : testData)
-        {
-            Log::Comment(std::get<0>(data).c_str());
-            int amountMoved;
-            std::pair<Endpoint, Endpoint> newEndpoints = UiaTextRange::_moveByWord(_pUiaData,
-                                                                                   std::get<2>(data),
-                                                                                   std::get<1>(data),
-                                                                                   L"",
-                                                                                   &amountMoved);
-
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
-            VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
-        }
-    }
-
-    TEST_METHOD(CanMoveByWord_NonEmptyBuffer)
-    {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
-
-        const std::wstring_view text[] = {
-            L"word1  word2   word3",
-            L"word4  word5   word6"
-        };
-
-        for (auto i = 0; i < 2; i++)
-        {
-            _pTextBuffer->WriteLine(text[i], { 0, gsl::narrow<SHORT>(i) });
-        }
-
-        // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     Endpoint, // start
-                                     Endpoint // end
-                                     >> testData =
-        {
-            {
-                L"move backwards on the word by (0,0)",
-                {
-                    0, 1,
-                    0, 2,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                -1,
-                0u,
-                6
-            },
-
-            {
-                L"get next word while on first word",
-                {
-                    0, 0,
-                    0, 0,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                1,
-                1,
-                0,
-                6
-            },
-
-            {
-                L"get next word twice while on first word",
-                {
-                    0, 0,
-                    0, 0,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                2,
-                2,
-                7,
-                14
-            },
-
-            {
-                L"move forward to next row with word",
-                {
-                    topRow, lastColumnIndex,
-                    topRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                1,
-                1,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1),
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + 6
-            },
-
-            {
-                L"move backwards to previous row with word",
-                {
-                    topRow + 1, firstColumnIndex,
-                    topRow + 1, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                -1,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 15,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
-            }
-        };
-        // clang-format on
-
-        for (auto data : testData)
-        {
-            Log::Comment(std::get<0>(data).c_str());
-            int amountMoved;
-            std::pair<Endpoint, Endpoint> newEndpoints = UiaTextRange::_moveByWord(_pUiaData,
-                                                                                   std::get<2>(data),
-                                                                                   std::get<1>(data),
-                                                                                   L"",
-                                                                                   &amountMoved);
-
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
-            VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
+            VERIFY_ARE_EQUAL(test.expected.moveAmt, amountMoved);
+            VERIFY_ARE_EQUAL(test.expected.start, utr->_start);
+            VERIFY_ARE_EQUAL(test.expected.end, utr->_end);
         }
     }
 
     TEST_METHOD(CanMoveByLine)
     {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     Endpoint, // start
-                                     Endpoint // end
-                                     >> testData =
+        const std::vector<MoveTest> testData
         {
-            {
+            MoveTest{
                 L"can't move backward from top row",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 0},
+                {0, lastColumnIndex},
                 -4,
-                0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
+                {
+                    0,
+                    {0, 0},
+                    {0, lastColumnIndex}
+                }
             },
 
-            {
+            MoveTest{
                 L"can move forward from top row",
+                {0, 0},
+                {0, lastColumnIndex},
+                4,
                 {
-                    topRow, firstColumnIndex,
-                    topRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                4,
-                4,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 4) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 4) + lastColumnIndex
+                    4,
+                    {0, 4},
+                    {0, 5}
+                }
             },
 
-            {
+            MoveTest{
                 L"can't move forward from bottom row",
-                {
-                    bottomRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, bottomRow},
+                {lastColumnIndex, bottomRow},
                 3,
-                0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex
+                {
+                    0,
+                    {0, bottomRow},
+                    {lastColumnIndex, bottomRow},
+                }
             },
 
-            {
+            MoveTest{
                 L"can move backward from bottom row",
+                {0, bottomRow},
+                {lastColumnIndex, bottomRow},
+                -3,
                 {
-                    bottomRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -3,
-                -3,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow - 3) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow - 3) + lastColumnIndex
+                    -3,
+                    {0, bottomRow - 3},
+                    {0, bottomRow - 2}
+                }
             },
 
-            {
+            MoveTest{
                 L"can't move backward when part of the top row is in the range",
-                {
-                    topRow, firstColumnIndex + 5,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {5, 0},
+                {lastColumnIndex, 0},
                 -1,
-                0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex + 5,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex
+                {
+                    0,
+                    {5, 0},
+                    {lastColumnIndex, 0},
+                }
             },
 
-            {
+            MoveTest{
                 L"can't move forward when part of the bottom row is in the range",
-                {
-                    bottomRow, firstColumnIndex,
-                    bottomRow, firstColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, bottomRow},
+                {0, bottomRow},
                 1,
-                0,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + firstColumnIndex
+                {
+                    0,
+                    {0, bottomRow},
+                    {0, bottomRow}
+                }
             }
         };
         // clang-format on
 
-        for (auto data : testData)
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (const auto& test : testData)
         {
-            Log::Comment(std::get<0>(data).c_str());
+            Log::Comment(test.comment.data());
             int amountMoved;
-            std::pair<Endpoint, Endpoint> newEndpoints = UiaTextRange::_moveByLine(_pUiaData,
-                                                                                   std::get<2>(data),
-                                                                                   std::get<1>(data),
-                                                                                   &amountMoved);
 
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
-            VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, test.start, test.end));
+            THROW_IF_FAILED(utr->Move(TextUnit::TextUnit_Line, test.moveAmt, &amountMoved));
+
+            VERIFY_ARE_EQUAL(test.expected.moveAmt, amountMoved);
+            VERIFY_ARE_EQUAL(test.expected.start, utr->_start);
+            VERIFY_ARE_EQUAL(test.expected.end, utr->_end);
         }
     }
 
     TEST_METHOD(CanMoveEndpointByUnitCharacter)
     {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const SHORT bottomRow = static_cast<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     TextPatternRangeEndpoint, // endpoint to move
-                                     Endpoint, // start
-                                     Endpoint, // end
-                                     bool // degenerate
-                                     >> testData =
+        const std::vector<MoveEndpointTest> testData
         {
-            {
+            MoveEndpointTest{
                 L"can't move _start past the beginning of the document when _start is positioned at the beginning",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 0},
+                {lastColumnIndex, 0},
                 -1,
-                0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
-                false
+                TextPatternRangeEndpoint_Start,
+                {
+                    0,
+                    {0, 0},
+                    {lastColumnIndex, 0}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can partially move _start to the begining of the document when it is closer than the move count requested",
-                {
-                    topRow, firstColumnIndex + 3,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {3, 0},
+                {lastColumnIndex, 0},
                 -5,
-                -3,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
-                false
+                TextPatternRangeEndpoint_Start,
+                {
+                    -3,
+                    {0, 0},
+                    {lastColumnIndex, 0}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _end past the begining of the document",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, firstColumnIndex + 4,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 0},
+                {4, 0},
                 -5,
-                -4,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                false
+                TextPatternRangeEndpoint_End,
+                {
+                    -4,
+                    {0, 0},
+                    {0, 0}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"_start follows _end when passed during movement",
+                {5, 0},
+                {10, 0},
+                -7,
+                TextPatternRangeEndpoint_End,
                 {
-                    topRow, firstColumnIndex + 5,
-                    topRow, firstColumnIndex + 10,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -7,
-                -7,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 3,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 3,
-                true
+                    -7,
+                    {3, 0},
+                    {3, 0}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _end past the beginning of the document when _end is positioned at the end",
-                {
-                    bottomRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, bottomRow},
+                {0, bottomRow+1},
                 1,
-                0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                TextPatternRangeEndpoint_End,
+                {
+                    0,
+                    {0, bottomRow},
+                    {0, bottomRow+1},
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can partially move _end to the end of the document when it is closer than the move count requested",
-                {
-                    topRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex - 3,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, 0},
+                {lastColumnIndex - 3, bottomRow},
                 5,
-                3,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                TextPatternRangeEndpoint_End,
+                {
+                    4,
+                    {0, 0},
+                    {0, bottomRow+1},
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _start past the end of the document",
-                {
-                    bottomRow, lastColumnIndex - 4,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {lastColumnIndex - 4, bottomRow},
+                {0, bottomRow+1},
                 5,
-                4,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                TextPatternRangeEndpoint_Start,
+                {
+                    5,
+                    {0, bottomRow+1},
+                    {0, bottomRow+1},
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"_end follows _start when passed during movement",
+                {5, 0},
+                {10, 0},
+                7,
+                TextPatternRangeEndpoint_Start,
                 {
-                    topRow, firstColumnIndex + 5,
-                    topRow, firstColumnIndex + 10,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                7,
-                7,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 12,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 12,
-                true
+                    7,
+                    {12, 0},
+                    {12, 0}
+                }
             },
         };
         // clang-format on
 
-        for (auto data : testData)
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (const auto& test : testData)
         {
-            Log::Comment(std::get<0>(data).c_str());
-            std::tuple<Endpoint, Endpoint, bool> result;
+            Log::Comment(test.comment.data());
             int amountMoved;
-            result = UiaTextRange::_moveEndpointByUnitCharacter(_pUiaData,
-                                                                std::get<2>(data),
-                                                                std::get<4>(data),
-                                                                std::get<1>(data),
-                                                                &amountMoved);
 
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<5>(data), std::get<0>(result));
-            VERIFY_ARE_EQUAL(std::get<6>(data), std::get<1>(result));
-            VERIFY_ARE_EQUAL(std::get<7>(data), std::get<2>(result));
-        }
-    }
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, test.start, test.end));
+            THROW_IF_FAILED(utr->MoveEndpointByUnit(test.endpoint, TextUnit::TextUnit_Character, test.moveAmt, &amountMoved));
 
-    TEST_METHOD(CanMoveEndpointByUnitWord)
-    {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
-
-        const std::wstring_view text[] = {
-            L"word1  word2   word3",
-            L"word4  word5   word6"
-        };
-
-        for (auto i = 0; i < 2; i++)
-        {
-            _pTextBuffer->WriteLine(text[i], { 0, gsl::narrow<SHORT>(i) });
-        }
-
-        // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     TextPatternRangeEndpoint, // endpoint to move
-                                     Endpoint, // start
-                                     Endpoint, // end
-                                     bool // degenerate
-                                     >> testData =
-        {
-            {
-                L"can't move _start past the beginning of the document when _start is positioned at the beginning",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
-                false
-            },
-
-            {
-                L"can partially move _start to the begining of the document when it is closer than the move count requested",
-                {
-                    topRow, firstColumnIndex + 15,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -5,
-                -2,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
-                false
-            },
-
-            {
-                L"can't move _end past the begining of the document",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, firstColumnIndex + 2,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -2,
-                -1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                false
-            },
-
-            {
-                L"_start follows _end when passed during movement",
-                {
-                    topRow + 1, firstColumnIndex + 2,
-                    topRow + 1, firstColumnIndex + 10,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -4,
-                -4,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 6,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 6,
-                true
-            },
-
-            {
-                L"can't move _end past the beginning of the document when _end is positioned at the end",
-                {
-                    bottomRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                1,
-                0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
-            },
-
-            {
-                L"can partially move _end to the end of the document when it is closer than the move count requested",
-                {
-                    topRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex - 3,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
-            },
-
-            {
-                L"can't move _start past the end of the document",
-                {
-                    bottomRow, lastColumnIndex - 4,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                5,
-                1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
-            },
-
-            {
-                L"_end follows _start when passed during movement",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, firstColumnIndex + 3,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                2,
-                2,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow)+15,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow)+15,
-                true
-            },
-        };
-        // clang-format on
-
-        for (auto data : testData)
-        {
-            Log::Comment(std::get<0>(data).c_str());
-            std::tuple<Endpoint, Endpoint, bool> result;
-            int amountMoved;
-            result = UiaTextRange::_moveEndpointByUnitWord(_pUiaData,
-                                                           std::get<2>(data),
-                                                           std::get<4>(data),
-                                                           std::get<1>(data),
-                                                           L" ",
-                                                           &amountMoved);
-
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<5>(data), std::get<0>(result));
-            VERIFY_ARE_EQUAL(std::get<6>(data), std::get<1>(result));
-            VERIFY_ARE_EQUAL(std::get<7>(data), std::get<2>(result));
+            VERIFY_ARE_EQUAL(test.expected.moveAmt, amountMoved);
+            VERIFY_ARE_EQUAL(test.expected.start, utr->_start);
+            VERIFY_ARE_EQUAL(test.expected.end, utr->_end);
         }
     }
 
     TEST_METHOD(CanMoveEndpointByUnitLine)
     {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     TextPatternRangeEndpoint, // endpoint to move
-                                     Endpoint, // start
-                                     Endpoint, // end
-                                     bool // degenerate
-                                     >> testData =
+        const std::vector<MoveEndpointTest> testData
         {
-            {
+            MoveEndpointTest{
                 L"can move _end forward without affecting _start",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, 0},
+                {lastColumnIndex, 0},
                 1,
+                TextPatternRangeEndpoint_End,
                 1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + lastColumnIndex,
-                false
+                {0, 0},
+                {0, 1}
             },
 
-            {
+            MoveEndpointTest{
                 L"can move _end backward without affecting _start",
-                {
-                    topRow + 1, firstColumnIndex,
-                    topRow + 5, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 1},
+                {lastColumnIndex, 5},
                 -2,
+                TextPatternRangeEndpoint_End,
                 -2,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3) + lastColumnIndex,
-                false
+                {0, 1},
+                {0, 4}
             },
 
-            {
+            MoveEndpointTest{
                 L"can move _start forward without affecting _end",
-                {
-                    topRow + 1, firstColumnIndex,
-                    topRow + 5, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, 1},
+                {lastColumnIndex, 5},
                 2,
+                TextPatternRangeEndpoint_Start,
                 2,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5) + lastColumnIndex,
-                false
+                {0, 3},
+                {lastColumnIndex, 5}
             },
 
-            {
+            MoveEndpointTest{
                 L"can move _start backward without affecting _end",
-                {
-                    topRow + 2, firstColumnIndex,
-                    topRow + 5, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 2},
+                {lastColumnIndex, 5},
                 -1,
+                TextPatternRangeEndpoint_Start,
                 -1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 1) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5) + lastColumnIndex,
-                false
+                {0, 1},
+                {lastColumnIndex, 5}
             },
 
-            {
+            MoveEndpointTest{
                 L"can move _start backwards when it's already on the top row",
-                {
-                    topRow, lastColumnIndex,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {lastColumnIndex, 0},
+                {lastColumnIndex, 0},
                 -1,
+                TextPatternRangeEndpoint_Start,
                 -1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
-                false
+                {0, 0},
+                {lastColumnIndex, 0},
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _start backwards when it's at the start of the document already",
-                {
-                    topRow, firstColumnIndex,
-                    topRow, lastColumnIndex,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 0},
+                {lastColumnIndex, 0},
                 -1,
+                TextPatternRangeEndpoint_Start,
                 0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + lastColumnIndex,
-                false
+                {0, 0},
+                {lastColumnIndex, 0}
             },
 
-            {
+            MoveEndpointTest{
                 L"can move _end forwards when it's on the bottom row",
-                {
-                    topRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex - 3,
-                    bottomRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, 0},
+                {lastColumnIndex - 3, bottomRow},
                 1,
+                TextPatternRangeEndpoint_End,
                 1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                {0, 0},
+                {0, bottomRow+1}
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _end forwards when it's at the end of the document already",
-                {
-                    topRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, 0},
+                {0, bottomRow+1},
                 1,
+                TextPatternRangeEndpoint_End,
                 0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                {0, 0},
+                {0, bottomRow+1}
             },
 
-            {
+            MoveEndpointTest{
                 L"moving _start forward when it's already on the bottom row creates a degenerate range at the document end",
-                {
-                    bottomRow, firstColumnIndex,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {0, bottomRow},
+                {lastColumnIndex, bottomRow},
                 1,
+                TextPatternRangeEndpoint_Start,
                 1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                true
+                {0, bottomRow+1},
+                {0, bottomRow+1}
             },
 
-            {
+            MoveEndpointTest{
                 L"moving _end backward when it's already on the top row creates a degenerate range at the document start",
-                {
-                    topRow, firstColumnIndex + 4,
-                    topRow, lastColumnIndex - 5,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {4, 0},
+                {lastColumnIndex - 5, 0},
                 -1,
+                TextPatternRangeEndpoint_End,
                 -1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                true
+                {0, 0},
+                {0, 0}
             }
         };
         // clang-format on
 
-        for (auto data : testData)
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (const auto& test : testData)
         {
-            Log::Comment(std::get<0>(data).c_str());
-            std::tuple<Endpoint, Endpoint, bool> result;
+            Log::Comment(test.comment.data());
             int amountMoved;
-            result = UiaTextRange::_moveEndpointByUnitLine(_pUiaData,
-                                                           std::get<2>(data),
-                                                           std::get<4>(data),
-                                                           std::get<1>(data),
-                                                           &amountMoved);
 
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<5>(data), std::get<0>(result));
-            VERIFY_ARE_EQUAL(std::get<6>(data), std::get<1>(result));
-            VERIFY_ARE_EQUAL(std::get<7>(data), std::get<2>(result));
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, test.start, test.end));
+            THROW_IF_FAILED(utr->MoveEndpointByUnit(test.endpoint, TextUnit::TextUnit_Line, test.moveAmt, &amountMoved));
+
+            VERIFY_ARE_EQUAL(test.expected.moveAmt, amountMoved);
+            VERIFY_ARE_EQUAL(test.expected.start, utr->_start);
+            VERIFY_ARE_EQUAL(test.expected.end, utr->_end);
         }
     }
 
     TEST_METHOD(CanMoveEndpointByUnitDocument)
     {
-        const Column firstColumnIndex = 0;
-        const Column lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const ScreenInfoRow topRow = 0;
-        const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
+        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // clang-format off
-        const std::vector<std::tuple<std::wstring,
-                                     UiaTextRange::MoveState,
-                                     int, // amount to move
-                                     int, // amount actually moved
-                                     TextPatternRangeEndpoint, // endpoint to move
-                                     Endpoint, // start
-                                     Endpoint, // end
-                                     bool // degenerate
-                                     >> testData =
+        const std::vector<MoveEndpointTest> testData =
         {
-            {
+            MoveEndpointTest{
                 L"can move _end forward to end of document without affecting _start",
+                {0, 4},
+                {0, 4},
+                1,
+                TextPatternRangeEndpoint_End,
                 {
-                    topRow, firstColumnIndex + 4,
-                    topRow, firstColumnIndex + 4,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                1,
-                1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex + 4,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                    1,
+                    {0, 4},
+                    {0, bottomRow+1}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can move _start backward to end of document without affect _end",
+                {0, 4},
+                {0, 4},
+                -1,
+                TextPatternRangeEndpoint_Start,
                 {
-                    topRow, firstColumnIndex + 4,
-                    topRow, firstColumnIndex + 4,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                -1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + 4,
-                false
+                    -1,
+                    {0, 0},
+                    {0, 4}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _end forward when it's already at the end of the document",
-                {
-                    topRow + 3, firstColumnIndex + 2,
-                    bottomRow, lastColumnIndex,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
+                {3, 2},
+                {0, bottomRow+1},
                 1,
-                0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 3) + firstColumnIndex + 2,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                false
+                TextPatternRangeEndpoint_End,
+                {
+                    0,
+                    {3, 2},
+                    {0, bottomRow+1}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"can't move _start backward when it's already at the start of the document",
-                {
-                    topRow, firstColumnIndex,
-                    topRow + 5, firstColumnIndex + 6,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
+                {0, 0},
+                {5, 6},
                 -1,
-                0,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow + 5) + 6,
-                false
+                TextPatternRangeEndpoint_Start,
+                {
+                    0,
+                    {0, 0},
+                    {5, 6}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"moving _end backward creates degenerate range at start of document",
+                {5, 2},
+                {5, 6},
+                -1,
+                TextPatternRangeEndpoint_End,
                 {
-                    topRow + 5, firstColumnIndex + 2,
-                    topRow + 5, firstColumnIndex + 6,
-                    topRow,
-                    lastColumnIndex,
-                    firstColumnIndex,
-                    UiaTextRange::MovementIncrement::Backward,
-                    UiaTextRange::MovementDirection::Backward
-                },
-                -1,
-                -1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_End,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, topRow) + firstColumnIndex,
-                true
+                    -1,
+                    {0, 0},
+                    {0, 0}
+                }
             },
 
-            {
+            MoveEndpointTest{
                 L"moving _start forward creates degenerate range at end of document",
+                {5, 2},
+                {5, 6},
+                1,
+                TextPatternRangeEndpoint_Start,
                 {
-                    topRow + 5, firstColumnIndex + 2,
-                    topRow + 5, firstColumnIndex + 6,
-                    bottomRow,
-                    firstColumnIndex,
-                    lastColumnIndex,
-                    UiaTextRange::MovementIncrement::Forward,
-                    UiaTextRange::MovementDirection::Forward
-                },
-                1,
-                1,
-                TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                UiaTextRange::_screenInfoRowToEndpoint(_pUiaData, bottomRow) + lastColumnIndex,
-                true
+                    1,
+                    {0, bottomRow+1},
+                    {0, bottomRow+1}
+                }
             }
         };
         // clang-format on
 
-        for (auto data : testData)
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (auto test : testData)
         {
-            Log::Comment(std::get<0>(data).c_str());
-            std::tuple<Endpoint, Endpoint, bool> result;
+            Log::Comment(test.comment.c_str());
             int amountMoved;
-            result = UiaTextRange::_moveEndpointByUnitDocument(_pUiaData,
-                                                               std::get<2>(data),
-                                                               std::get<4>(data),
-                                                               std::get<1>(data),
-                                                               &amountMoved);
 
-            VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
-            VERIFY_ARE_EQUAL(std::get<5>(data), std::get<0>(result));
-            VERIFY_ARE_EQUAL(std::get<6>(data), std::get<1>(result));
-            VERIFY_ARE_EQUAL(std::get<7>(data), std::get<2>(result));
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, test.start, test.end));
+            THROW_IF_FAILED(utr->MoveEndpointByUnit(test.endpoint, TextUnit::TextUnit_Document, test.moveAmt, &amountMoved));
+
+            VERIFY_ARE_EQUAL(test.expected.moveAmt, amountMoved);
+            VERIFY_ARE_EQUAL(test.expected.start, utr->_start);
+            VERIFY_ARE_EQUAL(test.expected.end, utr->_end);
         }
     }
 };

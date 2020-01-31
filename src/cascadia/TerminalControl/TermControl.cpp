@@ -9,6 +9,7 @@
 #include <Utf16Parser.hpp>
 #include <Utils.h>
 #include <WinUser.h>
+#include <LibraryResources.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
@@ -21,6 +22,7 @@ using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -162,6 +164,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
+
+        _root.AllowDrop(true);
+        _root.Drop({ get_weak(), &TermControl::_DragDropHandler });
+        _root.DragOver({ get_weak(), &TermControl::_DragOverHandler });
     }
 
     // Method Description:
@@ -852,7 +858,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     bool TermControl::_TrySendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates modifiers)
     {
-        _terminal->ClearSelection();
+        // When there is a selection active, escape should clear it and NOT flow through
+        // to the terminal. With any other keypress, it should clear the selection AND
+        // flow through to the terminal.
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->ClearSelection();
+
+            if (vkey == VK_ESCAPE)
+            {
+                return true;
+            }
+        }
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
@@ -925,8 +942,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    // save location before rendering
-                    _terminal->SetSelectionAnchor(terminalPosition);
+                    if (shiftEnabled && _terminal->IsSelectionActive())
+                    {
+                        _terminal->SetEndSelectionPosition(terminalPosition);
+                    }
+                    else
+                    {
+                        // save location before rendering
+                        _terminal->SetSelectionAnchor(terminalPosition);
+                    }
 
                     _lastMouseClick = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
@@ -1390,6 +1414,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - wstr: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
@@ -2148,6 +2178,95 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // The numbers below just feel well, feel free to change.
         // TODO: Maybe account for space beyond border that user has available
         return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
+    }
+
+    // Method Description:
+    // - Async handler for the "Drop" event. If a file was dropped onto our
+    //   root, we'll try to get the path of the file dropped onto us, and write
+    //   the full path of the file to our terminal connection. Like conhost, if
+    //   the path contains a space, we'll wrap the path in quotes.
+    // - Unlike conhost, if multiple files are dropped onto the terminal, we'll
+    //   write all the paths to the terminal, separated by spaces.
+    // Arguments:
+    // - e: The DragEventArgs from the Drop event
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_DoDragDrop(DragEventArgs const e)
+    {
+        if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            auto items = co_await e.DataView().GetStorageItemsAsync();
+            if (items.Size() > 0)
+            {
+                std::wstring allPaths;
+                for (auto item : items)
+                {
+                    // Join the paths with spaces
+                    if (!allPaths.empty())
+                    {
+                        allPaths += L" ";
+                    }
+
+                    std::wstring fullPath{ item.Path() };
+                    const auto containsSpaces = std::find(fullPath.begin(),
+                                                          fullPath.end(),
+                                                          L' ') != fullPath.end();
+
+                    auto lock = _terminal->LockForWriting();
+
+                    if (containsSpaces)
+                    {
+                        fullPath.insert(0, L"\"");
+                        fullPath += L"\"";
+                    }
+
+                    allPaths += fullPath;
+                }
+                _SendInputToConnection(allPaths);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Synchronous handler for the "Drop" event. We'll dispatch the async
+    //   _DoDragDrop method to handle this, because getting information about
+    //   the file that was potentially dropped onto us must be done off the UI
+    //   thread.
+    // Arguments:
+    // - e: The DragEventArgs from the Drop event
+    // Return Value:
+    // - <none>
+    void TermControl::_DragDropHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                       DragEventArgs const& e)
+    {
+        // Dispatch an async method to handle the drop event.
+        _DoDragDrop(e);
+    }
+
+    // Method Description:
+    // - Handle the DragOver event. We'll signal that the drag operation we
+    //   support is the "copy" operation, and we'll also customize the
+    //   appearance of the drag-drop UI, by removing the preview and setting a
+    //   custom caption. For more information, see
+    //   https://docs.microsoft.com/en-us/windows/uwp/design/input/drag-and-drop#customize-the-ui
+    // Arguments:
+    // - e: The DragEventArgs from the DragOver event
+    // Return Value:
+    // - <none>
+    void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                       DragEventArgs const& e)
+    {
+        // Make sure to set the AcceptedOperation, so that we can later recieve the path in the Drop event
+        e.AcceptedOperation(winrt::Windows::ApplicationModel::DataTransfer::DataPackageOperation::Copy);
+
+        // Sets custom UI text
+        e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
+        // Sets if the caption is visible
+        e.DragUIOverride().IsCaptionVisible(true);
+        // Sets if the dragged content is visible
+        e.DragUIOverride().IsContentVisible(false);
+        // Sets if the glyph is visibile
+        e.DragUIOverride().IsGlyphVisible(false);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -15,7 +15,6 @@
 
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/Environment.hpp"
-#include "../../types/inc/UTF8OutPipeReader.hpp"
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
@@ -169,7 +168,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
-        _guid{ initialGuid }
+        _guid{ initialGuid },
+        _u8State{},
+        _u16Str{},
+        _buffer{}
     {
         if (_guid == guid{})
         {
@@ -344,14 +346,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
-        UTF8OutPipeReader pipeReader{ _outPipe.get() };
-        std::string_view strView{};
-
         // process the data of the output pipe in a loop
         while (true)
         {
-            const HRESULT result = pipeReader.Read(strView);
-            if (FAILED(result) || result == S_FALSE)
+            DWORD read{};
+
+            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+            if (readFail) // reading failed (we must check this first, because read will also be 0.)
+            {
+                const auto lastError = GetLastError();
+                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                {
+                    // EXIT POINT
+                    _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
+                    _transitionToState(ConnectionState::Failed);
+                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
+                }
+                // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
+            }
+
+            const HRESULT result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+            if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
                 {
@@ -362,10 +377,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(-1);
+                return gsl::narrow_cast<DWORD>(result);
             }
 
-            if (strView.empty())
+            if (_u16Str.empty())
             {
                 return 0;
             }
@@ -386,11 +401,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _recievedFirstByte = true;
             }
 
-            // Convert buffer to hstring
-            auto hstr{ winrt::to_hstring(strView) };
-
             // Pass the output to our registered event handlers
-            _TerminalOutputHandlers(hstr);
+            _TerminalOutputHandlers(_u16Str);
         }
 
         return 0;

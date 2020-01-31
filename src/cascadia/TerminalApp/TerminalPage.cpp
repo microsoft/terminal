@@ -196,6 +196,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(message));
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
 
         _showDialogHandlers(*this, dialog);
     }
@@ -280,6 +281,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(aboutTextBlock);
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Close);
 
         _showDialogHandlers(*this, dialog);
     }
@@ -295,13 +297,14 @@ namespace winrt::TerminalApp::implementation
     {
         auto title = RS_(L"CloseWindowWarningTitle");
         auto primaryButtonText = RS_(L"CloseAll");
-        auto secondaryButtonText = RS_(L"Cancel");
+        auto closeButtonText = RS_(L"Cancel");
 
         WUX::Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
 
+        dialog.CloseButtonText(closeButtonText);
         dialog.PrimaryButtonText(primaryButtonText);
-        dialog.SecondaryButtonText(secondaryButtonText);
+        dialog.DefaultButton(WUX::Controls::ContentDialogButton::Primary);
         auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
 
         _showDialogHandlers(*this, dialog);
@@ -994,7 +997,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.size() > 1)
+        if (_tabs.size() > 1 && _settings->GlobalSettings().GetConfirmCloseAllTabs())
         {
             _ShowCloseWarningDialog();
         }

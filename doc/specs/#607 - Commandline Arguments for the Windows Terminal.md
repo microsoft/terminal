@@ -171,14 +171,14 @@ wt my-commandline.exe with some args and a \; literal semicolon ; new-tab anothe
 
 # Start cmd.exe, then split it vertically (with the first taking 70% of it's
 #  space, and the new pane taking 30%), and run wsl.exe in that pane (user story 13)
-wt cmd.exe ; split-pane --target 0 -v -% 30 wsl.exe
+wt cmd.exe ; split-pane --target 0 -V -% 30 wsl.exe
 wt cmd.exe ; split-pane -% 30 wsl.exe
 
 # Create a new window with the default profile, create a vertical split with the
 #  default profile, then create a horizontal split in the second pane and run
 #  "media.exe" (user story 13)
-wt new-tab ; split-pane -v ; split-pane --target 1 -h media.exe
-wt new-tab ; split-pane -v ; split-pane -t 1 -h media.exe
+wt new-tab ; split-pane -V ; split-pane --target 1 -H media.exe
+wt new-tab ; split-pane -V ; split-pane -t 1 -H media.exe
 
 ```
 
@@ -315,7 +315,7 @@ same window.
 
 #### `split-pane`
 
-`split-pane [--target,-t target-pane] [-h]|[-v] [--percent,-% split-percentage] [terminal_parameters]`
+`split-pane [--target,-t target-pane] [-H]|[-V] [--percent,-% split-percentage] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
@@ -325,10 +325,10 @@ vertically or horizontally.
   Each pane has a unique index (per-tab) which can be used to identify them.
   These indicies are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane.
-* `-h`, `-v`: Used to indicate which direction to split the pane. `-v` is
-  "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
+* `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
+  "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
   omitted, defaults to "auto", which splits the current pane in whatever the
-  larger dimension is. If both `-h` and `-v` are provided, defaults to vertical.
+  larger dimension is. If both `-H` and `-V` are provided, defaults to vertical.
 * `--percent,-% split-percentage`: Designates the amount of space that the new
   pane should take as a percentage of the parent's space. If omitted, the pane
   will take 50% by default.
@@ -580,7 +580,7 @@ As noted by @jantari:
 > semicolon-problem could also be addressed by the following syntax:
 > ```sh
 > # wt.exe still needs to be interpreted by PowerShell as it's a command in PATH, but nothing after it
-> wt.exe --% cmd.exe ; split-pane --target-pane 0 -v -% 30 wsl.exe
+> wt.exe --% cmd.exe ; split-pane --target-pane 0 -V -% 30 wsl.exe
 > ```
 
 ### `/SUBSYSTEM:Windows` or `/SUBSYSTEM:Console`?
@@ -627,7 +627,7 @@ environment, it's also the least bad option available to us.
 Consider the following commandline:
 
 ```sh
-wt.exe split-pane -v ; new-tab
+wt.exe split-pane -V ; new-tab
 ```
 
 In the future, maybe we could presume in this case that the commands are

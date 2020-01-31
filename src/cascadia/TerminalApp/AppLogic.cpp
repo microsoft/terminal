@@ -279,6 +279,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(warningsTextBlock));
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
         _ShowDialog(nullptr, dialog);
     }
@@ -315,6 +316,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(warningsTextBlock));
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
         _ShowDialog(nullptr, dialog);
     }
