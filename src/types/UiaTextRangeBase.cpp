@@ -221,12 +221,6 @@ const bool UiaTextRangeBase::IsDegenerate() const noexcept
     return _start == _end;
 }
 
-void UiaTextRangeBase::SetEndpoints(const COORD start, const COORD end) noexcept
-{
-    _start = start;
-    _end = end;
-}
-
 #pragma region ITextRangeProvider
 
 IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept
@@ -257,7 +251,8 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
 IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                                   _In_ ITextRangeProvider* pTargetRange,
                                                   _In_ TextPatternRangeEndpoint targetEndpoint,
-                                                  _Out_ int* pRetVal)
+                                                  _Out_ int* pRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -289,8 +284,9 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
 
     return S_OK;
 }
+CATCH_RETURN();
 
-IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
+IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexcept
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -423,7 +419,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttr
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -526,16 +522,20 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRangeBase::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangles, nullptr);
+#pragma warning(suppress : 26447) // QueryInterface's exception should be caught by the try-CATCH_RETURN block to allow this to be noexcept
     return _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
 }
+CATCH_RETURN();
 
-IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal) noexcept
+try
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -558,65 +558,61 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
 
     if (!IsDegenerate())
     {
-        try
-        {
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-            std::wstringstream ss;
-            ss << L"---Initial span start={" << _start.X << L", " << _start.Y << L"} and end={" << _end.X << ", " << _end.Y << L"}\n";
-            OutputDebugString(ss.str().c_str());
+        std::wstringstream ss;
+        ss << L"---Initial span start={" << _start.X << L", " << _start.Y << L"} and end={" << _end.X << ", " << _end.Y << L"}\n";
+        OutputDebugString(ss.str().c_str());
 #endif
 
-            // if _end is at 0, we ignore that row because _end is exclusive
-            const auto& buffer = _pData->GetTextBuffer();
-            const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
-                                               base::ClampSub(_end.Y, _start.Y) :
-                                               base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
-            const short lastRowInRange = _start.Y + totalRowsInRange - 1;
+        // if _end is at 0, we ignore that row because _end is exclusive
+        const auto& buffer = _pData->GetTextBuffer();
+        const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
+                                           base::ClampSub(_end.Y, _start.Y) :
+                                           base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
+        const short lastRowInRange = _start.Y + totalRowsInRange - 1;
 
-            short currentScreenInfoRow = 0;
-            for (short i = 0; i < totalRowsInRange; ++i)
+        short currentScreenInfoRow = 0;
+        for (short i = 0; i < totalRowsInRange; ++i)
+        {
+            currentScreenInfoRow = _start.Y + i;
+            const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+            if (row.GetCharRow().ContainsText())
             {
-                currentScreenInfoRow = _start.Y + i;
-                const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-                if (row.GetCharRow().ContainsText())
+                const size_t rowRight = row.GetCharRow().MeasureRight();
+                size_t startIndex = 0;
+                size_t endIndex = rowRight;
+                if (currentScreenInfoRow == _start.Y)
                 {
-                    const size_t rowRight = row.GetCharRow().MeasureRight();
-                    size_t startIndex = 0;
-                    size_t endIndex = rowRight;
-                    if (currentScreenInfoRow == _start.Y)
-                    {
-                        startIndex = _start.X;
-                    }
-
-                    if (currentScreenInfoRow == _end.Y)
-                    {
-                        // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
-                    }
-
-                    // if startIndex >= endIndex then _start is
-                    // further to the right than the last
-                    // non-whitespace char in the row so there
-                    // wouldn't be any text to grab.
-                    if (startIndex < endIndex)
-                    {
-                        wstr += row.GetText().substr(startIndex, endIndex - startIndex);
-                    }
+                    startIndex = _start.X;
                 }
 
-                if (currentScreenInfoRow != lastRowInRange)
+                if (currentScreenInfoRow == _end.Y)
                 {
-                    wstr += L"\r\n";
+                    // prevent the end from going past the last non-whitespace char in the row
+                    endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
                 }
 
-                if (getPartialText && wstr.size() > static_cast<size_t>(maxLength))
+                // if startIndex >= endIndex then _start is
+                // further to the right than the last
+                // non-whitespace char in the row so there
+                // wouldn't be any text to grab.
+                if (startIndex < endIndex)
                 {
-                    wstr.resize(maxLength);
-                    break;
+                    wstr += row.GetText().substr(startIndex, endIndex - startIndex);
                 }
             }
+
+            if (currentScreenInfoRow != lastRowInRange)
+            {
+                wstr += L"\r\n";
+            }
+
+            if (getPartialText && wstr.size() > static_cast<size_t>(maxLength))
+            {
+                wstr.resize(maxLength);
+                break;
+            }
         }
-        CATCH_RETURN();
     }
 
     *pRetVal = SysAllocString(wstr.c_str());
@@ -635,10 +631,11 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
 
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
-                                      _Out_ int* pRetVal)
+                                      _Out_ int* pRetVal) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -711,7 +708,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                     _In_ TextUnit unit,
                                                     _In_ int count,
-                                                    _Out_ int* pRetVal)
+                                                    _Out_ int* pRetVal) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -774,7 +771,8 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                                      _In_ ITextRangeProvider* pTargetRange,
-                                                     _In_ TextPatternRangeEndpoint targetEndpoint)
+                                                     _In_ TextPatternRangeEndpoint targetEndpoint) noexcept
+try
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -812,8 +810,10 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
     //Tracing::s_TraceUia(this, ApiCall::MoveEndpointByRange, &apiMsg);
     return S_OK;
 }
+CATCH_RETURN();
 
-IFACEMETHODIMP UiaTextRangeBase::Select()
+IFACEMETHODIMP UiaTextRangeBase::Select() noexcept
+try
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -836,6 +836,7 @@ IFACEMETHODIMP UiaTextRangeBase::Select()
     //Tracing::s_TraceUia(this, ApiCall::Select, nullptr);
     return S_OK;
 }
+CATCH_RETURN();
 
 // we don't support this
 IFACEMETHODIMP UiaTextRangeBase::AddToSelection() noexcept
@@ -853,79 +854,78 @@ IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection() noexcept
     return E_NOTIMPL;
 }
 
-IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
+IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop) noexcept
+try
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
-    try
+    const auto oldViewport = _pData->GetViewport().ToInclusive();
+    const auto viewportHeight = _getViewportHeight(oldViewport);
+    // range rows
+    const base::ClampedNumeric<short> startScreenInfoRow = _start.Y;
+    const base::ClampedNumeric<short> endScreenInfoRow = _end.Y;
+    // screen buffer rows
+    const base::ClampedNumeric<short> topRow = 0;
+    const base::ClampedNumeric<short> bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
+
+    SMALL_RECT newViewport = oldViewport;
+
+    // there's a bunch of +1/-1s here for setting the viewport. These
+    // are to account for the inclusivity of the viewport boundaries.
+    if (alignToTop)
     {
-        const auto oldViewport = _pData->GetViewport().ToInclusive();
-        const auto viewportHeight = _getViewportHeight(oldViewport);
-        // range rows
-        const base::ClampedNumeric<short> startScreenInfoRow = _start.Y;
-        const base::ClampedNumeric<short> endScreenInfoRow = _end.Y;
-        // screen buffer rows
-        const base::ClampedNumeric<short> topRow = 0;
-        const base::ClampedNumeric<short> bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
-
-        SMALL_RECT newViewport = oldViewport;
-
-        // there's a bunch of +1/-1s here for setting the viewport. These
-        // are to account for the inclusivity of the viewport boundaries.
-        if (alignToTop)
+        // determine if we can align the start row to the top
+        if (startScreenInfoRow + viewportHeight <= bottomRow)
         {
-            // determine if we can align the start row to the top
-            if (startScreenInfoRow + viewportHeight <= bottomRow)
-            {
-                // we can align to the top
-                newViewport.Top = startScreenInfoRow;
-                newViewport.Bottom = startScreenInfoRow + viewportHeight - 1;
-            }
-            else
-            {
-                // we can align to the top so we'll just move the viewport
-                // to the bottom of the screen buffer
-                newViewport.Bottom = bottomRow;
-                newViewport.Top = bottomRow - viewportHeight + 1;
-            }
+            // we can align to the top
+            newViewport.Top = startScreenInfoRow;
+            newViewport.Bottom = startScreenInfoRow + viewportHeight - 1;
         }
         else
         {
-            // we need to align to the bottom
-            // check if we can align to the bottom
-            if (static_cast<unsigned int>(endScreenInfoRow) >= viewportHeight)
-            {
-                // we can align to bottom
-                newViewport.Bottom = endScreenInfoRow;
-                newViewport.Top = endScreenInfoRow - viewportHeight + 1;
-            }
-            else
-            {
-                // we can't align to bottom so we'll move the viewport to
-                // the top of the screen buffer
-                newViewport.Top = topRow;
-                newViewport.Bottom = topRow + viewportHeight - 1;
-            }
+            // we can align to the top so we'll just move the viewport
+            // to the bottom of the screen buffer
+            newViewport.Bottom = bottomRow;
+            newViewport.Top = bottomRow - viewportHeight + 1;
         }
+    }
+    else
+    {
+        // we need to align to the bottom
+        // check if we can align to the bottom
+        if (static_cast<unsigned int>(endScreenInfoRow) >= viewportHeight)
+        {
+            // we can align to bottom
+            newViewport.Bottom = endScreenInfoRow;
+            newViewport.Top = endScreenInfoRow - viewportHeight + 1;
+        }
+        else
+        {
+            // we can't align to bottom so we'll move the viewport to
+            // the top of the screen buffer
+            newViewport.Top = topRow;
+            newViewport.Bottom = topRow + viewportHeight - 1;
+        }
+    }
 
-        FAIL_FAST_IF(!(newViewport.Top >= topRow));
-        FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
-        FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
+    FAIL_FAST_IF(!(newViewport.Top >= topRow));
+    FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
+    FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
 
-        _ChangeViewport(newViewport);
+    _ChangeViewport(newViewport);
 
-        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-        // tracing
-        /*ApiMsgScrollIntoView apiMsg;
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    // tracing
+    /*ApiMsgScrollIntoView apiMsg;
         apiMsg.AlignToTop = !!alignToTop;
         Tracing::s_TraceUia(this, ApiCall::ScrollIntoView, &apiMsg);*/
-    }
-    CATCH_RETURN();
+
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
@@ -973,6 +973,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 // Routine Description:
 // - adds the relevant coordinate points from the row to coords.
 // - it is assumed that startAnchor and endAnchor are within the same row
+//    and NOT DEGENERATE
 // Arguments:
 // - startAnchor - the start anchor of interested data within the viewport. In text buffer coordinate space. Inclusive.
 // - endAnchor - the end anchor of interested data within the viewport. In text buffer coordinate space. Inclusive
@@ -982,6 +983,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const
 {
     FAIL_FAST_IF(startAnchor.Y != endAnchor.Y);
+    FAIL_FAST_IF(startAnchor.X <= endAnchor.X);
 
     const auto viewport = _pData->GetViewport();
     const auto currentFontSize = _getScreenFontSize();
@@ -999,21 +1001,12 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
     topLeft.x = base::ClampMul<long, long>(startCoord.X, currentFontSize.X);
     topLeft.y = base::ClampMul<long, long>(startCoord.Y, currentFontSize.Y);
 
-    if (IsDegenerate())
-    {
-        // An empty array is returned for a degenerate (empty) text range or for a text range
-        // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
-        return;
-    }
-    else
-    {
-        // endAnchor is converted to the viewport coordinate space
+    // endAnchor is converted to the viewport coordinate space
 #pragma warning(suppress : 26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
-        auto endCoord = endAnchor;
-        viewport.ConvertToOrigin(&endCoord);
-        bottomRight.x = base::ClampMul<long, long>(endCoord.X, currentFontSize.X);
-        bottomRight.y = base::ClampMul<long, long>(base::ClampAdd(endCoord.Y, 1), currentFontSize.Y);
-    }
+    auto endCoord = endAnchor;
+    viewport.ConvertToOrigin(&endCoord);
+    bottomRight.x = base::ClampMul<long, long>(endCoord.X, currentFontSize.X);
+    bottomRight.y = base::ClampMul<long, long>(base::ClampAdd(endCoord.Y, 1), currentFontSize.Y);
 
     // convert the coords to be relative to the screen instead of
     // the client window
@@ -1173,6 +1166,8 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
 // Routine Description:
 // - moves the UTR's endpoint by moveCount times by line.
 // - if endpoints crossed, the degenerate range is created and both endpoints are moved
+// - a successful movement on start entails start being at Left()
+// - a successful movement on end entails end being at Left() of the NEXT line
 // Arguments:
 // - moveCount - the number of times to move
 // - endpoint - the endpoint to move
@@ -1198,9 +1193,9 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
 
-    bool fSuccess = true;
+    bool success = true;
     auto resultPos = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && fSuccess)
+    while (abs(*pAmountMoved) < abs(moveCount) && success)
     {
         auto nextPos = resultPos;
         switch (moveDirection)
@@ -1212,14 +1207,14 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             {
                 if (preventBufferEnd || nextPos == bufferSize.EndExclusive())
                 {
-                    fSuccess = false;
+                    success = false;
                     break;
                 }
             }
 
             nextPos.X = bufferSize.RightInclusive();
-            fSuccess = bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
-            if (fSuccess)
+            success = bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
+            if (success)
             {
                 resultPos = nextPos;
                 (*pAmountMoved)++;
@@ -1231,14 +1226,14 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             // can't move past top
             if (!allowBottomExclusive && nextPos.Y == bufferSize.Top())
             {
-                fSuccess = false;
+                success = false;
                 break;
             }
 
             // NOTE: Automatically detects if we are trying to move past origin
-            fSuccess = bufferSize.DecrementInBounds(nextPos, allowBottomExclusive);
+            success = bufferSize.DecrementInBounds(nextPos, allowBottomExclusive);
 
-            if (fSuccess)
+            if (success)
             {
                 nextPos.X = bufferSize.Left();
                 resultPos = nextPos;

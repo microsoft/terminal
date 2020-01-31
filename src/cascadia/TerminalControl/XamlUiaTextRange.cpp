@@ -10,6 +10,10 @@
 // we don't want to import the CLR headers to get it
 #define XAML_E_NOT_SUPPORTED 0x80131515L
 
+// the same as COR_E_NOTSUPPORTED
+// we don't want to import the CLR headers to get it
+#define XAML_E_NOT_SUPPORTED 0x80131515L
+
 namespace UIA
 {
     using ::ITextRangeProvider;
@@ -98,6 +102,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // We _need_ to return XAML_E_NOT_SUPPORTED here.
             // Returning nullptr is an improper implementation of it being unsupported.
+            // UIA Clients rely on this HRESULT to signify that the requested attribute is undefined.
+            // Anything else will result in the UIA Client refusing to read when navigating by word
+            // Magically, this doesn't affect other forms of navigation...
             winrt::throw_hresult(XAML_E_NOT_SUPPORTED);
         }
     }

@@ -80,6 +80,32 @@ class UiaTextRangeTests
     UiaTextRange* _range;
     IUiaData* _pUiaData;
 
+    struct ExpectedResult
+    {
+        int moveAmt;
+        COORD start;
+        COORD end;
+    };
+
+    struct MoveTest
+    {
+        std::wstring comment;
+        COORD start;
+        COORD end;
+        int moveAmt;
+        ExpectedResult expected;
+    };
+
+    struct MoveEndpointTest
+    {
+        std::wstring comment;
+        COORD start;
+        COORD end;
+        int moveAmt;
+        TextPatternRangeEndpoint endpoint;
+        ExpectedResult expected;
+    };
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -498,26 +524,10 @@ class UiaTextRangeTests
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
-        struct ExpectedResult
-        {
-            int moveAmt;
-            COORD start;
-            COORD end;
-        };
-
-        struct Test
-        {
-            std::wstring comment;
-            COORD start;
-            COORD end;
-            int moveAmt;
-            ExpectedResult expected;
-        };
-
         // clang-format off
-        const std::vector<Test> testData
+        const std::vector<MoveTest> testData
         {
-            Test{
+            MoveTest{
                 L"can't move backward from (0, 0)",
                 { 0, 0 },
                 { 2, 0 },
@@ -529,7 +539,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can move backward within a row",
                 { 1, 0 },
                 { 2, 0 },
@@ -541,7 +551,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can move forward in a row",
                 { 1, 2 },
                 { 5, 4 },
@@ -553,7 +563,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can't move past the last column in the last row",
                 { lastColumnIndex, bottomRow },
                 { lastColumnIndex, bottomRow },
@@ -565,7 +575,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can move to a new row when necessary when moving forward",
                 { lastColumnIndex, 0 },
                 { lastColumnIndex, 0 },
@@ -577,7 +587,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can move to a new row when necessary when moving backward",
                 { 0, 0 + 1 },
                 { lastColumnIndex, 0 + 1 },
@@ -611,26 +621,10 @@ class UiaTextRangeTests
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
-        struct ExpectedResult
-        {
-            int moveAmt;
-            COORD start;
-            COORD end;
-        };
-
-        struct Test
-        {
-            std::wstring comment;
-            COORD start;
-            COORD end;
-            int moveAmt;
-            ExpectedResult expected;
-        };
-
         // clang-format off
-        const std::vector<Test> testData
+        const std::vector<MoveTest> testData
         {
-            Test{
+            MoveTest{
                 L"can't move backward from top row",
                 {0, 0},
                 {0, lastColumnIndex},
@@ -642,7 +636,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can move forward from top row",
                 {0, 0},
                 {0, lastColumnIndex},
@@ -654,7 +648,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can't move forward from bottom row",
                 {0, bottomRow},
                 {lastColumnIndex, bottomRow},
@@ -666,7 +660,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can move backward from bottom row",
                 {0, bottomRow},
                 {lastColumnIndex, bottomRow},
@@ -678,7 +672,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can't move backward when part of the top row is in the range",
                 {5, 0},
                 {lastColumnIndex, 0},
@@ -690,7 +684,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveTest{
                 L"can't move forward when part of the bottom row is in the range",
                 {0, bottomRow},
                 {0, bottomRow},
@@ -724,27 +718,10 @@ class UiaTextRangeTests
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = static_cast<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
-        struct ExpectedResult
-        {
-            int moveAmt;
-            COORD start;
-            COORD end;
-        };
-
-        struct Test
-        {
-            std::wstring comment;
-            COORD start;
-            COORD end;
-            int moveAmt;
-            TextPatternRangeEndpoint endpoint;
-            ExpectedResult expected;
-        };
-
         // clang-format off
-        const std::vector<Test> testData
+        const std::vector<MoveEndpointTest> testData
         {
-            Test{
+            MoveEndpointTest{
                 L"can't move _start past the beginning of the document when _start is positioned at the beginning",
                 {0, 0},
                 {lastColumnIndex, 0},
@@ -757,7 +734,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can partially move _start to the begining of the document when it is closer than the move count requested",
                 {3, 0},
                 {lastColumnIndex, 0},
@@ -770,7 +747,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _end past the begining of the document",
                 {0, 0},
                 {4, 0},
@@ -783,7 +760,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"_start follows _end when passed during movement",
                 {5, 0},
                 {10, 0},
@@ -796,7 +773,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _end past the beginning of the document when _end is positioned at the end",
                 {0, bottomRow},
                 {0, bottomRow+1},
@@ -809,7 +786,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can partially move _end to the end of the document when it is closer than the move count requested",
                 {0, 0},
                 {lastColumnIndex - 3, bottomRow},
@@ -822,7 +799,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _start past the end of the document",
                 {lastColumnIndex - 4, bottomRow},
                 {0, bottomRow+1},
@@ -835,7 +812,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"_end follows _start when passed during movement",
                 {5, 0},
                 {10, 0},
@@ -870,27 +847,10 @@ class UiaTextRangeTests
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
-        struct ExpectedResult
-        {
-            int moveAmt;
-            COORD start;
-            COORD end;
-        };
-
-        struct Test
-        {
-            std::wstring comment;
-            COORD start;
-            COORD end;
-            int moveAmt;
-            TextPatternRangeEndpoint endpoint;
-            ExpectedResult expected;
-        };
-
         // clang-format off
-        const std::vector<Test> testData
+        const std::vector<MoveEndpointTest> testData
         {
-            Test{
+            MoveEndpointTest{
                 L"can move _end forward without affecting _start",
                 {0, 0},
                 {lastColumnIndex, 0},
@@ -901,7 +861,7 @@ class UiaTextRangeTests
                 {0, 1}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can move _end backward without affecting _start",
                 {0, 1},
                 {lastColumnIndex, 5},
@@ -912,7 +872,7 @@ class UiaTextRangeTests
                 {0, 4}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can move _start forward without affecting _end",
                 {0, 1},
                 {lastColumnIndex, 5},
@@ -923,7 +883,7 @@ class UiaTextRangeTests
                 {lastColumnIndex, 5}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can move _start backward without affecting _end",
                 {0, 2},
                 {lastColumnIndex, 5},
@@ -934,7 +894,7 @@ class UiaTextRangeTests
                 {lastColumnIndex, 5}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can move _start backwards when it's already on the top row",
                 {lastColumnIndex, 0},
                 {lastColumnIndex, 0},
@@ -945,7 +905,7 @@ class UiaTextRangeTests
                 {lastColumnIndex, 0},
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _start backwards when it's at the start of the document already",
                 {0, 0},
                 {lastColumnIndex, 0},
@@ -956,7 +916,7 @@ class UiaTextRangeTests
                 {lastColumnIndex, 0}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can move _end forwards when it's on the bottom row",
                 {0, 0},
                 {lastColumnIndex - 3, bottomRow},
@@ -967,7 +927,7 @@ class UiaTextRangeTests
                 {0, bottomRow+1}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _end forwards when it's at the end of the document already",
                 {0, 0},
                 {0, bottomRow+1},
@@ -978,7 +938,7 @@ class UiaTextRangeTests
                 {0, bottomRow+1}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"moving _start forward when it's already on the bottom row creates a degenerate range at the document end",
                 {0, bottomRow},
                 {lastColumnIndex, bottomRow},
@@ -989,7 +949,7 @@ class UiaTextRangeTests
                 {0, bottomRow+1}
             },
 
-            Test{
+            MoveEndpointTest{
                 L"moving _end backward when it's already on the top row creates a degenerate range at the document start",
                 {4, 0},
                 {lastColumnIndex - 5, 0},
@@ -1022,27 +982,10 @@ class UiaTextRangeTests
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
-        struct ExpectedResult
-        {
-            int moveAmt;
-            COORD start;
-            COORD end;
-        };
-
-        struct Test
-        {
-            std::wstring comment;
-            COORD start;
-            COORD end;
-            int moveAmt;
-            TextPatternRangeEndpoint endpoint;
-            ExpectedResult expected;
-        };
-
         // clang-format off
-        const std::vector<Test> testData =
+        const std::vector<MoveEndpointTest> testData =
         {
-            Test{
+            MoveEndpointTest{
                 L"can move _end forward to end of document without affecting _start",
                 {0, 4},
                 {0, 4},
@@ -1055,7 +998,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can move _start backward to end of document without affect _end",
                 {0, 4},
                 {0, 4},
@@ -1068,7 +1011,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _end forward when it's already at the end of the document",
                 {3, 2},
                 {0, bottomRow+1},
@@ -1081,7 +1024,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"can't move _start backward when it's already at the start of the document",
                 {0, 0},
                 {5, 6},
@@ -1094,7 +1037,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"moving _end backward creates degenerate range at start of document",
                 {5, 2},
                 {5, 6},
@@ -1107,7 +1050,7 @@ class UiaTextRangeTests
                 }
             },
 
-            Test{
+            MoveEndpointTest{
                 L"moving _start forward creates degenerate range at end of document",
                 {5, 2},
                 {5, 6},

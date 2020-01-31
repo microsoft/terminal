@@ -90,16 +90,14 @@ namespace Microsoft::Console::Types
         bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val);
         const bool IsDegenerate() const noexcept;
 
-        void SetEndpoints(const COORD start, const COORD end) noexcept;
-
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
         IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept override;
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
                                         _In_ TextPatternRangeEndpoint targetEndpoint,
-                                        _Out_ int* pRetVal) override;
-        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) override;
+                                        _Out_ int* pRetVal) noexcept override;
+        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) noexcept override;
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                      _In_ VARIANT val,
                                      _In_ BOOL searchBackward,
@@ -110,24 +108,24 @@ namespace Microsoft::Console::Types
                                 _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept override;
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
                                          _Out_ VARIANT* pRetVal) noexcept override;
-        IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
-        IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) override;
+        IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
+        IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) noexcept override;
         IFACEMETHODIMP GetText(_In_ int maxLength,
-                               _Out_ BSTR* pRetVal) override;
+                               _Out_ BSTR* pRetVal) noexcept override;
         IFACEMETHODIMP Move(_In_ TextUnit unit,
                             _In_ int count,
-                            _Out_ int* pRetVal) override;
+                            _Out_ int* pRetVal) noexcept override;
         IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                           _In_ TextUnit unit,
                                           _In_ int count,
-                                          _Out_ int* pRetVal) override;
+                                          _Out_ int* pRetVal) noexcept override;
         IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                            _In_ ITextRangeProvider* pTargetRange,
-                                           _In_ TextPatternRangeEndpoint targetEndpoint) override;
-        IFACEMETHODIMP Select() override;
+                                           _In_ TextPatternRangeEndpoint targetEndpoint) noexcept override;
+        IFACEMETHODIMP Select() noexcept override;
         IFACEMETHODIMP AddToSelection() noexcept override;
         IFACEMETHODIMP RemoveFromSelection() noexcept override;
-        IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) override;
+        IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) noexcept override;
         IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
 
     protected:

@@ -146,7 +146,7 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
 
-    void WriteLinesToBuffer(std::vector<std::wstring> text, TextBuffer& buffer);
+    void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
 };
 
@@ -2018,7 +2018,7 @@ void TextBufferTests::TestBurrito()
     VERIFY_IS_FALSE(afterBurritoIter);
 }
 
-void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring> text, TextBuffer& buffer)
+void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)
 {
     for (size_t row = 0; row < text.size(); ++row)
     {
