@@ -15,6 +15,7 @@ using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace WEX::Common;
 
 namespace TerminalAppLocalTests
 {

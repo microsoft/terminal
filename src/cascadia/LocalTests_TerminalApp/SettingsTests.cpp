@@ -2226,7 +2226,7 @@ namespace TerminalAppLocalTests
         auto settings = CascadiaSettings::FromJson(settingsJsonObj);
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(1u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
         VERIFY_ARE_EQUAL(2u, settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
         try
