@@ -117,7 +117,7 @@ For commands with arguments:
 | find | Open the search dialog box. | | | |
 | increaseFontSize | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
 | moveFocus | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
-| newTab | Create a new tab. Without any actions, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
+| newTab | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
 | nextTab | Open the tab to the right of the current one. | | | |
 | openNewTabDropdown | Open the dropdown menu. | | | |
 | openSettings | Open the settings file. | | | |
