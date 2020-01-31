@@ -53,6 +53,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CreateSimpleTerminalXamlType);
         TEST_METHOD(CreateTerminalMuxXamlType);
 
+        TEST_METHOD(TryDuplicateBadTab);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -160,6 +162,99 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&tabRowControl]() {
             tabRowControl = winrt::make_self<winrt::TerminalApp::implementation::TabRowControl>();
             VERIFY_IS_NOT_NULL(tabRowControl);
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::TryDuplicateBadTab()
+    {
+        // Create a tab with a profile with GUID A
+        // Reload the settings so that GUID A is no longer in the list of profiles
+        // Try calling _DuplicateTabViewItem on tab A
+        // No new tab should be created (and more importantly, the app should not crash)
+
+        // This is a tests that was inspired by GH#2455, but at the time,
+        // GH#2472 was still not solved, so this test was not possible to be
+        // authored.
+
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+        // const auto settings0JsonObj = VerifyParseSucceeded(settings0String);
+        // auto settings0 = CascadiaSettings::FromJson(settings0JsonObj);
+
+        const std::string settingsJson1{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+        // const auto settings1JsonObj = VerifyParseSucceeded(settings1String);
+        // auto settings1 = CascadiaSettings::FromJson(settings1JsonObj);
+
+        VerifyParseSucceeded(settingsJson0);
+        auto settings0 = std::make_shared<CascadiaSettings>(false);
+        VERIFY_IS_NOT_NULL(settings0);
+        settings0->_ParseJsonString(settingsJson0, false);
+        settings0->LayerJson(settings0->_userSettings);
+        settings0->_ValidateSettings();
+
+        VerifyParseSucceeded(settingsJson1);
+        auto settings1 = std::make_shared<CascadiaSettings>(false);
+        VERIFY_IS_NOT_NULL(settings1);
+        settings1->_ParseJsonString(settingsJson1, false);
+        settings1->LayerJson(settings1->_userSettings);
+        settings1->_ValidateSettings();
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+
+        auto result = RunOnUIThread([&page, settings0]() {
+            // auto foo{ winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>() };
+            winrt::TerminalApp::TerminalPage foo{};
+            // VERIFY_IS_NOT_NULL(foo);
+            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(foo));
+            page->_settings = settings0;
+        });
+        VERIFY_SUCCEEDED(result);
+
+        VERIFY_IS_NOT_NULL(page);
+        VERIFY_IS_NOT_NULL(page->_settings);
+
+        winrt::TerminalApp::TerminalPage projectedPage = *page;
+
+        // page->Create();
+        result = RunOnUIThread([&page]() {
+            VERIFY_IS_NOT_NULL(page);
+            VERIFY_IS_NOT_NULL(page->_settings);
+            DebugBreak();
+            page->Create();
+        });
+        VERIFY_SUCCEEDED(result);
+
+        result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.size());
         });
         VERIFY_SUCCEEDED(result);
     }

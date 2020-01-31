@@ -397,7 +397,12 @@ namespace winrt::TerminalApp::implementation
 
         // add static items
         {
-            const auto isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            auto isUwp = false;
+            try
+            {
+                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            }
+            CATCH_LOG();
 
             if (!isUwp)
             {
