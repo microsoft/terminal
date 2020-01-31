@@ -123,7 +123,7 @@ private:                                                                        
             const_cast<type&>(_##name) = value;                                        \
             event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
         }                                                                              \
-    };                                                                                 
+    };
 
 // Use this macro for quickly defining the factory_implementation part of a
 // class. CppWinrt requires these for the compiler, but more often than not,
