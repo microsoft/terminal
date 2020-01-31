@@ -30,7 +30,11 @@ namespace Microsoft::Terminal::Core
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
-class ConptyRoundtripTests;
+namespace TerminalCoreUnitTests
+{
+    class TerminalBufferTests;
+    class ConptyRoundtripTests;
+};
 #endif
 
 class Microsoft::Terminal::Core::Terminal final :
@@ -80,6 +84,7 @@ public:
     bool ReverseText(bool reversed) noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
+    bool CursorLineFeed(const bool withReturn) noexcept override;
     bool DeleteCharacter(const size_t count) noexcept override;
     bool InsertCharacter(const size_t count) noexcept override;
     bool EraseCharacters(const size_t numChars) noexcept override;
@@ -235,6 +240,8 @@ private:
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
+    void _AdjustCursorPosition(const COORD proposedPosition);
+
     void _NotifyScrollEvent() noexcept;
 
 #pragma region TextSelection
@@ -252,6 +259,7 @@ private:
 #pragma endregion
 
 #ifdef UNIT_TESTING
-    friend class ::ConptyRoundtripTests;
+    friend class TerminalCoreUnitTests::TerminalBufferTests;
+    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

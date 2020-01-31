@@ -208,6 +208,8 @@ class ScreenBufferTests
     TEST_METHOD(CursorSaveRestore);
 
     TEST_METHOD(ScreenAlignmentPattern);
+
+    TEST_METHOD(TestCursorIsOn);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -5729,4 +5731,55 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     auto expectedAttr = initialAttr;
     expectedAttr.SetMetaAttributes(0);
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
+}
+
+void ScreenBufferTests::TestCursorIsOn()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12h");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    cursor.SetIsOn(false);
+    stateMachine.ProcessString(L"\x1b[?12l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12h");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?25l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?25h");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12;25l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsVisible());
 }

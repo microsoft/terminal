@@ -128,29 +128,4 @@ This creates a new Windows Terminal window with one tab, and 3 panes:
   and will use `wsl.exe` as the commandline (instead of the default profile's
   `commandline`).
 
-### Running a specific linux distro in a specific distro
-
-Say you wanted to open a "Debian" WSL instance in `C:\Users`. According to the
-above reference, you might try:
-
-```
-wt -d c:\Users wsl -d Debian
-```
-
-Unfortunately, this _won't_ work, and will give you an error about "expected
-exactly 1 argument to `--startingDirectory`, got 2". This is because we'll
-erroneously try to parse the `-d Debian` parameter as a second
-`--startingDirectory` value. This is unexpected, and is a bug currently tracked
-in [#4277].
-
-As a workaround, you can try the following commandline:
-
-```
-wt -d c:\Users -- wsl -d Debian
-```
-
-In this commandline, the `--` will indicate to the Terminal that it should treat
-everything after that like a commandline.
-
 [#4023]: https://github.com/microsoft/terminal/pull/4023
-[#4277]: https://github.com/microsoft/terminal/issues/4277
