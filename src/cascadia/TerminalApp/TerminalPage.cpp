@@ -468,23 +468,32 @@ namespace winrt::TerminalApp::implementation
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
+        try
+        {
+            const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
-        _CreateNewTabFromSettings(profileGuid, settings);
+            _CreateNewTabFromSettings(profileGuid, settings);
 
-        const int tabCount = static_cast<int>(_tabs.size());
-        const bool usedManualProfile = (newTerminalArgs != nullptr) &&
-                                       (newTerminalArgs.ProfileIndex() != nullptr ||
-                                        newTerminalArgs.Profile().empty());
-        TraceLoggingWrite(
-            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabInformation",
-            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
-            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
-            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            const int tabCount = static_cast<int>(_tabs.size());
+            const bool usedManualProfile = (newTerminalArgs != nullptr) &&
+                                           (newTerminalArgs.ProfileIndex() != nullptr ||
+                                            newTerminalArgs.Profile().empty());
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "TabInformation",
+                TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
+                TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+                TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+                TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+        }
+        CATCH_LOG();
+        // TODO: Should we display a dialog when we do nothing because we
+        // couldn't find the associated profile? This can only really happen in
+        // the duplicate tab scenario currently, but maybe in the future of
+        // keybindings with args, someone could manually open a tab/pane with
+        // specific a GUID.
     }
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
@@ -798,8 +807,17 @@ namespace winrt::TerminalApp::implementation
         const auto& profileGuid = _tab->GetFocusedProfile();
         if (profileGuid.has_value())
         {
-            const auto settings = _settings->BuildSettings(profileGuid.value());
-            _CreateNewTabFromSettings(profileGuid.value(), settings);
+            try
+            {
+                const auto settings = _settings->BuildSettings(profileGuid.value());
+                _CreateNewTabFromSettings(profileGuid.value(), settings);
+            }
+            CATCH_LOG();
+            // TODO: Should we display a dialog when we do nothing because we
+            // couldn't find the associated profile? This can only really happen in
+            // the duplicate tab scenario currently, but maybe in the future of
+            // keybindings with args, someone could manually open a tab/pane with
+            // specific a GUID.
         }
     }
 
@@ -1049,26 +1067,35 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
-
-        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
-
-        const int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
-
-        const auto canSplit = focusedTab->CanSplitPane(splitType);
-
-        if (!canSplit)
+        try
         {
-            return;
+            const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
+
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+
+            const int focusedTabIndex = _GetFocusedTabIndex();
+            auto focusedTab = _tabs[focusedTabIndex];
+
+            const auto canSplit = focusedTab->CanSplitPane(splitType);
+
+            if (!canSplit)
+            {
+                return;
+            }
+
+            TermControl newControl{ controlSettings, controlConnection };
+
+            // Hookup our event handlers to the new terminal
+            _RegisterTerminalEvents(newControl, focusedTab);
+
+            focusedTab->SplitPane(splitType, realGuid, newControl);
         }
-
-        TermControl newControl{ controlSettings, controlConnection };
-
-        // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, focusedTab);
-
-        focusedTab->SplitPane(splitType, realGuid, newControl);
+        CATCH_LOG();
+        // TODO: Should we display a dialog when we do nothing because we
+        // couldn't find the associated profile? This can only really happen in
+        // the duplicate tab scenario currently, but maybe in the future of
+        // keybindings with args, someone could manually open a tab/pane with
+        // specific a GUID.
     }
 
     // Method Description:
@@ -1471,13 +1498,24 @@ namespace winrt::TerminalApp::implementation
         for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
-            const auto settings = _settings->BuildSettings(profileGuid);
-
-            for (auto& tab : _tabs)
+            try
             {
-                // Attempt to reload the settings of any panes with this profile
-                tab->UpdateSettings(settings, profileGuid);
+                // BuildSettings can throw an exception if the profileGuid does
+                // not belong to an actual profile in the list of profiles.
+                const auto settings = _settings->BuildSettings(profileGuid);
+
+                for (auto& tab : _tabs)
+                {
+                    // Attempt to reload the settings of any panes with this profile
+                    tab->UpdateSettings(settings, profileGuid);
+                }
             }
+            CATCH_LOG();
+            // TODO: Should we display a dialog when we do nothing because we
+            // couldn't find the associated profile? This can only really happen in
+            // the duplicate tab scenario currently, but maybe in the future of
+            // keybindings with args, someone could manually open a tab/pane with
+            // specific a GUID.
         }
 
         // Update the icon of the tab for the currently focused profile in that tab.
