@@ -983,7 +983,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const
 {
     FAIL_FAST_IF(startAnchor.Y != endAnchor.Y);
-    FAIL_FAST_IF(startAnchor.X <= endAnchor.X);
+    FAIL_FAST_IF(startAnchor.X >= endAnchor.X);
 
     const auto viewport = _pData->GetViewport();
     const auto currentFontSize = _getScreenFontSize();

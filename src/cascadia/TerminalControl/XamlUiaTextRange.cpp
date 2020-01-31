@@ -10,10 +10,6 @@
 // we don't want to import the CLR headers to get it
 #define XAML_E_NOT_SUPPORTED 0x80131515L
 
-// the same as COR_E_NOTSUPPORTED
-// we don't want to import the CLR headers to get it
-#define XAML_E_NOT_SUPPORTED 0x80131515L
-
 namespace UIA
 {
     using ::ITextRangeProvider;
