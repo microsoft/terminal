@@ -469,12 +469,12 @@ using namespace Microsoft::Console::Types;
     {
         _lastText.X += static_cast<short>(columnsActual);
     }
-    // GH#1245: If we wrote the exactly last char of the row, then we're
-    // probably in the "delayed EOL wrap" state. Different terminals (conhost,
-    // gnome-terminal, wt) all behave differently with how the cursor behaves at
-    // an end of line. Marke that we're in the delayed EOL wrap state - we don't
-    // want to be clever about how we move the cursor in this state, since
-    // different terminals will handle a backspace differently in this state.
+    // GH#1245: If we wrote the exactly last char of the row, then we're in the
+    // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
+    // wt) all behave differently with how the cursor behaves at an end of line.
+    // Mark that we're in the delayed EOL wrap state - we don't want to be
+    // clever about how we move the cursor in this state, since different
+    // terminals will handle a backspace differently in this state.
     if (_lastText.X >= _lastViewport.RightInclusive())
     {
         _delayedEolWrap = true;
