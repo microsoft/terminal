@@ -135,14 +135,13 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept
+try
 {
     _pProvider = a._pProvider;
     _start = a._start;
     _end = a._end;
     _pData = a._pData;
-
-    // c_str needed to suppress C26447
-    _wordDelimiters = a._wordDelimiters.c_str();
+    _wordDelimiters = a._wordDelimiters;
 
     _id = id;
     ++id;
@@ -154,6 +153,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a) noex
 
     return S_OK;
 }
+CATCH_RETURN();
 
 const IdType UiaTextRangeBase::GetId() const noexcept
 {
@@ -241,8 +241,7 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
     if (other)
     {
         *pRetVal = (_start == other->GetEndpoint(TextPatternRangeEndpoint_Start) &&
-                    _end == other->GetEndpoint(TextPatternRangeEndpoint_End) &&
-                    IsDegenerate() == other->IsDegenerate());
+                    _end == other->GetEndpoint(TextPatternRangeEndpoint_End));
     }
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
@@ -416,7 +415,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         if (IsDegenerate() || bufferSize.CompareInBounds(_start, viewportEnd, true) > 0 || bufferSize.CompareInBounds(_end, viewportOrigin, true) < 0)
         {
-            // An empty array is returned for a degenerate (empty) text range or for a text range
+            // An empty array is returned for a degenerate (empty) text range.
             // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
 
             // Remember, start cannot be past end, so
@@ -517,9 +516,9 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
             // if _end is at 0, we ignore that row because _end is exclusive
             const auto& buffer = _pData->GetTextBuffer();
             const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
-                                               _end.Y - _start.Y :
-                                               _end.Y - _start.Y + base::ClampedNumeric<short>(1);
-            const short lastRowInRange = _start.Y + totalRowsInRange - base::ClampedNumeric<short>(1);
+                                               base::ClampSub(_end.Y, _start.Y) :
+                                               base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
+            const short lastRowInRange = _start.Y + totalRowsInRange - 1;
 
             short currentScreenInfoRow = 0;
             for (short i = 0; i < totalRowsInRange; ++i)
@@ -938,8 +937,12 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
     POINT bottomRight{ 0 };
 
     // startAnchor is converted to the viewport coordinate space
+#pragma warning(suppress:26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
     auto startCoord = startAnchor;
     viewport.ConvertToOrigin(&startCoord);
+
+    // we want to clamp to a long (output type), not a short (input type)
+    // so we need to explicitly say <long,long>
     topLeft.x = base::ClampMul<long, long>(startCoord.X, currentFontSize.X);
     topLeft.y = base::ClampMul<long, long>(startCoord.Y, currentFontSize.Y);
 
@@ -952,6 +955,7 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
     else
     {
         // endAnchor is converted to the viewport coordinate space
+#pragma warning(suppress : 26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
         auto endCoord = endAnchor;
         viewport.ConvertToOrigin(&endCoord);
         bottomRight.x = base::ClampMul<long, long>(endCoord.X, currentFontSize.X);
@@ -1224,7 +1228,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
 
-    auto target = GetEndpoint(endpoint);
+    const auto target = GetEndpoint(endpoint);
     switch (moveDirection)
     {
     case MovementDirection::Forward:
