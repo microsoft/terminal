@@ -220,8 +220,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 
-        #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
         friend class InputEngineTest;
-        #endif
+#endif
     };
 }
