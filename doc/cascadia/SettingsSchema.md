@@ -98,7 +98,7 @@ Commands listed below are per the implementation in [`src/cascadia/TerminalApp/A
 
 Keybindings can be structured in the following manners:
 
-For commands without actions:
+For commands without arguments:
 <br>
 `{ "command": "commandName", "keys": [ "modifiers+key" ] }`
 
