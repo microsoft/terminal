@@ -363,8 +363,8 @@ void ConptyRoundtripTests::TestWrappingALongString()
 
     const auto initialTermView = term->GetViewport();
 
-    const auto charsToWrite = TestUtils::Test100CharsString.size();
-    VERIFY_ARE_EQUAL(100u, charsToWrite);
+    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialTermView.Top());
     VERIFY_ARE_EQUAL(32, initialTermView.BottomExclusive());
@@ -412,8 +412,8 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
 
     _flushFirstFrame();
 
-    const auto charsToWrite = TestUtils::Test100CharsString.size();
-    VERIFY_ARE_EQUAL(100u, charsToWrite);
+    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    VERIFY_ARE_EQUAL(100, charsToWrite);
 
     hostSm.ProcessString(TestUtils::Test100CharsString);
     hostSm.ProcessString(L"\n");
