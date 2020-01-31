@@ -240,7 +240,7 @@ bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
 void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
 {
     auto [first, second] = _activePane->Split(splitType, profile, control);
-
+    _activePane = first;
     _AttachEventHandlersToControl(control);
 
     // Add a event handlers to the new panes' GotFocus event. When the pane
@@ -296,6 +296,13 @@ void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     // NOTE: This _must_ be called on the root pane, so that it can propogate
     // throughout the entire tree.
     _rootPane->NavigateFocus(direction);
+}
+
+// Method Description:
+// - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
+void Tab::Shutdown()
+{
+    _rootPane->Shutdown();
 }
 
 // Method Description:

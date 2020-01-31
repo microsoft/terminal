@@ -9,7 +9,9 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `copyOnSelect` | Optional | Boolean | `false` | When set to `true`, a selection is immediately copied to your clipboard upon creation. When set to `false`, the selection persists and awaits further action. |
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
 | `initialCols` | _Required_ | Integer | `120` | The number of columns displayed in the window upon first load. |
+| `initialPosition` | Optional | String | `","` | The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If `launchMode` is set to `"maximized"`, the window will be maximized on the monitor specified by those coordinates. |
 | `initialRows` | _Required_ | Integer | `30` | The number of rows displayed in the window upon first load. |
+| `launchMode` | Optional | String | `default` | Defines whether the Terminal will launch as maximized or not. Possible values: `"default"`, `"maximized"` |
 | `rowsToScroll` | Optional | Integer | `system` | The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or "system". |
 | `requestedTheme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | `true` | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
@@ -17,6 +19,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `snapToGridOnResize` | Optional | Boolean | `false` | When set to `true`, the window will snap to the nearest character boundary on resize. When `false`, the window will resize "smoothly" |
 | `tabWidthMode` | Optional | String | `equal` | Sets the width of the tabs. Possible values: `"equal"`, `"titleLength"` |
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
+| `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
 
 ## Profiles
 Properties listed below are specific to each unique profile.

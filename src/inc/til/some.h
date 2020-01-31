@@ -154,7 +154,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _outOfRange();
             }
 
-            _array[_used] = val;
+            til::at(_array, _used) = val;
 
             ++_used;
         }
@@ -168,7 +168,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             --_used;
 
-            _array[_used] = 0;
+            til::at(_array, _used) = 0;
         }
 
         [[noreturn]] void _invalidArg() const

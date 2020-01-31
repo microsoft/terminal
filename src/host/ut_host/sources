@@ -36,6 +36,7 @@ SOURCES = \
     InputBufferTests.cpp \
     VtIoTests.cpp \
     VtRendererTests.cpp \
+    ConptyOutputTests.cpp \
     ViewportTests.cpp \
     ConsoleArgumentsTests.cpp \
     CommandLineTests.cpp \

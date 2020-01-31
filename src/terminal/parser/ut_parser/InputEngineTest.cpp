@@ -349,6 +349,10 @@ void InputEngineTest::C0Test()
         case L'\t': // Tab
             writeCtrl = false;
             break;
+        case L'\b': // backspace
+            wch = '\x7f';
+            expectedWch = '\x7f';
+            break;
         }
 
         short keyscan = VkKeyScanW(expectedWch);

@@ -180,6 +180,10 @@ Temporarily using the Windows Terminal default settings.
     <value>Release Notes
 </value>
   </data>
+  <data name="PrivacyPolicyLabelText" xml:space="preserve">
+    <value>Privacy Policy
+</value>
+  </data>
   <data name="DocumentationUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-documentation</value>
   </data>
@@ -188,6 +192,9 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="ReleaseNotesUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-release-notes</value>
+  </data>
+  <data name="PrivacyPolicyUriValue" xml:space="preserve">
+    <value>https://aka.ms/terminal-privacy-policy</value>
   </data>
   <data name="FeedbackUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-feedback</value>
@@ -209,5 +216,44 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
+  </data>
+  <data name="InvalidBackgroundImage" xml:space="preserve">
+    <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
+  </data>
+  <data name="InvalidIcon" xml:space="preserve">
+    <value>Found a profile with an invalid "icon". Defaulting that profile to have no icon. Make sure that when setting an "icon", the value is a valid file path to an image.</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>Move focus to another tab</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>Move focus to the next tab</value>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>Move focus to the previous tab</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>Move focus the tab at the given index</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>Create a new tab</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>Open with the given profile. Accepts either the name or guid of a profile</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>Create a new split pane</value>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>Create the new pane as a horizontal split (think [-])</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>Create the new pane as a vertical split (think [|])</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>Open in the given directory instead of the profile's set startingDirectory</value>
   </data>
 </root>

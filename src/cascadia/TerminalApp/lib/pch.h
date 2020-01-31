@@ -36,6 +36,7 @@
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 #include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
@@ -57,6 +58,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <json.h>
 
 #include <shellapi.h>
-#include <filesystem>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+
+#include <CLI11/CLI11.hpp>
