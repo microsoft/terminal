@@ -104,7 +104,7 @@ For commands without actions:
 
 For commands with actions:
 <br>
-`{ "command": { "action": "commandName", "actionName": "actionArguments" }, "keys": ["modifiers+keys"] }`
+`{ "command": { "action": "commandName", "argument": "value" }, "keys": ["modifiers+key"] }`
 
 | Command | Command Description | Action (*=required) | Action Arguments | Action Desciption |
 | ------- | ------------------- | ------ | ---------------- | ----------------- |
