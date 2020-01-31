@@ -10,9 +10,9 @@
 #include "Utils.h"
 #include "DefaultProfileUtils.h"
 
+// These four are headers we do not want proliferating, so they're not in the PCH.
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Management.Deployment.h>
-
 #include <appmodel.h>
 #include <shlobj.h>
 
@@ -211,11 +211,11 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
         const auto previewPath = appExecAliasPath / POWERSHELL_PREVIEW_PFN;
         if (std::filesystem::exists(previewPath))
         {
-            auto previewPackage = _getStorePackage(POWERSHELL_PREVIEW_PFN);
+            const auto previewPackage = _getStorePackage(POWERSHELL_PREVIEW_PFN);
             if (previewPackage)
             {
                 out.emplace_back(PowerShellInstance{
-                    static_cast<int>(previewPackage.Id().Version().Major),
+                    gsl::narrow_cast<int>(previewPackage.Id().Version().Major),
                     PowerShellFlags::Store | PowerShellFlags::Preview,
                     previewPath / PWSH_EXE });
             }
@@ -225,7 +225,7 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
         const auto gaPath = appExecAliasPath / POWERSHELL_PFN;
         if (std::filesystem::exists(gaPath))
         {
-            auto gaPackage = _getStorePackage(POWERSHELL_PFN);
+            const auto gaPackage = _getStorePackage(POWERSHELL_PFN);
             if (gaPackage)
             {
                 out.emplace_back(PowerShellInstance{
@@ -305,7 +305,7 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
     auto psInstances = _collectPowerShellInstances();
     for (const auto& psI : psInstances)
     {
-        auto name = psI.Name();
+        const auto name = psI.Name();
         auto profile{ CreateDefaultProfile(name) };
         profile.SetCommandline(psI.executablePath.wstring());
         profile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
