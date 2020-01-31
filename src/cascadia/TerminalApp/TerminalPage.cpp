@@ -1048,7 +1048,7 @@ namespace winrt::TerminalApp::implementation
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
-        auto focusedTab { _GetStrongTabImpl(_GetFocusedTabIndex()) };
+        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
 
         const auto canSplit = focusedTab->CanSplitPane(splitType);
 
