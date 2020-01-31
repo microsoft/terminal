@@ -14,7 +14,6 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
-#include "utf8ToWidecharParser.hpp"
 
 #include "../types/inc/convert.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -491,9 +490,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             CursorPosition = cursor.GetPosition();
 
             // Make sure we don't write past the end of the buffer.
-            if (i > (ULONG)coordScreenBufferSize.X - CursorPosition.X)
+            if (i > gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - CursorPosition.X)
             {
-                i = (ULONG)coordScreenBufferSize.X - CursorPosition.X;
+                i = gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - CursorPosition.X;
             }
 
             // line was wrapped if we're writing up to the end of the current row
@@ -683,7 +682,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 if (CheckBisectProcessW(screenInfo,
                                         pwchBufferBackupLimit,
                                         pwchBuffer + 1 - pwchBufferBackupLimit,
-                                        coordScreenBufferSize.X - sOriginalXPosition,
+                                        gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - sOriginalXPosition,
                                         sOriginalXPosition,
                                         dwFlags & WC_ECHO))
                 {
@@ -701,7 +700,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         case UNICODE_TAB:
         {
-            const size_t TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
+            const size_t TabSize = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X));
             CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
 
             // move cursor forward to next tab stop.  fill space with blanks.
@@ -1053,36 +1052,25 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         const auto codepage = gci.OutputCP;
 
         // Convert our input parameters to Unicode
-        std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
-        static Utf8ToWideCharParser parser{ gci.OutputCP };
-
-        // update current codepage in case it was changed from last time
-        // this was called. We do this outside the UTF-8 check because the parser drops its state
-        // when the codepage changes.
-        parser.SetCodePage(gci.OutputCP);
+        std::wstring wstr{};
+        static til::u8state u8State{};
 
         SCREEN_INFORMATION& ScreenInfo = context.GetActiveBuffer();
         wchar_t* pwchBuffer;
         size_t cchBuffer;
         if (codepage == CP_UTF8)
         {
-            wideCharBuffer.release();
-            unsigned int charCount;
-            unsigned int charsConsumed;
-            unsigned int charsGenerated;
-            RETURN_IF_FAILED(SizeTToUInt(buffer.size(), &charCount));
-            RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(buffer.data()),
-                                          charCount,
-                                          charsConsumed,
-                                          wideCharBuffer,
-                                          charsGenerated));
-
-            pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
-            cchBuffer = charsGenerated;
-            read = charsConsumed;
+            RETURN_IF_FAILED(til::u8u16(buffer, wstr, u8State));
+            pwchBuffer = wstr.data();
+            cchBuffer = wstr.length();
+            read = buffer.size();
         }
         else
         {
+            // In case the codepage changes from UTF-8 to another,
+            // we discard partials that might still be cached.
+            u8State.reset();
+
             NTSTATUS Status = STATUS_SUCCESS;
             PWCHAR TransBuffer;
             PWCHAR TransBufferOriginalLocation;
@@ -1183,7 +1171,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             }
 
             pwchBuffer = TransBufferOriginalLocation;
-            cchBuffer = (dbcsNumBytes + BufPtrNumBytes) / sizeof(wchar_t);
+            cchBuffer = (gsl::narrow_cast<size_t>(dbcsNumBytes) + BufPtrNumBytes) / sizeof(wchar_t);
         }
 
         // Make the W version of the call
