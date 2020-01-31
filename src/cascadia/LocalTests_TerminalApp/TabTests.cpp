@@ -168,14 +168,12 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
-        // Create a tab with a profile with GUID A
-        // Reload the settings so that GUID A is no longer in the list of profiles
-        // Try calling _DuplicateTabViewItem on tab A
+        // Create a tab with a profile with GUID 1
+        // Reload the settings so that GUID 1 is no longer in the list of profiles
+        // Try calling _DuplicateTabViewItem on tab 1
         // No new tab should be created (and more importantly, the app should not crash)
-
-        // This is a tests that was inspired by GH#2455, but at the time,
-        // GH#2472 was still not solved, so this test was not possible to be
-        // authored.
+        //
+        // Created to test GH#2455
 
         const std::string settingsJson0{ R"(
         {
@@ -193,8 +191,6 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-        // const auto settings0JsonObj = VerifyParseSucceeded(settings0String);
-        // auto settings0 = CascadiaSettings::FromJson(settings0JsonObj);
 
         const std::string settingsJson1{ R"(
         {
@@ -207,8 +203,6 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-        // const auto settings1JsonObj = VerifyParseSucceeded(settings1String);
-        // auto settings1 = CascadiaSettings::FromJson(settings1JsonObj);
 
         VerifyParseSucceeded(settingsJson0);
         auto settings0 = std::make_shared<CascadiaSettings>(false);
@@ -228,13 +222,21 @@ namespace TerminalAppLocalTests
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
         const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
 
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
-        auto result = RunOnUIThread([&page, settings0]() {
-            // auto foo{ winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>() };
-            winrt::TerminalApp::TerminalPage foo{};
-            // VERIFY_IS_NOT_NULL(foo);
-            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(foo));
+        Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
+        auto result = RunOnUIThread([&projectedPage, &page, settings0]() {
+            projectedPage = winrt::TerminalApp::TerminalPage();
+            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = settings0;
         });
         VERIFY_SUCCEEDED(result);
@@ -242,19 +244,46 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(page);
         VERIFY_IS_NOT_NULL(page->_settings);
 
-        winrt::TerminalApp::TerminalPage projectedPage = *page;
-
-        // page->Create();
+        Log::Comment(NoThrowString().Format(L"Create() the TerminalPage"));
         result = RunOnUIThread([&page]() {
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
-            DebugBreak();
             page->Create();
+
+            // I think in the tests, we don't always set the focused tab on
+            // creation. Doesn't seem to be a problem in the real app, but
+            // probably indicative of a problem.
+            //
+            // Manually set it here, so that later, the _GetFocusedTabIndex call
+            // in _DuplicateTabViewItem will have a sensible value.
+            page->_SetFocusedTabIndex(0);
         });
         VERIFY_SUCCEEDED(result);
 
         result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.size());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(NoThrowString().Format(L"Duplicate the first tab"));
+        result = RunOnUIThread([&page]() {
+            page->_DuplicateTabViewItem();
+            VERIFY_ARE_EQUAL(2u, page->_tabs.size());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(NoThrowString().Format(
+            L"Change the settings of the TerminalPage so the first profile is "
+            L"no longer in the list of profiles"));
+        result = RunOnUIThread([&page, settings1]() {
+            page->_settings = settings1;
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(NoThrowString().Format(L"Duplicate the tab, and don't crash"));
+        result = RunOnUIThread([&page]() {
+            page->_DuplicateTabViewItem();
+            VERIFY_ARE_EQUAL(2u, page->_tabs.size(), L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
     }
