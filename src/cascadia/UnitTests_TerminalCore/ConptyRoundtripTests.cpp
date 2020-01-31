@@ -115,9 +115,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         _pVtRenderEngine->SetTestCallback(pfn);
 
-        // TODO: configure the OutputStateMachine's _pfnFlushToTerminal
+        // Configure the OutputStateMachine's _pfnFlushToTerminal
         // Use OutputStateMachineEngine::SetTerminalConnection
-
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
 
@@ -356,58 +355,65 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
-    // auto& hostTb = si.GetTextBuffer();
     auto& termTb = *term->_buffer;
 
     _flushFirstFrame();
 
+    _logConpty = true;
+
     const auto hostView = si.GetViewport();
-    for (auto i = 0; i < 2 * hostView.Height(); i++)
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
     {
+        Log::Comment(NoThrowString().Format(L"Writing line %d/%d", i, end));
+        expectedOutput.push_back("X");
+        if (i < hostView.BottomInclusive())
+        {
+            expectedOutput.push_back("\r\n");
+        }
+        else
+        {
+            // After we hit the bottom of the viewport, the newlines come in
+            // seperated for whatever reason.
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
+            expectedOutput.push_back("");
+        }
+
         hostSm.ProcessString(L"X\n");
 
-        expectedOutput.push_back("X");
-        expectedOutput.push_back("\r\n");
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
     }
-
-    // hostSm.ProcessString(L"AAA\n");
-    // hostSm.ProcessString(L"BBB\n");
-    // hostSm.ProcessString(L"\n");
-    // hostSm.ProcessString(L"CCC");
-    // auto verifyData = [](TextBuffer& tb) {
-    //     _verifyExpectedString(tb, L"AAA", { 0, 0 });
-    //     _verifyExpectedString(tb, L"BBB", { 0, 1 });
-    //     _verifyExpectedString(tb, L"   ", { 0, 2 });
-    //     _verifyExpectedString(tb, L"CCC", { 0, 3 });
-    // };
-
-    // verifyData(hostTb);
-
-    // expectedOutput.push_back("AAA");
-    // expectedOutput.push_back("\r\n");
-    // expectedOutput.push_back("BBB");
-    // expectedOutput.push_back("\r\n");
-    // // Here, we're going to emit 3 spaces. The region that got invalidated was a
-    // // rectangle from 0,0 to 3,3, so the vt renderer will try to render the
-    // // region in between BBB and CCC as well, because it got included in the
-    // // rectangle Or() operation.
-    // // This behavior should not be seen as binding - if a future optimization
-    // // breaks this test, it wouldn't be the worst.
-    // expectedOutput.push_back("   ");
-    // expectedOutput.push_back("\r\n");
-    // expectedOutput.push_back("CCC");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    // verifyData(termTb);
-
+    // Verify that we've printed height*2 lines of X's to the Terminal
     const auto termFirstView = term->GetViewport();
     for (short y = 0; y < 2 * termFirstView.Height(); y++)
     {
-        _verifyExpectedString(termTb, L"X  ", { 0, y });
+        TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
     }
 
-    // TODO: Make sure that a \e[3J comes through conpty here and clears the terminal scrollback.
+    // Write a Erase Scrollback VT sequence to the host, it should come through to the Terminal
+    expectedOutput.push_back("\x1b[3J");
+    hostSm.ProcessString(L"\x1b[3J");
 
-    // This might need my other branch tbh
+    _checkConptyOutput = false;
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    const auto termSecondView = term->GetViewport();
+    VERIFY_ARE_EQUAL(0, termSecondView.Top());
+
+    // Verify the top of the Terminal veiwoprt contains the contents of the old viewport
+    for (short y = 0; y < termSecondView.BottomInclusive(); y++)
+    {
+        TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
+    }
+
+    // Verify below the new viewport (the old viewport) has been cleared out
+    for (short y = termSecondView.BottomInclusive(); y < termFirstView.BottomInclusive(); y++)
+    {
+        TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
+    }
 }
