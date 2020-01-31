@@ -472,10 +472,11 @@ using namespace Microsoft::Console::Types;
     // cursor, if we're trying to move it to the start of the next line,
     // we'll remember that this line was wrapped, and not manually break the
     // line.
-    // Don't do this is the last character we're writing is a space - The last
+    // Don't do this if the last character we're writing is a space - The last
     // char will always be a space, but if we see that, we shouldn't wrap.
+    const short lastWrittenChar = gsl::narrow_cast<short>(_lastText.X + (totalWidth - numSpaces));
     if (lineWrapped &&
-        (_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
+        lastWrittenChar > _lastViewport.RightInclusive())
     {
         _wrappedRow = coord.Y;
     }
