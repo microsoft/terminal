@@ -100,7 +100,7 @@ Keybindings can be structured in the following manners:
 
 For commands without actions:
 <br>
-`{ "command": "commandName", "keys": [ "modifiers+keys" ] }`
+`{ "command": "commandName", "keys": [ "modifiers+key" ] }`
 
 For commands with actions:
 <br>
