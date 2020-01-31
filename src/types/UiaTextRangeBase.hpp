@@ -116,7 +116,7 @@ namespace Microsoft::Console::Types
 
         const IdType GetId() const noexcept;
         const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
-        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
+        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val);
         const bool IsDegenerate() const noexcept;
 
         void SetEndpoints(const COORD start, const COORD end) noexcept;
@@ -127,7 +127,7 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
                                         _In_ TextPatternRangeEndpoint targetEndpoint,
-                                        _Out_ int* pRetVal) noexcept override;
+                                        _Out_ int* pRetVal) override;
         IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) override;
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                      _In_ VARIANT val,

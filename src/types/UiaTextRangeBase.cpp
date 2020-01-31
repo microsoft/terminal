@@ -140,7 +140,9 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(const UiaTextRangeBase& a) noex
     _start = a._start;
     _end = a._end;
     _pData = a._pData;
-    _wordDelimiters = a._wordDelimiters;
+
+    // c_str needed to suppress C26447
+    _wordDelimiters = a._wordDelimiters.c_str();
 
     _id = id;
     ++id;
@@ -178,7 +180,7 @@ const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) con
 // - val - the value that it will be set to
 // Return Value:
 // - true if range is degenerate, false otherwise.
-bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept
+bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val)
 {
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     switch (endpoint)
@@ -255,7 +257,7 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
 IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                                   _In_ ITextRangeProvider* pTargetRange,
                                                   _In_ TextPatternRangeEndpoint targetEndpoint,
-                                                  _Out_ int* pRetVal) noexcept
+                                                  _Out_ int* pRetVal)
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -514,13 +516,13 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
 
             // if _end is at 0, we ignore that row because _end is exclusive
             const auto& buffer = _pData->GetTextBuffer();
-            const SHORT totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
+            const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
                                                _end.Y - _start.Y :
-                                               _end.Y - _start.Y + static_cast<SHORT>(1);
-            const SHORT lastRowInRange = _start.Y + totalRowsInRange - static_cast<SHORT>(1);
+                                               _end.Y - _start.Y + base::ClampedNumeric<short>(1);
+            const short lastRowInRange = _start.Y + totalRowsInRange - base::ClampedNumeric<short>(1);
 
-            SHORT currentScreenInfoRow = 0;
-            for (SHORT i = 0; i < totalRowsInRange; ++i)
+            short currentScreenInfoRow = 0;
+            for (short i = 0; i < totalRowsInRange; ++i)
             {
                 currentScreenInfoRow = _start.Y + i;
                 const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
