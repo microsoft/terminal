@@ -15,38 +15,6 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-// The values used by VkKeyScan to encode modifiers in the high order byte
-const short KEYSCAN_SHIFT = 1;
-const short KEYSCAN_CTRL = 2;
-const short KEYSCAN_ALT = 4;
-
-// The values with which VT encodes modifier values.
-const short VT_SHIFT = 1;
-const short VT_ALT = 2;
-const short VT_CTRL = 4;
-
-// The assumed values for SGR Mouse Scroll Wheel deltas
-constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
-constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
-
-const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
-
-// For reference, the equivalent INPUT_RECORD values are:
-// RIGHT_ALT_PRESSED   0x0001
-// LEFT_ALT_PRESSED    0x0002
-// RIGHT_CTRL_PRESSED  0x0004
-// LEFT_CTRL_PRESSED   0x0008
-// SHIFT_PRESSED       0x0010
-// NUMLOCK_ON          0x0020
-// SCROLLLOCK_ON       0x0040
-// CAPSLOCK_ON         0x0080
-// ENHANCED_KEY        0x0100
-
-enum CsiIntermediateCodes : wchar_t
-{
-    MOUSE_SGR = L'<',
-};
-
 struct CsiToVkey
 {
     CsiActionCodes action;
@@ -70,25 +38,6 @@ static bool operator==(const CsiToVkey& pair, const CsiActionCodes code) noexcep
 {
     return pair.action == code;
 }
-
-// Sequences ending in '~' use these numbers as identifiers.
-enum class GenericKeyIdentifiers : unsigned short
-{
-    GenericHome = 1,
-    Insert = 2,
-    Delete = 3,
-    GenericEnd = 4,
-    Prior = 5, //PgUp
-    Next = 6, //PgDn
-    F5 = 15,
-    F6 = 17,
-    F7 = 18,
-    F8 = 19,
-    F9 = 20,
-    F10 = 21,
-    F11 = 23,
-    F12 = 24,
-};
 
 struct GenericToVkey
 {
@@ -117,22 +66,6 @@ static bool operator==(const GenericToVkey& pair, const GenericKeyIdentifiers id
 {
     return pair.identifier == identifier;
 }
-
-enum class Ss3ActionCodes : wchar_t
-{
-    // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
-    //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
-    // ArrowUp = L'A',
-    // ArrowDown = L'B',
-    // ArrowRight = L'C',
-    // ArrowLeft = L'D',
-    // Home = L'H',
-    // End = L'F',
-    SS3_F1 = L'P',
-    SS3_F2 = L'Q',
-    SS3_F3 = L'R',
-    SS3_F4 = L'S',
-};
 
 struct Ss3ToVkey
 {
@@ -397,6 +330,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             DWORD eventFlags = 0;
             modifierState = _GetSGRMouseModifierState(parameters);
             success = _GetSGRXYPosition(parameters, row, col);
+
+            // we need _UpdateSGRMouseButtonState() on the left side here because we _always_ should be updating our state
+            // even if we failed to parse a portion of this sequence.
             success = _UpdateSGRMouseButtonState(wch, parameters, buttonState, eventFlags) && success;
             success = success && _WriteMouseEvent(col, row, buttonState, modifierState, eventFlags);
         }
@@ -731,39 +667,36 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 // - modifierState - the modifier state to write with the key.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
-bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
 {
     const wchar_t wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
-    return _WriteSingleKey(wch, vkey, dwModifierState);
+    return _WriteSingleKey(wch, vkey, modifierState);
 }
 
 // Method Description:
 // - Writes a Mouse Event Record to the input callback based on the state of the mouse.
 // Arguments:
-// - uiColumn - the X/Column position on the viewport (0 = left-most)
-// - uiLine - the Y/Line/Row position on the viewport (0 = top-most)
-// - dwButtonState - the mouse buttons that are being modified
-// - dwModifierState - the modifier state to write mouse record.
-// - dwEventFlags - the type of mouse event to write to the mouse record.
+// - column - the X/Column position on the viewport (0 = left-most)
+// - line - the Y/Line/Row position on the viewport (0 = top-most)
+// - buttonState - the mouse buttons that are being modified
+// - modifierState - the modifier state to write mouse record.
+// - eventFlags - the type of mouse event to write to the mouse record.
 // Return Value:
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
 {
-    // At most 1 record - the modifiers don't get their own events
-    const size_t MAX_LENGTH = 1;
-    INPUT_RECORD rgInput[MAX_LENGTH];
-    size_t cInput = MAX_LENGTH;
-
     COORD uiPos = { gsl::narrow<short>(column) - 1, gsl::narrow<short>(line) - 1 };
 
-    rgInput[0].EventType = MOUSE_EVENT;
-    rgInput[0].Event.MouseEvent.dwMousePosition = uiPos;
-    rgInput[0].Event.MouseEvent.dwButtonState = buttonState;
-    rgInput[0].Event.MouseEvent.dwControlKeyState = controlKeyState;
-    rgInput[0].Event.MouseEvent.dwEventFlags = eventFlags;
+    INPUT_RECORD rgInput;
+    rgInput.EventType = MOUSE_EVENT;
+    rgInput.Event.MouseEvent.dwMousePosition = uiPos;
+    rgInput.Event.MouseEvent.dwButtonState = buttonState;
+    rgInput.Event.MouseEvent.dwControlKeyState = controlKeyState;
+    rgInput.Event.MouseEvent.dwEventFlags = eventFlags;
 
-    // pack and write input records
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(rgInput, cInput));
+    // pack and write input record
+    // 1 record - the modifiers don't get their own events
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(&rgInput, 1));
     return _pDispatch->WriteInput(inputEvents);
 }
 
@@ -868,7 +801,7 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 // - buttonState: Recieves the button state for the record
 // - eventFlags: Recieves the special mouse events for the record
 // Return Value:
-// true iff we were able to synthesize pdwButtonState
+// true iff we were able to synthesize buttonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
                                                          const std::basic_string_view<size_t> parameters,
                                                          DWORD& buttonState,
@@ -882,7 +815,6 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     // Starting with the state from the last mouse event we received
     buttonState = _mouseButtonState;
     eventFlags = 0;
-    bool success = true;
 
     // The first parameter of mouse events is encoded as the following two bytes:
     // BBDM'MMBB
@@ -890,9 +822,11 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     //   BB__'__BB - which button was pressed/released
     //   MMM - Control, Alt, Shift state (respectively)
     //   D - flag signifying a drag event
+    const auto sgrEncoding = til::at(parameters, 0);
+
     // This retrieves the 2 MSBs and concatenates them to the 2 LSBs to create BBBB in binary
     // This represents which button had a change in state
-    const auto buttonID = (til::at(parameters, 0) & 0x3) | ((til::at(parameters, 0) & 0xC0) >> 3);
+    const auto buttonID = (sgrEncoding & 0x3) | ((sgrEncoding & 0xC0) >> 4);
 
     // Step 1: Translate which button was affected
     DWORD buttonFlag = 0;
@@ -908,8 +842,8 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
         buttonFlag = FROM_LEFT_2ND_BUTTON_PRESSED;
         break;
     default:
-        success = false;
-        break;
+        // no detectable buttonID, so we can't update the state
+        return false;
     }
 
     // Step 2: Decide whether to set or clear that button's bit
@@ -925,8 +859,8 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
         buttonState &= (~buttonFlag);
         break;
     default:
-        success = false;
-        break;
+        // no detectable change of state, so we can't update the state
+        return false;
     }
 
     // Step 3: append the mouse wheel data to out param
@@ -953,7 +887,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     }
 
     // Step 4: check if mouse moved
-    if (WI_IsFlagSet(til::at(parameters, 0), CsiMouseModifierCodes::Drag))
+    if (WI_IsFlagSet(sgrEncoding, CsiMouseModifierCodes::Drag))
     {
         eventFlags |= MOUSE_MOVED;
     }
@@ -962,7 +896,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
     // only take LOWORD here because HIWORD is reserved for mouse wheel delta and release events for the wheel buttons are not reported
     _mouseButtonState = LOWORD(buttonState);
 
-    return success;
+    return true;
 }
 
 // Method Description:
@@ -1160,7 +1094,6 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
                                              size_t& line,
                                              size_t& column) const noexcept
 {
-    bool success = true;
     line = DefaultLine;
     column = DefaultColumn;
 
@@ -1181,7 +1114,7 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
     }
     else
     {
-        success = false;
+        return false;
     }
 
     // Distances of 0 should be changed to 1.
@@ -1195,7 +1128,7 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
         column = DefaultColumn;
     }
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -1210,7 +1143,6 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
                                                 size_t& line,
                                                 size_t& column) const noexcept
 {
-    bool success = true;
     line = DefaultLine;
     column = DefaultColumn;
 
@@ -1222,7 +1154,7 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
     }
     else
     {
-        success = false;
+        return false;
     }
 
     // Distances of 0 should be changed to 1.
@@ -1236,5 +1168,5 @@ bool InputStateMachineEngine::_GetSGRXYPosition(const std::basic_string_view<siz
         column = DefaultColumn;
     }
 
-    return success;
+    return true;
 }

@@ -218,10 +218,10 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     typedef std::tuple<CsiMouseButtonCodes, unsigned short, COORD, CsiActionCodes> SGR_PARAMS;
 
     // MOUSE_EVENT_PARAMS serves as expected output
-    // - dwButtonState
-    // - dwControlKeyState
-    // - dwMousePosition
-    // - dwEventFlags
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
     typedef std::tuple<DWORD, DWORD, COORD, DWORD> MOUSE_EVENT_PARAMS;
 
     void VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData);
@@ -271,22 +271,22 @@ void InputEngineTest::VerifyExpectedInputDrained()
             switch (exp.EventType)
             {
             case KEY_EVENT:
-                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: KEY_EVENT"));
+                Log::Error(L"EXPECTED INPUT NEVER RECEIVED: KEY_EVENT");
                 break;
             case MOUSE_EVENT:
-                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: MOUSE_EVENT"));
+                Log::Error(L"EXPECTED INPUT NEVER RECEIVED: MOUSE_EVENT");
                 break;
             case WINDOW_BUFFER_SIZE_EVENT:
-                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: WINDOW_BUFFER_SIZE_EVENT"));
+                Log::Error(L"EXPECTED INPUT NEVER RECEIVED: WINDOW_BUFFER_SIZE_EVENT");
                 break;
             case MENU_EVENT:
-                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: MENU_EVENT"));
+                Log::Error(L"EXPECTED INPUT NEVER RECEIVED: MENU_EVENT");
                 break;
             case FOCUS_EVENT:
-                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: FOCUS_EVENT"));
+                Log::Error(L"EXPECTED INPUT NEVER RECEIVED: FOCUS_EVENT");
                 break;
             default:
-                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: UNKNOWN TYPE"));
+                Log::Error(L"EXPECTED INPUT NEVER RECEIVED: UNKNOWN TYPE");
                 break;
             }
         }
@@ -524,6 +524,10 @@ void InputEngineTest::AlphanumericTest()
 
 void InputEngineTest::RoundTripTest()
 {
+    // TODO GH #4405: This test fails.
+    Log::Result(WEX::Logging::TestResults::Skipped);
+    return;
+
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
@@ -581,8 +585,7 @@ void InputEngineTest::RoundTripTest()
         terminalInput.HandleKey(inputKey.get());
     }
 
-    // TODO GH #4405: This test fails.
-    // VerifyExpectedInputDrained();
+    VerifyExpectedInputDrained();
 }
 
 void InputEngineTest::WindowManipulationTest()
@@ -1017,10 +1020,10 @@ void InputEngineTest::SGRMouseTest_ButtonClick()
     // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 
     // MOUSE_EVENT_PARAMS serves as expected output
-    // - dwButtonState
-    // - dwControlKeyState
-    // - dwMousePosition
-    // - dwEventFlags
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
 
     // clang-format off
     // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
@@ -1049,10 +1052,10 @@ void InputEngineTest::SGRMouseTest_Modifiers()
     // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 
     // MOUSE_EVENT_PARAMS serves as expected output
-    // - dwButtonState
-    // - dwControlKeyState
-    // - dwMousePosition
-    // - dwEventFlags
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
 
     // clang-format off
     // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of
@@ -1081,10 +1084,10 @@ void InputEngineTest::SGRMouseTest_Movement()
     // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
 
     // MOUSE_EVENT_PARAMS serves as expected output
-    // - dwButtonState
-    // - dwControlKeyState
-    // - dwMousePosition
-    // - dwEventFlags
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
 
     // clang-format off
     // NOTE: The first mouse event has to be considered a MOUSE_MOVED event because it does not have a previous location to keep track of

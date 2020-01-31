@@ -23,6 +23,38 @@ Author(s):
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    // The values used by VkKeyScan to encode modifiers in the high order byte
+    const short KEYSCAN_SHIFT = 1;
+    const short KEYSCAN_CTRL = 2;
+    const short KEYSCAN_ALT = 4;
+
+    // The values with which VT encodes modifier values.
+    const short VT_SHIFT = 1;
+    const short VT_ALT = 2;
+    const short VT_CTRL = 4;
+
+    // The assumed values for SGR Mouse Scroll Wheel deltas
+    constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
+    constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
+
+    const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
+
+    // For reference, the equivalent INPUT_RECORD values are:
+    // RIGHT_ALT_PRESSED   0x0001
+    // LEFT_ALT_PRESSED    0x0002
+    // RIGHT_CTRL_PRESSED  0x0004
+    // LEFT_CTRL_PRESSED   0x0008
+    // SHIFT_PRESSED       0x0010
+    // NUMLOCK_ON          0x0020
+    // SCROLLLOCK_ON       0x0040
+    // CAPSLOCK_ON         0x0080
+    // ENHANCED_KEY        0x0100
+
+    enum CsiIntermediateCodes : wchar_t
+    {
+        MOUSE_SGR = L'<',
+    };
+
     enum class CsiActionCodes : wchar_t
     {
         ArrowUp = L'A',
@@ -61,6 +93,41 @@ namespace Microsoft::Console::VirtualTerminal
         Meta = 8,
         Ctrl = 16,
         Drag = 32,
+    };
+
+    // Sequences ending in '~' use these numbers as identifiers.
+    enum class GenericKeyIdentifiers : unsigned short
+    {
+        GenericHome = 1,
+        Insert = 2,
+        Delete = 3,
+        GenericEnd = 4,
+        Prior = 5, //PgUp
+        Next = 6, //PgDn
+        F5 = 15,
+        F6 = 17,
+        F7 = 18,
+        F8 = 19,
+        F9 = 20,
+        F10 = 21,
+        F11 = 23,
+        F12 = 24,
+    };
+
+    enum class Ss3ActionCodes : wchar_t
+    {
+        // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
+        //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
+        // ArrowUp = L'A',
+        // ArrowDown = L'B',
+        // ArrowRight = L'C',
+        // ArrowLeft = L'D',
+        // Home = L'H',
+        // End = L'F',
+        SS3_F1 = L'P',
+        SS3_F2 = L'Q',
+        SS3_F3 = L'R',
+        SS3_F4 = L'S',
     };
 
     class InputStateMachineEngine : public IStateMachineEngine
@@ -102,7 +169,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool DispatchIntermediatesFromEscape() const noexcept override;
 
     private:
-        friend class InputEngineTest;
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
@@ -128,7 +194,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _WriteSingleKey(const short vkey, const DWORD modifierState);
         bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _WriteMouseEvent(const size_t column, const size_t uiLine, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
+        bool _WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
 
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,
@@ -153,5 +219,9 @@ namespace Microsoft::Console::VirtualTerminal
                                size_t& column) const noexcept;
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
+
+        #ifdef UNIT_TESTING
+        friend class InputEngineTest;
+        #endif
     };
 }
