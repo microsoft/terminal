@@ -106,7 +106,7 @@ For commands with arguments:
 <br>
 `{ "command": { "action": "commandName", "argument": "value" }, "keys": ["modifiers+key"] }`
 
-| Command | Command Description | Action (*=required) | Action Arguments | Action Desciption |
+| Command | Command Description | Action (*=required) | Action Arguments | Argument Descriptions |
 | ------- | ------------------- | ------ | ---------------- | ----------------- |
 | closePane | Close the active pane. | | | |
 | closeTab | Close the current tab. | | | |
