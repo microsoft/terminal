@@ -354,55 +354,54 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttrib
 IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
                                           _In_ BOOL searchBackward,
                                           _In_ BOOL ignoreCase,
-                                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+                                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
+try
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
-    try
+
+    const std::wstring queryText{ text, SysStringLen(text) };
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+
+    auto searchDirection = Search::Direction::Forward;
+    auto searchAnchor = _start;
+    if (searchBackward)
     {
-        const std::wstring queryText{ text };
-        const auto bufferSize = _pData->GetTextBuffer().GetSize();
-        const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+        searchDirection = Search::Direction::Backward;
 
-        auto searchDirection = Search::Direction::Forward;
-        auto searchAnchor = _start;
-        if (searchBackward)
-        {
-            searchDirection = Search::Direction::Backward;
-
-            // we need to convert the end to inclusive
-            // because Search operates with an inclusive COORD
-            searchAnchor = _end;
-            bufferSize.DecrementInBounds(searchAnchor, true);
-        }
-
-        Search searcher{ *_pData, queryText, searchDirection, sensitivity, searchAnchor };
-
-        if (searcher.FindNext())
-        {
-            const auto foundLocation = searcher.GetFoundLocation();
-            const auto start = foundLocation.first;
-
-            // we need to increment the position of end because it's exclusive
-            auto end = foundLocation.second;
-            bufferSize.IncrementInBounds(end, true);
-
-            // make sure what was found is within the bounds of the current range
-            if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end, true) < 0) ||
-                (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
-            {
-                RETURN_IF_FAILED(Clone(ppRetVal));
-                UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-                range._start = start;
-                range._end = end;
-            }
-        }
-        return S_OK;
+        // we need to convert the end to inclusive
+        // because Search operates with an inclusive COORD
+        searchAnchor = _end;
+        bufferSize.DecrementInBounds(searchAnchor, true);
     }
-    CATCH_RETURN();
+
+    Search searcher{ *_pData, queryText, searchDirection, sensitivity, searchAnchor };
+
+    if (searcher.FindNext())
+    {
+        const auto foundLocation = searcher.GetFoundLocation();
+        const auto start = foundLocation.first;
+
+        // we need to increment the position of end because it's exclusive
+        auto end = foundLocation.second;
+        bufferSize.IncrementInBounds(end, true);
+
+        // make sure what was found is within the bounds of the current range
+        if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end, true) < 0) ||
+            (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
+        {
+            RETURN_IF_FAILED(Clone(ppRetVal));
+            UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+            range._start = start;
+            range._end = end;
+        }
+    }
+    return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
                                                    _Out_ VARIANT* pRetVal) noexcept

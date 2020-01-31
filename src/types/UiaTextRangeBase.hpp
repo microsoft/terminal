@@ -107,7 +107,7 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP FindText(_In_ BSTR text,
                                 _In_ BOOL searchBackward,
                                 _In_ BOOL ignoreCase,
-                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
+                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept override;
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
                                          _Out_ VARIANT* pRetVal) noexcept override;
         IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
