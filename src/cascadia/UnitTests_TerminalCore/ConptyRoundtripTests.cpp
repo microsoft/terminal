@@ -777,15 +777,21 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(0, thirdHostView.Top());
     VERIFY_ARE_EQUAL(newViewportSize.Y, thirdHostView.BottomExclusive());
 
-    // The Terminal should be stuck to the top of the viewport.
+    // The Terminal should be stuck to the top of the viewport, unless dy<0,
+    // rows=50. In that set of cases, we _didn't_ pin the top of the Terminal to
+    // the old top, we actually shifted it down (because the output was at the
+    // bottom of the window, not empty lines).
     const auto thirdTermView = term->GetViewport();
-
-    // TODO: For dy<0, rows=50, this is not true. In that set of cases, we
-    // _didn't_ pin the top of the Terminal to the old top, we actually shifted
-    // it down (because the output was at the bottom of the window, not empty
-    // lines).
-    // TODO: VERIFY_ARE_EQUAL(secondTermView.Top(), thirdTermView.Top());
-    // TODO: VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, thirdTermView.BottomExclusive());
+    if (dy < 0 && (printedRows > initialTermView.Height() && printedRows < initialTerminalBufferHeight))
+    {
+        VERIFY_ARE_EQUAL(secondTermView.Top() - dy, thirdTermView.Top());
+        VERIFY_ARE_EQUAL(expectedTerminalViewBottom, thirdTermView.BottomExclusive());
+    }
+    else
+    {
+        VERIFY_ARE_EQUAL(secondTermView.Top(), thirdTermView.Top());
+        VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, thirdTermView.BottomExclusive());
+    }
 
     verifyHostData(*hostTb, dy);
     // Note that at this point, nothing should have changed with the Terminal.
@@ -799,16 +805,21 @@ void ConptyRoundtripTests::TestResizeHeight()
     VERIFY_ARE_EQUAL(0, fourthHostView.Top());
     VERIFY_ARE_EQUAL(newViewportSize.Y, fourthHostView.BottomExclusive());
 
-    // The Terminal should be stuck to the top of the viewport.
+    // The Terminal should be stuck to the top of the viewport, unless dy<0,
+    // rows=50. In that set of cases, we _didn't_ pin the top of the Terminal to
+    // the old top, we actually shifted it down (because the output was at the
+    // bottom of the window, not empty lines).
     const auto fourthTermView = term->GetViewport();
-
-    // TODO: For dy<0, rows=50, this is not true. In that set of cases, we
-    // _didn't_ pin the top of the Terminal to the old top, we actually shifted
-    // it down (because the output was at the bottom of the window, not empty
-    // lines).
-    // TODO: VERIFY_ARE_EQUAL(secondTermView.Top(), fourthTermView.Top());
-    // TODO: VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, fourthTermView.BottomExclusive());
-
+    if (dy < 0 && (printedRows > initialTermView.Height() && printedRows < initialTerminalBufferHeight))
+    {
+        VERIFY_ARE_EQUAL(secondTermView.Top() - dy, thirdTermView.Top());
+        VERIFY_ARE_EQUAL(expectedTerminalViewBottom, thirdTermView.BottomExclusive());
+    }
+    else
+    {
+        VERIFY_ARE_EQUAL(secondTermView.Top(), thirdTermView.Top());
+        VERIFY_ARE_EQUAL(expectedTerminalViewBottom + dy, thirdTermView.BottomExclusive());
+    }
     verifyHostData(*hostTb, dy);
     verifyTermData(*termTb, dy);
 }
