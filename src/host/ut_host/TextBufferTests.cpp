@@ -2018,7 +2018,7 @@ void TextBufferTests::TestBurrito()
     VERIFY_IS_FALSE(afterBurritoIter);
 }
 
-void TextBufferTests::WriteLinesToBuffer(std::vector<std::wstring> text, TextBuffer& buffer)
+void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring> text, TextBuffer& buffer)
 {
     for (auto row = 0; row < text.size(); ++row)
     {
