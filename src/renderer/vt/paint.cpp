@@ -474,7 +474,7 @@ using namespace Microsoft::Console::Types;
     // line.
     // Don't do this if the last character we're writing is a space - The last
     // char will always be a space, but if we see that, we shouldn't wrap.
-    const short lastWrittenChar = gsl::narrow_cast<short>(_lastText.X + (totalWidth - numSpaces));
+    const short lastWrittenChar = base::ClampAdd(_lastText.X, base::ClampSub(totalWidth, numSpaces));
     if (lineWrapped &&
         lastWrittenChar > _lastViewport.RightInclusive())
     {
