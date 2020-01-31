@@ -937,7 +937,7 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
     POINT bottomRight{ 0 };
 
     // startAnchor is converted to the viewport coordinate space
-#pragma warning(suppress:26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
+#pragma warning(suppress : 26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
     auto startCoord = startAnchor;
     viewport.ConvertToOrigin(&startCoord);
 

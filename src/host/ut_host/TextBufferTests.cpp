@@ -2020,7 +2020,7 @@ void TextBufferTests::TestBurrito()
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring> text, TextBuffer& buffer)
 {
-    for (auto row = 0; row < text.size(); ++row)
+    for (size_t row = 0; row < text.size(); ++row)
     {
         auto line = text[row];
         OutputCellIterator iter{ line };
