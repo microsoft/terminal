@@ -385,26 +385,16 @@ using namespace Microsoft::Console::Types;
 
     std::wstring unclusteredString;
     unclusteredString.reserve(clusters.size());
-    base::ClampedNumeric<short> totalWidth{ 0i16 };
-    // short totalWidth = 0;
-    // size_t totalWidth = 0;
+    short totalWidth = 0;
     for (const auto& cluster : clusters)
     {
         unclusteredString.append(cluster.GetText());
-        // totalWidth.operator+=(cluster.GetColumns());
-        // totalWidth = base::ClampAdd<short>(totalWidth, cluster.GetColumns());
-
-#pragma warning(push)
-#pragma warning(disable : 4100)
-        totalWidth += base::ClampedNumeric<short>(cluster.GetColumns());
-#pragma warning(pop)
-
-        //RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
     }
     const size_t cchLine = unclusteredString.size();
 
     bool foundNonspace = false;
-    base::ClampedNumeric<short> lastNonSpace = 0;
+    size_t lastNonSpace = 0;
     for (size_t i = 0; i < cchLine; i++)
     {
         if (unclusteredString.at(i) != L'\x20')
@@ -426,7 +416,7 @@ using namespace Microsoft::Console::Types;
     //      cch = 2, lastNonSpace = 1, foundNonSpace = true
     //      cch-lastNonSpace = 1 -> bad
     //      cch-lastNonSpace-(1) = 0 -> good
-    const base::ClampedNumeric<short> numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    const size_t numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -444,7 +434,7 @@ using namespace Microsoft::Console::Types;
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
-    const bool optimalToUseECH = numSpaces.RawValue() > ERASE_CHARACTER_STRING_LENGTH;
+    const bool optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
@@ -452,13 +442,13 @@ using namespace Microsoft::Console::Types;
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
     const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
-    const base::ClampedNumeric<short> cchActual = removeSpaces ?
-                                                      base::ClampedNumeric<short>(cchLine - numSpaces) :
-                                                      cchLine;
+    const size_t cchActual = removeSpaces ?
+                                 (cchLine - numSpaces) :
+                                 cchLine;
 
-    const base::ClampedNumeric<short> columnsActual = removeSpaces ?
-                                                          base::ClampedNumeric<short>(totalWidth - numSpaces) :
-                                                          totalWidth;
+    const size_t columnsActual = removeSpaces ?
+                                     (totalWidth - numSpaces) :
+                                     totalWidth;
 
     if (cchActual == 0)
     {
@@ -484,8 +474,7 @@ using namespace Microsoft::Console::Types;
     // line.
     // Don't do this if the last character we're writing is a space - The last
     // char will always be a space, but if we see that, we shouldn't wrap.
-    // const short lastWrittenChar = gsl::narrow_cast<short>(_lastText.X + (totalWidth - numSpaces));
-    base::ClampedNumeric<short> lastWrittenChar{ _lastText.X + (totalWidth - numSpaces) };
+    const short lastWrittenChar = gsl::narrow_cast<short>(_lastText.X + (totalWidth - numSpaces));
     if (lineWrapped &&
         lastWrittenChar > _lastViewport.RightInclusive())
     {
@@ -506,16 +495,15 @@ using namespace Microsoft::Console::Types;
     //      back one character more than we wanted.
     if (_lastText.X < _lastViewport.RightInclusive())
     {
-        const base::ClampedNumeric<short> newX = _lastText.X + columnsActual;
-        _lastText.X = newX.RawValue();
+        _lastText.X += static_cast<short>(columnsActual);
     }
 
-    base::ClampedNumeric<short> sNumSpaces = numSpaces;
-    // try
-    // {
-    //     sNumSpaces = gsl::narrow<short>(numSpaces);
-    // }
-    // CATCH_RETURN();
+    short sNumSpaces;
+    try
+    {
+        sNumSpaces = gsl::narrow<short>(numSpaces);
+    }
+    CATCH_RETURN();
 
     if (useEraseChar)
     {
@@ -525,11 +513,11 @@ using namespace Microsoft::Console::Types;
         //   cursor somewhere else before the end of the frame, we'll move the
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
-        _deferredCursorPos = { _lastText.X + sNumSpaces.RawValue(), _lastText.Y };
+        _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
 
         if (_deferredCursorPos.X < _lastViewport.RightInclusive())
         {
-            RETURN_IF_FAILED(_EraseCharacter(sNumSpaces.RawValue()));
+            RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
         }
         else
         {
@@ -542,15 +530,14 @@ using namespace Microsoft::Console::Types;
         //      line is already empty.
         if (optimalToUseECH)
         {
-            _deferredCursorPos = { _lastText.X + sNumSpaces.RawValue(), _lastText.Y };
+            _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
         }
         else
         {
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
-            // _lastText.X += static_cast<short>(numSpaces);
-            _lastText.X += numSpaces.RawValue();
+            _lastText.X += static_cast<short>(numSpaces);
         }
     }
 
