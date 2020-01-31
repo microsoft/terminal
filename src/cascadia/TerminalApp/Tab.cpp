@@ -32,11 +32,23 @@ namespace winrt::TerminalApp::implementation
         _MakeTabViewItem();
     }
 
+    // Method Description:
+    // - Initializes a TabViewItem for this Tab instance.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Tab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
     }
 
+    // Method Description:
+    // - Get the root UIElement of this Tab's root pane.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The UIElement acting as root of the Tab's root pane.
     UIElement Tab::GetRootElement()
     {
         return _rootPane->GetRootElement();
@@ -58,6 +70,12 @@ namespace winrt::TerminalApp::implementation
         return _activePane->GetTerminalControl();
     }
 
+    // Method Description:
+    // - Gets the TabViewItem that represents this Tab
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The TabViewItem that represents this Tab
     winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
     {
         return _tabViewItem;
@@ -150,6 +168,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Set the icon on the TabViewItem for this tab.
+    // Arguments:
+    // - iconPath: The new path string to use as the IconPath for our TabViewItem
+    // Return Value:
+    // - <none>
     winrt::fire_and_forget Tab::UpdateIcon(const winrt::hstring iconPath)
     {
         // Don't reload our icon if it hasn't changed.
