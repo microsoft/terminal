@@ -793,12 +793,15 @@ namespace winrt::TerminalApp::implementation
     // - Duplicates the current focused tab
     void TerminalPage::_DuplicateTabViewItem()
     {
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-        const auto& profileGuid = focusedTab->GetFocusedProfile();
-        if (profileGuid.has_value())
+        if (auto index{ _GetFocusedTabIndex() })
         {
-            const auto settings = _settings->BuildSettings(profileGuid.value());
-            _CreateNewTabFromSettings(profileGuid.value(), settings);
+            auto focusedTab = _GetStrongTabImpl(*index);
+            const auto& profileGuid = focusedTab->GetFocusedProfile();
+            if (profileGuid.has_value())
+            {
+                const auto settings = _settings->BuildSettings(profileGuid.value());
+                _CreateNewTabFromSettings(profileGuid.value(), settings);
+            }
         }
     }
 
@@ -835,20 +838,23 @@ namespace winrt::TerminalApp::implementation
             _lastTabClosedHandlers(*this, nullptr);
         }
 
-        auto focusedTabIndex = _GetFocusedTabIndex();
-        if (gsl::narrow_cast<int>(tabIndex) == focusedTabIndex)
+        if (auto indexOpt{ _GetFocusedTabIndex() })
         {
-            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.Size());
-            if (focusedTabIndex >= tabCount)
+            auto focusedTabIndex = *indexOpt;
+            if (tabIndex == focusedTabIndex)
             {
-                focusedTabIndex = tabCount - 1;
-            }
-            else if (focusedTabIndex < 0)
-            {
-                focusedTabIndex = 0;
-            }
+                uint32_t tabCount = _tabs.Size();
+                if (focusedTabIndex >= tabCount)
+                {
+                    focusedTabIndex = tabCount - 1;
+                }
+                else if (focusedTabIndex < 0)
+                {
+                    focusedTabIndex = 0;
+                }
 
-            _SelectTab(focusedTabIndex);
+                _SelectTab(focusedTabIndex);
+            }
         }
     }
 
@@ -893,13 +899,14 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        auto tabCount = _tabs.Size();
-        // Wraparound math. By adding tabCount and then calculating modulo tabCount,
-        // we clamp the values to the range [0, tabCount) while still supporting moving
-        // leftward from 0 to tabCount - 1.
-        _SetFocusedTabIndex(
-            static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount));
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            uint32_t tabCount = _tabs.Size();
+            // Wraparound math. By adding tabCount and then calculating modulo tabCount,
+            // we clamp the values to the range [0, tabCount) while still supporting moving
+            // leftward from 0 to tabCount - 1.
+            _SetFocusedTabIndex(((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount));
+        }
     }
 
     // Method Description:
@@ -907,9 +914,9 @@ namespace winrt::TerminalApp::implementation
     //   is greater than the number of tabs we have.
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
-    bool TerminalPage::_SelectTab(const int tabIndex)
+    bool TerminalPage::_SelectTab(const uint32_t& tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.Size()))
+        if (tabIndex >= 0 && tabIndex < _tabs.Size())
         {
             _SetFocusedTabIndex(tabIndex);
             return true;
@@ -927,14 +934,24 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_MoveFocus(const Direction& direction)
     {
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-        focusedTab->NavigateFocus(direction);
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            focusedTab->NavigateFocus(direction);
+        }
     }
 
     winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetActiveControl()
     {
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-        return focusedTab->GetActiveTerminalControl();
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            return focusedTab->GetActiveTerminalControl();
+        }
+        else
+        {
+            return nullptr;
+        }
     }
 
     // Method Description:
@@ -942,7 +959,7 @@ namespace winrt::TerminalApp::implementation
     //      no tab is currently selected, returns -1.
     // Return Value:
     // - the index of the currently focused tab if there is one, else -1
-    int TerminalPage::_GetFocusedTabIndex() const
+    std::optional<uint32_t> TerminalPage::_GetFocusedTabIndex() const noexcept
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex()
         //          sometimes return incorrect result after removing some tabs
@@ -951,10 +968,10 @@ namespace winrt::TerminalApp::implementation
         {
             return focusedIndex;
         }
-        return -1;
+        return std::nullopt;
     }
 
-    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(int tabIndex)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t& tabIndex)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -973,8 +990,10 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void TerminalPage::_CloseFocusedTab()
     {
-        uint32_t focusedTabIndex = _GetFocusedTabIndex();
-        _RemoveTabViewItemByIndex(focusedTabIndex);
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            _RemoveTabViewItemByIndex(*index);
+        }
     }
 
     // Method Description:
@@ -983,8 +1002,11 @@ namespace winrt::TerminalApp::implementation
     //   tab's Closed event.
     void TerminalPage::_CloseFocusedPane()
     {
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-        focusedTab->ClosePane();
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            focusedTab->ClosePane();
+        }
     }
 
     // Method Description:
@@ -1021,8 +1043,11 @@ namespace winrt::TerminalApp::implementation
     // - delta: a number of lines to move the viewport relative to the current viewport.
     void TerminalPage::_Scroll(int delta)
     {
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-        focusedTab->Scroll(delta);
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            focusedTab->Scroll(delta);
+        }
     }
 
     // Method Description:
@@ -1044,11 +1069,19 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        auto indexOpt = _GetFocusedTabIndex();
+
+        // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
+        if (!indexOpt)
+        {
+            return;
+        }
+
+        auto focusedTab = _GetStrongTabImpl(*indexOpt);
+
         const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
-
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
 
         const auto canSplit = focusedTab->CanSplitPane(splitType);
 
@@ -1075,8 +1108,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_ResizePane(const Direction& direction)
     {
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-        focusedTab->ResizePane(direction);
+        if (auto index{ _GetFocusedTabIndex() })
+        {
+            auto focusedTab{ _GetStrongTabImpl(*index) };
+            focusedTab->ResizePane(direction);
+        }
     }
 
     // Method Description:
@@ -1089,11 +1125,17 @@ namespace winrt::TerminalApp::implementation
     //      is clamped between -1 and 1)
     void TerminalPage::_ScrollPage(int delta)
     {
+        auto indexOpt = _GetFocusedTabIndex();
+        // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
+        if (!indexOpt)
+        {
+            return;
+        }
+
         delta = std::clamp(delta, -1, 1);
         const auto control = _GetActiveControl();
         const auto termHeight = control.GetViewHeight();
-
-        auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
+        auto focusedTab{ _GetStrongTabImpl(*indexOpt) };
         focusedTab->Scroll(termHeight * delta);
     }
 
@@ -1203,13 +1245,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings->GlobalSettings().SnapToGridOnResize())
         {
-            auto focusedTab{ _GetStrongTabImpl(_GetFocusedTabIndex()) };
-            return focusedTab->CalcSnappedDimension(widthOrHeight, dimension);
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                auto focusedTab{ _GetStrongTabImpl(*index) };
+                return focusedTab->CalcSnappedDimension(widthOrHeight, dimension);
+            }
         }
-        else
-        {
-            return dimension;
-        }
+        return dimension;
     }
 
     // Method Description:

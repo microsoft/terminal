@@ -143,7 +143,7 @@ namespace winrt::TerminalApp::implementation
     struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
     {
         SwitchToTabArgs() = default;
-        GETSET_PROPERTY(int32_t, TabIndex, 0);
+        GETSET_PROPERTY(uint32_t, TabIndex, 0);
 
         static constexpr std::string_view TabIndexKey{ "index" };
 
@@ -163,7 +163,7 @@ namespace winrt::TerminalApp::implementation
             auto args = winrt::make_self<SwitchToTabArgs>();
             if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
             {
-                args->_TabIndex = tabIndex.asInt();
+                args->_TabIndex = tabIndex.asUInt();
             }
             return *args;
         }

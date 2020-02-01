@@ -106,12 +106,12 @@ namespace winrt::TerminalApp::implementation
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, Tab& hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
-        bool _SelectTab(const int tabIndex);
+        bool _SelectTab(const uint32_t& tabIndex);
         void _MoveFocus(const Direction& direction);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
-        int _GetFocusedTabIndex() const;
-        winrt::fire_and_forget _SetFocusedTabIndex(int tabIndex);
+        std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
+        winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t& tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();
