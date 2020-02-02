@@ -398,7 +398,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Walk through advances and space out characters that are too small to consume their box.
         for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
         {
-            auto iClusterBegin = i;
+            const auto iClusterBegin = i;
 
             // Get how many columns we expected the glyph to have and multiply into pixels.
             UINT16 columns = 0;
@@ -418,8 +418,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
                 // Find the range of characters that the current glyph is representing.
                 const auto firstIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart);
-                const auto lastIterator = std::find_if(firstIterator, runEndIterator,
-                    [iGlyph = (i - run.glyphStart)](auto j) -> bool { return j > iGlyph; });
+                const auto lastIterator = std::find_if(firstIterator, runEndIterator, [iGlyph = (i - run.glyphStart)](auto j) -> bool { return j > iGlyph; });
 
                 // Add all allocated column counts together.
                 for (auto j = firstIterator; j < lastIterator; j++)
