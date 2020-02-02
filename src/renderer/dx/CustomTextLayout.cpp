@@ -398,20 +398,19 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Walk through advances and space out characters that are too small to consume their box.
         for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
         {
-            // Advance is how wide in pixels the glyph is
-            auto& advance = _glyphAdvances.at(i);
-
-            // Offsets is how far to move the origin (in pixels) from where it is
-            auto& offset = _glyphOffsets.at(i);
+            auto iClusterBegin = i;
 
             // Get how many columns we expected the glyph to have and multiply into pixels.
             UINT16 columns = 0;
             {
-                // Because of typographic features such as ligatures, it is well possible for a glyph to represent
-                //  multiple code points. Previous calls to IDWriteTextAnalyzer::GetGlyphs stores the mapping
+                // Because of typographic features such as ligatures, it is well possible for a cluster of glyph to
+                //  represent multiple code points. Previous calls to IDWriteTextAnalyzer::GetGlyphs stores the mapping
                 //  information between code points and glyphs in _glyphClusters.
-                // To properly allocate the columns for such glyphs, we need to find all characters that this glyph
-                //  is representing and add column counts for all the characters together.
+                // To properly allocate the columns for such glyph clusters, we need to find all characters that this
+                //  cluster is representing and add column counts for all the characters together.
+                // Inside a glyph cluster, we should try our best to respect the advances and offsets to keep glyphs properly
+                //  positioned. This means the glyph offset adjustment should be applied to all glyphs in cluster, and the
+                //  column-based advance adjustment should be applied on the last glyph of the cluster.
 
                 // Find the range for current glyph run in _glyphClusters.
                 const auto runStartIterator = _glyphClusters.begin() + run.textStart;
@@ -419,7 +418,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
                 // Find the range of characters that the current glyph is representing.
                 const auto firstIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart);
-                const auto lastIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart + 1);
+                const auto lastIterator = std::find_if(firstIterator, runEndIterator,
+                    [iGlyph = (i - run.glyphStart)](auto j) -> bool { return j > iGlyph; });
 
                 // Add all allocated column counts together.
                 for (auto j = firstIterator; j < lastIterator; j++)
@@ -427,7 +427,34 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
                     const auto charIndex = std::distance(_glyphClusters.begin(), j);
                     columns += _textClusterColumns.at(charIndex);
                 }
+
+                // See if we need to find the end of glyph cluster
+                if (i + 1 < (run.glyphStart + run.glyphCount) &&
+                    (runEndIterator == lastIterator || *lastIterator > (i - run.glyphStart + 1)))
+                {
+                    if (runEndIterator == lastIterator)
+                    {
+                        // We are not yet at the end of the glyph run, but nothing in the cluster array maps to the next glyph.
+                        // This means everything until end of run belongs to the same glyph cluster.
+                        i = run.glyphStart + run.glyphCount - 1;
+                    }
+                    else
+                    {
+                        // We found the starting index of next glyph cluster.
+                        // Decrement by one will get us the end of current cluster.
+                        i = run.glyphStart + *lastIterator - 1;
+                    }
+                }
             }
+
+            // At this point, we have:
+            //  - iClusterBegin: index of the first glyph in the glyph cluster
+            //  - i: index of the last glyph in the glyph cluster
+            //  - columns: number of terminal columns this cluster should occupy
+
+            // Advance is how wide in pixels the glyph is
+            auto& advance = _glyphAdvances.at(i);
+
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
@@ -438,7 +465,9 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
                 // Move the X offset (pixels to the right from the left edge) by half the excess space
                 // so half of it will be left of the glyph and the other half on the right.
-                offset.advanceOffset += diff / 2;
+                // Here we need to move every glyph in the cluster.
+                for (auto j = iClusterBegin; j <= i; j++)
+                    _glyphOffsets.at(j).advanceOffset += diff / 2;
 
                 // Set the advance to the perfect width we want.
                 advance = advanceExpected;
