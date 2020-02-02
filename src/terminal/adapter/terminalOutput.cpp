@@ -10,29 +10,46 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 namespace
 {
+    template<wchar_t BaseChar, size_t Size>
     class CharSet
     {
     public:
         constexpr CharSet(const std::initializer_list<std::pair<wchar_t, wchar_t>> replacements)
         {
             for (auto i = L'\0'; i < _translationTable.size(); i++)
-                _translationTable.at(i) = 0x20 + i;
+                _translationTable.at(i) = BaseChar + i;
             for (auto replacement : replacements)
-                _translationTable.at(replacement.first - 0x20) = replacement.second;
+                _translationTable.at(replacement.first - BaseChar) = replacement.second;
         }
         constexpr operator const std::wstring_view() const
         {
             return { _translationTable.data(), _translationTable.size() };
         }
+        constexpr bool operator==(const std::wstring_view rhs) const
+        {
+            return _translationTable.data() == rhs.data();
+        }
 
     private:
-        std::array<wchar_t, 95> _translationTable = {};
+        std::array<wchar_t, Size> _translationTable = {};
     };
+
+    template<wchar_t BaseChar, size_t Size>
+    constexpr bool operator==(const std::wstring_view lhs, const CharSet<BaseChar, Size>& rhs)
+    {
+        return rhs == lhs;
+    }
+
+    typedef CharSet<L'\x20', 95> AsciiBasedCharSet;
+    typedef CharSet<L'\xa0', 96> Latin1BasedCharSet;
 }
+
+static constexpr auto Ascii = AsciiBasedCharSet{};
+static constexpr auto Latin1 = Latin1BasedCharSet{};
 
 // https://www.vt100.net/docs/vt220-rm/table2-4.html
 #pragma warning(suppress : 26483) // Suppress spurious "value is outside the bounds" warning
-static constexpr auto DecSpecialGraphics = CharSet{
+static constexpr auto DecSpecialGraphics = AsciiBasedCharSet{
     { L'\x5f', L'\u0020' }, // Blank
     { L'\x60', L'\u2666' }, // Diamond (more commonly U+25C6, but U+2666 renders better for us)
     { L'\x61', L'\u2592' }, // Checkerboard
@@ -68,9 +85,17 @@ static constexpr auto DecSpecialGraphics = CharSet{
 };
 
 // https://www.vt100.net/docs/vt220-rm/table2-5.html
-static constexpr auto BritishNrcs = CharSet{
+static constexpr auto BritishNrcs = AsciiBasedCharSet{
     { L'\x23', L'\u00a3' }, // Pound Sign
 };
+
+TerminalOutput::TerminalOutput() noexcept
+{
+    _gsetTranslationTables.at(0) = Ascii;
+    _gsetTranslationTables.at(1) = Ascii;
+    _gsetTranslationTables.at(2) = Latin1;
+    _gsetTranslationTables.at(3) = Latin1;
+}
 
 bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
 {
@@ -78,7 +103,7 @@ bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
     {
     case L'B': // US ASCII
     case L'1': // Alternate Character ROM
-        return _SetTranslationTable(gsetNumber, {});
+        return _SetTranslationTable(gsetNumber, Ascii);
     case L'0': // DEC Special Graphics
     case L'2': // Alternate Character ROM Special Graphics
         return _SetTranslationTable(gsetNumber, DecSpecialGraphics);
@@ -94,6 +119,11 @@ bool TerminalOutput::LockingShift(const size_t gsetNumber)
 {
     _glSetNumber = gsetNumber;
     _glTranslationTable = _gsetTranslationTables.at(_glSetNumber);
+    // If GL is mapped to ASCII then we don't need to translate anything.
+    if (_glTranslationTable == Ascii)
+    {
+        _glTranslationTable = {};
+    }
     return true;
 }
 

@@ -23,7 +23,7 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
-        TerminalOutput() = default;
+        TerminalOutput() noexcept;
 
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
         bool DesignateCharset(const size_t gsetNumber, const wchar_t charset);
@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
 
-        std::array<std::wstring_view, 4> _gsetTranslationTables = {};
+        std::array<std::wstring_view, 4> _gsetTranslationTables;
         size_t _glSetNumber = 0;
         std::wstring_view _glTranslationTable;
         mutable std::wstring_view _ssTranslationTable;
