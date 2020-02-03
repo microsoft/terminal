@@ -85,7 +85,6 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
-
         RETURN_IF_FAILED(_pScreenInfoProvider.CopyTo(ppProvider));
 
         // signal that the focus changed
