@@ -21,7 +21,6 @@ Author(s):
 #pragma once
 
 #include <UIAutomationCore.h>
-
 #include <wrl/implements.h>
 
 namespace Microsoft::Console::Types

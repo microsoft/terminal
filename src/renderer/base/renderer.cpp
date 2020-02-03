@@ -84,7 +84,8 @@ Renderer::~Renderer()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept
+try
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
@@ -148,6 +149,7 @@ Renderer::~Renderer()
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
+CATCH_RETURN()
 
 void Renderer::_NotifyPaintFrame()
 {
