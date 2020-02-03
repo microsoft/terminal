@@ -914,7 +914,7 @@ namespace winrt::TerminalApp::implementation
     //   is greater than the number of tabs we have.
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
-    bool TerminalPage::_SelectTab(const uint32_t& tabIndex)
+    bool TerminalPage::_SelectTab(const uint32_t tabIndex)
     {
         if (tabIndex >= 0 && tabIndex < _tabs.Size())
         {
@@ -971,7 +971,7 @@ namespace winrt::TerminalApp::implementation
         return std::nullopt;
     }
 
-    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t& tabIndex)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t tabIndex)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -1674,7 +1674,7 @@ namespace winrt::TerminalApp::implementation
     // - index: an unsigned integer index to a tab in _tabs
     // Return Value:
     // - a com_ptr to the implementation type of the Tab
-    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const uint32_t& index) const
+    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const uint32_t index) const
     {
         winrt::com_ptr<Tab> tabImpl;
         tabImpl.copy_from(winrt::get_self<Tab>(_tabs.GetAt(index)));

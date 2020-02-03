@@ -64,7 +64,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t& index) const;
+        winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
 
         bool _isFullscreen{ false };
 
@@ -106,12 +106,12 @@ namespace winrt::TerminalApp::implementation
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, Tab& hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
-        bool _SelectTab(const uint32_t& tabIndex);
+        bool _SelectTab(const uint32_t tabIndex);
         void _MoveFocus(const Direction& direction);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t& tabIndex);
+        winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();
