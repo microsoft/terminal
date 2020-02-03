@@ -858,7 +858,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     bool TermControl::_TrySendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates modifiers)
     {
-        _terminal->ClearSelection();
+        // When there is a selection active, escape should clear it and NOT flow through
+        // to the terminal. With any other keypress, it should clear the selection AND
+        // flow through to the terminal.
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->ClearSelection();
+
+            if (vkey == VK_ESCAPE)
+            {
+                return true;
+            }
+        }
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
@@ -931,8 +942,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    // save location before rendering
-                    _terminal->SetSelectionAnchor(terminalPosition);
+                    if (shiftEnabled && _terminal->IsSelectionActive())
+                    {
+                        _terminal->SetEndSelectionPosition(terminalPosition);
+                    }
+                    else
+                    {
+                        // save location before rendering
+                        _terminal->SetSelectionAnchor(terminalPosition);
+                    }
 
                     _lastMouseClick = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
