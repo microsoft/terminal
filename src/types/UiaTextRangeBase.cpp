@@ -983,7 +983,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const
 {
     FAIL_FAST_IF(startAnchor.Y != endAnchor.Y);
-    FAIL_FAST_IF(startAnchor.X >= endAnchor.X);
+    FAIL_FAST_IF(startAnchor.X > endAnchor.X);
 
     const auto viewport = _pData->GetViewport();
     const auto currentFontSize = _getScreenFontSize();
@@ -1005,7 +1005,7 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
 #pragma warning(suppress : 26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
     auto endCoord = endAnchor;
     viewport.ConvertToOrigin(&endCoord);
-    bottomRight.x = base::ClampMul<long, long>(endCoord.X, currentFontSize.X);
+    bottomRight.x = base::ClampMul<long, long>(base::ClampAdd(endCoord.X, 1), currentFontSize.X);
     bottomRight.y = base::ClampMul<long, long>(base::ClampAdd(endCoord.Y, 1), currentFontSize.Y);
 
     // convert the coords to be relative to the screen instead of
