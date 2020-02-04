@@ -173,7 +173,7 @@ winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString
                 foundKey = true;
                 break;
             }
-            
+
             // If we haven't found a key, attempt a keyboard mapping
             if (!foundKey && part.size() == 1)
             {
