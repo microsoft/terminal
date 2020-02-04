@@ -243,6 +243,18 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->LockingShift(3);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3);
             break;
+        case VTActionCodes::LS1R_LockingShift:
+            success = _dispatch->LockingShiftRight(1);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS1R);
+            break;
+        case VTActionCodes::LS2R_LockingShift:
+            success = _dispatch->LockingShiftRight(2);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS2R);
+            break;
+        case VTActionCodes::LS3R_LockingShift:
+            success = _dispatch->LockingShiftRight(3);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             success = false;

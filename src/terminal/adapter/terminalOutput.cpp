@@ -322,6 +322,19 @@ bool TerminalOutput::LockingShift(const size_t gsetNumber)
 }
 
 #pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
+bool TerminalOutput::LockingShiftRight(const size_t gsetNumber)
+{
+    _grSetNumber = gsetNumber;
+    _grTranslationTable = _gsetTranslationTables.at(_grSetNumber);
+    // If GR is mapped to Latin1 then we don't need to translate anything.
+    if (_grTranslationTable == Latin1)
+    {
+        _grTranslationTable = {};
+    }
+    return true;
+}
+
+#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
 bool TerminalOutput::SingleShift(const size_t gsetNumber)
 {
     _ssTranslationTable = _gsetTranslationTables.at(gsetNumber);
@@ -336,7 +349,7 @@ bool TerminalOutput::SingleShift(const size_t gsetNumber)
 // - True if translation is required.
 bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return !_glTranslationTable.empty() || !_ssTranslationTable.empty();
+    return !_glTranslationTable.empty() || !_grTranslationTable.empty() || !_ssTranslationTable.empty();
 }
 
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
@@ -348,6 +361,10 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
         {
             wchFound = _ssTranslationTable.at(wch - 0x20u);
         }
+        else if (wch - 0xA0u < _ssTranslationTable.size())
+        {
+            wchFound = _ssTranslationTable.at(wch - 0xA0u);
+        }
         _ssTranslationTable = {};
     }
     else
@@ -356,6 +373,10 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
         {
             wchFound = _glTranslationTable.at(wch - 0x20u);
         }
+        else if (wch - 0xA0u < _grTranslationTable.size())
+        {
+            wchFound = _grTranslationTable.at(wch - 0xA0u);
+        }
     }
     return wchFound;
 }
@@ -363,6 +384,6 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 bool TerminalOutput::_SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable)
 {
     _gsetTranslationTables.at(gsetNumber) = translationTable;
-    // We need to reapply the locking shift in case the underlying G-set has changed.
-    return LockingShift(_glSetNumber);
+    // We need to reapply the locking shifts in case the underlying G-sets have changed.
+    return LockingShift(_glSetNumber) && LockingShiftRight(_grSetNumber);
 }

@@ -132,6 +132,9 @@ namespace Microsoft::Console::VirtualTerminal
             SS3_SingleShift = L'O',
             LS2_LockingShift = L'n',
             LS3_LockingShift = L'o',
+            LS1R_LockingShift = L'~',
+            LS2R_LockingShift = L'}',
+            LS3R_LockingShift = L'|',
             DECALN_ScreenAlignmentPattern = L'8'
         };
 

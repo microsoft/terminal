@@ -88,6 +88,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool TabClear(const size_t clearType) override; // TBC
         bool DesignateCharset(const size_t gsetNumber, const wchar_t charset) override; // SCS
         bool LockingShift(const size_t gsetNumber) override; // LS0, LS1, LS2, LS3
+        bool LockingShiftRight(const size_t gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const size_t gsetNumber) override; // SS2, SS3
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS

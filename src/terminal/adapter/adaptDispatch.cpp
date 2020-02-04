@@ -1616,6 +1616,17 @@ bool AdaptDispatch::LockingShift(const size_t gsetNumber)
 }
 
 //Routine Description:
+// Locking Shift Right - Invoke one of the G-sets into the right half of the code table.
+//Arguments:
+// - gsetNumber - The G-set that will be invoked.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::LockingShiftRight(const size_t gsetNumber)
+{
+    return _termOutput.LockingShiftRight(gsetNumber);
+}
+
+//Routine Description:
 // Single Shift - Temporarily invoke one of the G-sets into the code table.
 //Arguments:
 // - gsetNumber - The G-set that will be invoked.

@@ -28,6 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
         bool DesignateCharset(const size_t gsetNumber, const wchar_t charset);
         bool LockingShift(const size_t gsetNumber);
+        bool LockingShiftRight(const size_t gsetNumber);
         bool SingleShift(const size_t gsetNumber);
         bool NeedToTranslate() const noexcept;
 
@@ -36,7 +37,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::array<std::wstring_view, 4> _gsetTranslationTables;
         size_t _glSetNumber = 0;
+        size_t _grSetNumber = 2;
         std::wstring_view _glTranslationTable;
+        std::wstring_view _grTranslationTable;
         mutable std::wstring_view _ssTranslationTable;
     };
 }
