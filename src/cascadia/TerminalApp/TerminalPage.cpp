@@ -1425,10 +1425,10 @@ namespace winrt::TerminalApp::implementation
             auto selectedIndex = tabView.SelectedIndex();
 
             // Unfocus all the tabs.
-            for (uint32_t idx = 0; idx < _tabs.Size(); ++idx)
+            for (auto tab : _tabs)
             {
-                auto tab{ _GetStrongTabImpl(idx) };
-                tab->SetFocused(false);
+                auto tabImpl{ _GetStrongTabImpl(tab) };
+                tabImpl->SetFocused(false);
             }
 
             if (selectedIndex >= 0)
@@ -1459,9 +1459,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
         const auto newSize = e.NewSize();
-        for (uint32_t idx = 0; idx < _tabs.Size(); ++idx)
+        for (auto tab : _tabs)
         {
-            auto tabImpl{ _GetStrongTabImpl(idx) };
+            auto tabImpl{ _GetStrongTabImpl(tab) };
             tabImpl->ResizeContent(newSize);
         }
     }
@@ -1512,18 +1512,18 @@ namespace winrt::TerminalApp::implementation
             const GUID profileGuid = profile.GetGuid();
             const auto settings = _settings->BuildSettings(profileGuid);
 
-            for (uint32_t idx = 0; idx < _tabs.Size(); ++idx)
+            for (auto tab : _tabs)
             {
                 // Attempt to reload the settings of any panes with this profile
-                auto tabImpl{ _GetStrongTabImpl(idx) };
+                auto tabImpl{ _GetStrongTabImpl(tab) };
                 tabImpl->UpdateSettings(settings, profileGuid);
             }
         }
 
         // Update the icon of the tab for the currently focused profile in that tab.
-        for (uint32_t idx = 0; idx < _tabs.Size(); ++idx)
+        for (auto tab : _tabs)
         {
-            auto tabImpl{ _GetStrongTabImpl(idx) };
+            auto tabImpl{ _GetStrongTabImpl(tab) };
             _UpdateTabIcon(*tabImpl);
             _UpdateTitle(*tabImpl);
         }
@@ -1678,6 +1678,19 @@ namespace winrt::TerminalApp::implementation
     {
         winrt::com_ptr<Tab> tabImpl;
         tabImpl.copy_from(winrt::get_self<Tab>(_tabs.GetAt(index)));
+        return tabImpl;
+    }
+
+    // Method Description:
+    // - Returns a com_ptr to the implementation type of the given projected Tab
+    // Arguments:
+    // - tab: the projected type of a Tab
+    // Return Value:
+    // - a com_ptr to the implementation type of the Tab
+    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const
+    {
+        winrt::com_ptr<Tab> tabImpl;
+        tabImpl.copy_from(winrt::get_self<Tab>(tab));
         return tabImpl;
     }
 

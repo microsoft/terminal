@@ -65,6 +65,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
+        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
 
         bool _isFullscreen{ false };
 
