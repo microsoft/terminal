@@ -1321,6 +1321,22 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
+// - A private API call for setting the ENABLE_WRAP_AT_EOL_OUTPUT mode.
+//     This controls whether the cursor moves to the beginning of the next row
+//     when it reaches the end of the current row.
+// Parameters:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return value:
+// - STATUS_SUCCESS if handled successfully.
+[[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& outputMode = gci.GetActiveOutputBuffer().GetActiveBuffer().OutputMode;
+    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
 // - A private API call for making the cursor visible or not. Does not modify
 //      blinking state.
 // Parameters:

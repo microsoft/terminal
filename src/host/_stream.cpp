@@ -47,6 +47,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                             const BOOL fKeepCursorVisible,
                                             _Inout_opt_ PSHORT psScrollY)
 {
+    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.X < 0)
     {
@@ -70,7 +71,16 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         else
         {
-            coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
+            if (inVtMode)
+            {
+                // In VT mode, the cursor must be left in the last column.
+                coordCursor.X = bufferSize.X - 1;
+            }
+            else
+            {
+                // For legacy apps, it is left where it was at the start of the write.
+                coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
+            }
         }
     }
 
@@ -85,7 +95,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     const int iCurrentCursorY = currentCursor.Y;
-    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     const bool cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
@@ -308,6 +317,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
     size_t TempNumSpaces = 0;
     const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
+    const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
@@ -323,7 +333,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     while (*pcb < BufferSize)
     {
         // correct for delayed EOL
-        if (cursor.IsDelayedEOLWrap())
+        if (cursor.IsDelayedEOLWrap() && fWrapAtEOL)
         {
             const COORD coordDelayedAt = cursor.GetDelayedAtPosition();
             cursor.ResetDelayEOLWrap();
@@ -509,7 +519,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             CursorPosition.X = XPosition;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
-            if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X)
+            if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X && fWrapAtEOL)
             {
                 // Our cursor position as of this time is going to remain on the last position in this column.
                 CursorPosition.X = coordScreenBufferSize.X - 1;
@@ -678,7 +688,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 }
                 CATCH_LOG();
             }
-            if (cursor.GetPosition().X == 0 && (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
+            if (cursor.GetPosition().X == 0 && fWrapAtEOL && pwchBuffer > pwchBufferBackupLimit)
             {
                 if (CheckBisectProcessW(screenInfo,
                                         pwchBufferBackupLimit,
@@ -778,7 +788,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             if (Char >= UNICODE_SPACE &&
                 IsGlyphFullWidth(Char) &&
                 XPosition >= (coordScreenBufferSize.X - 1) &&
-                (screenInfo.OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
+                fWrapAtEOL)
             {
                 const COORD TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);

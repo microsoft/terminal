@@ -680,6 +680,7 @@ public:
         _cursorBlinking{ true },
         _isScreenModeReversed{ false },
         _isOriginModeRelative{ false },
+        _isAutoWrapEnabled{ true },
         _warningBell{ false },
         _carriageReturn{ false },
         _lineFeed{ false },
@@ -865,6 +866,9 @@ public:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
             break;
+        case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+            fSuccess = SetAutoWrapMode(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
@@ -933,6 +937,12 @@ public:
     bool SetOriginMode(const bool fRelativeMode) noexcept override
     {
         _isOriginModeRelative = fRelativeMode;
+        return true;
+    }
+
+    bool SetAutoWrapMode(const bool wrapAtEOL) noexcept override
+    {
+        _isAutoWrapEnabled = wrapAtEOL;
         return true;
     }
 
@@ -1011,6 +1021,7 @@ public:
     bool _cursorBlinking;
     bool _isScreenModeReversed;
     bool _isOriginModeRelative;
+    bool _isAutoWrapEnabled;
     bool _warningBell;
     bool _carriageReturn;
     bool _lineFeed;
@@ -1341,6 +1352,25 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_cursorPosition);
         VERIFY_ARE_EQUAL(pDispatch->_line, 1u);
         VERIFY_ARE_EQUAL(pDispatch->_column, 1u);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestAutoWrapMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?7l");
+        VERIFY_IS_FALSE(pDispatch->_isAutoWrapEnabled);
+
+        pDispatch->ClearState();
+        pDispatch->_isAutoWrapEnabled = false;
+
+        mach.ProcessString(L"\x1b[?7h");
+        VERIFY_IS_TRUE(pDispatch->_isAutoWrapEnabled);
 
         pDispatch->ClearState();
     }

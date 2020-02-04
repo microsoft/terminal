@@ -58,6 +58,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateSetKeypadMode(const bool applicationMode) = 0;
 
         virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
+        virtual bool PrivateSetAutoWrapMode(const bool wrapAtEOL) = 0;
 
         virtual bool PrivateShowCursor(const bool show) = 0;
         virtual bool PrivateAllowCursorBlinking(const bool enable) = 0;
