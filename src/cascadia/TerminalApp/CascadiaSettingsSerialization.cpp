@@ -59,6 +59,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
     auto resultPtr = LoadDefaults();
 
+    // GH 3588, we need this below to know if the user chose something that wasn't our default.
+    // Collect it up here in case it gets modified by any of the other layers between now and when
+    // the user's preferences are loaded and layered.
+    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().GetDefaultProfile();
+
     std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
 
@@ -94,6 +99,43 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
     // Apply the user's settings
     resultPtr->LayerJson(resultPtr->_userSettings);
+
+    // GH 3855 - Gathering Data on custom profiles to inform better defaults
+    {
+        if (auto defaultProfile{ resultPtr->_userSettings[JsonKey(DefaultProfileKey)] })
+        {
+            auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
+
+            // Compare to the defaults.json one that we set on install.
+            // If it's different, log what the user chose.
+            if (hardcodedDefaultGuid != guid)
+            {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    "CustomDefaultProfile",
+                    TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
+                    TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            }
+        }
+
+        // If the user had keybinding settings preferences, we want to learn from them to make better defaults
+        const auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
+        if (!userKeybindings.empty())
+        {
+            // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
+            const auto str = userKeybindings.asString();
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "CustomKeybindings",
+                TraceLoggingDescription("Event emitted when custom keybindings are idenfitied on load/reload"),
+                TraceLoggingUtf8String(str.c_str(), "Keybindings", "Keybindings as JSON"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+    }
 
     // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.

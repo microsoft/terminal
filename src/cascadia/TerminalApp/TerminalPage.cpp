@@ -484,9 +484,9 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.UseAcrylic(), "useAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.TintOpacity(), "tintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.FontFace().c_str(), "fontFace", "Font face chosen in the settings"),
+            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
