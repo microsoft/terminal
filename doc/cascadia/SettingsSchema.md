@@ -91,69 +91,63 @@ Properties listed below are specific to each custom key binding.
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+| `action` | Optional | String | Adds additional functionality to certain commands. |
 
-### Implemented Commands
+### Implemented Commands and Actions
 
-Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp)
+Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp).
 
-- copy
-- copyTextWithoutNewlines
-- paste
-- newTab
-- openNewTabDropdown
-- duplicateTab
-- newTabProfile0
-- newTabProfile1
-- newTabProfile2
-- newTabProfile3
-- newTabProfile4
-- newTabProfile5
-- newTabProfile6
-- newTabProfile7
-- newTabProfile8
-- closeWindow
-- closeTab
-- closePane
-- switchToTab
-- nextTab
-- prevTab
-- increaseFontSize
-- decreaseFontSize
-- resetFontSize
-- scrollUp
-- scrollDown
-- scrollUpPage
-- scrollDownPage
-- switchToTab0
-- switchToTab1
-- switchToTab2
-- switchToTab3
-- switchToTab4
-- switchToTab5
-- switchToTab6
-- switchToTab7
-- switchToTab8
-- openSettings
-- splitPane
-- resizePaneLeft
-- resizePaneRight
-- resizePaneUp
-- resizePaneDown
-- moveFocusLeft
-- moveFocusRight
-- moveFocusUp
-- moveFocusDown
-- toggleFullscreen
-- find
+Keybindings can be structured in the following manners:
 
-## Example Keys
-- ctrl+1
-- ctrl+plus
-- alt+-
-- shift+numpad_1
-- ctrL+shift+numpad_plus
-- ctrl+pgdn
-- ctrl+alt+shift+pgup
+For commands without arguments:
+<br>
+`{ "command": "commandName", "keys": [ "modifiers+key" ] }`
+
+For commands with arguments:
+<br>
+`{ "command": { "action": "commandName", "argument": "value" }, "keys": ["modifiers+key"] }`
+
+| Command | Command Description | Action (*=required) | Action Arguments | Argument Descriptions |
+| ------- | ------------------- | ------ | ---------------- | ----------------- |
+| closePane | Close the active pane. | | | |
+| closeTab | Close the current tab. | | | |
+| closeWindow | Close the current window and all tabs within it. | | | |
+| copy | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
+| decreaseFontSize | Make the text smaller by one delta. | `delta` | integer | Amount of size decrease per command invocation. |
+| duplicateTab | Make a copy and open the current tab. | | | |
+| find | Open the search dialog box. | | | |
+| increaseFontSize | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
+| moveFocus | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
+| newTab | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
+| nextTab | Open the tab to the right of the current one. | | | |
+| openNewTabDropdown | Open the dropdown menu. | | | |
+| openSettings | Open the settings file. | | | |
+| paste | Insert the content that was copied onto the clipboard. | | | |
+| prevTab | Open the tab to the left of the current one. | | | |
+| resetFontSize | Reset the text size to the default value. | | | |
+| resizePane | Change the size of the active pane. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the pane will be resized. |
+| scrollDown | Move the screen down. | | | |
+| scrollUp | Move the screen up. | | | |
+| scrollUpPage | Move the screen up a whole page. | | | |
+| scrollDownPage | Move the screen down a whole page. | | | |
+| splitPane | Halve the size of the active pane and open another. Without any arguments, this will open the default profile in the new pane. | 1. `split`*<br>2. `commandLine`<br>3. `startingDirectory`<br>4. `tabTitle`<br>5. `index`<br>6. `profile` | 1. `vertical`, `horizontal`, `auto`<br>2. string<br>3. string<br>4. string<br>5. integer<br>6. string | 1. How the pane will split. `auto` will split in the direction that provides the most surface area.<br>2. Executable run within the pane.<br>3. Directory in which the pane will open.<br>4. Title of the tab when the new pane is focused.<br>5. Profile that will open based on its position in the dropdown (starting at 0).<br>6. Profile that will open based on its GUID or name. |
+| switchToTab | Open a specific tab depending on index. | `index`* | integer | Tab that will open based on its position in the tab bar (starting at 0). |
+| toggleFullscreen | Switch between fullscreen and default window sizes. | | | |
+| unbound | Unbind the associated keys from any command. | | | |
+
+### Accepted Modifiers and Keys
+
+#### Modifiers
+`Ctrl+`, `Shift+`, `Alt+`
+
+#### Keys
+| Type | Keys |
+| ---- | ---- |
+| Function and Alphanumeric Keys | `f1-f24`, `a-z`, `0-9` |
+| Symbols | ``` ` ```, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/` |
+| Arrow Keys | `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus` |
+| Action Keys | `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert` |
+| Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
