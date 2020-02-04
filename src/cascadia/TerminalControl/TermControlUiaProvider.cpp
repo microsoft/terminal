@@ -95,26 +95,23 @@ const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() c
     return _termControl->GetPadding();
 }
 
-HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
+HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
-    try
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    if (_pData->IsSelectionActive())
     {
-        result.clear();
-        typename std::remove_reference<decltype(result)>::type temporaryResult;
+        const auto start = _pData->GetSelectionAnchor();
 
-        std::deque<ComPtr<UiaTextRange>> ranges;
-        RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, wordDelimiters, ranges));
+        // we need to make end exclusive
+        auto end = _pData->GetEndSelectionPosition();
+        _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
 
-        while (!ranges.empty())
-        {
-            temporaryResult.emplace_back(std::move(ranges.back()));
-            ranges.pop_back();
-        }
-
-        std::swap(result, temporaryResult);
-        return S_OK;
+        RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
     }
-    CATCH_RETURN();
+    *ppUtr = result;
+    return S_OK;
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)

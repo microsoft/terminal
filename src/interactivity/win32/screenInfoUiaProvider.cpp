@@ -97,26 +97,17 @@ void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
     _pUiaParent->ChangeViewport(NewWindow);
 }
 
-HRESULT ScreenInfoUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
+HRESULT ScreenInfoUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr)
 {
-    try
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
+    UiaTextRange* result = nullptr;
+    if (_pData->IsSelectionActive())
     {
-        result.clear();
-        typename std::remove_reference<decltype(result)>::type temporaryResult;
-
-        std::deque<ComPtr<UiaTextRange>> ranges;
-        RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, wordDelimiters, ranges));
-
-        while (!ranges.empty())
-        {
-            temporaryResult.emplace_back(std::move(ranges.back()));
-            ranges.pop_back();
-        }
-
-        std::swap(result, temporaryResult);
-        return S_OK;
+        RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, _pData->GetSelectionAnchor(), _pData->GetEndSelectionPosition(), wordDelimiters));
     }
-    CATCH_RETURN();
+    *ppUtr = result;
+    return S_OK;
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)

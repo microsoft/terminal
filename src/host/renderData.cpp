@@ -395,6 +395,45 @@ const COORD RenderData::GetSelectionAnchor() const
 }
 
 // Routine Description:
+// - Gets the current end selection anchor position
+// Arguments:
+// - none
+// Return Value:
+// - current selection anchor
+const COORD RenderData::GetEndSelectionPosition() const
+{
+    // The selection area in ConHost is encoded as two things...
+    //  - SelectionAnchor: the initial position where the selection was started
+    //  - SelectionRect: the rectangular region denoting a portion of the buffer that is selected
+
+    // The following is an exerpt from Selection::s_GetSelectionRects
+    // if the anchor (start of select) was in the top right or bottom left of the box,
+    // we need to remove rectangular overlap in the middle.
+    // e.g.
+    // For selections with the anchor in the top left (A) or bottom right (B),
+    // it is valid to maintain the inner rectangle (+) as part of the selection
+    //               A+++++++================
+    // ==============++++++++B
+    // + and = are valid highlights in this scenario.
+    // For selections with the anchor in in the top right (A) or bottom left (B),
+    // we must remove a portion of the first/last line that lies within the rectangle (+)
+    //               +++++++A=================
+    // ==============B+++++++
+    // Only = is valid for highlight in this scenario.
+    // This is only needed for line selection. Box selection doesn't need to account for this.
+    const auto selectionRect = Selection::Instance().GetSelectionRectangle();
+
+    // To extract the end anchor from this rect, we need to know which corner of the rect is the SelectionAnchor
+    // Then choose the opposite corner.
+    const auto anchor = Selection::Instance().GetSelectionAnchor();
+
+    const short x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
+    const short y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
+
+    return { x_pos, y_pos };
+}
+
+// Routine Description:
 // - Given two points in the buffer space, color the selection between the two with the given attribute.
 // - This will create an internal selection rectangle covering the two points, assume a line selection,
 //   and use the first point as the anchor for the selection (as if the mouse click started at that point)

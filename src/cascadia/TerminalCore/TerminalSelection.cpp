@@ -116,9 +116,21 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 const COORD Terminal::GetSelectionAnchor() const
 {
     COORD selectionAnchorPos{ _selectionAnchor };
-    THROW_IF_FAILED(ShortAdd(selectionAnchorPos.Y, _selectionVerticalOffset, &selectionAnchorPos.Y));
-
+    selectionAnchorPos.Y = base::ClampAdd(selectionAnchorPos.Y, _selectionVerticalOffset);
     return selectionAnchorPos;
+}
+
+// Method Description:
+// - Get the current end anchor position relative to the whole text buffer
+// Arguments:
+// - None
+// Return Value:
+// - None
+const COORD Terminal::GetEndSelectionPosition() const
+{
+    COORD endSelectionPos{ _endSelectionPosition };
+    endSelectionPos.Y = base::ClampAdd(endSelectionPos.Y, _selectionVerticalOffset);
+    return endSelectionPos;
 }
 
 // Method Description:
