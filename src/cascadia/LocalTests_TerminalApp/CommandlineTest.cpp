@@ -888,7 +888,6 @@ namespace TerminalAppLocalTests
             auto myArgs = actionAndArgs.Args().try_as<SwitchToTabArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), myArgs.TabIndex());
-
         }
 
         {
