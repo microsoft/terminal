@@ -344,8 +344,6 @@ void Terminal::ClearSelection()
     _selectionAnchor = { 0, 0 };
     _endSelectionPosition = { 0, 0 };
     _selectionVerticalOffset = 0;
-
-    _buffer->GetRenderTarget().TriggerSelection();
 }
 
 // Method Description:
