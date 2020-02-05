@@ -565,7 +565,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 }
 
 // Routine Description:
-// - packs a vector of TextAttribute into a vector of TextAttrbuteRun
+// - packs a vector of TextAttribute into a vector of TextAttributeRun
 // Arguments:
 // - attrs - text attributes to pack
 // Return Value:

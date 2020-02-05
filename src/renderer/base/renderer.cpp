@@ -676,7 +676,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
-// - a GridLines containing all the gridline info from the TextAtribute
+// - a GridLines containing all the gridline info from the TextAttribute
 IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
