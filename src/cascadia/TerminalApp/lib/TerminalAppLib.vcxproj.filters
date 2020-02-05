@@ -59,6 +59,8 @@
     <ClCompile Include="../Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
     </ClCompile>
+    <ClCompile Include="../AppCommandlineArgs.cpp" />
+    <ClCompile Include="../Commandline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../Utils.h" />
@@ -107,6 +109,8 @@
       <Filter>tab</Filter>
     </ClInclude>
     <ClInclude Include="../TelnetGenerator.h" />
+    <ClInclude Include="../AppCommandlineArgs.h" />
+    <ClInclude Include="../Commandline.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="../AppLogic.idl">
@@ -120,6 +124,9 @@
     </Midl>
     <Midl Include="../ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="../Tab.idl">
+      <Filter>tab</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +145,7 @@
     <Page Include="../TitlebarControl.xaml">
       <Filter>controls</Filter>
     </Page>
+    <Page Include="../ColorPickupFlyout.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="app">

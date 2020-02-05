@@ -70,6 +70,7 @@ public:
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
 
+    void SetGuid(GUID guid) noexcept { _guid = guid; }
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
     std::optional<std::wstring>& GetSchemeName() noexcept;
@@ -89,9 +90,11 @@ public:
     bool HasIcon() const noexcept;
     winrt::hstring GetExpandedIconPath() const;
     void SetIconPath(std::wstring_view path);
+    void ResetIconPath();
 
     bool HasBackgroundImage() const noexcept;
     winrt::hstring GetExpandedBackgroundImagePath() const;
+    void ResetBackgroundImagePath();
 
     CloseOnExitMode GetCloseOnExitMode() const noexcept;
     bool GetSuppressApplicationTitle() const noexcept;

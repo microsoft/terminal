@@ -25,6 +25,13 @@
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
+      on being compiled with RTTI (/GR). -->
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -56,6 +63,8 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="../App.base.h" />
+    <ClInclude Include="../AppCommandlineArgs.h" />
+    <ClInclude Include="../Commandline.h" />
     <ClInclude Include="../MinMaxCloseControl.h">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
@@ -72,7 +81,9 @@
     <ClInclude Include="../ColorPickupFlyout.h">
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../Tab.h">
+      <DependentUpon>../Tab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Pane.h" />
     <ClInclude Include="../ColorScheme.h" />
     <ClInclude Include="../GlobalAppSettings.h" />
@@ -88,7 +99,7 @@
     <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="../TelnetGenerator.h" />
-        <ClInclude Include="pch.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="../ShortcutActionDispatch.h">
       <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
     </ClInclude>
@@ -111,6 +122,8 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
+    <ClCompile Include="../AppCommandlineArgs.cpp" />
+    <ClCompile Include="../Commandline.cpp" />
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
@@ -127,7 +140,9 @@
     <ClCompile Include="../ColorPickupFlyout.cpp">
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="../Tab.cpp" />
+    <ClCompile Include="../Tab.cpp">
+      <DependentUpon>../Tab.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../Pane.cpp" />
     <ClCompile Include="../ColorScheme.cpp" />
     <ClCompile Include="../GlobalAppSettings.cpp" />
@@ -205,10 +220,13 @@
       <DependentUpon>../ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="../Tab.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="../Resources/en-US/Resources.resw" />
+    <PRIResource Include="../Resources/en-US/Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
     <None Include="../packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -266,7 +284,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>

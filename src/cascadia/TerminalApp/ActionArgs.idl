@@ -60,7 +60,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
-        Int32 TabIndex { get; };
+        UInt32 TabIndex { get; };
     };
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs

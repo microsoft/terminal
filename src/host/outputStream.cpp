@@ -85,7 +85,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  &dwNumBytes,
                                  nullptr,
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_LIMIT_BACKSPACE | WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
+                                 WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }
 
@@ -346,6 +346,32 @@ bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 }
 
 // Routine Description:
+// - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - true if successful (see DoSrvPrivateSetScreenMode). false otherwise.
+bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
+{
+    return NT_SUCCESS(DoSrvPrivateSetScreenMode(reverseMode));
+}
+
+// Routine Description:
+// - Connects the PrivateSetAutoWrapMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetAutoWrapMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - true if successful (see DoSrvPrivateSetAutoWrapMode). false otherwise.
+bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    return NT_SUCCESS(DoSrvPrivateSetAutoWrapMode(wrapAtEOL));
+}
+
+// Routine Description:
 // - Connects the PrivateShowCursor call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateShowCursor is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
@@ -386,6 +412,40 @@ bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMa
     return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_io.GetActiveOutputBuffer(), scrollMargins));
 }
 
+// Method Description:
+// - Retrieves the current Line Feed/New Line (LNM) mode.
+// Arguments:
+// - None
+// Return Value:
+// - true if a line feed also produces a carriage return. false otherwise.
+bool ConhostInternalGetSet::PrivateGetLineFeedMode() const
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsReturnOnNewlineAutomatic();
+}
+
+// Routine Description:
+// - Connects the PrivateLineFeed call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateLineFeed is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// - withReturn - Set to true if a carriage return should be performed as well.
+// Return Value:
+// - true if successful (see DoSrvPrivateLineFeed). false otherwise.
+bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
+{
+    return NT_SUCCESS(DoSrvPrivateLineFeed(_io.GetActiveOutputBuffer(), withReturn));
+}
+
+// Routine Description:
+// - Sends a notify message to play the "SystemHand" sound event.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateWarningBell()
+{
+    return _io.GetActiveOutputBuffer().SendNotifyBeep();
+}
+
 // Routine Description:
 // - Connects the PrivateReverseLineFeed call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateReverseLineFeed is an internal-only "API" call that the vt commands can execute,
@@ -395,23 +455,6 @@ bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMa
 bool ConhostInternalGetSet::PrivateReverseLineFeed()
 {
     return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_io.GetActiveOutputBuffer()));
-}
-
-// Routine Description:
-// - Connects the MoveCursorVertically call directly into our Driver Message servicing call inside Conhost.exe
-//   MoveCursorVertically is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Return Value:
-// - true if successful (see DoSrvMoveCursorVertically). false otherwise.
-bool ConhostInternalGetSet::MoveCursorVertically(const ptrdiff_t lines)
-{
-    SHORT l;
-    if (FAILED(PtrdiffTToShort(lines, &l)))
-    {
-        return false;
-    }
-
-    return SUCCEEDED(DoSrvMoveCursorVertically(_io.GetActiveOutputBuffer(), l));
 }
 
 // Routine Description:

@@ -21,10 +21,11 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
 #include "../buffer/out/textBuffer.hpp"
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
+
+#include <UIAutomationCore.h>
 
 #include <wrl/implements.h>
 
@@ -90,9 +91,8 @@ namespace Microsoft::Console::Types
 
         // specific endpoint range
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                        const Endpoint start,
-                                        const Endpoint end,
-                                        const bool degenerate,
+                                        const COORD start,
+                                        const COORD end,
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 

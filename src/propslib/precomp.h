@@ -4,6 +4,8 @@
 #define DEFINE_CONSOLEV2_PROPERTIES
 #define INC_OLE2
 
+#define NOMINMAX
+
 #define WIN32_NO_STATUS
 #include <windows.h>
 #undef WIN32_NO_STATUS

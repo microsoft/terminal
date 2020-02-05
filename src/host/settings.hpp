@@ -52,6 +52,9 @@ public:
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
+    bool IsScreenReversed() const;
+    void SetScreenReversed(const bool fScreenReversed);
+
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
 
@@ -231,6 +234,7 @@ private:
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
+    bool _fScreenReversed;
     bool _fUseDx;
     bool _fCopyColor;
 
