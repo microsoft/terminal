@@ -13,6 +13,10 @@ class FillOutputTests
     // Adapted from repro in GH#4258
     TEST_METHOD(FillWithInvalidCharacterA)
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method") // Don't pollute other tests by isolating our codepage change to this test.
+        END_TEST_METHOD_PROPERTIES()
+
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(50220));
         auto handle = GetStdOutputHandle();
         const COORD pos{ 0, 0 };
