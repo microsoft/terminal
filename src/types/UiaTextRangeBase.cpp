@@ -94,11 +94,21 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
-    _start = start;
-    _end = end;
+    // start is before/at end, so this is valid
+    if (_pData->GetTextBuffer().GetSize().CompareInBounds(start, end, true) <= 0)
+    {
+        _start = start;
+        _end = end;
+    }
+    else
+    {
+        // start is after end, so we need to flip our concept of start/end
+        _start = end;
+        _end= start;
+    }
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Constructor\n");
+        OutputDebugString(L"Constructor\n");
     _outputObjectState();
 #endif
 
