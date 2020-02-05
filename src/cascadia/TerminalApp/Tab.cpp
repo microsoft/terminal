@@ -139,6 +139,7 @@ namespace winrt::TerminalApp::implementation
     {
         _AttachEventHandlersToPane(_rootPane);
         _AttachEventHandlersToControl(control);
+        _CreateContextMenu();
     }
 
     // Method Description:
