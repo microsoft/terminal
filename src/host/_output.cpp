@@ -303,23 +303,18 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                    const size_t lengthToWrite,
                                                                    const COORD startingCoordinate,
                                                                    size_t& cellsModified) noexcept
+try
 {
-    // Incase ConvertToW throws causing an early return, set modified cells to 0.
+    // In case ConvertToW throws causing an early return, set modified cells to 0.
     cellsModified = 0;
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    std::wstring wchs{};
-    try
-    {
-        // convert character into c-string to form a null terminated string_view around
-        const char tempBuffer[]{ character, '\0' };
-        // convert to wide chars and call W version
-        wchs = ConvertToW(gci.OutputCP, { tempBuffer, 2 });
-    }
-    CATCH_RETURN();
+    // convert to wide chars and call W version
+    const auto wchs = ConvertToW(gci.OutputCP, { &character, 1 });
 
     LOG_HR_IF(E_UNEXPECTED, wchs.size() > 1);
 
     return FillConsoleOutputCharacterWImpl(OutContext, wchs.at(0), lengthToWrite, startingCoordinate, cellsModified);
 }
+CATCH_RETURN()
