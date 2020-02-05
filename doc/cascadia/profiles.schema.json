@@ -573,7 +573,7 @@
         "foreground": {
           "$ref": "#/definitions/Color",
           "default": "#cccccc",
-          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#cccccc\" (foreground color of Campbell).",
+          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "guid": {
