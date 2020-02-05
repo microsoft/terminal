@@ -638,3 +638,17 @@ void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
         _recievedEarlySizeChange = true;
     }
 }
+
+#ifdef UNIT_TESTING
+// Method Description:
+// - This is a test helper method. It can be used to trick us into thinking
+//   we're headless (in conpty mode), even without parsing any arguments.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConsoleArguments::EnableConptyModeForTests()
+{
+    _headless = true;
+}
+#endif

@@ -133,6 +133,27 @@ COORD Terminal::GetCursorPosition() noexcept
 }
 
 // Method Description:
+// - Moves the cursor down one line, and possibly also to the leftmost column.
+// Arguments:
+// - withReturn, set to true if a carriage return should be performed as well.
+// Return value:
+// - true if succeeded, false otherwise
+bool Terminal::CursorLineFeed(const bool withReturn) noexcept
+try
+{
+    auto cursorPos = _buffer->GetCursor().GetPosition();
+    cursorPos.Y++;
+    if (withReturn)
+    {
+        cursorPos.X = 0;
+    }
+    _AdjustCursorPosition(cursorPos);
+
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
+// Method Description:
 // - deletes count characters starting from the cursor's current position
 // - it moves over the remaining text to 'replace' the deleted text
 // - for example, if the buffer looks like this ('|' is the cursor): [abc|def]

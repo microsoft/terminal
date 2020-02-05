@@ -32,6 +32,8 @@ public:
     bool CursorPrevLine(const size_t /*distance*/) noexcept override { return false; } // CPL
     bool CursorHorizontalPositionAbsolute(const size_t /*column*/) noexcept override { return false; } // CHA
     bool VerticalLinePositionAbsolute(const size_t /*line*/) noexcept override { return false; } // VPA
+    bool HorizontalPositionRelative(const size_t /*distance*/) noexcept override { return false; } // HPR
+    bool VerticalPositionRelative(const size_t /*distance*/) noexcept override { return false; } // VPR
     bool CursorPosition(const size_t /*line*/, const size_t /*column*/) noexcept override { return false; } // CUP
     bool CursorSaveState() noexcept override { return false; } // DECSC
     bool CursorRestoreState() noexcept override { return false; } // DECRC
@@ -46,8 +48,13 @@ public:
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
+    bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } //DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
+    bool SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept override { return false; }; // DECAWM
     bool SetTopBottomScrollingMargins(const size_t /*topMargin*/, const size_t /*bottomMargin*/) noexcept override { return false; } // DECSTBM
+    bool WarningBell() noexcept override { return false; } // BEL
+    bool CarriageReturn() noexcept override { return false; } // CR
+    bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) noexcept override { return false; } // IND, NEL
     bool ReverseLineFeed() noexcept override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) noexcept override { return false; } // OscWindowTitle
     bool UseAlternateScreenBuffer() noexcept override { return false; } // ASBSET
