@@ -64,4 +64,4 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 THROW_HR(E_UNEXPECTED);                   \
             }                                             \
         }                                                 \
-    } while (0, 0)                                        \
+    } while (0, 0)
