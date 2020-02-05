@@ -381,7 +381,7 @@
         "background": {
           "$ref": "#/definitions/Color",
           "default": "#000000",
-          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
+          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#0c0c0c\" (background color of Campbell).",
           "type": ["string", "null"]
         },
         "backgroundImage": {
@@ -573,7 +573,7 @@
         "foreground": {
           "$ref": "#/definitions/Color",
           "default": "#ffffff",
-          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#cccccc\" (foreground color of Campbell).",
           "type": ["string", "null"]
         },
         "guid": {
