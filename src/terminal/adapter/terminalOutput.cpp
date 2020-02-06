@@ -266,7 +266,7 @@ TerminalOutput::TerminalOutput() noexcept
     _gsetTranslationTables.at(3) = Latin1;
 }
 
-bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
+bool TerminalOutput::Designate94Charset(size_t gsetNumber, const wchar_t charset)
 {
     switch (charset)
     {
@@ -303,6 +303,18 @@ bool TerminalOutput::DesignateCharset(size_t gsetNumber, const wchar_t charset)
         return _SetTranslationTable(gsetNumber, SwedishNrcs);
     case L'=': // Swiss NRCS
         return _SetTranslationTable(gsetNumber, SwissNrcs);
+    default:
+        return false;
+    }
+}
+
+bool TerminalOutput::Designate96Charset(size_t gsetNumber, const wchar_t charset)
+{
+    switch (charset)
+    {
+    case L'A': // ISO Latin-1 Supplemental
+    case L'<': // (UPSS when assigned to Latin-1)
+        return _SetTranslationTable(gsetNumber, Latin1);
     default:
         return false;
     }

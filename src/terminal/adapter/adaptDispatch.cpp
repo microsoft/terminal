@@ -1622,7 +1622,7 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 }
 
 //Routine Description:
-// Designate Charset - Selects a specific charset into one of the four G-sets.
+// Designate Charset - Selects a specific 94-character set into one of the four G-sets.
 //     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
 //       for a list of all charsets and their codes.
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
@@ -1631,9 +1631,24 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 // - charset - The character indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCharset(const size_t gsetNumber, const wchar_t charset)
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const wchar_t charset)
 {
-    return _termOutput.DesignateCharset(gsetNumber, charset);
+    return _termOutput.Designate94Charset(gsetNumber, charset);
+}
+
+//Routine Description:
+// Designate Charset - Selects a specific 96-character set into one of the four G-sets.
+//     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+//       for a list of all charsets and their codes.
+//     If the specified charset is unsupported, we do nothing (remain on the current one)
+//Arguments:
+// - gsetNumber - The G-set into which the charset will be selected.
+// - charset - The character indicating the charset that will be used.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const wchar_t charset)
+{
+    return _termOutput.Designate96Charset(gsetNumber, charset);
 }
 
 //Routine Description:

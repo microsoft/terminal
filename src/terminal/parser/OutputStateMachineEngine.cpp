@@ -77,7 +77,7 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
         _dispatch->LockingShift(1);
         break;
     default:
-        _dispatch->Execute(wch);
+        _dispatch->Print(wch);
         break;
     }
 
@@ -266,19 +266,31 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
         switch (til::at(intermediates, 0))
         {
         case L'(':
-            success = _dispatch->DesignateCharset(0, wch);
+            success = _dispatch->Designate94Charset(0, wch);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
             break;
         case L')':
-            success = _dispatch->DesignateCharset(1, wch);
+            success = _dispatch->Designate94Charset(1, wch);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
             break;
         case L'*':
-            success = _dispatch->DesignateCharset(2, wch);
+            success = _dispatch->Designate94Charset(2, wch);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
             break;
         case L'+':
-            success = _dispatch->DesignateCharset(3, wch);
+            success = _dispatch->Designate94Charset(3, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+            break;
+        case L'-':
+            success = _dispatch->Designate96Charset(1, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+            break;
+        case L'.':
+            success = _dispatch->Designate96Charset(2, wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+            break;
+        case L'/':
+            success = _dispatch->Designate96Charset(3, wch);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
             break;
         case L'%':
@@ -351,10 +363,10 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
             success = _dispatch->CursorBackward(1);
             break;
         case Vt52ActionCodes::EnterGraphicsMode:
-            success = _dispatch->DesignateCharset(0, DispatchTypes::VTCharacterSets::DEC_LineDrawing);
+            success = _dispatch->Designate94Charset(0, DispatchTypes::VTCharacterSets::DEC_LineDrawing);
             break;
         case Vt52ActionCodes::ExitGraphicsMode:
-            success = _dispatch->DesignateCharset(0, DispatchTypes::VTCharacterSets::USASCII);
+            success = _dispatch->Designate94Charset(0, DispatchTypes::VTCharacterSets::USASCII);
             break;
         case Vt52ActionCodes::CursorToHome:
             success = _dispatch->CursorPosition(1, 1);
