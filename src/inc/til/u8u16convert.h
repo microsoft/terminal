@@ -28,29 +28,31 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
     public:
         au16state() noexcept :
-            _codepage{ std::numeric_limits<unsigned int>::max() },
+            _codepage{ std::numeric_limits<unsigned int>::max() }, // since 0 is an alias for the default ANSI codepage, we use an invalid codepage id
             _buffer{},
             _partials{}
         {
         }
 
         // Method Description:
-        // - Takes a ANSI or UTF-8 string and populates it with *complete* codepoints.
+        // - Takes an ANSI or UTF-8 string and populates it with *complete* codepoints.
         //   If it receives an incomplete codepoint, it will cache it until it can be completed.
+        //   NOTE: The caching of incomplete codepoints is not supported if the codepage id is either of
+        //         50220, 50221, 50222, 50225, 50227, 50229, 52936, 54936, 55000, 55001, 55002, 55003, 55004,
+        //         57002, 57003, 57004, 57005, 57006, 57007, 57008, 57009, 57010, 57011, 65000.
+        //         In these cases incomplete code points are silently replaced with the default replacement
+        //         character in the involved conversion functions, and the conversion is treated as successful.
         // Arguments:
         // - codepage - id of the codepage the received string is encoded
         // - in - ANSI or UTF-8 string_view potentially containing partial code points
         // - out - on return, populated with complete codepoints at the string end
         // Return Value:
-        // - S_OK          - the resulting string doesn't end with a partial
-        // - E_INVALIDARG  - invalid codepage id passed
+        // - S_OK          - the resulting string doesn't end with a partial, or caching is not nupported (see above)
         // - S_FALSE       - the resulting string contains the previously cached partials only
+        // - E_INVALIDARG  - the codepage id is invalid
         // - E_OUTOFMEMORY - the method failed to allocate memory for the resulting string
         // - E_ABORT       - the resulting string length would exceed the max_size and thus, the processing was aborted
         // - E_UNEXPECTED  - an unexpected error occurred
-        // NOTE: the caching of incomplete codepoints at the string boundaries is not supported if the codepage id is either of
-        //  50220, 50221, 50222, 50225, 50227, 50229, 52936, 54936, 55000, 55001, 55002, 55003, 55004,
-        //  57002, 57003, 57004, 57005, 57006, 57007, 57008, 57009, 57010, 57011, 65000
         template<class T = charT>
         [[nodiscard]] typename std::enable_if<std::is_same<T, char>::value, HRESULT>::type
         operator()(const unsigned int codepage, const std::basic_string_view<T> in, std::basic_string_view<T>& out) noexcept
@@ -89,7 +91,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         return S_OK;
                     }
 
-                    return S_FALSE; // the partial is given back
+                    return S_FALSE; // the partial is populated
                 }
 
                 if (codepage == gsl::narrow_cast<unsigned int>(CP_UTF8)) // UTF-8
@@ -134,16 +136,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     {
                         // Start at the beginning of the string (or the second bvte if a lead byte has been cached in the previous call) and scan forward,
                         // keep track when it encounters a lead byte, and treat the next byte as the trailing part of the same character.
-                        std::for_each(_buffer.empty() ? in.cbegin() : in.cbegin() + 1, in.cend(), [&](const T& ch) {
+                        std::for_each(_buffer.empty() ? in.cbegin() : in.cbegin() + 1, in.cend(), [&](const auto& ch) {
                             if (foundLeadByte)
                             {
-                                foundLeadByte = false;
+                                foundLeadByte = false; // because it's the trailing part
                             }
                             else
                             {
                                 // We use our own algorithm because IsDBCSLeadByteEx() supports only a subset of DBCS codepages.
-                                const byte uCh{ gsl::narrow_cast<byte>(ch) };
-                                for (int idx{}; cpInfo.LeadByte[idx] != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes
+                                const auto uCh{ gsl::narrow_cast<byte>(ch) };
+                                for (int idx{}; cpInfo.LeadByte[idx] != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
                                 {
                                     if (uCh >= cpInfo.LeadByte[idx] && uCh <= cpInfo.LeadByte[idx + 1])
                                     {
@@ -230,7 +232,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         return S_OK;
                     }
 
-                    return S_FALSE; // the high surrogate is given back
+                    return S_FALSE; // the high surrogate is populated
                 }
 
                 // cache the last value in the string if it is in the range of high surrogates
@@ -245,7 +247,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     _partialsLen = 0u;
                 }
 
-                // give back the part of the string that contains complete code points only
+                // poulate the part of the string that contains complete code points only
                 _buffer.append(in, 0u, remainingLength);
                 out = _buffer;
 
@@ -340,219 +342,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     // make clear what incoming string type the state is for
-    using astate = au16state<char>;
-    using u16state = au16state<wchar_t>;
+    using astate = au16state<char>; // ANSI and UTF-8
+    using u16state = au16state<wchar_t>; // UTF-16
 
     // Routine Description:
-    // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.
-    // Arguments:
-    // - in - UTF-8 string to be converted
-    // - out - reference to the resulting UTF-16 string
-    // Return Value:
-    // - S_OK          - the conversion succeded
-    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
-    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
-    template<class inT, class outT>
-    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, char>::value && std::is_same<typename outT::value_type, wchar_t>::value, HRESULT>::type
-    u8u16(const inT in, outT& out) noexcept
-    {
-        try
-        {
-            out.clear();
-
-            if (in.empty())
-            {
-                return S_OK;
-            }
-
-            int lengthRequired{};
-            // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
-            RETURN_HR_IF(E_ABORT, FAILED(SizeTToInt(in.length(), &lengthRequired)));
-            out.resize(in.length()); // avoid to call MultiByteToWideChar twice only to get the required size
-            const int lengthOut{ MultiByteToWideChar(gsl::narrow_cast<UINT>(CP_UTF8), 0ul, in.data(), lengthRequired, out.data(), lengthRequired) };
-            out.resize(gsl::narrow_cast<size_t>(lengthOut));
-
-            return lengthOut == 0 ? E_UNEXPECTED : S_OK;
-        }
-        catch (std::length_error&)
-        {
-            return E_ABORT;
-        }
-        catch (std::bad_alloc&)
-        {
-            return E_OUTOFMEMORY;
-        }
-        catch (...)
-        {
-            return E_UNEXPECTED;
-        }
-    }
-
-    // Routine Description:
-    // - Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
-    // Arguments:
-    // - in - UTF-8 string to be converted
-    // - out - reference to the resulting UTF-16 string
-    // - state - reference to a til::astate class holding the status of the current partials handling
-    // Return Value:
-    // - S_OK          - the conversion succeded
-    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
-    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
-    template<class inT, class outT>
-    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, char>::value && std::is_same<typename outT::value_type, wchar_t>::value, HRESULT>::type
-    u8u16(const inT in, outT& out, astate& state) noexcept
-    {
-        std::string_view sv{};
-        RETURN_IF_FAILED(state(gsl::narrow_cast<unsigned int>(CP_UTF8), std::string_view{ in }, sv));
-        return til::u8u16(sv, out);
-    }
-
-    // Routine Description:
-    // - Takes a UTF-16 string and performs the conversion to UTF-8. NOTE: The function relies on getting complete UTF-16 characters at the string boundaries.
-    // Arguments:
-    // - in - UTF-16 string to be converted
-    // - out - reference to the resulting UTF-8 string
-    // Return Value:
-    // - S_OK          - the conversion succeded
-    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
-    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
-    template<class inT, class outT>
-    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value && std::is_same<typename outT::value_type, char>::value, HRESULT>::type
-    u16u8(const inT in, outT& out) noexcept
-    {
-        try
-        {
-            out.clear();
-
-            if (in.empty())
-            {
-                return S_OK;
-            }
-
-            int lengthIn{};
-            int lengthRequired{};
-            // Code Point U+0000..U+FFFF: 1 UTF-16 code unit --> 1..3 UTF-8 code units.
-            // Code Points >U+FFFF: 2 UTF-16 code units --> 4 UTF-8 code units.
-            // Thus, the worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
-            RETURN_HR_IF(E_ABORT, FAILED(SizeTToInt(in.length(), &lengthIn)) || FAILED(IntMult(lengthIn, 3, &lengthRequired)));
-            out.resize(gsl::narrow_cast<size_t>(lengthRequired)); // avoid to call WideCharToMultiByte twice only to get the required size
-            const int lengthOut{ WideCharToMultiByte(gsl::narrow_cast<UINT>(CP_UTF8), 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr) };
-            out.resize(gsl::narrow_cast<size_t>(lengthOut));
-
-            return lengthOut == 0 ? E_UNEXPECTED : S_OK;
-        }
-        catch (std::length_error&)
-        {
-            return E_ABORT;
-        }
-        catch (std::bad_alloc&)
-        {
-            return E_OUTOFMEMORY;
-        }
-        catch (...)
-        {
-            return E_UNEXPECTED;
-        }
-    }
-
-    // Routine Description:
-    // - Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
-    // Arguments:
-    // - in - UTF-16 string to be converted
-    // - out - reference to the resulting UTF-8 string
-    // - state - reference to a til::u16state class holding the status of the current partials handling
-    // Return Value:
-    // - S_OK          - the conversion succeded without any change of the represented code points
-    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
-    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
-    template<class inT, class outT>
-    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value && std::is_same<typename outT::value_type, char>::value, HRESULT>::type
-    u16u8(const inT in, outT& out, u16state& state) noexcept
-    {
-        std::wstring_view sv{};
-        RETURN_IF_FAILED(state(std::wstring_view{ in }, sv));
-        return u16u8(sv, out);
-    }
-
-    // Routine Description:
-    // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.
-    // Arguments:
-    // - in - UTF-8 string to be converted
-    // Return Value:
-    // - the resulting UTF-16 string
-    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class inT>
-    typename std::enable_if<std::is_same<typename inT::value_type, char>::value, std::wstring>::type
-    u8u16(const inT in)
-    {
-        std::wstring out{};
-        THROW_IF_FAILED(u8u16(std::string_view{ in }, out));
-        return out;
-    }
-
-    // Routine Description:
-    // Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
-    // Arguments:
-    // - in - UTF-8 string to be converted
-    // - state - reference to a til::astate class holding the status of the current partials handling
-    // Return Value:
-    // - the resulting UTF-16 string
-    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class inT>
-    typename std::enable_if<std::is_same<typename inT::value_type, char>::value, std::wstring>::type
-    u8u16(const inT in, astate& state)
-    {
-        std::wstring out{};
-        THROW_IF_FAILED(u8u16(std::string_view{ in }, out, state));
-        return out;
-    }
-
-    // Routine Description:
-    // - Takes a UTF-16 string and performs the conversion to UTF-8. NOTE: The function relies on getting complete UTF-16 characters at the string boundaries.
-    // Arguments:
-    // - in - UTF-16 string to be converted
-    // Return Value:
-    // - the resulting UTF-8 string
-    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class inT>
-    typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value, std::string>::type
-    u16u8(const inT in)
-    {
-        std::string out{};
-        THROW_IF_FAILED(u16u8(std::wstring_view{ in }, out));
-        return out;
-    }
-
-    // Routine Description:
-    // Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
-    // Arguments:
-    // - in - UTF-16 string to be converted
-    // - state - reference to a til::u16state class holding the status of the current partials handling
-    // Return Value:
-    // - the resulting UTF-8 string
-    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class inT>
-    typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value, std::string>::type
-    u16u8(const inT in, u16state& state)
-    {
-        std::string out{};
-        THROW_IF_FAILED(u16u8(std::wstring_view{ in }, out, state));
-        return out;
-    }
-
-    // Routine Description:
-    // - Takes a ANSI string and performs the conversion to UTF-16. NOTE: The function relies on getting complete ANSI characters at the string boundaries.
+    // - Takes an ANSI string and performs the conversion to UTF-16. NOTE: The function relies on getting complete ANSI characters at the string boundaries.
     // Arguments:
     // - codepage - id of the codepage the received string is encoded
     // - in - ANSI string to be converted
     // - out - reference to the resulting UTF-16 string
     // Return Value:
     // - S_OK          - the conversion succeded
-    // - E_INVALIDARG  - invalid codepage id passed
+    // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -598,7 +399,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
     // Routine Description:
-    // - Takes a ANSI string, complements and/or caches partials, and performs the conversion to UTF-16.
+    // - Takes an ANSI string, complements and/or caches partials, and performs the conversion to UTF-16. NOTE: The support is restricted. See description of au16state<char>.
     // Arguments:
     // - codepage - id of the codepage the received string is encoded
     // - in - ANSI string to be converted
@@ -606,7 +407,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - state - reference to a til::astate class holding the status of the current partials handling
     // Return Value:
     // - S_OK          - the conversion succeded
-    // - E_INVALIDARG  - invalid codepage id passed
+    // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -620,7 +421,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
     // Routine Description:
-    // - Takes a ANSI string and performs the conversion to UTF-16. NOTE: The function relies on getting complete ANSI characters at the string boundaries.
+    // - Takes an ANSI string and performs the conversion to UTF-16. NOTE: The function relies on getting complete ANSI characters at the string boundaries.
     // Arguments:
     // - codepage - id of the codepage the received string is encoded
     // - in - ANSI string to be converted
@@ -637,7 +438,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
     // Routine Description:
-    // Takes a ANSI string, complements and/or caches partials, and performs the conversion to UTF-16.
+    // Takes an ANSI string, complements and/or caches partials, and performs the conversion to UTF-16. NOTE: The support is restricted. See description of au16state<char>.
     // Arguments:
     // - codepage - id of the codepage the received string is encoded
     // - in - ANSI string to be converted
@@ -662,7 +463,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting ANSI string
     // Return Value:
     // - S_OK          - the conversion succeded
-    // - E_INVALIDARG  - invalid codepage id passed
+    // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -687,14 +488,32 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             int lengthIn{};
             RETURN_HR_IF(E_ABORT, FAILED(SizeTToInt(in.length(), &lengthIn)));
 
-            const int lengthRequired{ WideCharToMultiByte(codepage, 0ul, in.data(), lengthIn, nullptr, 0, nullptr, nullptr) };
-            if (lengthRequired == 0)
+            int lengthRequired{};
+            if (codepage == gsl::narrow_cast<unsigned int>(CP_UTF8)) // UTF-8
             {
-                return E_ABORT;
+                // Avoid to call WideCharToMultiByte twice only to get the required size.
+                // Code Point U+0000..U+FFFF: 1 UTF-16 code unit --> 1..3 UTF-8 code units.
+                // Code Points >U+FFFF: 2 UTF-16 code units --> 4 UTF-8 code units.
+                // Thus, the worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
+                RETURN_HR_IF(E_ABORT, FAILED(IntMult(lengthIn, 3, &lengthRequired)));
+            }
+            else // ANSI codepages
+            {
+#pragma prefast(suppress \
+                : __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+                // We have to call WideCharToMultiByte to get the required size because we can't predict it for all possible codepages.
+                lengthRequired = WideCharToMultiByte(codepage, 0ul, in.data(), lengthIn, nullptr, 0, nullptr, nullptr);
+                if (lengthRequired == 0)
+                {
+                    return E_ABORT;
+                }
             }
 
             out.resize(gsl::narrow_cast<size_t>(lengthRequired));
+#pragma prefast(suppress \
+                : __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
             const int lengthOut{ WideCharToMultiByte(codepage, 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr) };
+            out.resize(gsl::narrow_cast<size_t>(lengthOut));
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
         }
@@ -721,7 +540,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
     // - S_OK          - the conversion succeded without any change of the represented code points
-    // - E_INVALIDARG  - invalid codepage id passed
+    // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -766,6 +585,146 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         std::string out{};
         THROW_IF_FAILED(u16a(codepage, std::wstring_view{ in }, out, state));
+        return out;
+    }
+
+    // Routine Description:
+    // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.
+    // Arguments:
+    // - in - UTF-8 string to be converted
+    // - out - reference to the resulting UTF-16 string
+    // Return Value:
+    // - S_OK          - the conversion succeded
+    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
+    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
+    // - E_UNEXPECTED  - an unexpected error occurred
+    template<class inT, class outT>
+    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, char>::value && std::is_same<typename outT::value_type, wchar_t>::value, HRESULT>::type
+    u8u16(const inT in, outT& out) noexcept
+    {
+        return au16(gsl::narrow_cast<unsigned int>(CP_UTF8), std::string_view{ in }, out);
+    }
+
+    // Routine Description:
+    // - Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
+    // Arguments:
+    // - in - UTF-8 string to be converted
+    // - out - reference to the resulting UTF-16 string
+    // - state - reference to a til::astate class holding the status of the current partials handling
+    // Return Value:
+    // - S_OK          - the conversion succeded
+    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
+    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
+    // - E_UNEXPECTED  - an unexpected error occurred
+    template<class inT, class outT>
+    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, char>::value && std::is_same<typename outT::value_type, wchar_t>::value, HRESULT>::type
+    u8u16(const inT in, outT& out, astate& state) noexcept
+    {
+        std::string_view sv{};
+        RETURN_IF_FAILED(state(gsl::narrow_cast<unsigned int>(CP_UTF8), std::string_view{ in }, sv));
+        return til::u8u16(sv, out);
+    }
+
+    // Routine Description:
+    // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.
+    // Arguments:
+    // - in - UTF-8 string to be converted
+    // Return Value:
+    // - the resulting UTF-16 string
+    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
+    template<class inT>
+    typename std::enable_if<std::is_same<typename inT::value_type, char>::value, std::wstring>::type
+    u8u16(const inT in)
+    {
+        std::wstring out{};
+        THROW_IF_FAILED(u8u16(std::string_view{ in }, out));
+        return out;
+    }
+
+    // Routine Description:
+    // Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
+    // Arguments:
+    // - in - UTF-8 string to be converted
+    // - state - reference to a til::astate class holding the status of the current partials handling
+    // Return Value:
+    // - the resulting UTF-16 string
+    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
+    template<class inT>
+    typename std::enable_if<std::is_same<typename inT::value_type, char>::value, std::wstring>::type
+    u8u16(const inT in, astate& state)
+    {
+        std::wstring out{};
+        THROW_IF_FAILED(u8u16(std::string_view{ in }, out, state));
+        return out;
+    }
+
+    // Routine Description:
+    // - Takes a UTF-16 string and performs the conversion to UTF-8. NOTE: The function relies on getting complete UTF-16 characters at the string boundaries.
+    // Arguments:
+    // - in - UTF-16 string to be converted
+    // - out - reference to the resulting UTF-8 string
+    // Return Value:
+    // - S_OK          - the conversion succeded
+    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
+    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
+    // - E_UNEXPECTED  - an unexpected error occurred
+    template<class inT, class outT>
+    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value && std::is_same<typename outT::value_type, char>::value, HRESULT>::type
+    u16u8(const inT in, outT& out) noexcept
+    {
+        return u16a(gsl::narrow_cast<unsigned int>(CP_UTF8), std::wstring_view{ in }, out);
+    }
+
+    // Routine Description:
+    // - Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
+    // Arguments:
+    // - in - UTF-16 string to be converted
+    // - out - reference to the resulting UTF-8 string
+    // - state - reference to a til::u16state class holding the status of the current partials handling
+    // Return Value:
+    // - S_OK          - the conversion succeded without any change of the represented code points
+    // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
+    // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
+    // - E_UNEXPECTED  - an unexpected error occurred
+    template<class inT, class outT>
+    [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value && std::is_same<typename outT::value_type, char>::value, HRESULT>::type
+    u16u8(const inT in, outT& out, u16state& state) noexcept
+    {
+        std::wstring_view sv{};
+        RETURN_IF_FAILED(state(std::wstring_view{ in }, sv));
+        return u16u8(sv, out);
+    }
+
+    // Routine Description:
+    // - Takes a UTF-16 string and performs the conversion to UTF-8. NOTE: The function relies on getting complete UTF-16 characters at the string boundaries.
+    // Arguments:
+    // - in - UTF-16 string to be converted
+    // Return Value:
+    // - the resulting UTF-8 string
+    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
+    template<class inT>
+    typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value, std::string>::type
+    u16u8(const inT in)
+    {
+        std::string out{};
+        THROW_IF_FAILED(u16u8(std::wstring_view{ in }, out));
+        return out;
+    }
+
+    // Routine Description:
+    // Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
+    // Arguments:
+    // - in - UTF-16 string to be converted
+    // - state - reference to a til::u16state class holding the status of the current partials handling
+    // Return Value:
+    // - the resulting UTF-8 string
+    // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
+    template<class inT>
+    typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value, std::string>::type
+    u16u8(const inT in, u16state& state)
+    {
+        std::string out{};
+        THROW_IF_FAILED(u16u8(std::wstring_view{ in }, out, state));
         return out;
     }
 }
