@@ -52,27 +52,28 @@ steps:
     arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
     errorActionPreference: silentlyContinue
 
-- task: CmdLine@1
-  displayName: 'Run Unit Tests (x64)'
+- task: PowerShell@2
+  displayName: 'Rationalize build platform'
   inputs:
-    filename: '$(BUILD.SOURCESDIRECTORY)\packages\Taef.Redist.Wlk.10.51.200127004\build\binaries\x64\te.exe'
-    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\x64\Release\*unit.test*.dll'
-    failOnStandardError: true
-  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+    targetType: inline
+    script: |
+      $Arch = "$(BuildPlatform)"
+      If ($Arch -Eq "x86") { $Arch = "Win32" }
+      Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
 - task: CmdLine@1
-  displayName: 'Run Unit Tests (x86)'
+  displayName: 'Run Unit Tests'
   inputs:
-    filename: '$(BUILD.SOURCESDIRECTORY)\packages\Taef.Redist.Wlk.10.51.200127004\build\binaries\x86\te.exe'
-    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\win32\Release\*unit.test*.dll'
+    filename: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe'
+    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\*unit.test*.dll'
     failOnStandardError: true
-  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x86'))
+  condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: CmdLine@1
   displayName: 'Run Feature Tests (x64 only)'
   inputs:
-    filename: '$(BUILD.SOURCESDIRECTORY)\packages\Taef.Redist.Wlk.10.51.200127004\build\binaries\x64\te.exe'
-    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\x64\Release\*feature.test*.dll'
+    filename: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe'
+    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\*feature.test*.dll'
     failOnStandardError: true
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
