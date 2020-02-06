@@ -39,6 +39,6 @@ namespace Microsoft::Console
         HRESULT _exitResult;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
-        til::u8state _u8State;
+        til::astate _u8State;
     };
 }

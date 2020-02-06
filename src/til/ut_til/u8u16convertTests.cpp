@@ -97,7 +97,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
         gsl::narrow_cast<wchar_t>(0xDF5C)
     };
 
-    til::u8state state{};
+    til::astate state{};
 
     std::wstring u16Out1{};
     const HRESULT hRes1{ til::u8u16(u8String1, u16Out1, state) };
