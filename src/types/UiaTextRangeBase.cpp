@@ -901,7 +901,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     bool success = true;
     auto target = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && success)
+    while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         switch (moveDirection)
         {
@@ -1043,7 +1043,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
     bool success = true;
     auto resultPos = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && success)
+    while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         auto nextPos = resultPos;
         switch (moveDirection)
@@ -1198,7 +1198,7 @@ std::wstring UiaTextRangeBase::_getTextValue() const noexcept
         const auto bufferSize = buffer.GetSize();
 
         auto pos = _start;
-        while (bufferSize.CompareInBounds(pos, _end, true) != 0)
+        while (std::abs(bufferSize.CompareInBounds(pos, _end, true)) > 0)
         {
             stream << buffer.GetTextDataAt(pos)->data();
             bufferSize.IncrementInBounds(pos, true);
