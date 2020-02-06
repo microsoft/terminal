@@ -72,6 +72,9 @@
     <ClCompile Include="..\Environment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\UiaTracing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\IInputEvent.hpp">
@@ -153,6 +156,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\inc\Environment.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\UiaTracing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

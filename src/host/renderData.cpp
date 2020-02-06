@@ -12,7 +12,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Interactivity;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 #pragma region IBaseData

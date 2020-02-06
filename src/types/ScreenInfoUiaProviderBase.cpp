@@ -5,9 +5,9 @@
 
 #include "ScreenInfoUiaProviderBase.h"
 #include "WindowUiaProviderBase.hpp"
+#include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Types::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
@@ -38,6 +38,7 @@ try
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     _pData = pData;
     _wordDelimiters = wordDelimiters;
+    UiaTracing::TextProvider::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -62,11 +63,6 @@ CATCH_RETURN();
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalFiringMapping[id] = false;
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgSignal apiMsg;
-    apiMsg.Signal = id;
-    Tracing::s_TraceUia(this, ApiCall::Signal, &apiMsg);*/
     return hr;
 }
 
@@ -78,9 +74,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_ProviderOptions(_Out_ ProviderOpti
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pOptions);
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
     *pOptions = ProviderOptions_ServerSideProvider;
+    UiaTracing::TextProvider::get_ProviderOptions(*this, *pOptions);
     return S_OK;
 }
 
@@ -92,12 +87,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
     RETURN_HR_IF(E_INVALIDARG, ppInterface == nullptr);
     *ppInterface = nullptr;
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
-
-    *ppInterface = nullptr;
     HRESULT hr = S_OK;
-
     if (patternId == UIA_TextPatternId)
     {
         hr = QueryInterface(IID_PPV_ARGS(ppInterface));
@@ -106,6 +96,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
             *ppInterface = nullptr;
         }
     }
+    UiaTracing::TextProvider::GetPatternProvider(*this, patternId);
     return hr;
 }
 
@@ -114,9 +105,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyId,
                                                            _Out_ VARIANT* pVariant) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
-
     pVariant->vt = VT_EMPTY;
 
     // Returning the default will leave the property as the default
@@ -179,16 +167,15 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPropertyValue(_In_ PROPERTYID prope
         pVariant->boolVal = VARIANT_TRUE;
     }
 
+    UiaTracing::TextProvider::GetPropertyValue(*this, propertyId);
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
     RETURN_HR_IF(E_INVALIDARG, ppProvider == nullptr);
     *ppProvider = nullptr;
-
+    UiaTracing::TextProvider::get_HostRawElementProvider(*this);
     return S_OK;
 }
 #pragma endregion
@@ -197,9 +184,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
-
     // Root defers this to host, others must implement it...
     RETURN_HR_IF(E_INVALIDARG, ppRuntimeId == nullptr);
     *ppRuntimeId = nullptr;
@@ -212,24 +196,21 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);
 
+    UiaTracing::TextProvider::GetRuntimeId(*this);
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
-
     RETURN_HR_IF(E_INVALIDARG, ppRoots == nullptr);
     *ppRoots = nullptr;
+    UiaTracing::TextProvider::GetEmbeddedFragmentRoots(*this);
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::SetFocus, nullptr);
-
+    UiaTracing::TextProvider::SetFocus(*this);
     return Signal(UIA_AutomationFocusChangedEventId);
 }
 
@@ -239,9 +220,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //ApiMsgGetSelection apiMsg;
-
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
@@ -253,10 +231,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
     if (!_pData->IsSelectionActive())
     {
-        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-        //apiMsg.AreaSelected = false;
-        //apiMsg.SelectionRowCount = 1;
-
         // return a degenerate range at the cursor position
         const Cursor& cursor = _getTextBuffer().GetCursor();
 
@@ -298,10 +272,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         std::deque<WRL::ComPtr<UiaTextRangeBase>> ranges;
         RETURN_IF_FAILED(GetSelectionRanges(this, _wordDelimiters, ranges));
 
-        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-        //apiMsg.AreaSelected = true;
-        //apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
-
         // make a safe array
         *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(ranges.size()));
         if (*ppRetVal == nullptr)
@@ -322,16 +292,12 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         }
     }
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetSelection, &apiMsg);
+    UiaTracing::TextProvider::GetSelection(*this);
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
-
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
@@ -339,6 +305,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
 
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
+    WRL::ComPtr<UiaTextRangeBase> range;
 
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     const auto viewport = bufferSize.ConvertToOrigin(_getViewport());
@@ -359,7 +326,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
         const COORD end{ start.X, start.Y + 1 };
 
         HRESULT hr = S_OK;
-        WRL::ComPtr<UiaTextRangeBase> range;
         hr = CreateTextRange(this,
                              start,
                              end,
@@ -381,30 +347,26 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             return hr;
         }
     }
+    UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
                                                          _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
-
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
     RETURN_IF_FAILED(CreateTextRange(this, _wordDelimiters, &utr));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
+    UiaTracing::TextProvider::RangeFromChild(*this, *utr.Get());
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
                                                          _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
-
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
@@ -414,14 +376,12 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
                                      _wordDelimiters,
                                      &utr));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
+    UiaTracing::TextProvider::RangeFromPoint(*this, point, *utr.Get());
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
-
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
@@ -429,6 +389,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     RETURN_IF_FAILED(CreateTextRange(this, _wordDelimiters, &utr));
     RETURN_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
+    UiaTracing::TextProvider::get_DocumentRange(*this, *utr.Get());
     return S_OK;
 }
 
@@ -436,10 +397,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ Suppo
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
-
     *pRetVal = SupportedTextSelection::SupportedTextSelection_Single;
+    UiaTracing::TextProvider::get_SupportedTextSelection(*this, *pRetVal);
     return S_OK;
 }
 
