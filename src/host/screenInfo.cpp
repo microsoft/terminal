@@ -40,8 +40,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     HWheelDelta{ 0 },
     _textBuffer{ nullptr },
     Next{ nullptr },
-    WriteConsoleDbcsLeadByte{ 0, 0 },
-    FillOutDbcsLeadChar{ 0 },
     ConvScreenInfo{ nullptr },
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },

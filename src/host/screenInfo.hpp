@@ -172,8 +172,6 @@ private:
 
 public:
     SCREEN_INFORMATION* Next;
-    BYTE WriteConsoleDbcsLeadByte[2];
-    BYTE FillOutDbcsLeadChar;
 
     // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;

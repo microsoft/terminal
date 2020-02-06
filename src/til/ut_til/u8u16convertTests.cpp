@@ -148,7 +148,7 @@ void Utf8Utf16ConvertTests::TestDbcsPartials()
     const std::string cp936String1{
         '\xCE', // CJK UNIFIED IDEOGRAPH-7EF4 (2 bytes)
         '\xAC',
-        '\xBB'  // CJK UNIFIED IDEOGRAPH-57FA (lead byte)
+        '\xBB' // CJK UNIFIED IDEOGRAPH-57FA (lead byte)
     };
 
     const std::string cp936String2{
@@ -158,12 +158,12 @@ void Utf8Utf16ConvertTests::TestDbcsPartials()
     };
 
     const std::wstring u16StringComp1{
-        gsl::narrow_cast<wchar_t>(0x7EF4)  // CJK UNIFIED IDEOGRAPH-7EF4
+        gsl::narrow_cast<wchar_t>(0x7EF4) // CJK UNIFIED IDEOGRAPH-7EF4
     };
 
     const std::wstring u16StringComp2{
         gsl::narrow_cast<wchar_t>(0x57FA), // CJK UNIFIED IDEOGRAPH-57FA
-        gsl::narrow_cast<wchar_t>(0x767E)  // CJK UNIFIED IDEOGRAPH-767E
+        gsl::narrow_cast<wchar_t>(0x767E) // CJK UNIFIED IDEOGRAPH-767E
     };
 
     til::astate state{};

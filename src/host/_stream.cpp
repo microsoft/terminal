@@ -1056,93 +1056,18 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         auto unlock{ wil::scope_exit([&] { UnlockConsole(); }) };
 
         auto& screenInfo{ context.GetActiveBuffer() };
-        const auto& consoleInfo{ ServiceLocator::LocateGlobals().getConsoleInformation() };
-        const auto codepage{ consoleInfo.OutputCP };
-        auto leadByteCaptured{ false };
-        auto leadByteConsumed{ false };
+        const auto codepage{ ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP };
         std::wstring wstr{};
         static til::astate aState{};
 
         // Convert our input parameters to Unicode
+        const auto leadByteConsumed{ !aState.empty(codepage) }; // only used for DBCS
+        RETURN_IF_FAILED(til::au16(codepage, buffer, wstr, aState));
+        const auto leadByteCaptured{ !aState.empty(codepage) }; // only used for DBCS
+
         if (codepage == CP_UTF8)
         {
-            RETURN_IF_FAILED(til::u8u16(buffer, wstr, aState));
             read = buffer.size();
-        }
-        else
-        {
-            // In case the codepage changes from UTF-8 to another,
-            // we discard partials that might still be cached.
-            aState.reset();
-
-            int mbPtrLength{};
-            RETURN_IF_FAILED(SizeTToInt(buffer.size(), &mbPtrLength));
-
-            // (buffer.size() + 2) I think because we might be shoving another unicode char
-            // from screenInfo->WriteConsoleDbcsLeadByte in front
-            // because we previously checked that buffer.size() fits into an int, +2 won't cause an overflow of size_t
-            wstr.resize(buffer.size() + 2);
-
-            wchar_t* wcPtr{ wstr.data() };
-            auto mbPtr{ buffer.data() };
-            size_t dbcsLength{};
-            if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
-            {
-                // there was a portion of a dbcs character stored from a previous
-                // call so we take the 2nd half from mbPtr[0], put them together
-                // and write the wide char to wcPtr[0]
-                screenInfo.WriteConsoleDbcsLeadByte[1] = gsl::narrow_cast<byte>(*mbPtr);
-
-                try
-                {
-                    const auto wFromComplemented{
-                        ConvertToW(codepage, { reinterpret_cast<const char*>(screenInfo.WriteConsoleDbcsLeadByte), ARRAYSIZE(screenInfo.WriteConsoleDbcsLeadByte) })
-                    };
-
-                    FAIL_FAST_IF(wFromComplemented.size() != 1);
-                    dbcsLength = sizeof(wchar_t);
-                    wcPtr[0] = wFromComplemented.at(0);
-                    mbPtr++;
-                }
-                catch (...)
-                {
-                    dbcsLength = 0;
-                }
-
-                // this looks weird to be always incrementing even if the conversion failed, but this is the
-                // original behavior so it's left unchanged.
-                wcPtr++;
-                mbPtrLength--;
-
-                // Note that we used a stored lead byte from a previous call in order to complete this write
-                // Use this to offset the "number of bytes consumed" calculation at the end by -1 to account
-                // for using a byte we had internally, not off the stream.
-                leadByteConsumed = true;
-            }
-
-            screenInfo.WriteConsoleDbcsLeadByte[0] = 0;
-
-            // if the last byte in mbPtr is a lead byte for the current code page,
-            // save it for the next time this function is called and we can piece it
-            // back together then
-            if (mbPtrLength != 0 && CheckBisectStringA(const_cast<char*>(mbPtr), mbPtrLength, &consoleInfo.OutputCPInfo))
-            {
-                screenInfo.WriteConsoleDbcsLeadByte[0] = gsl::narrow_cast<byte>(mbPtr[mbPtrLength - 1]);
-                mbPtrLength--;
-
-                // Note that we captured a lead byte during this call, but won't actually draw it until later.
-                // Use this to offset the "number of bytes consumed" calculation at the end by +1 to account
-                // for taking a byte off the stream.
-                leadByteCaptured = true;
-            }
-
-            if (mbPtrLength != 0)
-            {
-                // convert the remaining bytes in mbPtr to wide chars
-                mbPtrLength = sizeof(wchar_t) * MultiByteToWideChar(codepage, 0, mbPtr, mbPtrLength, wcPtr, mbPtrLength);
-            }
-
-            wstr.resize((dbcsLength + mbPtrLength) / sizeof(wchar_t));
         }
 
         // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
