@@ -84,6 +84,7 @@ namespace Microsoft::Console::VirtualTerminal
             LS3R,
             SS2,
             SS3,
+            DOCS,
             HVP,
             DECSTR,
             RIS,

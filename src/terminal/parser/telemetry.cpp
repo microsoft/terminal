@@ -257,6 +257,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[LS3R], "LS3R"),
                                       TraceLoggingUInt32(_uiTimesUsed[SS2], "SS2"),
                                       TraceLoggingUInt32(_uiTimesUsed[SS3], "SS3"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DOCS], "DOCS"),
                                       TraceLoggingUInt32(_uiTimesUsed[HVP], "HVP"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSTR], "DECSTR"),
                                       TraceLoggingUInt32(_uiTimesUsed[RIS], "RIS"),

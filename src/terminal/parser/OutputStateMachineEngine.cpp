@@ -281,6 +281,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->DesignateCharset(3, wch);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
             break;
+        case L'%':
+            success = _dispatch->DesignateCodingSystem(wch);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DOCS);
+            break;
         case L'#':
             switch (wch)
             {

@@ -31,6 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool LockingShiftRight(const size_t gsetNumber);
         bool SingleShift(const size_t gsetNumber);
         bool NeedToTranslate() const noexcept;
+        void EnableGrTranslation(boolean enabled);
 
     private:
         bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
@@ -41,5 +42,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring_view _glTranslationTable;
         std::wstring_view _grTranslationTable;
         mutable std::wstring_view _ssTranslationTable;
+        boolean _grTranslationEnabled = false;
     };
 }

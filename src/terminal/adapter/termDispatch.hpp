@@ -89,6 +89,7 @@ public:
     bool DeviceAttributes() noexcept override { return false; } // DA1
     bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
 
+    bool DesignateCodingSystem(const wchar_t /*codingSystem*/) noexcept override { return false; } // DOCS
     bool DesignateCharset(const size_t /*gsetNumber*/, const wchar_t /*charset*/) noexcept override { return false; } // SCS
     bool LockingShift(const size_t /*gsetNumber*/) noexcept override { return false; } // LS0, LS1, LS2, LS3
     bool LockingShiftRight(const size_t /*gsetNumber*/) noexcept override { return false; } // LS1R, LS2R, LS3R

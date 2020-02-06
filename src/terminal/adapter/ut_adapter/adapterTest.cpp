@@ -461,6 +461,12 @@ public:
         return FALSE;
     }
 
+    bool SetConsoleOutputCP(const unsigned int /*codepage*/) override
+    {
+        Log::Comment(L"SetConsoleOutputCP MOCK called...");
+        return TRUE;
+    }
+
     bool GetConsoleOutputCP(unsigned int& codepage) override
     {
         Log::Comment(L"GetConsoleOutputCP MOCK called...");

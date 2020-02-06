@@ -115,6 +115,7 @@ public:
 
     bool PrivateWriteConsoleControlInput(const KeyEvent key) override;
 
+    bool SetConsoleOutputCP(const unsigned int codepage) override;
     bool GetConsoleOutputCP(unsigned int& codepage) override;
 
     bool IsConsolePty() const override;

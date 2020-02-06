@@ -1590,6 +1590,38 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 }
 
 //Routine Description:
+// DOCS - Selects the coding system through which character sets are activated.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
+//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
+//     the code page is set to UTF-8, and only the GL area can be remapped.
+//Arguments:
+// - codingSystem - The coding system that will be selected.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
+{
+    bool success = false;
+    switch (codingSystem)
+    {
+    case DispatchTypes::CodingSystem::ISO2022:
+        success = _pConApi->SetConsoleOutputCP(28591);
+        if (success)
+        {
+            _termOutput.EnableGrTranslation(true);
+        }
+        break;
+    case DispatchTypes::CodingSystem::UTF8:
+        success = _pConApi->SetConsoleOutputCP(CP_UTF8);
+        if (success)
+        {
+            _termOutput.EnableGrTranslation(false);
+        }
+        break;
+    }
+    return success;
+}
+
+//Routine Description:
 // Designate Charset - Selects a specific charset into one of the four G-sets.
 //     See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
 //       for a list of all charsets and their codes.

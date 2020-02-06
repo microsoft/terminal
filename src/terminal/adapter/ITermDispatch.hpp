@@ -95,6 +95,7 @@ public:
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
+    virtual bool DesignateCodingSystem(const wchar_t codingSystem) = 0; // DOCS
     virtual bool DesignateCharset(const size_t gsetNumber, const wchar_t charset) = 0; // SCS
     virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
     virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R

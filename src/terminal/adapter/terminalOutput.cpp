@@ -326,8 +326,8 @@ bool TerminalOutput::LockingShiftRight(const size_t gsetNumber)
 {
     _grSetNumber = gsetNumber;
     _grTranslationTable = _gsetTranslationTables.at(_grSetNumber);
-    // If GR is mapped to Latin1 then we don't need to translate anything.
-    if (_grTranslationTable == Latin1)
+    // If GR is mapped to Latin1, or GR translation is not allowed, we don't need to translate anything.
+    if (_grTranslationTable == Latin1 || !_grTranslationEnabled)
     {
         _grTranslationTable = {};
     }
@@ -350,6 +350,13 @@ bool TerminalOutput::SingleShift(const size_t gsetNumber)
 bool TerminalOutput::NeedToTranslate() const noexcept
 {
     return !_glTranslationTable.empty() || !_grTranslationTable.empty() || !_ssTranslationTable.empty();
+}
+
+void TerminalOutput::EnableGrTranslation(boolean enabled)
+{
+    _grTranslationEnabled = enabled;
+    // We need to reapply the right locking shift to (de)activate the translation table.
+    LockingShiftRight(_grSetNumber);
 }
 
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept

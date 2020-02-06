@@ -105,6 +105,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         USASCII = L'B'
     };
 
+    enum CodingSystem : wchar_t
+    {
+        ISO2022 = L'@',
+        UTF8 = L'G'
+    };
+
     enum TabClearType : unsigned short
     {
         ClearCurrentColumn = 0,
