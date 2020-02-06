@@ -52,32 +52,28 @@ steps:
     arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
     errorActionPreference: silentlyContinue
 
-- task: VSTest@2
-  displayName: 'Run Unit Tests'
+- task: CmdLine@1
+  displayName: 'Run Unit Tests (x64)'
   inputs:
-    testAssemblyVer2: |
-      $(BUILD.SOURCESDIRECTORY)\**\*unit.test*.dll
-      !**\obj\**
-    runSettingsFile: '$(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings'
-    codeCoverageEnabled: true
-    runInParallel: False
-    testRunTitle: 'Console Unit Tests'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-  condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+    filename: '$(BUILD.SOURCESDIRECTORY)\packages\Taef.Redist.Wlk.10.51.200127004\build\binaries\x64\te.exe'
+    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\x64\Release\*unit.test*.dll'
+    failOnStandardError: true
+  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
-- task: VSTest@2
+- task: CmdLine@1
+  displayName: 'Run Unit Tests (x86)'
+  inputs:
+    filename: '$(BUILD.SOURCESDIRECTORY)\packages\Taef.Redist.Wlk.10.51.200127004\build\binaries\x86\te.exe'
+    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\win32\Release\*unit.test*.dll'
+    failOnStandardError: true
+  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x86'))
+
+- task: CmdLine@1
   displayName: 'Run Feature Tests (x64 only)'
   inputs:
-    testAssemblyVer2: |
-      $(BUILD.SOURCESDIRECTORY)\**\*feature.test*.dll
-      !**\obj\**
-    runSettingsFile: '$(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings'
-    codeCoverageEnabled: true
-    runInParallel: False
-    testRunTitle: 'Console Feature Tests'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
+    filename: '$(BUILD.SOURCESDIRECTORY)\packages\Taef.Redist.Wlk.10.51.200127004\build\binaries\x64\te.exe'
+    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\x64\Release\*feature.test*.dll'
+    failOnStandardError: true
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
 - task: CopyFiles@2
