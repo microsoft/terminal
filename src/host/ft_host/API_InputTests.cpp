@@ -411,6 +411,7 @@ void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFla
 
     Log::Comment(L"This test is flaky. Fix me in GH#4494");
     Log::Result(WEX::Logging::TestResults::Skipped);
+    return;
 
     HWND const hwnd = GetConsoleWindow();
     VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
