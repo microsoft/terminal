@@ -127,7 +127,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
-        if (pScreen->InVTMode())
+        if (pScreen->_IsInVTMode())
         {
             // microsoft/terminal#411: If VT mode is enabled, lets construct the
             // VT tab stops. Without this line, if a user has
@@ -189,17 +189,6 @@ const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
 StateMachine& SCREEN_INFORMATION::GetStateMachine()
 {
     return *_stateMachine;
-}
-
-// Method Description:
-// - returns true if this buffer is in Virtual Terminal Output mode.
-// Arguments:
-// <none>
-// Return Value:
-// true iff this buffer is in Virtual Terminal Output mode.
-bool SCREEN_INFORMATION::InVTMode() const
-{
-    return WI_IsFlagSet(OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 }
 
 // Routine Description:
@@ -1962,6 +1951,17 @@ bool SCREEN_INFORMATION::_IsInPtyMode() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return _IsAltBuffer() || gci.IsInVtIoMode();
+}
+
+// Routine Description:
+// - returns true if this buffer is in Virtual Terminal Output mode.
+// Parameters:
+// - None
+// Return Value:
+// - true iff this buffer is in Virtual Terminal Output mode.
+bool SCREEN_INFORMATION::_IsInVTMode() const
+{
+    return WI_IsFlagSet(OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 }
 
 // Routine Description:

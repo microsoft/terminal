@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppCommandlineArgs.h"
 #include "ActionArgs.h"
+#include <LibraryResources.h>
 
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
@@ -163,7 +164,7 @@ void AppCommandlineArgs::_buildParser()
 // - <none>
 void AppCommandlineArgs::_buildNewTabParser()
 {
-    _newTabCommand.subcommand = _app.add_subcommand("new-tab", NEEDS_LOC("Create a new tab"));
+    _newTabCommand.subcommand = _app.add_subcommand("new-tab", RS_A(L"CmdNewTabDesc"));
     _addNewTerminalArgs(_newTabCommand);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -191,14 +192,14 @@ void AppCommandlineArgs::_buildNewTabParser()
 // - <none>
 void AppCommandlineArgs::_buildSplitPaneParser()
 {
-    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", NEEDS_LOC("Create a new pane"));
+    _newPaneCommand.subcommand = _app.add_subcommand("split-pane", RS_A(L"CmdSplitPaneDesc"));
     _addNewTerminalArgs(_newPaneCommand);
     _horizontalOption = _newPaneCommand.subcommand->add_flag("-H,--horizontal",
                                                              _splitHorizontal,
-                                                             NEEDS_LOC("Create the new pane as a horizontal split (think [-])"));
+                                                             RS_A(L"CmdSplitPaneHorizontalArgDesc"));
     _verticalOption = _newPaneCommand.subcommand->add_flag("-V,--vertical",
                                                            _splitVertical,
-                                                           NEEDS_LOC("Create the new pane as a vertical split (think [|])"));
+                                                           RS_A(L"CmdSplitPaneVerticalArgDesc"));
     _verticalOption->excludes(_horizontalOption);
 
     // When ParseCommand is called, if this subcommand was provided, this
@@ -241,14 +242,14 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 // - <none>
 void AppCommandlineArgs::_buildFocusTabParser()
 {
-    _focusTabCommand = _app.add_subcommand("focus-tab", NEEDS_LOC("Move focus to another tab"));
-    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, NEEDS_LOC("Move focus the tab at the given index"));
+    _focusTabCommand = _app.add_subcommand("focus-tab", RS_A(L"CmdFocusTabDesc"));
+    auto* indexOpt = _focusTabCommand->add_option("-t,--target", _focusTabIndex, RS_A(L"CmdFocusTabTargetArgDesc"));
     auto* nextOpt = _focusTabCommand->add_flag("-n,--next",
                                                _focusNextTab,
-                                               NEEDS_LOC("Move focus to the next tab"));
+                                               RS_A(L"CmdFocusTabNextArgDesc"));
     auto* prevOpt = _focusTabCommand->add_flag("-p,--previous",
                                                _focusPrevTab,
-                                               NEEDS_LOC("Move focus to the previous tab"));
+                                               RS_A(L"CmdFocusTabPrevArgDesc"));
     nextOpt->excludes(prevOpt);
     indexOpt->excludes(prevOpt);
     indexOpt->excludes(nextOpt);
@@ -288,13 +289,20 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
 {
     subcommand.profileNameOption = subcommand.subcommand->add_option("-p,--profile",
                                                                      _profileName,
-                                                                     NEEDS_LOC("Open with the given profile. Accepts either the name or guid of a profile"));
+                                                                     RS_A(L"CmdProfileArgDesc"));
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
-                                                                           NEEDS_LOC("Open in the given directory instead of the profile's set startingDirectory"));
-    subcommand.commandlineOption = subcommand.subcommand->add_option("cmdline",
-                                                                     _commandline,
-                                                                     NEEDS_LOC("Commandline to run in the given profile"));
+                                                                           RS_A(L"CmdStartingDirArgDesc"));
+
+    // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
+    // without CLI11 thinking that we've specified -d twice.
+    // There's an alternate construction where we make all subcommands "prefix commands",
+    // which lets us get all remaining non-option args provided at the end, but that
+    // doesn't support "wt new-tab -- wsl -d Ubuntu -- sleep 10" because the first
+    // -- breaks out of the subcommand (instead of the subcommand options).
+    // See https://github.com/CLIUtils/CLI11/issues/417 for more info.
+    subcommand.commandlineOption = subcommand.subcommand->add_option("command", _commandline, RS_A(L"CmdCommandArgDesc"));
+    subcommand.subcommand->positionals_at_end(true);
 }
 
 // Method Description:
@@ -307,75 +315,29 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 {
     auto args = winrt::make_self<implementation::NewTerminalArgs>();
 
-    // If a commandline was provided, we need to get a little tricky parsing
-    // here. The behavior we want is that once we see a string that we don't
-    // recognize, we want to treat the rest of the command as the commandline to
-    // pass to the NewTerminalArgs. However, if that commandline contains any
-    // options that _we_ understand, CLI11 will try to first grab those options
-    // from the provided string to parse our own args, and _not_ include them in
-    // the _commandline here. Consider for example, the following command:
-    //
-    //     wt.exe new-tab wsl.exe -d Alpine
-    //
-    // We want the commandline here to be "wsl.exe -d Alpine zsh". However, by
-    // default, that'll be parsed by CLI11 as a _startingDirectory of "Alpine",
-    // with a commandline of "wsl.exe zsh".
-    //
-    // So, instead, when we see that there's a commandlineOption that's been
-    // parsed, we'll use that as our cue to handle the commandline ourselves.
-    //  * We'll start by going through all the options that were parsed by
-    //    CLI11, and clearing all of the ones after the first commandline
-    //    option. This will prevent use from acting on their values later.
-    //  * Then, we'll grab all the strings starting with the first commandline
-    //    string, and add them to the commandline for the NewTerminalArgs.
-    if (*subcommand.commandlineOption)
+    if (!_commandline.empty())
     {
-        const std::vector<CLI::Option*>& opts = subcommand.subcommand->parse_order();
-        auto foundCommandlineStart = false;
-        for (auto opt : opts)
-        {
-            if (opt == subcommand.commandlineOption)
-            {
-                foundCommandlineStart = true;
-            }
-            else if (foundCommandlineStart)
-            {
-                opt->clear();
-            }
-            // otherwise, this option preceeded the start of the commandline
-        }
+        std::ostringstream cmdlineBuffer;
 
-        // Concatenate all the strings starting with the first arg in the
-        // _commandline as the _real_ commandline.
-        const auto& firstCmdlineArg = _commandline.at(0);
-        auto foundFirstArg = false;
-        std::string fullCommandlineBuffer;
-        for (const auto& arg : _currentCommandline->Args())
+        for (const auto& arg : _commandline)
         {
-            if (arg == firstCmdlineArg)
+            if (cmdlineBuffer.tellp() != 0)
             {
-                foundFirstArg = true;
+                // If there's already something in here, prepend a space
+                cmdlineBuffer << ' ';
             }
-            if (foundFirstArg)
+
+            if (arg.find(" ") != std::string::npos)
             {
-                if (arg.find(" ") != std::string::npos)
-                {
-                    fullCommandlineBuffer += "\"";
-                    fullCommandlineBuffer += arg;
-                    fullCommandlineBuffer += "\"";
-                }
-                else
-                {
-                    fullCommandlineBuffer += arg;
-                }
-                fullCommandlineBuffer += " ";
+                cmdlineBuffer << '"' << arg << '"';
+            }
+            else
+            {
+                cmdlineBuffer << arg;
             }
         }
 
-        // Discard the space from the last arg we appended.
-        std::string_view realCommandline = fullCommandlineBuffer;
-        realCommandline = realCommandline.substr(0, static_cast<size_t>(fullCommandlineBuffer.size() - 1));
-        args->Commandline(winrt::to_hstring(realCommandline));
+        args->Commandline(winrt::to_hstring(cmdlineBuffer.str()));
     }
 
     if (*subcommand.profileNameOption)

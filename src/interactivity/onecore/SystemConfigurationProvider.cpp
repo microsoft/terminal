@@ -5,8 +5,6 @@
 
 #include "SystemConfigurationProvider.hpp"
 
-static constexpr wchar_t DEFAULT_TT_FONT_FACENAME[]{ L"__DefaultTTFont__" };
-
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 UINT SystemConfigurationProvider::GetCaretBlinkTime()

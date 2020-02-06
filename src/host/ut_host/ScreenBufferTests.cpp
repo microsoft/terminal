@@ -184,6 +184,7 @@ class ScreenBufferTests
 
     TEST_METHOD(SetScreenMode);
     TEST_METHOD(SetOriginMode);
+    TEST_METHOD(SetAutoWrapMode);
 
     TEST_METHOD(HardResetBuffer);
 
@@ -208,6 +209,8 @@ class ScreenBufferTests
     TEST_METHOD(CursorSaveRestore);
 
     TEST_METHOD(ScreenAlignmentPattern);
+
+    TEST_METHOD(TestCursorIsOn);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -4598,6 +4601,50 @@ void ScreenBufferTests::SetOriginMode()
     stateMachine.ProcessString(L"\x1B[?6l");
 }
 
+void ScreenBufferTests::SetAutoWrapMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto attributes = si.GetAttributes();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto view = Viewport::FromDimensions({ 0, 0 }, { 80, 25 });
+    si.SetViewport(view, true);
+
+    Log::Comment(L"By default, output should wrap onto the next line.");
+    // Output 6 characters, 3 spaces from the end of the line.
+    short startLine = 0;
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"abcdef");
+    // Half of the the content should wrap onto the next line.
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, startLine + 1 }, L"def", attributes));
+    VERIFY_ARE_EQUAL(COORD({ 3, startLine + 1 }), cursor.GetPosition());
+
+    Log::Comment(L"When DECAWM is reset, output is clamped to the line width.");
+    stateMachine.ProcessString(L"\x1b[?7l");
+    // Output 6 characters, 3 spaces from the end of the line.
+    startLine = 2;
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"abcdef");
+    // Content should be clamped to the line width, overwriting the last char.
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abf", attributes));
+    VERIFY_ARE_EQUAL(COORD({ 79, startLine }), cursor.GetPosition());
+
+    Log::Comment(L"When DECAWM is set, output is wrapped again.");
+    stateMachine.ProcessString(L"\x1b[?7h");
+    // Output 6 characters, 3 spaces from the end of the line.
+    startLine = 4;
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"abcdef");
+    // Half of the the content should wrap onto the next line.
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, startLine + 1 }, L"def", attributes));
+    VERIFY_ARE_EQUAL(COORD({ 3, startLine + 1 }), cursor.GetPosition());
+}
+
 void ScreenBufferTests::HardResetBuffer()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -5729,4 +5776,55 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     auto expectedAttr = initialAttr;
     expectedAttr.SetMetaAttributes(0);
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
+}
+
+void ScreenBufferTests::TestCursorIsOn()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12h");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    cursor.SetIsOn(false);
+    stateMachine.ProcessString(L"\x1b[?12l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12h");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?25l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?25h");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsVisible());
+
+    stateMachine.ProcessString(L"\x1b[?12;25l");
+    VERIFY_IS_TRUE(cursor.IsOn());
+    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsVisible());
 }

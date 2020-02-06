@@ -84,6 +84,7 @@ public:
     bool ReverseText(bool reversed) noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
+    bool CursorLineFeed(const bool withReturn) noexcept override;
     bool DeleteCharacter(const size_t count) noexcept override;
     bool InsertCharacter(const size_t count) noexcept override;
     bool EraseCharacters(const size_t numChars) noexcept override;
@@ -238,6 +239,8 @@ private:
     void _InitializeColorTable();
 
     void _WriteBuffer(const std::wstring_view& stringView);
+
+    void _AdjustCursorPosition(const COORD proposedPosition);
 
     void _NotifyScrollEvent() noexcept;
 
