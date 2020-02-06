@@ -108,11 +108,13 @@ MODULE_SETUP(ModuleSetup)
     // The OS will auto-start the inbox conhost to host this process.
     if (insideWindows || testAsV1)
     {
+        WEX::Logging::Log::Comment(L"Launching with inbox conhost.exe");
         value = value.Append(L"Nihilist.exe");
     }
     else
     {
         // If we're outside or testing V2, let's use the open console binary we built.
+        WEX::Logging::Log::Comment(L"Launching with OpenConsole.exe");
         value = value.Append(L"OpenConsole.exe Nihilist.exe");
     }
 
