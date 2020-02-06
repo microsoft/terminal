@@ -16,6 +16,7 @@ class Utf8Utf16ConvertTests
     TEST_METHOD(TestU16ToU8);
     TEST_METHOD(TestU8ToU16Partials);
     TEST_METHOD(TestU16ToU8Partials);
+    TEST_METHOD(TestDbcsPartials);
 };
 
 void Utf8Utf16ConvertTests::TestU8ToU16()
@@ -140,4 +141,40 @@ void Utf8Utf16ConvertTests::TestU16ToU8Partials()
     const HRESULT hRes2{ til::u16u8(u16String2, u8Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out2);
+}
+
+void Utf8Utf16ConvertTests::TestDbcsPartials()
+{
+    const std::string cp936String1{
+        '\xCE', // CJK UNIFIED IDEOGRAPH-7EF4 (2 bytes)
+        '\xAC',
+        '\xBB'  // CJK UNIFIED IDEOGRAPH-57FA (lead byte)
+    };
+
+    const std::string cp936String2{
+        '\xF9', // CJK UNIFIED IDEOGRAPH-57FA (trailing byte)
+        '\xB0', // CJK UNIFIED IDEOGRAPH-767E (2 bytes)
+        '\xD9'
+    };
+
+    const std::wstring u16StringComp1{
+        gsl::narrow_cast<wchar_t>(0x7EF4)  // CJK UNIFIED IDEOGRAPH-7EF4
+    };
+
+    const std::wstring u16StringComp2{
+        gsl::narrow_cast<wchar_t>(0x57FA), // CJK UNIFIED IDEOGRAPH-57FA
+        gsl::narrow_cast<wchar_t>(0x767E)  // CJK UNIFIED IDEOGRAPH-767E
+    };
+
+    til::astate state{};
+
+    std::wstring u16Out1{};
+    const HRESULT hRes1{ til::au16(936u, cp936String1, u16Out1, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes1);
+    VERIFY_ARE_EQUAL(u16StringComp1, u16Out1);
+
+    std::wstring u16Out2{};
+    const HRESULT hRes2{ til::au16(936u, cp936String2, u16Out2, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes2);
+    VERIFY_ARE_EQUAL(u16StringComp2, u16Out2);
 }
