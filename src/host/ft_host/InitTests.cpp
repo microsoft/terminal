@@ -91,10 +91,12 @@ MODULE_SETUP(ModuleSetup)
     if (testAsV1)
     {
         v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V1));
+        Common::_isV2 = false;
     }
     else
     {
         v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V2));
+        Common::_isV2 = true;
     }
 
     // Retrieve location of directory that the test was deployed to.

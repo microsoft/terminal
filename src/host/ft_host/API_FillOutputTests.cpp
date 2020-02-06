@@ -22,14 +22,25 @@ class FillOutputTests
         const COORD pos{ 0, 0 };
         DWORD written = 0;
         const char originalCh = 14;
-        VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterA(handle, originalCh, 1, pos, &written));
-        VERIFY_ARE_EQUAL(1u, written);
 
-        char readCh = 42; // don't use null (the expected) or 14 (the actual) to ensure that it is read out.
-        DWORD read = 0;
-        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(handle, &readCh, 1, pos, &read));
-        VERIFY_ARE_EQUAL(1u, read);
-        VERIFY_ARE_EQUAL(0, readCh, L"Null should be read back as the conversion from the invalid original character.");
+        WEX::Logging::Log::Comment(L"This test diverges between V1 and V2 consoles.");
+        if (Common::_isV2)
+        {
+            VERIFY_WIN32_BOOL_FAILED(FillConsoleOutputCharacterA(handle, originalCh, 1, pos, &written));
+            VERIFY_ARE_EQUAL(gsl::narrow_cast<DWORD>(HRESULT_CODE(E_UNEXPECTED)), ::GetLastError());
+        }
+        else
+        {
+            VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterA(handle, originalCh, 1, pos, &written));
+            VERIFY_ARE_EQUAL(1u, written);
+
+            char readCh = 42; // don't use null (the expected) or 14 (the actual) to ensure that it is read out.
+            DWORD read = 0;
+
+            VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(handle, &readCh, 1, pos, &read));
+            VERIFY_ARE_EQUAL(1u, read);
+            VERIFY_ARE_EQUAL(0, readCh, L"Null should be read back as the conversion from the invalid original character.");
+        }
     }
 
     TEST_METHOD(WriteNarrowGlyphAscii)

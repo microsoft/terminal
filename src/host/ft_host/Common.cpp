@@ -7,6 +7,7 @@ using WEX::Logging::Log;
 using namespace WEX::Common;
 
 HANDLE Common::_hConsole = INVALID_HANDLE_VALUE;
+bool Common::_isV2 = true;
 extern wil::unique_process_information pi;
 
 bool IsConsoleStillRunning()
