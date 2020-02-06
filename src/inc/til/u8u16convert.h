@@ -145,9 +145,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             {
                                 // We use our own algorithm because IsDBCSLeadByteEx() supports only a subset of DBCS codepages.
                                 const auto uCh{ gsl::narrow_cast<byte>(ch) };
-                                for (int idx{}; *(cpInfo.LeadByte + idx) != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
+                                for (size_t idx{}; gsl::at(cpInfo.LeadByte, idx) != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
                                 {
-                                    if (uCh >= *(cpInfo.LeadByte + idx) && uCh <= *(cpInfo.LeadByte + idx + 1))
+                                    if (uCh >= gsl::at(cpInfo.LeadByte, idx) && uCh <= gsl::at(cpInfo.LeadByte, idx + 1))
                                     {
                                         foundLeadByte = true;
                                         break;
