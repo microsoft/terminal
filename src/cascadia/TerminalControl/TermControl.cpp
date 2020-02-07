@@ -895,6 +895,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_PointerPressedHandler(Windows::Foundation::IInspectable const& sender,
                                              Input::PointerRoutedEventArgs const& args)
     {
+        Focus(FocusState::Pointer);
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -902,15 +904,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            // Ignore mouse events while the terminal does not have focus.
-            // This prevents the user from selecting and copying text if they
-            // click inside the current tab to refocus the terminal window.
-            if (!_focused)
-            {
-                args.Handled(true);
-                return;
-            }
-
             const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
             // static_cast to a uint32_t because we can't use the WI_IsFlagSet
             // macro directly with a VirtualKeyModifiers
@@ -921,6 +914,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+
+                // Ignore most mouse events while the terminal does not have focus.
+                // This prevents the user from selecting and copying text if they
+                // single click inside the current tab to refocus the terminal window.
+                // The one case we don't want to ignore is when the user tries to
+                // click-drag select.
+                if (!_focused)
+                {
+                    // Save this click position in case the user is performing a click-drag.
+                    // The PointerMovedHandler will use this position to set the selection anchor.
+                    _clickDragStartPos = terminalPosition;
+
+                    args.Handled(true);
+                    return;
+                }
 
                 // handle ALT key
                 _terminal->SetBoxSelection(altEnabled);
@@ -948,7 +956,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                     else
                     {
-                        // save location before rendering
                         _terminal->SetSelectionAnchor(terminalPosition);
                     }
 
@@ -995,6 +1002,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             if (point.Properties().IsLeftButtonPressed())
             {
+                if (_clickDragStartPos)
+                {
+                    _terminal->SetSelectionAnchor(*_clickDragStartPos);
+                }
+
                 const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
 
@@ -1069,6 +1081,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _ReleasePointerCapture(sender, args);
 
         const auto ptr = args.Pointer();
+
+        _clickDragStartPos = std::nullopt;
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
@@ -1395,6 +1409,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
+        if (this->FocusState() == FocusState::Unfocused)
+        {
+            _focused = false;
+        }
+
         _focused = false;
 
         if (_uiaEngine.get())
