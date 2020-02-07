@@ -463,7 +463,7 @@ try
     *ppRetVal = nullptr;
 
 #pragma warning(suppress : 26447) // QueryInterface's exception should be caught by the try-CATCH_RETURN block to allow this to be noexcept
-    auto hr = _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
+    const auto hr = _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
     // TODO CARLOS: fix tracing call
     //UiaTracing::TextRange::GetEnclosingElement(*this, static_cast<ScreenInfoUiaProviderBase*>(*ppRetVal));
     return hr;
@@ -1179,7 +1179,10 @@ RECT UiaTextRangeBase::_getTerminalRect() const
     };
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
 std::wstring UiaTextRangeBase::_getTextValue() const noexcept
+try
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -1191,23 +1194,21 @@ std::wstring UiaTextRangeBase::_getTextValue() const noexcept
         return {};
     }
 
-    try
-    {
-        std::wstringstream stream;
-        const auto& buffer = _pData->GetTextBuffer();
-        const auto bufferSize = buffer.GetSize();
+    std::wstringstream stream;
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto bufferSize = buffer.GetSize();
 
-        auto pos = _start;
-        while (std::abs(bufferSize.CompareInBounds(pos, _end, true)) > 0)
-        {
-            stream << buffer.GetTextDataAt(pos)->data();
-            bufferSize.IncrementInBounds(pos, true);
-        }
-
-        return stream.str();
-    }
-    catch (...)
+    auto pos = _start;
+    while (std::abs(bufferSize.CompareInBounds(pos, _end, true)) > 0)
     {
-        return {};
+        stream << buffer.GetTextDataAt(pos)->data();
+        bufferSize.IncrementInBounds(pos, true);
     }
+
+    return stream.str();
 }
+catch (...)
+{
+    return {};
+}
+#pragma warning(pop)

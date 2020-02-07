@@ -88,9 +88,9 @@ namespace Microsoft::Console::Types
         UiaTracing& operator=(const UiaTracing&) = delete;
         UiaTracing& operator=(UiaTracing&&) = delete;
 
-        static std::wstring _getValue(const ScreenInfoUiaProviderBase& siup);
-        static std::wstring _getValue(const UiaTextRangeBase& utr);
-        static std::wstring _getValue(const TextPatternRangeEndpoint endpoint);
-        static std::wstring _getValue(const TextUnit unit);
+        static std::wstring _getValue(const ScreenInfoUiaProviderBase& siup) noexcept;
+        static std::wstring _getValue(const UiaTextRangeBase& utr) noexcept;
+        static std::wstring _getValue(const TextPatternRangeEndpoint endpoint) noexcept;
+        static std::wstring _getValue(const TextUnit unit) noexcept;
     };
 }

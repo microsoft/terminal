@@ -4,6 +4,16 @@
 #include "precomp.h"
 #include "UiaTracing.h"
 
+// we need to disable a few warnings because
+// the TraceLogging code is out of our control
+#pragma warning(push)
+#pragma warning(disable : 26447)
+#pragma warning(disable : 26477)
+#pragma warning(disable : 26482)
+#pragma warning(disable : 26496)
+#pragma warning(disable : 26485)
+#pragma warning(disable : 26494)
+#pragma warning(disable : 26446)
 TRACELOGGING_DEFINE_PROVIDER(g_UiaProviderTraceProvider,
                              "Microsoft.Windows.Console.UIA",
                              // tl:{e7ebce59-2161-572d-b263-2f16a6afb9e5}
@@ -21,14 +31,20 @@ UiaTracing::~UiaTracing() noexcept
     TraceLoggingUnregister(g_UiaProviderTraceProvider);
 }
 
-std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/)
+std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/) noexcept
+try
 {
     std::wstringstream stream;
     stream << " NO IDENTIFYING DATA";
     return stream.str();
 }
+catch (...)
+{
+    return {};
+}
 
-std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr)
+std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
+try
 {
     const auto start = utr.GetEndpoint(TextPatternRangeEndpoint_Start);
     const auto end = utr.GetEndpoint(TextPatternRangeEndpoint_End);
@@ -42,8 +58,12 @@ std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr)
     stream << " content: " << utr._getTextValue();
     return stream.str();
 }
+catch (...)
+{
+    return {};
+}
 
-std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint)
+std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noexcept
 {
     switch (endpoint)
     {
@@ -56,7 +76,7 @@ std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint)
     }
 }
 
-std::wstring UiaTracing::_getValue(const TextUnit unit)
+std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
 {
     switch (unit)
     {
@@ -507,3 +527,4 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
         TraceLoggingValue(getResult(), "result"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
+#pragma warning(pop)
