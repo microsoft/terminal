@@ -21,7 +21,9 @@ using namespace std;
 
 class Microsoft::Console::VirtualTerminal::VtIoTests
 {
-    TEST_CLASS(VtIoTests);
+    BEGIN_TEST_CLASS(VtIoTests)
+        TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
+    END_TEST_CLASS()
 
     // General Tests:
     TEST_METHOD(NoOpStartTest);
