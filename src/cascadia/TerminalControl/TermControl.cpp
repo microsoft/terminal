@@ -924,7 +924,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     // Save this click position in case the user is performing a click-drag.
                     // The PointerMovedHandler will use this position to set the selection anchor.
-                    _clickDragStartPos = point.Position();
+                    _clickDragStartPos = terminalPosition;
 
                     args.Handled(true);
                     return;
@@ -1006,7 +1006,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 if (_clickDragStartPos)
                 {
-                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_clickDragStartPos));
+                    _terminal->SetSelectionAnchor(*_clickDragStartPos);
                 }
 
                 const auto cursorPosition = point.Position();
