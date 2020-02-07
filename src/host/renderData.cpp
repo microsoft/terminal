@@ -389,7 +389,7 @@ void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 // - none
 // Return Value:
 // - current selection anchor
-const COORD RenderData::GetSelectionAnchor() const
+const COORD RenderData::GetSelectionAnchor() const noexcept
 {
     return Selection::Instance().GetSelectionAnchor();
 }
@@ -400,7 +400,7 @@ const COORD RenderData::GetSelectionAnchor() const
 // - none
 // Return Value:
 // - current selection anchor
-const COORD RenderData::GetEndSelectionPosition() const
+const COORD RenderData::GetEndSelectionPosition() const noexcept
 {
     // The selection area in ConHost is encoded as two things...
     //  - SelectionAnchor: the initial position where the selection was started

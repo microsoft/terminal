@@ -113,7 +113,7 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 // - None
 // Return Value:
 // - None
-const COORD Terminal::GetSelectionAnchor() const
+const COORD Terminal::GetSelectionAnchor() const noexcept
 {
     COORD selectionAnchorPos{ _selectionAnchor };
     selectionAnchorPos.Y = base::ClampAdd(selectionAnchorPos.Y, _selectionVerticalOffset);
@@ -126,7 +126,7 @@ const COORD Terminal::GetSelectionAnchor() const
 // - None
 // Return Value:
 // - None
-const COORD Terminal::GetEndSelectionPosition() const
+const COORD Terminal::GetEndSelectionPosition() const noexcept
 {
     COORD endSelectionPos{ _endSelectionPosition };
     endSelectionPos.Y = base::ClampAdd(endSelectionPos.Y, _selectionVerticalOffset);
@@ -337,6 +337,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 
 // Method Description:
 // - clear selection data and disable rendering it
+#pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
