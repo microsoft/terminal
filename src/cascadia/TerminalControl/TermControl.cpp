@@ -895,8 +895,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_PointerPressedHandler(Windows::Foundation::IInspectable const& sender,
                                              Input::PointerRoutedEventArgs const& args)
     {
-        Focus(FocusState::Pointer);
-
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -922,9 +920,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // click-drag select.
                 if (!_focused)
                 {
+                    Focus(FocusState::Pointer);
+
                     // Save this click position in case the user is performing a click-drag.
                     // The PointerMovedHandler will use this position to set the selection anchor.
-                    _clickDragStartPos = terminalPosition;
+                    _clickDragStartPos = point.Position();
 
                     args.Handled(true);
                     return;
@@ -966,6 +966,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (point.Properties().IsRightButtonPressed())
             {
+                Focus(FocusState::Pointer);
+
                 // copyOnSelect causes right-click to always paste
                 if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
                 {
@@ -1004,7 +1006,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 if (_clickDragStartPos)
                 {
-                    _terminal->SetSelectionAnchor(*_clickDragStartPos);
+                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_clickDragStartPos));
                 }
 
                 const auto cursorPosition = point.Position();
