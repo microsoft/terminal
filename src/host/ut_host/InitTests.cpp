@@ -30,6 +30,11 @@ class InitTests
     static LANGID const s_langIdTraditionalChinese = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
     static LANGID const s_langIdEnglish = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
 
+    TEST_METHOD(FailBoat)
+    {
+        VERIFY_FAIL(L"Ouch");
+    }
+
     // This test exists to ensure the continued behavior of the code in the Windows loader.
     // See the LOAD BEARING CODE comment inside GetConsoleLangId or the investigation results in MSFT: 9808579 for more detail.
     TEST_METHOD(TestGetConsoleLangId)
