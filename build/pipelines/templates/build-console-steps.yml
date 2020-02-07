@@ -61,20 +61,24 @@ steps:
       If ($Arch -Eq "x86") { $Arch = "Win32" }
       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
-- task: CmdLine@1
+- task: PowerShell@2
   displayName: 'Run Unit Tests'
   inputs:
-    filename: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe'
-    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\*unit.test*.dll'
-    failOnStandardError: true
+    targetType: inline
+    script: |
+      $testdlls = Get-ChildItem -Path '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Include '*unit.test*.dll'
+      foreach ($dll in $testdlls) { $(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $dll }
+    failOnStderr: true
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
-- task: CmdLine@1
+- task: PowerShell@2
   displayName: 'Run Feature Tests (x64 only)'
   inputs:
-    filename: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe'
-    arguments: '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\*feature.test*.dll'
-    failOnStandardError: true
+    targetType: inline
+    script: |
+      $testdlls = Get-ChildItem -Path '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Include '*feature.test*.dll'
+      foreach ($dll in $testdlls) { $(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $dll }
+    failOnStderr: true
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
 - task: CopyFiles@2
