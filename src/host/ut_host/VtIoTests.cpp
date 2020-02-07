@@ -362,7 +362,7 @@ void VtIoTests::RendererDtorAndThread()
         // EnablePainting gets called, and if that happens, then the thread will
         // never get destructed. This will only ever happen in the vstest test runner,
         // which is what CI uses.
-        Sleep(500);
+        /*Sleep(500);*/
 
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
@@ -389,7 +389,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         // EnablePainting gets called, and if that happens, then the thread will
         // never get destructed. This will only ever happen in the vstest test runner,
         // which is what CI uses.
-        Sleep(500);
+        /*Sleep(500);*/
 
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
