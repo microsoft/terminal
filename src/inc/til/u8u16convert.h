@@ -29,6 +29,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     public:
         au16state() noexcept :
             _codepage{ std::numeric_limits<unsigned int>::max() }, // since 0 is an alias for the default ANSI codepage, we use an invalid codepage id
+            _cpInfo{},
             _buffer{},
             _partials{}
         {
@@ -64,6 +65,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 {
                     _partialsLen = 0u;
                     _codepage = codepage;
+                    // update _cpInfo if necessary
+                    if (codepage != gsl::narrow_cast<unsigned int>(CP_UTF8) && !GetCPInfo(codepage, &_cpInfo))
+                    {
+                        return E_INVALIDARG;
+                    }
                 }
 
                 size_t remainingLength{ in.length() };
@@ -125,14 +131,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 else // ANSI codepages
                 {
-                    CPINFO cpInfo{};
-                    if (!GetCPInfo(codepage, &cpInfo))
-                    {
-                        return E_INVALIDARG;
-                    }
-
                     auto foundLeadByte{ false };
-                    if (cpInfo.MaxCharSize == 2u && !!cpInfo.LeadByte[0]) // DBCS codepages
+                    if (_cpInfo.MaxCharSize == 2u && !!_cpInfo.LeadByte[0]) // DBCS codepages
                     {
                         // Start at the beginning of the string (or the second bvte if a lead byte has been cached in the previous call) and scan forward,
                         // keep track when it encounters a lead byte, and treat the next byte as the trailing part of the same character.
@@ -148,13 +148,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma warning(push)
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions.
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-                                for (int idx{}; cpInfo.LeadByte[idx] != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
+                                for (int idx{}; _cpInfo.LeadByte[idx] != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
 #pragma warning(pop)
                                 {
 #pragma warning(push)
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions.
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-                                    if (uCh >= cpInfo.LeadByte[idx] && uCh <= cpInfo.LeadByte[idx + 1])
+                                    if (uCh >= _cpInfo.LeadByte[idx] && uCh <= _cpInfo.LeadByte[idx + 1])
 #pragma warning(pop)
                                     {
                                         foundLeadByte = true;
@@ -344,6 +344,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         };
 
         unsigned int _codepage; // previously used codepage
+        CPINFO _cpInfo;
         std::basic_string<charT> _buffer; // buffer to which the poulated string_view refers
         std::array<charT, 4> _partials; // buffer for code units of a partial code point that have to be cached
         size_t _partialsLen{}; // number of cached code units
@@ -373,7 +374,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             out.clear();
 
-            if (!IsValidCodePage(codepage))
+            if (codepage != gsl::narrow_cast<unsigned int>(CP_UTF8) && !IsValidCodePage(codepage))
             {
                 return E_INVALIDARG;
             }
