@@ -1409,12 +1409,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-
-        if (this->FocusState() == FocusState::Unfocused)
-        {
-            _focused = false;
-        }
-
         _focused = false;
 
         if (_uiaEngine.get())
