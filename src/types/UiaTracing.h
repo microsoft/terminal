@@ -32,44 +32,44 @@ namespace Microsoft::Console::Types
         class TextRange final
         {
         public:
-            static void Constructor(const UiaTextRangeBase& result);
-            static void Clone(const UiaTextRangeBase& base, const UiaTextRangeBase& result);
-            static void Compare(const UiaTextRangeBase& base, const UiaTextRangeBase& other, bool result);
-            static void CompareEndpoints(const UiaTextRangeBase& base, const TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, int result);
-            static void ExpandToEnclosingUnit(TextUnit unit, const UiaTextRangeBase& result);
-            static void FindAttribute(const UiaTextRangeBase& base);
-            static void FindText(const UiaTextRangeBase& base, std::wstring text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result);
-            static void GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result);
-            static void GetBoundingRectangles(const UiaTextRangeBase& base);
-            static void GetEnclosingElement(const UiaTextRangeBase& base, const ScreenInfoUiaProviderBase& siup);
-            static void GetText(const UiaTextRangeBase& base, int maxLength, std::wstring result);
-            static void Move(TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result);
-            static void MoveEndpointByUnit(TextPatternRangeEndpoint endpoint, TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result);
-            static void MoveEndpointByRange(TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, const UiaTextRangeBase& result);
-            static void Select(const UiaTextRangeBase& base);
-            static void AddToSelection(const UiaTextRangeBase& base);
-            static void RemoveFromSelection(const UiaTextRangeBase& base);
-            static void ScrollIntoView(bool alignToTop, const UiaTextRangeBase& result);
-            static void GetChildren(const UiaTextRangeBase& base);
+            static void Constructor(const UiaTextRangeBase& result) noexcept;
+            static void Clone(const UiaTextRangeBase& base, const UiaTextRangeBase& result) noexcept;
+            static void Compare(const UiaTextRangeBase& base, const UiaTextRangeBase& other, bool result) noexcept;
+            static void CompareEndpoints(const UiaTextRangeBase& base, const TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, int result) noexcept;
+            static void ExpandToEnclosingUnit(TextUnit unit, const UiaTextRangeBase& result) noexcept;
+            static void FindAttribute(const UiaTextRangeBase& base) noexcept;
+            static void FindText(const UiaTextRangeBase& base, std::wstring text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result) noexcept;
+            static void GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result) noexcept;
+            static void GetBoundingRectangles(const UiaTextRangeBase& base) noexcept;
+            static void GetEnclosingElement(const UiaTextRangeBase& base, const ScreenInfoUiaProviderBase& siup) noexcept;
+            static void GetText(const UiaTextRangeBase& base, int maxLength, std::wstring result) noexcept;
+            static void Move(TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result) noexcept;
+            static void MoveEndpointByUnit(TextPatternRangeEndpoint endpoint, TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result) noexcept;
+            static void MoveEndpointByRange(TextPatternRangeEndpoint endpoint, const UiaTextRangeBase& other, TextPatternRangeEndpoint otherEndpoint, const UiaTextRangeBase& result) noexcept;
+            static void Select(const UiaTextRangeBase& base) noexcept;
+            static void AddToSelection(const UiaTextRangeBase& base) noexcept;
+            static void RemoveFromSelection(const UiaTextRangeBase& base) noexcept;
+            static void ScrollIntoView(bool alignToTop, const UiaTextRangeBase& result) noexcept;
+            static void GetChildren(const UiaTextRangeBase& base) noexcept;
         };
 
         class TextProvider final
         {
         public:
-            static void Constructor(const ScreenInfoUiaProviderBase& result);
-            static void get_ProviderOptions(const ScreenInfoUiaProviderBase& base, ProviderOptions options);
-            static void GetPatternProvider(const ScreenInfoUiaProviderBase& base, PATTERNID patternId);
-            static void GetPropertyValue(const ScreenInfoUiaProviderBase& base, PROPERTYID propertyId);
-            static void get_HostRawElementProvider(const ScreenInfoUiaProviderBase& base);
-            static void GetRuntimeId(const ScreenInfoUiaProviderBase& base);
-            static void GetEmbeddedFragmentRoots(const ScreenInfoUiaProviderBase& base);
-            static void SetFocus(const ScreenInfoUiaProviderBase& base);
-            static void GetSelection(const ScreenInfoUiaProviderBase& base);
-            static void GetVisibleRanges(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result);
-            static void RangeFromChild(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result);
-            static void RangeFromPoint(const ScreenInfoUiaProviderBase& base, UiaPoint point, const UiaTextRangeBase& result);
-            static void get_DocumentRange(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result);
-            static void get_SupportedTextSelection(const ScreenInfoUiaProviderBase& base, SupportedTextSelection result);
+            static void Constructor(const ScreenInfoUiaProviderBase& result) noexcept;
+            static void get_ProviderOptions(const ScreenInfoUiaProviderBase& base, ProviderOptions options) noexcept;
+            static void GetPatternProvider(const ScreenInfoUiaProviderBase& base, PATTERNID patternId) noexcept;
+            static void GetPropertyValue(const ScreenInfoUiaProviderBase& base, PROPERTYID propertyId) noexcept;
+            static void get_HostRawElementProvider(const ScreenInfoUiaProviderBase& base) noexcept;
+            static void GetRuntimeId(const ScreenInfoUiaProviderBase& base) noexcept;
+            static void GetEmbeddedFragmentRoots(const ScreenInfoUiaProviderBase& base) noexcept;
+            static void SetFocus(const ScreenInfoUiaProviderBase& base) noexcept;
+            static void GetSelection(const ScreenInfoUiaProviderBase& base) noexcept;
+            static void GetVisibleRanges(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
+            static void RangeFromChild(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
+            static void RangeFromPoint(const ScreenInfoUiaProviderBase& base, UiaPoint point, const UiaTextRangeBase& result) noexcept;
+            static void get_DocumentRange(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
+            static void get_SupportedTextSelection(const ScreenInfoUiaProviderBase& base, SupportedTextSelection result) noexcept;
         };
 
     private:
