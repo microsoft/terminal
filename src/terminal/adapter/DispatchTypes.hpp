@@ -84,6 +84,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECCOLM_SetNumberOfColumns = 3,
         DECSCNM_ScreenMode = 5,
         DECOM_OriginMode = 6,
+        DECAWM_AutoWrapMode = 7,
         ATT610_StartCursorBlink = 12,
         DECTCEM_TextCursorEnableMode = 25,
         XTERM_EnableDECCOLMSupport = 40,

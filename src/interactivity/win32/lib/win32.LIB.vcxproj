@@ -36,7 +36,6 @@
     <ClCompile Include="..\WindowIo.cpp" />
     <ClCompile Include="..\WindowMetrics.cpp" />
     <ClCompile Include="..\WindowProc.cpp" />
-    <ClCompile Include="..\windowtheme.cpp" />
     <ClCompile Include="..\windowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -59,7 +58,6 @@
     <ClInclude Include="..\WindowIme.hpp" />
     <ClInclude Include="..\WindowMetrics.hpp" />
     <ClInclude Include="..\WindowIo.hpp" />
-    <ClInclude Include="..\windowtheme.hpp" />
     <ClInclude Include="..\windowUiaProvider.hpp" />
   </ItemGroup>
   <ItemDefinitionGroup>

@@ -121,6 +121,9 @@
     <Midl Include="../ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
+    <Midl Include="../Tab.idl">
+      <Filter>tab</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="../packages.config" />

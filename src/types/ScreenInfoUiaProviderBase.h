@@ -21,10 +21,11 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
 #include "../buffer/out/textBuffer.hpp"
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
+
+#include <UIAutomationCore.h>
 
 #include <wrl/implements.h>
 

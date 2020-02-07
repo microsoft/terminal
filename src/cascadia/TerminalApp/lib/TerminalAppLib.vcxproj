@@ -77,7 +77,9 @@
     <ClInclude Include="../TabRowControl.h">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../Tab.h">
+      <DependentUpon>../Tab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Pane.h" />
     <ClInclude Include="../ColorScheme.h" />
     <ClInclude Include="../GlobalAppSettings.h" />
@@ -131,7 +133,9 @@
     <ClCompile Include="../TabRowControl.cpp">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="../Tab.cpp" />
+    <ClCompile Include="../Tab.cpp">
+      <DependentUpon>../Tab.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../Pane.cpp" />
     <ClCompile Include="../ColorScheme.cpp" />
     <ClCompile Include="../GlobalAppSettings.cpp" />
@@ -205,6 +209,7 @@
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="../Tab.idl"/>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

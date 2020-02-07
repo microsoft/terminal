@@ -58,10 +58,6 @@ namespace Microsoft::Console::Interactivity::Win32
         HRESULT RuntimeClassInitialize(const UiaTextRange& a);
 
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
-        IFACEMETHODIMP FindText(_In_ BSTR text,
-                                _In_ BOOL searchBackward,
-                                _In_ BOOL ignoreCase,
-                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
         void _ChangeViewport(const SMALL_RECT NewWindow) override;
