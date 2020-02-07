@@ -91,6 +91,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ const COORD start,
                                                  _In_ const COORD end,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
+try
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
@@ -104,16 +105,17 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
     {
         // start is after end, so we need to flip our concept of start/end
         _start = end;
-        _end= start;
+        _end = start;
     }
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-        OutputDebugString(L"Constructor\n");
+    OutputDebugString(L"Constructor\n");
     _outputObjectState();
 #endif
 
     return S_OK;
 }
+CATCH_RETURN();
 
 void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
 {
