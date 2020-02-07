@@ -6,13 +6,6 @@ namespace TerminalApp
     delegate void LastTabClosedEventArgs();
     delegate void ToggleFullscreenEventArgs();
 
-    runtimeclass TabColorChangedEventArgs
-    {
-        Windows.UI.Color TitleBarColor { get; };
-        Windows.UI.Color MinMaxForegroundColor { get; };
-        Windows.UI.Color MinMaxHoverColor { get; };
-    };
-
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
     {
         TerminalPage();
@@ -25,7 +18,5 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.Controls.ContentDialog> ShowDialog;
         event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
-        event Windows.Foundation.TypedEventHandler<Object, TabColorChangedEventArgs> SetTitleBarColor;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Color> ClearTitleBarColor;
     }
 }

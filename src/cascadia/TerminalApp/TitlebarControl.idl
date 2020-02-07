@@ -14,8 +14,6 @@ namespace TerminalApp
     {
         TitlebarControl(UInt64 parentWindowHandle);
         void SetWindowVisualState(WindowVisualState visualState);
-        void SetMinMaxControlColors(Windows.UI.Color minMaxForegroundColor, Windows.UI.Color minMaxHoverColor);
-        void ClearMinMaxControlColors();
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

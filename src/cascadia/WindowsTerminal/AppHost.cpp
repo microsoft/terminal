@@ -133,8 +133,6 @@ void AppHost::Initialize()
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
         _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
-        _logic.SetTitleBarColor({ this, &AppHost::_SetTitleBarColor });
-        _logic.ClearTitleBarColor({ this, &AppHost::_ClearTitleBarColor });
     }
 
     // Register the 'X' button of the window for a warning experience of multiple
@@ -310,40 +308,6 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
     if (_useNonClientArea)
     {
         (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
-    }
-}
-
-// Method Description:
-// - Called when the user has selected a custom color for a tab.
-// Sets the background to a matching color
-// Arguments:
-// - sender: unused
-// - color: the color to use as the new Titlebar background color.
-// - minMaxForeground: the foreground color for the min max buttons
-// - minMaxHover: the hover color for the min max buttons
-// Return Value:
-// - <none>
-void AppHost::_SetTitleBarColor(const winrt::Windows::Foundation::IInspectable&, const winrt::TerminalApp::TabColorChangedEventArgs& args)
-{
-    if (_useNonClientArea)
-    {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarColor(args.TitleBarColor(), args.MinMaxForegroundColor(), args.MinMaxHoverColor());
-    }
-}
-
-// Method Description:
-// - Called when the user has clears the custom tab color
-// Sets the background to a matching color
-// Arguments:
-// - sender: unused
-// - arg: unused
-// Return Value:
-// - <none>
-void AppHost::_ClearTitleBarColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Color& arg)
-{
-    if (_useNonClientArea)
-    {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->ClearTitlebarColor(arg);
     }
 }
 

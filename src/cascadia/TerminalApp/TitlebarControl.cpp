@@ -93,39 +93,4 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().SetWindowVisualState(visualState);
     }
-
-    void TitlebarControl::SetMinMaxControlColors(const winrt::Windows::UI::Color& minMaxForegroundColor, const winrt::Windows::UI::Color& minMaxHoverColor)
-    {
-        winrt::Windows::UI::Xaml::Media::SolidColorBrush minMaxForegroundBrush{ minMaxForegroundColor };
-        winrt::Windows::UI::Xaml::Media::SolidColorBrush minMaxHoverBrush{ minMaxHoverColor };
-        MinMaxCloseControl().Resources().Insert(winrt::box_value(L"CaptionButtonStroke"), minMaxForegroundBrush);
-        MinMaxCloseControl().Resources().Insert(winrt::box_value(L"CaptionButtonStrokePressed"), minMaxForegroundBrush);
-        MinMaxCloseControl().Resources().Insert(winrt::box_value(L"CaptionButtonStrokePointerOver"), minMaxHoverBrush);
-        // this is not a mistake, it really looks better IMHO
-        MinMaxCloseControl().Resources().Insert(winrt::box_value(L"CaptionButtonBackgroundPointerOver"), minMaxHoverBrush);
-
-        MinMaxCloseControl().RefreshButtons();
-    }
-
-    void TitlebarControl::ClearMinMaxControlColors()
-    {
-        winrt::hstring keys[] = {
-            L"CaptionButtonStroke",
-            L"CaptionButtonStrokePressed",
-            L"CaptionButtonStrokePointerOver",
-            L"CaptionButtonBackgroundPointerOver",
-        };
-
-        // simply clear any of the colors in the tab's dict
-        for (auto keyString : keys)
-        {
-            auto key = winrt::box_value(keyString);
-            if (MinMaxCloseControl().Resources().HasKey(key))
-            {
-                MinMaxCloseControl().Resources().Remove(key);
-            }
-        }
-
-        MinMaxCloseControl().RefreshButtons();
-    }
 }
