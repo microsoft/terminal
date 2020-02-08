@@ -238,6 +238,15 @@ const bool Terminal::IsSelectionActive() const noexcept
 }
 
 // Method Description:
+// - Checks if selection is recorded line by line or as a block
+// Return Value:
+// - True if the selection is to be treated line by line. False if it is to be a block.
+const bool Terminal::IsLineSelection() const noexcept
+{
+    return !_boxSelection;
+}
+
+// Method Description:
 // - Checks if the CopyOnSelect setting is active
 // Return Value:
 // - true if feature is active, false otherwise.

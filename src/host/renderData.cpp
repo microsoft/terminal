@@ -360,6 +360,17 @@ const bool RenderData::IsSelectionActive() const
 }
 
 // Routine Description:
+// - Determines whether we are performing a line selection right now
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the selection is to be treated line by line. False if it is to be a block.
+const bool RenderData::IsLineSelection() const
+{
+    return Selection::Instance().IsLineSelection();
+}
+
+// Routine Description:
 // - If a selection exists, clears it and restores the state.
 //   Will also unblock a blocked write if one exists.
 // Arguments:
