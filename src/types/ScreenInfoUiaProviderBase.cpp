@@ -347,7 +347,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             return hr;
         }
     }
-    UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
+
+    // TODO GH #4507: This returns the wrong result.
+    //   No point in putting effort to trace something
+    //   that's wrong right now, that will be fixed soon.
+    //UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
     return S_OK;
 }
 

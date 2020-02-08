@@ -152,7 +152,7 @@ namespace Microsoft::Console::Types
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
         // GetText() cannot be used as it's not const
-        std::wstring _getTextValue() const noexcept;
+        std::wstring _getTextValue(int maxLength = -1) const noexcept;
 
         RECT _getTerminalRect() const;
 

@@ -462,10 +462,8 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
-#pragma warning(suppress : 26447) // QueryInterface's exception should be caught by the try-CATCH_RETURN block to allow this to be noexcept
     const auto hr = _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
-    // TODO CARLOS: fix tracing call
-    //UiaTracing::TextRange::GetEnclosingElement(*this, static_cast<ScreenInfoUiaProviderBase*>(*ppRetVal));
+    UiaTracing::TextRange::GetEnclosingElement(*this);
     return hr;
 }
 CATCH_RETURN();
@@ -473,83 +471,109 @@ CATCH_RETURN();
 IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal) noexcept
 try
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = nullptr;
-
-    std::wstring wstr = L"";
 
     if (maxLength < -1)
     {
         return E_INVALIDARG;
     }
+
+    const auto text = _getTextValue(maxLength);
+
+    *pRetVal = SysAllocString(text.c_str());
+    UiaTracing::TextRange::GetText(*this, maxLength, text);
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Method Description:
+// - Helper method for GetText(). Retrieves the text that the UiaTextRange encompasses as a wstring
+// Arguments:
+// - maxLength - the maximum size of the retrieved text. -1 means we don't care about the size.
+// Return Value:
+// - the text that the UiaTextRange encompasses
+#pragma warning(push)
+#pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
+std::wstring UiaTextRangeBase::_getTextValue(int maxLength) const noexcept
+try
+{
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+
+    if (IsDegenerate())
+    {
+        return {};
+    }
+
+    std::wstring result{};
+
     // the caller must pass in a value for the max length of the text
     // to retrieve. a value of -1 means they don't want the text
     // truncated.
     const bool getPartialText = maxLength != -1;
 
-    if (!IsDegenerate())
+    // if _end is at 0, we ignore that row because _end is exclusive
+    const auto& buffer = _pData->GetTextBuffer();
+    const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
+                                       base::ClampSub(_end.Y, _start.Y) :
+                                       base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
+    const short lastRowInRange = _start.Y + totalRowsInRange - 1;
+
+    short currentScreenInfoRow = 0;
+    for (short i = 0; i < totalRowsInRange; ++i)
     {
-        // if _end is at 0, we ignore that row because _end is exclusive
-        const auto& buffer = _pData->GetTextBuffer();
-        const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
-                                           base::ClampSub(_end.Y, _start.Y) :
-                                           base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
-        const short lastRowInRange = _start.Y + totalRowsInRange - 1;
-
-        short currentScreenInfoRow = 0;
-        for (short i = 0; i < totalRowsInRange; ++i)
+        currentScreenInfoRow = _start.Y + i;
+        const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+        if (row.GetCharRow().ContainsText())
         {
-            currentScreenInfoRow = _start.Y + i;
-            const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-            if (row.GetCharRow().ContainsText())
+            const size_t rowRight = row.GetCharRow().MeasureRight();
+            size_t startIndex = 0;
+            size_t endIndex = rowRight;
+            if (currentScreenInfoRow == _start.Y)
             {
-                const size_t rowRight = row.GetCharRow().MeasureRight();
-                size_t startIndex = 0;
-                size_t endIndex = rowRight;
-                if (currentScreenInfoRow == _start.Y)
-                {
-                    startIndex = _start.X;
-                }
-
-                if (currentScreenInfoRow == _end.Y)
-                {
-                    // prevent the end from going past the last non-whitespace char in the row
-                    endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
-                }
-
-                // if startIndex >= endIndex then _start is
-                // further to the right than the last
-                // non-whitespace char in the row so there
-                // wouldn't be any text to grab.
-                if (startIndex < endIndex)
-                {
-                    wstr += row.GetText().substr(startIndex, endIndex - startIndex);
-                }
+                startIndex = _start.X;
             }
 
-            if (currentScreenInfoRow != lastRowInRange)
+            if (currentScreenInfoRow == _end.Y)
             {
-                wstr += L"\r\n";
+                // prevent the end from going past the last non-whitespace char in the row
+                endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
             }
 
-            if (getPartialText && wstr.size() > static_cast<size_t>(maxLength))
+            // if startIndex >= endIndex then _start is
+            // further to the right than the last
+            // non-whitespace char in the row so there
+            // wouldn't be any text to grab.
+            if (startIndex < endIndex)
             {
-                wstr.resize(maxLength);
-                break;
+                result += row.GetText().substr(startIndex, endIndex - startIndex);
             }
+        }
+
+        if (currentScreenInfoRow != lastRowInRange)
+        {
+            result += L"\r\n";
+        }
+
+        if (getPartialText && result.size() > static_cast<size_t>(maxLength))
+        {
+            result.resize(maxLength);
+            break;
         }
     }
 
-    *pRetVal = SysAllocString(wstr.c_str());
-    UiaTracing::TextRange::GetText(*this, maxLength, wstr);
-    return S_OK;
+    return result;
 }
-CATCH_RETURN();
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+#pragma warning(pop)
+
 
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
@@ -1178,37 +1202,3 @@ RECT UiaTextRangeBase::_getTerminalRect() const
         gsl::narrow<LONG>(result.top + result.height)
     };
 }
-
-#pragma warning(push)
-#pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
-std::wstring UiaTextRangeBase::_getTextValue() const noexcept
-try
-{
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-
-    if (IsDegenerate())
-    {
-        return {};
-    }
-
-    std::wstringstream stream;
-    const auto& buffer = _pData->GetTextBuffer();
-    const auto bufferSize = buffer.GetSize();
-
-    auto pos = _start;
-    while (std::abs(bufferSize.CompareInBounds(pos, _end, true)) > 0)
-    {
-        stream << buffer.GetTextDataAt(pos)->data();
-        bufferSize.IncrementInBounds(pos, true);
-    }
-
-    return stream.str();
-}
-catch (...)
-{
-    return {};
-}
-#pragma warning(pop)

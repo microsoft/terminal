@@ -41,7 +41,7 @@ namespace Microsoft::Console::Types
             static void FindText(const UiaTextRangeBase& base, std::wstring text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result) noexcept;
             static void GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result) noexcept;
             static void GetBoundingRectangles(const UiaTextRangeBase& base) noexcept;
-            static void GetEnclosingElement(const UiaTextRangeBase& base, const ScreenInfoUiaProviderBase& siup) noexcept;
+            static void GetEnclosingElement(const UiaTextRangeBase& base) noexcept;
             static void GetText(const UiaTextRangeBase& base, int maxLength, std::wstring result) noexcept;
             static void Move(TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result) noexcept;
             static void MoveEndpointByUnit(TextPatternRangeEndpoint endpoint, TextUnit unit, int count, int resultCount, const UiaTextRangeBase& result) noexcept;
@@ -88,9 +88,9 @@ namespace Microsoft::Console::Types
         UiaTracing& operator=(const UiaTracing&) = delete;
         UiaTracing& operator=(UiaTracing&&) = delete;
 
-        static std::wstring _getValue(const ScreenInfoUiaProviderBase& siup) noexcept;
-        static std::wstring _getValue(const UiaTextRangeBase& utr) noexcept;
-        static std::wstring _getValue(const TextPatternRangeEndpoint endpoint) noexcept;
-        static std::wstring _getValue(const TextUnit unit) noexcept;
+        static inline std::wstring _getValue(const ScreenInfoUiaProviderBase& siup) noexcept;
+        static inline std::wstring _getValue(const UiaTextRangeBase& utr) noexcept;
+        static inline std::wstring _getValue(const TextPatternRangeEndpoint endpoint) noexcept;
+        static inline std::wstring _getValue(const TextUnit unit) noexcept;
     };
 }

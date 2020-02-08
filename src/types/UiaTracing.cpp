@@ -7,13 +7,7 @@
 // we need to disable a few warnings because
 // the TraceLogging code is out of our control
 #pragma warning(push)
-#pragma warning(disable : 26447)
-#pragma warning(disable : 26477)
-#pragma warning(disable : 26482)
-#pragma warning(disable : 26496)
-#pragma warning(disable : 26485)
-#pragma warning(disable : 26494)
-#pragma warning(disable : 26446)
+#pragma warning(disable : 26446 26447 26477 26482 26485 26494 26496)
 TRACELOGGING_DEFINE_PROVIDER(g_UiaProviderTraceProvider,
                              "Microsoft.Windows.Console.UIA",
                              // tl:{e7ebce59-2161-572d-b263-2f16a6afb9e5}
@@ -31,7 +25,7 @@ UiaTracing::~UiaTracing() noexcept
     TraceLoggingUnregister(g_UiaProviderTraceProvider);
 }
 
-std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/) noexcept
+inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/) noexcept
 try
 {
     std::wstringstream stream;
@@ -43,7 +37,7 @@ catch (...)
     return {};
 }
 
-std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
+inline std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
 try
 {
     const auto start = utr.GetEndpoint(TextPatternRangeEndpoint_Start);
@@ -63,7 +57,7 @@ catch (...)
     return {};
 }
 
-std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noexcept
+inline std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noexcept
 {
     switch (endpoint)
     {
@@ -76,7 +70,7 @@ std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noex
     }
 }
 
-std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
+inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
 {
     switch (unit)
     {
@@ -203,14 +197,13 @@ void UiaTracing::TextRange::GetBoundingRectangles(const UiaTextRangeBase& utr) n
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
-void UiaTracing::TextRange::GetEnclosingElement(const UiaTextRangeBase& utr, const ScreenInfoUiaProviderBase& siup) noexcept
+void UiaTracing::TextRange::GetEnclosingElement(const UiaTextRangeBase& utr) noexcept
 {
     EnsureRegistration();
     TraceLoggingWrite(
         g_UiaProviderTraceProvider,
         "UiaTextRange::GetEnclosingElement",
         TraceLoggingValue(_getValue(utr).c_str(), "base"),
-        TraceLoggingValue(_getValue(siup).c_str(), "parent"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
