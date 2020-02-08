@@ -574,7 +574,6 @@ catch (...)
 }
 #pragma warning(pop)
 
-
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
                                       _Out_ int* pRetVal) noexcept
