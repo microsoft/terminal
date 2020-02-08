@@ -50,7 +50,12 @@ public:
     bool GetShowTitleInTitlebar() const noexcept;
     void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
 
+    bool GetConfirmCloseAllTabs() const noexcept;
+    void SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept;
+
     void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
+
+    void SetTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode);
 
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
@@ -70,11 +75,15 @@ public:
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
+    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode GetTabWidthMode() const noexcept;
+
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
+
+    GETSET_PROPERTY(bool, SnapToGridOnResize, true);
 
 private:
     GUID _defaultProfile;
@@ -85,22 +94,29 @@ private:
     int32_t _initialRows;
     int32_t _initialCols;
 
+    int32_t _rowsToScroll;
+
     std::optional<int32_t> _initialX;
     std::optional<int32_t> _initialY;
 
     bool _showStatusline;
     bool _alwaysShowTabs;
     bool _showTitleInTitlebar;
+    bool _confirmCloseAllTabs;
 
     bool _showTabsInTitlebar;
     std::wstring _wordDelimiters;
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+    winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _tabWidthMode;
 
     winrt::TerminalApp::LaunchMode _launchMode;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+
+    static std::wstring_view _SerializeTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode) noexcept;
+    static winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode _ParseTabWidthMode(const std::wstring& tabWidthModeString) noexcept;
 
     static void _ParseInitialPosition(const std::wstring& initialPosition,
                                       std::optional<int32_t>& initialX,

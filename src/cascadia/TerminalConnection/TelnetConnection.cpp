@@ -19,7 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     TelnetConnection::TelnetConnection(const hstring& uri) :
         _reader{ nullptr },
         _writer{ nullptr },
-        _uri{ uri }
+        _uri{ uri },
+        _receiveBuffer{}
     {
         _session.install(_nawsServer);
         _nawsServer.activate([](auto&&) {});
@@ -37,8 +38,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             nullptr,
             0,
             [](LPVOID lpParameter) {
-                auto pInstance = reinterpret_cast<TelnetConnection*>(lpParameter);
-                return pInstance->_outputThread();
+                auto pInstance = static_cast<TelnetConnection*>(lpParameter);
+                if (pInstance)
+                {
+                    return pInstance->_outputThread();
+                }
+                return gsl::narrow_cast<DWORD>(ERROR_BAD_ARGUMENTS);
             },
             this,
             0,
@@ -75,6 +80,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             str = "\r\n";
         }
 
+#pragma warning(suppress : 26490) // Using something that isn't reinterpret_cast to forward stream bytes is more clumsy than just using it.
         telnetpp::bytes bytes(reinterpret_cast<const uint8_t*>(str.data()), str.size());
         _session.send(bytes, [=](telnetpp::bytes data) {
             _socketSend(data);
@@ -238,8 +244,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - <none>
     void TelnetConnection::_socketBufferedSend(telnetpp::bytes data)
     {
+        // winrt::array_view should take data/size but it doesn't.
+        // We contacted the WinRT owners and they said, more or less, that it's not worth fixing
+        // with std::span on the horizon instead of this. So we're suppressing the warning
+        // and hoping for a std::span future that will eliminate winrt::array_view<T>
+#pragma warning(push)
+#pragma warning(disable : 26481)
         const uint8_t* first = data.data();
         const uint8_t* last = data.data() + data.size();
+#pragma warning(pop)
+
         const winrt::array_view<const uint8_t> arrayView(first, last);
         _writer.WriteBytes(arrayView);
     }
@@ -283,9 +297,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // mad at us for it) to use a public array_view constructor.
         // The WinRT team isn't fixing this because std::span is coming
         // soon and that will do it.
-        // So just do this for now and suppress the warnings.
+#pragma warning(push)
+#pragma warning(disable : 26481)
         const auto first = buffer.data();
         const auto last = first + bytesLoaded;
+#pragma warning(pop)
+
         const winrt::array_view<uint8_t> arrayView(first, last);
         _reader.ReadBytes(arrayView);
         return bytesLoaded;
@@ -304,6 +321,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                std::function<void(telnetpp::bytes)> const& /*send*/)
     {
         // Convert telnetpp bytes to standard string_view
+#pragma warning(suppress : 26490) // Using something that isn't reinterpret_cast to forward stream bytes is more clumsy than just using it.
         const auto stringView = std::string_view{ reinterpret_cast<const char*>(data.data()), gsl::narrow<size_t>(data.size()) };
 
         // Convert to hstring

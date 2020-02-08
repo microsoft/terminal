@@ -457,8 +457,20 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.pCurrentScreenBuffer = &screenInfo;
 
-    // initialize cursor
-    screenInfo.GetTextBuffer().GetCursor().SetIsOn(false);
+    // initialize cursor GH#4102 - Typically, the cursor is set to on by the
+    // cursor blinker. Unfortunately, in conpty mode, there is no cursor
+    // blinker. So, in conpty mode, we need to leave the cursor on always. The
+    // cursor can still be set to hidden, and whether the cursor should be
+    // blinking will still be passed through to the terminal, but internally,
+    // the cursor should always be on.
+    //
+    // In particular, some applications make use of a calling
+    // `SetConsoleScreenBuffer` and `SetCursorPosition` without printing any
+    // text in between these calls. If we initialize the cursor to Off in conpty
+    // mode, then the cursor will remain off until they print text. This can
+    // lead to alignment problems in the terminal, because we won't move the
+    // terminal's cursor in this _exact_ scenario.
+    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.IsInVtIoMode());
 
     // set font
     screenInfo.RefreshFontWithRenderer();

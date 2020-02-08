@@ -59,7 +59,12 @@ namespace Microsoft::Console::Utils
 
 #endif
 
+// For things that need UTF-8 strings
+#define RS_A(x) (winrt::to_string(RS_(x)))
+
+// Array-to-pointer decay might technically be avoidable, but this is elegant and clean.
 #define UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(x) \
+    __pragma(warning(suppress : 26485));       \
     __declspec(selectany) extern const wchar_t* g_WinRTUtilsLibraryResourceScope{ (x) };
 
 winrt::hstring GetLibraryResourceString(const std::wstring_view key);

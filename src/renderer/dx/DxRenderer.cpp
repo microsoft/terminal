@@ -74,6 +74,7 @@ DxEngine::DxEngine() :
     _selectionBackground{},
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
+    _retroTerminalEffects{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -161,6 +162,10 @@ _CompileShader(
     std::string target,
     std::string entry = "main")
 {
+#ifdef __INSIDE_WINDOWS
+    THROW_HR(E_UNEXPECTED);
+    return 0;
+#else
     Microsoft::WRL::ComPtr<ID3DBlob> code{};
     Microsoft::WRL::ComPtr<ID3DBlob> error{};
 
@@ -189,6 +194,7 @@ _CompileShader(
     }
 
     return code;
+#endif
 }
 
 // Routine Description:
@@ -1735,7 +1741,7 @@ float DxEngine::GetScaling() const noexcept
         }
     }
 
-    THROW_IF_NULL_ALLOC(face);
+    THROW_HR_IF_NULL(E_FAIL, face);
 
     return face;
 }

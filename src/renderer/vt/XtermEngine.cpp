@@ -433,7 +433,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
 {
     return _fUseAsciiOnly ?
                VtEngine::_WriteTerminalAscii(wstr) :

@@ -143,7 +143,7 @@ namespace winrt::TerminalApp::implementation
     struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
     {
         SwitchToTabArgs() = default;
-        GETSET_PROPERTY(int32_t, TabIndex, 0);
+        GETSET_PROPERTY(uint32_t, TabIndex, 0);
 
         static constexpr std::string_view TabIndexKey{ "index" };
 
@@ -163,7 +163,7 @@ namespace winrt::TerminalApp::implementation
             auto args = winrt::make_self<SwitchToTabArgs>();
             if (auto tabIndex{ json[JsonKey(TabIndexKey)] })
             {
-                args->_TabIndex = tabIndex.asInt();
+                args->_TabIndex = tabIndex.asUInt();
             }
             return *args;
         }
@@ -295,6 +295,7 @@ namespace winrt::TerminalApp::implementation
     // TODO:GH#2550/#3475 - move these to a centralized deserializing place
     static constexpr std::string_view VerticalKey{ "vertical" };
     static constexpr std::string_view HorizontalKey{ "horizontal" };
+    static constexpr std::string_view AutomaticKey{ "auto" };
     static TerminalApp::SplitState ParseSplitState(const std::string& stateString)
     {
         if (stateString == VerticalKey)
@@ -304,6 +305,10 @@ namespace winrt::TerminalApp::implementation
         else if (stateString == HorizontalKey)
         {
             return TerminalApp::SplitState::Horizontal;
+        }
+        else if (stateString == AutomaticKey)
+        {
+            return TerminalApp::SplitState::Automatic;
         }
         // default behavior for invalid data
         return TerminalApp::SplitState::None;

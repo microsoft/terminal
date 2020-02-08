@@ -12,7 +12,9 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
+#include "SearchBoxControl.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -56,7 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        void UpdateSettings(Settings::IControlSettings newSettings);
+        winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
 
@@ -65,6 +67,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize() const;
+        float SnapDimensionToGrid(const bool widthOrHeight, const float dimension) const;
 
         void ScrollViewport(int viewTop);
         int GetScrollOffset();
@@ -73,7 +76,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
-        void SwapChainChanged();
+        winrt::fire_and_forget SwapChainChanged();
+
+        void CreateSearchBoxControl();
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -88,12 +94,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
 
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
+        TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         // clang-format on
 
     private:
@@ -104,6 +112,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
+
+        winrt::com_ptr<SearchBoxControl> _searchBox;
+
         TSFInputControl _tsfInputControl;
 
         event_token _connectionOutputEventToken;
@@ -125,6 +136,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _isTerminalInitiatedScroll;
         std::atomic<bool> _willUpdateScrollBarToMatchViewport;
+
+        int _rowsToScroll;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
         double _autoScrollVelocity;
@@ -161,9 +174,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _Create();
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
-        void _BackgroundColorChanged(const uint32_t color);
+        winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
         bool _InitializeTerminal();
-        void _UpdateFont();
+        void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
@@ -174,16 +187,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+        void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+        winrt::fire_and_forget _DoDragDrop(Windows::UI::Xaml::DragEventArgs const e);
 
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
         void _SendPastedTextToConnection(const std::wstring& wstr);
+        winrt::fire_and_forget _SwapChainRoutine();
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);
         void _TerminalTitleChanged(const std::wstring_view& wstr);
-        void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        winrt::fire_and_forget _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
         void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);
         void _MouseZoomHandler(const double delta);
@@ -206,10 +223,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
+        void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
-        void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
-        void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
+        void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
+        void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
     };
 }
 

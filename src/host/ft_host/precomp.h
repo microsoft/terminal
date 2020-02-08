@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define NOMINMAX
+
 #include "windows.h"
 #include "wincon.h"
 #include "windowsx.h"

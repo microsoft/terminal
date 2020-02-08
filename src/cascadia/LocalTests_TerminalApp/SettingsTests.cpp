@@ -34,7 +34,7 @@ namespace TerminalAppLocalTests
         // details on that.
         BEGIN_TEST_CLASS(SettingsTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
@@ -433,7 +433,8 @@ namespace TerminalAppLocalTests
             "globals": {
                 "alwaysShowTabs": true,
                 "initialCols" : 120,
-                "initialRows" : 30
+                "initialRows" : 30,
+                "rowsToScroll" :  4
             }
         })" };
         const std::string settings1String{ R"(
@@ -441,7 +442,8 @@ namespace TerminalAppLocalTests
             "globals": {
                 "showTabsInTitlebar": false,
                 "initialCols" : 240,
-                "initialRows" : 60
+                "initialRows" : 60,
+                "rowsToScroll" : 8
             }
         })" };
         const auto settings0Json = VerifyParseSucceeded(settings0String);
@@ -453,12 +455,14 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
         VERIFY_ARE_EQUAL(120, settings._globals._initialCols);
         VERIFY_ARE_EQUAL(30, settings._globals._initialRows);
+        VERIFY_ARE_EQUAL(4, settings._globals._rowsToScroll);
         VERIFY_ARE_EQUAL(true, settings._globals._showTabsInTitlebar);
 
         settings.LayerJson(settings1Json);
         VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
         VERIFY_ARE_EQUAL(240, settings._globals._initialCols);
         VERIFY_ARE_EQUAL(60, settings._globals._initialRows);
+        VERIFY_ARE_EQUAL(8, settings._globals._rowsToScroll);
         VERIFY_ARE_EQUAL(false, settings._globals._showTabsInTitlebar);
     }
 

@@ -72,8 +72,8 @@ VOID
     MinSize.y = (GetSystemMetrics(SM_CYMIN) - NonClientSize.y) / lpFont->Size.Y;
     MaxSize.x = GetSystemMetrics(SM_CXFULLSCREEN) / lpFont->Size.X;
     MaxSize.y = GetSystemMetrics(SM_CYFULLSCREEN) / lpFont->Size.Y;
-    WindowSize.x = max(MinSize.x, min(MaxSize.x, gpStateInfo->WindowSize.X));
-    WindowSize.y = max(MinSize.y, min(MaxSize.y, gpStateInfo->WindowSize.Y));
+    WindowSize.x = std::max(MinSize.x, std::min<LONG>(MaxSize.x, gpStateInfo->WindowSize.X));
+    WindowSize.y = std::max(MinSize.y, std::min<LONG>(MaxSize.y, gpStateInfo->WindowSize.Y));
 
     /*
      * Get the window rectangle, making sure it's at least twice the

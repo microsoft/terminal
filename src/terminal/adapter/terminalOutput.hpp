@@ -23,20 +23,15 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
-        TerminalOutput();
-        ~TerminalOutput();
+        TerminalOutput() = default;
 
-        wchar_t TranslateKey(const wchar_t wch) const;
-        bool DesignateCharset(const wchar_t wchNewCharset);
-        bool NeedToTranslate() const;
+        wchar_t TranslateKey(const wchar_t wch) const noexcept;
+        bool DesignateCharset(const wchar_t wchNewCharset) noexcept;
+        bool NeedToTranslate() const noexcept;
 
     private:
-        wchar_t _wchCurrentCharset = DispatchTypes::VTCharacterSets::USASCII;
+        wchar_t _currentCharset = DispatchTypes::VTCharacterSets::USASCII;
 
-        // The tables only ever change the values x20 - x7f (96 display characters)
-        static const unsigned int s_uiNumDisplayCharacters = 96;
-        static const wchar_t s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters];
-
-        const wchar_t* _GetTranslationTable() const;
+        const std::wstring_view _GetTranslationTable() const noexcept;
     };
 }

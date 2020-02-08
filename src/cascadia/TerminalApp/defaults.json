@@ -7,7 +7,10 @@
     "requestedTheme": "system",
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
+    "tabWidthMode": "equal",
+    "snapToGridOnResize": false,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
+    "confirmCloseAllTabs": true,
 
     "profiles":
     [
@@ -203,6 +206,7 @@
         { "command": "closePane", "keys": [ "ctrl+shift+w" ] },
         { "command": "closeWindow", "keys": [ "alt+f4" ] },
         { "command": "copy", "keys": [ "ctrl+shift+c" ] },
+        { "command": "copy", "keys": [ "ctrl+insert" ] },
         { "command": "decreaseFontSize", "keys": [ "ctrl+-" ] },
         { "command": "duplicateTab", "keys": [ "ctrl+shift+d" ] },
         { "command": "increaseFontSize", "keys": [ "ctrl+=" ] },
@@ -224,6 +228,7 @@
         { "command": "openNewTabDropdown", "keys": [ "ctrl+shift+space" ] },
         { "command": "openSettings", "keys": [ "ctrl+," ] },
         { "command": "paste", "keys": [ "ctrl+shift+v" ] },
+        { "command": "paste", "keys": [ "shift+insert" ] },
         { "command": "prevTab", "keys": [ "ctrl+shift+tab" ] },
         { "command": "resetFontSize", "keys": ["ctrl+0"]},
         { "command": { "action": "resizePane", "direction": "down" }, "keys": [ "alt+shift+down" ] },
@@ -245,6 +250,7 @@
         { "command": { "action": "switchToTab", "index": 6 }, "keys": ["ctrl+alt+7"] },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": ["ctrl+alt+8"] },
         { "command": { "action": "switchToTab", "index": 8 }, "keys": ["ctrl+alt+9"] },
+        { "command": "find", "keys": [ "ctrl+shift+f" ] },
         { "command": "toggleFullscreen", "keys": [ "alt+enter" ] },
         { "command": "toggleFullscreen", "keys": [ "f11" ] }
     ]

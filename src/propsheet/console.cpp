@@ -245,21 +245,21 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
     case IDD_WINDOW_POSX:
         if (Value < 0)
         {
-            gpStateInfo->WindowPosX = max(SHORT_MIN, Value);
+            gpStateInfo->WindowPosX = std::max(SHORT_MIN, Value);
         }
         else
         {
-            gpStateInfo->WindowPosX = min(SHORT_MAX, Value);
+            gpStateInfo->WindowPosX = std::min(SHORT_MAX, Value);
         }
         break;
     case IDD_WINDOW_POSY:
         if (Value < 0)
         {
-            gpStateInfo->WindowPosY = max(SHORT_MIN, Value);
+            gpStateInfo->WindowPosY = std::max(SHORT_MIN, Value);
         }
         else
         {
-            gpStateInfo->WindowPosY = min(SHORT_MAX, Value);
+            gpStateInfo->WindowPosY = std::min(SHORT_MAX, Value);
         }
         break;
     case IDD_AUTO_POSITION:
@@ -316,10 +316,10 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         gpStateInfo->InsertMode = Value;
         break;
     case IDD_HISTORY_SIZE:
-        gpStateInfo->HistoryBufferSize = max(Value, 1);
+        gpStateInfo->HistoryBufferSize = std::max(Value, 1);
         break;
     case IDD_HISTORY_NUM:
-        gpStateInfo->NumberOfHistoryBuffers = max(Value, 1);
+        gpStateInfo->NumberOfHistoryBuffers = std::max(Value, 1);
         break;
     case IDD_HISTORY_NODUP:
         gpStateInfo->HistoryNoDup = Value;
@@ -646,7 +646,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     psh.hInstance = ghInstance;
     psh.pszCaption = awchBuffer;
     psh.nPages = g_fForceV2 ? NUMBER_OF_PAGES : V1_NUMBER_OF_PAGES;
-    psh.nStartPage = min(gnCurrentPage, ARRAYSIZE(psp));
+    psh.nStartPage = std::min<UINT>(gnCurrentPage, ARRAYSIZE(psp));
     psh.ppsp = psp;
     psh.pfnCallback = NULL;
 

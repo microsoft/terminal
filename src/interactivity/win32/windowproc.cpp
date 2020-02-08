@@ -25,7 +25,8 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
-#include "..\interactivity\win32\windowtheme.hpp"
+#include "..\..\inc\conint.h"
+
 #include "..\interactivity\win32\CustomWindowMessages.h"
 
 #include "..\interactivity\win32\windowUiaProvider.hpp"
@@ -185,7 +186,7 @@ using namespace Microsoft::Console::Types;
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
         FontInfoDesired fiDesired(fiCurrent);
-        FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
+        FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
 
         const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
         // fiProposal will be updated by the renderer for this new font.
@@ -336,13 +337,7 @@ using namespace Microsoft::Console::Types;
 
     case WM_SETTINGCHANGE:
     {
-        try
-        {
-            WindowTheme theme;
-            LOG_IF_FAILED(theme.TrySetDarkMode(hWnd));
-        }
-        CATCH_LOG();
-
+        LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(hWnd));
         gci.GetCursorBlinker().SettingsChanged();
     }
         __fallthrough;

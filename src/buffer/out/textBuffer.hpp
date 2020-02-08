@@ -123,15 +123,17 @@ public:
 
     void Reset();
 
-    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
     UnicodeStorage& GetUnicodeStorage() noexcept;
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
-    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun = false) const;
-    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun = false) const;
+    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
+    bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
 
     class TextAndColor
     {
@@ -157,6 +159,8 @@ public:
                               const int fontHeightPoints,
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
+
+    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer);
 
 private:
     std::deque<ROW> _storage;
@@ -196,6 +200,10 @@ private:
         RegularChar
     };
     DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept;
+    const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

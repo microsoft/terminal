@@ -10,7 +10,8 @@
 #include "windowio.hpp"
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
-#include "windowtheme.hpp"
+
+#include "..\..\inc\conint.h"
 
 #include "..\..\host\globals.h"
 #include "..\..\host\dbcs.h"
@@ -349,12 +350,7 @@ void Window::_UpdateSystemMetrics() const
                     siAttached.PostUpdateWindowSize();
 
                     // Locate window theming modules and try to set the dark mode.
-                    try
-                    {
-                        WindowTheme theme;
-                        LOG_IF_FAILED(theme.TrySetDarkMode(_hWnd));
-                    }
-                    CATCH_LOG();
+                    LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(_hWnd));
                 }
             }
         }

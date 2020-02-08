@@ -45,6 +45,10 @@
          so it's not in the common resource items. -->
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <!-- This is picked up by CascadiaResources.build.items. -->
+    <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>
@@ -103,11 +107,11 @@
     </ItemGroup>
   </Target>
   <!-- This is required to get the package dependency in the AppXManifest. -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.191203001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.3.191217003-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
 </Project>

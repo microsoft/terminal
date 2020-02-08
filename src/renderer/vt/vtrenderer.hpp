@@ -24,6 +24,14 @@ Author(s):
 #include <string>
 #include <functional>
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
+
 namespace Microsoft::Console::Render
 {
     class VtEngine : public RenderEngineBase, public Microsoft::Console::ITerminalOutputConnection
@@ -89,9 +97,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT RequestCursor() noexcept;
         [[nodiscard]] HRESULT InheritCursor(const COORD coordCursor) noexcept;
 
-        [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string& str) noexcept;
+        [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
 
-        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
+        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
 
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
         void BeginResizeRequest();
@@ -209,8 +217,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
                                                     const COORD coord) noexcept;
 
-        [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring& str) noexcept;
-        [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring& str) noexcept;
+        [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
+        [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
 
         [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 
@@ -220,6 +228,8 @@ namespace Microsoft::Console::Render
         bool _usingTestCallback;
 
         friend class VtRendererTest;
+        friend class ConptyOutputTests;
+        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 
         void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);

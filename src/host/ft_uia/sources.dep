@@ -8,6 +8,3 @@ PUBLIC_PASS1_CONSUMES= \
     onecore\sdktools\winappdriver\selenium.support|PASS1 \
     onecore\sdktools\winappdriver\selenium.webdriver|PASS1 \
 
-BUILD_PASS3_CONSUMES= \
-    onecore\merged\mbs\bootableskus\prepareimagingtools|PASS3 \
-
