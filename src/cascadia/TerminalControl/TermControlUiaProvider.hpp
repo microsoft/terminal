@@ -47,27 +47,22 @@ namespace Microsoft::Terminal
         const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:
-        HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
-
         // degenerate range
-        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
+        HRESULT CreateTextRange(const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // degenerate range at cursor position
-        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                const Cursor& cursor,
+        HRESULT CreateTextRange(const Cursor& cursor,
                                 const std::wstring_view wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // specific endpoint range
-        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                const COORD start,
+        HRESULT CreateTextRange(const COORD start,
                                 const COORD end,
                                 const std::wstring_view wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 
         // range from a UiaPoint
-        HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                const UiaPoint point,
+        HRESULT CreateTextRange(const UiaPoint point,
                                 const std::wstring_view wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 

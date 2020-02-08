@@ -97,72 +97,37 @@ void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
     _pUiaParent->ChangeViewport(NewWindow);
 }
 
-HRESULT ScreenInfoUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr)
+HRESULT ScreenInfoUiaProvider::CreateTextRange(const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    UiaTextRange* result = nullptr;
-    if (_pData->IsSelectionActive())
-    {
-        const auto start = _pData->GetSelectionAnchor();
-
-        // we need to make end exclusive
-        auto end = _pData->GetEndSelectionPosition();
-        _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
-
-        // TODO GH #4509: Box Selection is misrepresented here as a line selection.
-        RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
-    }
-    *ppUtr = result;
-    return S_OK;
+    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, wordDelimiters);
 }
 
-HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
-    *ppUtr = nullptr;
-    UiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, wordDelimiters));
-    *ppUtr = result;
-    return S_OK;
-}
-
-HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const Cursor& cursor,
+HRESULT ScreenInfoUiaProvider::CreateTextRange(const Cursor& cursor,
                                                const std::wstring_view wordDelimiters,
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    UiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, cursor, wordDelimiters));
-    *ppUtr = result;
-    return S_OK;
+    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, cursor, wordDelimiters);
 }
 
-HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const COORD start,
+HRESULT ScreenInfoUiaProvider::CreateTextRange(const COORD start,
                                                const COORD end,
                                                const std::wstring_view wordDelimiters,
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    UiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
-    *ppUtr = result;
-    return S_OK;
+    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, start, end, wordDelimiters));
 }
 
-HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const UiaPoint point,
+HRESULT ScreenInfoUiaProvider::CreateTextRange(const UiaPoint point,
                                                const std::wstring_view wordDelimiters,
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    UiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, point, wordDelimiters));
-    *ppUtr = result;
-    return S_OK;
+    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, point, wordDelimiters);
 }

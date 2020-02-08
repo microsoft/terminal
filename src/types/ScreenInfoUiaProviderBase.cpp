@@ -266,15 +266,17 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
         // return a degenerate range at the cursor position
         const Cursor& cursor = _getTextBuffer().GetCursor();
-        hr = CreateTextRange(this, cursor, _wordDelimiters, &range);
+        hr = CreateTextRange(cursor, _wordDelimiters, &range);
     }
     else
     {
-        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-        //apiMsg.AreaSelected = true;
+        const auto start = _pData->GetSelectionAnchor();
 
-        // get the selection range
-        hr = GetSelectionRange(this, _wordDelimiters, &range);
+        // we need to make end exclusive
+        auto end = _pData->GetEndSelectionPosition();
+        _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
+
+        hr = CreateTextRange(start, end, _wordDelimiters, &range);
     }
 
     if (FAILED(hr))

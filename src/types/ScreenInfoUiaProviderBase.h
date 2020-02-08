@@ -78,27 +78,22 @@ namespace Microsoft::Console::Types
     protected:
         ScreenInfoUiaProviderBase() = default;
 
-        virtual HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
-
         // degenerate range
-        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
+        virtual HRESULT CreateTextRange(const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // degenerate range at cursor position
-        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                        const Cursor& cursor,
+        virtual HRESULT CreateTextRange(const Cursor& cursor,
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // specific endpoint range
-        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                        const COORD start,
+        virtual HRESULT CreateTextRange(const COORD start,
                                         const COORD end,
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // range from a UiaPoint
-        virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                        const UiaPoint point,
+        virtual HRESULT CreateTextRange(const UiaPoint point,
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
