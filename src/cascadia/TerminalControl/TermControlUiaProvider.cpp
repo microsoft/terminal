@@ -108,6 +108,7 @@ HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple
         auto end = _pData->GetEndSelectionPosition();
         _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
 
+        // TODO GH #4509: Box Selection is misrepresented here as a line selection.
         RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
     }
     *ppUtr = result;
