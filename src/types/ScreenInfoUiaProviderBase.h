@@ -89,6 +89,7 @@ namespace Microsoft::Console::Types
         // specific endpoint range
         virtual HRESULT CreateTextRange(const COORD start,
                                         const COORD end,
+                                        bool blockSelection,
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 

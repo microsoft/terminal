@@ -276,7 +276,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         auto end = _pData->GetEndSelectionPosition();
         _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
 
-        hr = CreateTextRange(start, end, _wordDelimiters, &range);
+        const bool blockSelection = !_pData->IsLineSelection();
+        hr = CreateTextRange(start, end, blockSelection, _wordDelimiters, &range);
     }
 
     if (FAILED(hr))
@@ -333,8 +334,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
 
         HRESULT hr = S_OK;
         WRL::ComPtr<UiaTextRangeBase> range;
-        hr = CreateTextRange(this,
-                             start,
+        hr = CreateTextRange(start,
                              end,
                              _wordDelimiters,
                              &range);
@@ -367,7 +367,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    RETURN_IF_FAILED(CreateTextRange(this, _wordDelimiters, &utr));
+    RETURN_IF_FAILED(CreateTextRange(_wordDelimiters, &utr));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;
 }
@@ -382,8 +382,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    RETURN_IF_FAILED(CreateTextRange(this,
-                                     point,
+    RETURN_IF_FAILED(CreateTextRange(point,
                                      _wordDelimiters,
                                      &utr));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
@@ -399,7 +398,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     *ppRetVal = nullptr;
 
     WRL::ComPtr<UiaTextRangeBase> utr;
-    RETURN_IF_FAILED(CreateTextRange(this, _wordDelimiters, &utr));
+    RETURN_IF_FAILED(CreateTextRange(_wordDelimiters, &utr));
     RETURN_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     return S_OK;

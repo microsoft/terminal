@@ -76,6 +76,7 @@ namespace Microsoft::Console::Types
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        _In_ const COORD start,
                                        _In_ const COORD end,
+                                       _In_ bool blockSelection,
                                        _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
@@ -138,6 +139,11 @@ namespace Microsoft::Console::Types
         IRawElementProviderSimple* _pProvider;
 
         std::wstring _wordDelimiters;
+
+        // when enabled, this should be treated as a block selection
+        // This means that only text in the rect from start to end
+        // is included in this text range.
+        bool _blockSelection = false;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;

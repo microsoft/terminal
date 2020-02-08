@@ -115,12 +115,13 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(const Cursor& cursor,
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(const COORD start,
                                                const COORD end,
+                                               bool blockSelection,
                                                const std::wstring_view wordDelimiters,
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, start, end, wordDelimiters));
+    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, start, end, blockSelection, wordDelimiters));
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(const UiaPoint point,

@@ -90,6 +90,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  _In_ const COORD start,
                                                  _In_ const COORD end,
+                                                 _In_ bool blockSelection,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
@@ -107,6 +108,7 @@ try
         _start = end;
         _end = start;
     }
+    _blockSelection = blockSelection;
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"Constructor\n");
