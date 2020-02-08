@@ -494,13 +494,13 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
                 COORD startCoord = { 0, row };
                 COORD endCoord = { viewport.RightInclusive(), row };
 
-                if (row == startAnchor.Y)
+                if (_blockSelection || row == startAnchor.Y)
                 {
                     // first row --> reduce left side
                     startCoord.X = startAnchor.X;
                 }
 
-                if (row == endAnchor.Y)
+                if (_blockSelection || row == endAnchor.Y)
                 {
                     // last row --> reduce right side
                     endCoord.X = endAnchor.X;
@@ -595,12 +595,12 @@ try
                 const size_t rowRight = row.GetCharRow().MeasureRight();
                 size_t startIndex = 0;
                 size_t endIndex = rowRight;
-                if (currentScreenInfoRow == _start.Y)
+                if (_blockSelection || currentScreenInfoRow == _start.Y)
                 {
                     startIndex = _start.X;
                 }
 
-                if (currentScreenInfoRow == _end.Y)
+                if (_blockSelection || currentScreenInfoRow == _end.Y)
                 {
                     // prevent the end from going past the last non-whitespace char in the row
                     endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));

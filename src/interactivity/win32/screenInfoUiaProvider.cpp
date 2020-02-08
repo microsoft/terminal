@@ -101,7 +101,10 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(const std::wstring_view wordDelim
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, wordDelimiters);
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, this, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(const Cursor& cursor,
@@ -110,7 +113,10 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(const Cursor& cursor,
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, cursor, wordDelimiters);
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, this, cursor, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(const COORD start,
@@ -121,7 +127,10 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(const COORD start,
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, start, end, blockSelection, wordDelimiters));
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, this, start, end, blockSelection, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(const UiaPoint point,
@@ -130,5 +139,8 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(const UiaPoint point,
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    return MakeAndInitialize<UiaTextRange>(ppUtr, _pData, this, point, wordDelimiters);
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, this, point, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }

@@ -34,7 +34,18 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              const COORD end,
                                              const std::wstring_view wordDelimiters)
 {
-    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, wordDelimiters);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, false, wordDelimiters);
+}
+
+// specific endpoint range (selection)
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                             _In_ IRawElementProviderSimple* const pProvider,
+                                             const COORD start,
+                                             const COORD end,
+                                             bool blockSelection,
+                                             const std::wstring_view wordDelimiters)
+{
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, blockSelection, wordDelimiters);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point

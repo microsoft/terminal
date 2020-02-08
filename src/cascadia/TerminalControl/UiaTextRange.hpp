@@ -41,6 +41,7 @@ namespace Microsoft::Terminal
                                        _In_ IRawElementProviderSimple* const pProvider,
                                        const COORD start,
                                        const COORD end,
+                                       bool blockSelection,
                                        const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // range from a UiaPoint

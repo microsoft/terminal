@@ -336,6 +336,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
         WRL::ComPtr<UiaTextRangeBase> range;
         hr = CreateTextRange(start,
                              end,
+                             false,
                              _wordDelimiters,
                              &range);
         if (FAILED(hr))
