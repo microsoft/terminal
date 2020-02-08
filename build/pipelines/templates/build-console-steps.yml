@@ -66,8 +66,8 @@ steps:
   inputs:
     targetType: inline
     script: |
-      $testdlls = Get-ChildItem -Path '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Include '*unit.test*.dll'
-      foreach ($dll in $testdlls) { $(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $dll }
+      $testdlls = Get-ChildItem -Path '.\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Filter '*unit.test*.dll'
+      .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls
     failOnStderr: true
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
@@ -76,8 +76,8 @@ steps:
   inputs:
     targetType: inline
     script: |
-      $testdlls = Get-ChildItem -Path '$(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Include '*feature.test*.dll'
-      foreach ($dll in $testdlls) { $(BUILD.SOURCESDIRECTORY)\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $dll }
+      $testdlls = Get-ChildItem -Path '.\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Filter '*feature.test*.dll'
+      .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls 
     failOnStderr: true
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
