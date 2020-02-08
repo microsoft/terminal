@@ -8,6 +8,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
+#include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -46,7 +47,12 @@ AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
 // - <none>
 void AdaptDispatch::Print(const wchar_t wchPrintable)
 {
-    _pDefaults->Print(_termOutput.TranslateKey(wchPrintable));
+    const auto wchTranslated = _termOutput.TranslateKey(wchPrintable);
+    // The DEL character will only be output if translated to something else.
+    if (wchTranslated != AsciiChars::DEL)
+    {
+        _pDefaults->Print(wchTranslated);
+    }
 }
 
 // Routine Description
