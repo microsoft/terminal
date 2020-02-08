@@ -68,7 +68,7 @@ steps:
     script: |
       $testdlls = Get-ChildItem -Path '.\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Filter '*unit.test*.dll'
       .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls
-    failOnStderr: true
+      if ($lastexitcode -Ne 0) { Exit $lastexitcode }
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PowerShell@2
@@ -77,8 +77,8 @@ steps:
     targetType: inline
     script: |
       $testdlls = Get-ChildItem -Path '.\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Filter '*feature.test*.dll'
-      .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls 
-    failOnStderr: true
+      .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls
+      if ($lastexitcode -Ne 0) { Exit $lastexitcode }
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
 - task: CopyFiles@2
