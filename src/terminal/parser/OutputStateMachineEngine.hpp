@@ -72,6 +72,8 @@ namespace Microsoft::Console::VirtualTerminal
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
 
+        bool _IntermediateScsDispatch(const wchar_t wch,
+                                      const std::basic_string_view<wchar_t> intermediates);
         bool _IntermediateQuestionMarkDispatch(const wchar_t wchAction,
                                                const std::basic_string_view<size_t> parameters);
         bool _IntermediateExclamationDispatch(const wchar_t wch);

@@ -266,9 +266,9 @@ TerminalOutput::TerminalOutput() noexcept
     _gsetTranslationTables.at(3) = Latin1;
 }
 
-bool TerminalOutput::Designate94Charset(size_t gsetNumber, const wchar_t charset)
+bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
 {
-    switch (charset)
+    switch (charset.first)
     {
     case L'B': // US ASCII
     case L'1': // Alternate Character ROM
@@ -303,14 +303,21 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const wchar_t charset
         return _SetTranslationTable(gsetNumber, SwedishNrcs);
     case L'=': // Swiss NRCS
         return _SetTranslationTable(gsetNumber, SwissNrcs);
+    case L'%':
+        switch (charset.second)
+        {
+        case L'5': // DEC Supplemental
+            return _SetTranslationTable(gsetNumber, DecSupplemental);
+        }
+        return false;
     default:
         return false;
     }
 }
 
-bool TerminalOutput::Designate96Charset(size_t gsetNumber, const wchar_t charset)
+bool TerminalOutput::Designate96Charset(size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
 {
-    switch (charset)
+    switch (charset.first)
     {
     case L'A': // ISO Latin-1 Supplemental
     case L'<': // (UPSS when assigned to Latin-1)

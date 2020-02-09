@@ -265,34 +265,6 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
     {
         switch (til::at(intermediates, 0))
         {
-        case L'(':
-            success = _dispatch->Designate94Charset(0, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
-            break;
-        case L')':
-            success = _dispatch->Designate94Charset(1, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
-            break;
-        case L'*':
-            success = _dispatch->Designate94Charset(2, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
-            break;
-        case L'+':
-            success = _dispatch->Designate94Charset(3, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
-            break;
-        case L'-':
-            success = _dispatch->Designate96Charset(1, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
-            break;
-        case L'.':
-            success = _dispatch->Designate96Charset(2, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
-            break;
-        case L'/':
-            success = _dispatch->Designate96Charset(3, wch);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
-            break;
         case L'%':
             success = _dispatch->DesignateCodingSystem(wch);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DOCS);
@@ -311,10 +283,13 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             }
             break;
         default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
+            success = _IntermediateScsDispatch(wch, intermediates);
             break;
         }
+    }
+    else if (intermediates.size() == 2)
+    {
+        success = _IntermediateScsDispatch(wch, intermediates);
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
@@ -363,10 +338,10 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
             success = _dispatch->CursorBackward(1);
             break;
         case Vt52ActionCodes::EnterGraphicsMode:
-            success = _dispatch->Designate94Charset(0, DispatchTypes::VTCharacterSets::DEC_LineDrawing);
+            success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::DecSpecialGraphics);
             break;
         case Vt52ActionCodes::ExitGraphicsMode:
-            success = _dispatch->Designate94Charset(0, DispatchTypes::VTCharacterSets::USASCII);
+            success = _dispatch->Designate94Charset(0, DispatchTypes::CharacterSets::ASCII);
             break;
         case Vt52ActionCodes::CursorToHome:
             success = _dispatch->CursorPosition(1, 1);
@@ -408,6 +383,57 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
     }
 
     _ClearLastChar();
+
+    return success;
+}
+
+// Routine Description:
+// - Handles SCS charset designation actions that can have one or two possible intermediates.
+// Arguments:
+// - wch - Character to dispatch.
+// - intermediates - Intermediate characters in the sequence
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool OutputStateMachineEngine::_IntermediateScsDispatch(const wchar_t wch,
+                                                        const std::basic_string_view<wchar_t> intermediates)
+{
+    bool success = false;
+
+    // If we have more than one intermediate, the second intermediate forms part of
+    // the charset identifier. Otherwise it's identified by just the final character.
+    const auto charset = intermediates.size() > 1 ? std::make_pair(intermediates.at(1), wch) : std::make_pair(wch, L'\0');
+
+    switch (intermediates.at(0))
+    {
+    case L'(':
+        success = _dispatch->Designate94Charset(0, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG0);
+        break;
+    case L')':
+        success = _dispatch->Designate94Charset(1, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+        break;
+    case L'*':
+        success = _dispatch->Designate94Charset(2, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+        break;
+    case L'+':
+        success = _dispatch->Designate94Charset(3, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+        break;
+    case L'-':
+        success = _dispatch->Designate96Charset(1, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG1);
+        break;
+    case L'.':
+        success = _dispatch->Designate96Charset(2, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG2);
+        break;
+    case L'/':
+        success = _dispatch->Designate96Charset(3, charset);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+        break;
+    }
 
     return success;
 }
