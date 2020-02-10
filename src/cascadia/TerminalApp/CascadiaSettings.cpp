@@ -232,7 +232,7 @@ void CascadiaSettings::_ValidateProfilesExist()
 // Method Description:
 // - Walks through each profile, and ensures that they had a GUID set at some
 //   point. If the profile did _not_ have a GUID ever set for it, generate a
-//   temporary runtime GUID for it. This valitation does not add any warnnings.
+//   temporary runtime GUID for it. This validation does not add any warnings.
 void CascadiaSettings::_ValidateProfilesHaveGuid()
 {
     for (auto& profile : _profiles)
@@ -283,7 +283,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 {
     bool foundDupe = false;
 
-    std::vector<size_t> indiciesToDelete;
+    std::vector<size_t> indicesToDelete;
 
     std::set<GUID> uniqueGuids;
 
@@ -294,13 +294,13 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
         if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
         {
             foundDupe = true;
-            indiciesToDelete.push_back(i);
+            indicesToDelete.push_back(i);
         }
     }
 
     // Remove all the duplicates we've marked
     // Walk backwards, so we don't accidentally shift any of the elements
-    for (auto iter = indiciesToDelete.rbegin(); iter != indiciesToDelete.rend(); iter++)
+    for (auto iter = indicesToDelete.rbegin(); iter != indicesToDelete.rend(); iter++)
     {
         _profiles.erase(_profiles.begin() + *iter);
     }

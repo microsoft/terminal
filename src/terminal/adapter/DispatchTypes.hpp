@@ -89,7 +89,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECTCEM_TextCursorEnableMode = 25,
         XTERM_EnableDECCOLMSupport = 40,
         VT200_MOUSE_MODE = 1000,
-        BUTTTON_EVENT_MOUSE_MODE = 1002,
+        BUTTON_EVENT_MOUSE_MODE = 1002,
         ANY_EVENT_MOUSE_MODE = 1003,
         UTF8_EXTENDED_MODE = 1005,
         SGR_EXTENDED_MODE = 1006,

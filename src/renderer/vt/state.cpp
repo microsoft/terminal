@@ -82,7 +82,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     {
         // Try to get the last error. If that wasn't set, then the test probably
         // doesn't set last error. No matter. We'll just return with E_FAIL
-        // then. This is a unit test, we don't particularily care.
+        // then. This is a unit test, we don't particularly care.
         const auto succeeded = _pfnTestCallback(str.data(), str.size());
         auto hr = E_FAIL;
         if (!succeeded)
@@ -160,7 +160,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Method Description:
 // - Writes a wstring to the tty, encoded as "utf-8" where characters that are
 //      outside the ASCII range are encoded as '?'
-//   This mainly exists to maintain compatability with the inbox telnet client.
+//   This mainly exists to maintain compatibility with the inbox telnet client.
 //   This is one implementation of the WriteTerminalW method.
 // Arguments:
 // - wstr - wstring of text to be written
@@ -336,7 +336,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Method Description:
 // - Retrieves the current pixel size of the font we have selected for drawing.
 // Arguments:
-// - pFontSize - recieves the current X by Y size of the font.
+// - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 [[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept

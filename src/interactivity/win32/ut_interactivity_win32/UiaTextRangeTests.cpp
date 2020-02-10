@@ -735,7 +735,7 @@ class UiaTextRangeTests
             },
 
             MoveEndpointTest{
-                L"can partially move _start to the begining of the document when it is closer than the move count requested",
+                L"can partially move _start to the beginning of the document when it is closer than the move count requested",
                 {3, 0},
                 {lastColumnIndex, 0},
                 -5,
@@ -748,7 +748,7 @@ class UiaTextRangeTests
             },
 
             MoveEndpointTest{
-                L"can't move _end past the begining of the document",
+                L"can't move _end past the beginning of the document",
                 {0, 0},
                 {4, 0},
                 -5,
