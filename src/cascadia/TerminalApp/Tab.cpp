@@ -244,7 +244,7 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.GetScrollOffset();
-        control.KeyboardScrollViewport(currentOffset + delta);
+        control.ScrollViewport(currentOffset + delta);
     }
 
     // Method Description:
