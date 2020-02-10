@@ -39,7 +39,7 @@ static const WORD leftShiftScanCode = 0x2A;
 
     // Ask how much space we will need.
     int const iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
-    THROW_LAST_ERROR_IF(0 == iTarget);
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == iTarget);
 
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
@@ -49,7 +49,7 @@ static const WORD leftShiftScanCode = 0x2A;
     out.resize(cchNeeded);
 
     // Attempt conversion for real.
-    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
 
     // Return as a string
     return out;
