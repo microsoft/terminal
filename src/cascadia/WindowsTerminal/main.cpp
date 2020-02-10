@@ -91,24 +91,21 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
+    // !!! LOAD BEARING !!!
+    // We must initialize the main thread as a single-threaded apartment before
+    // constructing any Xaml objects. Failing to do so will cause some issues
+    // in accessibility somewhere down the line when a UIAutomation object will
+    // be queried on the wrong thread at the wrong time.
+    // We used to initialize as STA only _after_ initializing the application
+    // host, which loaded the settings. The settings needed to be loaded in MTA
+    // because we were using the Windows.Storage APIs. Since we're no longer
+    // doing that, we can safely init as STA before any WinRT dispatches.
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
+
     // Create the AppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;
-
-    // !!! LOAD BEARING !!!
-    // This is _magic_. Do the initial loading of our settings *BEFORE* we
-    // initialize our COM apartment type. This is because the Windows.Storage
-    // APIs require a MTA. However, other api's (notably the clipboard ones)
-    // require that the main thread is an STA. During startup, we don't yet have
-    // a dispatcher to background any async work, and we don't want to - we want
-    // to load the settings synchronously. Fortunately, WinRT will assume we're
-    // in a MTA until we explicitly call init_apartment. We can only call
-    // init_apartment _once_, so we'll do the settings loading first, in the
-    // implicit MTA, then set our apartment type to STA. The AppHost ctor will
-    // load the settings for us, as it constructs the window.
-    // This works because Kenny Kerr said it would, and he wrote cpp/winrt, so he knows.
-    winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initalized.
