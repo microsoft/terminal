@@ -313,12 +313,14 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
         {
             // expand to word
             _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-
-            // GetWordEnd may return the end of the TextBuffer we need to clamp
-            // this value to our bufferSize (which may be different from the
-            // actual size of the text buffer)
             _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
-            bufferSize.Clamp(_end);
+
+            // GetWordEnd may return the actual end of the TextBuffer.
+            // If so, just set it to this value of bufferEnd
+            if (!bufferSize.IsInBounds(_end))
+            {
+                _end = bufferEnd;
+            }
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
