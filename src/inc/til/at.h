@@ -11,21 +11,11 @@ namespace til
     // pivoting on the length of a set and now want to pull elements out of it by offset
     // without checking again.
     // gsl::at will do the check again. As will .at(). And using [] will have a warning in audit.
-    template<class T, class U>
-    constexpr auto at(const T& sequence, const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(sequence[0])>::type
+    template<class T>
+    constexpr auto at(T& cont, const size_t i) -> decltype(cont[cont.size()])
     {
-#pragma warning(push)
-#pragma warning(suppress : 26481 26482 26446) // Suppress checks for pointer arithmetik, indexing with constant expressions, and subscript operator.
-        return sequence[index];
-#pragma warning(pop)
-    }
-
-    template<class T, class U>
-    constexpr auto at(T& sequence, const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(sequence[0])>::type
-    {
-#pragma warning(push)
-#pragma warning(suppress : 26481 26482 26446) // Suppress checks for pointer arithmetik, indexing with constant expressions, and subscript operator.
-        return sequence[index];
-#pragma warning(pop)
+#pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
+#pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
+        return cont[i];
     }
 }
