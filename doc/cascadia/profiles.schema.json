@@ -380,7 +380,8 @@
         },
         "background": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
+          "default": "#0c0c0c",
+          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "backgroundImage": {
@@ -571,7 +572,8 @@
         },
         "foreground": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+          "default": "#cccccc",
+          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "guid": {

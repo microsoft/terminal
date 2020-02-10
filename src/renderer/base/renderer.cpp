@@ -47,6 +47,7 @@ Renderer::Renderer(IRenderData* pData,
 Renderer::~Renderer()
 {
     _destructing = true;
+    _pThread.reset();
 }
 
 // Routine Description:
@@ -67,6 +68,11 @@ Renderer::~Renderer()
         auto tries = maxRetriesForRenderEngine;
         while (tries > 0)
         {
+            if (_destructing)
+            {
+                return S_FALSE;
+            }
+
             const auto hr = _PaintFrameForEngine(pEngine);
             if (E_PENDING == hr)
             {
