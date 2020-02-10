@@ -79,7 +79,7 @@ void IslandWindow::Close()
 
 // Method Description:
 // - Set a callback to be called when we process a WM_CREATE message. This gives
-//   the AppHost a chance to resize the window to the propoer size.
+//   the AppHost a chance to resize the window to the proper size.
 // Arguments:
 // - pfn: a function to be called during the handling of WM_CREATE. It takes two
 //   parameters:

@@ -281,8 +281,8 @@ of the file.
 `inheritFrom` is very unique relative to other keys we already have.
 
 ##### Powerful
-This lets the user have potentially many layers of settings grouping. hese
-layers would let the user seperate out common settings however they like,
+This lets the user have potentially many layers of settings grouping. These
+layers would let the user separate out common settings however they like,
 without forcing them to a single "default" profile. They could potentially have
 many "default" profiles, e.g.
 * one that's used for all their WSL profiles, with `startingDirectory` set to

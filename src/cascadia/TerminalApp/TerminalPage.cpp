@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
-    //   that more than 1 tab is opend, and once the user clicks the OK button, remove
+    //   that more than 1 tab is opened, and once the user clicks the OK button, remove
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
@@ -480,7 +480,7 @@ namespace winrt::TerminalApp::implementation
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
@@ -521,7 +521,7 @@ namespace winrt::TerminalApp::implementation
         auto weakTab = make_weak(newTabImpl);
 
         // When the tab's active pane changes, we'll want to lookup a new icon
-        // for it, and possibly propogate the title up to the window.
+        // for it, and possibly propagate the title up to the window.
         newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -1236,7 +1236,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Calculates the appropriate size to snap to in the gived direction, for
+    // - Calculates the appropriate size to snap to in the given direction, for
     //   the given dimension. If the global setting `snapToGridOnResize` is set
     //   to `false`, this will just immediately return the provided dimension,
     //   effectively disabling snapping.

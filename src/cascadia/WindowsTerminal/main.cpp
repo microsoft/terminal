@@ -108,7 +108,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     AppHost host;
 
     // Initialize the xaml content. This must be called AFTER the
-    // WindowsXamlManager is initalized.
+    // WindowsXamlManager is initialized.
     host.Initialize();
 
     MSG message;

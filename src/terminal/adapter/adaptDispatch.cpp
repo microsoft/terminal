@@ -83,7 +83,7 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 
 // Routine Description:
 // - CUU - Handles cursor upward movement by given distance.
-// CUU and CUD are handled seperately from other CUP sequences, because they are
+// CUU and CUD are handled separately from other CUP sequences, because they are
 //      constrained by the margins.
 // See: https://vt100.net/docs/vt510-rm/CUU.html
 //  "The cursor stops at the top margin. If the cursor is already above the top
@@ -99,7 +99,7 @@ bool AdaptDispatch::CursorUp(const size_t distance)
 
 // Routine Description:
 // - CUD - Handles cursor downward movement by given distance
-// CUU and CUD are handled seperately from other CUP sequences, because they are
+// CUU and CUD are handled separately from other CUP sequences, because they are
 //      constrained by the margins.
 // See: https://vt100.net/docs/vt510-rm/CUD.html
 //  "The cursor stops at the bottom margin. If the cursor is already above the
@@ -470,7 +470,7 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // Arguments:
 // - count - The number of characters to delete
 // Return Value:
-// - True if handled successfuly. False otherwise.
+// - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeleteCharacter(const size_t count)
 {
     return _InsertDeleteHelper(count, false);
@@ -533,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
 // - ECH - Erase Characters from the current cursor position, by replacing
 //     them with a space. This will only erase characters in the current line,
 //     and won't wrap to the next. The attributes of any erased positions
-//     recieve the currently selected attributes.
+//     receive the currently selected attributes.
 // Arguments:
 // - numChars - The number of characters to erase.
 // Return Value:
@@ -755,7 +755,7 @@ bool AdaptDispatch::_CursorPositionReport() const
 // Arguments:
 // - reply - The reply string to transmit back to the input stream
 // Return Value:
-// - True if the string was converted to input events and placed into the console input buffer successfuly. False otherwise.
+// - True if the string was converted to input events and placed into the console input buffer successfully. False otherwise.
 bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 {
     bool success = false;
@@ -862,7 +862,7 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 // Routine Description:
 // - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
 // DECCOLM also clear the screen (like a CSI 2 J sequence), while DECSCPP just sets the width.
-// (DECCOLM will do this seperately of this function)
+// (DECCOLM will do this separately of this function)
 // Arguments:
 // - columns - Number of columns
 // Return Value:
@@ -962,7 +962,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
     case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
@@ -1912,7 +1912,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
-//  This is kept seperate from the input version, as there may be
+//  This is kept separate from the input version, as there may be
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform

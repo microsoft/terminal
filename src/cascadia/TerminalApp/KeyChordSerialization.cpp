@@ -205,7 +205,7 @@ winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString
 }
 
 // Function Description:
-// - Serialize this keychord into a string represenation.
+// - Serialize this keychord into a string representation.
 // - The string will fit the format "[ctrl+][alt+][shift+]<keyName>",
 //   where each modifier is optional, and keyName is either one of the
 //   names listed in the vkeyNamePairs vector above, or is one of 0-9a-z.
