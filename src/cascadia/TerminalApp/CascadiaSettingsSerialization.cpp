@@ -100,7 +100,42 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // Apply the user's settings
     resultPtr->LayerJson(resultPtr->_userSettings);
 
+    // After layering the user settings, check if there are any new profiles
+    // that need to be inserted into their user settings file.
+    needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
+
+    if (needToWriteFile)
+    {
+        // For safety's sake, we need to re-parse the JSON document to ensure that
+        // all future patches are applied with updated object offsets.
+        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+    }
+
+    // Make sure there's a $schema at the top of the file.
+    needToWriteFile = resultPtr->_PrependSchemaDirective() || needToWriteFile;
+
+    // TODO:GH#2721 If powershell core is installed, we need to set that to the
+    // default profile, but only when the settings file was newly created. We'll
+    // re-write the segment of the user settings for "default profile" to have
+    // the powershell core GUID instead.
+
+    // If we created the file, or found new dynamic profiles, write the user
+    // settings string back to the file.
+    if (needToWriteFile)
+    {
+        // If AppendDynamicProfilesToUserSettings (or the pwsh check above)
+        // changed the file, then our local settings JSON is no longer accurate.
+        // We should re-parse, but not re-layer
+        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+
+        _WriteSettings(resultPtr->_userSettingsString);
+    }
+
+    // If this throws, the app will catch it and use the default settings
+    resultPtr->_ValidateSettings();
+
     // GH 3855 - Gathering Data on custom profiles to inform better defaults
+    // Do it after everything else so it won't happen unless validation passed.
     {
         if (auto defaultProfile{ resultPtr->_userSettings[JsonKey(DefaultProfileKey)] })
         {
@@ -136,40 +171,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
     }
-
-    // After layering the user settings, check if there are any new profiles
-    // that need to be inserted into their user settings file.
-    needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
-
-    if (needToWriteFile)
-    {
-        // For safety's sake, we need to re-parse the JSON document to ensure that
-        // all future patches are applied with updated object offsets.
-        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
-    }
-
-    // Make sure there's a $schema at the top of the file.
-    needToWriteFile = resultPtr->_PrependSchemaDirective() || needToWriteFile;
-
-    // TODO:GH#2721 If powershell core is installed, we need to set that to the
-    // default profile, but only when the settings file was newly created. We'll
-    // re-write the segment of the user settings for "default profile" to have
-    // the powershell core GUID instead.
-
-    // If we created the file, or found new dynamic profiles, write the user
-    // settings string back to the file.
-    if (needToWriteFile)
-    {
-        // If AppendDynamicProfilesToUserSettings (or the pwsh check above)
-        // changed the file, then our local settings JSON is no longer accurate.
-        // We should re-parse, but not re-layer
-        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
-
-        _WriteSettings(resultPtr->_userSettingsString);
-    }
-
-    // If this throws, the app will catch it and use the default settings
-    resultPtr->_ValidateSettings();
 
     return resultPtr;
 }
