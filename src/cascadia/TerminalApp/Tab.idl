@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass Tab : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Title { get; };
+        String IconPath { get; };
+    }
+}

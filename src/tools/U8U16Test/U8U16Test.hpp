@@ -1,34 +1,27 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- UTF8OutPipeReader.hpp
-
-Abstract:
-- This reads a UTF-8 stream and gives back a buffer that contains complete code points only
-- Partial UTF-8 code points at the end of the buffer read are cached and prepended to the next chunk read
-
-Author(s):
-- Steffen Illhardt (german-one) 12-July-2019
---*/
+﻿// TEST TOOL U8U16Test
+// Performance tests for UTF-8 <--> UTF-16 conversions, related to PR #4093
+// NOTE The functions u8u16 and u16u8 contain own algorithms. Tests have shown that they perform
+// worse than the platform API functions.
+// Thus, these functions are *unrelated* to the til::u8u16 and til::u16u8 implementation.
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#include <windows.h>
-#include <wil\common.h>
-#include <wil\resource.h>
+#undef WIN32_LEAN_AND_MEAN
+#undef NOMINMAX
+#define NOMINMAX
+#include <string>
 #include <string_view>
+#include <array>
+#include <algorithm>
+#include <windows.h>
+#include <intsafe.h>
 
-class UTF8OutPipeReader final
+class u8state final
 {
 public:
-    UTF8OutPipeReader(HANDLE outPipe) noexcept;
-    [[nodiscard]] HRESULT Read(_Out_ std::string_view& strView);
+    u8state() noexcept;
+    [[nodiscard]] HRESULT operator()(const std::string_view in, std::string_view& out) noexcept;
+    void reset() noexcept;
 
 private:
     enum _Utf8BitMasks : BYTE
@@ -61,8 +54,32 @@ private:
         _Utf8BitMasks::IsLeadByteThreeByteSequence,
     };
 
-    HANDLE _outPipe; // non-owning reference to a pipe.
-    std::array<char, 4096> _buffer; // buffer for the chunk read.
+    std::string _buffer8;
     std::array<char, 4> _utf8Partials; // buffer for code units of a partial UTF-8 code point that have to be cached
-    DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
+    size_t _partialsLen{}; // number of cached UTF-8 code units
 };
+
+class u16state final
+{
+public:
+    u16state() noexcept;
+    [[nodiscard]] HRESULT operator()(const std::wstring_view in, std::wstring_view& out) noexcept;
+    void reset() noexcept;
+
+private:
+    std::wstring _buffer16;
+    wchar_t _highSurrogate{}; // UTF-16 high surrogate that has to be cached
+    size_t _cached{}; // 1 if a high surrogate has been cached, 0 otherwise
+};
+
+[[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u8u16_ptr(const std::string_view in, std::wstring& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u8u16(const std::string_view in, std::wstring& out, u8state& state, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u16u8_ptr(const std::wstring_view in, std::string& out, bool discardInvalids = false) noexcept;
+[[nodiscard]] HRESULT u16u8(const std::wstring_view in, std::string& out, u16state& state, bool discardInvalids = false) noexcept;
+
+std::wstring u8u16(const std::string_view in, bool discardInvalids = false);
+std::wstring u8u16(const std::string_view in, u8state& state, bool discardInvalids = false);
+std::string u16u8(const std::wstring_view in, bool discardInvalids = false);
+std::string u16u8(const std::wstring_view in, u16state& state, bool discardInvalids = false);

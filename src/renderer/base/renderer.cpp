@@ -47,6 +47,7 @@ Renderer::Renderer(IRenderData* pData,
 Renderer::~Renderer()
 {
     _destructing = true;
+    _pThread.reset();
 }
 
 // Routine Description:
@@ -67,6 +68,11 @@ Renderer::~Renderer()
         auto tries = maxRetriesForRenderEngine;
         while (tries > 0)
         {
+            if (_destructing)
+            {
+                return S_FALSE;
+            }
+
             const auto hr = _PaintFrameForEngine(pEngine);
             if (E_PENDING == hr)
             {
@@ -84,7 +90,8 @@ Renderer::~Renderer()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept
+try
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
@@ -148,11 +155,16 @@ Renderer::~Renderer()
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
+CATCH_RETURN()
 
 void Renderer::_NotifyPaintFrame()
 {
-    // The thread will provide throttling for us.
-    _pThread->NotifyPaint();
+    // If we're running in the unittests, we might not have a render thread.
+    if (_pThread)
+    {
+        // The thread will provide throttling for us.
+        _pThread->NotifyPaint();
+    }
 }
 
 // Routine Description:

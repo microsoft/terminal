@@ -185,12 +185,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     terminalSettings.FontSize(_fontSize);
     terminalSettings.Padding(_padding);
 
-    terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
+    terminalSettings.Commandline(_commandline);
 
     if (_startingDirectory)
     {
         const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
-        terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
+        terminalSettings.StartingDirectory(evaluatedDirectory);
     }
 
     // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
@@ -231,7 +231,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
 
     if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
 
     if (_backgroundImageOpacity)

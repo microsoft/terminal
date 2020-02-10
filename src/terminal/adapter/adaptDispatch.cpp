@@ -269,6 +269,30 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 }
 
 // Routine Description:
+// - HPR - Handles cursor forward movement by given distance
+// - Unlike CUF, this is not constrained by margin settings.
+// Arguments:
+// - distance - Distance to move
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
+{
+    return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), false);
+}
+
+// Routine Description:
+// - VPR - Handles cursor downward movement by given distance
+// - Unlike CUD, this is not constrained by margin settings.
+// Arguments:
+// - distance - Distance to move
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
+{
+    return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), false);
+}
+
+// Routine Description:
 // - CUP - Moves the cursor to an exact X/Column and Y/Row/Line coordinate position.
 // Arguments:
 // - line - Specific Y/Row/Line position to move to
@@ -909,9 +933,15 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
+    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        success = SetScreenMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
+        break;
+    case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+        success = SetAutoWrapMode(enable);
         break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
@@ -1056,6 +1086,18 @@ bool AdaptDispatch::DeleteLine(const size_t distance)
 }
 
 // Routine Description:
+// - DECSCNM - Sets the screen mode to either normal or reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetScreenMode(const bool reverseMode)
+{
+    return _pConApi->PrivateSetScreenMode(reverseMode);
+}
+
+// Routine Description:
 // - DECOM - Sets the cursor addressing origin mode to relative or absolute.
 //    When relative, line numbers start at top margin of the user-defined scrolling region.
 //    When absolute, line numbers are independent of the scrolling region.
@@ -1067,6 +1109,19 @@ bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
 {
     _isOriginModeRelative = relativeMode;
     return true;
+}
+
+// Routine Description:
+// - DECAWM - Sets the Auto Wrap Mode.
+//    This controls whether the cursor moves to the beginning of the next row
+//    when it reaches the end of the current row.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
+{
+    return _pConApi->PrivateSetAutoWrapMode(wrapAtEOL);
 }
 
 // Routine Description:
@@ -1352,7 +1407,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
 //  X Text cursor enable          DECTCEM     Cursor enabled.
 //    Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
-//    Autowrap                    DECAWM      No autowrap.
+//  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
 //        character set
 //    Keyboard action             KAM         Unlocked.
@@ -1381,6 +1436,10 @@ bool AdaptDispatch::SoftReset()
     if (success)
     {
         success = SetOriginMode(false); // Absolute cursor addressing.
+    }
+    if (success)
+    {
+        success = SetAutoWrapMode(true); // Wrap at end of line.
     }
     if (success)
     {
@@ -1449,6 +1508,12 @@ bool AdaptDispatch::HardReset()
     if (success)
     {
         success = _EraseScrollback();
+    }
+
+    // Set the DECSCNM screen mode back to normal.
+    if (success)
+    {
+        success = SetScreenMode(false);
     }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute

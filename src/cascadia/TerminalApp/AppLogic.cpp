@@ -279,6 +279,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(warningsTextBlock));
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
         _ShowDialog(nullptr, dialog);
     }
@@ -315,6 +316,7 @@ namespace winrt::TerminalApp::implementation
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(warningsTextBlock));
         dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(Controls::ContentDialogButton::Close);
 
         _ShowDialog(nullptr, dialog);
     }
@@ -716,6 +718,24 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
+    }
+
+    int32_t AppLogic::SetStartupCommandline(array_view<const winrt::hstring> actions)
+    {
+        if (_root)
+        {
+            return _root->SetStartupCommandline(actions);
+        }
+        return 0;
+    }
+
+    winrt::hstring AppLogic::EarlyExitMessage()
+    {
+        if (_root)
+        {
+            return _root->EarlyExitMessage();
+        }
+        return { L"" };
     }
 
     // -------------------------------- WinRT Events ---------------------------------

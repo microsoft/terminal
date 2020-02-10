@@ -660,6 +660,8 @@ public:
         _cursorPreviousLine{ false },
         _cursorHorizontalPositionAbsolute{ false },
         _verticalLinePositionAbsolute{ false },
+        _horizontalPositionRelative{ false },
+        _verticalPositionRelative{ false },
         _cursorPosition{ false },
         _cursorSave{ false },
         _cursorLoad{ false },
@@ -676,7 +678,9 @@ public:
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
+        _isScreenModeReversed{ false },
         _isOriginModeRelative{ false },
+        _isAutoWrapEnabled{ true },
         _warningBell{ false },
         _carriageReturn{ false },
         _lineFeed{ false },
@@ -748,6 +752,20 @@ public:
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
+        return true;
+    }
+
+    bool HorizontalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    {
+        _horizontalPositionRelative = true;
+        _cursorDistance = uiDistance;
+        return true;
+    }
+
+    bool VerticalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    {
+        _verticalPositionRelative = true;
+        _cursorDistance = uiDistance;
         return true;
     }
 
@@ -841,9 +859,15 @@ public:
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
+        case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+            fSuccess = SetScreenMode(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
+            break;
+        case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+            fSuccess = SetAutoWrapMode(fEnable);
             break;
         case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
@@ -904,9 +928,21 @@ public:
         return true;
     }
 
+    bool SetScreenMode(const bool reverseMode) noexcept override
+    {
+        _isScreenModeReversed = reverseMode;
+        return true;
+    }
+
     bool SetOriginMode(const bool fRelativeMode) noexcept override
     {
         _isOriginModeRelative = fRelativeMode;
+        return true;
+    }
+
+    bool SetAutoWrapMode(const bool wrapAtEOL) noexcept override
+    {
+        _isAutoWrapEnabled = wrapAtEOL;
         return true;
     }
 
@@ -965,6 +1001,8 @@ public:
     bool _cursorPreviousLine;
     bool _cursorHorizontalPositionAbsolute;
     bool _verticalLinePositionAbsolute;
+    bool _horizontalPositionRelative;
+    bool _verticalPositionRelative;
     bool _cursorPosition;
     bool _cursorSave;
     bool _cursorLoad;
@@ -981,7 +1019,9 @@ public:
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
+    bool _isScreenModeReversed;
     bool _isOriginModeRelative;
+    bool _isAutoWrapEnabled;
     bool _warningBell;
     bool _carriageReturn;
     bool _lineFeed;
@@ -1096,6 +1136,10 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, true, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
+        TestCsiCursorMovement(L'a', uiDistance, true, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'e', uiDistance, true, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, true, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'P', uiDistance, true, &pDispatch->_deleteCharacter, mach, *pDispatch);
@@ -1126,6 +1170,10 @@ class StateMachineExternalTest final
         TestCsiCursorMovement(L'`', uiDistance, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'd', uiDistance, false, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'a', uiDistance, false, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        pDispatch->ClearState();
+        TestCsiCursorMovement(L'e', uiDistance, false, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
         TestCsiCursorMovement(L'@', uiDistance, false, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
@@ -1264,6 +1312,25 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestScreenMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?5h");
+        VERIFY_IS_TRUE(pDispatch->_isScreenModeReversed);
+
+        pDispatch->ClearState();
+        pDispatch->_isScreenModeReversed = true;
+
+        mach.ProcessString(L"\x1b[?5l");
+        VERIFY_IS_FALSE(pDispatch->_isScreenModeReversed);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestOriginMode)
     {
         auto dispatch = std::make_unique<StatefulDispatch>();
@@ -1285,6 +1352,25 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_cursorPosition);
         VERIFY_ARE_EQUAL(pDispatch->_line, 1u);
         VERIFY_ARE_EQUAL(pDispatch->_column, 1u);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestAutoWrapMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?7l");
+        VERIFY_IS_FALSE(pDispatch->_isAutoWrapEnabled);
+
+        pDispatch->ClearState();
+        pDispatch->_isAutoWrapEnabled = false;
+
+        mach.ProcessString(L"\x1b[?7h");
+        VERIFY_IS_TRUE(pDispatch->_isAutoWrapEnabled);
 
         pDispatch->ClearState();
     }

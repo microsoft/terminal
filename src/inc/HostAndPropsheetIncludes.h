@@ -4,6 +4,10 @@
 
 // clang-format off
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN // If this is not defined, windows.h includes commdlg.h which defines FindText globally and conflicts with UIAutomation ITextRangeProvider.
+#endif
+
 // Define and then undefine WIN32_NO_STATUS because windows.h has no guard to prevent it from double defing certain statuses
 // when included with ntstatus.h
 #define WIN32_NO_STATUS

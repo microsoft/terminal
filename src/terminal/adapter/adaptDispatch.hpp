@@ -44,6 +44,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorPrevLine(const size_t distance) override; // CPL
         bool CursorHorizontalPositionAbsolute(const size_t column) override; // CHA
         bool VerticalLinePositionAbsolute(const size_t line) override; // VPA
+        bool HorizontalPositionRelative(const size_t distance) override; // HPR
+        bool VerticalPositionRelative(const size_t distance) override; // VPR
         bool CursorPosition(const size_t line, const size_t column) override; // CUP
         bool CursorSaveState() override; // DECSC
         bool CursorRestoreState() override; // DECRC
@@ -66,7 +68,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool enable) override; // ATT610
+        bool SetScreenMode(const bool reverseMode) override; //DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
+        bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
         bool SetTopBottomScrollingMargins(const size_t topMargin,
                                           const size_t bottomMargin) override; // DECSTBM
         bool WarningBell() override; // BEL

@@ -162,6 +162,20 @@ public:
         return _privateSetKeypadModeResult;
     }
 
+    bool PrivateSetScreenMode(const bool /*reverseMode*/) override
+    {
+        Log::Comment(L"PrivateSetScreenMode MOCK called...");
+
+        return true;
+    }
+
+    bool PrivateSetAutoWrapMode(const bool /*wrapAtEOL*/) override
+    {
+        Log::Comment(L"PrivateSetAutoWrapMode MOCK called...");
+
+        return false;
+    }
+
     bool PrivateShowCursor(const bool show) override
     {
         Log::Comment(L"PrivateShowCursor MOCK called...");

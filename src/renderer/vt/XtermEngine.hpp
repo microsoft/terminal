@@ -73,6 +73,7 @@ namespace Microsoft::Console::Render
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
+        friend class ConptyOutputTests;
 #endif
     };
 }

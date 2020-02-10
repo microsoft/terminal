@@ -85,7 +85,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  &dwNumBytes,
                                  nullptr,
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_LIMIT_BACKSPACE | WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP,
+                                 WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
 }
 
@@ -343,6 +343,32 @@ bool ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode
 bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 {
     return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
+}
+
+// Routine Description:
+// - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on our public API surface.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - true if successful (see DoSrvPrivateSetScreenMode). false otherwise.
+bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
+{
+    return NT_SUCCESS(DoSrvPrivateSetScreenMode(reverseMode));
+}
+
+// Routine Description:
+// - Connects the PrivateSetAutoWrapMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetAutoWrapMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - true if successful (see DoSrvPrivateSetAutoWrapMode). false otherwise.
+bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    return NT_SUCCESS(DoSrvPrivateSetAutoWrapMode(wrapAtEOL));
 }
 
 // Routine Description:

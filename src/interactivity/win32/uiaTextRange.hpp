@@ -45,9 +45,8 @@ namespace Microsoft::Console::Interactivity::Win32
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const Endpoint start,
-                                       const Endpoint end,
-                                       const bool degenerate,
+                                       _In_ const COORD start,
+                                       _In_ const COORD end,
                                        _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter);
 
         // range from a UiaPoint
@@ -59,10 +58,6 @@ namespace Microsoft::Console::Interactivity::Win32
         HRESULT RuntimeClassInitialize(const UiaTextRange& a);
 
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
-        IFACEMETHODIMP FindText(_In_ BSTR text,
-                                _In_ BOOL searchBackward,
-                                _In_ BOOL ignoreCase,
-                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
         void _ChangeViewport(const SMALL_RECT NewWindow) override;

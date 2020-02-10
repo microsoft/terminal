@@ -80,7 +80,7 @@ For an introduction to the various settings, see [Using Json Settings](UsingJson
 1. In PowerShell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
 
     Under pwsh you can also use
-`(Get-Process -Id $pid).Parent.Parent.ProcessName -eq 'WindowsTerminal'`
+`(Get-Process -Id $pid).Parent.ProcessName -eq 'WindowsTerminal'`
 
     (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
 
