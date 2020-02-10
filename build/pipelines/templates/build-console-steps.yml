@@ -64,21 +64,17 @@ steps:
 - task: PowerShell@2
   displayName: 'Run Unit Tests'
   inputs:
-    targetType: inline
-    script: |
-      $testdlls = Get-ChildItem -Path '.\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Filter '*unit.test*.dll'
-      .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls
-      if ($lastexitcode -Ne 0) { Exit $lastexitcode }
+    targetType: filePath
+    filePath: build\scripts\Run-Tests.ps1
+    arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PowerShell@2
   displayName: 'Run Feature Tests (x64 only)'
   inputs:
-    targetType: inline
-    script: |
-      $testdlls = Get-ChildItem -Path '.\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)' -Recurse -Filter '*feature.test*.dll'
-      .\bin\$(RationalizedBuildPlatform)\$(BuildConfiguration)\te.exe $testdlls
-      if ($lastexitcode -Ne 0) { Exit $lastexitcode }
+    targetType: filePath
+    filePath: build\scripts\Run-Tests.ps1
+    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
 
 - task: CopyFiles@2
