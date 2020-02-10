@@ -578,7 +578,14 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
-        return _EraseScrollback();
+        const bool eraseScrollbackResult = _EraseScrollback();
+        // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
+        // make the state machine propogate this ED sequence to the connected
+        // terminal application. While we're in conpty mode, we don't really
+        // have a scrollback, but the attached terminal might.
+        bool isPty = false;
+        _pConApi->IsConsolePty(isPty);
+        return eraseScrollbackResult && (!isPty);
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
@@ -1524,6 +1531,17 @@ bool AdaptDispatch::HardReset()
 
     // delete all current tab stops and reapply
     _pConApi->PrivateSetDefaultTabStops();
+
+    // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
+    // make the state machine propogate this RIS sequence to the connected
+    // terminal application. We've reset our state, but the connected terminal
+    // might need to do more.
+    bool isPty = false;
+    _pConApi->IsConsolePty(isPty);
+    if (isPty)
+    {
+        return false;
+    }
 
     return success;
 }

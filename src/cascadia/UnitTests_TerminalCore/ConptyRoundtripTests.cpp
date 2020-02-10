@@ -115,6 +115,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         _pVtRenderEngine->SetTestCallback(pfn);
 
+        // Configure the OutputStateMachine's _pfnFlushToTerminal
+        // Use OutputStateMachineEngine::SetTerminalConnection
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
 
@@ -148,6 +150,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+    TEST_METHOD(PassthroughClearScrollback);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -339,4 +342,78 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData(termTb);
+}
+
+void ConptyRoundtripTests::PassthroughClearScrollback()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write more lines of outout. We should use \r\n to move the cursor"));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    _logConpty = true;
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
+    {
+        Log::Comment(NoThrowString().Format(L"Writing line %d/%d", i, end));
+        expectedOutput.push_back("X");
+        if (i < hostView.BottomInclusive())
+        {
+            expectedOutput.push_back("\r\n");
+        }
+        else
+        {
+            // After we hit the bottom of the viewport, the newlines come in
+            // seperated for whatever reason.
+            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\n");
+            expectedOutput.push_back("");
+        }
+
+        hostSm.ProcessString(L"X\n");
+
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+    }
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Verify that we've printed height*2 lines of X's to the Terminal
+    const auto termFirstView = term->GetViewport();
+    for (short y = 0; y < 2 * termFirstView.Height(); y++)
+    {
+        TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
+    }
+
+    // Write a Erase Scrollback VT sequence to the host, it should come through to the Terminal
+    expectedOutput.push_back("\x1b[3J");
+    hostSm.ProcessString(L"\x1b[3J");
+
+    _checkConptyOutput = false;
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    const auto termSecondView = term->GetViewport();
+    VERIFY_ARE_EQUAL(0, termSecondView.Top());
+
+    // Verify the top of the Terminal veiwoprt contains the contents of the old viewport
+    for (short y = 0; y < termSecondView.BottomInclusive(); y++)
+    {
+        TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
+    }
+
+    // Verify below the new viewport (the old viewport) has been cleared out
+    for (short y = termSecondView.BottomInclusive(); y < termFirstView.BottomInclusive(); y++)
+    {
+        TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
+    }
 }
