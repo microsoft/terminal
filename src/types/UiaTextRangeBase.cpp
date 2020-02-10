@@ -181,7 +181,7 @@ const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) con
 // - val - the value that it will be set to
 // Return Value:
 // - true if range is degenerate, false otherwise.
-bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val)
+bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept
 {
     const auto bufferSize = _getBufferSize();
     switch (endpoint)
@@ -1062,7 +1062,7 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
                                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                    _In_ const bool preventBufferEnd)
+                                                    _In_ const bool preventBufferEnd) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1204,7 +1204,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
 void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
                                                _Out_ gsl::not_null<int*> const pAmountMoved,
-                                               _In_ const bool preventBufferEnd)
+                                               _In_ const bool preventBufferEnd) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1288,7 +1288,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
                                                    _In_ const TextPatternRangeEndpoint endpoint,
                                                    _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                   _In_ const bool preventBufferEnd)
+                                                   _In_ const bool preventBufferEnd) noexcept
 {
     *pAmountMoved = 0;
 
