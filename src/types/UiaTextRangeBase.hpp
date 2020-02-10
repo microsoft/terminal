@@ -159,6 +159,7 @@ namespace Microsoft::Console::Types
 
         virtual const COORD _getScreenFontSize() const;
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
+        const Viewport _getBufferSize() const noexcept;
 
         void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
 
