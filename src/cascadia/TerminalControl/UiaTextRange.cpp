@@ -106,9 +106,10 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_ChangeViewport(const SMALL_RECT /*NewWindow*/)
+void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
 {
-    // TODO GitHub #2361: Update viewport when calling UiaTextRangeBase::ScrollIntoView()
+    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    provider->ChangeViewport(NewWindow);
 }
 
 // Method Description:
