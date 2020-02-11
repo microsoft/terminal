@@ -8,6 +8,7 @@
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
+using namespace winrt::Windows::Graphics::Display;
 
 HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                                          _In_ IRawElementProviderSimple* pProvider,
@@ -121,21 +122,59 @@ void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 {
     auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
+    auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
+        auto result = base::ClampedNumeric<double>(clientPos);
+        result += padding;
+        result *= scaleFactor;
+        result += termControlPos;
+        return result;
+    };
+
     // update based on TermControl location (important for Panes)
     UiaRect boundingRect;
     THROW_IF_FAILED(provider->get_BoundingRectangle(&boundingRect));
-    clientPoint->x += gsl::narrow<LONG>(boundingRect.left);
-    clientPoint->y += gsl::narrow<LONG>(boundingRect.top);
 
     // update based on TermControl padding
-    auto padding = provider->GetPadding();
-    clientPoint->x += gsl::narrow<LONG>(padding.Left);
-    clientPoint->y += gsl::narrow<LONG>(padding.Top);
+    const auto padding = provider->GetPadding();
+
+    // Get scale factor for display
+    const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    clientPoint->x = includeOffsets(clientPoint->x, boundingRect.left, padding.Left, scaleFactor);
+    clientPoint->y = includeOffsets(clientPoint->y, boundingRect.top, padding.Top, scaleFactor);
 }
 
-void UiaTextRange::_TranslatePointFromScreen(LPPOINT /*screenPoint*/) const
+// Method Description:
+// - Transform coordinates relative to the screen to relative to the client
+// Arguments:
+// - screenPoint: coordinates relative to the screen where
+//                (0,0) is the top-left of the screen
+// Return Value:
+// - <none>
+void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
 {
-    // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
+    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
+
+    auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
+        auto result = base::ClampedNumeric<double>(screenPos);
+        result -= termControlPos;
+        result /= scaleFactor;
+        result -= padding;
+        return result;
+    };
+
+    // update based on TermControl location (important for Panes)
+    UiaRect boundingRect;
+    THROW_IF_FAILED(provider->get_BoundingRectangle(&boundingRect));
+
+    // update based on TermControl padding
+    const auto padding = provider->GetPadding();
+
+    // Get scale factor for display
+    const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+    screenPoint->x = includeOffsets(screenPoint->x, boundingRect.left, padding.Left, scaleFactor);
+    screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.Top, scaleFactor);
 }
 
 const COORD UiaTextRange::_getScreenFontSize() const
