@@ -169,14 +169,9 @@ WUI::Color ColorHelper::GetAccentColor(const WUI::Color& color)
 {
     auto accentColor = RgbToHsl(color);
 
-    if (accentColor.S == 0.f)
-    {
-        accentColor.H = 60 * std::roundf(accentColor.L * 6);
-    }
-
     if (accentColor.S < 0.15)
     {
-        accentColor.S = 0.5f;
+        accentColor.S = 0.15f;
     }
 
     constexpr auto shadeCount = 16;
@@ -189,7 +184,8 @@ WUI::Color ColorHelper::GetAccentColor(const WUI::Color& color)
         shades.insert(std::make_pair(contrast, shade));
     }
 
-    constexpr auto readability = 3.f;
+    // 3f is quite nice of the whole non-client area is painted
+    constexpr auto readability = 1.75f;
     for (auto shade : shades)
     {
         if (shade.first >= readability)
