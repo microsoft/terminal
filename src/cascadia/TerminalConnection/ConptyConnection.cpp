@@ -156,6 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const std::filesystem::path processName = wil::GetModuleFileNameExW<std::wstring>(_piClient.hProcess, nullptr);
         _clientName = processName.filename().wstring();
 
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
         TraceLoggingWrite(
             g_hTerminalConnectionProvider,
             "ConPtyConnected",
