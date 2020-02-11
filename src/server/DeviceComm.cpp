@@ -34,7 +34,7 @@ DeviceComm::~DeviceComm()
 // Routine Description:
 // - Retrieves a packet message from the driver representing the next action/activity that should be performed.
 // Arguments:
-// - pCompletion - Optional completion structure from the previous activity (can be used in lieu of calling CompleteIo seperately.)
+// - pCompletion - Optional completion structure from the previous activity (can be used in lieu of calling CompleteIo separately.)
 // - pMessage - A structure to hold the message data retrieved from the driver.
 // Return Value:
 // - HRESULT S_OK or suitable error.
@@ -59,7 +59,7 @@ DeviceComm::~DeviceComm()
 // Routine Description:
 // - Marks an action/activity as completed to the driver so control/responses can be returned to the client application.
 // Arguments:
-// - pCompletion - Completion structure from the previous activity (can be used in lieu of calling CompleteIo seperately.)
+// - pCompletion - Completion structure from the previous activity (can be used in lieu of calling CompleteIo separately.)
 // Return Value:
 // - HRESULT S_OK or suitable error.
 [[nodiscard]] HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const

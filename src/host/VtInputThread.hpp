@@ -15,7 +15,6 @@ Author(s):
 #pragma once
 
 #include "..\terminal\parser\StateMachine.hpp"
-#include "utf8ToWideCharParser.hpp"
 
 namespace Microsoft::Console
 {
@@ -29,7 +28,7 @@ namespace Microsoft::Console
         void DoReadInput(const bool throwOnFail);
 
     private:
-        [[nodiscard]] HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch);
+        [[nodiscard]] HRESULT _HandleRunInput(const std::string_view u8Str);
         DWORD _InputThread();
 
         wil::unique_hfile _hFile;
@@ -40,6 +39,6 @@ namespace Microsoft::Console
         HRESULT _exitResult;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
-        Utf8ToWideCharParser _utf8Parser;
+        til::u8state _u8State;
     };
 }

@@ -121,7 +121,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtSetColorTable);
 
-    TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
+    TEST_METHOD(ResizeTraditionalDoesNotDoubleFreeAttrRows);
 
     TEST_METHOD(ResizeCursorUnchanged);
 
@@ -455,7 +455,7 @@ void ScreenBufferTests::TestClearTabStops()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    Log::Comment(L"Clear non-existant tab stops.");
+    Log::Comment(L"Clear nonexistent tab stops.");
     {
         screenInfo.ClearTabStops();
         VERIFY_IS_TRUE(screenInfo._tabStops.empty());
@@ -478,7 +478,7 @@ void ScreenBufferTests::TestClearTabStop()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    Log::Comment(L"Try to clear nonexistant list.");
+    Log::Comment(L"Try to clear nonexistent list.");
     {
         screenInfo.ClearTabStop(0);
 
@@ -493,7 +493,7 @@ void ScreenBufferTests::TestClearTabStop()
         VERIFY_IS_TRUE(screenInfo._tabStops.empty());
     }
 
-    Log::Comment(L"Allocate 1 list item and clear non-existant.");
+    Log::Comment(L"Allocate 1 list item and clear nonexistent.");
     {
         screenInfo._tabStops.push_back(0);
 
@@ -548,7 +548,7 @@ void ScreenBufferTests::TestClearTabStop()
         screenInfo._tabStops.clear();
     }
 
-    Log::Comment(L"Allocate many (5) list items and clear non-existant item.");
+    Log::Comment(L"Allocate many (5) list items and clear nonexistent item.");
     {
         std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
         screenInfo._tabStops = inputData;
@@ -1584,7 +1584,7 @@ void ScreenBufferTests::VtSetColorTable()
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 }
 
-void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
+void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
 {
     // there is not much to verify here, this test passes if the console doesn't crash.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1599,7 +1599,7 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 
 void ScreenBufferTests::ResizeCursorUnchanged()
 {
-    // Created for MSFT:19863799. Make sure whewn we resize the buffer, the
+    // Created for MSFT:19863799. Make sure when we resize the buffer, the
     //      cursor looks the same as it did before.
 
     BEGIN_TEST_METHOD_PROPERTIES()
@@ -3506,7 +3506,7 @@ void ScreenBufferTests::InsertChars()
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
     VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L" ", expectedFillAttr),
-                   L"One space should be inserted with standard erase attributes at the cursor postion.");
+                   L"One space should be inserted with standard erase attributes at the cursor position.");
 
     Log::Comment(
         L"Test 3: Inserting at the exact beginning of the line. Same line structure. "
@@ -3665,7 +3665,7 @@ void ScreenBufferTests::DeleteChars()
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
     VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L" ", expectedFillAttr),
-                   L"One character should be erased with standard erase attributes at the cursor postion.");
+                   L"One character should be erased with standard erase attributes at the cursor position.");
 
     Log::Comment(
         L"Test 3: Deleting at the exact beginning of the line. Same line structure. "
@@ -5355,7 +5355,7 @@ void ScreenBufferTests::CursorUpDownOutsideMargins()
     // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
     // * writes out Y
 
-    // This test is different becasue the end location of the vertical movement
+    // This test is different because the end location of the vertical movement
     // should not be within the margins at all. We should not clamp this
     // movement to be within the margins.
 
@@ -5409,7 +5409,7 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
     // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
     // * writes out 4
 
-    // This test is different becasue the starting location for these scroll
+    // This test is different because the starting location for these scroll
     // operations is _exactly_ on the margins
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -5698,7 +5698,7 @@ void ScreenBufferTests::CursorSaveRestore()
     // Set margins and restore state.
     stateMachine.ProcessString(L"\x1b[20;25r");
     stateMachine.ProcessString(restoreCursor);
-    // Verfify Y position is clamped inside the top margin
+    // Verify Y position is clamped inside the top margin
     VERIFY_ARE_EQUAL(COORD({ 5, 19 }), cursor.GetPosition());
 
     Log::Comment(L"Clamp inside bottom margin.");
@@ -5711,7 +5711,7 @@ void ScreenBufferTests::CursorSaveRestore()
     // Set margins and restore state.
     stateMachine.ProcessString(L"\x1b[1;10r");
     stateMachine.ProcessString(restoreCursor);
-    // Verfify Y position is clamped inside the top margin
+    // Verify Y position is clamped inside the top margin
     VERIFY_ARE_EQUAL(COORD({ 5, 9 }), cursor.GetPosition());
 
     // Reset origin mode and margins.
@@ -5768,7 +5768,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     Log::Comment(L"Margins should not be set.");
     VERIFY_IS_FALSE(si.AreMarginsSet());
 
-    Log::Comment(L"Cursor position shold be moved to home.");
+    Log::Comment(L"Cursor position should be moved to home.");
     auto homePosition = COORD{ 0, viewportStart };
     VERIFY_ARE_EQUAL(homePosition, cursor.GetPosition());
 

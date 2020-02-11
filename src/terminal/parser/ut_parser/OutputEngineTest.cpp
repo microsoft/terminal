@@ -1837,7 +1837,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         ///////////////////////////////////////////////////////////////////////
-        Log::Comment(L"Test 3: Two sequences seperated by a non-sequence of characters");
+        Log::Comment(L"Test 3: Two sequences separated by a non-sequence of characters");
 
         mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J");
 

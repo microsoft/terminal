@@ -759,7 +759,7 @@ public:
         _viewport.Left = 30;
         _viewport.Right = 59;
 
-        // Call cursor positions seperately
+        // Call cursor positions separately
         PrepCursor(xact, yact);
 
         _cursorSize = 33;

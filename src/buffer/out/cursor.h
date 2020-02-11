@@ -89,7 +89,7 @@ public:
 private:
     TextBuffer& _parentBuffer;
 
-    //TODO: seperate the rendering and text placement
+    //TODO: separate the rendering and text placement
 
     // NOTE: If you are adding a property here, go add it to CopyProperties.
 

@@ -302,7 +302,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Arguments:
 // - wch - Character to dispatch.
 // - intermediates - Intermediate characters in the sequence
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
@@ -434,7 +434,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
@@ -487,7 +487,7 @@ bool InputStateMachineEngine::ActionIgnore() noexcept
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
-// - true if we handled the dsipatch.
+// - true if we handled the dispatch.
 bool InputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                 const size_t /*parameter*/,
                                                 const std::wstring_view /*string*/) noexcept
@@ -707,7 +707,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - rgusParams - the set of parameters to get the modifier state from.
 // - cParams - the number of elements in rgusParams
 // Return Value:
-// - the INPUT_RECORD comaptible modifier state.
+// - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
 {
     // Both Cursor keys and generic keys keep their modifiers in the same index.
@@ -762,7 +762,7 @@ DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const std::basic_string
 // Method Description:
 // - Determines if a set of parameters indicates a modified keypress
 // Arguments:
-// - paramCount - the nummber of parameters we've collected in this sequence
+// - paramCount - the number of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
 bool InputStateMachineEngine::_IsModified(const size_t paramCount) noexcept
@@ -798,8 +798,8 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 // Arguments:
 // - wch: the wchar_t representing whether the button was pressed or released
 // - parameters: the wchar_t to get the mapped vkey of. Represents the direction of the button (down vs up)
-// - buttonState: Recieves the button state for the record
-// - eventFlags: Recieves the special mouse events for the record
+// - buttonState: Receives the button state for the record
+// - eventFlags: Receives the special mouse events for the record
 // Return Value:
 // true iff we were able to synthesize buttonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
@@ -902,7 +902,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const wchar_t wch,
 // Arguments:
 // - parameters: an array of shorts where the first is the identifier of the key
 //      we're looking for.
-// - vkey: Recieves the vkey
+// - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_t> parameters, short& vkey) const
@@ -929,7 +929,7 @@ bool InputStateMachineEngine::_GetGenericVkey(const std::basic_string_view<size_
 // - Gets the Vkey from the CSI codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - vkey: Recieves the vkey
+// - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey) const
@@ -950,7 +950,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, short& vkey)
 // - Gets the Vkey from the SS3 codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
-// - pVkey: Recieves the vkey
+// - pVkey: Receives the vkey
 // Return Value:
 // true iff we found the key
 bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) const
@@ -971,8 +971,8 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, short& vkey) co
 // - Gets the Vkey and modifier state that's associated with a particular char.
 // Arguments:
 // - wch: the wchar_t to get the vkey and modifier state of.
-// - vkey: Recieves the vkey
-// - modifierState: Recieves the modifier state
+// - vkey: Receives the vkey
+// - modifierState: Receives the modifier state
 // Return Value:
 // <none>
 bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
@@ -1004,7 +1004,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 }
 
 // Method Description:
-// - Returns true if the engine should dispatch on the last charater of a string
+// - Returns true if the engine should dispatch on the last character of a string
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
@@ -1046,7 +1046,7 @@ bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
-//  This is kept seperate from the output version, as there may be
+//  This is kept separate from the output version, as there may be
 //      codes that are supported in one direction but not the other.
 // Arguments:
 // - parameters - Array of parameters collected
@@ -1082,7 +1082,7 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const std::basic_string
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
 // Arguments:
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // - line - Receives the Y/Line/Row position
 // - column - Receives the X/Column position
 // Return Value:

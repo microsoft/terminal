@@ -46,7 +46,7 @@ Example settings include
     ...
 ```
 
-These global properties can exist either in the root json object, or in and
+These global properties can exist either in the root json object, or in an
 object under a root property `"globals"`.
 
 ## Key Bindings
@@ -104,7 +104,7 @@ profile is identified by a GUID and contains a number of other fields.
 * Which color scheme to use (see Schemes below)
 * Font face and size
 * Various settings to control appearance. E.g. Opacity, icon, cursor appearance, display name etc.
-* Other behavioural settings. E.g. Close on exit, snap on input, .....
+* Other behavioral settings. E.g. Close on exit, snap on input, .....
 
 Example settings include
 
