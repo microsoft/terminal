@@ -35,7 +35,7 @@ VtIo::VtIo() :
 // Arguments:
 //  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
-//  pIoMode: recieves the VtIoMode that the string prepresents if it's a valid
+//  pIoMode: receives the VtIoMode that the string represents if it's a valid
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
@@ -374,7 +374,7 @@ void VtIo::CloseOutput()
 
 void VtIo::_ShutdownIfNeeded()
 {
-    // The callers should have both accquired the _shutdownLock at this point -
+    // The callers should have both acquired the _shutdownLock at this point -
     //      we dont want a race on who is actually responsible for closing it.
     if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
     {

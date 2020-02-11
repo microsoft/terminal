@@ -82,7 +82,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT WinTelnetEngine::ScrollFrame() noexcept
 {
     // win-telnet doesn't know anything about scroll vt sequences
-    // every frame, we're repainitng everything, always.
+    // every frame, we're repainting everything, always.
     return S_OK;
 }
 

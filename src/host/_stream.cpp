@@ -590,7 +590,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                      i < bufferSize;
                      i++, Tmp++)
                 {
-                    // see 18120085, these two need to be seperate if statements
+                    // see 18120085, these two need to be separate if statements
                     if (*Tmp == UNICODE_BACKSPACE)
                     {
                         //it is important we do nothing in the else case for
