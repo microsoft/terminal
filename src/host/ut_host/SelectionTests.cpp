@@ -331,7 +331,12 @@ class SelectionTests
         srOriginal.Left = srSelection.Left;
         srOriginal.Right = srSelection.Right;
 
-        srSelection = Selection::s_BisectSelection(sStringLength, coordTargetPoint, screenInfo, srSelection);
+        COORD startPos{ sTargetX, sTargetY };
+        COORD endPos{ base::ClampAdd(sTargetX, sLength), sTargetY };
+        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos);
+
+        VERIFY_ARE_EQUAL(1, selectionRects.size());
+        srSelection = selectionRects.at(1);
 
         VERIFY_ARE_EQUAL(srOriginal.Top, srSelection.Top);
         VERIFY_ARE_EQUAL(srOriginal.Bottom, srSelection.Bottom);

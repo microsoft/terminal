@@ -22,89 +22,22 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        // NOTE: (0,0) is the top-left of the screen
-        // the physically "higher" coordinate is closer to the top-left
-        // the physically "lower" coordinate is closer to the bottom-right
-        const auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
+        COORD startPos = { _selectionAnchor };
+        COORD endPos = { _endSelectionPosition };
 
-        SHORT selectionRectSize;
-        THROW_IF_FAILED(ShortSub(lowerCoord.Y, higherCoord.Y, &selectionRectSize));
-        THROW_IF_FAILED(ShortAdd(selectionRectSize, 1, &selectionRectSize));
+        // Add anchor offset here to update properly on new buffer output
+        startPos.Y = base::ClampAdd(startPos.Y, _selectionVerticalOffset);
+        endPos.Y = base::ClampAdd(endPos.Y, _selectionVerticalOffset);
 
-        std::vector<SMALL_RECT> selectionArea;
-        selectionArea.reserve(selectionRectSize);
-        for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
-        {
-            SMALL_RECT selectionRow = _GetSelectionRow(row, higherCoord, lowerCoord);
-            _ExpandSelectionRow(selectionRow);
-            selectionArea.emplace_back(selectionRow);
-        }
-        result.swap(selectionArea);
+        // clamp anchors to be within buffer bounds
+        const auto bufferSize = _buffer->GetSize();
+        bufferSize.Clamp(startPos);
+        bufferSize.Clamp(endPos);
+
+        return _buffer->GetTextRects(startPos, endPos, _boxSelection);
     }
     CATCH_LOG();
     return result;
-}
-
-// Method Description:
-// - convert selection anchors to proper coordinates for rendering
-// NOTE: (0,0) is top-left so vertical comparison is inverted
-// Arguments:
-// - None
-// Return Value:
-// - tuple.first: the physically "higher" coordinate (closer to the top-left)
-// - tuple.second: the physically "lower" coordinate (closer to the bottom-right)
-std::tuple<COORD, COORD> Terminal::_PreprocessSelectionCoords() const
-{
-    // create these new anchors for comparison and rendering
-    COORD selectionAnchorWithOffset{ _selectionAnchor };
-    COORD endSelectionPositionWithOffset{ _endSelectionPosition };
-
-    // Add anchor offset here to update properly on new buffer output
-    THROW_IF_FAILED(ShortAdd(selectionAnchorWithOffset.Y, _selectionVerticalOffset, &selectionAnchorWithOffset.Y));
-    THROW_IF_FAILED(ShortAdd(endSelectionPositionWithOffset.Y, _selectionVerticalOffset, &endSelectionPositionWithOffset.Y));
-
-    // clamp anchors to be within buffer bounds
-    const auto bufferSize = _buffer->GetSize();
-    bufferSize.Clamp(selectionAnchorWithOffset);
-    bufferSize.Clamp(endSelectionPositionWithOffset);
-
-    // NOTE: (0,0) is top-left so vertical comparison is inverted
-    // CompareInBounds returns whether A is to the left of (rv<0), equal to (rv==0), or to the right of (rv>0) B.
-    // Here, we want the "left"most coordinate to be the one "higher" on the screen. The other gets the dubious honor of
-    // being the "lower."
-    return bufferSize.CompareInBounds(selectionAnchorWithOffset, endSelectionPositionWithOffset) <= 0 ?
-               std::make_tuple(selectionAnchorWithOffset, endSelectionPositionWithOffset) :
-               std::make_tuple(endSelectionPositionWithOffset, selectionAnchorWithOffset);
-}
-
-// Method Description:
-// - constructs the selection row at the given row
-// NOTE: (0,0) is top-left so vertical comparison is inverted
-// Arguments:
-// - row: the buffer y-value under observation
-// - higherCoord: the physically "higher" coordinate (closer to the top-left)
-// - lowerCoord: the physically "lower" coordinate (closer to the bottom-right)
-// Return Value:
-// - the selection row needed for rendering
-SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const
-{
-    SMALL_RECT selectionRow;
-
-    selectionRow.Top = row;
-    selectionRow.Bottom = row;
-
-    if (_boxSelection || higherCoord.Y == lowerCoord.Y)
-    {
-        selectionRow.Left = std::min(higherCoord.X, lowerCoord.X);
-        selectionRow.Right = std::max(higherCoord.X, lowerCoord.X);
-    }
-    else
-    {
-        selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : _buffer->GetSize().Left();
-        selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
-    }
-
-    return selectionRow;
 }
 
 // Method Description:
@@ -119,86 +52,6 @@ const COORD Terminal::GetSelectionAnchor() const
     THROW_IF_FAILED(ShortAdd(selectionAnchorPos.Y, _selectionVerticalOffset, &selectionAnchorPos.Y));
 
     return selectionAnchorPos;
-}
-
-// Method Description:
-// - Expand the selection row according to selection mode and wide glyphs
-// - this is particularly useful for box selections (ALT + selection)
-// Arguments:
-// - selectionRow: the selection row to be expanded
-// Return Value:
-// - modifies selectionRow's Left and Right values to expand properly
-void Terminal::_ExpandSelectionRow(SMALL_RECT& selectionRow) const
-{
-    const auto row = selectionRow.Top;
-
-    // expand selection for Double/Triple Click
-    if (_multiClickSelectionMode == SelectionExpansionMode::Word)
-    {
-        selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
-        selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
-    }
-    else if (_multiClickSelectionMode == SelectionExpansionMode::Line)
-    {
-        selectionRow.Left = _buffer->GetSize().Left();
-        selectionRow.Right = _buffer->GetSize().RightInclusive();
-    }
-
-    // expand selection for Wide Glyphs
-    selectionRow.Left = _ExpandWideGlyphSelectionLeft(selectionRow.Left, row);
-    selectionRow.Right = _ExpandWideGlyphSelectionRight(selectionRow.Right, row);
-}
-
-// Method Description:
-// - Expands the selection left-wards to cover a wide glyph, if necessary
-// Arguments:
-// - position: the (x,y) coordinate on the visible viewport
-// Return Value:
-// - updated x position to encapsulate the wide glyph
-SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
-{
-    // don't change the value if at/outside the boundary
-    const auto bufferSize = _buffer->GetSize();
-    if (xPos <= bufferSize.Left() || xPos > bufferSize.RightInclusive())
-    {
-        return xPos;
-    }
-
-    COORD position{ xPos, yPos };
-    const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
-    if (attr.IsTrailing())
-    {
-        // move off by highlighting the lead half too.
-        // alters position.X
-        bufferSize.DecrementInBounds(position);
-    }
-    return position.X;
-}
-
-// Method Description:
-// - Expands the selection right-wards to cover a wide glyph, if necessary
-// Arguments:
-// - position: the (x,y) coordinate on the visible viewport
-// Return Value:
-// - updated x position to encapsulate the wide glyph
-SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
-{
-    // don't change the value if at/outside the boundary
-    const auto bufferSize = _buffer->GetSize();
-    if (xPos < bufferSize.Left() || xPos >= bufferSize.RightInclusive())
-    {
-        return xPos;
-    }
-
-    COORD position{ xPos, yPos };
-    const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
-    if (attr.IsLeading())
-    {
-        // move off by highlighting the trailing half too.
-        // alters position.X
-        bufferSize.IncrementInBounds(position);
-    }
-    return position.X;
 }
 
 // Method Description:
