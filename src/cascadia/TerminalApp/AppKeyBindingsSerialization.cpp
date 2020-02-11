@@ -341,7 +341,7 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
 
 // Function Description:
 // - Small helper to create a json value serialization of a single
-//   KeyBinding->Action maping. The created object is of schema:
+//   KeyBinding->Action maping.
 //   {
 //      keys:[String],
 //      command:String

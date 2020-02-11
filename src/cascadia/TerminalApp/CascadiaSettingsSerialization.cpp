@@ -153,17 +153,30 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         }
 
         // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-        const auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
+        auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
         if (!userKeybindings.empty())
         {
             // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
-            const auto str = userKeybindings.asString();
+
+            // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
+            // and avoid extraneous data.
+            auto akb = winrt::make_self<implementation::AppKeyBindings>();
+            akb->LayerJson(userKeybindings);
+            auto value = akb->ToJson();
+
+            // Reserialize the keybindings
+            Json::StreamWriterBuilder wbuilder;
+            // Use 4 spaces to indent instead of \t
+            wbuilder.settings_["indentation"] = "    ";
+            wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+
+            const auto keybindingsString = Json::writeString(wbuilder, value);
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                 "CustomKeybindings",
                 TraceLoggingDescription("Event emitted when custom keybindings are idenfitied on load/reload"),
-                TraceLoggingUtf8String(str.c_str(), "Keybindings", "Keybindings as JSON"),
+                TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
