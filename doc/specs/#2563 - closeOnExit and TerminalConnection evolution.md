@@ -28,7 +28,7 @@ Other terminal emulators like ConEmu have a similar feature.
         * This enum attempts to encompass all potential connection states, even those which do not make sense for a local terminal.
         * The wide variety of values will be useful to indicate state changes in a user interface.
         * `NotConnected`: All new connections will start out in this state
-        * `Connecting`: The connection has been initated, but has not yet completed connecting.
+        * `Connecting`: The connection has been initiated, but has not yet completed connecting.
         * `Connected`: The connection is active.
         * `Closing`: The connection is being closed (usually by request).
         * `Closed`: The connection has been closed, either by request or from the remote end terminating successfully.
@@ -48,7 +48,7 @@ Other terminal emulators like ConEmu have a similar feature.
 
 ### Application and Settings
 
-1. The existing `closeOnExit` profile key will be replaced with an enumerated string key supporting the following values (behaviours):
+1. The existing `closeOnExit` profile key will be replaced with an enumerated string key supporting the following values (behaviors):
     * `always` - a tab or pane hosting this profile will always be closed when the launched connection reaches a terminal state.
     * `graceful` - a tab or pane hosting this profile will be closed if and only if the launched connection reaches the `Closed` terminal state.
     * `never` - a tab or pane hosting this profile will not automatically close.

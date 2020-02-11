@@ -50,7 +50,7 @@ void BufferTests::TestCookedReadOnNonShareableScreenBuffer()
 
     Log::Comment(L"Create alternate buffer that is read/writeable but not shareable.");
     const auto otherBuffer = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
-                                                       0, // This says non-sharable
+                                                       0, // This says non-shareable
                                                        nullptr,
                                                        CONSOLE_TEXTMODE_BUFFER,
                                                        nullptr);

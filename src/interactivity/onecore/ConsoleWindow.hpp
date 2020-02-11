@@ -14,13 +14,13 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IConsoleWindow.hpp"
+#include "..\..\types\IConsoleWindow.hpp"
 
 #pragma hdrstop
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class ConsoleWindow sealed : public IConsoleWindow
+    class ConsoleWindow sealed : public Microsoft::Console::Types::IConsoleWindow
     {
     public:
         // Inherited via IConsoleWindow
@@ -57,6 +57,6 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
         [[nodiscard]] HRESULT UiaSetTextAreaFocus();
-        RECT GetWindowRect() const;
+        RECT GetWindowRect() const noexcept;
     };
 }

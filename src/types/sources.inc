@@ -42,6 +42,9 @@ SOURCES= \
     ..\Utf16Parser.cpp \
     ..\utils.cpp \
     ..\ThemeUtils.cpp \
+    ..\WindowUiaProviderBase.cpp \
+    ..\ScreenInfoUiaProviderBase.cpp \
+    ..\UiaTextRangeBase.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

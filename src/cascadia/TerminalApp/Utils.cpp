@@ -5,7 +5,7 @@
 #include "Utils.h"
 
 // Method Description:
-// - Contstructs a wstring from a given Json::Value object. Reads the object as
+// - Constructs a wstring from a given Json::Value object. Reads the object as
 //   a std::string using asString, then builds an hstring from that std::string,
 //   then converts that hstring into a std::wstring.
 // Arguments:

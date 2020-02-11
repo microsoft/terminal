@@ -256,7 +256,7 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. It will try to
 //      find the colors in the color table that are nearest to the input colors,
-//       and write those indicies to the pipe.
+//       and write those indices to the pipe.
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.

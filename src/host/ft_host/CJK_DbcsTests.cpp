@@ -461,7 +461,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
         }
 
         // This is the stated size of the buffer we're passing.
-        // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the number of CHAR_INFO charcters.
+        // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the number of CHAR_INFO characters.
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
         coordBufferSize.X = cChars;

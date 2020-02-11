@@ -19,7 +19,8 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
+#include <UIAutomationCore.h>
+
 #include "..\types\ScreenInfoUiaProviderBase.h"
 #include "..\types\UiaTextRangeBase.hpp"
 #include "uiaTextRange.hpp"

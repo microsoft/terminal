@@ -84,7 +84,7 @@ class UtilsTests
         COORD coordA;
         COORD coordB;
 
-        // Set the buffer size to be able to accomodate large values.
+        // Set the buffer size to be able to accommodate large values.
         COORD coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
