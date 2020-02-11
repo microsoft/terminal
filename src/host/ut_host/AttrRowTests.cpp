@@ -117,7 +117,7 @@ class AttrRowTests
         if (sChainLeftover > 0)
         {
             // If we had a leftover, then this chain is one longer than we expected (the default length)
-            // So use it as the index (because indicies start at 0)
+            // So use it as the index (because indices start at 0)
             TextAttributeRun* pRun = &pChain->_list[_sDefaultChainLength];
 
             pRun->SetAttributes(_DefaultChainAttr);
@@ -161,7 +161,7 @@ class AttrRowTests
     // - Packs an array of words representing attributes into the more compact storage form used by the row.
     // Arguments:
     // - rgAttrs - Array of words representing the attribute associated with each character position in the row.
-    // - cRowLength - Length of preceeding array.
+    // - cRowLength - Length of preceding array.
     // - outAttrRun - reference to unique_ptr that will contain packed attr run on success.
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
@@ -413,7 +413,7 @@ class AttrRowTests
         {
             ch1 = rgch1Options[iCh1Option];
 
-            UINT const uiMaxCh1Length = uiTestRunLength - 1; // leave at least 1 space for the second piece of the inser trun.
+            UINT const uiMaxCh1Length = uiTestRunLength - 1; // leave at least 1 space for the second piece of the insert run.
             for (UINT iCh1Length = 1; iCh1Length <= uiMaxCh1Length; iCh1Length++)
             {
                 uiChar1Length = iCh1Length;

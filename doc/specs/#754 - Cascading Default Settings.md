@@ -520,7 +520,7 @@ would `openDefaultSettings`, and we could bind that to
 ### How does this work with the settings UI?
 
 If we only have one version of the settings models (Globals, Profiles,
-ColorShemes, Keybindings) at runtime, and the user changes one of the settings
+ColorSchemes, Keybindings) at runtime, and the user changes one of the settings
 with the settings UI, how can we tell that settings changed?
 
 Fortunately, this should be handled cleanly by the algorithm proposed above, in
@@ -678,7 +678,7 @@ generators _must_ be enabled to use the dynamic profiles.
   a WinRT interface that extensions could implement, and be triggered just like
   other dynamic profile generators.
 * **Multiple settings files** - This could enable us to place color schemes into
-  a seperate file (like `colorschemes.json`) and put keybindings into their own
+  a separate file (like `colorschemes.json`) and put keybindings into their own
   file as well, and reduce the number of settings in the user's `profiles.json`.
   It's unclear if this is something that we need quite yet, but the same
   layering functionality that enables this scenario could also enable more than

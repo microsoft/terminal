@@ -3,7 +3,7 @@
 
   <!-- This file is used as the Appxmanifest for tests that _need_ to run in a
   packaged environment. It will be copied to the test's OutDir as part of the
-  PostBuid step. It's highly similar to the "SUA" manifest that
+  PostBuild step. It's highly similar to the "SUA" manifest that
   TAEF ships with, with the following modifications:
 
   1. All of our winrt types are included in this manifest, including types from
