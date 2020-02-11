@@ -126,6 +126,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
+            unsigned int CodePage = 0;
         };
         struct Offset
         {
@@ -168,6 +169,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
+        unsigned int _initialCodePage = 0;
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer

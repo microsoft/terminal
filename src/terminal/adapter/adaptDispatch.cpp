@@ -341,6 +341,7 @@ bool AdaptDispatch::CursorSaveState()
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
+        _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
     }
 
     return success;
@@ -381,6 +382,12 @@ bool AdaptDispatch::CursorRestoreState()
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
+
+    // Restore the code page if it was previously saved.
+    if (savedCursorState.CodePage != 0)
+    {
+        success = _pConApi->SetConsoleOutputCP(savedCursorState.CodePage);
+    }
 
     return success;
 }
@@ -1606,6 +1613,13 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 {
+    // If we haven't previously saved the initial code page, do so now.
+    // This will be used to restore the code page in response to a reset.
+    if (_initialCodePage == 0)
+    {
+        _pConApi->GetConsoleOutputCP(_initialCodePage);
+    }
+
     bool success = false;
     switch (codingSystem)
     {
@@ -1754,6 +1768,11 @@ bool AdaptDispatch::SoftReset()
     if (success)
     {
         _termOutput = {}; // Reset all character set designations.
+        if (_initialCodePage != 0)
+        {
+            // Restore initial code page if previously changed by a DOCS sequence.
+            success = _pConApi->SetConsoleOutputCP(_initialCodePage);
+        }
     }
     if (success)
     {
