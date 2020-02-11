@@ -665,7 +665,7 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
         // when the window viewport is updated.
         // ---
         // - The specific scenario that this impacts is ConEmu (wrapping our console) to use Bash in WSL.
-        // - The reason this is a problem is because ConEmu has to programatically manipulate our buffer and window size
+        // - The reason this is a problem is because ConEmu has to programmatically manipulate our buffer and window size
         //   one after another to get our dimensions to change.
         // - The WSL layer watches our Buffer change message to know when to get the new Window size and send it into the
         //   WSL environment. This isn't technically correct to use a Buffer message to know when Window changes, but

@@ -218,7 +218,7 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // Routine Description:
 // - Called when the cursor has moved in the buffer. Allows for RenderEngines to
 //      differentiate between cursor movements and other invalidates.
-//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT
+//   Visual Renderers (ex GDI) should invalidate the position, while the VT
 //      engine ignores this. See MSFT:14711161.
 // Arguments:
 // - pcoord: The buffer-space position of the cursor.
@@ -549,7 +549,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // Routine Description:
 // - Paint helper to copy the primary console buffer text onto the screen.
 // - This portion primarily handles figuring the current viewport, comparing it/trimming it versus the invalid portion of the frame, and queuing up, row by row, which pieces of text need to be further processed.
-// - See also: Helper functions that seperate out each complexity of text rendering.
+// - See also: Helper functions that separate out each complexity of text rendering.
 // Arguments:
 // - <none>
 // Return Value:
@@ -682,7 +682,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
-// - a GridLines containing all the gridline info from the TextAtribute
+// - a GridLines containing all the gridline info from the TextAttribute
 IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.

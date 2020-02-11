@@ -322,7 +322,7 @@ void InputTests::TestReadConsolePasswordScenario()
     // Scenario inspired by net use's password capture code.
     HANDLE const hIn = GetStdHandle(STD_INPUT_HANDLE);
 
-    // 1. Set up our mode to be raw input (mimicing method used by "net use")
+    // 1. Set up our mode to be raw input (mimicking method used by "net use")
     DWORD mode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT;
     GetConsoleMode(hIn, &mode);
 
@@ -347,7 +347,7 @@ void InputTests::TestReadConsolePasswordScenario()
 
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0));
 
-    // 3. Set up our read loop (mimicing password capture methodology from "net use" command.)
+    // 3. Set up our read loop (mimicking password capture methodology from "net use" command.)
     size_t const buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
     wistd::unique_ptr<wchar_t[]> buf = wil::make_unique_nothrow<wchar_t[]>(buflen);
     size_t len = 0;

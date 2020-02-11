@@ -113,7 +113,7 @@ using namespace Microsoft::Console::Types;
         rc.right = rc.left + pcs->cx;
         rc.bottom = rc.top + pcs->cy;
 
-        // Find nearest montitor.
+        // Find nearest monitor.
         HMONITOR hmon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
 
         // This API guarantees that dpix and dpiy will be equal, but neither is an optional parameter so give two UINTs.
@@ -299,7 +299,7 @@ using namespace Microsoft::Console::Types;
         // check if we're minimized (iconic) and set our internal state flags accordingly.
         // http://msdn.microsoft.com/en-us/library/windows/desktop/dd162483(v=vs.85).aspx
         // NOTE: We will not get called to paint ourselves when minimized because we set an icon when registering the window class.
-        //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
+        //       That means this CONSOLE_IS_ICONIC is unnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
             WI_SetFlag(gci.Flags, CONSOLE_IS_ICONIC);

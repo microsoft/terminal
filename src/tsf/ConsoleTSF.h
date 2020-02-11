@@ -119,9 +119,9 @@ public:
     STDMETHODIMP OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid, REFGUID catid, REFGUID guidProfile, HKL hkl, DWORD dwFlags);
 
     // ITfUIElementSink methods
-    STDMETHODIMP BeginUIElement(DWORD dwUIELementId, BOOL* pbShow);
-    STDMETHODIMP UpdateUIElement(DWORD dwUIELementId);
-    STDMETHODIMP EndUIElement(DWORD dwUIELementId);
+    STDMETHODIMP BeginUIElement(DWORD dwUIElementId, BOOL* pbShow);
+    STDMETHODIMP UpdateUIElement(DWORD dwUIElementId);
+    STDMETHODIMP EndUIElement(DWORD dwUIElementId);
 
     // ITfCleanupContextSink methods
     STDMETHODIMP OnCleanupContext(TfEditCookie ecWrite, ITfContext* pic);
