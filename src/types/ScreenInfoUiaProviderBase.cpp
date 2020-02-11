@@ -304,54 +304,40 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     });
 
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
-    *ppRetVal = nullptr;
-    WRL::ComPtr<UiaTextRangeBase> range;
-
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
-    const auto viewport = bufferSize.ConvertToOrigin(_getViewport());
 
     // make a safe array
-    const auto rowCount = viewport.Height();
-    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(rowCount));
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
     if (*ppRetVal == nullptr)
     {
         return E_OUTOFMEMORY;
     }
 
-    // stuff each visible line in the safearray
-    for (short i = 0; i < rowCount; ++i)
+    WRL::ComPtr<UiaTextRangeBase> range;
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto viewport = bufferSize.ConvertToOrigin(_getViewport());
+
+    const COORD start{ viewport.Left(), viewport.Top() };
+    const COORD end{ viewport.Left(), viewport.BottomExclusive() };
+
+    auto hr = CreateTextRange(this, start, end, _wordDelimiters, &range);
+    if (FAILED(hr))
     {
-        // end is exclusive so add 1
-        const COORD start{ viewport.Left(), viewport.Top() + i };
-        const COORD end{ start.X, start.Y + 1 };
-
-        HRESULT hr = S_OK;
-        hr = CreateTextRange(this,
-                             start,
-                             end,
-                             _wordDelimiters,
-                             &range);
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-
-        LONG currentIndex = gsl::narrow<LONG>(i);
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
+        SafeArrayDestroy(*ppRetVal);
+        *ppRetVal = nullptr;
+        return hr;
     }
 
-    // TODO GH #4507: This returns the wrong result.
-    //   No point in putting effort to trace something
-    //   that's wrong right now, that will be fixed soon.
-    //UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
+    UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
+
+    LONG currentIndex = 0;
+    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
+    if (FAILED(hr))
+    {
+        SafeArrayDestroy(*ppRetVal);
+        *ppRetVal = nullptr;
+        return hr;
+    }
+
     return S_OK;
 }
 
