@@ -169,6 +169,13 @@ public:
         return true;
     }
 
+    bool PrivateSetAutoWrapMode(const bool /*wrapAtEOL*/) override
+    {
+        Log::Comment(L"PrivateSetAutoWrapMode MOCK called...");
+
+        return false;
+    }
+
     bool PrivateShowCursor(const bool show) override
     {
         Log::Comment(L"PrivateShowCursor MOCK called...");
@@ -752,7 +759,7 @@ public:
         _viewport.Left = 30;
         _viewport.Right = 59;
 
-        // Call cursor positions seperately
+        // Call cursor positions separately
         PrepCursor(xact, yact);
 
         _cursorSize = 33;

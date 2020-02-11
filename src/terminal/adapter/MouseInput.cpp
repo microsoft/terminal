@@ -234,7 +234,7 @@ static constexpr COORD _winToVTCoord(const COORD coordWinCoordinate) noexcept
 
 // Routine Description:
 // - Encodes the given value as a default (or utf-8) encoding value.
-//     32 is added so that the value 0 can be emitted as the printable characher ' '.
+//     32 is added so that the value 0 can be emitted as the printable character ' '.
 // Parameters:
 // - sCoordinateValue - the value to encode.
 // Return value:
@@ -439,7 +439,7 @@ std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
 //     see http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Extended-coordinates
 // Parameters:
 // - position - The windows coordinates (top,left = 0,0) of the mouse event
-// - button - the message to decode. WM_MOUSERMOVE is used for mouse hovers with no buttons pressed.
+// - button - the message to decode. WM_MOUSEMOVE is used for mouse hovers with no buttons pressed.
 // - isDown - true iff a mouse button was pressed.
 // - isHover - true if the sequence is generated in response to a mouse hover
 // - modifierKeyState - the modifier keys pressed with this button
@@ -628,7 +628,7 @@ void MouseInput::UseMainScreenBuffer() noexcept
 // Routine Description:
 // - Returns true if we should translate the input event (button, sScrollDelta)
 //      into an alternate scroll event instead of the default scroll event,
-//      dependiong on if alternate scroll mode is enabled and we're in the alternate buffer.
+//      depending on if alternate scroll mode is enabled and we're in the alternate buffer.
 // Parameters:
 // - button: The mouse event code of the input event
 // - delta: The scroll wheel delta of the input event
@@ -642,7 +642,7 @@ bool MouseInput::_ShouldSendAlternateScroll(const unsigned int button, const sho
 }
 
 // Routine Description:
-// - Sends a sequence to the input coresponding to cursor up / down depending on the sScrollDelta.
+// - Sends a sequence to the input corresponding to cursor up / down depending on the sScrollDelta.
 // Parameters:
 // - delta: The scroll wheel delta of the input event
 // Return value:

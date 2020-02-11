@@ -245,7 +245,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     // pressed, manually get the character that's being typed, and put it in the
     // KeyEvent.
     // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximimize, size, move, close
+    // the system menu for restore, min/maximize, size, move, close
     wchar_t ch = UNICODE_NULL;
     if (states.IsAltPressed() && vkey != VK_SPACE)
     {
@@ -345,7 +345,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a read lock on the terminal.
+// - Acquire a read lock on the terminal.
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
@@ -355,7 +355,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a write lock on the terminal.
+// - Acquire a write lock on the terminal.
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.

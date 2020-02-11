@@ -30,6 +30,7 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo, const bool
 [[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode);
+[[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL);
 
 void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept;
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);

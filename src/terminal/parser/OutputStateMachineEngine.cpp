@@ -286,7 +286,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Arguments:
 // - wch - Character to dispatch.
 // - intermediates - Intermediate characters in the sequence
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
@@ -712,7 +712,7 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
-// - true if we handled the dsipatch.
+// - true if we handled the dispatch.
 bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const size_t parameter,
                                                  const std::wstring_view string)
@@ -1291,7 +1291,7 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
 }
 
 // Routine Description:
-// - Returns true if the engine should dispatch on the last charater of a string
+// - Returns true if the engine should dispatch on the last character of a string
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
@@ -1333,7 +1333,7 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 // - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
-// - value - recieves the int value of the char
+// - value - receives the int value of the char
 // Return Value:
 // - true iff the character is a hex character.
 bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
@@ -1396,7 +1396,7 @@ static constexpr bool _isHexNumber(const wchar_t wch) noexcept
 //          where <color> is one or two hex digits, upper or lower case.
 // Arguments:
 // - string - The string containing the color spec string to parse.
-// - rgb - recieves the color that we parsed
+// - rgb - receives the color that we parsed
 // Return Value:
 // - True if a color was successfully parsed
 bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
@@ -1504,8 +1504,8 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
 //          where <color> is two hex digits
 // Arguments:
 // - string - the Osc String to parse
-// - tableIndex - recieves the table index
-// - rgb - recieves the color that we parsed in the format: 0x00BBGGRR
+// - tableIndex - receives the table index
+// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
@@ -1579,7 +1579,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 //          where <color> is two hex digits
 // Arguments:
 // - string - the Osc String to parse
-// - rgb - recieves the color that we parsed in the format: 0x00BBGGRR
+// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
@@ -1603,7 +1603,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
-//  This is kept seperate from the input version, as there may be
+//  This is kept separate from the input version, as there may be
 //      codes that are supported in one direction but not the other.
 // Arguments:
 // - parameters - The parameters to parse

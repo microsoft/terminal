@@ -250,7 +250,7 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
         actualDataStart += Utf8Bom.size();
     }
 
-    std::string errs; // This string will recieve any error text from failing to parse.
+    std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
     // Parse the json data into either our defaults or user settings. We'll keep
@@ -722,7 +722,7 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
             // that two instances of the app will try and move the settings file
             // simultaneously. We don't know what might happen in that scenario,
             // but we're also not sure how to safely lock the file to prevent
-            // that from ocurring.
+            // that from occurring.
             THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
                                           pathToSettingsFile.c_str()));
 

@@ -35,7 +35,7 @@ Selection& Selection::Instance()
 }
 
 // Routine Description:
-// - Detemines the line-by-line selection rectangles based on global selection state.
+// - Determines the line-by-line selection rectangles based on global selection state.
 // Arguments:
 // - selectionRect - The selection rectangle outlining the region to be selected
 // - selectionAnchor - The corner of the selection rectangle that selection started from
@@ -140,7 +140,7 @@ std::vector<SMALL_RECT> Selection::s_GetSelectionRects(const SMALL_RECT& selecti
 }
 
 // Routine Description:
-// - Detemines the line-by-line selection rectangles based on global selection state.
+// - Determines the line-by-line selection rectangles based on global selection state.
 // Arguments:
 // - <none> - Uses internal state to know what area is selected already.
 // Return Value:

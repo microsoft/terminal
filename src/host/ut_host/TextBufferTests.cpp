@@ -1543,7 +1543,7 @@ void TextBufferTests::TestBackspaceStrings()
 
 void TextBufferTests::TestBackspaceStringsAPI()
 {
-    // Pretty much the same as the above test, but explicitly DOESNT use the
+    // Pretty much the same as the above test, but explicitly DOESN'T use the
     //  state machine.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -1593,7 +1593,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     seqCb = 2;
 
     Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as seperate strings."));
+        L"Using DoWriteConsole, write \\b \\b as separate strings."));
 
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
@@ -1604,7 +1604,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
     Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as seperate strings."));
+        L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
         wchar_t* str = L"a";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
@@ -1835,7 +1835,7 @@ void TextBufferTests::ResizeTraditional()
             }
             else
             {
-                Log::Comment(L"This position is below our ouriginal write area. It should have filled blank lines (space lines) with the default fill color.");
+                Log::Comment(L"This position is below our original write area. It should have filled blank lines (space lines) with the default fill color.");
                 // Otherwise, we use the default.
                 VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
                 VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());
@@ -1862,13 +1862,13 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
-    const auto bbutton = L"\xD83C\xDD71";
-    position = bbutton;
+    const auto bButton = L"\xD83C\xDD71";
+    position = bButton;
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(bbutton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
     const SHORT delta = _buffer->GetFirstRowIndex() - pos.Y;
@@ -1884,7 +1884,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const auto shouldBeEmojiText = *_buffer->GetTextDataAt(newPos);
 
     VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
-    VERIFY_ARE_EQUAL(String(bbutton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
 }
 
 // This tests that when buffer storage rows are rotated around during a scroll buffer operation,
