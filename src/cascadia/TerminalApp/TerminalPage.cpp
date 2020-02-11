@@ -837,25 +837,6 @@ namespace winrt::TerminalApp::implementation
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-
-        if (auto indexOpt{ _GetFocusedTabIndex() })
-        {
-            auto focusedTabIndex = *indexOpt;
-            if (tabIndex == focusedTabIndex)
-            {
-                uint32_t tabCount = _tabs.Size();
-                if (focusedTabIndex >= tabCount)
-                {
-                    focusedTabIndex = tabCount - 1;
-                }
-                else if (focusedTabIndex < 0)
-                {
-                    focusedTabIndex = 0;
-                }
-
-                _SelectTab(focusedTabIndex);
-            }
-        }
     }
 
     // Method Description:
