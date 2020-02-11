@@ -39,7 +39,7 @@ static const WORD leftShiftScanCode = 0x2A;
 
     // Ask how much space we will need.
     int const iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
-    THROW_LAST_ERROR_IF(0 == iTarget);
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == iTarget);
 
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
@@ -49,7 +49,7 @@ static const WORD leftShiftScanCode = 0x2A;
     out.resize(cchNeeded);
 
     // Attempt conversion for real.
-    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
 
     // Return as a string
     return out;
@@ -343,7 +343,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 //                      is not reliable for calculating half/full width. Must use current
 //                      display font data (cached) instead.
 // May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
-// Jan-16-2018 migrie   Seperated core lookup from asking the renderer the width
+// Jan-16-2018 migrie   Separated core lookup from asking the renderer the width
 // May-01-2019 MiNiksa  Forced lookup-via-renderer for retroactively recategorized emoji
 //                      that used to be narrow but now might be wide. (approx x2194-x2b55, not inclusive)
 //                      Also forced block characters segment (x2580-x259F) to narrow
@@ -597,7 +597,7 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
              (0xffd2 <= wch && wch <= 0xffd7) ||
              (0xffda <= wch && wch <= 0xffdc))
     {
-        /* Halfwidth Hangule variants */
+        /* Halfwidth Hangul variants */
         return CodepointWidth::Narrow;
     }
     else if (0xffe0 <= wch && wch <= 0xffe6)

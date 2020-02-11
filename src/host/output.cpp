@@ -506,7 +506,7 @@ void CloseConsoleProcessState()
     // Jiggle the handle: (see MSFT:19419231)
     // When we call this function, we'll only actually close the console once
     //      we're totally unlocked. If our caller has the console locked, great,
-    //      we'll displatch the ctrl event once they unlock. However, if they're
+    //      we'll dispatch the ctrl event once they unlock. However, if they're
     //      not running under lock (eg PtySignalInputThread::_GetData), then the
     //      ctrl event will never actually get dispatched.
     // So, lock and unlock here, to make sure the ctrl event gets handled.

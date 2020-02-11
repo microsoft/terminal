@@ -115,7 +115,7 @@ DxEngine::~DxEngine()
 }
 
 // Routine Description:
-// - Sets this engine to disabled to prevent painting and presentation from occuring
+// - Sets this engine to disabled to prevent painting and presentation from occurring
 // Arguments:
 // - <none>
 // Return Value:

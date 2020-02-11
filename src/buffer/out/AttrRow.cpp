@@ -283,7 +283,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         else if (iStart > 0 && iStart == iEnd)
         {
             // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
-            // where we are curretly at.
+            // where we are currently at.
             size_t lowerBound = 0;
             size_t upperBound = 0;
             for (size_t i = 0; i < _list.size(); i++)
@@ -503,7 +503,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
             else
             {
                 // If the color didn't match, then we just need to copy the piece we skipped and adjust
-                // its length for the discrepency in columns not yet covered by the final/new run.
+                // its length for the discrepancy in columns not yet covered by the final/new run.
 
                 // Move forward to a blank spot in the new run
                 pNewRunPos++;
@@ -565,7 +565,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 }
 
 // Routine Description:
-// - packs a vector of TextAttribute into a vector of TextAttrbuteRun
+// - packs a vector of TextAttribute into a vector of TextAttributeRun
 // Arguments:
 // - attrs - text attributes to pack
 // Return Value:

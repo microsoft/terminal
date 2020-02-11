@@ -3,7 +3,7 @@
 
 namespace Microsoft.Terminal.TerminalControl
 {
-    delegate void SearchHandler(String query, Boolean goFarward, Boolean isCaseSensitive);
+    delegate void SearchHandler(String query, Boolean goForward, Boolean isCaseSensitive);
 
     [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
     {

@@ -9,7 +9,7 @@
 // Routine Description:
 // - checks if flag is present in flags
 // Arguments:
-// - flags - bit battern to check for flag
+// - flags - bit pattern to check for flag
 // - flag - bit pattern to search for
 // Return Value:
 // - true if flag is present in flags

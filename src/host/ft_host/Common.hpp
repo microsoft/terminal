@@ -25,6 +25,7 @@ public:
     static bool TestBufferSetup();
     static bool TestBufferCleanup();
     static HANDLE _hConsole;
+    static bool _isV2;
 };
 
 class CommonV1V2Helper

@@ -373,7 +373,7 @@ class CommandLineTests
         // save current position for later checking
         const auto endCursorPos = cookedReadData._currentPosition;
         const auto endBufferPos = cookedReadData._bufPtr;
-        // NOTE: need to initialize the actualy cursor and keep it up to date with the changes here. remove
+        // NOTE: need to initialize the actually cursor and keep it up to date with the changes here. remove
         once functions are fixed
         // try to move right, nothing should happen
         short expectedPos = gsl::narrow<short>(endCursorPos);

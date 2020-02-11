@@ -936,7 +936,7 @@ CloseOnExitMode Profile::GetCloseOnExitMode() const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - true iff the profile chould be hidden from the list of profiles.
+// - true iff the profile should be hidden from the list of profiles.
 bool Profile::IsHidden() const noexcept
 {
     return _hidden;
@@ -1309,7 +1309,7 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
 {
     // If we have a _source, then we can from a dynamic profile generator. Use
-    // our source to build the naespace guid, instead of using the default GUID.
+    // our source to build the namespace guid, instead of using the default GUID.
 
     const GUID namespaceGuid = source.has_value() ?
                                    Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.value()))) :

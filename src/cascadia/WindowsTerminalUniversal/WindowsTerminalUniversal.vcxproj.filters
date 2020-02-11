@@ -23,8 +23,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\en-US\Resources.resw">
-      <Filter>Resources\en-US</Filter>
+    <PRIResource Include="Resources.devicefamily-core.resw">
+      <Filter>Resources</Filter>
+    </PRIResource>
+    <PRIResource Include="Resources.language-en.resw">
+      <Filter>Resources</Filter>
+    </PRIResource>
+    <PRIResource Include="Resources.resw">
+      <Filter>Resources</Filter>
     </PRIResource>
   </ItemGroup>
   <ItemGroup>
