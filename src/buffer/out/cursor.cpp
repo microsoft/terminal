@@ -282,7 +282,7 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
     _fDeferCursorRedraw = OtherCursor._fDeferCursorRedraw;
     _fHaveDeferredCursorRedraw = OtherCursor._fHaveDeferredCursorRedraw;
 
-    // Size will be handled seperately in the resize operation.
+    // Size will be handled separately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
     _cursorType = OtherCursor._cursorType;
     _color = OtherCursor._color;

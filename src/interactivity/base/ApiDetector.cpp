@@ -14,7 +14,7 @@ using namespace Microsoft::Console::Interactivity;
 // API Sets
 #define EXT_API_SET_NTUSER_WINDOW L"ext-ms-win-ntuser-window-l1-1-0"
 
-// This may not be defined depending on the SDK version being targetted.
+// This may not be defined depending on the SDK version being targeted.
 #ifndef LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER
 #define LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER 0x00004000
 #endif

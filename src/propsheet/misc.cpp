@@ -652,7 +652,7 @@ int
     }
 
     /*
-     * reject TT fonts for whoom family is not modern, that is do not use
+     * reject TT fonts for whom family is not modern, that is do not use
      * FF_DONTCARE    // may be surprised unpleasantly
      * FF_DECORATIVE  // likely to be symbol fonts
      * FF_SCRIPT      // cursive, inappropriate for console
@@ -678,7 +678,7 @@ int
     }
 
     /*
-     * reject non-TT fonts that are virtical font
+     * reject non-TT fonts that are vertical font
      */
     if ((nFontType != TRUETYPE_FONTTYPE) &&
         (ptszFace[0] == TEXT('@')))

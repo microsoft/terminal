@@ -31,7 +31,7 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - glyph - utf16 encoded codepoint to check
-// - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
+// - pResult - receives return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept

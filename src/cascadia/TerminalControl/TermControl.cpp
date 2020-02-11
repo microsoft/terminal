@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
-        _lastScrollOffset{ std::nullopt },
+        _isTerminalInitiatedScroll{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
@@ -647,17 +647,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
 
         // TODO:GH#3927 - Make it possible to hot-reload this setting. Right
-        // here, the setting will only be used when the Temrinal is initialized.
+        // here, the setting will only be used when the Terminal is initialized.
         dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
 
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
-        auto onRecieveOutputFn = [this](const hstring str) {
+        auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
         };
-        _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
+        _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
@@ -711,13 +711,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
-        //      before the CharacterRecieved, so we can't easily get characters
+        //      before the CharacterReceived, so we can't easily get characters
         //      first, then fallback to getting keys from vkeys.
         // TODO: This apparently handles keys and characters correctly, though
         //      I'd keep an eye on it, and test more.
         // I presume that the characters that aren't translated by terminalInput
         //      just end up getting ignored, and the rest of the input comes
-        //      through CharacterRecieved.
+        //      through CharacterReceived.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
         // These two handlers _must_ be on this, not _root.
@@ -873,7 +873,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
-        // of it and sending us a CharacterRecieved event.
+        // of it and sending us a CharacterReceived event.
         const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers) : true;
 
         if (_cursorTimer.has_value())
@@ -1045,9 +1045,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto currentOffset = this->GetScrollOffset();
                 const double newValue = (numRows) + (currentOffset);
 
-                // Clear our expected scroll offset. The viewport will now move
-                //      in response to our user input.
-                _lastScrollOffset = std::nullopt;
                 _scrollBar.Value(static_cast<int>(newValue));
 
                 // Use this point as our new scroll anchor.
@@ -1193,9 +1190,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         double newValue = (_rowsToScroll * rowDelta) + (currentOffset);
 
-        // Clear our expected scroll offset. The viewport will now move in
-        //      response to our user input.
-        _lastScrollOffset = std::nullopt;
         // The scroll bar's ValueChanged handler will actually move the viewport
         //      for us.
         _scrollBar.Value(static_cast<int>(newValue));
@@ -1211,30 +1205,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        const auto newValue = args.NewValue();
+        if (_isTerminalInitiatedScroll)
+        {
+            return;
+        }
 
-        // If we've stored a lastScrollOffset, that means the terminal has
-        //      initiated some scrolling operation. We're responding to that event here.
-        if (_lastScrollOffset.has_value())
-        {
-            // If this event's offset is the same as the last offset message
-            //      we've sent, then clear out the expected offset. We do this
-            //      because in that case, the message we're replying to was the
-            //      last scroll event we raised.
-            // Regardless, we're going to ignore this message, because the
-            //      terminal is already in the scroll position it wants.
-            const auto ourLastOffset = _lastScrollOffset.value();
-            if (newValue == ourLastOffset)
-            {
-                _lastScrollOffset = std::nullopt;
-            }
-        }
-        else
-        {
-            // This is a scroll event that wasn't initiated by the termnial
-            //      itself - it was initiated by the mouse wheel, or the scrollbar.
-            this->ScrollViewport(static_cast<int>(newValue));
-        }
+        const auto newValue = static_cast<int>(args.NewValue());
+
+        // This is a scroll event that wasn't initiated by the terminal
+        //      itself - it was initiated by the mouse wheel, or the scrollbar.
+        _terminal->UserScrollViewport(newValue);
+
+        // We've just told the terminal to update its viewport to reflect the
+        // new scroll value so the scroll bar matches the viewport now.
+        _willUpdateScrollBarToMatchViewport.store(false);
     }
 
     // Method Description:
@@ -1438,7 +1422,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //   performance guarantees aren't exactly stellar)
         // - The STL doesn't have a simple string search/replace method.
         //   This fact is lamentable.
-        // - This line-ending converstion is intentionally fairly
+        // - This line-ending conversion is intentionally fairly
         //   conservative, to avoid stripping out lone \n characters
         //   where they could conceivably be intentional.
 
@@ -1620,7 +1604,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Update the postion and size of the scrollbar to match the given
+    // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   The change will be actually handled in _ScrollbarChangeHandler.
     //   This should be done on the UI thread. Make sure the caller is calling
@@ -1635,16 +1619,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                         const int viewHeight,
                                         const int bufferSize)
     {
+        // The terminal is already in the scroll position it wants, so no need
+        // to tell it to scroll.
+        _isTerminalInitiatedScroll = true;
+
         const auto hiddenContent = bufferSize - viewHeight;
         scrollBar.Maximum(hiddenContent);
         scrollBar.Minimum(0);
         scrollBar.ViewportSize(viewHeight);
-
         scrollBar.Value(viewTop);
+
+        _isTerminalInitiatedScroll = false;
     }
 
     // Method Description:
-    // - Update the postion and size of the scrollbar to match the given
+    // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
     //      registered an event handler for us.
@@ -1664,8 +1653,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // Set this value as our next expected scroll position.
-        _lastScrollOffset = { viewTop };
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
 
         auto weakThis{ get_weak() };
@@ -1791,23 +1778,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::ScrollViewport(int viewTop)
-    {
-        _terminal->UserScrollViewport(viewTop);
-    }
-
     // Method Description:
     // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    // The difference between this function and ScrollViewport is that this one also
-    // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
-    // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
-    void TermControl::KeyboardScrollViewport(int viewTop)
+    void TermControl::ScrollViewport(int viewTop)
     {
-        _terminal->UserScrollViewport(viewTop);
-        _lastScrollOffset = std::nullopt;
-        _scrollBar.Value(static_cast<int>(viewTop));
+        _scrollBar.Value(viewTop);
     }
 
     int TermControl::GetScrollOffset()
@@ -1992,13 +1969,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //  or we hit max number of allowable values (= 4) for the bounding rectangle
         // Non-numeral values detected will default to 0
         // std::getline will not throw exception unless flags are set on the wstringstream
-        // std::stod will throw invalid_argument expection if the input is an invalid double value
-        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
+        // std::stod will throw invalid_argument exception if the input is an invalid double value
+        // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
         try
         {
             for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
             {
-                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
+                // std::stod internally calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
@@ -2256,7 +2233,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                        DragEventArgs const& e)
     {
-        // Make sure to set the AcceptedOperation, so that we can later recieve the path in the Drop event
+        // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
         e.AcceptedOperation(winrt::Windows::ApplicationModel::DataTransfer::DataPackageOperation::Copy);
 
         // Sets custom UI text

@@ -87,7 +87,7 @@ namespace Microsoft::Console::Types
 
         const IdType GetId() const noexcept;
         const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
-        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val);
+        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
 
         // ITextRangeProvider methods
@@ -159,6 +159,7 @@ namespace Microsoft::Console::Types
 
         virtual const COORD _getScreenFontSize() const;
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
+        const Viewport _getBufferSize() const noexcept;
 
         void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
 
@@ -166,7 +167,7 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
                                      _Out_ gsl::not_null<int*> const pAmountMoved,
-                                     _In_ const bool preventBufferEnd = false);
+                                     _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
@@ -178,13 +179,13 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
                                 _Out_ gsl::not_null<int*> const pAmountMoved,
-                                _In_ const bool preventBufferEnd = false);
+                                _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                    _In_ const bool preventBufferEnd = false);
+                                    _In_ const bool preventBufferEnd = false) noexcept;
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
