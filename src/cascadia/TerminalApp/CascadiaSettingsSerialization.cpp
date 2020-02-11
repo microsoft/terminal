@@ -137,22 +137,19 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // GH 3855 - Gathering Data on custom profiles to inform better defaults
     // Do it after everything else so it won't happen unless validation passed.
     {
-        if (auto defaultProfile{ resultPtr->_userSettings[JsonKey(DefaultProfileKey)] })
-        {
-            auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
+        auto guid = resultPtr->GlobalSettings().GetDefaultProfile();
 
-            // Compare to the defaults.json one that we set on install.
-            // If it's different, log what the user chose.
-            if (hardcodedDefaultGuid != guid)
-            {
-                TraceLoggingWrite(
-                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                    "CustomDefaultProfile",
-                    TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
-                    TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
+        // Compare to the defaults.json one that we set on install.
+        // If it's different, log what the user chose.
+        if (hardcodedDefaultGuid != guid)
+        {
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "CustomDefaultProfile",
+                TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
+                TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
 
         // If the user had keybinding settings preferences, we want to learn from them to make better defaults
