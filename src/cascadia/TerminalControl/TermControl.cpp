@@ -1033,8 +1033,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             const float dy = newTouchPoint.Y - anchor.Y;
 
-            // If we've moved more than one row of text, we'll want to scroll the viewport
-            if (std::abs(dy) > fontHeight)
+            // Start viewport scroll after we've moved more than a half row of text
+            if (std::abs(dy) > (fontHeight / 2.0f))
             {
                 // Multiply by -1, because moving the touch point down will
                 // create a positive delta, but we want the viewport to move up,
@@ -1042,10 +1042,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // panning down)
                 const float numRows = -1.0f * (dy / fontHeight);
 
-                const auto currentOffset = this->GetScrollOffset();
-                const double newValue = (numRows) + (currentOffset);
+                const auto currentOffset = _scrollBar.Value();
+                const double newValue = numRows + currentOffset;
 
-                _scrollBar.Value(static_cast<int>(newValue));
+                _scrollBar.Value(newValue);
 
                 // Use this point as our new scroll anchor.
                 _touchAnchor = newTouchPoint;
