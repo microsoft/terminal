@@ -48,8 +48,8 @@ Terminal::Terminal() :
     _selectionActive{ false },
     _allowSingleCharSelection{ true },
     _copyOnSelect{ false },
-    _selectionAnchor{ 0, 0 },
-    _endSelectionPosition{ 0, 0 }
+    _selectionStart{ 0, 0 },
+    _selectionEnd{ 0, 0 }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));

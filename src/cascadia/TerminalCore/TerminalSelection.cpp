@@ -22,19 +22,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        COORD startPos = { _selectionAnchor };
-        COORD endPos = { _endSelectionPosition };
-
-        // Add anchor offset here to update properly on new buffer output
-        startPos.Y = base::ClampAdd(startPos.Y, _selectionVerticalOffset);
-        endPos.Y = base::ClampAdd(endPos.Y, _selectionVerticalOffset);
-
-        // clamp anchors to be within buffer bounds
-        const auto bufferSize = _buffer->GetSize();
-        bufferSize.Clamp(startPos);
-        bufferSize.Clamp(endPos);
-
-        return _buffer->GetTextRects(startPos, endPos, _boxSelection);
+        return _buffer->GetTextRects(_selectionStart, _selectionEnd, _boxSelection);
     }
     CATCH_LOG();
     return result;
@@ -48,10 +36,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 // - None
 const COORD Terminal::GetSelectionAnchor() const
 {
-    COORD selectionAnchorPos{ _selectionAnchor };
-    THROW_IF_FAILED(ShortAdd(selectionAnchorPos.Y, _selectionVerticalOffset, &selectionAnchorPos.Y));
-
-    return selectionAnchorPos;
+    return _selectionStart;
 }
 
 // Method Description:
@@ -60,7 +45,7 @@ const COORD Terminal::GetSelectionAnchor() const
 // - bool representing if selection is only a single cell. Used for copyOnSelect
 const bool Terminal::_IsSingleCellSelection() const noexcept
 {
-    return (_selectionAnchor == _endSelectionPosition);
+    return (_selectionStart == _selectionEnd);
 }
 
 // Method Description:
@@ -91,21 +76,18 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 // - Select the sequence between delimiters defined in Settings
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
-void Terminal::DoubleClickSelection(const COORD position)
+void Terminal::DoubleClickSelection(const COORD viewportPos)
 {
-#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
-    COORD positionWithOffsets = _ConvertToBufferCell(position);
+    COORD textBufferPos = _ConvertToBufferCell(viewportPos);
+    _buffer->GetSize().Clamp(textBufferPos);
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
-    _selectionAnchor = _ExpandDoubleClickSelectionLeft(positionWithOffsets);
-    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_selectionAnchor.Y));
-    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
+    _selectionStart = _ExpandDoubleClickSelectionLeft(textBufferPos);
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
-    _endSelectionPosition = _ExpandDoubleClickSelectionRight(positionWithOffsets);
-    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(ViewStartIndex()), &_endSelectionPosition.Y));
+    _selectionEnd = _ExpandDoubleClickSelectionRight(textBufferPos);
 
     _selectionActive = true;
     _multiClickSelectionMode = SelectionExpansionMode::Word;
@@ -127,21 +109,15 @@ void Terminal::TripleClickSelection(const COORD position)
 // - Record the position of the beginning of a selection
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
-void Terminal::SetSelectionAnchor(const COORD position)
+void Terminal::SetSelectionAnchor(const COORD viewportPos)
 {
-    _selectionAnchor = position;
-
-    // include _scrollOffset here to ensure this maps to the right spot of the original viewport
-    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_scrollOffset), &_selectionAnchor.Y));
-
-    // copy value of ViewStartIndex to support scrolling
-    // and update on new buffer output (used in _GetSelectionRects())
-    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
+    _selectionStart = _ConvertToBufferCell(viewportPos);
+    _buffer->GetSize().Clamp(_selectionStart);
 
     _selectionActive = true;
     _allowSingleCharSelection = (_copyOnSelect) ? false : true;
 
-    SetEndSelectionPosition(position);
+    SetEndSelectionPosition(viewportPos);
 
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
 }
@@ -150,16 +126,10 @@ void Terminal::SetSelectionAnchor(const COORD position)
 // - Record the position of the end of a selection
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
-void Terminal::SetEndSelectionPosition(const COORD position)
+void Terminal::SetEndSelectionPosition(const COORD viewportPos)
 {
-    _endSelectionPosition = position;
-
-    // include _scrollOffset here to ensure this maps to the right spot of the original viewport
-    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
-
-    // copy value of ViewStartIndex to support scrolling
-    // and update on new buffer output (used in _GetSelectionRects())
-    _selectionVerticalOffset = gsl::narrow<SHORT>(ViewStartIndex());
+    _selectionEnd = _ConvertToBufferCell(viewportPos);
+    _buffer->GetSize().Clamp(_selectionEnd);
 
     if (_copyOnSelect && !_IsSingleCellSelection())
     {
@@ -182,9 +152,8 @@ void Terminal::ClearSelection()
 {
     _selectionActive = false;
     _allowSingleCharSelection = false;
-    _selectionAnchor = { 0, 0 };
-    _endSelectionPosition = { 0, 0 };
-    _selectionVerticalOffset = 0;
+    _selectionStart = { 0, 0 };
+    _selectionEnd = { 0, 0 };
 
     _buffer->GetRenderTarget().TriggerSelection();
 }
@@ -250,13 +219,8 @@ COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 // - the corresponding location on the buffer
 COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
-    // Force position to be valid
-    COORD positionWithOffsets = viewportPos;
-    _buffer->GetSize().Clamp(positionWithOffsets);
-
-    THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
-    THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(ViewStartIndex()), &positionWithOffsets.Y));
-    return positionWithOffsets;
+    const auto yPos = base::ClampedNumeric<short>(_VisibleStartIndex()) + viewportPos.Y;
+    return COORD{ viewportPos.X, yPos };
 }
 
 // Method Description:

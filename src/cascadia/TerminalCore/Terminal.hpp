@@ -192,13 +192,12 @@ private:
         Word,
         Line
     };
-    COORD _selectionAnchor;
-    COORD _endSelectionPosition;
+    COORD _selectionStart;
+    COORD _selectionEnd;
     bool _boxSelection;
     bool _selectionActive;
     bool _allowSingleCharSelection;
     bool _copyOnSelect;
-    SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
