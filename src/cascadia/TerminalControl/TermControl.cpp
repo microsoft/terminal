@@ -327,20 +327,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto existingMargin = _swapChainPanel.Margin();
         _swapChainPanel.Margin(newMargin);
 
-        if (newMargin != existingMargin && newMargin != Thickness{ 0 })
-        {
-            TraceLoggingWrite(g_hTerminalControlProvider,
-                              "NonzeroPaddingApplied",
-                              TraceLoggingDescription("An event emitted when a control has padding applied to it"),
-                              TraceLoggingStruct(4, "Padding"),
-                              TraceLoggingFloat64(newMargin.Left, "Left"),
-                              TraceLoggingFloat64(newMargin.Top, "Top"),
-                              TraceLoggingFloat64(newMargin.Right, "Right"),
-                              TraceLoggingFloat64(newMargin.Bottom, "Bottom"),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-        }
-
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
