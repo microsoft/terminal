@@ -1179,11 +1179,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - mouseDelta: the mouse wheel delta that triggered this event.
     void TermControl::_MouseScrollHandler(const double mouseDelta, Windows::UI::Input::PointerPoint const& pointerPoint)
     {
-        const auto currentOffset = this->GetScrollOffset();
+        const auto currentOffset = _scrollBar.Value();
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
-        const auto rowDelta = mouseDelta < 0 ? 1.0 : -1.0;
+        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
         // With one of the precision mouses, one click is always a multiple of 120,
         // but the "smooth scrolling" mode results in non-int values
@@ -1192,7 +1192,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         //      for us.
-        _scrollBar.Value(static_cast<int>(newValue));
+        _scrollBar.Value(newValue);
 
         if (_terminal->IsSelectionActive() && pointerPoint.Properties().IsLeftButtonPressed())
         {
