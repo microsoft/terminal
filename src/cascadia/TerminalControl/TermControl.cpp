@@ -2233,8 +2233,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                        DragEventArgs const& e)
     {
+        if (!e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            // We can't do anything for non-storageitems right now.
+            return;
+        }
+
         // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
-        e.AcceptedOperation(winrt::Windows::ApplicationModel::DataTransfer::DataPackageOperation::Copy);
+        e.AcceptedOperation(DataPackageOperation::Copy);
 
         // Sets custom UI text
         e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
