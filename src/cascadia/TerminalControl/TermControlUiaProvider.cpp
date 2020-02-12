@@ -95,6 +95,11 @@ const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() c
     return _termControl->GetPadding();
 }
 
+void TermControlUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+{
+    _termControl->ScrollViewport(NewWindow.Top);
+}
+
 HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
 {
     try
