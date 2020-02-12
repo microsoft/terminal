@@ -131,7 +131,7 @@ All project documentation is located in the `./doc` folder. If you would like to
 
 We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
 
-***BEFORE you start work on a feature/fix***, please read & follow our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/contributing.md) to help avoid any wasted or duplicate effort.
+***BEFORE you start work on a feature/fix***, please read & follow our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/CONTRIBUTING.md) to help avoid any wasted or duplicate effort.
 
 ## Communicating with the Team
 
