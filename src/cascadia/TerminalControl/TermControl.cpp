@@ -944,7 +944,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     if (shiftEnabled && _terminal->IsSelectionActive())
                     {
-                        _terminal->SetEndSelectionPosition(terminalPosition);
+                        _terminal->SetSelectionEnd(terminalPosition, ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Cell);
                     }
                     else
                     {
@@ -1549,7 +1549,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
         // save location (for rendering) + render
-        _terminal->SetEndSelectionPosition(terminalPosition);
+        _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
     }
 

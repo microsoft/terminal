@@ -44,7 +44,7 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _boxSelection{ false },
+    _blockSelection{ false },
     _selectionActive{ false },
     _allowSingleCharSelection{ true },
     _copyOnSelect{ false },

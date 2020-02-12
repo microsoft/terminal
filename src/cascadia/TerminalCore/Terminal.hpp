@@ -156,11 +156,17 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    enum class SelectionExpansionMode
+    {
+        Cell,
+        Word,
+        Line
+    };
     const bool IsCopyOnSelectActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
-    void SetEndSelectionPosition(const COORD position);
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> expansionMode = std::nullopt);
     void SetBoxSelection(const bool isEnabled) noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
@@ -186,15 +192,10 @@ private:
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
-    enum class SelectionExpansionMode
-    {
-        Cell,
-        Word,
-        Line
-    };
     COORD _selectionStart;
     COORD _selectionEnd;
-    bool _boxSelection;
+    COORD _selectionPivot;
+    bool _blockSelection;
     bool _selectionActive;
     bool _allowSingleCharSelection;
     bool _copyOnSelect;
@@ -246,6 +247,8 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    void _ChunkSelectionByWord(const COORD position, bool shiftClick);
+    void _ChunkSelectionByLine(const COORD position, bool shiftClick);
     COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;

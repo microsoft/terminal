@@ -173,7 +173,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetEndSelectionPosition(realCoordEnd);
+    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
     _buffer->GetRenderTarget().TriggerSelection();
 }
 
