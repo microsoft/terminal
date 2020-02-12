@@ -167,7 +167,7 @@ public:
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> expansionMode = std::nullopt);
-    void SetBoxSelection(const bool isEnabled) noexcept;
+    void SetBlockSelection(const bool isEnabled) noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
@@ -247,6 +247,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    void _ChunkSelectionByCell(const COORD position, bool shiftClick);
     void _ChunkSelectionByWord(const COORD position, bool shiftClick);
     void _ChunkSelectionByLine(const COORD position, bool shiftClick);
     COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;

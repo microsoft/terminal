@@ -78,33 +78,24 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::DoubleClickSelection(const COORD viewportPos)
 {
-    COORD textBufferPos = _ConvertToBufferCell(viewportPos);
-    _buffer->GetSize().Clamp(textBufferPos);
-    _selectionPivot = textBufferPos;
+    _selectionPivot = _ConvertToBufferCell(viewportPos);
+    _buffer->GetSize().Clamp(_selectionPivot);
 
-    // scan leftwards until delimiter is found and
-    // set selection anchor to one right of that spot
-    _selectionStart = _ExpandDoubleClickSelectionLeft(textBufferPos);
-
-    // scan rightwards until delimiter is found and
-    // set endSelectionPosition to one left of that spot
-    _selectionEnd = _ExpandDoubleClickSelectionRight(textBufferPos);
-
-    _selectionActive = true;
     _multiClickSelectionMode = SelectionExpansionMode::Word;
+    SetSelectionEnd(viewportPos);
 }
 
 // Method Description:
 // - Select the entire row of the position clicked
 // Arguments:
-// - position: the (x,y) coordinate on the visible viewport
-void Terminal::TripleClickSelection(const COORD position)
+// - viewportPos: the (x,y) coordinate on the visible viewport
+void Terminal::TripleClickSelection(const COORD viewportPos)
 {
-    const auto bufferSize = _buffer->GetSize();
+    _selectionPivot = _ConvertToBufferCell(viewportPos);
+    _buffer->GetSize().Clamp(_selectionPivot);
 
-    SetSelectionAnchor({ bufferSize.Left(), position.Y });
     _multiClickSelectionMode = SelectionExpansionMode::Line;
-    SetSelectionEnd({ bufferSize.RightInclusive(), position.Y });
+    SetSelectionEnd(viewportPos);
 }
 
 // Method Description:
@@ -116,11 +107,11 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selectionStart = _ConvertToBufferCell(viewportPos);
     _buffer->GetSize().Clamp(_selectionStart);
 
-    _multiClickSelectionMode = SelectionExpansionMode::Cell;
+    _selectionPivot = _selectionStart;
 
-    _selectionActive = true;
     _allowSingleCharSelection = (_copyOnSelect) ? false : true;
 
+    _multiClickSelectionMode = SelectionExpansionMode::Cell;
     SetSelectionEnd(viewportPos);
 }
 
@@ -150,13 +141,39 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
         break;
     case SelectionExpansionMode::Cell:
     default:
-        _selectionEnd = textBufferPos;
+        _ChunkSelectionByCell(textBufferPos, shiftClick);
 
         if (_copyOnSelect && !_IsSingleCellSelection())
         {
             _allowSingleCharSelection = true;
         }
         break;
+    }
+
+    _selectionActive = true;
+}
+
+// Method Description:
+// - Update the selection anchors when dragging to a position
+// - Used for SelectionExpansionMode::Word
+// Arguments:
+// - targetPos: the (x,y) coordinate we are dragging to on the text buffer
+// - shiftClick: when enabled, only update the _endSelectionPosition
+void Terminal::_ChunkSelectionByCell(const COORD targetPos, bool /*shiftClick*/)
+{
+    // TODO GH #4557: Shift+Multi-Click Expansion
+    //   shiftClick is reserved for that implementation
+    if (_buffer->GetSize().CompareInBounds(targetPos, _selectionPivot) <= 0)
+    {
+        // target is before pivot
+        _selectionStart = targetPos;
+        _selectionEnd = _selectionPivot;
+    }
+    else
+    {
+        // target is after pivot
+        _selectionStart = _selectionPivot;
+        _selectionEnd = targetPos;
     }
 }
 
@@ -166,50 +183,27 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // Arguments:
 // - targetPos: the (x,y) coordinate we are dragging to on the text buffer
 // - shiftClick: when enabled, only update the _endSelectionPosition
-void Terminal::_ChunkSelectionByWord(const COORD targetPos, bool shiftClick)
+void Terminal::_ChunkSelectionByWord(const COORD targetPos, bool /*shiftClick*/)
 {
-    const auto bufferSize = _buffer->GetSize();
-
-    // (0,0) is the top-left of the screen
-    // the physically "higher" coordinate is closer to the top-left
-    // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(_selectionStart, _selectionEnd) < 0 ?
-                                               std::make_tuple(_selectionStart, _selectionEnd) :
-                                               std::make_tuple(_selectionEnd, _selectionStart);
-
-    COORD newHigherCoord{};
-    COORD newLowerCoord{};
-    if (bufferSize.CompareInBounds(targetPos, _selectionPivot) <= 0)
+    // TODO GH #4557: Shift+Multi-Click Expansion
+    //   shiftClick is reserved for that implementation
+    if (_buffer->GetSize().CompareInBounds(targetPos, _selectionPivot) <= 0)
     {
         // target is before pivot
         //  - start --> ExpandLeft(target)
         //  - end --> ExpandRight(pivot)
 
-        newHigherCoord = _ExpandDoubleClickSelectionLeft(targetPos);
-        newLowerCoord = _ExpandDoubleClickSelectionRight(_selectionPivot);
+        _selectionStart = _ExpandDoubleClickSelectionLeft(targetPos);
+        _selectionEnd = _ExpandDoubleClickSelectionRight(_selectionPivot);
     }
-    else if (bufferSize.CompareInBounds(targetPos, _selectionPivot) > 0)
+    else
     {
         // target is after pivot
         //  - start --> ExpandLeft(pivot)
         //  - end --> ExpandRight(target)
 
-        newHigherCoord = _ExpandDoubleClickSelectionLeft(_selectionPivot);
-        newLowerCoord = _ExpandDoubleClickSelectionRight(targetPos);
-    }
-
-    // Assign the selection anchors properly
-    if (bufferSize.CompareInBounds(_selectionStart, _selectionEnd) < 0)
-    {
-        // if this is a shiftClick, we don't modify the selectionAnchor
-        _selectionStart = shiftClick ? _selectionStart : newHigherCoord;
-        _selectionEnd = newLowerCoord;
-    }
-    else
-    {
-        // if this is a shiftClick, we don't modify the selectionAnchor
-        _selectionStart = shiftClick ? _selectionStart : newLowerCoord;
-        _selectionEnd = newHigherCoord;
+        _selectionStart = _ExpandDoubleClickSelectionLeft(_selectionPivot);
+        _selectionEnd = _ExpandDoubleClickSelectionRight(targetPos);
     }
 }
 
@@ -219,57 +213,36 @@ void Terminal::_ChunkSelectionByWord(const COORD targetPos, bool shiftClick)
 // Arguments:
 // - targetPos: the (x,y) coordinate we are dragging to on the text buffer
 // - shiftClick: when enabled, only update the _endSelectionPosition
-void Terminal::_ChunkSelectionByLine(const COORD targetPos, bool shiftClick)
+void Terminal::_ChunkSelectionByLine(const COORD targetPos, bool /*shiftClick*/)
 {
+    // TODO GH #4557: Shift+Multi-Click Expansion
+    //   shiftClick is reserved for that implementation
     const auto bufferSize = _buffer->GetSize();
-
-    // (0,0) is the top-left of the screen
-    // the physically "higher" coordinate is closer to the top-left
-    // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(_selectionStart, _selectionEnd) < 0 ?
-                                               std::make_tuple(_selectionStart, _selectionEnd) :
-                                               std::make_tuple(_selectionEnd, _selectionStart);
-
-    COORD newHigherCoord{};
-    COORD newLowerCoord{};
     if (bufferSize.CompareInBounds(targetPos, _selectionPivot) <= 0)
     {
         // target is before pivot
         //  - start --> ExpandLeft(target)
         //  - end --> ExpandRight(pivot)
 
-        newHigherCoord = { bufferSize.Left(), targetPos.Y };
-        newLowerCoord = { bufferSize.RightInclusive(), _selectionPivot.Y };
+        _selectionStart = { bufferSize.Left(), targetPos.Y };
+        _selectionEnd = { bufferSize.RightInclusive(), _selectionPivot.Y };
     }
-    else if (bufferSize.CompareInBounds(targetPos, _selectionPivot) > 0)
+    else
     {
         // target is after pivot
         //  - start --> ExpandLeft(pivot)
         //  - end --> ExpandRight(target)
 
-        newHigherCoord = { bufferSize.Left(), _selectionPivot.Y };
-        newLowerCoord = { bufferSize.RightInclusive(), targetPos.Y };
-    }
-
-    if (bufferSize.CompareInBounds(_selectionStart, _selectionEnd) < 0)
-    {
-        // if this is a shiftClick, we don't modify the selectionAnchor
-        _selectionStart = shiftClick ? _selectionStart : newHigherCoord;
-        _selectionEnd = newLowerCoord;
-    }
-    else
-    {
-        // if this is a shiftClick, we don't modify the selectionAnchor
-        _selectionStart = shiftClick ? _selectionStart : newLowerCoord;
-        _selectionEnd = newHigherCoord;
+        _selectionStart = { bufferSize.Left(), _selectionPivot.Y };
+        _selectionEnd = { bufferSize.RightInclusive(), targetPos.Y };
     }
 }
 
 // Method Description:
-// - enable/disable box selection (ALT + selection)
+// - enable/disable block selection (ALT + selection)
 // Arguments:
-// - isEnabled: new value for _boxSelection
-void Terminal::SetBoxSelection(const bool isEnabled) noexcept
+// - isEnabled: new value for _blockSelection
+void Terminal::SetBlockSelection(const bool isEnabled) noexcept
 {
     _blockSelection = isEnabled;
 }

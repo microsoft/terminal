@@ -227,7 +227,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto lock = _terminal->LockForWriting();
         if (search.FindNext())
         {
-            _terminal->SetBoxSelection(false);
+            _terminal->SetBlockSelection(false);
             search.Select();
             _renderer->TriggerSelection();
         }
@@ -923,7 +923,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
                 // handle ALT key
-                _terminal->SetBoxSelection(altEnabled);
+                _terminal->SetBlockSelection(altEnabled);
 
                 auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
