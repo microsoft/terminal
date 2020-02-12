@@ -136,6 +136,9 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
     // GH 3855 - Gathering Data on custom profiles to inform better defaults
     // Do it after everything else so it won't happen unless validation passed.
+    // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
+    // is a lot of computation we can skip if no one cares.
+    if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES)) 
     {
         auto guid = resultPtr->GlobalSettings().GetDefaultProfile();
 
