@@ -41,7 +41,7 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const SMALL_RECT NewWindow) override;
 
     protected:
         HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<WRL::ComPtr<Microsoft::Console::Types::UiaTextRangeBase>>& selectionRanges) override;
