@@ -78,11 +78,16 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::DoubleClickSelection(const COORD viewportPos)
 {
+    // set the selection pivot to expand the selection using SetSelectionEnd()
     _selectionPivot = _ConvertToBufferCell(viewportPos);
     _buffer->GetSize().Clamp(_selectionPivot);
 
     _multiClickSelectionMode = SelectionExpansionMode::Word;
     SetSelectionEnd(viewportPos);
+
+    // we need to set the _selectionPivot again
+    // for future shift+clicks
+    _selectionPivot = _selectionStart;
 }
 
 // Method Description:
@@ -91,11 +96,16 @@ void Terminal::DoubleClickSelection(const COORD viewportPos)
 // - viewportPos: the (x,y) coordinate on the visible viewport
 void Terminal::TripleClickSelection(const COORD viewportPos)
 {
+    // set the selection pivot to expand the selection using SetSelectionEnd()
     _selectionPivot = _ConvertToBufferCell(viewportPos);
     _buffer->GetSize().Clamp(_selectionPivot);
 
     _multiClickSelectionMode = SelectionExpansionMode::Line;
     SetSelectionEnd(viewportPos);
+
+    // we need to set the _selectionPivot again
+    // for future shift+clicks
+    _selectionPivot = _selectionStart;
 }
 
 // Method Description:
