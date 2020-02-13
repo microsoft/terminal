@@ -45,6 +45,7 @@ namespace Microsoft::Terminal
 
         const COORD GetFontSize() const;
         const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
+        void ChangeViewport(const SMALL_RECT NewWindow) override;
 
     protected:
         HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
