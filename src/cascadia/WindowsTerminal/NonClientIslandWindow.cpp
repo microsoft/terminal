@@ -516,25 +516,6 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 }
 
 // Method Description:
-// - This method is called when the window receives the WM_NCCREATE message.
-// Return Value:
-// - The value returned from the window proc.
-[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
-{
-    const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (ret == FALSE)
-    {
-        return ret;
-    }
-
-    // Set the frame's theme before it is rendered (WM_NCPAINT) so that it is
-    // rendered with the correct theme.
-    _UpdateFrameTheme();
-
-    return TRUE;
-}
-
-// Method Description:
 // - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
 //   need to manually hide the entire titlebar.
 // - See also IslandWindow::_SetIsFullscreen, which does additional work.

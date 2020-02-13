@@ -45,7 +45,6 @@ public:
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
-    void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
     std::optional<COORD> _oldIslandPos;
@@ -67,7 +66,6 @@ private:
     RECT _GetDragAreaRect() const noexcept;
     int _GetTopBorderHeight() const noexcept;
 
-    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     [[nodiscard]] LRESULT _OnPaint() noexcept;
