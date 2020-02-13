@@ -1419,7 +1419,7 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // - GetBackgroundColor - function used to map TextAttribute to RGB COLORREF for background color. If null, only extract the text.
 // Return Value:
 // - The text, background color, and foreground color data of the selected region of the text buffer.
-const TextBuffer::TextAndColor TextBuffer::GetText(const bool lineSelection,
+const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool trimTrailingWhitespace,
                                                    const std::vector<SMALL_RECT>& selectionRects,
                                                    std::function<COLORREF(TextAttribute&)> GetForegroundColor,
@@ -1486,14 +1486,14 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool lineSelection,
             it++;
         }
 
-        // trim trailing spaces if SHIFT key not held
         if (trimTrailingWhitespace)
         {
             const ROW& Row = GetRowByOffset(iRow);
 
-            // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
-            if (!lineSelection || !Row.GetCharRow().WasWrapForced())
+            // if the row was NOT wrapped...
+            if (!Row.GetCharRow().WasWrapForced())
             {
+                // remove the spaces at the end (aka trim the trailing whitespace)
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
                 {
                     selectionText.pop_back();
@@ -1504,28 +1504,27 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool lineSelection,
                     }
                 }
             }
+        }
 
-            // apply CR/LF to the end of the final string, unless we're the last line.
-            // a.k.a if we're earlier than the bottom, then apply CR/LF.
-            if (i < selectionRects.size() - 1)
+        // apply CR/LF to the end of the final string, unless we're the last line.
+        // a.k.a if we're earlier than the bottom, then apply CR/LF.
+        if (includeCRLF && i < selectionRects.size() - 1)
+        {
+            // if the row was NOT wrapped...
+            if (!GetRowByOffset(iRow).GetCharRow().WasWrapForced())
             {
-                // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
-                // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
-                // always apply \r\n for box selection
-                if (!lineSelection || !GetRowByOffset(iRow).GetCharRow().WasWrapForced())
-                {
-                    selectionText.push_back(UNICODE_CARRIAGERETURN);
-                    selectionText.push_back(UNICODE_LINEFEED);
+                // then we can assume a CR/LF is proper
+                selectionText.push_back(UNICODE_CARRIAGERETURN);
+                selectionText.push_back(UNICODE_LINEFEED);
 
-                    if (GetForegroundColor && GetBackgroundColor)
-                    {
-                        // cant see CR/LF so just use black FG & BK
-                        COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
-                        selectionFgAttr.push_back(Blackness);
-                        selectionFgAttr.push_back(Blackness);
-                        selectionBkAttr.push_back(Blackness);
-                        selectionBkAttr.push_back(Blackness);
-                    }
+                if (GetForegroundColor && GetBackgroundColor)
+                {
+                    // cant see CR/LF so just use black FG & BK
+                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
+                    selectionFgAttr.push_back(Blackness);
+                    selectionFgAttr.push_back(Blackness);
+                    selectionBkAttr.push_back(Blackness);
+                    selectionBkAttr.push_back(Blackness);
                 }
             }
         }

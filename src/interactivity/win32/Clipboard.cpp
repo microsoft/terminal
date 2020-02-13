@@ -203,17 +203,26 @@ void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyFormatting)
 
     // read selection area.
     const auto selectionRects = selection.GetSelectionRects();
-    const bool lineSelection = Selection::Instance().IsLineSelection();
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-    const bool trimTrailingWhitespace = !WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&CONSOLE_INFORMATION::LookupForegroundColor, &gci, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&CONSOLE_INFORMATION::LookupBackgroundColor, &gci, std::placeholders::_1);
 
-    const auto text = buffer.GetText(lineSelection,
-                                     trimTrailingWhitespace,
+    bool includeCRLF, trimTrailingWhitespace;
+    if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
+    {
+        // When shift is held, put everything in one line
+        includeCRLF = trimTrailingWhitespace = false;
+    }
+    else
+    {
+        includeCRLF = trimTrailingWhitespace = true;
+    }
+
+    const auto text = buffer.GetText(includeCRLF,
+                                     /*trimTrailingWhitespace*/ true,
                                      selectionRects,
                                      GetForegroundColor,
                                      GetBackgroundColor);

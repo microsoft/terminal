@@ -522,69 +522,28 @@ try
         _pData->UnlockConsole();
     });
 
-    if (IsDegenerate())
+    std::wstring textData{};
+    if (!IsDegenerate())
     {
-        return {};
-    }
+        const auto& buffer = _pData->GetTextBuffer();
+        const auto bufferSize = buffer.GetSize();
 
-    std::wstring result{};
+        // convert _end to be inclusive
+        auto inclusiveEnd{ _end };
+        bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-    // the caller must pass in a value for the max length of the text
-    // to retrieve. a value of -1 means they don't want the text
-    // truncated.
-    const bool getPartialText = maxLength != -1;
+        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd);
+        const auto bufferData = buffer.GetText(true,
+                                               false,
+                                               textRects);
 
-    // if _end is at 0, we ignore that row because _end is exclusive
-    const auto& buffer = _pData->GetTextBuffer();
-    const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
-                                       base::ClampSub(_end.Y, _start.Y) :
-                                       base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
-    const short lastRowInRange = _start.Y + totalRowsInRange - 1;
-
-    short currentScreenInfoRow = 0;
-    for (short i = 0; i < totalRowsInRange; ++i)
-    {
-        currentScreenInfoRow = _start.Y + i;
-        const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-        if (row.GetCharRow().ContainsText())
+        for (const auto& text : bufferData.text)
         {
-            const size_t rowRight = row.GetCharRow().MeasureRight();
-            size_t startIndex = 0;
-            size_t endIndex = rowRight;
-            if (currentScreenInfoRow == _start.Y)
-            {
-                startIndex = _start.X;
-            }
-
-            if (currentScreenInfoRow == _end.Y)
-            {
-                // prevent the end from going past the last non-whitespace char in the row
-                endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
-            }
-
-            // if startIndex >= endIndex then _start is
-            // further to the right than the last
-            // non-whitespace char in the row so there
-            // wouldn't be any text to grab.
-            if (startIndex < endIndex)
-            {
-                result += row.GetText().substr(startIndex, endIndex - startIndex);
-            }
-        }
-
-        if (currentScreenInfoRow != lastRowInRange)
-        {
-            result += L"\r\n";
-        }
-
-        if (getPartialText && result.size() > static_cast<size_t>(maxLength))
-        {
-            result.resize(maxLength);
-            break;
+            textData += text;
         }
     }
 
-    return result;
+    return textData;
 }
 catch (...)
 {
