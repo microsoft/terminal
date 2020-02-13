@@ -1521,12 +1521,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender,
                                              Windows::Foundation::IInspectable const& /*args*/)
     {
-        const auto scale = sender.CompositionScaleX();
-        const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+        if (_renderEngine)
+        {
+            const auto scale = sender.CompositionScaleX();
+            const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
 
-        // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
-        THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
-        _renderer->TriggerRedrawAll();
+            // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
+            THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
+            _renderer->TriggerRedrawAll();
+        }
     }
 
     // Method Description:
