@@ -8,7 +8,7 @@
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
-    "snapToGridOnResize": false,
+    "snapToGridOnResize": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
     "confirmCloseAllTabs": true,
 
