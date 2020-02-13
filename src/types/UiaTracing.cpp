@@ -30,7 +30,6 @@ inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siu
     return L" NO IDENTIFYING DATA";
 }
 
-
 inline std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
 try
 {
