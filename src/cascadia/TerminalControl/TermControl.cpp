@@ -327,20 +327,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto existingMargin = _swapChainPanel.Margin();
         _swapChainPanel.Margin(newMargin);
 
-        if (newMargin != existingMargin && newMargin != Thickness{ 0 })
-        {
-            TraceLoggingWrite(g_hTerminalControlProvider,
-                              "NonzeroPaddingApplied",
-                              TraceLoggingDescription("An event emitted when a control has padding applied to it"),
-                              TraceLoggingStruct(4, "Padding"),
-                              TraceLoggingFloat64(newMargin.Left, "Left"),
-                              TraceLoggingFloat64(newMargin.Top, "Top"),
-                              TraceLoggingFloat64(newMargin.Right, "Right"),
-                              TraceLoggingFloat64(newMargin.Bottom, "Bottom"),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-        }
-
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
@@ -2233,8 +2219,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                        DragEventArgs const& e)
     {
+        if (!e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            // We can't do anything for non-storageitems right now.
+            return;
+        }
+
         // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
-        e.AcceptedOperation(winrt::Windows::ApplicationModel::DataTransfer::DataPackageOperation::Copy);
+        e.AcceptedOperation(DataPackageOperation::Copy);
 
         // Sets custom UI text
         e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
