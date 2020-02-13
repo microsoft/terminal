@@ -9,7 +9,7 @@ Abstract:
   area of the window, as it is in the base IslandWindow class. The second is in
   the titlebar of the window, in the "non-client" area of the window. This
   enables an app to place xaml content in the titlebar.
-- Placing content in the frame is enabled with DwmExtendFrameIntoClientArea. See
+- Placing content in the frame is enabled with WM_NCCALCSIZE. See
   https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
   for information on how this is done.
 
@@ -19,6 +19,7 @@ Author(s):
 
 #include "pch.h"
 #include "IslandWindow.h"
+#include "NativeFrameColor.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <wil/resource.h>
@@ -54,6 +55,10 @@ private:
     wil::unique_hbrush _backgroundBrush;
     COLORREF _backgroundBrushColor;
 
+    NativeFrameColor _nativeFrameColor;
+    wil::unique_hbrush _frameBrush;
+    COLORREF _frameBrushColor;
+
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hrgn _dragBarRegion;
 
@@ -75,7 +80,6 @@ private:
     void _SetIsFullscreen(const bool fFullscreenEnabled) override;
     bool _IsTitlebarVisible() const;
 
-    void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateIslandRegion() const;

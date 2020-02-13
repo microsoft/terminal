@@ -54,6 +54,7 @@
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="WindowUiaProvider.hpp" />
+    <ClInclude Include="NativeFrameColor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -64,6 +65,7 @@
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
     <ClCompile Include="WindowUiaProvider.cpp" />
+    <ClCompile Include="NativeFrameColor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsTerminal.rc" />
