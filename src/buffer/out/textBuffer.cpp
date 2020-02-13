@@ -1412,26 +1412,29 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // Routine Description:
 // - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
 // Arguments:
-// - lineSelection - true if entire line is being selected. False otherwise (box selection)
+// - lineSelection - true if entire line is being selected. False otherwise (block selection)
 // - trimTrailingWhitespace - setting flag removes trailing whitespace at the end of each row in selection
-// - selectionRects - the selection regions from which the data will be extracted from the buffer
-// - GetForegroundColor - function used to map TextAttribute to RGB COLORREF for foreground color
-// - GetBackgroundColor - function used to map TextAttribute to RGB COLORREF for foreground color
+// - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
+// - GetForegroundColor - function used to map TextAttribute to RGB COLORREF for foreground color. If null, only extract the text.
+// - GetBackgroundColor - function used to map TextAttribute to RGB COLORREF for background color. If null, only extract the text.
 // Return Value:
 // - The text, background color, and foreground color data of the selected region of the text buffer.
-const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSelection,
-                                                               const bool trimTrailingWhitespace,
-                                                               const std::vector<SMALL_RECT>& selectionRects,
-                                                               std::function<COLORREF(TextAttribute&)> GetForegroundColor,
-                                                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const
+const TextBuffer::TextAndColor TextBuffer::GetText(const bool lineSelection,
+                                                   const bool trimTrailingWhitespace,
+                                                   const std::vector<SMALL_RECT>& selectionRects,
+                                                   std::function<COLORREF(TextAttribute&)> GetForegroundColor,
+                                                   std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const
 {
     TextAndColor data;
 
     // preallocate our vectors to reduce reallocs
     size_t const rows = selectionRects.size();
     data.text.reserve(rows);
-    data.FgAttr.reserve(rows);
-    data.BkAttr.reserve(rows);
+    if (GetForegroundColor && GetBackgroundColor)
+    {
+        data.FgAttr.reserve(rows);
+        data.BkAttr.reserve(rows);
+    }
 
     // for each row in the selection
     for (UINT i = 0; i < rows; i++)
@@ -1450,24 +1453,32 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 
         // preallocate to avoid reallocs
         selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
-        selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
-        selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
+        if (GetForegroundColor && GetBackgroundColor)
+        {
+            selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
+            selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
+        }
 
         // copy char data into the string buffer, skipping trailing bytes
         while (it)
         {
             const auto& cell = *it;
-            auto cellData = cell.TextAttr();
-            COLORREF const CellFgAttr = GetForegroundColor(cellData);
-            COLORREF const CellBkAttr = GetBackgroundColor(cellData);
 
             if (!cell.DbcsAttr().IsTrailing())
             {
                 selectionText.append(cell.Chars());
-                for (const wchar_t wch : cell.Chars())
+
+                // Copy Foreground/Background color
+                if (GetForegroundColor && GetBackgroundColor)
                 {
-                    selectionFgAttr.push_back(CellFgAttr);
-                    selectionBkAttr.push_back(CellBkAttr);
+                    auto cellData = cell.TextAttr();
+                    COLORREF const CellFgAttr = GetForegroundColor(cellData);
+                    COLORREF const CellBkAttr = GetBackgroundColor(cellData);
+                    for (const wchar_t wch : cell.Chars())
+                    {
+                        selectionFgAttr.push_back(CellFgAttr);
+                        selectionBkAttr.push_back(CellBkAttr);
+                    }
                 }
             }
 #pragma warning(suppress : 26444)
@@ -1486,8 +1497,11 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
                 {
                     selectionText.pop_back();
-                    selectionFgAttr.pop_back();
-                    selectionBkAttr.pop_back();
+                    if (GetForegroundColor && GetBackgroundColor)
+                    {
+                        selectionFgAttr.pop_back();
+                        selectionBkAttr.pop_back();
+                    }
                 }
             }
 
@@ -1500,21 +1514,28 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                 // always apply \r\n for box selection
                 if (!lineSelection || !GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                 {
-                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00); // cant see CR/LF so just use black FG & BK
-
                     selectionText.push_back(UNICODE_CARRIAGERETURN);
                     selectionText.push_back(UNICODE_LINEFEED);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
+
+                    if (GetForegroundColor && GetBackgroundColor)
+                    {
+                        // cant see CR/LF so just use black FG & BK
+                        COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
+                        selectionFgAttr.push_back(Blackness);
+                        selectionFgAttr.push_back(Blackness);
+                        selectionBkAttr.push_back(Blackness);
+                        selectionBkAttr.push_back(Blackness);
+                    }
                 }
             }
         }
 
         data.text.emplace_back(std::move(selectionText));
-        data.FgAttr.emplace_back(std::move(selectionFgAttr));
-        data.BkAttr.emplace_back(std::move(selectionBkAttr));
+        if (GetForegroundColor && GetBackgroundColor)
+        {
+            data.FgAttr.emplace_back(std::move(selectionFgAttr));
+            data.BkAttr.emplace_back(std::move(selectionBkAttr));
+        }
     }
 
     return data;

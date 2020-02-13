@@ -40,10 +40,6 @@ namespace Microsoft::Console::Interactivity::Win32
 
         void StoreSelectionToClipboard(_In_ bool const fAlsoCopyFormatting);
 
-        TextBuffer::TextAndColor RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                        const bool lineSelection,
-                                                        const std::vector<SMALL_RECT>& selectionRects);
-
         void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const fAlsoCopyFormatting);
         void CopyToSystemClipboard(std::string stringToPlaceOnClip, LPCWSTR lpszFormat);
 
