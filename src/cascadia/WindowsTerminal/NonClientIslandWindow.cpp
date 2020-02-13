@@ -123,6 +123,31 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
     return topBorderVisibleHeight;
 }
 
+// Method Description:
+// - This method invalidates the window's frame's top border, so that it is
+//   painted again.
+void NonClientIslandWindow::_InvalidateTopBorder() const noexcept
+{
+    const auto topBorderHeight = _GetTopBorderHeight();
+    if (topBorderHeight <= 0)
+    {
+        return;
+    }
+
+    const auto hwnd = GetWindowHandle();
+
+    RECT clientRc;
+    ::GetClientRect(hwnd, &clientRc);
+
+    RECT invalidRc;
+    invalidRc.top = 0;
+    invalidRc.bottom = topBorderHeight;
+    invalidRc.left = clientRc.left;
+    invalidRc.right = clientRc.right;
+
+    ::InvalidateRect(hwnd, &invalidRc, FALSE);
+}
+
 RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 {
     if (_dragBar)
@@ -440,24 +465,22 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         return _OnPaint();
     case WM_DWMCOLORIZATIONCOLORCHANGED:
         _nativeFrameColor.Update();
+        _InvalidateTopBorder();
+        break;
     case WM_ACTIVATE:
-    {
-        const auto topBorderHeight = _GetTopBorderHeight();
-        if (topBorderHeight > 0)
+        _InvalidateTopBorder();
+
+        if (wParam == WA_CLICKACTIVE)
         {
-            const auto hwnd = GetWindowHandle();
-
-            RECT clientRc;
-            ::GetClientRect(hwnd, &clientRc);
-
-            RECT invalidRc = clientRc;
-            invalidRc.bottom = topBorderHeight;
-
-            ::InvalidateRect(GetWindowHandle(), &invalidRc, FALSE);
+            // If the user presses the mouse left button on the title bar and
+            // doesn't move its cursor, the application will freeze.
+            // So update _right now_ while we still can, otherwise we will end
+            // up with an ugly desync between the top border and the other
+            // borders of the frame.
+            ::UpdateWindow(GetWindowHandle());
         }
 
         break;
-    }
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);

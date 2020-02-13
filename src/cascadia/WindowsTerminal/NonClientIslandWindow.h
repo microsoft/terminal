@@ -65,6 +65,7 @@ private:
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
     int _GetTopBorderHeight() const noexcept;
+    void _InvalidateTopBorder() const noexcept;
 
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
