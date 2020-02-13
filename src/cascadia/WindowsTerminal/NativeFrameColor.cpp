@@ -1,6 +1,37 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 
 #include "NativeFrameColor.h"
+
+namespace
+{
+    DWORD GetByte(DWORD value, int i)
+    {
+        const auto bitOffset = i * 8;
+        return (value & (0xFF << bitOffset)) >> bitOffset;
+    }
+
+    int AlphaBlendComponent(int bg, int fg, float alpha)
+    {
+        return static_cast<int>(bg * (1.0f - alpha) + fg * alpha);
+    }
+
+    COLORREF AlphaBlendColor(COLORREF bg, COLORREF fg, float alpha)
+    {
+        return AlphaBlendComponent(GetByte(bg, 0), GetByte(fg, 0), alpha) | // red
+               (AlphaBlendComponent(GetByte(bg, 1), GetByte(fg, 1), alpha) << 8) | // green
+               (AlphaBlendComponent(GetByte(bg, 2), GetByte(fg, 2), alpha) << 16); // blue
+    }
+
+    COLORREF RgbToColorref(DWORD rgb)
+    {
+        return GetByte(rgb, 2) | // red
+               (GetByte(rgb, 1) << 8) | // green
+               (GetByte(rgb, 0) << 16); // blue
+    }
+}
 
 NativeFrameColor::NativeFrameColor()
 {
@@ -15,31 +46,9 @@ COLORREF NativeFrameColor::GetActiveColor() const
 
 COLORREF NativeFrameColor::GetInactiveColor() const
 {
-    // TODO: This is not the real color
+    // TODO (GH #4576): This is not the real color
     //  The real color is transparent and is blended on top of other windows.
     return 0x404040;
-}
-
-namespace
-{
-    int AlphaBlendComponent(int bg, int fg, float alpha)
-    {
-        return static_cast<int>(bg * (1.0f - alpha) + fg * alpha);
-    }
-
-    COLORREF AlphaBlendColor(COLORREF bg, COLORREF fg, float alpha)
-    {
-        return AlphaBlendComponent(bg & 0x000000FF, fg & 0x000000FF, alpha) | // red
-               (AlphaBlendComponent((bg & 0x0000FF00) >> 8, (fg & 0x0000FF00) >> 8, alpha) << 8) | // green
-               (AlphaBlendComponent((bg & 0x00FF0000) >> 16, (fg & 0x00FF0000) >> 16, alpha) << 16); // blue
-    }
-
-    COLORREF XrgbToColorref(DWORD xrgb)
-    {
-        return ((xrgb & 0x00FF0000) >> 16) | // red
-               (xrgb & 0x0000FF00) | // green
-               ((xrgb & 0x000000FF) << 16); // blue
-    }
 }
 
 void NativeFrameColor::Update()
@@ -67,12 +76,12 @@ void NativeFrameColor::Update()
             colorizationColorBalance = 80;
 
         _activeColor = AlphaBlendColor(0xD9D9D9,
-                                       XrgbToColorref(colorizationColor),
+                                       RgbToColorref(colorizationColor),
                                        colorizationColorBalance / 100.0f);
     }
     else
     {
-        // TODO: This is not the real color
+        // TODO (GH #4576): This is not the real color
         //  The real color is transparent and is blended on top of other windows.
         _activeColor = 0x303030;
     }

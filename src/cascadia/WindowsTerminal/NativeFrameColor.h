@@ -1,10 +1,18 @@
-#pragma once
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
 
+Module Name:
+- NativeFrameColor.h
+
+Abstract:
+- This class determines the color used by the system to paint the window frame.
+- It is useful if we need to draw our own frame but want to match the system's one.
+--*/
+
+#pragma once
 #include "pch.h"
 
-// Class Description:
-// - This class determines the color used by the system to paint the window frame.
-// - It is useful if we need to draw our own frame but want to match the system's one.
 class NativeFrameColor
 {
 public:
