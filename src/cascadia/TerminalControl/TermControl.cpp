@@ -886,17 +886,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
+        if (!_focused)
+        {
+            Focus(FocusState::Pointer);
+
+            // Save the click position here when the terminal does not have focus
+            // because they might be performing a click-drag selection. Since we
+            // only want to start the selection when the user moves the pointer with
+            // the left mouse button held down, the PointerMovedHandler will use
+            // this saved position to set the SelectionAnchor.
+            _clickDragStartPos = point.Position();
+        }
+
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            // Ignore mouse events while the terminal does not have focus.
-            // This prevents the user from selecting and copying text if they
-            // click inside the current tab to refocus the terminal window.
-            if (!_focused)
-            {
-                args.Handled(true);
-                return;
-            }
-
             const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
             // static_cast to a uint32_t because we can't use the WI_IsFlagSet
             // macro directly with a VirtualKeyModifiers
@@ -905,6 +908,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
+                // _clickDragStartPos having a value signifies to us that
+                // the user clicked on an unfocused terminal. We don't want
+                // a single left click from out of focus to start a selection,
+                // so we return fast here.
+                if (_clickDragStartPos)
+                {
+                    args.Handled(true);
+                    return;
+                }
+
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
@@ -981,6 +994,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             if (point.Properties().IsLeftButtonPressed())
             {
+                // If this does not have a value, it means that PointerPressedHandler already
+                // set the SelectionAnchor. If it does have a value, that means the user is
+                // performing a click-drag selection on an unfocused terminal, so
+                // a SelectionAnchor isn't set yet. We'll have to set it here.
+                if (_clickDragStartPos)
+                {
+                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_clickDragStartPos));
+                }
+
                 const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
 
@@ -1052,6 +1074,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _ReleasePointerCapture(sender, args);
 
         const auto ptr = args.Pointer();
+
+        _clickDragStartPos = std::nullopt;
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
