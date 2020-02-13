@@ -26,16 +26,10 @@ UiaTracing::~UiaTracing() noexcept
 }
 
 inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& /*siup*/) noexcept
-try
 {
-    std::wstringstream stream;
-    stream << " NO IDENTIFYING DATA";
-    return stream.str();
+    return L" NO IDENTIFYING DATA";
 }
-catch (...)
-{
-    return {};
-}
+
 
 inline std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
 try
