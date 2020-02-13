@@ -389,7 +389,7 @@ void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 // - none
 // Return Value:
 // - current selection anchor
-const COORD RenderData::GetSelectionAnchor() const
+const COORD RenderData::GetSelectionAnchor() const noexcept
 {
     return Selection::Instance().GetSelectionAnchor();
 }

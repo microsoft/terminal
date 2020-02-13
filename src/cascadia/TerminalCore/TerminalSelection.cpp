@@ -34,7 +34,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 // - None
 // Return Value:
 // - None
-const COORD Terminal::GetSelectionAnchor() const
+const COORD Terminal::GetSelectionAnchor() const noexcept
 {
     return _selectionStart;
 }
@@ -328,7 +328,7 @@ COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 // - viewportPos: a coordinate on the viewport
 // Return Value:
 // - the corresponding location on the buffer
-COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
+COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const noexcept
 {
     const auto yPos = base::ClampedNumeric<short>(_VisibleStartIndex()) + viewportPos.Y;
     return COORD{ viewportPos.X, yPos };

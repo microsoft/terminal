@@ -141,7 +141,7 @@ public:
     const bool IsSelectionActive() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const override;
+    const COORD GetSelectionAnchor() const noexcept override;
     const std::wstring GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
@@ -252,7 +252,7 @@ private:
     void _ChunkSelectionByLine(const COORD position, bool shiftClick);
     COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
-    COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    COORD _ConvertToBufferCell(const COORD viewportPos) const noexcept;
     const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
 
