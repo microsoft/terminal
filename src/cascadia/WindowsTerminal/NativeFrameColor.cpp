@@ -1,4 +1,5 @@
 #include "pch.h"
+
 #include "NativeFrameColor.h"
 
 NativeFrameColor::NativeFrameColor()

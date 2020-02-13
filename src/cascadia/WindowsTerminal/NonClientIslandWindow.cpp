@@ -18,10 +18,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
-NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
+NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{},
-    _backgroundBrushColor{ RGB(0, 0, 0) },
-    _theme{ requestedTheme },
     _isMaximized{ false }
 {
 }
@@ -497,14 +495,8 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         auto frameColor = isActive ?
                               _nativeFrameColor.GetActiveColor() :
                               _nativeFrameColor.GetInactiveColor();
-
-        if (!_frameBrush || frameColor != _frameBrushColor)
-        {
-            // Create brush for titlebar color.
-            _frameBrush = wil::unique_hbrush(::CreateSolidBrush(frameColor));
-        }
-
-        ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.get());
+        _frameBrush.SetColor(frameColor);
+        ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.GetHandle());
     }
 
     if (ps.rcPaint.bottom > topBorderHeight)
@@ -516,14 +508,8 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
         const auto backgroundColor = backgroundSolidBrush.Color();
         const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
-
-        if (!_backgroundBrush || color != _backgroundBrushColor)
-        {
-            // Create brush for titlebar color.
-            _backgroundBrush = wil::unique_hbrush(::CreateSolidBrush(color));
-        }
-
-        ::FillRect(hdc.get(), &rcRest, _backgroundBrush.get());
+        _backgroundBrush.SetColor(color);
+        ::FillRect(hdc.get(), &rcRest, _backgroundBrush.GetHandle());
     }
 
     return 0;
@@ -546,47 +532,6 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
     _UpdateFrameTheme();
 
     return TRUE;
-}
-
-// Method Description:
-// - Updates the window frame's theme depending on the application theme (light
-//   or dark). This doesn't invalidate the old frame so it will not be
-//   rerendered until the user resizes or focuses/unfocuses the window.
-// Return Value:
-// - <none>
-void NonClientIslandWindow::_UpdateFrameTheme() const
-{
-    bool isDarkMode;
-
-    switch (_theme)
-    {
-    case ElementTheme::Light:
-        isDarkMode = false;
-        break;
-    case ElementTheme::Dark:
-        isDarkMode = true;
-        break;
-    default:
-        isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
-        break;
-    }
-
-    LOG_IF_FAILED(ThemeUtils::SetWindowFrameDarkMode(_window.get(), isDarkMode));
-}
-
-// Method Description:
-// - Called when the app wants to change its theme. We'll update the frame
-//   theme to match the new theme.
-// Arguments:
-// - requestedTheme: the ElementTheme to use as the new theme for the UI
-// Return Value:
-// - <none>
-void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& requestedTheme)
-{
-    IslandWindow::OnApplicationThemeChanged(requestedTheme);
-
-    _theme = requestedTheme;
-    _UpdateFrameTheme();
 }
 
 // Method Description:

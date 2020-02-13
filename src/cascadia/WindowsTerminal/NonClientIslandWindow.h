@@ -20,6 +20,7 @@ Author(s):
 #include "pch.h"
 #include "IslandWindow.h"
 #include "NativeFrameColor.h"
+#include "GdiSolidBrush.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <wil/resource.h>
@@ -30,7 +31,7 @@ public:
     // this is the same for all DPIs
     static constexpr const int topBorderVisibleHeight = 1;
 
-    NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
+    NonClientIslandWindow() noexcept;
     virtual ~NonClientIslandWindow() override;
 
     virtual void OnSize(const UINT width, const UINT height) override;
@@ -52,17 +53,13 @@ private:
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
-    wil::unique_hbrush _backgroundBrush;
-    COLORREF _backgroundBrushColor;
+    GdiSolidBrush _backgroundBrush;
 
     NativeFrameColor _nativeFrameColor;
-    wil::unique_hbrush _frameBrush;
-    COLORREF _frameBrushColor;
+    GdiSolidBrush _frameBrush;
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hrgn _dragBarRegion;
-
-    winrt::Windows::UI::Xaml::ElementTheme _theme;
 
     bool _isMaximized;
 
@@ -83,5 +80,4 @@ private:
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
     void _UpdateIslandRegion() const;
-    void _UpdateFrameTheme() const;
 };
