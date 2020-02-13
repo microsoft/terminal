@@ -922,8 +922,10 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::StartPaint() noexcept
 {
-    FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
+
+    // TODO: not sure why this is happening at all, but it is
+    RETURN_HR_IF(S_FALSE, IsRectEmpty(&_invalidRect) && _invalidScroll.cx == 0 && _invalidScroll.cy == 0);
 
     if (_isEnabled)
     {
@@ -987,17 +989,17 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
         if (SUCCEEDED(hr))
         {
+            _presentDirty = _invalidRect;
+
+            _presentParams.DirtyRectsCount = 1;
+            _presentParams.pDirtyRects = &_presentDirty;
+
             if (_invalidScroll.cy != 0 || _invalidScroll.cx != 0)
             {
-                _presentDirty = _invalidRect;
-
                 const RECT display = _GetDisplayRect();
                 SubtractRect(&_presentScroll, &display, &_presentDirty);
                 _presentOffset.x = _invalidScroll.cx;
                 _presentOffset.y = _invalidScroll.cy;
-
-                _presentParams.DirtyRectsCount = 1;
-                _presentParams.pDirtyRects = &_presentDirty;
 
                 _presentParams.pScrollOffset = &_presentOffset;
                 _presentParams.pScrollRect = &_presentScroll;
@@ -1075,9 +1077,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         try
         {
             HRESULT hr = S_OK;
-
-            hr = _dxgiSwapChain->Present(1, 0);
-            /*hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);*/
+            hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
             if (FAILED(hr))
             {
@@ -1126,19 +1126,26 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 {
+    const auto rect = D2D1::RectF(static_cast<float>(_invalidRect.left),
+                                  static_cast<float>(_invalidRect.top),
+                                  static_cast<float>(_invalidRect.right),
+                                  static_cast<float>(_invalidRect.bottom));
+
     switch (_chainMode)
     {
     case SwapChainMode::ForHwnd:
-        _d2dRenderTarget->FillRectangle(D2D1::RectF(static_cast<float>(_invalidRect.left),
-                                                    static_cast<float>(_invalidRect.top),
-                                                    static_cast<float>(_invalidRect.right),
-                                                    static_cast<float>(_invalidRect.bottom)),
+        _d2dRenderTarget->FillRectangle(rect,
                                         _d2dBrushBackground.Get());
         break;
     case SwapChainMode::ForComposition:
-        D2D1_COLOR_F nothing = { 0 };
+        _d2dRenderTarget->PushAxisAlignedClip(rect,
+                                              D2D1_ANTIALIAS_MODE::D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+        D2D1_COLOR_F nothing = { 0 };
         _d2dRenderTarget->Clear(nothing);
+
+        _d2dRenderTarget->PopAxisAlignedClip();
+
         break;
     }
 
