@@ -39,7 +39,6 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
-static constexpr std::string_view DefaultProfilesIndentation{ "        " };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
@@ -414,6 +413,11 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     const auto numProfiles = userProfilesObj.size();
     const auto lastProfile = userProfilesObj[numProfiles - 1];
     size_t currentInsertIndex = lastProfile.getOffsetLimit();
+    // Find the position of the first non-tab/space character before the last profile...
+    const auto lastProfileIndentStartsAt{ _userSettingsString.find_last_not_of(" \t", lastProfile.getOffsetStart() - 1) };
+    // ... and impute the user's preferred indentation.
+    // (we're taking a copy because a string_view into a string we mutate is a no-no.)
+    const std::string indentation{ _userSettingsString, lastProfileIndentStartsAt + 1, lastProfile.getOffsetStart() - lastProfileIndentStartsAt - 1 };
 
     bool changedFile = false;
 
@@ -444,17 +448,17 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         const auto diff = profile.GenerateStub();
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
-        // Add 8 spaces to the start of each line
-        profileSerialization.insert(0, DefaultProfilesIndentation);
+        // Add the user's indent to the start of each line
+        profileSerialization.insert(0, indentation);
         // Get the first newline
         size_t pos = profileSerialization.find("\n");
         // for each newline...
         while (pos != std::string::npos)
         {
             // Insert 8 spaces immediately following the current newline
-            profileSerialization.insert(pos + 1, DefaultProfilesIndentation);
+            profileSerialization.insert(pos + 1, indentation);
             // Get the next newline
-            pos = profileSerialization.find("\n", pos + 9);
+            pos = profileSerialization.find("\n", pos + indentation.size() + 1);
         }
 
         // Write a comma, newline to the file
