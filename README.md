@@ -227,4 +227,4 @@ For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [open
 [conduct-code]: https://opensource.microsoft.com/codeofconduct/
 [conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
-[store-install-link]: https://www.microsoft.com/store/productId/9N0DX20HK701
+[store-install-link]: https://aka.ms/windowsterminal
