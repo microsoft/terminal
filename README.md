@@ -17,7 +17,7 @@ Related repositories include:
 
 > 👉 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
 
-### Microsoft Store [Recommneded]
+### Microsoft Store [Recommended]
 
 Install the [Windows Terminal from the Microsoft Store][store-install-link]. This allows you to always be on the latest version when we release new builds with automatic upgrades. 
 
