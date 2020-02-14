@@ -202,9 +202,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
     if (cchNeeded > -1)
     {
-        wil::str_printf()
-            wistd::unique_ptr<char[]>
-                psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        wistd::unique_ptr<char[]>
+        psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
         RETURN_IF_NULL_ALLOC(psz);
 
         int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pFormat->c_str(), argList);
