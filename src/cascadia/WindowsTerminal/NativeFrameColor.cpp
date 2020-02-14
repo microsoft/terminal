@@ -5,6 +5,9 @@
 
 #include "NativeFrameColor.h"
 
+using namespace winrt::Windows::UI::ViewManagement;
+using namespace winrt::Windows::UI;
+
 namespace
 {
     DWORD GetByte(DWORD value, int i)
@@ -31,6 +34,12 @@ namespace
                (GetByte(rgb, 1) << 8) | // green
                (GetByte(rgb, 0) << 16); // blue
     }
+
+    bool IsDarkModeEnabled()
+    {
+        auto systemBgColor = UISettings().GetColorValue(UIColorType::Background);
+        return systemBgColor == Colors::Black();
+    }
 }
 
 NativeFrameColor::NativeFrameColor()
@@ -46,13 +55,13 @@ COLORREF NativeFrameColor::GetActiveColor() const
 
 COLORREF NativeFrameColor::GetInactiveColor() const
 {
-    // TODO (GH #4576): This is not the real color
-    //  The real color is transparent and is blended on top of other windows.
-    return 0x404040;
+    return _inactiveColor;
 }
 
 void NativeFrameColor::Update()
 {
+    bool darkMode = IsDarkModeEnabled();
+
     auto colorPrevalence = _ReadDwmSetting(L"ColorPrevalence").value_or(0);
     if (colorPrevalence)
     {
@@ -81,10 +90,14 @@ void NativeFrameColor::Update()
     }
     else
     {
-        // TODO (GH #4576): This is not the real color
+        // TODO (GH #4576): This is not the real color.
         //  The real color is transparent and is blended on top of other windows.
-        _activeColor = 0x303030;
+        _activeColor = !darkMode ? 0x707070 : 0x303030;
     }
+
+    // TODO (GH #4576): This is not the real color.
+    //  The real color is transparent and is blended on top of other windows.
+    _inactiveColor = !darkMode ? 0xAAAAAA : 0x404040;
 }
 
 std::optional<DWORD> NativeFrameColor::_ReadDwmSetting(LPCWSTR key) const

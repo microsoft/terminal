@@ -24,9 +24,9 @@ public:
     void Update();
 
 private:
-    wil::unique_hkey _dwmKey;
-
     std::optional<DWORD> _ReadDwmSetting(LPCWSTR key) const;
 
+    wil::unique_hkey _dwmKey;
     COLORREF _activeColor;
+    COLORREF _inactiveColor;
 };
