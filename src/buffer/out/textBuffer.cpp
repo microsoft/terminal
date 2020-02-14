@@ -1486,12 +1486,12 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
             it++;
         }
 
+        const bool forcedWrap = GetRowByOffset(iRow).GetCharRow().WasWrapForced();
+
         if (trimTrailingWhitespace)
         {
-            const ROW& Row = GetRowByOffset(iRow);
-
             // if the row was NOT wrapped...
-            if (!Row.GetCharRow().WasWrapForced())
+            if (!forcedWrap)
             {
                 // remove the spaces at the end (aka trim the trailing whitespace)
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
@@ -1511,7 +1511,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         if (includeCRLF && i < selectionRects.size() - 1)
         {
             // if the row was NOT wrapped...
-            if (!GetRowByOffset(iRow).GetCharRow().WasWrapForced())
+            if (!forcedWrap)
             {
                 // then we can assume a CR/LF is proper
                 selectionText.push_back(UNICODE_CARRIAGERETURN);
