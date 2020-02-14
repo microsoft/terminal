@@ -21,7 +21,7 @@ Related repositories include:
 
 Install the [Windows Terminal from the Microsoft Store][store-install-link]. This allows you to always be on the latest version when we release new builds with automatic upgrades. 
 
-This is our perferred method.
+This is our preferred method.
 
 ### Other install methods
 
