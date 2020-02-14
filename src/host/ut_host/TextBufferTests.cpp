@@ -150,6 +150,7 @@ class TextBufferTests
     TEST_METHOD(GetWordBoundaries);
 
     TEST_METHOD(GetTextRects);
+    TEST_METHOD(GetText);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2201,5 +2202,103 @@ void TextBufferTests::GetTextRects()
     for (size_t i = 0; i < expected.size(); ++i)
     {
         VERIFY_ARE_EQUAL(expected.at(i), result.at(i));
+    }
+}
+
+void TextBufferTests::GetText()
+{
+    // GetText() is used by...
+    //  - Copying text to the clipboard regularly
+    //  - Copying text to the clipboard, with shift held (collapse to one line)
+    //  - Extracting text from a UiaTextRange
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:lineSelection", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:trimTrailingWhitespace", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool includeCRLF;
+    bool trimTrailingWhitespace;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"includeCRLF", includeCRLF), L"Get 'includeCRLF' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"trimTrailingWhitespace", trimTrailingWhitespace), L"Get 'trimTrailingWhitespace' variant");
+
+    // Case 1: General case
+    {
+        COORD bufferSize{ 10, 20 };
+        UINT cursorSize = 12;
+        TextAttribute attr{ 0x7f };
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+        // Setup: Write lines of text to the buffer
+        const std::vector<std::wstring> text = { L"12345",
+                                                 L"  345",
+                                                 L"123  ",
+                                                 L"  3  " };
+        WriteLinesToBuffer(text, *_buffer);
+
+        // simulate a selection from origin to {4,4}
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 });
+
+        std::wstring result = L"";
+        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+        for (auto& text : textData)
+        {
+            result += text;
+        }
+
+        std::wstring expectedTextData = L"";
+        if (includeCRLF)
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"Standard Copy to Clipboard");
+                expectedTextData += L"12345\r\n";
+                expectedTextData += L"  345\r\n";
+                expectedTextData += L"123\r\n";
+                expectedTextData += L"  3\r\n";
+            }
+            else
+            {
+                Log::Comment(L"UI Automation");
+                expectedTextData += L"12345\r\n";
+                expectedTextData += L"  345\r\n";
+                expectedTextData += L"123  \r\n";
+                expectedTextData += L"  3  \r\n";
+                expectedTextData += L"     ";
+            }
+        }
+        else
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"UNDEFINED");
+                expectedTextData += L"12345";
+                expectedTextData += L"  345";
+                expectedTextData += L"123";
+                expectedTextData += L"  3";
+            }
+            else
+            {
+                Log::Comment(L"Shift+Copy to Clipboard");
+                expectedTextData += L"12345";
+                expectedTextData += L"  345";
+                expectedTextData += L"123  ";
+                expectedTextData += L"  3  ";
+                expectedTextData += L"     ";
+            }
+        }
+
+        // Verify expected output and actual output are the same
+        VERIFY_ARE_EQUAL(expectedTextData.size(), textData.size());
+        for (size_t i = 0; i < expectedTextData.size(); ++i)
+        {
+            VERIFY_ARE_EQUAL(expectedTextData.at(i), textData.at(i));
+        }
+    }
+
+    // Case 2: Wrapped text
+    {
+        // TODO CARLOS: If you have read this far, good for you.
+        //              I'll get back to these in the morning. 😁
     }
 }
