@@ -20,6 +20,11 @@
 
 using namespace DirectX;
 
+TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
+                             "Microsoft.Windows.Terminal.Renderer.DirectX",
+                             // {c93e739e-ae50-5a14-78e7-f171e947535d}
+                             (0xc93e739e, 0xae50, 0x5a14, 0x78, 0xe7, 0xf1, 0x71, 0xe9, 0x47, 0x53, 0x5d), );
+
 // Quad where we draw the terminal.
 // pos is world space coordinates where origin is at the center of screen.
 // tex is texel coordinates where origin is top left.
@@ -82,6 +87,8 @@ DxEngine::DxEngine() :
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
+    TraceLoggingRegister(g_hDxRenderProvider);
+
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
     THROW_IF_FAILED(DWriteCreateFactory(
@@ -99,6 +106,8 @@ DxEngine::DxEngine() :
 DxEngine::~DxEngine()
 {
     _ReleaseDeviceResources();
+
+    TraceLoggingUnregister(g_hDxRenderProvider);
 }
 
 // Routine Description:
@@ -376,8 +385,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
         {
             switch (_chainMode)
             {
-            case SwapChainMode::ForHwnd:
-            {
+            case SwapChainMode::ForHwnd: {
                 // use the HWND's dimensions for the swap chain dimensions.
                 RECT rect = { 0 };
                 RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
@@ -406,8 +414,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
                 break;
             }
-            case SwapChainMode::ForComposition:
-            {
+            case SwapChainMode::ForComposition: {
                 // Use the given target size for compositions.
                 SwapChainDesc.Width = _displaySizePixels.cx;
                 SwapChainDesc.Height = _displaySizePixels.cy;
@@ -777,8 +784,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
@@ -788,8 +794,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 
         return clientSize;
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         SIZE size = _sizeTarget;
         size.cx = static_cast<LONG>(size.cx * _scale);
         size.cy = static_cast<LONG>(size.cy * _scale);
@@ -926,6 +931,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
     // TODO: not sure why this is happening at all, but it is
     RETURN_HR_IF(S_FALSE, IsRectEmpty(&_invalidRect) && _invalidScroll.cx == 0 && _invalidScroll.cy == 0);
+
+    TraceLoggingWrite(g_hDxRenderProvider,
+                      "Invalid",
+                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
+                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
+                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
+                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
+                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
+                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"));
 
     if (_isEnabled)
     {
@@ -1352,8 +1366,7 @@ enum class CursorPaintType
 
     switch (options.cursorType)
     {
-    case CursorType::Legacy:
-    {
+    case CursorType::Legacy: {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
 
@@ -1361,26 +1374,22 @@ enum class CursorPaintType
         rect.top = rect.bottom - ulHeight;
         break;
     }
-    case CursorType::VerticalBar:
-    {
+    case CursorType::VerticalBar: {
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
         rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
         break;
     }
-    case CursorType::Underscore:
-    {
+    case CursorType::Underscore: {
         rect.top = rect.bottom - 1;
         break;
     }
-    case CursorType::EmptyBox:
-    {
+    case CursorType::EmptyBox: {
         paintType = CursorPaintType::Outline;
         break;
     }
-    case CursorType::FullBox:
-    {
+    case CursorType::FullBox: {
         break;
     }
     default:
@@ -1397,13 +1406,11 @@ enum class CursorPaintType
 
     switch (paintType)
     {
-    case CursorPaintType::Fill:
-    {
+    case CursorPaintType::Fill: {
         _d2dRenderTarget->FillRectangle(rect, brush.Get());
         break;
     }
-    case CursorPaintType::Outline:
-    {
+    case CursorPaintType::Outline: {
         // DrawRectangle in straddles physical pixels in an attempt to draw a line
         // between them. To avoid this, bump the rectangle around by half the stroke width.
         rect.top += 0.5f;
@@ -2057,12 +2064,10 @@ float DxEngine::GetScaling() const noexcept
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
