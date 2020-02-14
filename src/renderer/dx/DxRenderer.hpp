@@ -149,6 +149,7 @@ namespace Microsoft::Console::Render
 
         void _InvalidOffset(POINT pt);
 
+        bool _hasEverPresented;
         bool _presentReady;
         RECT _presentDirty;
         RECT _presentScroll;

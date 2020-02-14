@@ -85,7 +85,8 @@ DxEngine::DxEngine() :
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
-    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
+    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
+    _hasEverPresented{ false }
 {
     TraceLoggingRegister(g_hDxRenderProvider);
 
@@ -152,6 +153,10 @@ DxEngine::~DxEngine()
     if (!_isEnabled)
     {
         _ReleaseDeviceResources();
+    }
+    else
+    {
+        RETURN_IF_FAILED(_CreateDeviceResources(true));
     }
 
     return S_OK;
@@ -331,7 +336,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
 // You can find out how to install it here:
 // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
                               // clang-format on
-                              // D3D11_CREATE_DEVICE_DEBUG |
+                              D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     const std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels{ D3D_FEATURE_LEVEL_11_1,
@@ -434,6 +439,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
                 THROW_HR(E_NOTIMPL);
             }
 
+            _hasEverPresented = false;
+
             if (_retroTerminalEffects)
             {
                 const HRESULT hr = _SetupTerminalEffects();
@@ -525,6 +532,9 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
             RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
         }
+
+        _hasEverPresented = false;
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -553,6 +563,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
+        _hasEverPresented = false;
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -1091,7 +1102,16 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         try
         {
             HRESULT hr = S_OK;
-            hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+
+            if (_hasEverPresented)
+            {
+                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+            }
+            else
+            {
+                hr = _dxgiSwapChain->Present(1, 0);
+                _hasEverPresented = true;
+            }
 
             if (FAILED(hr))
             {
@@ -1148,9 +1168,6 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     switch (_chainMode)
     {
     case SwapChainMode::ForHwnd:
-        _d2dRenderTarget->FillRectangle(rect,
-                                        _d2dBrushBackground.Get());
-        break;
     case SwapChainMode::ForComposition:
         _d2dRenderTarget->PushAxisAlignedClip(rect,
                                               D2D1_ANTIALIAS_MODE::D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
