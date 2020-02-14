@@ -25,6 +25,10 @@
 
 #include "../../types/inc/Viewport.hpp"
 
+#include <TraceLoggingProvider.h>
+
+TRACELOGGING_DECLARE_PROVIDER(g_hDxRenderProvider);
+
 namespace Microsoft::Console::Render
 {
     class DxEngine final : public RenderEngineBase

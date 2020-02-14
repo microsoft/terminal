@@ -20,6 +20,11 @@
 
 using namespace DirectX;
 
+TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
+                             "Microsoft.Windows.Terminal.Renderer.DirectX",
+                             // {c93e739e-ae50-5a14-78e7-f171e947535d}
+                             (0xc93e739e, 0xae50, 0x5a14, 0x78, 0xe7, 0xf1, 0x71, 0xe9, 0x47, 0x53, 0x5d), );
+
 // Quad where we draw the terminal.
 // pos is world space coordinates where origin is at the center of screen.
 // tex is texel coordinates where origin is top left.
@@ -82,6 +87,8 @@ DxEngine::DxEngine() :
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
+    TraceLoggingRegister(g_hDxRenderProvider);
+
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
     THROW_IF_FAILED(DWriteCreateFactory(
@@ -99,6 +106,8 @@ DxEngine::DxEngine() :
 DxEngine::~DxEngine()
 {
     _ReleaseDeviceResources();
+
+    TraceLoggingUnregister(g_hDxRenderProvider);
 }
 
 // Routine Description:
@@ -924,6 +933,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 {
     FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
+
+    TraceLoggingWrite(g_hDxRenderProvider,
+                      "Invalid",
+                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
+                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
+                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
+                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
+                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
+                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"));
 
     if (_isEnabled)
     {
