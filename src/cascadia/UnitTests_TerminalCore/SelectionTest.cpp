@@ -122,7 +122,7 @@ namespace TerminalCoreUnitTests
                 ValidateSingleRowSelection(term, expected);
             };
 
-            // Test DoubleClickSelection(COORD)
+            // Test a Double Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do double click selection.
             auto ValidateDoubleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
@@ -130,11 +130,11 @@ namespace TerminalCoreUnitTests
                 DummyRenderTarget emptyRT;
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
-                term.DoubleClickSelection(maxCoord);
+                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansionMode::Word);
                 ValidateSingleRowSelection(term, expected);
             };
 
-            // Test TripleClickSelection(COORD)
+            // Test a Triple Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do triple click selection.
             auto ValidateTripleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
@@ -142,7 +142,7 @@ namespace TerminalCoreUnitTests
                 DummyRenderTarget emptyRT;
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
-                term.TripleClickSelection(maxCoord);
+                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansionMode::Line);
                 ValidateSingleRowSelection(term, expected);
             };
 
@@ -501,7 +501,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate double click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.DoubleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, (4 + gsl::narrow<SHORT>(text.size()) - 1), 10 }));
@@ -519,7 +519,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.DoubleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -546,7 +546,7 @@ namespace TerminalCoreUnitTests
             // Simulate click at (x,y) = (15,10)
             // this is over the '>' char
             auto clickPos = COORD{ 15, 10 };
-            term.DoubleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
 
             // ---Validate selection area---
             // "Terminal" is in class 2
@@ -572,7 +572,7 @@ namespace TerminalCoreUnitTests
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
-            term.DoubleClickSelection({ 5, 10 });
+            term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansionMode::Word);
 
             // Simulate move to (x,y) = (21,10)
             //
@@ -601,7 +601,7 @@ namespace TerminalCoreUnitTests
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
-            term.DoubleClickSelection({ 21, 10 });
+            term.MultiClickSelection({ 21, 10 }, Terminal::SelectionExpansionMode::Word);
 
             // Simulate move to (x,y) = (5,10)
             //
@@ -622,7 +622,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.TripleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
 
             // Validate selection area
             ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
@@ -636,7 +636,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.TripleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
 
             // Simulate move to (x,y) = (7,10)
             term.SetSelectionEnd({ 7, 10 });
@@ -653,7 +653,7 @@ namespace TerminalCoreUnitTests
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
-            term.TripleClickSelection(clickPos);
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
 
             // Simulate move to (x,y) = (5,11)
             term.SetSelectionEnd({ 5, 11 });

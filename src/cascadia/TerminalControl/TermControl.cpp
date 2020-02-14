@@ -920,17 +920,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (multiClickMapper == 3)
                 {
-                    _terminal->TripleClickSelection(terminalPosition);
+                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
                 }
                 else if (multiClickMapper == 2)
                 {
-                    _terminal->DoubleClickSelection(terminalPosition);
+                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
                 }
                 else
                 {
                     if (shiftEnabled && _terminal->IsSelectionActive())
                     {
-                        _terminal->SetSelectionEnd(terminalPosition, ::Microsoft::Terminal::Core::Terminal::SelectionExpansionMode::Cell);
+                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
                     }
                     else
                     {

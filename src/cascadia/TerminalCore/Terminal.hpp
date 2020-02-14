@@ -163,8 +163,7 @@ public:
         Line
     };
     const bool IsCopyOnSelectActive() const noexcept;
-    void DoubleClickSelection(const COORD position);
-    void TripleClickSelection(const COORD position);
+    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> expansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;

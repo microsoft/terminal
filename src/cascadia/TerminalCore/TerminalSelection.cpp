@@ -73,34 +73,17 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 }
 
 // Method Description:
-// - Select the sequence between delimiters defined in Settings
-// Arguments:
-// - position: the (x,y) coordinate on the visible viewport
-void Terminal::DoubleClickSelection(const COORD viewportPos)
-{
-    // set the selection pivot to expand the selection using SetSelectionEnd()
-    _selectionPivot = _ConvertToBufferCell(viewportPos);
-    _buffer->GetSize().Clamp(_selectionPivot);
-
-    _multiClickSelectionMode = SelectionExpansionMode::Word;
-    SetSelectionEnd(viewportPos);
-
-    // we need to set the _selectionPivot again
-    // for future shift+clicks
-    _selectionPivot = _selectionStart;
-}
-
-// Method Description:
-// - Select the entire row of the position clicked
+// - Perform a multi-click selection at viewportPos expanding according to the expansionMode
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
-void Terminal::TripleClickSelection(const COORD viewportPos)
+// - expansionMode: the SelectionExpansionMode to dictate the boundaries of the selection anchors
+void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode)
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
     _selectionPivot = _ConvertToBufferCell(viewportPos);
     _buffer->GetSize().Clamp(_selectionPivot);
 
-    _multiClickSelectionMode = SelectionExpansionMode::Line;
+    _multiClickSelectionMode = expansionMode;
     SetSelectionEnd(viewportPos);
 
     // we need to set the _selectionPivot again
@@ -114,14 +97,16 @@ void Terminal::TripleClickSelection(const COORD viewportPos)
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::SetSelectionAnchor(const COORD viewportPos)
 {
-    _selectionStart = _ConvertToBufferCell(viewportPos);
+    _selectionPivot = _ConvertToBufferCell(viewportPos);
     _buffer->GetSize().Clamp(_selectionStart);
 
-    _selectionPivot = _selectionStart;
-
-    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
-
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
+
+    // Unlike MultiClickSelection(), we need to set
+    // these vars BEFORE SetSelectionEnd()
+    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
+    _selectionStart = _selectionPivot;
+
     SetSelectionEnd(viewportPos);
 }
 
