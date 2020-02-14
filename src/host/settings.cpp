@@ -69,8 +69,7 @@ Settings::Settings() :
 
     _dwWindowSizePixels = { 0 };
 
-    _dwWindowOrigin.X = 0;
-    _dwWindowOrigin.Y = 0;
+    _dwWindowOrigin.X = _dwWindowOrigin.Y = 0;
 
     _dwFontSize.X = 0;
     _dwFontSize.Y = 16;
