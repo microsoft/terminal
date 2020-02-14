@@ -2227,14 +2227,17 @@ void TextBufferTests::GetText()
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:wrappedText", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:blockSelection", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:includeCRLF", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:trimTrailingWhitespace", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
     bool wrappedText;
+    bool blockSelection;
     bool includeCRLF;
     bool trimTrailingWhitespace;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"wrappedText", wrappedText), L"Get 'wrappedText' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"includeCRLF", includeCRLF), L"Get 'includeCRLF' variant");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"trimTrailingWhitespace", trimTrailingWhitespace), L"Get 'trimTrailingWhitespace' variant");
 
@@ -2253,7 +2256,7 @@ void TextBufferTests::GetText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 });
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection);
 
         std::wstring result = L"";
         const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
@@ -2276,11 +2279,22 @@ void TextBufferTests::GetText()
             else
             {
                 Log::Comment(L"UI Automation");
-                expectedText += L"12345     \r\n";
-                expectedText += L"  345     \r\n";
-                expectedText += L"123       \r\n";
-                expectedText += L"  3       \r\n";
-                expectedText += L"     ";
+                if (blockSelection)
+                {
+                    expectedText += L"12345\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"  3  \r\n";
+                    expectedText += L"     ";
+                }
+                else
+                {
+                    expectedText += L"12345     \r\n";
+                    expectedText += L"  345     \r\n";
+                    expectedText += L"123       \r\n";
+                    expectedText += L"  3       \r\n";
+                    expectedText += L"     ";
+                }
             }
         }
         else
@@ -2296,11 +2310,22 @@ void TextBufferTests::GetText()
             else
             {
                 Log::Comment(L"Shift+Copy to Clipboard");
-                expectedText += L"12345     ";
-                expectedText += L"  345     ";
-                expectedText += L"123       ";
-                expectedText += L"  3       ";
-                expectedText += L"     ";
+                if (blockSelection)
+                {
+                    expectedText += L"12345";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"  3  ";
+                    expectedText += L"     ";
+                }
+                else
+                {
+                    expectedText += L"12345     ";
+                    expectedText += L"  345     ";
+                    expectedText += L"123       ";
+                    expectedText += L"  3       ";
+                    expectedText += L"     ";
+                }
             }
         }
 
