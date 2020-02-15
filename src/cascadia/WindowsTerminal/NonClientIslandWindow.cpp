@@ -581,9 +581,9 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 }
 
 // Method Description:
-// - Returns `true` if dark mode is enabled.
+// - Return `true` if dark mode is enabled or `false` otherwise.
 // Return Value:
-// - Is dark mode enabled?
+// - Whether dark mode is enabled or not.
 bool NonClientIslandWindow::_IsDarkModeEnabled() const
 {
     switch (_theme)
@@ -609,6 +609,7 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
     IslandWindow::OnApplicationThemeChanged(requestedTheme);
 
     _theme = requestedTheme;
+    _InvalidateTopBorder(); // its color might be different based on the theme
 }
 
 // Method Description:
