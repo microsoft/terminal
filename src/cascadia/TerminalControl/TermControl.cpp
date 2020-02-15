@@ -327,20 +327,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto existingMargin = _swapChainPanel.Margin();
         _swapChainPanel.Margin(newMargin);
 
-        if (newMargin != existingMargin && newMargin != Thickness{ 0 })
-        {
-            TraceLoggingWrite(g_hTerminalControlProvider,
-                              "NonzeroPaddingApplied",
-                              TraceLoggingDescription("An event emitted when a control has padding applied to it"),
-                              TraceLoggingStruct(4, "Padding"),
-                              TraceLoggingFloat64(newMargin.Left, "Left"),
-                              TraceLoggingFloat64(newMargin.Top, "Top"),
-                              TraceLoggingFloat64(newMargin.Right, "Right"),
-                              TraceLoggingFloat64(newMargin.Bottom, "Bottom"),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-        }
-
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
@@ -900,17 +886,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
+        if (!_focused)
+        {
+            Focus(FocusState::Pointer);
+
+            // Save the click position here when the terminal does not have focus
+            // because they might be performing a click-drag selection. Since we
+            // only want to start the selection when the user moves the pointer with
+            // the left mouse button held down, the PointerMovedHandler will use
+            // this saved position to set the SelectionAnchor.
+            _clickDragStartPos = point.Position();
+        }
+
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            // Ignore mouse events while the terminal does not have focus.
-            // This prevents the user from selecting and copying text if they
-            // click inside the current tab to refocus the terminal window.
-            if (!_focused)
-            {
-                args.Handled(true);
-                return;
-            }
-
             const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
             // static_cast to a uint32_t because we can't use the WI_IsFlagSet
             // macro directly with a VirtualKeyModifiers
@@ -919,6 +908,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
+                // _clickDragStartPos having a value signifies to us that
+                // the user clicked on an unfocused terminal. We don't want
+                // a single left click from out of focus to start a selection,
+                // so we return fast here.
+                if (_clickDragStartPos)
+                {
+                    args.Handled(true);
+                    return;
+                }
+
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
@@ -995,6 +994,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             if (point.Properties().IsLeftButtonPressed())
             {
+                // If this does not have a value, it means that PointerPressedHandler already
+                // set the SelectionAnchor. If it does have a value, that means the user is
+                // performing a click-drag selection on an unfocused terminal, so
+                // a SelectionAnchor isn't set yet. We'll have to set it here.
+                if (_clickDragStartPos)
+                {
+                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_clickDragStartPos));
+                }
+
                 const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
 
@@ -1066,6 +1074,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _ReleasePointerCapture(sender, args);
 
         const auto ptr = args.Pointer();
+
+        _clickDragStartPos = std::nullopt;
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
@@ -1511,12 +1521,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender,
                                              Windows::Foundation::IInspectable const& /*args*/)
     {
-        const auto scale = sender.CompositionScaleX();
-        const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+        if (_renderEngine)
+        {
+            const auto scale = sender.CompositionScaleX();
+            const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
 
-        // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
-        THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
-        _renderer->TriggerRedrawAll();
+            // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
+            THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
+            _renderer->TriggerRedrawAll();
+        }
     }
 
     // Method Description:
@@ -2233,8 +2246,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_DragOverHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                        DragEventArgs const& e)
     {
+        if (!e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            // We can't do anything for non-storageitems right now.
+            return;
+        }
+
         // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
-        e.AcceptedOperation(winrt::Windows::ApplicationModel::DataTransfer::DataPackageOperation::Copy);
+        e.AcceptedOperation(DataPackageOperation::Copy);
 
         // Sets custom UI text
         e.DragUIOverride().Caption(RS_(L"DragFileCaption"));

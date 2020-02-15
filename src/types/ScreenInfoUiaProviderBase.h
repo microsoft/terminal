@@ -47,6 +47,7 @@ namespace Microsoft::Console::Types
         ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
+        virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept override;
