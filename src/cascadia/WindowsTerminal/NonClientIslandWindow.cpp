@@ -417,6 +417,38 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 }
 
 // Method Description:
+// - Update the top border when the window is made active or inactive.
+// Arguments:
+// - wParam: `TRUE` or `FALSE` if the window was made active or inactive respectively.
+// - lParam: the lParam parameter for the WM_NCACTIVATE message
+// Return Value:
+// - The return value is the result of the message processing.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcActivate(const WPARAM wParam, const LPARAM lParam) noexcept
+{
+    bool newIsActive = wParam == TRUE;
+
+    if (_isActive != newIsActive)
+    {
+        _isActive = newIsActive;
+
+        _InvalidateTopBorder();
+
+        // 1. If the user presses the mouse left button on the title bar and
+        //    doesn't move its cursor, the application will freeze.
+        //    So update _right now_ while we still can, otherwise we will end
+        //    up with an ugly desync between the top border and the other
+        //    borders of the frame.
+        // 2. When the windows goes from active to inactive, there is a lag of
+        //    a few milliseconds before the top border is painted unless we
+        //    force it to be painted _right now_ using that function.
+        ::UpdateWindow(GetWindowHandle());
+    }
+
+    // delegate to superclass' message handler
+    return IslandWindow::MessageHandler(WM_NCACTIVATE, wParam, lParam);
+}
+
+// Method Description:
 // - Gets the difference between window and client area size.
 // Arguments:
 // - dpi: dpi of a monitor on which the window is placed
@@ -467,20 +499,8 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         _nativeFrameColor.Update();
         _InvalidateTopBorder();
         break;
-    case WM_ACTIVATE:
-        _InvalidateTopBorder();
-
-        if (wParam == WA_CLICKACTIVE)
-        {
-            // If the user presses the mouse left button on the title bar and
-            // doesn't move its cursor, the application will freeze.
-            // So update _right now_ while we still can, otherwise we will end
-            // up with an ugly desync between the top border and the other
-            // borders of the frame.
-            ::UpdateWindow(GetWindowHandle());
-        }
-
-        break;
+    case WM_NCACTIVATE:
+        return _OnNcActivate(wParam, lParam);
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
@@ -514,8 +534,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         RECT rcTopBorder = ps.rcPaint;
         rcTopBorder.bottom = topBorderHeight;
 
-        auto isActive = ::GetActiveWindow() == GetWindowHandle();
-        auto frameColor = isActive ?
+        auto frameColor = _isActive ?
                               _nativeFrameColor.GetActiveColor() :
                               _nativeFrameColor.GetInactiveColor();
         _frameBrush.SetColor(frameColor);
