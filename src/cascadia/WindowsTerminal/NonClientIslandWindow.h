@@ -20,7 +20,7 @@ Author(s):
 #include "pch.h"
 #include "IslandWindow.h"
 #include "NativeFrameColor.h"
-#include "GdiSolidBrush.h"
+#include "SolidBrushCache.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <wil/resource.h>
@@ -52,10 +52,10 @@ private:
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
-    GdiSolidBrush _titlebarBrush;
+    SolidBrushCache _titlebarBrush;
 
     NativeFrameColor _nativeFrameColor;
-    GdiSolidBrush _frameBrush;
+    SolidBrushCache _frameBrush;
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hrgn _dragBarRegion;

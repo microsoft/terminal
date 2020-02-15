@@ -55,7 +55,7 @@
     <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="WindowUiaProvider.hpp" />
     <ClInclude Include="NativeFrameColor.h" />
-    <ClInclude Include="GdiSolidBrush.h" />
+    <ClInclude Include="SolidBrushCache.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -67,7 +67,7 @@
     <ClCompile Include="NonClientIslandWindow.cpp" />
     <ClCompile Include="WindowUiaProvider.cpp" />
     <ClCompile Include="NativeFrameColor.cpp" />
-    <ClCompile Include="GdiSolidBrush.cpp" />
+    <ClCompile Include="SolidBrushCache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsTerminal.rc" />

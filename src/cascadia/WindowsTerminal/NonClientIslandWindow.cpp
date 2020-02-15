@@ -527,11 +527,10 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         return 0;
     }
 
-    const auto titlebarBrush = _titlebar.Background();
-    const auto titlebarSolidBrush = titlebarBrush.as<Media::SolidColorBrush>();
-    const auto titlebarColor = titlebarSolidBrush.Color();
-    const auto color = RGB(titlebarColor.R, titlebarColor.G, titlebarColor.B);
-    _titlebarBrush.SetColor(color);
+    const auto titlebarBrushXaml = _titlebar.Background();
+    const auto titlebarSolidBrushXaml = titlebarBrushXaml.as<Media::SolidColorBrush>();
+    const auto titlebarColorXaml = titlebarSolidBrushXaml.Color();
+    const auto titlebarColor = RGB(titlebarColorXaml.R, titlebarColorXaml.G, titlebarColorXaml.B);
 
     const auto topBorderHeight = _GetTopBorderHeight();
 
@@ -545,15 +544,14 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
                               _nativeFrameColor.GetInactiveColor();
         if (frameColor.has_value())
         {
-            _frameBrush.SetColor(frameColor.value());
-            ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.GetHandle());
+            ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.MakeOrGetHandle(frameColor.value()));
         }
         else
         {
             // TODO (GH #4576): An empty value means that it is a transparent color
             //  which we can't render easily, so we use the color of the titlebar
             //  instead to make it look _not too bad_.
-            ::FillRect(hdc.get(), &rcTopBorder, _titlebarBrush.GetHandle());
+            ::FillRect(hdc.get(), &rcTopBorder, _titlebarBrush.MakeOrGetHandle(titlebarColor));
         }
     }
 
@@ -562,7 +560,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         RECT rcRest = ps.rcPaint;
         rcRest.top = topBorderHeight;
 
-        ::FillRect(hdc.get(), &rcRest, _titlebarBrush.GetHandle());
+        ::FillRect(hdc.get(), &rcRest, _titlebarBrush.MakeOrGetHandle(titlebarColor));
     }
 
     return 0;
