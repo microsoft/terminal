@@ -149,6 +149,39 @@ void NonClientIslandWindow::_InvalidateTopBorder() const noexcept
     ::InvalidateRect(hwnd, &invalidRc, FALSE);
 }
 
+// Method Description:
+// - This method returns the color that that top border should be painted in or
+//   an empty value to signal that the color should be the same as the titlebar's
+//   color.
+// Return Value:
+// - the color of the top border or an empty value to copy the titlebar's color
+std::optional<COLORREF> NonClientIslandWindow::_GetTopBorderColor() const noexcept
+{
+    const auto color = _isActive ?
+                                _nativeFrameColor.GetActiveColor() :
+                                _nativeFrameColor.GetInactiveColor();
+    if (color.has_value())
+    {
+        return color;
+    }
+    else
+    {
+        // An empty value means that it is a transparent color which we
+        // can't render easily, so we use the color of the titlebar
+        // when it's dark instead, to make it look _not too bad_, or
+        // a predefined color when the titlebar is bright.
+        // TODO (GH #4576): render the actual transparent color
+        if (_IsDarkModeEnabled())
+        {
+            return std::nullopt;
+        }
+        else
+        {
+            return { _isActive ? RGB(112, 112, 112) : RGB(170, 170, 170) };
+        }
+    }
+}
+
 RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
 {
     if (_dragBar)
@@ -528,45 +561,22 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         return 0;
     }
 
-    const auto titlebarBrushXaml = _titlebar.Background();
-    const auto titlebarSolidBrushXaml = titlebarBrushXaml.as<Media::SolidColorBrush>();
-    const auto titlebarColorXaml = titlebarSolidBrushXaml.Color();
-    const auto titlebarColor = RGB(titlebarColorXaml.R, titlebarColorXaml.G, titlebarColorXaml.B);
+    const auto titlebarBrush = _titlebar.Background();
+    const auto titlebarSolidBrush = titlebarBrush.as<Media::SolidColorBrush>();
+    const auto titlebarColor = titlebarSolidBrush.Color();
+    const auto titlebarColorref = RGB(titlebarColor.R, titlebarColor.G, titlebarColor.B);
 
     const auto topBorderHeight = _GetTopBorderHeight();
 
     if (ps.rcPaint.top < topBorderHeight)
     {
-        COLORREF frameColor;
-
-        const auto tmp = _isActive ?
-                             _nativeFrameColor.GetActiveColor() :
-                             _nativeFrameColor.GetInactiveColor();
-        if (tmp.has_value())
-        {
-            frameColor = tmp.value();
-        }
-        else
-        {
-            // An empty value means that it is a transparent color which we
-            // can't render easily, so we use the color of the titlebar
-            // when it's dark instead, to make it look _not too bad_, or
-            // a predifined color when the titlebar is bright.
-            // TODO (GH #4576): render the actual transparent color
-            if (_IsDarkModeEnabled())
-            {
-                frameColor = titlebarColor;
-            }
-            else
-            {
-                frameColor = _isActive ? RGB(112, 112, 112) : RGB(170, 170, 170);
-            }
-        }
-
         RECT rcTopBorder = ps.rcPaint;
         rcTopBorder.bottom = topBorderHeight;
 
-        ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.MakeOrGetHandle(frameColor));
+        const auto topBorderColor = _GetTopBorderColor()
+            .value_or(titlebarColorref);
+
+        ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.MakeOrGetHandle(topBorderColor));
     }
 
     if (ps.rcPaint.bottom > topBorderHeight)
@@ -574,7 +584,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         RECT rcRest = ps.rcPaint;
         rcRest.top = topBorderHeight;
 
-        ::FillRect(hdc.get(), &rcRest, _titlebarBrush.MakeOrGetHandle(titlebarColor));
+        ::FillRect(hdc.get(), &rcRest, _titlebarBrush.MakeOrGetHandle(titlebarColorref));
     }
 
     return 0;

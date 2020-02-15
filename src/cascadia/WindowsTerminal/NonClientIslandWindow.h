@@ -68,8 +68,10 @@ private:
 
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
+
     int _GetTopBorderHeight() const noexcept;
     void _InvalidateTopBorder() const noexcept;
+    std::optional<COLORREF> _GetTopBorderColor() const noexcept;
 
     bool _IsDarkModeEnabled() const;
 
