@@ -32,7 +32,7 @@ AppHost::AppHost() noexcept :
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>();
+        _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
     }
     else
     {

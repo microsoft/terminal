@@ -46,10 +46,11 @@ std::optional<COLORREF> NativeFrameColor::GetActiveColor() const
 
 std::optional<COLORREF> NativeFrameColor::GetInactiveColor() const
 {
-    // TODO (GH #4576): The real color is supposed to be transparent and is
-    //  blended on top of other windows. Because we can't render transparent
-    //  colors easily, we cheat and instead tell the render code to use a
-    //  color that doesn't look _too wrong_ by returning an empty value.
+    // The real color is supposed to be transparent and is blended on top of
+    // other windows. Because we can't render transparent colors easily, we
+    // cheat and instead tell the render code to use a color that doesn't
+    // look _too wrong_ by returning an empty value.
+    // TODO (GH #4576): render the actual transparent color
     return std::nullopt;
 }
 
@@ -83,10 +84,11 @@ void NativeFrameColor::Update()
     }
     else
     {
-        // TODO (GH #4576): The real color is supposed to be transparent and is
-        //  blended on top of other windows. Because we can't render transparent
-        //  colors easily, we cheat and instead tell the render code to use a
-        //  color that doesn't look _too wrong_ by returning an empty value.
+        // The real color is supposed to be transparent and is blended on top of
+        // other windows. Because we can't render transparent colors easily, we
+        // cheat and instead tell the render code to use a color that doesn't
+        // look _too wrong_ by returning an empty value.
+        // TODO (GH #4576): render the actual transparent color
         _activeColor = std::nullopt;
     }
 }

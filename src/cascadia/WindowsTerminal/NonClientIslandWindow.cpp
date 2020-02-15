@@ -18,8 +18,9 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
-NonClientIslandWindow::NonClientIslandWindow() noexcept :
+NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
+    _theme{ requestedTheme },
     _isMaximized{ false }
 {
 }
@@ -536,23 +537,36 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 
     if (ps.rcPaint.top < topBorderHeight)
     {
-        RECT rcTopBorder = ps.rcPaint;
-        rcTopBorder.bottom = topBorderHeight;
+        COLORREF frameColor;
 
-        auto frameColor = _isActive ?
-                              _nativeFrameColor.GetActiveColor() :
-                              _nativeFrameColor.GetInactiveColor();
-        if (frameColor.has_value())
+        const auto tmp = _isActive ?
+                             _nativeFrameColor.GetActiveColor() :
+                             _nativeFrameColor.GetInactiveColor();
+        if (tmp.has_value())
         {
-            ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.MakeOrGetHandle(frameColor.value()));
+            frameColor = tmp.value();
         }
         else
         {
-            // TODO (GH #4576): An empty value means that it is a transparent color
-            //  which we can't render easily, so we use the color of the titlebar
-            //  instead to make it look _not too bad_.
-            ::FillRect(hdc.get(), &rcTopBorder, _titlebarBrush.MakeOrGetHandle(titlebarColor));
+            // An empty value means that it is a transparent color which we
+            // can't render easily, so we use the color of the titlebar
+            // when it's dark instead, to make it look _not too bad_, or
+            // a predifined color when the titlebar is bright.
+            // TODO (GH #4576): render the actual transparent color
+            if (_IsDarkModeEnabled())
+            {
+                frameColor = titlebarColor;
+            }
+            else
+            {
+                frameColor = _isActive ? RGB(112, 112, 112) : RGB(170, 170, 170);
+            }
         }
+
+        RECT rcTopBorder = ps.rcPaint;
+        rcTopBorder.bottom = topBorderHeight;
+
+        ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.MakeOrGetHandle(frameColor));
     }
 
     if (ps.rcPaint.bottom > topBorderHeight)
@@ -564,6 +578,37 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
     }
 
     return 0;
+}
+
+// Method Description:
+// - Returns `true` if dark mode is enabled.
+// Return Value:
+// - Is dark mode enabled?
+bool NonClientIslandWindow::_IsDarkModeEnabled() const
+{
+    switch (_theme)
+    {
+    case ElementTheme::Light:
+        return false;
+    case ElementTheme::Dark:
+        return true;
+    default:
+        return Application::Current().RequestedTheme() == ApplicationTheme::Dark;
+    }
+}
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll update the frame
+//   theme to match the new theme.
+// Arguments:
+// - requestedTheme: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& requestedTheme)
+{
+    IslandWindow::OnApplicationThemeChanged(requestedTheme);
+
+    _theme = requestedTheme;
 }
 
 // Method Description:
