@@ -28,8 +28,8 @@ Author(s):
 class NonClientIslandWindow : public IslandWindow
 {
 public:
-    // this is the same for all DPIs
-    static constexpr const int topBorderVisibleHeight = 1;
+    // the unit is DIP or Device Independent Pixel
+    static constexpr const int frameBorderSize = 1;
 
     NonClientIslandWindow() noexcept;
     virtual ~NonClientIslandWindow() override;

@@ -120,7 +120,7 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
         return 0;
     }
 
-    return topBorderVisibleHeight;
+    return static_cast<int>(NonClientIslandWindow::frameBorderSize * GetCurrentDpiScale());
 }
 
 // Method Description:
@@ -464,7 +464,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
     // size of our window, which will be at least close.
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
 
-    islandFrame.top = -topBorderVisibleHeight;
+    islandFrame.top = -1 * NonClientIslandWindow::frameBorderSize * dpi;
 
     const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
 
