@@ -51,10 +51,8 @@ Abstract:
 // Additional headers for various xaml features. We need:
 //  * Controls for grid
 //  * Media for ScaleTransform
-//  * ViewManagement for dark mode detection
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.Xaml.Media.h>
-#include <winrt/Windows.UI.ViewManagement.h>
 
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>

@@ -52,7 +52,7 @@ private:
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
-    GdiSolidBrush _backgroundBrush;
+    GdiSolidBrush _titlebarBrush;
 
     NativeFrameColor _nativeFrameColor;
     GdiSolidBrush _frameBrush;

@@ -527,6 +527,12 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         return 0;
     }
 
+    const auto titlebarBrush = _titlebar.Background();
+    const auto titlebarSolidBrush = titlebarBrush.as<Media::SolidColorBrush>();
+    const auto titlebarColor = titlebarSolidBrush.Color();
+    const auto color = RGB(titlebarColor.R, titlebarColor.G, titlebarColor.B);
+    _titlebarBrush.SetColor(color);
+
     const auto topBorderHeight = _GetTopBorderHeight();
 
     if (ps.rcPaint.top < topBorderHeight)
@@ -537,8 +543,18 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         auto frameColor = _isActive ?
                               _nativeFrameColor.GetActiveColor() :
                               _nativeFrameColor.GetInactiveColor();
-        _frameBrush.SetColor(frameColor);
-        ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.GetHandle());
+        if (frameColor.has_value())
+        {
+            _frameBrush.SetColor(frameColor.value());
+            ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.GetHandle());
+        }
+        else
+        {
+            // TODO (GH #4576): An empty value means that it is a transparent color
+            //  which we can't render easily, so we use the color of the titlebar
+            //  instead to make it look _not too bad_.
+            ::FillRect(hdc.get(), &rcTopBorder, _titlebarBrush.GetHandle());
+        }
     }
 
     if (ps.rcPaint.bottom > topBorderHeight)
@@ -546,12 +562,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         RECT rcRest = ps.rcPaint;
         rcRest.top = topBorderHeight;
 
-        const auto backgroundBrush = _titlebar.Background();
-        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const auto backgroundColor = backgroundSolidBrush.Color();
-        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
-        _backgroundBrush.SetColor(color);
-        ::FillRect(hdc.get(), &rcRest, _backgroundBrush.GetHandle());
+        ::FillRect(hdc.get(), &rcRest, _titlebarBrush.GetHandle());
     }
 
     return 0;

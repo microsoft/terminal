@@ -18,8 +18,8 @@ class NativeFrameColor
 public:
     NativeFrameColor();
 
-    COLORREF GetActiveColor() const;
-    COLORREF GetInactiveColor() const;
+    std::optional<COLORREF> GetActiveColor() const;
+    std::optional<COLORREF> GetInactiveColor() const;
 
     void Update();
 
@@ -27,6 +27,5 @@ private:
     std::optional<DWORD> _ReadDwmSetting(LPCWSTR key) const;
 
     wil::unique_hkey _dwmKey;
-    COLORREF _activeColor;
-    COLORREF _inactiveColor;
+    std::optional<COLORREF> _activeColor;
 };

@@ -5,9 +5,6 @@
 
 #include "NativeFrameColor.h"
 
-using namespace winrt::Windows::UI::ViewManagement;
-using namespace winrt::Windows::UI;
-
 namespace
 {
     DWORD GetByte(DWORD value, int i)
@@ -34,12 +31,6 @@ namespace
                (GetByte(rgb, 1) << 8) | // green
                (GetByte(rgb, 0) << 16); // blue
     }
-
-    bool IsDarkModeEnabled()
-    {
-        auto systemBgColor = UISettings().GetColorValue(UIColorType::Background);
-        return systemBgColor == Colors::Black();
-    }
 }
 
 NativeFrameColor::NativeFrameColor()
@@ -48,20 +39,22 @@ NativeFrameColor::NativeFrameColor()
     Update();
 }
 
-COLORREF NativeFrameColor::GetActiveColor() const
+std::optional<COLORREF> NativeFrameColor::GetActiveColor() const
 {
     return _activeColor;
 }
 
-COLORREF NativeFrameColor::GetInactiveColor() const
+std::optional<COLORREF> NativeFrameColor::GetInactiveColor() const
 {
-    return _inactiveColor;
+    // TODO (GH #4576): The real color is supposed to be transparent and is
+    //  blended on top of other windows. Because we can't render transparent
+    //  colors easily, we cheat and instead tell the render code to use a
+    //  color that doesn't look _too wrong_ by returning an empty value.
+    return std::nullopt;
 }
 
 void NativeFrameColor::Update()
 {
-    bool darkMode = IsDarkModeEnabled();
-
     auto colorPrevalence = _ReadDwmSetting(L"ColorPrevalence").value_or(0);
     if (colorPrevalence)
     {
@@ -84,20 +77,18 @@ void NativeFrameColor::Update()
         if (colorizationColorBalance > 100)
             colorizationColorBalance = 80;
 
-        _activeColor = AlphaBlendColor(0xD9D9D9,
-                                       RgbToColorref(colorizationColor),
-                                       colorizationColorBalance / 100.0f);
+        _activeColor = { AlphaBlendColor(0xD9D9D9,
+                                         RgbToColorref(colorizationColor),
+                                         colorizationColorBalance / 100.0f) };
     }
     else
     {
-        // TODO (GH #4576): This is not the real color.
-        //  The real color is transparent and is blended on top of other windows.
-        _activeColor = !darkMode ? 0x707070 : 0x303030;
+        // TODO (GH #4576): The real color is supposed to be transparent and is
+        //  blended on top of other windows. Because we can't render transparent
+        //  colors easily, we cheat and instead tell the render code to use a
+        //  color that doesn't look _too wrong_ by returning an empty value.
+        _activeColor = std::nullopt;
     }
-
-    // TODO (GH #4576): This is not the real color.
-    //  The real color is transparent and is blended on top of other windows.
-    _inactiveColor = !darkMode ? 0xAAAAAA : 0x404040;
 }
 
 std::optional<DWORD> NativeFrameColor::_ReadDwmSetting(LPCWSTR key) const
