@@ -72,6 +72,8 @@ For example, here's a sample of the default keybindings:
 
 ```
 
+A list of default key bindings is available [here](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/defaults.json#L204).
+
 ### Unbinding keys
 
 If you ever come across a key binding that you're unhappy with, it's possible to
