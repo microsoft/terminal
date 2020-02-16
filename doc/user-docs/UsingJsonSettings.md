@@ -128,7 +128,7 @@ Example settings include
 
 The profile GUID is used to reference the default profile in the global settings.
 
-The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch)
+The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch).
 
 ### Hiding a profile
 
