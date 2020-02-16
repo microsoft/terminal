@@ -158,8 +158,8 @@ void NonClientIslandWindow::_InvalidateTopBorder() const noexcept
 std::optional<COLORREF> NonClientIslandWindow::_GetTopBorderColor() const noexcept
 {
     const auto color = _isActive ?
-                                _nativeFrameColor.GetActiveColor() :
-                                _nativeFrameColor.GetInactiveColor();
+                           _nativeFrameColor.GetActiveColor() :
+                           _nativeFrameColor.GetInactiveColor();
     if (color.has_value())
     {
         return color;
@@ -574,7 +574,7 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
         rcTopBorder.bottom = topBorderHeight;
 
         const auto topBorderColor = _GetTopBorderColor()
-            .value_or(titlebarColorref);
+                                        .value_or(titlebarColorref);
 
         ::FillRect(hdc.get(), &rcTopBorder, _frameBrush.MakeOrGetHandle(topBorderColor));
     }
