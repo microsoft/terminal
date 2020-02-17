@@ -39,8 +39,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // - Takes an ANSI or UTF-8 string and populates it with *complete* codepoints.
         //   If it receives an incomplete codepoint, it will cache it until it can be completed.
         //   NOTE: The caching of incomplete codepoints is not supported if the codepage id is either of
-        //         50220, 50221, 50222, 50225, 50227, 50229, 52936, 54936, 55000, 55001, 55002, 55003, 55004,
-        //         57002, 57003, 57004, 57005, 57006, 57007, 57008, 57009, 57010, 57011, 65000.
+        //         50220, 50221, 50222, 50225, 50227, 50229, 52936, 57002, 57003, 57004, 57005, 57006, 57007, 57008, 57009, 57010, 57011, 65000.
         //         In these cases incomplete code points are silently replaced with the default replacement
         //         character in the involved conversion functions, and the conversion is treated as successful.
         // Arguments:
@@ -131,9 +130,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 else // ANSI codepages
                 {
-                    auto foundLeadByte{ false };
                     if (_cpInfo.MaxCharSize == 2u && !!_cpInfo.LeadByte[0]) // DBCS codepages
                     {
+                        auto foundLeadByte{ false };
+
                         // Start at the beginning of the string (or the second bvte if a lead byte has been cached in the previous call) and scan forward,
                         // keep track when it encounters a lead byte, and treat the next byte as the trailing part of the same character.
                         std::for_each(_buffer.empty() ? in.cbegin() : in.cbegin() + 1, in.cend(), [&](const auto& ch) {
@@ -163,17 +163,94 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 }
                             }
                         });
-                    }
 
-                    if (foundLeadByte)
-                    {
-                        _partials.front() = in.back();
-                        --remainingLength;
-                        _partialsLen = 1u;
+                        if (foundLeadByte)
+                        {
+                            _partials.front() = in.back();
+                            --remainingLength;
+                            _partialsLen = 1u;
+                        }
+                        else
+                        {
+                            _partialsLen = 0u;
+                        }
                     }
-                    else
+                    else if (codepage == 54936u) // GB 18030
                     {
-                        _partialsLen = 0u;
+                        auto foundLeadByte{ false };
+                        size_t left{};
+                        auto sequence{ gsl::narrow_cast<size_t>(1u) };
+                        if (_buffer.size() > 1u)
+                        {
+                            left = 4u - _buffer.size();
+                            sequence = 4u;
+                        }
+                        else if (_buffer.size() == 1u)
+                        {
+                            foundLeadByte = true;
+                            left = 1u;
+                            sequence = 2u;
+                        }
+
+                        std::for_each(in.cbegin(), in.cend(), [&](const auto& ch) {
+                            if (left > 0u && !foundLeadByte) // skip 3rd and 4th byte of a 4-byte sequence
+                            {
+                                --left;
+                            }
+                            else
+                            {
+                                const auto uCh{ gsl::narrow_cast<byte>(ch) };
+                                if (foundLeadByte) // check the second byte after a lead byte was found
+                                {
+                                    foundLeadByte = false;
+                                    if (uCh < byte{ 0x40 }) // if the second byte is < 0x40 then the sequence is 4 bytes long
+                                    {
+                                        left = 2u;
+                                        sequence = 4u;
+                                    }
+                                    else // the sequence was 2 bytes long and we read them all
+                                    {
+                                        left = 0u;
+                                    }
+                                }
+                                else if (uCh > byte{ 0x80 }) // if the first byte is > 0x80 then it indicates the begin of a 2- or 4-byte sequence
+                                {
+                                    foundLeadByte = true;
+                                    left = 1u;
+                                    sequence = 2u;
+                                }
+                                else // single byte
+                                {
+                                    foundLeadByte = false;
+                                    left = 0u;
+                                    sequence = 1u;
+                                }
+                            }
+                        });
+
+                        if (left == 0u)
+                        {
+                            _partialsLen = 0u;
+                        }
+                        else
+                        {
+                            _partialsLen = sequence - left;
+                            remainingLength -= _partialsLen;
+                            std::move(in.end() - _partialsLen, in.end(), _partials.begin());
+                        }
+                    }
+                    else if (codepage >= 55000u && codepage <= 55004u) // GSM 7-bit
+                    {
+                        if (in.back() == '\x1B') // escape character for a 2-byte sequence
+                        {
+                            _partialsLen = 1u;
+                            --remainingLength;
+                            _partials.front() = in.back();
+                        }
+                        else
+                        {
+                            _partialsLen = 0u;
+                        }
                     }
                 }
 

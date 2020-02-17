@@ -17,6 +17,8 @@ class Utf8Utf16ConvertTests
     TEST_METHOD(TestU8ToU16Partials);
     TEST_METHOD(TestU16ToU8Partials);
     TEST_METHOD(TestDbcsPartials);
+    TEST_METHOD(TestGB18030Partials);
+    TEST_METHOD(TestGSM7BitPartials);
 };
 
 void Utf8Utf16ConvertTests::TestU8ToU16()
@@ -175,6 +177,90 @@ void Utf8Utf16ConvertTests::TestDbcsPartials()
 
     std::wstring u16Out2{};
     const HRESULT hRes2{ til::au16(936u, cp936String2, u16Out2, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes2);
+    VERIFY_ARE_EQUAL(u16StringComp2, u16Out2);
+}
+
+void Utf8Utf16ConvertTests::TestGB18030Partials()
+{
+    const std::string cp54936String1{
+        '\xCE', // CJK UNIFIED IDEOGRAPH-7EF4 (2 bytes)
+        '\xAC',
+        '\xBB' // CJK UNIFIED IDEOGRAPH-57FA (lead byte)
+    };
+
+    const std::string cp54936String2{
+        '\xF9', // CJK UNIFIED IDEOGRAPH-57FA (trailing byte)
+        '\x96', // CJK UNIFIED IDEOGRAPH-24F5C (first 2 bytes)
+        '\x38'
+    };
+
+    const std::string cp54936String3{
+        '\x92', // CJK UNIFIED IDEOGRAPH-24F5C (last 2 bytes)
+        '\x32'
+    };
+
+    const std::wstring u16StringComp1{
+        gsl::narrow_cast<wchar_t>(0x7EF4) // CJK UNIFIED IDEOGRAPH-7EF4
+    };
+
+    const std::wstring u16StringComp2{
+        gsl::narrow_cast<wchar_t>(0x57FA), // CJK UNIFIED IDEOGRAPH-57FA
+    };
+
+    const std::wstring u16StringComp3{
+        gsl::narrow_cast<wchar_t>(0xD853), // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
+        gsl::narrow_cast<wchar_t>(0xDF5C),
+    };
+
+    til::astate state{};
+
+    std::wstring u16Out1{};
+    const HRESULT hRes1{ til::au16(54936u, cp54936String1, u16Out1, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes1);
+    VERIFY_ARE_EQUAL(u16StringComp1, u16Out1);
+
+    std::wstring u16Out2{};
+    const HRESULT hRes2{ til::au16(54936u, cp54936String2, u16Out2, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes2);
+    VERIFY_ARE_EQUAL(u16StringComp2, u16Out2);
+
+    std::wstring u16Out3{};
+    const HRESULT hRes3{ til::au16(54936u, cp54936String3, u16Out3, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes3);
+    VERIFY_ARE_EQUAL(u16StringComp3, u16Out3);
+}
+
+void Utf8Utf16ConvertTests::TestGSM7BitPartials()
+{
+    const std::string cp55000String1{
+        '\x41', // A
+        '\x1B' // GSM escape character
+    };
+
+    const std::string cp55000String2{
+        '\x28', // { (if escaped)
+        '\x02' // $
+    };
+
+    const std::wstring u16StringComp1{
+        gsl::narrow_cast<wchar_t>(0x0041) // A
+    };
+
+    const std::wstring u16StringComp2{
+        gsl::narrow_cast<wchar_t>(0x007B), // {
+        gsl::narrow_cast<wchar_t>(0x0024) // $
+    };
+
+    til::astate state{};
+
+    std::wstring u16Out1{};
+    const HRESULT hRes1{ til::au16(55000u, cp55000String1, u16Out1, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes1);
+    VERIFY_ARE_EQUAL(u16StringComp1, u16Out1);
+
+    std::wstring u16Out2{};
+    const HRESULT hRes2{ til::au16(55000u, cp55000String2, u16Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u16StringComp2, u16Out2);
 }
