@@ -155,6 +155,8 @@ namespace Microsoft::Console::Render
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;
 
+        static std::atomic<size_t> _tracelogCount;
+
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 

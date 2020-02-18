@@ -20,6 +20,7 @@
 
 using namespace DirectX;
 
+std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
 TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
                              "Microsoft.Windows.Terminal.Renderer.DirectX",
                              // {c93e739e-ae50-5a14-78e7-f171e947535d}
@@ -87,7 +88,11 @@ DxEngine::DxEngine() :
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
-    TraceLoggingRegister(g_hDxRenderProvider);
+    const auto was = _tracelogCount.fetch_add(1);
+    if (0 == was)
+    {
+        TraceLoggingRegister(g_hDxRenderProvider);
+    }
 
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
@@ -107,7 +112,11 @@ DxEngine::~DxEngine()
 {
     _ReleaseDeviceResources();
 
-    TraceLoggingUnregister(g_hDxRenderProvider);
+    const auto was = _tracelogCount.fetch_sub(1);
+    if (1 == was)
+    {
+        TraceLoggingUnregister(g_hDxRenderProvider);
+    }
 }
 
 // Routine Description:
