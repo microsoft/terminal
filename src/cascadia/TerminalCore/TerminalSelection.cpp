@@ -98,7 +98,7 @@ void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMo
 void Terminal::SetSelectionAnchor(const COORD viewportPos)
 {
     _selectionPivot = _ConvertToBufferCell(viewportPos);
-    _buffer->GetSize().Clamp(_selectionStart);
+    _buffer->GetSize().Clamp(_selectionPivot);
 
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
 

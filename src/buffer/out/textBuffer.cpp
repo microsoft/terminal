@@ -1382,8 +1382,14 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
     COORD targetPoint{ textRow.Left, textRow.Top };
     if (GetCellDataAt(targetPoint)->DbcsAttr().IsTrailing())
     {
-        FAIL_FAST_IF(targetPoint.X == bufferSize.Left());
-        bufferSize.DecrementInBounds(targetPoint);
+        if (targetPoint.X == bufferSize.Left())
+        {
+            bufferSize.IncrementInBounds(targetPoint);
+        }
+        else
+        {
+            bufferSize.DecrementInBounds(targetPoint);
+        }
         textRow.Left = targetPoint.X;
     }
 
@@ -1391,8 +1397,14 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
     targetPoint = { textRow.Right, textRow.Bottom };
     if (GetCellDataAt(targetPoint)->DbcsAttr().IsLeading())
     {
-        FAIL_FAST_IF(targetPoint.X == bufferSize.RightInclusive());
-        bufferSize.IncrementInBounds(targetPoint);
+        if (targetPoint.X == bufferSize.RightInclusive())
+        {
+            bufferSize.DecrementInBounds(targetPoint);
+        }
+        else
+        {
+            bufferSize.IncrementInBounds(targetPoint);
+        }
         textRow.Right = targetPoint.X;
     }
 }
