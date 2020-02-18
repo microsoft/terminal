@@ -101,18 +101,16 @@ HRESULT ScreenInfoUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple*
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    UiaTextRange* result = nullptr;
-    if (_pData->IsSelectionActive())
-    {
-        const auto start = _pData->GetSelectionAnchor();
 
-        // we need to make end exclusive
-        auto end = _pData->GetEndSelectionPosition();
-        _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
+    const auto start = _pData->GetSelectionAnchor();
 
-        // TODO GH #4509: Box Selection is misrepresented here as a line selection.
-        RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
-    }
+    // we need to make end exclusive
+    auto end = _pData->GetEndSelectionPosition();
+    _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
+
+    // TODO GH #4509: Box Selection is misrepresented here as a line selection.
+    UiaTextRange* result;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }
