@@ -69,7 +69,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClick{},
         _lastMouseClickPos{},
         _searchBox{ nullptr },
-        _tsfInputControl{ nullptr }
+        _tsfInputControl{ nullptr },
+        _unfocusedClickPos{ std::nullopt },
+        _isClickDragSelection{ false }
     {
         _EnsureStaticInitialization();
         _Create();

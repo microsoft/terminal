@@ -162,8 +162,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Timestamp _lastMouseClick;
         unsigned int _multiClickCounter;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        std::optional<winrt::Windows::Foundation::Point> _unfocusedClickPos{ std::nullopt };
-        bool _isClickDragSelection{ false };
+        std::optional<winrt::Windows::Foundation::Point> _unfocusedClickPos;
+        bool _isClickDragSelection;
 
         // Event revokers -- we need to deregister ourselves before we die,
         // lest we get callbacks afterwards.
