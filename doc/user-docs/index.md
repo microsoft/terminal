@@ -25,7 +25,37 @@ NOTE: The default shell is PowerShell; you can change this using the _Running a 
 
 ### Command line options
 
-None at this time. See issue [#607](https://github.com/microsoft/terminal/issues/607)
+`wt [OPTIONS] [[; SubCommand1] [; SubCommand2] ...]`
+
+Options:
+-  **-h** or **-?**:
+
+   Prints an as-of-yet outdated help message
+   
+-  **-d "_folder path_"**:
+
+   Changes the default working folder
+   
+-  **-p "_profile name_"**:
+
+   Changes the profile of the first tab
+
+Subcommands:
+- **new-tab _Path_ [_Arguments_]**
+
+  Create a new tab
+
+- **split-pane [-V|-H] [Options]**
+
+  Create a new split pane. Options are the same as above. -V and -H cause the pane to be vertical or horizontal.
+
+**Important consideration:** The semicolon character (";") has syntactic meanings in PowerShell. If you invoke `wt` from PowerShell, consider using `--%` before the first instance of ";".
+
+See also:
+- #607: [Feature Request: wt.exe supports command line arguments (profile, command, directory, etc.)](https://github.com/microsoft/terminal/issues/607)
+- #4023: [Add support for commandline args to `wt.exe`](https://github.com/microsoft/terminal/pull/4023)
+- Kayla Cinnamon (13 February 2020); ["Windows Terminal Preview v0.9 Release"](https://devblogs.microsoft.com/commandline/windows-terminal-preview-v0-9-release/); _Windows Command Line_; Microsoft Corporation
+
 
 ## Multiple Tabs
 
