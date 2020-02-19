@@ -590,12 +590,14 @@ namespace winrt::TerminalApp::implementation
 
         if (debugConnection)
         {
-            TermControl newControl{ settings, debugConnection };
+            Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+                                  [this, profileGuid, newTabImpl, settings, debugConnection = std::move(debugConnection)]() {
+                                      TermControl newControl{ settings, debugConnection };
+                                      // Hookup our event handlers to the new terminal
+                                      _RegisterTerminalEvents(newControl, *newTabImpl);
 
-            // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, newTab);
-
-            newTab->SplitPane(Pane::SplitState::Vertical, profileGuid, newControl);
+                                      newTabImpl->SplitPane(SplitState::Automatic, profileGuid, newControl);
+                                  });
         }
     }
 

@@ -15,19 +15,18 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
+        winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;
 
-        DECLARE_EVENT(TerminalOutput, _terminalOutput, Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs);
-        DECLARE_EVENT(TerminalDisconnected, _terminalDisconnected, Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs);
+        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
+
+        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable);
 
     private:
         void PrintInput(const hstring& data);
 
         void _OutputHandler(const hstring str);
-        void _DisconnectedHandler();
-        uint32_t _columns{ 0 };
-        size_t _off{ 0 };
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalDisconnected_revoker _disconnectedRevoker;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _wrappedConnection;
 
         friend class DebugInputTapConnection;
