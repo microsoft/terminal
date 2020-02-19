@@ -153,6 +153,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
 
+        const std::filesystem::path processName = wil::GetModuleFileNameExW<std::wstring>(_piClient.hProcess, nullptr);
+        _clientName = processName.filename().wstring();
+
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ConPtyConnected",
+            TraceLoggingDescription("Event emitted when ConPTY connection is started"),
+            TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+            TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
         return S_OK;
     }
     CATCH_RETURN();

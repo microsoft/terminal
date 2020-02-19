@@ -152,12 +152,15 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+
     TEST_METHOD(PassthroughClearScrollback);
 
     TEST_METHOD(TestWrappingALongString);
     TEST_METHOD(TestAdvancedWrapping);
     TEST_METHOD(TestExactWrappingWithoutSpaces);
     TEST_METHOD(TestExactWrappingWithSpaces);
+
+    TEST_METHOD(MoveCursorAtEOL);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -480,6 +483,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
     auto& termTb = *term->_buffer;
+
     const auto initialTermView = term->GetViewport();
 
     _flushFirstFrame();
@@ -604,6 +608,69 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb, true);
+}
+
+void ConptyRoundtripTests::MoveCursorAtEOL()
+{
+    // This is a test for GH#1245
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    _flushFirstFrame();
+
+    Log::Comment(NoThrowString().Format(
+        L"Write exactly a full line of text"));
+    hostSm.ProcessString(std::wstring(TerminalViewWidth, L'A'));
+
+    auto verifyData0 = [](TextBuffer& tb) {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter, 0, TerminalViewWidth);
+        TestUtils::VerifySpanOfText(L" ", iter, 0, TerminalViewWidth);
+    };
+
+    verifyData0(hostTb);
+
+    // TODO: GH#405/#4415 - Before #405 merges, the VT sequences conpty emits
+    // might change, but the buffer contents shouldn't.
+    // If they do change and these tests break, that's to be expected.
+    expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    expectedOutput.push_back("\x1b[1;80H");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyData0(termTb);
+
+    Log::Comment(NoThrowString().Format(
+        L"Emulate backspacing at a bash prompt when the previous line wrapped.\n"
+        L"We'll move the cursor up to the last char of the prev line, and erase it."));
+    hostSm.ProcessString(L"\x1b[1;80H");
+    hostSm.ProcessString(L"\x1b[K");
+
+    auto verifyData1 = [](TextBuffer& tb) {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        // There should be 79 'A's, followed by a space, and the following line should be blank.
+        TestUtils::VerifySpanOfText(L"A", iter, 0, TerminalViewWidth - 1);
+        TestUtils::VerifySpanOfText(L" ", iter, 0, 1);
+        TestUtils::VerifySpanOfText(L" ", iter, 0, TerminalViewWidth);
+
+        auto& cursor = tb.GetCursor();
+        VERIFY_ARE_EQUAL(TerminalViewWidth - 1, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+    };
+
+    verifyData1(hostTb);
+
+    expectedOutput.push_back(" ");
+    expectedOutput.push_back("\x1b[1;80H");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyData1(termTb);
 }
 
 void ConptyRoundtripTests::PassthroughClearScrollback()

@@ -482,7 +482,7 @@ using namespace Microsoft::Console::Types;
     }
 
     // Update our internal tracker of the cursor's position.
-    // See MSFT:20266233
+    // See MSFT:20266233 (which is also GH#357)
     // If the cursor is at the rightmost column of the terminal, and we write a
     //      space, the cursor won't actually move to the next cell (which would
     //      be {0, _lastText.Y++}). The cursor will stay visibly in that last
@@ -493,9 +493,23 @@ using namespace Microsoft::Console::Types;
     //      we'll determine that we need to emit a \b to put the cursor in the
     //      right position. This is wrong, and will cause us to move the cursor
     //      back one character more than we wanted.
-    if (_lastText.X < _lastViewport.RightInclusive())
+    //
+    // GH#1245: This needs to be RightExclusive, _not_ inclusive. Otherwise, we
+    // won't update our internal cursor position tracker correctly at the last
+    // character of the row.
+    if (_lastText.X < _lastViewport.RightExclusive())
     {
         _lastText.X += static_cast<short>(columnsActual);
+    }
+    // GH#1245: If we wrote the exactly last char of the row, then we're in the
+    // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
+    // wt) all behave differently with how the cursor behaves at an end of line.
+    // Mark that we're in the delayed EOL wrap state - we don't want to be
+    // clever about how we move the cursor in this state, since different
+    // terminals will handle a backspace differently in this state.
+    if (_lastText.X >= _lastViewport.RightInclusive())
+    {
+        _delayedEolWrap = true;
     }
 
     short sNumSpaces;

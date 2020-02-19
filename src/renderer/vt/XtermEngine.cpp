@@ -266,6 +266,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                 hr = _Write(seq);
             }
         }
+        else if (_delayedEolWrap)
+        {
+            // GH#1245, GH#357 - If we were in the delayed EOL wrap state, make
+            // sure to _manually_ position the cursor now, with a full CUP
+            // sequence, don't try and be clever with \b or \r or other control
+            // sequences. Different terminals (conhost, gnome-terminal, wt) all
+            // behave differently with how the cursor behaves at an end of line.
+            // This is the only solution that works in all of them, and also
+            // works wrapped lines emitted by conpty.
+            //
+            // Make sure to do this _after_ the possible \r\n branch above,
+            // otherwise we might accidentally break wrapped lines (GH#405)
+            hr = _CursorPosition(coord);
+        }
         else if (coord.X == 0 && coord.Y == _lastText.Y)
         {
             // Start of this line
@@ -308,6 +322,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _deferredCursorPos = INVALID_COORDS;
 
     _wrappedRow = std::nullopt;
+
+    _delayedEolWrap = false;
 
     return hr;
 }
