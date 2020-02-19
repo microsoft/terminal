@@ -1042,8 +1042,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // panning down)
                 const float numRows = -1.0f * (dy / fontHeight);
 
-                const auto currentOffset = _scrollBar.Value();
-                const double newValue = numRows + currentOffset;
+                const auto currentOffset = ::base::ClampedNumeric<double>(_scrollBar.Value());
+                const auto newValue = numRows + currentOffset;
 
                 _scrollBar.Value(newValue);
 
