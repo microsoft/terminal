@@ -3,9 +3,8 @@
 
 #pragma once
 
-#define NOMINMAX
-
-#include <windows.h>
+// Use winconpty's precomp wince we hit a lot of the same APIs
+#include "../precomp.h"
 
 #include "WexTestClass.h"
 

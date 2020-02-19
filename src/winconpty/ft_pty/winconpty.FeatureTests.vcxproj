@@ -4,8 +4,8 @@
     <ProjectGuid>{024052DE-83FB-4653-AEA4-90790D29D5BD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ConPTYFeatureTests</RootNamespace>
-    <ProjectName>ConPTY.Tests.Feature</ProjectName>
-    <TargetName>ConPTY.Feature.Tests</TargetName>
+    <ProjectName>winconpty.Tests.Feature</ProjectName>
+    <TargetName>winconpty.Feature.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
@@ -19,7 +19,7 @@
     <ClInclude Include="precomp.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\winconpty.vcxproj">
+    <ProjectReference Include="..\lib\winconptylib.vcxproj">
       <Project>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -33,7 +33,7 @@
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>$(OutDir)\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>
