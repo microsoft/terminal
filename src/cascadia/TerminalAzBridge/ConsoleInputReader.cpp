@@ -32,7 +32,7 @@ std::optional<std::wstring_view> ConsoleInputReader::Read()
         }
 
         _buffer.resize(readCount);
-        for (auto it = _buffer.begin(); it != _buffer.end(); it++)
+        for (auto it = _buffer.begin(); it != _buffer.end(); ++it)
         {
             if (it->EventType == WINDOW_BUFFER_SIZE_EVENT && _windowSizeChangedCallback)
             {

@@ -32,7 +32,8 @@ static ConnectionState RunConnectionToCompletion(const ITerminalConnection& conn
     std::thread([connection, outputHandle, inputHandle] {
         ConsoleInputReader reader{ inputHandle };
         reader.SetWindowSizeChangedCallback([&]() {
-            auto size = GetConsoleScreenSize(outputHandle);
+            const auto size = GetConsoleScreenSize(outputHandle);
+
             connection.Resize(size.Y, size.X);
         });
 
@@ -93,9 +94,11 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
         SetConsoleOutputCP(outputCodepage);
     });
 
-    auto size = GetConsoleScreenSize(conOut);
+    const auto size = GetConsoleScreenSize(conOut);
+
     AzureConnection azureConn{ gsl::narrow_cast<uint32_t>(size.Y), gsl::narrow_cast<uint32_t>(size.X) };
 
-    auto state = RunConnectionToCompletion(azureConn, conOut, conIn);
+    const auto state = RunConnectionToCompletion(azureConn, conOut, conIn);
+
     return state == ConnectionState::Closed ? 0 : 1;
 }
