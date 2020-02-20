@@ -77,6 +77,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _Create();
 
         bool _inComposition;
+        void _sendAndClearText();
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation

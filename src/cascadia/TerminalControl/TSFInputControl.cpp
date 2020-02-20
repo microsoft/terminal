@@ -202,8 +202,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& /*args*/)
     {
-        _canvas.Visibility(Visibility::Visible);
-        _textBlock.Visibility(Visibility::Visible);
         _inComposition = true;
     }
 
@@ -218,23 +216,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& /*args*/)
     {
         _inComposition = false;
+
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            // call event handler with data handled by parent
-            _compositionCompletedHandlers(_inputBuffer);
-
-            // clear the buffer for next round
-            const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
-            _inputBuffer.clear();
-            _textBlock.Text(L"");
-
-            // indicate text is now 0
-            _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
-
-            // hide the controls until composition starts again
-            _canvas.Visibility(Visibility::Collapsed);
-            _textBlock.Visibility(Visibility::Collapsed);
+            _sendAndClearText();
         }
     }
 
@@ -268,7 +254,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
+            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition,
+                                                           std::min(static_cast<size_t>(range.EndCaretPosition), _inputBuffer.length()) - static_cast<size_t>(range.StartCaretPosition));
 
             args.Request().Text(textRequested);
         }
@@ -318,11 +305,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            if (!_inComposition)
-            {
-                _canvas.Visibility(Visibility::Visible);
-                _textBlock.Visibility(Visibility::Visible);
-            }
+            _canvas.Visibility(Visibility::Visible);
+            _textBlock.Visibility(Visibility::Visible);
 
             auto rangetoreplace = static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition);
             _inputBuffer = _inputBuffer.replace(
@@ -332,25 +316,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _textBlock.Text(_inputBuffer);
 
-            // Notify the TSF that the update succeeded
-            args.Result(CoreTextTextUpdatingResult::Succeeded);
-
+            // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
+            // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
             if (!_inComposition)
             {
-                // call event handler with data handled by parent
-                _compositionCompletedHandlers(_inputBuffer);
-
-                // clear the buffer for next round
-                const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
-                _inputBuffer.clear();
-                _textBlock.Text(L"");
-
-                // indicate text is now 0
-                _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
-
-                _canvas.Visibility(Visibility::Collapsed);
-                _textBlock.Visibility(Visibility::Collapsed);
+                _sendAndClearText();
             }
+
+            // Notify the TSF that the update succeeded
+            args.Result(CoreTextTextUpdatingResult::Succeeded);
         }
         catch (...)
         {
@@ -359,6 +333,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // indicate updating failed.
             args.Result(CoreTextTextUpdatingResult::Failed);
         }
+    }
+
+    void TSFInputControl::_sendAndClearText()
+    {
+        // call event handler with data handled by parent
+        _compositionCompletedHandlers(_inputBuffer);
+
+        // clear the buffer for next round
+        const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
+
+        // indicate text is now 0
+        _inputBuffer.clear();
+        _textBlock.Text(L"");
+
+        // Leaving and reentering focus forces the next composition to send a CompositionStart event
+        // Without the leave+enter, we don't consistently receive a CompositionStart, leading to weird bugs.
+        _editContext.NotifyFocusLeave();
+        _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
+        _editContext.NotifyFocusEnter();
+
+        // hide the controls until text input starts again
+        _canvas.Visibility(Visibility::Collapsed);
+        _textBlock.Visibility(Visibility::Collapsed);
     }
 
     // Method Description:
