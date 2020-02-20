@@ -254,8 +254,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition,
-                                                           std::min(static_cast<size_t>(range.EndCaretPosition), _inputBuffer.length()) - static_cast<size_t>(range.StartCaretPosition));
+            const auto textEnd = std::min(static_cast<size_t>(range.EndCaretPosition), _inputBuffer.length());
+            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, textEnd - static_cast<size_t>(range.StartCaretPosition));
 
             args.Request().Text(textRequested);
         }
