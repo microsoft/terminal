@@ -5,33 +5,11 @@
 #include "UiaTextRangeBase.hpp"
 #include "ScreenInfoUiaProviderBase.h"
 #include "..\buffer\out\search.h"
+#include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Types::UiaTextRangeBaseTracing;
-
-// toggle these for additional logging in a debug build
-//#define _DEBUG 1
-//#define UIATEXTRANGE_DEBUG_MSGS 1
-#undef UIATEXTRANGE_DEBUG_MSGS
 
 IdType UiaTextRangeBase::id = 1;
-
-#if _DEBUG
-#include <sstream>
-void UiaTextRangeBase::_outputObjectState()
-{
-    std::wstringstream ss;
-    ss << "Object State";
-    ss << " _id: " << _id;
-    ss << " _start: { " << _start.X << ", " << _start.Y << " }";
-    ss << " _end: { " << _end.X << ", " << _end.Y << " }";
-    ss << " _degenerate: " << IsDegenerate();
-
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-}
-#endif // _DEBUG
 
 // degenerate range constructor.
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
@@ -50,12 +28,7 @@ try
     _id = id;
     ++id;
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgConstructor apiMsg;
-    apiMsg.Id = _id;
-    Tracing::s_TraceUia(nullptr, ApiCall::Constructor, &apiMsg);*/
-
+    UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -65,25 +38,17 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  _In_ const Cursor& cursor,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
+try
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
-    try
-    {
-        _start = cursor.GetPosition();
-        _end = _start;
+    _start = cursor.GetPosition();
+    _end = _start;
 
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-        OutputDebugString(L"Constructor\n");
-        _outputObjectState();
-#endif
-    }
-    catch (...)
-    {
-        return E_INVALIDARG;
-    }
+    UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
+CATCH_RETURN();
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
 HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
@@ -108,11 +73,7 @@ try
         _end = start;
     }
 
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Constructor\n");
-    _outputObjectState();
-#endif
-
+    UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -159,11 +120,7 @@ try
     _id = id;
     ++id;
 
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Copy Constructor\n");
-    _outputObjectState();
-#endif
-
+    UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -177,9 +134,9 @@ const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) con
 {
     switch (endpoint)
     {
-    case TextPatternRangeEndpoint::TextPatternRangeEndpoint_End:
+    case TextPatternRangeEndpoint_End:
         return _end;
-    case TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start:
+    case TextPatternRangeEndpoint_Start:
     default:
         return _start;
     }
@@ -198,7 +155,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     const auto bufferSize = _getBufferSize();
     switch (endpoint)
     {
-    case TextPatternRangeEndpoint::TextPatternRangeEndpoint_End:
+    case TextPatternRangeEndpoint_End:
         _end = val;
         // if end is before start...
         if (bufferSize.CompareInBounds(_end, _start, true) < 0)
@@ -207,7 +164,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
             _start = _end;
         }
         break;
-    case TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start:
+    case TextPatternRangeEndpoint_Start:
         _start = val;
         // if start is after end...
         if (bufferSize.CompareInBounds(_start, _end, true) > 0)
@@ -250,13 +207,8 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
         *pRetVal = (_start == other->GetEndpoint(TextPatternRangeEndpoint_Start) &&
                     _end == other->GetEndpoint(TextPatternRangeEndpoint_End));
     }
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgCompare apiMsg;
-    apiMsg.OtherId = other == nullptr ? InvalidId : other->GetId();
-    apiMsg.Equal = !!*pRetVal;
-    Tracing::s_TraceUia(this, ApiCall::Compare, &apiMsg);*/
 
+    UiaTracing::TextRange::Compare(*this, *other, *pRetVal);
     return S_OK;
 }
 
@@ -285,15 +237,7 @@ try
     // compare them
     *pRetVal = _pData->GetTextBuffer().GetSize().CompareInBounds(mine, other, true);
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgCompareEndpoints apiMsg;
-    apiMsg.OtherId = range->GetId();
-    apiMsg.Endpoint = endpoint;
-    apiMsg.TargetEndpoint = targetEndpoint;
-    apiMsg.Result = *pRetVal;
-    Tracing::s_TraceUia(this, ApiCall::CompareEndpoints, &apiMsg);*/
-
+    UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;
 }
 CATCH_RETURN();
@@ -305,23 +249,18 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
         _pData->UnlockConsole();
     });
 
-    ApiMsgExpandToEnclosingUnit apiMsg;
-    apiMsg.Unit = unit;
-    apiMsg.OriginalStart = _start;
-    apiMsg.OriginalEnd = _end;
-
     try
     {
         const auto& buffer = _pData->GetTextBuffer();
         const auto bufferSize = _getBufferSize();
         const auto bufferEnd = bufferSize.EndExclusive();
 
-        if (unit == TextUnit::TextUnit_Character)
+        if (unit == TextUnit_Character)
         {
             _end = _start;
             bufferSize.IncrementInBounds(_end, true);
         }
-        else if (unit <= TextUnit::TextUnit_Word)
+        else if (unit <= TextUnit_Word)
         {
             // expand to word
             _start = buffer.GetWordStart(_start, _wordDelimiters, true);
@@ -334,7 +273,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
                 _end = bufferEnd;
             }
         }
-        else if (unit <= TextUnit::TextUnit_Line)
+        else if (unit <= TextUnit_Line)
         {
             // expand to line
             _start.X = 0;
@@ -348,8 +287,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
             _end = bufferSize.EndExclusive();
         }
 
-        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-        //Tracing::s_TraceUia(this, ApiCall::ExpandToEnclosingUnit, &apiMsg);
+        UiaTracing::TextRange::ExpandToEnclosingUnit(unit, *this);
         return S_OK;
     }
     CATCH_RETURN();
@@ -361,8 +299,7 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttrib
                                                _In_ BOOL /*searchBackward*/,
                                                _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/) noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::FindAttribute, nullptr);
+    UiaTracing::TextRange::FindAttribute(*this);
     return E_NOTIMPL;
 }
 
@@ -372,8 +309,6 @@ IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
                                           _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
 try
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
@@ -412,6 +347,8 @@ try
             UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
             range._start = start;
             range._end = end;
+
+            UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
         }
     }
     return S_OK;
@@ -423,8 +360,6 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttr
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetAttributeValue, nullptr);
     if (textAttributeId == UIA_IsReadOnlyAttributeId)
     {
         pRetVal->vt = VT_BOOL;
@@ -435,6 +370,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttr
         pRetVal->vt = VT_UNKNOWN;
         UiaGetReservedNotSupportedValue(&pRetVal->punkVal);
     }
+    UiaTracing::TextRange::GetAttributeValue(*this, textAttributeId, *pRetVal);
     return S_OK;
 }
 
@@ -535,9 +471,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
     }
     CATCH_RETURN();
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangles, nullptr);
-
+    UiaTracing::TextRange::GetBoundingRectangles(*this);
     return S_OK;
 }
 
@@ -547,13 +481,40 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
-    //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangles, nullptr);
-#pragma warning(suppress : 26447) // QueryInterface's exception should be caught by the try-CATCH_RETURN block to allow this to be noexcept
-    return _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
+    const auto hr = _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
+    UiaTracing::TextRange::GetEnclosingElement(*this);
+    return hr;
 }
 CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal) noexcept
+try
+{
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    *pRetVal = nullptr;
+
+    if (maxLength < -1)
+    {
+        return E_INVALIDARG;
+    }
+
+    const auto text = _getTextValue(maxLength);
+
+    *pRetVal = SysAllocString(text.c_str());
+    UiaTracing::TextRange::GetText(*this, maxLength, text);
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Method Description:
+// - Helper method for GetText(). Retrieves the text that the UiaTextRange encompasses as a wstring
+// Arguments:
+// - maxLength - the maximum size of the retrieved text. -1 means we don't care about the size.
+// Return Value:
+// - the text that the UiaTextRange encompasses
+#pragma warning(push)
+#pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
+std::wstring UiaTextRangeBase::_getTextValue(int maxLength) const noexcept
 try
 {
     _pData->LockConsole();
@@ -561,96 +522,76 @@ try
         _pData->UnlockConsole();
     });
 
-    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
-    *pRetVal = nullptr;
-
-    std::wstring wstr = L"";
-
-    if (maxLength < -1)
+    if (IsDegenerate())
     {
-        return E_INVALIDARG;
+        return {};
     }
+
+    std::wstring result{};
+
     // the caller must pass in a value for the max length of the text
     // to retrieve. a value of -1 means they don't want the text
     // truncated.
     const bool getPartialText = maxLength != -1;
 
-    if (!IsDegenerate())
+    // if _end is at 0, we ignore that row because _end is exclusive
+    const auto& buffer = _pData->GetTextBuffer();
+    const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
+                                       base::ClampSub(_end.Y, _start.Y) :
+                                       base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
+    const short lastRowInRange = _start.Y + totalRowsInRange - 1;
+
+    short currentScreenInfoRow = 0;
+    for (short i = 0; i < totalRowsInRange; ++i)
     {
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-        std::wstringstream ss;
-        ss << L"---Initial span start={" << _start.X << L", " << _start.Y << L"} and end={" << _end.X << ", " << _end.Y << L"}\n";
-        OutputDebugString(ss.str().c_str());
-#endif
-
-        // if _end is at 0, we ignore that row because _end is exclusive
-        const auto& buffer = _pData->GetTextBuffer();
-        const short totalRowsInRange = (_end.X == buffer.GetSize().Left()) ?
-                                           base::ClampSub(_end.Y, _start.Y) :
-                                           base::ClampAdd(base::ClampSub(_end.Y, _start.Y), base::ClampedNumeric<short>(1));
-        const short lastRowInRange = _start.Y + totalRowsInRange - 1;
-
-        short currentScreenInfoRow = 0;
-        for (short i = 0; i < totalRowsInRange; ++i)
+        currentScreenInfoRow = _start.Y + i;
+        const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
+        if (row.GetCharRow().ContainsText())
         {
-            currentScreenInfoRow = _start.Y + i;
-            const ROW& row = buffer.GetRowByOffset(currentScreenInfoRow);
-            if (row.GetCharRow().ContainsText())
+            const size_t rowRight = row.GetCharRow().MeasureRight();
+            size_t startIndex = 0;
+            size_t endIndex = rowRight;
+            if (currentScreenInfoRow == _start.Y)
             {
-                const size_t rowRight = row.GetCharRow().MeasureRight();
-                size_t startIndex = 0;
-                size_t endIndex = rowRight;
-                if (currentScreenInfoRow == _start.Y)
-                {
-                    startIndex = _start.X;
-                }
-
-                if (currentScreenInfoRow == _end.Y)
-                {
-                    // prevent the end from going past the last non-whitespace char in the row
-                    endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
-                }
-
-                // if startIndex >= endIndex then _start is
-                // further to the right than the last
-                // non-whitespace char in the row so there
-                // wouldn't be any text to grab.
-                if (startIndex < endIndex)
-                {
-                    wstr += row.GetText().substr(startIndex, endIndex - startIndex);
-                }
+                startIndex = _start.X;
             }
 
-            if (currentScreenInfoRow != lastRowInRange)
+            if (currentScreenInfoRow == _end.Y)
             {
-                wstr += L"\r\n";
+                // prevent the end from going past the last non-whitespace char in the row
+                endIndex = std::max<size_t>(startIndex + 1, std::min(gsl::narrow_cast<size_t>(_end.X), rowRight));
             }
 
-            if (getPartialText && wstr.size() > static_cast<size_t>(maxLength))
+            // if startIndex >= endIndex then _start is
+            // further to the right than the last
+            // non-whitespace char in the row so there
+            // wouldn't be any text to grab.
+            if (startIndex < endIndex)
             {
-                wstr.resize(maxLength);
-                break;
+                result += row.GetText().substr(startIndex, endIndex - startIndex);
             }
+        }
+
+        if (currentScreenInfoRow != lastRowInRange)
+        {
+            result += L"\r\n";
+        }
+
+        if (getPartialText && result.size() > static_cast<size_t>(maxLength))
+        {
+            result.resize(maxLength);
+            break;
         }
     }
 
-    *pRetVal = SysAllocString(wstr.c_str());
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgGetText apiMsg;
-    apiMsg.Text = wstr.c_str();
-    Tracing::s_TraceUia(this, ApiCall::GetText, &apiMsg);*/
-
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    std::wstringstream ss;
-    ss << L"--------Retrieved Text Max Length(" << maxLength << L") [" << _id << L"]: " << wstr.c_str() << "\n";
-    OutputDebugString(ss.str().c_str());
-#endif
-
-    return S_OK;
+    return result;
 }
-CATCH_RETURN();
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+#pragma warning(pop)
 
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
@@ -662,23 +603,6 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     {
         return S_OK;
     }
-
-    ApiMsgMove apiMsg;
-    apiMsg.OriginalStart = _start;
-    apiMsg.OriginalEnd = _end;
-    apiMsg.Unit = unit;
-    apiMsg.RequestedCount = count;
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Move\n");
-    _outputObjectState();
-
-    std::wstringstream ss;
-    ss << L" unit: " << unit;
-    ss << L" count: " << count;
-    std::wstring data = ss.str();
-    OutputDebugString(data.c_str());
-    OutputDebugString(L"\n");
-#endif
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -716,11 +640,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
         ExpandToEnclosingUnit(unit);
     }
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*apiMsg.MovedCount = *pRetVal;
-    Tracing::s_TraceUia(this, ApiCall::Move, &apiMsg);*/
-
+    UiaTracing::TextRange::Move(unit, count, *pRetVal, *this);
     return S_OK;
 }
 
@@ -735,24 +655,6 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     {
         return S_OK;
     }
-
-    ApiMsgMoveEndpointByUnit apiMsg;
-    apiMsg.OriginalStart = _start;
-    apiMsg.OriginalEnd = _end;
-    apiMsg.Endpoint = endpoint;
-    apiMsg.Unit = unit;
-    apiMsg.RequestedCount = count;
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"MoveEndpointByUnit\n");
-    _outputObjectState();
-
-    std::wstringstream ss;
-    ss << L" endpoint: " << endpoint;
-    ss << L" count: " << count;
-    std::wstring data = ss.str();
-    OutputDebugString(data.c_str());
-    OutputDebugString(L"\n");
-#endif
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -780,11 +682,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     }
     CATCH_RETURN();
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*apiMsg.MovedCount = *pRetVal;
-    Tracing::s_TraceUia(this, ApiCall::MoveEndpointByUnit, &apiMsg);*/
-
+    UiaTracing::TextRange::MoveEndpointByUnit(endpoint, unit, count, *pRetVal, *this);
     return S_OK;
 }
 
@@ -804,29 +702,9 @@ try
         return E_INVALIDARG;
     }
 
-    ApiMsgMoveEndpointByRange apiMsg;
-    apiMsg.OriginalStart = _start;
-    apiMsg.OriginalEnd = _end;
-    apiMsg.Endpoint = endpoint;
-    apiMsg.TargetEndpoint = targetEndpoint;
-    apiMsg.OtherId = range->GetId();
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"MoveEndpointByRange\n");
-    _outputObjectState();
-
-    std::wstringstream ss;
-    ss << L" endpoint: " << endpoint;
-    ss << L" targetRange: " << range->_id;
-    ss << L" targetEndpoint: " << targetEndpoint;
-    std::wstring data = ss.str();
-    OutputDebugString(data.c_str());
-    OutputDebugString(L"\n");
-#endif
-
     SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::MoveEndpointByRange, &apiMsg);
+    UiaTracing::TextRange::MoveEndpointByRange(endpoint, *range, targetEndpoint, *this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -851,8 +729,7 @@ try
         _pData->SelectNewRegion(_start, temp);
     }
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::Select, nullptr);
+    UiaTracing::TextRange::Select(*this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -860,16 +737,14 @@ CATCH_RETURN();
 // we don't support this
 IFACEMETHODIMP UiaTextRangeBase::AddToSelection() noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::AddToSelection, nullptr);
+    UiaTracing::TextRange::AddToSelection(*this);
     return E_NOTIMPL;
 }
 
 // we don't support this
 IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection() noexcept
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::RemoveFromSelection, nullptr);
+    UiaTracing::TextRange::RemoveFromSelection(*this);
     return E_NOTIMPL;
 }
 
@@ -936,12 +811,7 @@ try
 
     _ChangeViewport(newViewport);
 
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgScrollIntoView apiMsg;
-        apiMsg.AlignToTop = !!alignToTop;
-        Tracing::s_TraceUia(this, ApiCall::ScrollIntoView, &apiMsg);*/
-
+    UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
     return S_OK;
 }
 CATCH_RETURN();
@@ -959,6 +829,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY
     {
         return E_OUTOFMEMORY;
     }
+    UiaTracing::TextRange::GetChildren(*this);
     return S_OK;
 }
 
@@ -1091,7 +962,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     bool success = true;
     auto target = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && success)
+    while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         switch (moveDirection)
         {
@@ -1233,7 +1104,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
     bool success = true;
     auto resultPos = GetEndpoint(endpoint);
-    while (abs(*pAmountMoved) < abs(moveCount) && success)
+    while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         auto nextPos = resultPos;
         switch (moveDirection)

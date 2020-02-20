@@ -128,49 +128,4 @@ namespace Microsoft::Console::Types
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
     };
-
-    namespace ScreenInfoUiaProviderTracing
-    {
-        enum class ApiCall
-        {
-            Constructor,
-            Signal,
-            GetProviderOptions,
-            GetPatternProvider,
-            GetPropertyValue,
-            GetHostRawElementProvider,
-            Navigate,
-            GetRuntimeId,
-            GetBoundingRectangle,
-            GetEmbeddedFragmentRoots,
-            SetFocus,
-            GetFragmentRoot,
-            GetSelection,
-            GetVisibleRanges,
-            RangeFromChild,
-            RangeFromPoint,
-            GetDocumentRange,
-            GetSupportedTextSelection
-        };
-
-        struct IApiMsg
-        {
-        };
-
-        struct ApiMsgSignal : public IApiMsg
-        {
-            EVENTID Signal;
-        };
-
-        struct ApiMsgNavigate : public IApiMsg
-        {
-            NavigateDirection Direction;
-        };
-
-        struct ApiMsgGetSelection : public IApiMsg
-        {
-            bool AreaSelected;
-            unsigned int SelectionRowCount;
-        };
-    }
 }
