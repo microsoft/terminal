@@ -16,6 +16,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\base\lib\base.vcxproj">
+      <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\lib\dx.vcxproj">
       <Project>{48D21369-3D7B-4431-9967-24E81292CF62}</Project>
     </ProjectReference>

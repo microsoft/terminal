@@ -184,6 +184,9 @@ namespace Microsoft::Console::Render
         std::vector<std::tuple<UINT32, float>> _glyphScaleCorrections;
 
 #ifdef UNIT_TESTING
+    public:
+        CustomTextLayout() = default;
+
         friend class CustomTextLayoutTests;
 #endif
     };
