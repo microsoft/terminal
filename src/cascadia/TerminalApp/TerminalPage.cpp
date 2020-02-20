@@ -1709,7 +1709,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - tab: the projected type of a Tab
     // Return Value:
-    // - a com_ptr to the implementation type of the Tab    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const
+    // - a com_ptr to the implementation type of the Tab 
     winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const
     {
         winrt::com_ptr<Tab> tabImpl;
