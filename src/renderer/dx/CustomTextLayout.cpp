@@ -1127,6 +1127,16 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     }
 }
 
+// Routine Description:
+// - Takes the linked runs stored in the state variable _runs
+//   and ensures that their vector/array indexes are in order in which they're drawn.
+// - This is to be used after splitting and reordering them with the split/select functions
+//   as those manipulate the runs like a linked list (instead of an ordered array)
+//   while splitting to reduce copy overhead and just reorder them when complete with this func.
+// Arguments:
+// - <none> - Manipulates _runs variable.
+// Return Value:
+// - <none>
 void CustomTextLayout::_OrderRuns()
 {
     const size_t totalRuns = _runs.size();
