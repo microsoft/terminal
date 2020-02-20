@@ -69,7 +69,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClick{},
         _lastMouseClickPos{},
         _searchBox{ nullptr },
-        _tsfInputControl{ nullptr }
+        _tsfInputControl{ nullptr },
+        _unfocusedClickPos{ std::nullopt },
+        _isClickDragSelection{ false }
     {
         _EnsureStaticInitialization();
         _Create();
@@ -895,7 +897,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // only want to start the selection when the user moves the pointer with
             // the left mouse button held down, the PointerMovedHandler will use
             // this saved position to set the SelectionAnchor.
-            _clickDragStartPos = point.Position();
+            _unfocusedClickPos = point.Position();
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
@@ -908,11 +910,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
-                // _clickDragStartPos having a value signifies to us that
+                // _unfocusedClickPos having a value signifies to us that
                 // the user clicked on an unfocused terminal. We don't want
                 // a single left click from out of focus to start a selection,
                 // so we return fast here.
-                if (_clickDragStartPos)
+                if (_unfocusedClickPos)
                 {
                     args.Handled(true);
                     return;
@@ -994,13 +996,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             if (point.Properties().IsLeftButtonPressed())
             {
+                _isClickDragSelection = true;
+
                 // If this does not have a value, it means that PointerPressedHandler already
                 // set the SelectionAnchor. If it does have a value, that means the user is
                 // performing a click-drag selection on an unfocused terminal, so
                 // a SelectionAnchor isn't set yet. We'll have to set it here.
-                if (_clickDragStartPos)
+                if (_unfocusedClickPos)
                 {
-                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_clickDragStartPos));
+                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_unfocusedClickPos));
                 }
 
                 const auto cursorPosition = point.Position();
@@ -1041,8 +1045,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             const float dy = newTouchPoint.Y - anchor.Y;
 
-            // If we've moved more than one row of text, we'll want to scroll the viewport
-            if (std::abs(dy) > fontHeight)
+            // Start viewport scroll after we've moved more than a half row of text
+            if (std::abs(dy) > (fontHeight / 2.0f))
             {
                 // Multiply by -1, because moving the touch point down will
                 // create a positive delta, but we want the viewport to move up,
@@ -1050,10 +1054,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // panning down)
                 const float numRows = -1.0f * (dy / fontHeight);
 
-                const auto currentOffset = this->GetScrollOffset();
-                const double newValue = (numRows) + (currentOffset);
+                const auto currentOffset = ::base::ClampedNumeric<double>(_scrollBar.Value());
+                const auto newValue = numRows + currentOffset;
 
-                _scrollBar.Value(static_cast<int>(newValue));
+                _scrollBar.Value(newValue);
 
                 // Use this point as our new scroll anchor.
                 _touchAnchor = newTouchPoint;
@@ -1075,8 +1079,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ptr = args.Pointer();
 
-        _clickDragStartPos = std::nullopt;
-
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
             const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
@@ -1086,13 +1088,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_terminal->IsCopyOnSelectActive())
             {
-                CopySelectionToClipboard(!shiftEnabled);
+                // If the terminal was in focus, copy to clipboard.
+                // If the terminal was unfocused AND a click-drag selection happened, copy to clipboard.
+                if (!_unfocusedClickPos || (_unfocusedClickPos && _isClickDragSelection))
+                {
+                    CopySelectionToClipboard(!shiftEnabled);
+                }
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             _touchAnchor = std::nullopt;
         }
+
+        _unfocusedClickPos = std::nullopt;
+        _isClickDragSelection = false;
 
         _TryStopAutoScroll(ptr.PointerId());
 
@@ -1189,11 +1199,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - mouseDelta: the mouse wheel delta that triggered this event.
     void TermControl::_MouseScrollHandler(const double mouseDelta, Windows::UI::Input::PointerPoint const& pointerPoint)
     {
-        const auto currentOffset = this->GetScrollOffset();
+        const auto currentOffset = _scrollBar.Value();
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
-        const auto rowDelta = mouseDelta < 0 ? 1.0 : -1.0;
+        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
         // With one of the precision mouses, one click is always a multiple of 120,
         // but the "smooth scrolling" mode results in non-int values
@@ -1202,7 +1212,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         //      for us.
-        _scrollBar.Value(static_cast<int>(newValue));
+        _scrollBar.Value(newValue);
 
         if (_terminal->IsSelectionActive() && pointerPoint.Properties().IsLeftButtonPressed())
         {
