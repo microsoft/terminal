@@ -20,6 +20,13 @@
 
 using namespace DirectX;
 
+std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
+#pragma warning(suppress : 26477)
+TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
+                             "Microsoft.Windows.Terminal.Renderer.DirectX",
+                             // {c93e739e-ae50-5a14-78e7-f171e947535d}
+                             (0xc93e739e, 0xae50, 0x5a14, 0x78, 0xe7, 0xf1, 0x71, 0xe9, 0x47, 0x53, 0x5d), );
+
 // Quad where we draw the terminal.
 // pos is world space coordinates where origin is at the center of screen.
 // tex is texel coordinates where origin is top left.
@@ -82,6 +89,12 @@ DxEngine::DxEngine() :
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
+    const auto was = _tracelogCount.fetch_add(1);
+    if (0 == was)
+    {
+        TraceLoggingRegister(g_hDxRenderProvider);
+    }
+
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
     THROW_IF_FAILED(DWriteCreateFactory(
@@ -99,6 +112,12 @@ DxEngine::DxEngine() :
 DxEngine::~DxEngine()
 {
     _ReleaseDeviceResources();
+
+    const auto was = _tracelogCount.fetch_sub(1);
+    if (1 == was)
+    {
+        TraceLoggingUnregister(g_hDxRenderProvider);
+    }
 }
 
 // Routine Description:
@@ -924,6 +943,22 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 {
     FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
+
+#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
+    TraceLoggingWrite(g_hDxRenderProvider,
+                      "Invalid",
+                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
+                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
+                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
+                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
+                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
+                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
+                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
+                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
+                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
+                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
+                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
+                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
 
     if (_isEnabled)
     {
