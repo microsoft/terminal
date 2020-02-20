@@ -17,7 +17,8 @@ using namespace winrt::Windows::UI::Xaml;
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TSFInputControl::TSFInputControl() :
-        _editContext{ nullptr }
+        _editContext{ nullptr },
+        _inComposition{ false }
     {
         _Create();
     }
@@ -203,6 +204,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _canvas.Visibility(Visibility::Visible);
         _textBlock.Visibility(Visibility::Visible);
+        _inComposition = true;
     }
 
     // Method Description:
@@ -215,6 +217,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& /*args*/)
     {
+        _inComposition = false;
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
@@ -315,15 +318,39 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
+            if (!_inComposition)
+            {
+                _canvas.Visibility(Visibility::Visible);
+                _textBlock.Visibility(Visibility::Visible);
+            }
+
+            auto rangetoreplace = static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition);
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
+                rangetoreplace,
                 text);
 
             _textBlock.Text(_inputBuffer);
 
             // Notify the TSF that the update succeeded
             args.Result(CoreTextTextUpdatingResult::Succeeded);
+
+            if (!_inComposition)
+            {
+                // call event handler with data handled by parent
+                _compositionCompletedHandlers(_inputBuffer);
+
+                // clear the buffer for next round
+                const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
+                _inputBuffer.clear();
+                _textBlock.Text(L"");
+
+                // indicate text is now 0
+                _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
+
+                _canvas.Visibility(Visibility::Collapsed);
+                _textBlock.Visibility(Visibility::Collapsed);
+            }
         }
         catch (...)
         {
