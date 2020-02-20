@@ -943,6 +943,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
+    #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
     TraceLoggingWrite(g_hDxRenderProvider,
                       "Invalid",
                       TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
