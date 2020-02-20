@@ -363,7 +363,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         {
             // Split after the adjustment first so it
             // takes a copy of all the run properties before we modify them.
-            // PERF: This is the other half of the potential future perf item.
+            // GH 4665: This is the other half of the potential future perf item.
             //       If glyphs needing the same scale are coalesced, we could
             //       break fewer times and have fewer runs.
             _SetCurrentRun(index + 1);
@@ -451,7 +451,7 @@ try
             const auto scaleProposed = fontSizeWant / _format->GetFontSize();
 
             // Store the glyph scale correction for future run breaking
-            // PERF: In theory, we could also store the length of the new run and coalesce
+            // GH 4665: In theory, we could also store the length of the new run and coalesce
             //       in case two adjacent glyphs need the same scale factor.
             _glyphScaleCorrections.push_back(std::tuple{ i, scaleProposed });
 
