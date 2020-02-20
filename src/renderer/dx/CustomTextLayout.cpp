@@ -232,7 +232,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // Shapes a single run of text into glyphs.
         // Alternately, you could iteratively interleave shaping and line
         // breaking to reduce the number glyphs held onto at once. It's simpler
-        // for this demostration to just do shaping and line breaking as two
+        // for this demonstration to just do shaping and line breaking as two
         // separate processes, but realize that this does have the consequence that
         // certain advanced fonts containing line specific features (like Gabriola)
         // will shape as if the line is not broken.
@@ -256,7 +256,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // need more glyphs than codepoints if they are decomposed into separate
         // glyphs, or fewer glyphs than codepoints if multiple are substituted
         // into a single glyph. In any case, the shaping process will need some
-        // room to apply those rules to even make that determintation.
+        // room to apply those rules to even make that determination.
 
         if (textLength > maxGlyphCount)
         {
@@ -404,30 +404,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             // Offsets is how far to move the origin (in pixels) from where it is
             auto& offset = _glyphOffsets.at(i);
 
-            // Get how many columns we expected the glyph to have and multiply into pixels.
-            UINT16 columns = 0;
-            {
-                // Because of typographic features such as ligatures, it is well possible for a glyph to represent
-                //  multiple code points. Previous calls to IDWriteTextAnalyzer::GetGlyphs stores the mapping
-                //  information between code points and glyphs in _glyphClusters.
-                // To properly allocate the columns for such glyphs, we need to find all characters that this glyph
-                //  is representing and add column counts for all the characters together.
-
-                // Find the range for current glyph run in _glyphClusters.
-                const auto runStartIterator = _glyphClusters.begin() + run.textStart;
-                const auto runEndIterator = _glyphClusters.begin() + run.textStart + run.textLength;
-
-                // Find the range of characters that the current glyph is representing.
-                const auto firstIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart);
-                const auto lastIterator = std::find(runStartIterator, runEndIterator, i - run.glyphStart + 1);
-
-                // Add all allocated column counts together.
-                for (auto j = firstIterator; j < lastIterator; j++)
-                {
-                    const auto charIndex = std::distance(_glyphClusters.begin(), j);
-                    columns += _textClusterColumns.at(charIndex);
-                }
-            }
+            // Get how many columns we expected the glyph to have and mutiply into pixels.
+            const auto columns = _textClusterColumns.at(i);
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
@@ -812,7 +790,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 }
 #pragma endregion
 
-#pragma region internal methods for mimicing text analyzer pattern but for font fallback
+#pragma region internal methods for mimicking text analyzer pattern but for font fallback
 // Routine Description:
 // - Mimics an IDWriteTextAnalyser but for font fallback calculations.
 // Arguments:

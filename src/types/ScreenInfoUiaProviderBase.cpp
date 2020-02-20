@@ -229,67 +229,40 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     *ppRetVal = nullptr;
     HRESULT hr = S_OK;
 
+    // make a safe array
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
+    if (*ppRetVal == nullptr)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    WRL::ComPtr<UiaTextRangeBase> range;
     if (!_pData->IsSelectionActive())
     {
         // return a degenerate range at the cursor position
         const Cursor& cursor = _getTextBuffer().GetCursor();
-
-        // make a safe array
-        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
-        if (*ppRetVal == nullptr)
-        {
-            return E_OUTOFMEMORY;
-        }
-
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-
-        WRL::ComPtr<UiaTextRangeBase> range;
         hr = CreateTextRange(this, cursor, _wordDelimiters, &range);
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-
-        LONG currentIndex = 0;
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
     }
     else
     {
-        // get the selection ranges
-        std::deque<WRL::ComPtr<UiaTextRangeBase>> ranges;
-        RETURN_IF_FAILED(GetSelectionRanges(this, _wordDelimiters, ranges));
+        // get the selection range
+        hr = GetSelectionRange(this, _wordDelimiters, &range);
+    }
 
-        // make a safe array
-        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(ranges.size()));
-        if (*ppRetVal == nullptr)
-        {
-            return E_OUTOFMEMORY;
-        }
+    if (FAILED(hr))
+    {
+        SafeArrayDestroy(*ppRetVal);
+        *ppRetVal = nullptr;
+        return hr;
+    }
 
-        // fill the safe array
-        for (LONG i = 0; i < gsl::narrow<LONG>(ranges.size()); ++i)
-        {
-            hr = SafeArrayPutElement(*ppRetVal, &i, ranges.at(i).Detach());
-            if (FAILED(hr))
-            {
-                SafeArrayDestroy(*ppRetVal);
-                *ppRetVal = nullptr;
-                return hr;
-            }
-        }
+    LONG currentIndex = 0;
+    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
+    if (FAILED(hr))
+    {
+        SafeArrayDestroy(*ppRetVal);
+        *ppRetVal = nullptr;
+        return hr;
     }
 
     UiaTracing::TextProvider::GetSelection(*this);

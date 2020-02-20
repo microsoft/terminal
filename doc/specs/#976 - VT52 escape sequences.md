@@ -229,7 +229,7 @@ This should not introduce any new reliability issues.
 
 ### Compatibility
 
-This could be a breaking change for code that relies on the few existing VT52 commands being available without a mode change. However, that functionality is non-standard, and has not been around for that long. There is almost certainly more benefit in being able to implement the missing VT100 functionality than there is in retaining that non-standard behaviour.
+This could be a breaking change for code that relies on the few existing VT52 commands being available without a mode change. However, that functionality is non-standard, and has not been around for that long. There is almost certainly more benefit in being able to implement the missing VT100 functionality than there is in retaining that non-standard behavior.
 
 ### Performance, Power, and Efficiency
 

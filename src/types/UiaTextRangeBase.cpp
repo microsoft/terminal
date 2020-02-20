@@ -56,15 +56,27 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ const COORD start,
                                                  _In_ const COORD end,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
+try
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
-    _start = start;
-    _end = end;
+    // start is before/at end, so this is valid
+    if (_pData->GetTextBuffer().GetSize().CompareInBounds(start, end, true) <= 0)
+    {
+        _start = start;
+        _end = end;
+    }
+    else
+    {
+        // start is after end, so we need to flip our concept of start/end
+        _start = end;
+        _end = start;
+    }
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
 }
+CATCH_RETURN();
 
 void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
 {
@@ -138,9 +150,9 @@ const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) con
 // - val - the value that it will be set to
 // Return Value:
 // - true if range is degenerate, false otherwise.
-bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val)
+bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept
 {
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto bufferSize = _getBufferSize();
     switch (endpoint)
     {
     case TextPatternRangeEndpoint_End:
@@ -240,7 +252,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
     try
     {
         const auto& buffer = _pData->GetTextBuffer();
-        const auto bufferSize = buffer.GetSize();
+        const auto bufferSize = _getBufferSize();
         const auto bufferEnd = bufferSize.EndExclusive();
 
         if (unit == TextUnit_Character)
@@ -253,6 +265,13 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
             // expand to word
             _start = buffer.GetWordStart(_start, _wordDelimiters, true);
             _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
+
+            // GetWordEnd may return the actual end of the TextBuffer.
+            // If so, just set it to this value of bufferEnd
+            if (!bufferSize.IsInBounds(_end))
+            {
+                _end = bufferEnd;
+            }
         }
         else if (unit <= TextUnit_Line)
         {
@@ -294,7 +313,7 @@ try
     *ppRetVal = nullptr;
 
     const std::wstring queryText{ text, SysStringLen(text) };
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto bufferSize = _getBufferSize();
     const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
 
     auto searchDirection = Search::Direction::Forward;
@@ -372,7 +391,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         // set of coords.
         std::vector<double> coords;
 
-        const auto bufferSize = _pData->GetTextBuffer().GetSize();
+        const auto bufferSize = _getBufferSize();
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
@@ -842,6 +861,25 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 }
 
 // Routine Description:
+// - Gets a viewport representing where valid text may be in the TextBuffer
+// - Use this instead of `textBuffer.GetSize()`. This improves performance
+//    because it's a smaller space to have to search through
+// Arguments:
+// - <none>
+// Return Value:
+// - A viewport representing the portion of the TextBuffer that has valid text
+const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
+{
+    // we need to add 1 to the X/Y of textBufferEnd
+    // because we want the returned viewport to include this COORD
+    const auto textBufferEnd = _pData->GetTextBufferEndPosition();
+    const auto width = base::ClampAdd<short>(1, textBufferEnd.X);
+    const auto height = base::ClampAdd<short>(1, textBufferEnd.Y);
+
+    return Viewport::FromDimensions({ 0, 0 }, width, height);
+}
+
+// Routine Description:
 // - adds the relevant coordinate points from the row to coords.
 // - it is assumed that startAnchor and endAnchor are within the same row
 //    and NOT DEGENERATE
@@ -909,7 +947,7 @@ void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
                                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                    _In_ const bool preventBufferEnd)
+                                                    _In_ const bool preventBufferEnd) noexcept
 {
     *pAmountMoved = 0;
 
@@ -920,7 +958,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto bufferSize = _getBufferSize();
 
     bool success = true;
     auto target = GetEndpoint(endpoint);
@@ -977,10 +1015,10 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto& buffer = _pData->GetTextBuffer();
-    const auto bufferSize = buffer.GetSize();
+    const auto bufferSize = _getBufferSize();
     const auto bufferOrigin = bufferSize.Origin();
     const auto bufferEnd = bufferSize.EndExclusive();
-    const auto lastCharPos = buffer.GetLastNonSpaceCharacter();
+    const auto lastCharPos = buffer.GetLastNonSpaceCharacter(bufferSize);
 
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
@@ -1051,7 +1089,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
 void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
                                                _Out_ gsl::not_null<int*> const pAmountMoved,
-                                               _In_ const bool preventBufferEnd)
+                                               _In_ const bool preventBufferEnd) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1062,7 +1100,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto bufferSize = _getBufferSize();
 
     bool success = true;
     auto resultPos = GetEndpoint(endpoint);
@@ -1135,7 +1173,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
                                                    _In_ const TextPatternRangeEndpoint endpoint,
                                                    _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                   _In_ const bool preventBufferEnd)
+                                                   _In_ const bool preventBufferEnd) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1145,7 +1183,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     }
 
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
+    const auto bufferSize = _getBufferSize();
 
     const auto target = GetEndpoint(endpoint);
     switch (moveDirection)

@@ -211,7 +211,7 @@ static constexpr bool _isOscIndicator(const wchar_t wch) noexcept
 // Routine Description:
 // - Determines if a character is a delimiter between two parameters in a "operating system control sequence"
 //   This occurs in the middle of a control sequence after escape and OscIndicator have been recognized,
-//   after the paramater indicating which OSC action to take.
+//   after the parameter indicating which OSC action to take.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -299,7 +299,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 // Routine Description:
 // - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character, with the added
-//      information that we're executing it from the Escsape state.
+//      information that we're executing it from the Escape state.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:

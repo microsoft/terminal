@@ -5,7 +5,7 @@
 // - Pane.h
 //
 // Abstract:
-// - Panes are an abstraction by which the terminal can dislay multiple terminal
+// - Panes are an abstraction by which the terminal can display multiple terminal
 //   instances simultaneously in a single terminal window. While tabs allow for
 //   a single terminal window to have many terminal sessions running
 //   simultaneously within a single window, only one tab can be visible at a
@@ -191,7 +191,7 @@ private:
         std::unique_ptr<LayoutSizeNode> secondChild;
 
         // These two fields hold next possible snapped values of firstChild and
-        // secondChild. Although that could be calculated from these fields themself,
+        // secondChild. Although that could be calculated from these fields themselves,
         // it would be wasteful as we have to know these values more often than for
         // simple increment. Hence we cache that here.
         std::unique_ptr<LayoutSizeNode> nextFirstChild;

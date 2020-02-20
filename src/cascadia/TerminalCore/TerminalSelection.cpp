@@ -113,12 +113,24 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
 // - None
 // Return Value:
 // - None
-const COORD Terminal::GetSelectionAnchor() const
+const COORD Terminal::GetSelectionAnchor() const noexcept
 {
     COORD selectionAnchorPos{ _selectionAnchor };
-    THROW_IF_FAILED(ShortAdd(selectionAnchorPos.Y, _selectionVerticalOffset, &selectionAnchorPos.Y));
-
+    selectionAnchorPos.Y = base::ClampAdd(selectionAnchorPos.Y, _selectionVerticalOffset);
     return selectionAnchorPos;
+}
+
+// Method Description:
+// - Get the current end anchor position relative to the whole text buffer
+// Arguments:
+// - None
+// Return Value:
+// - None
+const COORD Terminal::GetEndSelectionPosition() const noexcept
+{
+    COORD endSelectionPos{ _endSelectionPosition };
+    endSelectionPos.Y = base::ClampAdd(endSelectionPos.Y, _selectionVerticalOffset);
+    return endSelectionPos;
 }
 
 // Method Description:
@@ -325,6 +337,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 
 // Method Description:
 // - clear selection data and disable rendering it
+#pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
@@ -332,8 +345,6 @@ void Terminal::ClearSelection()
     _selectionAnchor = { 0, 0 };
     _endSelectionPosition = { 0, 0 };
     _selectionVerticalOffset = 0;
-
-    _buffer->GetRenderTarget().TriggerSelection();
 }
 
 // Method Description:
