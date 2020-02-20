@@ -393,7 +393,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 [[nodiscard]] HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
 try
 {
-    Run& run = _runs.at(runIndex);
+    const Run& run = _runs.at(runIndex);
 
     if (run.textLength == 0)
     {

@@ -21,6 +21,7 @@
 using namespace DirectX;
 
 std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
+#pragma warning(suppress : 26477) // We don't control tracelogging macros
 TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
                              "Microsoft.Windows.Terminal.Renderer.DirectX",
                              // {c93e739e-ae50-5a14-78e7-f171e947535d}
@@ -943,7 +944,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
     TraceLoggingWrite(g_hDxRenderProvider,
                       "Invalid",
                       TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
