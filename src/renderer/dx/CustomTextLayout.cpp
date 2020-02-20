@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -1042,15 +1042,86 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 
     if (frontHalf.glyphCount > 0)
     {
+        // Starting from this:
+        // TEXT (_text)
+        // f  i  ñ  e
+        // CLUSTERMAP (_glyphClusters)
+        // 0  0  1  3
+        // GLYPH INDICIES (_glyphIndicies)
+        // 19 81 23 72
+        // With _runs length = 1
+        // _runs(0):
+        //  - Text Index:   0
+        //  - Text Length:  4
+        //  - Glyph Index:  0
+        //  - Glyph Length: 4
+        //
+        // If we split at text index = 2 (between i and ñ)...
+        // ... then this will be the state after the text splitting above:
+        //
+        // TEXT (_text)
+        // f  i  ñ  e
+        // CLUSTERMAP (_glyphClusters)
+        // 0  0  1  3
+        // GLYPH INDICIES (_glyphIndicies)
+        // 19 81 23 72
+        // With _runs length = 2
+        // _runs(0):
+        //  - Text Index:   0
+        //  - Text Length:  2
+        //  - Glyph Index:  0
+        //  - Glyph Length: 4
+        // _runs(1):
+        //  - Text Index:   2
+        //  - Text Length:  2
+        //  - Glyph Index:  0
+        //  - Glyph Length: 4
+        //
+        // Notice that the text index/length values are correct,
+        // but we haven't fixed up the glyph index/lengths to match.
+        // We need it to say:
+        // With _runs length = 2
+        // _runs(0):
+        //  - Text Index:   0
+        //  - Text Length:  2
+        //  - Glyph Index:  0
+        //  - Glyph Length: 1
+        // _runs(1):
+        //  - Text Index:   2
+        //  - Text Length:  2
+        //  - Glyph Index:  1
+        //  - Glyph Length: 3
+        //
+        // Which means that the cluster map value under the beginning
+        // of the right-hand text range is our offset to fix all the values.
+        // In this case, that's 1 corresponding with the ñ.
         const auto mapOffset = _glyphClusters.at(backHalf.textStart);
+
+        // The front half's glyph start index (position in _glyphIndicies)
+        // stays the same.
+
+        // The front half's glyph count (items in _glyphIndicies to consume)
+        // is the offset value as that's now one past the end of the front half.
+        // (and count is end index + 1)
         frontHalf.glyphCount = mapOffset;
+
+        // The back half starts at the index that's one past the end of the front
         backHalf.glyphStart = mapOffset;
+
+        // And the back half count (since it was copied from the front half above)
+        // now just needs to be subtracted by how many we gave the front half.
         backHalf.glyphCount -= mapOffset;
 
+        // The CLUSTERMAP is also wrong given that it is relative
+        // to each run. And now there are two runs so the map
+        // value under the ñ and e need to updated to be relative
+        // to the text index "2" now instead of the original.
+        //
+        // For the entire range of the back half, we need to walk through and
+        // slide all the glyph mapping values to be relative to the new
+        // backHalf.glyphStart, or adjust it by the offset we just set it to.
         const auto updateBegin = _glyphClusters.begin() + backHalf.textStart;
-        const auto updateEnd = updateBegin + backHalf.textLength;
-
-        std::for_each(updateBegin, updateEnd, [mapOffset](UINT16& n) {
+        std::for_each_n(updateBegin, backHalf.textLength, [mapOffset](UINT16& n) {
             n -= mapOffset;
         });
     }
