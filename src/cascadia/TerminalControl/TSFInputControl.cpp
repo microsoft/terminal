@@ -308,10 +308,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _canvas.Visibility(Visibility::Visible);
             _textBlock.Visibility(Visibility::Visible);
 
-            auto rangetoreplace = static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition);
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                rangetoreplace,
+                static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
                 text);
 
             _textBlock.Text(_inputBuffer);
