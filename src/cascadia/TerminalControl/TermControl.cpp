@@ -852,6 +852,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_terminal->IsSelectionActive())
         {
             _terminal->ClearSelection();
+            _renderer->TriggerSelection();
 
             if (vkey == VK_ESCAPE)
             {
@@ -1744,6 +1745,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_terminal->IsCopyOnSelectActive())
         {
             _terminal->ClearSelection();
+            _renderer->TriggerSelection();
         }
 
         // send data up for clipboard
