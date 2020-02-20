@@ -335,6 +335,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Sends the currently held text in the input buffer to the parent and
+    //   clears the input buffer and text block for the next round of input.
+    //   Then hides the text block control until the next time text received.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TSFInputControl::_sendAndClearText()
     {
         // call event handler with data handled by parent
