@@ -946,11 +946,17 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     TraceLoggingWrite(g_hDxRenderProvider,
                       "Invalid",
                       TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
+                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
                       TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
+                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
                       TraceLoggingInt32(_invalidRect.left, "InvalidX"),
+                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
                       TraceLoggingInt32(_invalidRect.top, "InvalidY"),
+                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
                       TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
-                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"));
+                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
+                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
+                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
 
     if (_isEnabled)
     {
