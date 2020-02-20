@@ -182,5 +182,9 @@ namespace Microsoft::Console::Render
 
         // These are used to further break the runs apart and adjust the font size so glyphs fit inside the cells.
         std::vector<std::tuple<UINT32, float>> _glyphScaleCorrections;
+
+#ifdef UNIT_TESTING
+        friend class CustomTextLayoutTests;
+#endif
     };
 }
