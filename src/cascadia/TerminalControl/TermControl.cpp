@@ -731,7 +731,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
             _cursorTimer.value().Tick({ get_weak(), &TermControl::_BlinkCursor });
-            //_cursorTimer.value().Start();
+            _cursorTimer.value().Start();
         }
         else
         {
@@ -867,7 +867,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
             _terminal->SetCursorVisible(true);
-            //_cursorTimer.value().Start();
+            _cursorTimer.value().Start();
         }
 
         return handled;
@@ -1372,8 +1372,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             // When the terminal focuses, show the cursor immediately
-            //_terminal->SetCursorVisible(true);
-            //_cursorTimer.value().Start();
+            _terminal->SetCursorVisible(true);
+            _cursorTimer.value().Start();
         }
         _rowsToScroll = _settings.RowsToScroll();
     }
@@ -1404,7 +1404,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
-            //_terminal->SetCursorVisible(false);
+            _terminal->SetCursorVisible(false);
         }
     }
 
