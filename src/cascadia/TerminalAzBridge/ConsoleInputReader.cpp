@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "ConsoleInputReader.h"
+#include "unicode.hpp"
 
 ConsoleInputReader::ConsoleInputReader(HANDLE handle) :
     _handle(handle)
@@ -50,15 +51,32 @@ std::optional<std::wstring_view> ConsoleInputReader::Read()
                         continue; // we've consumed it -- only dispatch it if we get a low
                     }
 
-                    if (IS_LOW_SURROGATE(keyEvent.uChar.UnicodeChar) && _highSurrogate)
+                    if (IS_LOW_SURROGATE(keyEvent.uChar.UnicodeChar))
                     {
-                        _convertedString.push_back(*_highSurrogate);
-                        _highSurrogate.reset();
+                        // No matter what we do, we want to destructively consume the high surrogate
+                        if (const auto oldHighSurrogate{ std::exchange(_highSurrogate, std::nullopt) })
+                        {
+                            _convertedString.push_back(*_highSurrogate);
+                        }
+                        else
+                        {
+                            // If we get a low without a high surrogate, we've done everything we can.
+                            // This is an illegal state.
+                            _convertedString.push_back(UNICODE_REPLACEMENT);
+                            continue; // onto the next event
+                        }
                     }
 
                     // (\0 with a scancode is probably a modifier key, not a VT input key)
                     if (keyEvent.uChar.UnicodeChar != L'\0' || keyEvent.wVirtualScanCode == 0)
                     {
+                        if (_highSurrogate) // non-destructive: we don't want to set it to nullopt needlessly for every character
+                        {
+                            // If we get a high surrogate *here*, we didn't find a low surrogate.
+                            // This state is also illegal.
+                            _convertedString.push_back(UNICODE_REPLACEMENT);
+                            _highSurrogate.reset();
+                        }
                         _convertedString.push_back(keyEvent.uChar.UnicodeChar);
                     }
                 }
