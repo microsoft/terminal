@@ -213,7 +213,7 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="../Resources/en-US/Resources.resw" />
+    <PRIResource Include="../Resources/Resources.language-en.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
