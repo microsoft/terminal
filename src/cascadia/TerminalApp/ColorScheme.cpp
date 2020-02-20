@@ -18,7 +18,7 @@ static constexpr std::string_view TableKey{ "colors" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
-static constexpr std::string_view CursorColorKey { "cursorColor" };
+static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::array<std::string_view, 16> TableColors = {
     "black",
     "red",
@@ -54,7 +54,7 @@ ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF default
     _defaultForeground{ defaultFg },
     _defaultBackground{ defaultBg },
     _selectionBackground{ DEFAULT_FOREGROUND },
-    _cursorColor { cursorColor }
+    _cursorColor{ cursorColor }
 {
 }
 
@@ -171,7 +171,7 @@ void ColorScheme::LayerJson(const Json::Value& json)
         const auto color = Utils::ColorFromHexString(sbString.asString());
         _selectionBackground = color;
     }
-    if (auto sbString { json[JsonKey(CursorColorKey)] })
+    if (auto sbString{ json[JsonKey(CursorColorKey)] })
     {
         const auto color = Utils::ColorFromHexString(sbString.asString());
         _cursorColor = color;

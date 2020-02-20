@@ -100,7 +100,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _defaultForeground{},
     _defaultBackground{},
     _selectionBackground{},
-    _cursorColor {},
+    _cursorColor{},
     _colorTable{},
     _tabTitle{},
     _suppressApplicationTitle{},
