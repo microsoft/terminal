@@ -118,43 +118,29 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
     // Otherwise, we may accidentally expand during other selection-based actions
-    const auto shiftClick = newExpansionMode.has_value();
     _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
-    switch (_multiClickSelectionMode)
-    {
-    case SelectionExpansionMode::Line:
-        _ChunkSelectionByLine(textBufferPos, shiftClick);
-        break;
-    case SelectionExpansionMode::Word:
-        _ChunkSelectionByWord(textBufferPos, shiftClick);
-        break;
-    case SelectionExpansionMode::Cell:
-    default:
-        _ChunkSelectionByCell(textBufferPos, shiftClick);
+    _AdjustStartAndEndAcrossPivot(textBufferPos);
 
-        // moving the endpoint of what used to be a single cell selection
-        // allows the user to drag back and select just one cell
-        if (_copyOnSelect && !_IsSingleCellSelection())
-        {
-            _allowSingleCharSelection = true;
-        }
-        break;
+    _ExpandSelectionAnchors();
+
+    // moving the endpoint of what used to be a single cell selection
+    // allows the user to drag back and select just one cell
+    if (_copyOnSelect && !_IsSingleCellSelection())
+    {
+        _allowSingleCharSelection = true;
     }
 
     _selectionActive = true;
 }
 
 // Method Description:
-// - Update the selection anchors when dragging to a position
-// - Used for SelectionExpansionMode::Cell
+// - Update the selection anchors based on the targeted position in relation to the pivot
+// - This ensures start < end when compared
 // Arguments:
-// - targetPos: the (x,y) coordinate we are dragging to on the text buffer
-// - shiftClick: when enabled, only update the _endSelectionPosition
-void Terminal::_ChunkSelectionByCell(const COORD targetPos, bool /*shiftClick*/)
+// - targetPos: the (x,y) coordinate we are moving to on the text buffer
+void Terminal::_AdjustStartAndEndAcrossPivot(const COORD targetPos)
 {
-    // TODO GH #4557: Shift+Multi-Click Expansion
-    //   shiftClick is reserved for that implementation
     if (_buffer->GetSize().CompareInBounds(targetPos, _selectionPivot) <= 0)
     {
         // target is before pivot
@@ -170,63 +156,26 @@ void Terminal::_ChunkSelectionByCell(const COORD targetPos, bool /*shiftClick*/)
 }
 
 // Method Description:
-// - Update the selection anchors when dragging to a position
-// - Used for SelectionExpansionMode::Word
+// - Update the selection anchors to expand according to the expansion mode
 // Arguments:
-// - targetPos: the (x,y) coordinate we are dragging to on the text buffer
-// - shiftClick: when enabled, only update the _endSelectionPosition
-void Terminal::_ChunkSelectionByWord(const COORD targetPos, bool /*shiftClick*/)
+// - <none>
+void Terminal::_ExpandSelectionAnchors()
 {
-    // TODO GH #4557: Shift+Multi-Click Expansion
-    //   shiftClick is reserved for that implementation
-    if (_buffer->GetSize().CompareInBounds(targetPos, _selectionPivot) <= 0)
-    {
-        // target is before pivot
-        //  - start --> ExpandLeft(target)
-        //  - end --> ExpandRight(pivot)
-
-        _selectionStart = _ExpandDoubleClickSelectionLeft(targetPos);
-        _selectionEnd = _ExpandDoubleClickSelectionRight(_selectionPivot);
-    }
-    else
-    {
-        // target is after pivot
-        //  - start --> ExpandLeft(pivot)
-        //  - end --> ExpandRight(target)
-
-        _selectionStart = _ExpandDoubleClickSelectionLeft(_selectionPivot);
-        _selectionEnd = _ExpandDoubleClickSelectionRight(targetPos);
-    }
-}
-
-// Method Description:
-// - Update the selection anchors when dragging to a position
-// - Used for SelectionExpansionMode::Line
-// Arguments:
-// - targetPos: the (x,y) coordinate we are dragging to on the text buffer
-// - shiftClick: when enabled, only update the _endSelectionPosition
-void Terminal::_ChunkSelectionByLine(const COORD targetPos, bool /*shiftClick*/)
-{
-    // TODO GH #4557: Shift+Multi-Click Expansion
-    //   shiftClick is reserved for that implementation
     const auto bufferSize = _buffer->GetSize();
-    if (bufferSize.CompareInBounds(targetPos, _selectionPivot) <= 0)
+    switch (_multiClickSelectionMode)
     {
-        // target is before pivot
-        //  - start --> ExpandLeft(target)
-        //  - end --> ExpandRight(pivot)
-
-        _selectionStart = { bufferSize.Left(), targetPos.Y };
-        _selectionEnd = { bufferSize.RightInclusive(), _selectionPivot.Y };
-    }
-    else
-    {
-        // target is after pivot
-        //  - start --> ExpandLeft(pivot)
-        //  - end --> ExpandRight(target)
-
-        _selectionStart = { bufferSize.Left(), _selectionPivot.Y };
-        _selectionEnd = { bufferSize.RightInclusive(), targetPos.Y };
+    case SelectionExpansionMode::Line:
+        _selectionStart = { bufferSize.Left(), _selectionStart.Y };
+        _selectionEnd = { bufferSize.RightInclusive(), _selectionEnd.Y };
+        break;
+    case SelectionExpansionMode::Word:
+        _selectionStart = _buffer->GetWordStart(_selectionStart, _wordDelimiters);
+        _selectionEnd = _buffer->GetWordEnd(_selectionEnd, _wordDelimiters);
+        break;
+    case SelectionExpansionMode::Cell:
+    default:
+        // no expansion is necessary
+        break;
     }
 }
 
@@ -268,40 +217,6 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
                                         _GetSelectionRects(),
                                         GetForegroundColor,
                                         GetBackgroundColor);
-}
-
-// Method Description:
-// - expand the double click selection to the left
-// - stopped by delimiter if started on delimiter
-// Arguments:
-// - position: buffer coordinate for selection
-// Return Value:
-// - updated copy of "position" to new expanded location (with vertical offset)
-COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
-{
-    // force position to be within bounds
-#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
-    COORD positionWithOffsets = position;
-    _buffer->GetSize().Clamp(positionWithOffsets);
-
-    return _buffer->GetWordStart(positionWithOffsets, _wordDelimiters);
-}
-
-// Method Description:
-// - expand the double click selection to the right
-// - stopped by delimiter if started on delimiter
-// Arguments:
-// - position: buffer coordinate for selection
-// Return Value:
-// - updated copy of "position" to new expanded location (with vertical offset)
-COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
-{
-    // force position to be within bounds
-#pragma warning(suppress : 26496) // cpp core checks wants this const but .Clamp() can write it.
-    COORD positionWithOffsets = position;
-    _buffer->GetSize().Clamp(positionWithOffsets);
-
-    return _buffer->GetWordEnd(positionWithOffsets, _wordDelimiters);
 }
 
 // Method Description:

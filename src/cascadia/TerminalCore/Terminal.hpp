@@ -249,11 +249,8 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    void _ChunkSelectionByCell(const COORD position, bool shiftClick);
-    void _ChunkSelectionByWord(const COORD position, bool shiftClick);
-    void _ChunkSelectionByLine(const COORD position, bool shiftClick);
-    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
-    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
+    void _AdjustStartAndEndAcrossPivot(const COORD targetPos);
+    void _ExpandSelectionAnchors();
     COORD _ConvertToBufferCell(const COORD viewportPos) const noexcept;
     const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
