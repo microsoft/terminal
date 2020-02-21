@@ -22,7 +22,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        return _buffer->GetTextRects(_selectionStart, _selectionEnd, _blockSelection);
+        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection);
     }
     CATCH_LOG();
     return result;
@@ -36,7 +36,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 // - None
 const COORD Terminal::GetSelectionAnchor() const noexcept
 {
-    return _selectionStart;
+    return _selection->start;
 }
 
 // Method Description:
@@ -47,7 +47,7 @@ const COORD Terminal::GetSelectionAnchor() const noexcept
 // - None
 const COORD Terminal::GetSelectionEnd() const noexcept
 {
-    return _selectionEnd;
+    return _selection->end;
 }
 
 // Method Description:
@@ -56,7 +56,7 @@ const COORD Terminal::GetSelectionEnd() const noexcept
 // - bool representing if selection is only a single cell. Used for copyOnSelect
 const bool Terminal::_IsSingleCellSelection() const noexcept
 {
-    return (_selectionStart == _selectionEnd);
+    return (_selection->start == _selection->end);
 }
 
 // Method Description:
@@ -71,7 +71,7 @@ const bool Terminal::IsSelectionActive() const noexcept
     {
         return false;
     }
-    return _selectionActive;
+    return _selection.has_value();
 }
 
 // Method Description:
@@ -91,14 +91,14 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode)
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
-    _selectionPivot = _ConvertToBufferCell(viewportPos);
+    _selection->pivot = _ConvertToBufferCell(viewportPos);
 
     _multiClickSelectionMode = expansionMode;
     SetSelectionEnd(viewportPos);
 
     // we need to set the _selectionPivot again
     // for future shift+clicks
-    _selectionPivot = _selectionStart;
+    _selection->pivot = _selection->start;
 }
 
 // Method Description:
@@ -107,14 +107,15 @@ void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMo
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::SetSelectionAnchor(const COORD viewportPos)
 {
-    _selectionPivot = _ConvertToBufferCell(viewportPos);
+    _selection = SelectionAnchors{};
+    _selection->pivot = _ConvertToBufferCell(viewportPos);
 
     _allowSingleCharSelection = (_copyOnSelect) ? false : true;
 
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
     SetSelectionEnd(viewportPos);
 
-    _selectionStart = _selectionPivot;
+    _selection->start = _selection->pivot;
 }
 
 // Method Description:
@@ -132,7 +133,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
     const auto anchors = _PivotSelection(textBufferPos);
-    std::tie(_selectionStart, _selectionEnd) = _ExpandSelectionAnchors(anchors);
+    std::tie(_selection->start, _selection->end) = _ExpandSelectionAnchors(anchors);
 
     // moving the endpoint of what used to be a single cell selection
     // allows the user to drag back and select just one cell
@@ -140,8 +141,6 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     {
         _allowSingleCharSelection = true;
     }
-
-    _selectionActive = true;
 }
 
 // Method Description:
@@ -153,17 +152,17 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - the new start/end for a selection
 std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos) const
 {
-    if (_buffer->GetSize().CompareInBounds(targetPos, _selectionPivot) <= 0)
+    if (_buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
     {
         // target is before pivot
         // treat target as start
-        return std::make_pair(targetPos, _selectionPivot);
+        return std::make_pair(targetPos, _selection->pivot);
     }
     else
     {
         // target is after pivot
         // treat pivot as start
-        return std::make_pair(_selectionPivot, targetPos);
+        return std::make_pair(_selection->pivot, targetPos);
     }
 }
 
@@ -211,10 +210,8 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
 #pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
-    _selectionActive = false;
     _allowSingleCharSelection = false;
-    _selectionStart = { 0, 0 };
-    _selectionEnd = { 0, 0 };
+    _selection = std::nullopt;
 }
 
 // Method Description:

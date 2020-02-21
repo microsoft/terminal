@@ -192,14 +192,17 @@ private:
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
-    // a selection is represented as a range between _selectionStart and _selectionEnd
-    // the _selectionPivot is the COORD that remains selected when you extend a selection in any direction
+    // a selection is represented as a range between two COORDs (start and end)
+    // the pivot is the COORD that remains selected when you extend a selection in any direction
     //   this is particularly useful when a selection is extended over its starting point
-    COORD _selectionStart;
-    COORD _selectionEnd;
-    COORD _selectionPivot;
+    struct SelectionAnchors
+    {
+        COORD start;
+        COORD end;
+        COORD pivot;
+    };
+    std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
-    bool _selectionActive;
     bool _allowSingleCharSelection;
     bool _copyOnSelect;
     std::wstring _wordDelimiters;
