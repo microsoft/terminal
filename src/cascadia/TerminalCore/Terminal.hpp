@@ -141,7 +141,8 @@ public:
     const bool IsSelectionActive() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const override;
+    const COORD GetSelectionAnchor() const noexcept override;
+    const COORD GetEndSelectionPosition() const noexcept override;
     const std::wstring GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
@@ -225,7 +226,7 @@ private:
     //      _visibleTop as well.
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
-    //      Either way, we sohould make this behavior controlled by a setting.
+    //      Either way, we should make this behavior controlled by a setting.
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;

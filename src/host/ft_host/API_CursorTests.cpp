@@ -154,6 +154,6 @@ void CursorTests::TestSetConsoleCursorPosition()
     // Try several cases
     TestSetConsoleCursorPositionImpl(0, 0, TRUE); // Top left corner of buffer
     TestSetConsoleCursorPositionImpl(sbiInitial.dwSize.X - 1, sbiInitial.dwSize.Y - 1, TRUE); // Bottom right corner of buffer
-    TestSetConsoleCursorPositionImpl(sbiInitial.dwSize.X, sbiInitial.dwSize.Y, FALSE); // 1 beyond bottom right corner (the size is 1 larger than the array indicies)
+    TestSetConsoleCursorPositionImpl(sbiInitial.dwSize.X, sbiInitial.dwSize.Y, FALSE); // 1 beyond bottom right corner (the size is 1 larger than the array indices)
     TestSetConsoleCursorPositionImpl(MAXWORD, MAXWORD, FALSE); // Max values
 }

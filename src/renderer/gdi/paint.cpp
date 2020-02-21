@@ -705,7 +705,7 @@ void GdiEngine::_PaintDebugRect(const RECT* const prc) const
 
 // Routine Description:
 // - Will immediately Blt the given rectangle to the screen for aid in debugging when it is tough to see
-//   what is occuring with the in-memory DC.
+//   what is occurring with the in-memory DC.
 // - This will pause the thread for 200ms when called to give you an opportunity to see the paint.
 // - NOTE: You must set _fDebug flag for this to operate using a debugger.
 // - NOTE: This only works in Debug (DBG) builds.

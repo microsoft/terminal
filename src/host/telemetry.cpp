@@ -31,7 +31,7 @@ Telemetry::Telemetry() :
     // Start at position 1, since the first 2 bytes contain the number of strings.
     _iProcessFileNamesNext(1),
     _iProcessConnectedCurrently(SIZE_MAX),
-    _rgiProccessFileNameIndex(),
+    _rgiProcessFileNameIndex(),
     _rguiProcessFileNamesCount(),
     _rgiAlphabeticalIndex(),
     _rguiProcessFileNamesCodesCount(),
@@ -252,7 +252,7 @@ bool Telemetry::FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosi
         iMid = (iMax + iMin) / 2;
         // Use a case-insensitive comparison.  We do support running Linux binaries now, but we haven't seen them connect
         // as processes, and even if they did, we don't care about the difference in running emacs vs. Emacs.
-        result = _wcsnicmp(pszProcessName, _wchProcessFileNames + _rgiProccessFileNameIndex[_rgiAlphabeticalIndex[iMid]], MAX_PATH);
+        result = _wcsnicmp(pszProcessName, _wchProcessFileNames + _rgiProcessFileNameIndex[_rgiAlphabeticalIndex[iMid]], MAX_PATH);
         if (result < 0)
         {
             iMax = iMid - 1;
@@ -335,7 +335,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 
                     // Now point to the string, and set the count to 1.
                     _rgiAlphabeticalIndex[iFileName] = _uiNumberProcessFileNames;
-                    _rgiProccessFileNameIndex[_uiNumberProcessFileNames] = _iProcessFileNamesNext;
+                    _rgiProcessFileNameIndex[_uiNumberProcessFileNames] = _iProcessFileNamesNext;
                     _rguiProcessFileNamesCount[_uiNumberProcessFileNames] = 1;
                     _iProcessFileNamesNext += wcslen(pwszFileName) + 1;
                     _iProcessConnectedCurrently = _uiNumberProcessFileNames++;

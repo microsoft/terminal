@@ -33,15 +33,12 @@ class UiaTextRangeTests;
 #endif
 
 typedef unsigned long long IdType;
-
-// A Column is a row agnostic value that refers to the column an
-// endpoint is equivalent to. It is 0-indexed.
-typedef unsigned int Column;
-
 constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Types
 {
+    class UiaTracing;
+
     class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
     {
     private:
@@ -87,7 +84,7 @@ namespace Microsoft::Console::Types
 
         const IdType GetId() const noexcept;
         const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
-        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val);
+        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
 
         // ITextRangeProvider methods
@@ -130,9 +127,6 @@ namespace Microsoft::Console::Types
 
     protected:
         UiaTextRangeBase() = default;
-#if _DEBUG
-        void _outputObjectState();
-#endif
         IUiaData* _pData;
 
         IRawElementProviderSimple* _pProvider;
@@ -155,10 +149,16 @@ namespace Microsoft::Console::Types
         COORD _start;
         COORD _end;
 
+        // This is used by tracing to extract the text value
+        // that the UiaTextRange currently encompasses.
+        // GetText() cannot be used as it's not const
+        std::wstring _getTextValue(int maxLength = -1) const noexcept;
+
         RECT _getTerminalRect() const;
 
         virtual const COORD _getScreenFontSize() const;
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
+        const Viewport _getBufferSize() const noexcept;
 
         void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
 
@@ -166,7 +166,7 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
                                      _Out_ gsl::not_null<int*> const pAmountMoved,
-                                     _In_ const bool preventBufferEnd = false);
+                                     _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
@@ -178,115 +178,17 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
                                 _Out_ gsl::not_null<int*> const pAmountMoved,
-                                _In_ const bool preventBufferEnd = false);
+                                _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                    _In_ const bool preventBufferEnd = false);
+                                    _In_ const bool preventBufferEnd = false) noexcept;
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
 #endif
+        friend class UiaTracing;
     };
-
-    namespace UiaTextRangeBaseTracing
-    {
-        enum class ApiCall
-        {
-            Constructor,
-            Clone,
-            Compare,
-            CompareEndpoints,
-            ExpandToEnclosingUnit,
-            FindAttribute,
-            FindText,
-            GetAttributeValue,
-            GetBoundingRectangles,
-            GetEnclosingElement,
-            GetText,
-            Move,
-            MoveEndpointByUnit,
-            MoveEndpointByRange,
-            Select,
-            AddToSelection,
-            RemoveFromSelection,
-            ScrollIntoView,
-            GetChildren
-        };
-
-        struct IApiMsg
-        {
-        };
-
-        struct ApiMsgConstructor : public IApiMsg
-        {
-            IdType Id;
-        };
-
-        struct ApiMsgClone : public IApiMsg
-        {
-            IdType CloneId;
-        };
-
-        struct ApiMsgCompare : public IApiMsg
-        {
-            IdType OtherId;
-            bool Equal;
-        };
-
-        struct ApiMsgCompareEndpoints : public IApiMsg
-        {
-            IdType OtherId;
-            TextPatternRangeEndpoint Endpoint;
-            TextPatternRangeEndpoint TargetEndpoint;
-            int Result;
-        };
-
-        struct ApiMsgExpandToEnclosingUnit : public IApiMsg
-        {
-            TextUnit Unit;
-            COORD OriginalStart;
-            COORD OriginalEnd;
-        };
-
-        struct ApiMsgGetText : IApiMsg
-        {
-            const wchar_t* Text;
-        };
-
-        struct ApiMsgMove : IApiMsg
-        {
-            COORD OriginalStart;
-            COORD OriginalEnd;
-            TextUnit Unit;
-            int RequestedCount;
-            int MovedCount;
-        };
-
-        struct ApiMsgMoveEndpointByUnit : IApiMsg
-        {
-            COORD OriginalStart;
-            COORD OriginalEnd;
-            TextPatternRangeEndpoint Endpoint;
-            TextUnit Unit;
-            int RequestedCount;
-            int MovedCount;
-        };
-
-        struct ApiMsgMoveEndpointByRange : IApiMsg
-        {
-            COORD OriginalStart;
-            COORD OriginalEnd;
-            TextPatternRangeEndpoint Endpoint;
-            TextPatternRangeEndpoint TargetEndpoint;
-            IdType OtherId;
-        };
-
-        struct ApiMsgScrollIntoView : IApiMsg
-        {
-            bool AlignToTop;
-        };
-    }
 }

@@ -786,7 +786,7 @@ void Pane::_SetupChildCloseHandlers()
 // - Sets up row/column definitions for this pane. There are three total
 //   row/cols. The middle one is for the separator. The first and third are for
 //   each of the child panes, and are given a size in pixels, based off the
-//   availiable space, and the percent of the space they respectively consume,
+//   available space, and the percent of the space they respectively consume,
 //   which is stored in _desiredSplitPosition
 // - Does nothing if our split state is currently set to SplitState::None
 // Arguments:

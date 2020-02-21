@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
-    //   that more than 1 tab is opend, and once the user clicks the OK button, remove
+    //   that more than 1 tab is opened, and once the user clicks the OK button, remove
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
@@ -480,9 +480,13 @@ namespace winrt::TerminalApp::implementation
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+            TraceLoggingUInt32(1u, "EventVer", "Version of this event"),
+            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
+            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -521,7 +525,7 @@ namespace winrt::TerminalApp::implementation
         auto weakTab = make_weak(newTabImpl);
 
         // When the tab's active pane changes, we'll want to lookup a new icon
-        // for it, and possibly propogate the title up to the window.
+        // for it, and possibly propagate the title up to the window.
         newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -598,8 +602,10 @@ namespace winrt::TerminalApp::implementation
             profile->GetConnectionType() == AzureConnectionType &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
-                                                             settings.InitialCols());
+            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
+            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
+            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(), L".", L"Azure", settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }
 
         else if (profile->HasConnectionType() &&
@@ -836,25 +842,6 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0)
         {
             _lastTabClosedHandlers(*this, nullptr);
-        }
-
-        if (auto indexOpt{ _GetFocusedTabIndex() })
-        {
-            auto focusedTabIndex = *indexOpt;
-            if (tabIndex == focusedTabIndex)
-            {
-                uint32_t tabCount = _tabs.Size();
-                if (focusedTabIndex >= tabCount)
-                {
-                    focusedTabIndex = tabCount - 1;
-                }
-                else if (focusedTabIndex < 0)
-                {
-                    focusedTabIndex = 0;
-                }
-
-                _SelectTab(focusedTabIndex);
-            }
         }
     }
 
@@ -1236,7 +1223,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Calculates the appropriate size to snap to in the gived direction, for
+    // - Calculates the appropriate size to snap to in the given direction, for
     //   the given dimension. If the global setting `snapToGridOnResize` is set
     //   to `false`, this will just immediately return the provided dimension,
     //   effectively disabling snapping.

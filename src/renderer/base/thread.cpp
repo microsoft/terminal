@@ -17,6 +17,8 @@ RenderThread::RenderThread() :
     _fKeepRunning(true),
     _hPaintEnabledEvent(nullptr)
 {
+    _fNextFrameRequested.clear();
+    _fPainting.clear();
 }
 
 RenderThread::~RenderThread()
@@ -158,9 +160,20 @@ DWORD WINAPI RenderThread::_ThreadProc()
     while (_fKeepRunning)
     {
         WaitForSingleObject(_hPaintEnabledEvent, INFINITE);
-        WaitForSingleObject(_hEvent, INFINITE);
+
+        // Skip waiting if next frame is requested.
+        if (_fNextFrameRequested.test_and_set(std::memory_order_relaxed))
+        {
+            _fNextFrameRequested.clear(std::memory_order_relaxed);
+        }
+        else
+        {
+            WaitForSingleObject(_hEvent, INFINITE);
+        }
 
         ResetEvent(_hPaintCompletedEvent);
+
+        _fPainting.test_and_set(std::memory_order_acquire);
 
         LOG_IF_FAILED(_pRenderer->PaintFrame());
 
@@ -171,6 +184,8 @@ DWORD WINAPI RenderThread::_ThreadProc()
         {
             Sleep(s_FrameLimitMilliseconds);
         }
+
+        _fPainting.clear(std::memory_order_release);
     }
 
     return S_OK;
@@ -178,6 +193,14 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
 void RenderThread::NotifyPaint()
 {
+    // If we are currently painting a frame, set _fNextFrameRequested flag
+    // to indicate we want to paint next frame immediately.
+    if (_fPainting.test_and_set(std::memory_order_acquire))
+    {
+        _fNextFrameRequested.test_and_set(std::memory_order_relaxed);
+        return;
+    }
+
     SetEvent(_hEvent);
 }
 
@@ -200,7 +223,7 @@ void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     // the active application letting it know that it has lost focus;
     // 3.1 ConIoSrv waits for a reply from the client application;
     // 3.2 Meanwhile, the active application receives the focus event and calls
-    // the method this methed, waiting for the current paint operation to
+    // this method, waiting for the current paint operation to
     // finish.
     //
     // This means that the new application is waiting on the connection request
