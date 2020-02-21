@@ -642,6 +642,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Ensure that our cluster vector is clear.
             clusters.clear();
 
+            // Reset our flag to know when we're in the special circumstance
+            // of attempting to draw only the right-half of a two-column character
+            // as the first item in our run.
+            bool trimLeft = false;
+
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
             do
@@ -653,7 +658,33 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
-                clusters.emplace_back(it->Chars(), it->Columns());
+
+                // If we're on the first cluster to be added and it's marked as "trailing"
+                // (a.k.a. the right half of a two column character), then we need some special handling.
+                if (clusters.empty() && it->DbcsAttr().IsTrailing())
+                {
+                    // If we have room to move to the left to start drawing...
+                    if (screenPoint.X > 0)
+                    {
+                        // Move left to the one so the whole character can be struck correctly.
+                        --screenPoint.X;
+                        // And tell the next function to trim off the left half of it.
+                        trimLeft = true;
+                        // And add one to the number of columns we expect it to take as we insert it.
+                        clusters.emplace_back(it->Chars(), it->Columns() + 1);
+                    }
+                    else
+                    {
+                        // If we didn't have room, move to the right one and just skip this one.
+                        screenPoint.X++;
+                        continue;
+                    }
+                }
+                // Otherwise if it's not a special case, just insert it as is.
+                else
+                {
+                    clusters.emplace_back(it->Chars(), it->Columns());
+                }
 
                 // Advance the cluster and column counts.
                 const auto columnCount = clusters.back().GetColumns();
@@ -663,8 +694,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             } while (it);
 
             // Do the painting.
-            // TODO: Calculate when trim left should be TRUE
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, false));
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
