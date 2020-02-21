@@ -139,32 +139,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) };
+        const COORD cursorPos = { ::base::ClampedNumeric<SHORT>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<SHORT>(cursorArgs->CurrentPosition().Y) };
 
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
 
-        const float fontWidth = fontArgs->FontSize().Width;
-        const float fontHeight = fontArgs->FontSize().Height;
+        const auto fontWidth = ::base::ClampedNumeric<SHORT>(fontArgs->FontSize().Width);
+        const auto fontHeight = ::base::ClampedNumeric<SHORT>(fontArgs->FontSize().Height);
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
         COORD screenCursorPos;
-        THROW_IF_FAILED(ShortMult(cursorPos.X, gsl::narrow<SHORT>(fontWidth), &clientCursorPos.X));
-        THROW_IF_FAILED(ShortMult(cursorPos.Y, gsl::narrow<SHORT>(fontHeight), &clientCursorPos.Y));
+        clientCursorPos.X = ::base::ClampMul(cursorPos.X, fontWidth);
+        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, fontHeight);
 
         // Convert from client coordinate to screen coordinate by adding window position
-        THROW_IF_FAILED(ShortAdd(clientCursorPos.X, gsl::narrow_cast<SHORT>(windowBounds.X), &screenCursorPos.X));
-        THROW_IF_FAILED(ShortAdd(clientCursorPos.Y, gsl::narrow_cast<SHORT>(windowBounds.Y), &screenCursorPos.Y));
+        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<SHORT>(windowBounds.X));
+        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<SHORT>(windowBounds.Y));
 
         // get any offset (margin + tabs, etc..) of the control within the window
         const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
 
         // add the margin offsets if any
-        const auto currentMargin = this->Margin();
-        THROW_IF_FAILED(ShortAdd(screenCursorPos.X, gsl::narrow_cast<SHORT>(offsetPoint.X), &screenCursorPos.X));
-        THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, gsl::narrow_cast<SHORT>(offsetPoint.Y), &screenCursorPos.Y));
+        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<SHORT>(offsetPoint.X));
+        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<SHORT>(offsetPoint.Y));
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
@@ -179,10 +178,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // position textblock to cursor position
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
-        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y));
+        _canvas.SetTop(_textBlock, ::base::checked_cast<double>(clientCursorPos.Y));
 
-        // width is cursor to end of canvas
-        _textBlock.Width(200); // TODO GitHub #3640: Determine proper Width
+        // Set width of text block to the end of the window.
+        _textBlock.Width(::base::ClampSub<double, double>(windowBounds.Width, screenCursorPos.X));
         _textBlock.Height(fontHeight);
 
         // calculate FontSize in pixels from DIPs
@@ -254,8 +253,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            const auto textEnd = std::min(static_cast<size_t>(range.EndCaretPosition), _inputBuffer.length());
-            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, textEnd - static_cast<size_t>(range.StartCaretPosition));
+            const auto textEnd = ::base::ClampMin<size_t, size_t>(range.EndCaretPosition, _inputBuffer.length());
+            const auto length = ::base::ClampSub(textEnd, range.StartCaretPosition);
+            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, length);
 
             args.Request().Text(textRequested);
         }
@@ -308,9 +308,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _canvas.Visibility(Visibility::Visible);
             _textBlock.Visibility(Visibility::Visible);
 
+            const auto length = ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition);
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
+                length,
                 text);
 
             _textBlock.Text(_inputBuffer);
@@ -348,14 +349,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _compositionCompletedHandlers(_inputBuffer);
 
         // clear the buffer for next round
-        const auto bufferLength = gsl::narrow_cast<int32_t>(_inputBuffer.length());
-
-        // indicate text is now 0
+        const auto bufferLength = ::base::saturated_cast<int32_t>(_inputBuffer.length());
         _inputBuffer.clear();
         _textBlock.Text(L"");
 
-        // Leaving and reentering focus forces the next composition to send a CompositionStart event
-        // Without the leave+enter, we don't consistently receive a CompositionStart, leading to weird bugs.
+        // Leaving focus before NotifyTextChanged seems to guarantee that the next
+        // composition started will send us a CompositionStarted event.
         _editContext.NotifyFocusLeave();
         _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
         _editContext.NotifyFocusEnter();
