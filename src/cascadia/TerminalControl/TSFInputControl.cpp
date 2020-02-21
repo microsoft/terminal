@@ -139,31 +139,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { ::base::ClampedNumeric<SHORT>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<SHORT>(cursorArgs->CurrentPosition().Y) };
+        const COORD cursorPos = { ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().Y) };
 
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
 
-        const auto fontWidth = ::base::ClampedNumeric<SHORT>(fontArgs->FontSize().Width);
-        const auto fontHeight = ::base::ClampedNumeric<SHORT>(fontArgs->FontSize().Height);
+        const auto fontWidth = fontArgs->FontSize().Width;
+        const auto fontHeight = fontArgs->FontSize().Height;
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
-        COORD screenCursorPos;
-        clientCursorPos.X = ::base::ClampMul(cursorPos.X, fontWidth);
-        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, fontHeight);
+        clientCursorPos.X = ::base::ClampMul(cursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
+        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
 
         // Convert from client coordinate to screen coordinate by adding window position
-        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<SHORT>(windowBounds.X));
-        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<SHORT>(windowBounds.Y));
+        COORD screenCursorPos;
+        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<short>(windowBounds.X));
+        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<short>(windowBounds.Y));
 
         // get any offset (margin + tabs, etc..) of the control within the window
         const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
 
         // add the margin offsets if any
-        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<SHORT>(offsetPoint.X));
-        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<SHORT>(offsetPoint.Y));
+        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
+        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
@@ -178,10 +178,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // position textblock to cursor position
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
-        _canvas.SetTop(_textBlock, ::base::checked_cast<double>(clientCursorPos.Y));
+        _canvas.SetTop(_textBlock, ::base::ClampedNumeric<double>(clientCursorPos.Y));
 
         // Set width of text block to the end of the window.
-        _textBlock.Width(::base::ClampSub<double, double>(windowBounds.Width, screenCursorPos.X));
+        _textBlock.Width(::base::ClampSub<double>(windowBounds.Width, screenCursorPos.X));
         _textBlock.Height(fontHeight);
 
         // calculate FontSize in pixels from DIPs
@@ -226,7 +226,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Handler for FocusRemoved event by CoreEditContext responsible
     //   for removing focus for the TSFInputControl control accordingly
-    //   when focus was forcibly removed from text input control. (TODO GitHub #3644)
+    //   when focus was forcibly removed from text input control.
     //   NOTE: Documentation says application should handle this event
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
@@ -253,8 +253,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            const auto textEnd = ::base::ClampMin<size_t, size_t>(range.EndCaretPosition, _inputBuffer.length());
-            const auto length = ::base::ClampSub(textEnd, range.StartCaretPosition);
+            const auto textEnd = ::base::ClampMin<size_t>(range.EndCaretPosition, _inputBuffer.length());
+            const auto length = ::base::ClampSub<size_t>(textEnd, range.StartCaretPosition);
             const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, length);
 
             args.Request().Text(textRequested);
@@ -349,12 +349,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _compositionCompletedHandlers(_inputBuffer);
 
         // clear the buffer for next round
-        const auto bufferLength = ::base::saturated_cast<int32_t>(_inputBuffer.length());
+        const auto bufferLength = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
         _inputBuffer.clear();
         _textBlock.Text(L"");
 
         // Leaving focus before NotifyTextChanged seems to guarantee that the next
-        // composition started will send us a CompositionStarted event.
+        // composition will send us a CompositionStarted event.
         _editContext.NotifyFocusLeave();
         _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
         _editContext.NotifyFocusEnter();

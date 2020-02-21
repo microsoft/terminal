@@ -78,7 +78,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool _inComposition;
         void _sendAndClearText();
-        double convertWindowToScreenCoord(const SHORT& coord, const float& fontDimension, const float& windowBound, const float& margin);
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
