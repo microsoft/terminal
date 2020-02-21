@@ -131,9 +131,8 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     // Otherwise, we may accidentally expand during other selection-based actions
     _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
-    _AdjustStartAndEndAcrossPivot(textBufferPos);
-
-    _ExpandSelectionAnchors();
+    const auto anchors = _PivotSelection(textBufferPos);
+    std::tie(_selectionStart, _selectionEnd) = _ExpandSelectionAnchors(anchors);
 
     // moving the endpoint of what used to be a single cell selection
     // allows the user to drag back and select just one cell
@@ -146,48 +145,56 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 }
 
 // Method Description:
-// - Update the selection anchors based on the targeted position in relation to the pivot
+// - returns a new pair of selection anchors for selecting around the pivot
 // - This ensures start < end when compared
 // Arguments:
 // - targetPos: the (x,y) coordinate we are moving to on the text buffer
-void Terminal::_AdjustStartAndEndAcrossPivot(const COORD targetPos)
+// Return Value:
+// - the new start/end for a selection
+std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos) const
 {
     if (_buffer->GetSize().CompareInBounds(targetPos, _selectionPivot) <= 0)
     {
         // target is before pivot
-        _selectionStart = targetPos;
-        _selectionEnd = _selectionPivot;
+        // treat target as start
+        return std::make_pair(targetPos, _selectionPivot);
     }
     else
     {
         // target is after pivot
-        _selectionStart = _selectionPivot;
-        _selectionEnd = targetPos;
+        // treat pivot as start
+        return std::make_pair(_selectionPivot, targetPos);
     }
 }
 
 // Method Description:
 // - Update the selection anchors to expand according to the expansion mode
 // Arguments:
-// - <none>
-void Terminal::_ExpandSelectionAnchors()
+// - anchors: a pair of selection anchors representing a desired selection
+// Return Value:
+// - the new start/end for a selection
+std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const
 {
+    COORD start = anchors.first;
+    COORD end = anchors.second;
+
     const auto bufferSize = _buffer->GetSize();
     switch (_multiClickSelectionMode)
     {
     case SelectionExpansionMode::Line:
-        _selectionStart = { bufferSize.Left(), _selectionStart.Y };
-        _selectionEnd = { bufferSize.RightInclusive(), _selectionEnd.Y };
+        start = { bufferSize.Left(), start.Y };
+        end = { bufferSize.RightInclusive(), end.Y };
         break;
     case SelectionExpansionMode::Word:
-        _selectionStart = _buffer->GetWordStart(_selectionStart, _wordDelimiters);
-        _selectionEnd = _buffer->GetWordEnd(_selectionEnd, _wordDelimiters);
+        start = _buffer->GetWordStart(start, _wordDelimiters);
+        end = _buffer->GetWordEnd(end, _wordDelimiters);
         break;
     case SelectionExpansionMode::Cell:
     default:
         // no expansion is necessary
         break;
     }
+    return std::make_pair(start, end);
 }
 
 // Method Description:

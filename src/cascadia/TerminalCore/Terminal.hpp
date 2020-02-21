@@ -250,8 +250,8 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    void _AdjustStartAndEndAcrossPivot(const COORD targetPos);
-    void _ExpandSelectionAnchors();
+    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
+    std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const noexcept;
     const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
