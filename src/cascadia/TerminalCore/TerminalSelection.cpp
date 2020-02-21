@@ -81,7 +81,6 @@ void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMo
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
     _selectionPivot = _ConvertToBufferCell(viewportPos);
-    _buffer->GetSize().Clamp(_selectionPivot);
 
     _multiClickSelectionMode = expansionMode;
     SetSelectionEnd(viewportPos);
@@ -98,16 +97,13 @@ void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMo
 void Terminal::SetSelectionAnchor(const COORD viewportPos)
 {
     _selectionPivot = _ConvertToBufferCell(viewportPos);
-    _buffer->GetSize().Clamp(_selectionPivot);
+
+    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
 
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
-
-    // Unlike MultiClickSelection(), we need to set
-    // these vars BEFORE SetSelectionEnd()
-    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
-    _selectionStart = _selectionPivot;
-
     SetSelectionEnd(viewportPos);
+
+    _selectionStart = _selectionPivot;
 }
 
 // Method Description:
@@ -115,16 +111,15 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // - based on the selection expansion mode
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
-// - expansionModeOverwrite: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
-void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansionMode> expansionModeOverwrite)
+// - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
+void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansionMode> newExpansionMode)
 {
     auto textBufferPos = _ConvertToBufferCell(viewportPos);
-    _buffer->GetSize().Clamp(textBufferPos);
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
     // Otherwise, we may accidentally expand during other selection-based actions
-    const auto shiftClick = expansionModeOverwrite.has_value();
-    _multiClickSelectionMode = expansionModeOverwrite.has_value() ? *expansionModeOverwrite : _multiClickSelectionMode;
+    const auto shiftClick = newExpansionMode.has_value();
+    _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
     switch (_multiClickSelectionMode)
     {
@@ -138,6 +133,8 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     default:
         _ChunkSelectionByCell(textBufferPos, shiftClick);
 
+        // moving the endpoint of what used to be a single cell selection
+        // allows the user to drag back and select just one cell
         if (_copyOnSelect && !_IsSingleCellSelection())
         {
             _allowSingleCharSelection = true;
@@ -150,7 +147,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 
 // Method Description:
 // - Update the selection anchors when dragging to a position
-// - Used for SelectionExpansionMode::Word
+// - Used for SelectionExpansionMode::Cell
 // Arguments:
 // - targetPos: the (x,y) coordinate we are dragging to on the text buffer
 // - shiftClick: when enabled, only update the _endSelectionPosition
@@ -316,7 +313,9 @@ COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const noexcept
 {
     const auto yPos = base::ClampedNumeric<short>(_VisibleStartIndex()) + viewportPos.Y;
-    return COORD{ viewportPos.X, yPos };
+    COORD bufferPos = { viewportPos.X, yPos };
+    _buffer->GetSize().Clamp(bufferPos);
+    return bufferPos;
 }
 
 // Method Description:

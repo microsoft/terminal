@@ -165,7 +165,7 @@ public:
     const bool IsCopyOnSelectActive() const noexcept;
     void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> expansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
@@ -191,6 +191,9 @@ private:
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
+    // a selection is represented as a range between _selectionStart and _selectionEnd
+    // the _selectionPivot is the COORD that remains selected when you extend a selection in any direction
+    //   this is particularly useful when a selection is extended over its starting point
     COORD _selectionStart;
     COORD _selectionEnd;
     COORD _selectionPivot;
