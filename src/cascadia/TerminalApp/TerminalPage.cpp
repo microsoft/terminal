@@ -1046,6 +1046,7 @@ namespace winrt::TerminalApp::implementation
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
+                                  const TerminalApp::SplitType splitMode,
                                   const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
@@ -1064,7 +1065,22 @@ namespace winrt::TerminalApp::implementation
 
         auto focusedTab = _GetStrongTabImpl(*indexOpt);
 
-        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
+        auto realGuid, controlSettings;
+        bool profileFound = false;
+
+        if (splitMode == TerminalApp::SplitType::Duplicate)
+        {
+            current_guid = focusedTab->GetFocusedProfile();
+            if (currrent_guid)
+            {
+                profileFound = true;
+                controlSettings = _settings->BuildSettings(current_guid);
+            }
+        }
+        if (!profileFound)
+        {
+            [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
+        }
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 

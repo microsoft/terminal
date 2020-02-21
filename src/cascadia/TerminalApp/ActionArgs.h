@@ -319,6 +319,7 @@ namespace winrt::TerminalApp::implementation
         SplitPaneArgs() = default;
         GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::None);
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(winrt::TerminalApp::SplitType, SplitMode, winrt::TerminalApp::SplitType::Manual);
 
         static constexpr std::string_view SplitKey{ "split" };
 
@@ -329,7 +330,8 @@ namespace winrt::TerminalApp::implementation
             if (otherAsUs)
             {
                 return otherAsUs->_SplitStyle == _SplitStyle &&
-                       otherAsUs->_TerminalArgs == _TerminalArgs;
+                       otherAsUs->_TerminalArgs == _TerminalArgs && 
+                       otherAsUs->_SplitMode == SplitMode;
             }
             return false;
         };

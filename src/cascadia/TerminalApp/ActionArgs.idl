@@ -31,6 +31,12 @@ namespace TerminalApp
         Horizontal = 2
     };
 
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;
@@ -82,5 +88,6 @@ namespace TerminalApp
     {
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
+        SplitType SplitMode { get; };
     };
 }
