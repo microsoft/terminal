@@ -180,10 +180,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
         _canvas.SetTop(_textBlock, ::base::ClampedNumeric<double>(clientCursorPos.Y));
 
-        // Set width of text block to the end of the window.
-        _textBlock.Width(::base::ClampSub<double>(windowBounds.Width, screenCursorPos.X));
         _textBlock.Height(fontHeight);
-
         // calculate FontSize in pixels from DIPs
         const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
         _textBlock.FontSize(fontSizePx);
