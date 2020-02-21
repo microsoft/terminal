@@ -331,7 +331,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return otherAsUs->_SplitStyle == _SplitStyle &&
                        otherAsUs->_TerminalArgs == _TerminalArgs && 
-                       otherAsUs->_SplitMode == SplitMode;
+                       otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
         };
