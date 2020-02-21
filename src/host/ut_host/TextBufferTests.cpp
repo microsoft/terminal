@@ -2191,14 +2191,14 @@ void TextBufferTests::GetTextRects()
         expected.push_back({ 0, 1, 19, 1 });
         expected.push_back({ 0, 2, 19, 2 });
         expected.push_back({ 0, 3, 19, 3 });
-        expected.push_back({ 0, 4,  7, 4 });
+        expected.push_back({ 0, 4, 7, 4 });
     }
 
     COORD start{ 1, 0 };
     COORD end{ 7, 4 };
     const auto result = _buffer->GetTextRects(start, end, blockSelection);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
-    for (size_t i=0; i<expected.size(); ++i)
+    for (size_t i = 0; i < expected.size(); ++i)
     {
         VERIFY_ARE_EQUAL(expected.at(i), result.at(i));
     }
