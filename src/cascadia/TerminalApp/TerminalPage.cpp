@@ -1065,7 +1065,8 @@ namespace winrt::TerminalApp::implementation
 
         auto focusedTab = _GetStrongTabImpl(*indexOpt);
 
-        auto realGuid, controlSettings;
+        winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
+        GUID realGuid;
         bool profileFound = false;
 
         if (splitMode == TerminalApp::SplitType::Duplicate)
