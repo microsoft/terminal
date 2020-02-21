@@ -255,7 +255,7 @@ private:
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
-    COORD _ConvertToBufferCell(const COORD viewportPos) const noexcept;
+    COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
 

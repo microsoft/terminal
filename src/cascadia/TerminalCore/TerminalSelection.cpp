@@ -126,7 +126,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
 void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansionMode> newExpansionMode)
 {
-    auto textBufferPos = _ConvertToBufferCell(viewportPos);
+    const auto textBufferPos = _ConvertToBufferCell(viewportPos);
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
     // Otherwise, we may accidentally expand during other selection-based actions
@@ -239,7 +239,7 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 // - viewportPos: a coordinate on the viewport
 // Return Value:
 // - the corresponding location on the buffer
-COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const noexcept
+COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
     const auto yPos = base::ClampedNumeric<short>(_VisibleStartIndex()) + viewportPos.Y;
     COORD bufferPos = { viewportPos.X, yPos };
