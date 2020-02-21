@@ -15,7 +15,7 @@ Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
 
 ```json
 {
-    "commandline" : "cmd.exe /K %USERPROFILE%\\Anaconda3\\Scripts\\activate.bat %USERPROFILE%\\Anaconda3",
+    "commandline" : "cmd.exe /k \"%USERPROFILE%\\Anaconda3\\Scripts\\activate.bat %USERPROFILE%\\Anaconda3\"",
     "icon" : "%USERPROFILE%/Anaconda3/Menu/anaconda-navigator.ico",
     "name" : "Anaconda3",
     "startingDirectory" : "%USERPROFILE%"
@@ -28,7 +28,7 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
 
 ```json
 {
-    "commandline" : "cmd.exe /k %CMDER_ROOT%\\vendor\\init.bat",
+    "commandline" : "cmd.exe /k \"%CMDER_ROOT%\\vendor\\init.bat\"",
     "name" : "cmder",
     "startingDirectory" : "%USERPROFILE%"
 }

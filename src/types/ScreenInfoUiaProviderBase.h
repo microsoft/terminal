@@ -79,7 +79,7 @@ namespace Microsoft::Console::Types
     protected:
         ScreenInfoUiaProviderBase() = default;
 
-        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<WRL::ComPtr<UiaTextRangeBase>>& selectionRanges) = 0;
+        virtual HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // degenerate range
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
@@ -128,49 +128,4 @@ namespace Microsoft::Console::Types
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
     };
-
-    namespace ScreenInfoUiaProviderTracing
-    {
-        enum class ApiCall
-        {
-            Constructor,
-            Signal,
-            GetProviderOptions,
-            GetPatternProvider,
-            GetPropertyValue,
-            GetHostRawElementProvider,
-            Navigate,
-            GetRuntimeId,
-            GetBoundingRectangle,
-            GetEmbeddedFragmentRoots,
-            SetFocus,
-            GetFragmentRoot,
-            GetSelection,
-            GetVisibleRanges,
-            RangeFromChild,
-            RangeFromPoint,
-            GetDocumentRange,
-            GetSupportedTextSelection
-        };
-
-        struct IApiMsg
-        {
-        };
-
-        struct ApiMsgSignal : public IApiMsg
-        {
-            EVENTID Signal;
-        };
-
-        struct ApiMsgNavigate : public IApiMsg
-        {
-            NavigateDirection Direction;
-        };
-
-        struct ApiMsgGetSelection : public IApiMsg
-        {
-            bool AreaSelected;
-            unsigned int SelectionRowCount;
-        };
-    }
 }

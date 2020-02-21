@@ -25,6 +25,10 @@
 
 #include "../../types/inc/Viewport.hpp"
 
+#include <TraceLoggingProvider.h>
+
+TRACELOGGING_DECLARE_PROVIDER(g_hDxRenderProvider);
+
 namespace Microsoft::Console::Render
 {
     class DxEngine final : public RenderEngineBase
@@ -150,6 +154,8 @@ namespace Microsoft::Console::Render
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;
+
+        static std::atomic<size_t> _tracelogCount;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;

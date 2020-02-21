@@ -136,7 +136,7 @@ the property `"hidden": true` to the profile's json. This can also be used to
 remove the default `cmd` and PowerShell profiles, if the user does not wish to
 see them.
 
-##  Color Schemes
+## Color Schemes
 
 Each scheme defines the color values to be used for various terminal escape sequences.
 Each schema is identified by the name field. Examples include
@@ -159,6 +159,7 @@ The schema name can then be referenced in one or more profiles.
 ## Settings layering
 
 The runtime settings are actually constructed from _three_ sources:
+
 * The default settings, which are hardcoded into the application, and available
   in `defaults.json`. This includes the default keybindings, color schemes, and
   profiles for both Windows PowerShell and Command Prompt (`cmd.exe`).
@@ -287,6 +288,7 @@ properties for all your profiles, like so:
 
 Note that the `profiles` property has changed in this example from a _list_ of
 profiles, to an _object_ with two properties:
+
 * a `list` that contains the list of all the profiles
 * the new `defaults` object, which contains all the settings that should apply to
   every profile.
@@ -329,12 +331,11 @@ could achieve that with the following:
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
 `"fontFace"` from the `defaults`.
 
-
-## Configuration Examples:
+## Configuration Examples
 
 ### Add a custom background to the WSL Debian terminal profile
 
-1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
+1. Download the [Debian JPG logo](https://www.debian.org/logos/openlogo-100.jpg)
 2. Put the image in the
  `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\`
  directory (same directory as your `profiles.json` file).
@@ -342,17 +343,20 @@ In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
     __NOTE__:  You can put the image anywhere you like, the above suggestion happens to be convenient.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
+
 ```json
     "backgroundImage": "ms-appdata:///Local/openlogo-100.jpg",
     "backgroundImageOpacity": 1,
     "backgroundImageStretchMode" : "none",
     "backgroundImageAlignment" : "topRight",
 ```
+
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
 7. Jump over to WT and verify your changes.
 
 Notes:
+
 1. You will need to experiment with different color settings
 and schemes to make your terminal text visible on top of your image
 2. If you store the image in the UWP directory (the same directory as your profiles.json file),
@@ -413,7 +417,6 @@ an interrupt to the commandline application using <kbd>Ctrl+C</kbd> when there's
 no text selection. Additionally, if you set `paste` to `"ctrl+v"`, commandline
 applications won't be able to read a ctrl+v from the input. For these reasons,
 we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`
-
 
 ### Setting the `startingDirectory` of WSL Profiles to `~`
 

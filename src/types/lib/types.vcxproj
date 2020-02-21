@@ -23,6 +23,7 @@
     <ClCompile Include="..\ScreenInfoUiaProviderBase.cpp" />
     <ClCompile Include="..\ThemeUtils.cpp" />
     <ClCompile Include="..\UiaTextRangeBase.cpp" />
+    <ClCompile Include="..\UiaTracing.cpp" />
     <ClCompile Include="..\Utf16Parser.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
@@ -50,6 +51,7 @@
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenInfoUiaProviderBase.h" />
     <ClInclude Include="..\UiaTextRangeBase.hpp" />
+    <ClInclude Include="..\UiaTracing.h" />
     <ClInclude Include="..\WindowUiaProviderBase.hpp" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

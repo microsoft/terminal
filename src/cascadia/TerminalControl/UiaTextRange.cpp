@@ -10,34 +10,6 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
 using namespace winrt::Windows::Graphics::Display;
 
-HRESULT UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
-                                         _In_ IRawElementProviderSimple* pProvider,
-                                         _In_ const std::wstring_view wordDelimiters,
-                                         _Out_ std::deque<ComPtr<UiaTextRange>>& ranges)
-{
-    try
-    {
-        typename std::remove_reference<decltype(ranges)>::type temporaryResult;
-
-        // get the selection rects
-        const auto rectangles = pData->GetSelectionRects();
-
-        // create a range for each row
-        for (const auto& rect : rectangles)
-        {
-            const auto start = rect.Origin();
-            const auto end = rect.EndExclusive();
-
-            ComPtr<UiaTextRange> range;
-            RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&range, pData, pProvider, start, end, wordDelimiters));
-            temporaryResult.emplace_back(std::move(range));
-        }
-        std::swap(temporaryResult, ranges);
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
 // degenerate range constructor.
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters)
 {

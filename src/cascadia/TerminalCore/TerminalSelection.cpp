@@ -40,6 +40,17 @@ const COORD Terminal::GetSelectionAnchor() const noexcept
 }
 
 // Method Description:
+// - Get the current end anchor position relative to the whole text buffer
+// Arguments:
+// - None
+// Return Value:
+// - None
+const COORD Terminal::GetSelectionEnd() const noexcept
+{
+    return _selectionEnd;
+}
+
+// Method Description:
 // - Checks if selection is on a single cell
 // Return Value:
 // - bool representing if selection is only a single cell. Used for copyOnSelect
@@ -190,14 +201,13 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
 
 // Method Description:
 // - clear selection data and disable rendering it
+#pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
     _allowSingleCharSelection = false;
     _selectionStart = { 0, 0 };
     _selectionEnd = { 0, 0 };
-
-    _buffer->GetRenderTarget().TriggerSelection();
 }
 
 // Method Description:
