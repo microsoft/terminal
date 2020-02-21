@@ -21,7 +21,7 @@
 using namespace DirectX;
 
 std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
-#pragma warning(suppress : 26477)
+#pragma warning(suppress : 26477) // We don't control tracelogging macros
 TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
                              "Microsoft.Windows.Terminal.Renderer.DirectX",
                              // {c93e739e-ae50-5a14-78e7-f171e947535d}

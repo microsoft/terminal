@@ -55,6 +55,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
+    <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
   </ItemGroup>
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>

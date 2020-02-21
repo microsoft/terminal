@@ -73,7 +73,7 @@ void RenderTracing::TraceString(const std::string_view& instr) const
         const char* const seq = _seq.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceString",
-                          TraceLoggingString(seq),
+                          TraceLoggingUtf8String(seq),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
