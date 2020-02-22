@@ -161,7 +161,6 @@ DWORD WINAPI RenderThread::_ThreadProc()
     {
         WaitForSingleObject(_hPaintEnabledEvent, INFINITE);
 
-        // Wait until a next frame has been requested.
         if (!_fNextFrameRequested.exchange(false))
         {
             // <--
@@ -174,6 +173,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
             // check again now (see comment above)
             if (!_fNextFrameRequested.exchange(false))
             {
+                // Wait until a next frame is requested.
                 WaitForSingleObject(_hEvent, INFINITE);
             }
 
