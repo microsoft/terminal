@@ -534,7 +534,7 @@
         },
         "cursorColor": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the cursor color for the profile. Overrides cursor color set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
+          "description": "Sets the cursor color of the profile. Overrides cursor color set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
