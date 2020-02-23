@@ -287,13 +287,13 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     D3D11_BUFFER_DESC pixelShaderSettingsBufferDesc{};
     pixelShaderSettingsBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    pixelShaderSettingsBufferDesc.ByteWidth = sizeof(PixelShaderSettings) + (16 - sizeof(PixelShaderSettings) % 16) % 16;
+    pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings) + (16 - sizeof(_pixelShaderSettings) % 16) % 16;
     pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-    PixelShaderSettings pixelShaderSettings = _GetPixelShaderSettings();
+    _ComputePixelShaderSettings();
 
     D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
-    pixelShaderSettingsInitData.pSysMem = static_cast<const void*>(&pixelShaderSettings);
+    pixelShaderSettingsInitData.pSysMem = static_cast<const void*>(&_pixelShaderSettings);
 
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&pixelShaderSettingsBufferDesc, &pixelShaderSettingsInitData, &_pixelShaderSettingsBuffer));
 
@@ -320,19 +320,15 @@ HRESULT DxEngine::_SetupTerminalEffects()
 }
 
 // Routine Description:
+// - Puts the correct values in _pixelShaderSettings.
 // Arguments:
 // - <none>
 // Return Value:
-// - PixelShaderSettings based on current settings.
-[[nodiscard]] PixelShaderSettings DxEngine::_GetPixelShaderSettings() const noexcept
+// - <none>
+void DxEngine::_ComputePixelShaderSettings() noexcept
 {
-    float scale = _scale;
-
-    PixelShaderSettings pixelShaderSettings{};
-    pixelShaderSettings.ScaledScanLinePeriod = scale * 1.0f;   // Retro scan lines alternate every pixel row at 100%.
-    pixelShaderSettings.ScaledGaussianSigma = scale * 2.0f;    // Gaussian distribution sigma used for blurring.
-
-    return pixelShaderSettings;
+    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;    // Retro scan lines alternate every pixel row at 100% scaling.
+    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;     // Gaussian distribution sigma used for blurring.
 }
 
 // Routine Description;
@@ -1123,18 +1119,18 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK on success, E_PENDING to indicate a retry or a relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::Present() noexcept
 {
-    if (_retroTerminalEffects)
-    {
-        const HRESULT hr2 = _PaintTerminalEffects();
-        if (FAILED(hr2))
-        {
-            _retroTerminalEffects = false;
-            LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
-        }
-    }
-
     if (_presentReady)
     {
+        if (_retroTerminalEffects)
+        {
+            const HRESULT hr2 = _PaintTerminalEffects();
+            if (FAILED(hr2))
+            {
+                _retroTerminalEffects = false;
+                LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+            }
+        }
+
         try
         {
             HRESULT hr = S_OK;
@@ -1618,8 +1614,8 @@ CATCH_RETURN()
 
     if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
     {
-        PixelShaderSettings pixelShaderSettings = _GetPixelShaderSettings();
-        _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &pixelShaderSettings, 0, 0);
+        _ComputePixelShaderSettings();
+        _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
     }
 
     return S_OK;

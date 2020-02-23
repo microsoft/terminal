@@ -31,12 +31,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hDxRenderProvider);
 
 namespace Microsoft::Console::Render
 {
-    struct PixelShaderSettings
-    {
-        float ScaledScanLinePeriod;
-        float ScaledGaussianSigma;
-    };
-
     class DxEngine final : public RenderEngineBase
     {
     public:
@@ -196,10 +190,15 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11Buffer> _pixelShaderSettingsBuffer;
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
+        struct
+        {
+            float ScaledScanLinePeriod;
+            float ScaledGaussianSigma;
+        } _pixelShaderSettings;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
         HRESULT _SetupTerminalEffects();
-        PixelShaderSettings _GetPixelShaderSettings() const noexcept;
+        void _ComputePixelShaderSettings() noexcept;
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
