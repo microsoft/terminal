@@ -316,7 +316,7 @@ namespace winrt::TerminalApp::implementation
 
     // Possible SplitType values
     static constexpr std::string_view DuplicateKey{ "duplicate" };
-    static TerminalApp::SplitType ParseSplitTypeState(const std::string& stateString)
+    static TerminalApp::SplitType ParseSplitModeState(const std::string& stateString)
     {
         if (stateString == DuplicateKey)
         {
@@ -333,7 +333,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::TerminalApp::SplitType, SplitMode, winrt::TerminalApp::SplitType::Manual);
 
         static constexpr std::string_view SplitKey{ "split" };
-        static constexpr std::string_view SplitTypeKey{ "splitType" };
+        static constexpr std::string_view SplitModeKey{ "splitMode" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -356,9 +356,9 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SplitStyle = ParseSplitState(jsonStyle.asString());
             }
-            if (auto jsonStyle{ json[JsonKey(SplitTypeKey)] })
+            if (auto jsonStyle{ json[JsonKey(SplitModeKey)] })
             {
-                args->_SplitType = ParseSplitTypeState(jsonStyle.asString());
+                args->_SplitMode = ParseSplitModeState(jsonStyle.asString());
             }
             return *args;
         }

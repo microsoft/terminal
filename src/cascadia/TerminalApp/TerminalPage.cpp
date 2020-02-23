@@ -1072,16 +1072,16 @@ namespace winrt::TerminalApp::implementation
 
         if (splitMode == TerminalApp::SplitType::Duplicate)
         {
-            current_guid = focusedTab->GetFocusedProfile();
-            if (currrent_guid)
+            std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
+            if (current_guid)
             {
                 profileFound = true;
-                controlSettings = _settings->BuildSettings(current_guid);
+                controlSettings = _settings->BuildSettings(current_guid.value());
             }
         }
         if (!profileFound)
         {
-            [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
+            std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
         }
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
