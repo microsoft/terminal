@@ -285,12 +285,24 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&bd, &InitData, &_screenQuadVertexBuffer));
 
+    D3D11_BUFFER_DESC pixelShaderSettingsBufferDesc{};
+    pixelShaderSettingsBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    pixelShaderSettingsBufferDesc.ByteWidth = sizeof(PixelShaderSettings) + (16 - sizeof(PixelShaderSettings) % 16) % 16;
+    pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+    PixelShaderSettings pixelShaderSettings = _GetPixelShaderSettings();
+
+    D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
+    pixelShaderSettingsInitData.pSysMem = static_cast<const void*>(&pixelShaderSettings);
+
+    RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&pixelShaderSettingsBufferDesc, &pixelShaderSettingsInitData, &_pixelShaderSettingsBuffer));
+
     // Sampler state is needed to use texture as input to shader.
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
@@ -305,6 +317,22 @@ HRESULT DxEngine::_SetupTerminalEffects()
     RETURN_IF_FAILED(_d3dDevice->CreateSamplerState(&samplerDesc, &_samplerState));
 
     return S_OK;
+}
+
+// Routine Description:
+// Arguments:
+// - <none>
+// Return Value:
+// - PixelShaderSettings based on current settings.
+[[nodiscard]] PixelShaderSettings DxEngine::_GetPixelShaderSettings() const noexcept
+{
+    float scale = _scale;
+
+    PixelShaderSettings pixelShaderSettings{};
+    pixelShaderSettings.ScaledScanLinePeriod = scale * 1.0f;   // Retro scan lines alternate every pixel row at 100%.
+    pixelShaderSettings.ScaledGaussianSigma = scale * 2.0f;    // Gaussian distribution sigma used for blurring.
+
+    return pixelShaderSettings;
 }
 
 // Routine Description;
@@ -1490,6 +1518,7 @@ try
     _d3dDeviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
     _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
     _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
+    _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
     _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
 
     return S_OK;
@@ -1586,6 +1615,12 @@ CATCH_RETURN()
     _scale = _dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
     RETURN_IF_FAILED(InvalidateAll());
+
+    if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
+    {
+        PixelShaderSettings pixelShaderSettings = _GetPixelShaderSettings();
+        _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &pixelShaderSettings, 0, 0);
+    }
 
     return S_OK;
 }
@@ -2085,12 +2120,10 @@ float DxEngine::GetScaling() const noexcept
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;

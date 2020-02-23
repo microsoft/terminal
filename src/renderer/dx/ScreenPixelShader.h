@@ -7,8 +7,13 @@ const char screenPixelShaderString[] = R"(
 Texture2D shaderTexture;
 SamplerState samplerState;
 
+cbuffer PixelShaderSettings
+{
+    float ScaledScanLinePeriod;
+    float ScaledGaussianSigma;
+};
+
 #define SCANLINE_FACTOR 0.5
-#define SCANLINE_PERIOD 1
 
 static const float M_PI = 3.14159265f;
 
@@ -26,7 +31,6 @@ float4 Blur(Texture2D input, float2 tex_coord, float sigma)
     float texelHeight = 1.0f/height;
 
     float4 color = { 0, 0, 0, 0 };
-    float factor = 1;
 
     int sampleCount = 13;
 
@@ -49,7 +53,7 @@ float4 Blur(Texture2D input, float2 tex_coord, float sigma)
 
 float SquareWave(float y)
 {
-    return 1 - (floor(y / SCANLINE_PERIOD) % 2) * SCANLINE_FACTOR;
+    return 1 - (floor(y / ScaledScanLinePeriod) % 2) * SCANLINE_FACTOR;
 }
 
 float4 Scanline(float4 color, float4 pos)
@@ -74,7 +78,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 
     // TODO:GH#3930 Make these configurable in some way.
     float4 color = input.Sample(samplerState, tex);
-    color += Blur(input, tex, 2)*0.3;
+    color += Blur(input, tex, ScaledGaussianSigma)*0.3;
     color = Scanline(color, pos);
 
     return color;
