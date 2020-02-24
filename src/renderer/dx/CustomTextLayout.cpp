@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -154,18 +154,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         }
 
         // Resequence the resulting runs in order before returning to caller.
-        const size_t totalRuns = _runs.size();
-        std::vector<LinkedRun> runs;
-        runs.resize(totalRuns);
-
-        UINT32 nextRunIndex = 0;
-        for (size_t i = 0; i < totalRuns; ++i)
-        {
-            runs.at(i) = _runs.at(nextRunIndex);
-            nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
-        }
-
-        _runs.swap(runs);
+        _OrderRuns();
     }
     CATCH_RETURN();
     return S_OK;
@@ -368,6 +357,28 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         {
             LOG_IF_FAILED(_CorrectGlyphRun(runIndex));
         }
+
+        // If scale corrections were needed, we need to split the run.
+        for (auto [index, scale] : _glyphScaleCorrections)
+        {
+            // Split after the adjustment first so it
+            // takes a copy of all the run properties before we modify them.
+            // GH 4665: This is the other half of the potential future perf item.
+            //       If glyphs needing the same scale are coalesced, we could
+            //       break fewer times and have fewer runs.
+            _SetCurrentRun(index + 1);
+            _SplitCurrentRun(index + 1);
+
+            // Now split just this glyph off.
+            _SetCurrentRun(index);
+            _SplitCurrentRun(index);
+
+            // Get the run with the one glyph and adjust the scale.
+            auto& run = _GetCurrentRun();
+            run.fontScale = scale;
+        }
+
+        _OrderRuns();
     }
     CATCH_RETURN();
     return S_OK;
@@ -376,90 +387,94 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 // Routine Description:
 // - Adjusts the advances for each glyph in the run so it fits within a fixed-column count of cells.
 // Arguments:
-// - runIndex - The ID number of the internal runs array to use while shaping
+// - runIndex - The ID number of the internal runs array to use while shaping.
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
 [[nodiscard]] HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
+try
 {
-    try
+    const Run& run = _runs.at(runIndex);
+
+    if (run.textLength == 0)
     {
-        Run& run = _runs.at(runIndex);
-
-        if (run.textLength == 0)
-        {
-            return S_FALSE; // Nothing to do..
-        }
-
-        // We're going to walk through and check for advances that don't match the space that we expect to give out.
-
-        DWRITE_FONT_METRICS1 metrics;
-        run.fontFace->GetMetrics(&metrics);
-
-        // Walk through advances and space out characters that are too small to consume their box.
-        for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
-        {
-            // Advance is how wide in pixels the glyph is
-            auto& advance = _glyphAdvances.at(i);
-
-            // Offsets is how far to move the origin (in pixels) from where it is
-            auto& offset = _glyphOffsets.at(i);
-
-            // Get how many columns we expected the glyph to have and mutiply into pixels.
-            const auto columns = _textClusterColumns.at(i);
-            const auto advanceExpected = static_cast<float>(columns * _width);
-
-            // If what we expect is bigger than what we have... pad it out.
-            if (advanceExpected > advance)
-            {
-                // Get the amount of space we have leftover.
-                const auto diff = advanceExpected - advance;
-
-                // Move the X offset (pixels to the right from the left edge) by half the excess space
-                // so half of it will be left of the glyph and the other half on the right.
-                offset.advanceOffset += diff / 2;
-
-                // Set the advance to the perfect width we want.
-                advance = advanceExpected;
-            }
-            // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
-            else if (advanceExpected < advance)
-            {
-                // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
-                // height proportional to the width that we desire.
-                INT32 advanceInDesignUnits;
-                RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices.at(i), &advanceInDesignUnits));
-
-                // When things are drawn, we want the font size (as specified in the base font in the original format)
-                // to be scaled by some factor.
-                // i.e. if the original font size was 16, we might want to draw this glyph with a 15.2 size font so
-                // the width (and height) of the glyph will shrink to fit the monospace cell box.
-
-                // This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
-                // and was advised by the DirectWrite team.
-                const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
-                const auto fontSizeWant = advanceExpected / widthAdvance;
-                run.fontScale = fontSizeWant / _format->GetFontSize();
-
-                // Set the advance to the perfect width that we want.
-                advance = advanceExpected;
-            }
-        }
-
-        // Certain fonts, like Batang, contain glyphs for hidden control
-        // and formatting characters. So we'll want to explicitly force their
-        // advance to zero.
-        // I'm leaving this here for future reference, but I don't think we want invisible glyphs for this renderer.
-        //if (run.script.shapes & DWRITE_SCRIPT_SHAPES_NO_VISUAL)
-        //{
-        //    std::fill(_glyphAdvances.begin() + glyphStart,
-        //              _glyphAdvances.begin() + glyphStart + actualGlyphCount,
-        //              0.0f
-        //    );
-        //}
+        return S_FALSE; // Nothing to do..
     }
-    CATCH_RETURN();
+
+    // We're going to walk through and check for advances that don't match the space that we expect to give out.
+
+    DWRITE_FONT_METRICS1 metrics;
+    run.fontFace->GetMetrics(&metrics);
+
+    // Walk through advances and space out characters that are too small to consume their box.
+    for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
+    {
+        // Advance is how wide in pixels the glyph is
+        auto& advance = _glyphAdvances.at(i);
+
+        // Offsets is how far to move the origin (in pixels) from where it is
+        auto& offset = _glyphOffsets.at(i);
+
+        // Get how many columns we expected the glyph to have and mutiply into pixels.
+        const auto columns = _textClusterColumns.at(i);
+        const auto advanceExpected = static_cast<float>(columns * _width);
+
+        // If what we expect is bigger than what we have... pad it out.
+        if (advanceExpected > advance)
+        {
+            // Get the amount of space we have leftover.
+            const auto diff = advanceExpected - advance;
+
+            // Move the X offset (pixels to the right from the left edge) by half the excess space
+            // so half of it will be left of the glyph and the other half on the right.
+            offset.advanceOffset += diff / 2;
+
+            // Set the advance to the perfect width we want.
+            advance = advanceExpected;
+        }
+        // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
+        else if (advanceExpected < advance)
+        {
+            // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
+            // height proportional to the width that we desire.
+            INT32 advanceInDesignUnits;
+            RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices.at(i), &advanceInDesignUnits));
+
+            // When things are drawn, we want the font size (as specified in the base font in the original format)
+            // to be scaled by some factor.
+            // i.e. if the original font size was 16, we might want to draw this glyph with a 15.2 size font so
+            // the width (and height) of the glyph will shrink to fit the monospace cell box.
+
+            // This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
+            // and was advised by the DirectWrite team.
+            const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
+            const auto fontSizeWant = advanceExpected / widthAdvance;
+            const auto scaleProposed = fontSizeWant / _format->GetFontSize();
+
+            // Store the glyph scale correction for future run breaking
+            // GH 4665: In theory, we could also store the length of the new run and coalesce
+            //       in case two adjacent glyphs need the same scale factor.
+            _glyphScaleCorrections.push_back(std::tuple{ i, scaleProposed });
+
+            // Set the advance to the perfect width that we want before figuring out if the scale factor doesn't match this run
+            advance = advanceExpected;
+        }
+    }
+
+    // Certain fonts, like Batang, contain glyphs for hidden control
+    // and formatting characters. So we'll want to explicitly force their
+    // advance to zero.
+    // I'm leaving this here for future reference, but I don't think we want invisible glyphs for this renderer.
+    //if (run.script.shapes & DWRITE_SCRIPT_SHAPES_NO_VISUAL)
+    //{
+    //    std::fill(_glyphAdvances.begin() + glyphStart,
+    //              _glyphAdvances.begin() + glyphStart + actualGlyphCount,
+    //              0.0f
+    //    );
+    //}
+
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Takes the analyzed and shaped textual information from the layout process and
@@ -952,6 +967,18 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 }
 
 // Routine Description:
+// - Retrieves the current run according to the internal
+//   positioning set by Set/Split Current Run methods.
+// Arguments:
+// - <none>
+// Return Value:
+// - Mutable reference ot the current run.
+[[nodiscard]] CustomTextLayout::LinkedRun& CustomTextLayout::_GetCurrentRun()
+{
+    return _runs.at(_runIndex);
+}
+
+// Routine Description:
 // - Move the current run to the given position.
 //   Since the analyzers generally return results in a forward manner,
 //   this will usually just return early. If not, find the
@@ -1007,5 +1034,126 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     frontHalf.textLength = splitPoint;
     frontHalf.nextRunIndex = gsl::narrow<UINT32>(totalRuns);
     _runIndex = gsl::narrow<UINT32>(totalRuns);
+
+    // If there is already a glyph mapping in these runs,
+    // we need to correct it for the split as well.
+    // See also (for NxM):
+    // https://social.msdn.microsoft.com/Forums/en-US/993365bc-8689-45ff-a675-c5ed0c011788/dwriteglyphrundescriptionclustermap-explained
+
+    if (frontHalf.glyphCount > 0)
+    {
+        // Starting from this:
+        // TEXT (_text)
+        // f  i  ñ  e
+        // CLUSTERMAP (_glyphClusters)
+        // 0  0  1  3
+        // GLYPH INDICIES (_glyphIndicies)
+        // 19 81 23 72
+        // With _runs length = 1
+        // _runs(0):
+        //  - Text Index:   0
+        //  - Text Length:  4
+        //  - Glyph Index:  0
+        //  - Glyph Length: 4
+        //
+        // If we split at text index = 2 (between i and ñ)...
+        // ... then this will be the state after the text splitting above:
+        //
+        // TEXT (_text)
+        // f  i  ñ  e
+        // CLUSTERMAP (_glyphClusters)
+        // 0  0  1  3
+        // GLYPH INDICIES (_glyphIndicies)
+        // 19 81 23 72
+        // With _runs length = 2
+        // _runs(0):
+        //  - Text Index:   0
+        //  - Text Length:  2
+        //  - Glyph Index:  0
+        //  - Glyph Length: 4
+        // _runs(1):
+        //  - Text Index:   2
+        //  - Text Length:  2
+        //  - Glyph Index:  0
+        //  - Glyph Length: 4
+        //
+        // Notice that the text index/length values are correct,
+        // but we haven't fixed up the glyph index/lengths to match.
+        // We need it to say:
+        // With _runs length = 2
+        // _runs(0):
+        //  - Text Index:   0
+        //  - Text Length:  2
+        //  - Glyph Index:  0
+        //  - Glyph Length: 1
+        // _runs(1):
+        //  - Text Index:   2
+        //  - Text Length:  2
+        //  - Glyph Index:  1
+        //  - Glyph Length: 3
+        //
+        // Which means that the cluster map value under the beginning
+        // of the right-hand text range is our offset to fix all the values.
+        // In this case, that's 1 corresponding with the ñ.
+        const auto mapOffset = _glyphClusters.at(backHalf.textStart);
+
+        // The front half's glyph start index (position in _glyphIndicies)
+        // stays the same.
+
+        // The front half's glyph count (items in _glyphIndicies to consume)
+        // is the offset value as that's now one past the end of the front half.
+        // (and count is end index + 1)
+        frontHalf.glyphCount = mapOffset;
+
+        // The back half starts at the index that's one past the end of the front
+        backHalf.glyphStart = mapOffset;
+
+        // And the back half count (since it was copied from the front half above)
+        // now just needs to be subtracted by how many we gave the front half.
+        backHalf.glyphCount -= mapOffset;
+
+        // The CLUSTERMAP is also wrong given that it is relative
+        // to each run. And now there are two runs so the map
+        // value under the ñ and e need to updated to be relative
+        // to the text index "2" now instead of the original.
+        //
+        // For the entire range of the back half, we need to walk through and
+        // slide all the glyph mapping values to be relative to the new
+        // backHalf.glyphStart, or adjust it by the offset we just set it to.
+        const auto updateBegin = _glyphClusters.begin() + backHalf.textStart;
+        std::for_each_n(updateBegin, backHalf.textLength, [mapOffset](UINT16& n) {
+            n -= mapOffset;
+        });
+    }
 }
+
+// Routine Description:
+// - Takes the linked runs stored in the state variable _runs
+//   and ensures that their vector/array indexes are in order in which they're drawn.
+// - This is to be used after splitting and reordering them with the split/select functions
+//   as those manipulate the runs like a linked list (instead of an ordered array)
+//   while splitting to reduce copy overhead and just reorder them when complete with this func.
+// Arguments:
+// - <none> - Manipulates _runs variable.
+// Return Value:
+// - <none>
+void CustomTextLayout::_OrderRuns()
+{
+    const size_t totalRuns = _runs.size();
+    std::vector<LinkedRun> runs;
+    runs.resize(totalRuns);
+
+    UINT32 nextRunIndex = 0;
+    for (UINT32 i = 0; i < totalRuns; ++i)
+    {
+        runs.at(i) = _runs.at(nextRunIndex);
+        runs.at(i).nextRunIndex = i + 1;
+        nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
+    }
+
+    runs.back().nextRunIndex = 0;
+
+    _runs.swap(runs);
+}
+
 #pragma endregion

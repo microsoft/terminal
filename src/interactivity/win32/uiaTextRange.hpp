@@ -24,11 +24,6 @@ namespace Microsoft::Console::Interactivity::Win32
     class UiaTextRange final : public Microsoft::Console::Types::UiaTextRangeBase
     {
     public:
-        static HRESULT GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                          _In_ IRawElementProviderSimple* pProvider,
-                                          _In_ const std::wstring_view wordDelimiters,
-                                          _Out_ std::deque<WRL::ComPtr<UiaTextRange>>& ranges);
-
         UiaTextRange() = default;
 
         // degenerate range

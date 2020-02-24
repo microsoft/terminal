@@ -83,18 +83,32 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
         '\xA4',
         '\xBD',
         '\x9C',
-        '\xF0' // CJK UNIFIED IDEOGRAPH-24F5C (lead byte only)
+        '\xF0', // CJK UNIFIED IDEOGRAPH-24F5C (lead byte + 2 complementary bytes)
+        '\xA4',
+        '\xBD'
     };
 
     const std::string u8String2{
-        '\xA4', // CJK UNIFIED IDEOGRAPH-24F5C (complementary bytes)
-        '\xBD',
-        '\x9C'
+        '\x9C' // CJK UNIFIED IDEOGRAPH-24F5C (last complementary byte)
     };
 
-    const std::wstring u16StringComp{
+    const std::wstring u16StringComp1{
         gsl::narrow_cast<wchar_t>(0xD853), // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
         gsl::narrow_cast<wchar_t>(0xDF5C)
+    };
+
+    // GH#4673
+    const std::string u8String3{
+        '\xE2' // WHITE SMILING FACE (lead byte)
+    };
+
+    const std::string u8String4{
+        '\x98', // WHITE SMILING FACE (complementary bytes)
+        '\xBA'
+    };
+
+    const std::wstring u16StringComp2{
+        gsl::narrow_cast<wchar_t>(0x263A) // WHITE SMILING FACE
     };
 
     til::u8state state{};
@@ -102,12 +116,22 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
     std::wstring u16Out1{};
     const HRESULT hRes1{ til::u8u16(u8String1, u16Out1, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes1);
-    VERIFY_ARE_EQUAL(u16StringComp, u16Out1);
+    VERIFY_ARE_EQUAL(u16StringComp1, u16Out1);
 
     std::wstring u16Out2{};
     const HRESULT hRes2{ til::u8u16(u8String2, u16Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
-    VERIFY_ARE_EQUAL(u16StringComp, u16Out2);
+    VERIFY_ARE_EQUAL(u16StringComp1, u16Out2);
+
+    std::wstring u16Out3{};
+    const HRESULT hRes3{ til::u8u16(u8String3, u16Out3, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes3);
+    VERIFY_ARE_EQUAL(std::wstring{}, u16Out3);
+
+    std::wstring u16Out4{};
+    const HRESULT hRes4{ til::u8u16(u8String4, u16Out4, state) };
+    VERIFY_ARE_EQUAL(S_OK, hRes4);
+    VERIFY_ARE_EQUAL(u16StringComp2, u16Out4);
 }
 
 void Utf8Utf16ConvertTests::TestU16ToU8Partials()

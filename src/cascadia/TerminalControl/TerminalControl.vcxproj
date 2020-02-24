@@ -84,7 +84,7 @@
     <None Include="TerminalControl.def" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources/en-US/Resources.resw" />
+    <PRIResource Include="Resources/Resources.language-en.resw" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

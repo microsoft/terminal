@@ -100,26 +100,22 @@ void TermControlUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
     _termControl->ScrollViewport(NewWindow.Top);
 }
 
-HRESULT TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<ComPtr<UiaTextRangeBase>>& result)
+HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {
-    try
-    {
-        result.clear();
-        typename std::remove_reference<decltype(result)>::type temporaryResult;
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
+    *ppUtr = nullptr;
 
-        std::deque<ComPtr<UiaTextRange>> ranges;
-        RETURN_IF_FAILED(UiaTextRange::GetSelectionRanges(_pData, pProvider, wordDelimiters, ranges));
+    const auto start = _pData->GetSelectionAnchor();
 
-        while (!ranges.empty())
-        {
-            temporaryResult.emplace_back(std::move(ranges.back()));
-            ranges.pop_back();
-        }
+    // we need to make end exclusive
+    auto end = _pData->GetEndSelectionPosition();
+    _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
 
-        std::swap(result, temporaryResult);
-        return S_OK;
-    }
-    CATCH_RETURN();
+    // TODO GH #4509: Box Selection is misrepresented here as a line selection.
+    UiaTextRange* result = nullptr;
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
+    *ppUtr = result;
+    return S_OK;
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)

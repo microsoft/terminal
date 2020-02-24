@@ -84,8 +84,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 if ((*backIter & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
                 {
                     // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the string
-                    const size_t stopLen{ std::min(in.length(), gsl::narrow_cast<size_t>(4u)) };
-                    for (size_t sequenceLen{ 1u }; sequenceLen < stopLen; ++sequenceLen, --backIter)
+                    const size_t stopLen{ std::min(in.length(), gsl::narrow_cast<size_t>(3u)) };
+                    for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen, --backIter)
                     {
                         // If Lead Byte found
                         if ((*backIter & _Utf8BitMasks::MaskContinuationByte) > _Utf8BitMasks::IsContinuationByte)
