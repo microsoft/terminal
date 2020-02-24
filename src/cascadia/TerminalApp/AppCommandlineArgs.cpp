@@ -393,7 +393,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 // Function Description:
 // - Builds a list of Commandline objects for the given argc,argv. Each
 //   Commandline represents a single command to parse. These commands can be
-//   seperated by ";", which indicates the start of the next commandline. If the
+//   separated by ";", which indicates the start of the next commandline. If the
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
@@ -423,7 +423,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(winrt::array_view<con
 // Function Description:
 // - Builds a list of Commandline objects for the given argc,argv. Each
 //   Commandline represents a single command to parse. These commands can be
-//   seperated by ";", which indicates the start of the next commandline. If the
+//   separated by ";", which indicates the start of the next commandline. If the
 //   user would like to provide ';' in the text of the commandline, they can
 //   escape it as "\;".
 // Arguments:
@@ -457,7 +457,7 @@ std::vector<Commandline> AppCommandlineArgs::BuildCommands(const std::vector<con
 // Function Description:
 // - Update and append Commandline objects for the given arg to the given list
 //   of commands. Each Commandline represents a single command to parse. These
-//   commands can be seperated by ";", which indicates the start of the next
+//   commands can be separated by ";", which indicates the start of the next
 //   commandline. If the user would like to provide ';' in the text of the
 //   commandline, they can escape it as "\;".
 // - As we parse arg, if it doesn't contain a delimiter in it, we'll add it to

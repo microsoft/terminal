@@ -86,7 +86,7 @@ namespace TerminalAppLocalTests
         // Just creating it is enough to know that everything is working.
         winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
         VERIFY_IS_NOT_NULL(conn);
-        // We're doing this test seperately from the TryCreateSettingsType test,
+        // We're doing this test separately from the TryCreateSettingsType test,
         // to ensure both dependent binaries (TemrinalSettings and
         // TerminalConnection) both work individually.
     }
