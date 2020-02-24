@@ -411,7 +411,7 @@ const COORD RenderData::GetSelectionEnd() const noexcept
     //  - SelectionAnchor: the initial position where the selection was started
     //  - SelectionRect: the rectangular region denoting a portion of the buffer that is selected
 
-    // The following is an exerpt from Selection::s_GetSelectionRects
+    // The following is an excerpt from Selection::s_GetSelectionRects
     // if the anchor (start of select) was in the top right or bottom left of the box,
     // we need to remove rectangular overlap in the middle.
     // e.g.
