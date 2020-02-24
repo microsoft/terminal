@@ -38,7 +38,7 @@ namespace Microsoft::Console::Types
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
@@ -104,9 +104,9 @@ namespace Microsoft::Console::Types
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // weak reference to IUiaData
-        IUiaData* _pData;
+        IUiaData* _pData{ nullptr };
 
-        std::wstring _wordDelimiters;
+        std::wstring _wordDelimiters{};
 
     private:
         // this is used to prevent the object from
@@ -120,7 +120,7 @@ namespace Microsoft::Console::Types
         // eventually overflowing the stack.
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
-        std::map<EVENTID, bool> _signalFiringMapping;
+        std::map<EVENTID, bool> _signalFiringMapping{};
 
         const COORD _getScreenBufferCoords() const;
         const TextBuffer& _getTextBuffer() const noexcept;

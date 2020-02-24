@@ -58,25 +58,26 @@ namespace Microsoft::Console::Types
         static constexpr std::wstring_view DefaultWordDelimiter{ &UNICODE_SPACE, 1 };
 
         // degenerate range
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
-                                       _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                               _In_ IRawElementProviderSimple* const pProvider,
+                                               _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // degenerate range at cursor position
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
-                                       _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ const Cursor& cursor,
-                                       _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                               _In_ IRawElementProviderSimple* const pProvider,
+                                               _In_ const Cursor& cursor,
+                                               _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // specific endpoint range
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
-                                       _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ const COORD start,
-                                       _In_ const COORD end,
-                                       _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+                                               _In_ IRawElementProviderSimple* const pProvider,
+                                               _In_ const COORD start,
+                                               _In_ const COORD end,
+                                               _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
-        HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
+        virtual HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
+        UiaTextRangeBase(const UiaTextRangeBase&) = default;
         UiaTextRangeBase(UiaTextRangeBase&&) = default;
         UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
@@ -127,11 +128,11 @@ namespace Microsoft::Console::Types
 
     protected:
         UiaTextRangeBase() = default;
-        IUiaData* _pData;
+        IUiaData* _pData{ nullptr };
 
-        IRawElementProviderSimple* _pProvider;
+        IRawElementProviderSimple* _pProvider{ nullptr };
 
-        std::wstring _wordDelimiters;
+        std::wstring _wordDelimiters{};
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
@@ -141,13 +142,13 @@ namespace Microsoft::Console::Types
 
         // used to debug objects passed back and forth
         // between the provider and the client
-        IdType _id;
+        IdType _id{};
 
         // measure units in the form [_start, _end).
         // These are in the TextBuffer coordinate space.
         // NOTE: _start is inclusive, but _end is exclusive
-        COORD _start;
-        COORD _end;
+        COORD _start{};
+        COORD _end{};
 
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
