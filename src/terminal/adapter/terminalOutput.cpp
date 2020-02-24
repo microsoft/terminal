@@ -38,7 +38,10 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar
         return _SetTranslationTable(gsetNumber, FinnishNrcs);
     case L'R': // French NRCS
         return _SetTranslationTable(gsetNumber, FrenchNrcs);
-    case L'Q': // French Canadian NRCS
+    case L'f': // French NRCS (ISO update)
+        return _SetTranslationTable(gsetNumber, FrenchNrcsIso);
+    case L'9': // French Canadian NRCS
+    case L'Q': // (fallback)
         return _SetTranslationTable(gsetNumber, FrenchCanadianNrcs);
     case L'K': // German NRCS
         return _SetTranslationTable(gsetNumber, GermanNrcs);
@@ -47,6 +50,8 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar
     case L'6': // Norwegian/Danish NRCS
     case L'E': // (fallback)
         return _SetTranslationTable(gsetNumber, NorwegianDanishNrcs);
+    case L'`': // Norwegian/Danish NRCS (ISO standard)
+        return _SetTranslationTable(gsetNumber, NorwegianDanishNrcsIso);
     case L'Z': // Spanish NRCS
         return _SetTranslationTable(gsetNumber, SpanishNrcs);
     case L'7': // Swedish NRCS
@@ -59,6 +64,8 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar
         {
         case L'5': // DEC Supplemental
             return _SetTranslationTable(gsetNumber, DecSupplemental);
+        case L'6': // Portuguese NRCS
+            return _SetTranslationTable(gsetNumber, PortugueseNrcs);
         }
         return false;
     default:

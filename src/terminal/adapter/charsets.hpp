@@ -155,6 +155,23 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\x7e', L'\u00a8' }, // Diaeresis
     };
 
+    // https://www.itscj.ipsj.or.jp/iso-ir/069.pdf
+    // Some terminal emulators consider all the French character sets as equivalent,
+    // but the 6/6 designator is actually an updated ISO standard, which adds the
+    // Micro Sign character, which is not included in the DEC version.
+    static constexpr auto FrenchNrcsIso = AsciiBasedCharSet{
+        { L'\x23', L'\u00a3' }, // Pound Sign
+        { L'\x40', L'\u00e0' }, // Latin Small Letter A With Grave
+        { L'\x5b', L'\u00b0' }, // Degree Sign
+        { L'\x5c', L'\u00e7' }, // Latin Small Letter C With Cedilla
+        { L'\x5d', L'\u00a7' }, // Section Sign
+        { L'\x60', L'\u00b5' }, // Micro Sign
+        { L'\x7b', L'\u00e9' }, // Latin Small Letter E With Acute
+        { L'\x7c', L'\u00f9' }, // Latin Small Letter U With Grave
+        { L'\x7d', L'\u00e8' }, // Latin Small Letter E With Grave
+        { L'\x7e', L'\u00a8' }, // Diaeresis
+    };
+
     // https://www.vt100.net/docs/vt220-rm/table2-9.html
     static constexpr auto FrenchCanadianNrcs = AsciiBasedCharSet{
         { L'\x40', L'\u00e0' }, // Latin Small Letter A With Grave
@@ -207,6 +224,29 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\x7c', L'\u00f8' }, // Latin Small Letter O With Stroke
         { L'\x7d', L'\u00e5' }, // Latin Small Letter A With Ring Above
         { L'\x7e', L'\u00fc' }, // Latin Small Letter U With Diaeresis
+    };
+
+    // https://www.itscj.ipsj.or.jp/iso-ir/060.pdf
+    // Some terminal emulators consider all the Nordic character sets as equivalent,
+    // but the 6/0 designator is a separate ISO-registered standard, which only maps
+    // a subset of the characters included in the DEC version.
+    static constexpr auto NorwegianDanishNrcsIso = AsciiBasedCharSet{
+        { L'\x5b', L'\u00c6' }, // Latin Capital Letter Ae
+        { L'\x5c', L'\u00d8' }, // Latin Capital Letter O With Stroke
+        { L'\x5d', L'\u00c5' }, // Latin Capital Letter A With Ring Above
+        { L'\x7b', L'\u00e6' }, // Latin Small Letter Ae
+        { L'\x7c', L'\u00f8' }, // Latin Small Letter O With Stroke
+        { L'\x7d', L'\u00e5' }, // Latin Small Letter A With Ring Above
+    };
+
+    // https://www.vt100.net/docs/vt320-uu/appendixe.html#SE.2.3
+    static constexpr auto PortugueseNrcs = AsciiBasedCharSet{
+        { L'\x5b', L'\u00c3' }, // Latin Capital Letter A With Tilde
+        { L'\x5c', L'\u00c7' }, // Latin Capital Letter C With Cedilla
+        { L'\x5d', L'\u00d5' }, // Latin Capital Letter O With Tilde
+        { L'\x7b', L'\u00e3' }, // Latin Small Letter A With Tilde
+        { L'\x7c', L'\u00e7' }, // Latin Small Letter C With Cedilla
+        { L'\x7d', L'\u00f5' }, // Latin Small Letter O With Tilde
     };
 
     // https://www.vt100.net/docs/vt220-rm/table2-13.html
