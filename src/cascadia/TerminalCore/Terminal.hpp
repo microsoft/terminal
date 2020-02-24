@@ -240,7 +240,7 @@ private:
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
     int _scrollOffset;
     // TODO this might not be the value we want to store.
-    // We might want to store the height in the scrollback that's currenty visible.
+    // We might want to store the height in the scrollback that's currently visible.
     // Think on this some more.
     // For example: While looking at the scrollback, we probably want the visible region to "stick"
     //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport,
