@@ -441,11 +441,11 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
 
         if (keys)
         {
-            if (!keys.isArray() || keys.size() != 1)
+            if ((!keys.isString() && !keys.isArray()) || keys.size() != 1)
             {
                 continue;
             }
-            const auto keyChordString = winrt::to_hstring(keys[0].asString());
+            const auto keyChordString = keys.isString() ? winrt::to_hstring(keys.asString()) : winrt::to_hstring(keys[0].asString());
             // Invalid is our placeholder that the action was not parsed.
             ShortcutAction action = ShortcutAction::Invalid;
 

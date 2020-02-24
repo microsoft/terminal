@@ -3,6 +3,10 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema'",
   "definitions": {
+    "KeyChordSegment": {
+      "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
+      "type": "string"
+    },
     "Color": {
       "default": "#",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
@@ -244,12 +248,18 @@
         },
         "keys": {
           "description": "Defines the key combinations used to call the command.",
-          "items": {
-            "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/KeyChordSegment"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/KeyChordSegment"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          ]
         }
       },
       "required": [
