@@ -1675,7 +1675,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - the help text or error message for the providied commandline, if one
+    // - the help text or error message for the provided commandline, if one
     //   exists, otherwise the empty string.
     winrt::hstring TerminalPage::EarlyExitMessage()
     {
