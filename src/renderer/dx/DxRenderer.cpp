@@ -320,15 +320,19 @@ HRESULT DxEngine::_SetupTerminalEffects()
 }
 
 // Routine Description:
-// - Puts the correct values in _pixelShaderSettings.
+// - Puts the correct values in _pixelShaderSettings, so the struct can be
+//   passed the GPU.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void DxEngine::_ComputePixelShaderSettings() noexcept
 {
-    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;    // Retro scan lines alternate every pixel row at 100% scaling.
-    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;     // Gaussian distribution sigma used for blurring.
+    // Retro scan lines alternate every pixel row at 100% scaling.
+    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;
+
+    // Gaussian distribution sigma used for blurring.
+    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;
 }
 
 // Routine Description;
@@ -2116,10 +2120,12 @@ float DxEngine::GetScaling() const noexcept
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
