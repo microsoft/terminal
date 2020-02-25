@@ -27,6 +27,7 @@ namespace Microsoft::Console::VirtualTerminal
     class ConGetSet
     {
     public:
+        virtual ~ConGetSet() = default;
         virtual bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const = 0;
         virtual bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual bool SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;
