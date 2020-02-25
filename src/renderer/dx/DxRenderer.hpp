@@ -188,13 +188,23 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
         ::Microsoft::WRL::ComPtr<ID3D11InputLayout> _vertexLayout;
         ::Microsoft::WRL::ComPtr<ID3D11Buffer> _screenQuadVertexBuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11Buffer> _pixelShaderSettingsBuffer;
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
+        // DirectX constant buffers need to be a multiple of 16; align to pad the size.
+        __declspec(align(16)) struct
+        {
+            float ScaledScanLinePeriod;
+            float ScaledGaussianSigma;
+#pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
+        } _pixelShaderSettings;
+
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
         HRESULT _SetupTerminalEffects();
+        void _ComputePixelShaderSettings() noexcept;
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
