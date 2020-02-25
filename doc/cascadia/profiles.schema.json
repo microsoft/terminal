@@ -380,10 +380,11 @@
         },
         "antialiasingMode": {
           "default": "grayscale",
-          "description": "Controls how text is antialiased in the renderer. Possible values are \"grayscale\" and \"cleartype\". Note that changing this setting will require starting a new terminal instance.",
+          "description": "Controls how text is antialiased in the renderer. Possible values are \"grayscale\", \"cleartype\" and \"aliased\". Note that changing this setting will require starting a new terminal instance.",
           "enum": [
             "grayscale",
-            "cleartype"
+            "cleartype",
+            "aliased"
           ],
           "type": "string"
         },

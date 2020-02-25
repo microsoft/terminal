@@ -15,7 +15,8 @@ namespace Microsoft.Terminal.Settings
     enum TextAntialiasingMode
     {
         Grayscale = 0,
-        Cleartype
+        Cleartype,
+        Aliased
     };
 
     // Class Description:

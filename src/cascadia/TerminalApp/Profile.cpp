@@ -88,6 +88,7 @@ static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 // Possible values for TextAntialiasingMode
 static constexpr std::wstring_view AntialiasingModeGrayscale{ L"grayscale" };
 static constexpr std::wstring_view AntialiasingModeCleartype{ L"cleartype" };
+static constexpr std::wstring_view AntialiasingModeAliased{ L"aliased" };
 
 Profile::Profile() :
     Profile(std::nullopt)
@@ -1377,6 +1378,10 @@ TextAntialiasingMode Profile::ParseTextAntialiasingMode(const std::wstring& anti
     {
         return TextAntialiasingMode::Cleartype;
     }
+    else if (antialiasingMode == AntialiasingModeAliased)
+    {
+        return TextAntialiasingMode::Aliased;
+    }
     else if (antialiasingMode == AntialiasingModeGrayscale)
     {
         return TextAntialiasingMode::Grayscale;
@@ -1398,6 +1403,8 @@ std::wstring_view Profile::SerializeTextAntialiasingMode(const TextAntialiasingM
     {
     case TextAntialiasingMode::Cleartype:
         return AntialiasingModeCleartype;
+    case TextAntialiasingMode::Aliased:
+        return AntialiasingModeAliased;
     default:
     case TextAntialiasingMode::Grayscale:
         return AntialiasingModeGrayscale;

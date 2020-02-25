@@ -645,6 +645,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         case TextAntialiasingMode::Cleartype:
             dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
             break;
+        case TextAntialiasingMode::Aliased:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
         case TextAntialiasingMode::Grayscale:
         default:
             dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
