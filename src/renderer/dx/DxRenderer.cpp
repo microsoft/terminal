@@ -1621,8 +1621,8 @@ CATCH_RETURN()
         _ComputePixelShaderSettings();
         try
         {
-        _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
-    }
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
+        }
         CATCH_RETURN();
     }
 
