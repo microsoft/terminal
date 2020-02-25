@@ -91,6 +91,7 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode)
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
+    _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
     _multiClickSelectionMode = expansionMode;
