@@ -1,59 +1,60 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "pch.h"
-#include "UiaTextRange.hpp"
+#include "precomp.h"
+#include "TermControlUiaTextRange.hpp"
 #include "TermControlUiaProvider.hpp"
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
-using namespace winrt::Windows::Graphics::Display;
 
 // degenerate range constructor.
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters)
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
 
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
-                                             _In_ IRawElementProviderSimple* const pProvider,
-                                             const Cursor& cursor,
-                                             const std::wstring_view wordDelimiters)
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                                        _In_ IRawElementProviderSimple* const pProvider,
+                                                        const Cursor& cursor,
+                                                        const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor, wordDelimiters);
 }
 
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
-                                             _In_ IRawElementProviderSimple* const pProvider,
-                                             const COORD start,
-                                             const COORD end,
-                                             const std::wstring_view wordDelimiters)
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                                        _In_ IRawElementProviderSimple* const pProvider,
+                                                        const COORD start,
+                                                        const COORD end,
+                                                        const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, wordDelimiters);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
-                                             _In_ IRawElementProviderSimple* const pProvider,
-                                             const UiaPoint point,
-                                             const std::wstring_view wordDelimiters)
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+                                                        _In_ IRawElementProviderSimple* const pProvider,
+                                                        const UiaPoint point,
+                                                        const std::wstring_view wordDelimiters)
 {
     RETURN_IF_FAILED(UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters));
     Initialize(point);
     return S_OK;
 }
 
-HRESULT UiaTextRange::RuntimeClassInitialize(const UiaTextRange& a)
+#pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(const TermControlUiaTextRange& a) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(a);
 }
 
-IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
-    auto hr = MakeAndInitialize<UiaTextRange>(ppRetVal, *this);
+    const auto hr = MakeAndInitialize<TermControlUiaTextRange>(ppRetVal, *this);
 
     if (hr != S_OK)
     {
@@ -78,9 +79,9 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
+void TermControlUiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
 {
-    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
     provider->ChangeViewport(NewWindow);
 }
 
@@ -91,11 +92,11 @@ void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
 //                (0,0) is the top-left of the app window
 // Return Value:
 // - <none>
-void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
+void TermControlUiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 {
-    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
-    auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
+    const auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
         auto result = base::ClampedNumeric<double>(clientPos);
         result += padding;
         result *= scaleFactor;
@@ -111,10 +112,10 @@ void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
     const auto padding = provider->GetPadding();
 
     // Get scale factor for display
-    const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+    const auto scaleFactor = provider->GetScaleFactor();
 
-    clientPoint->x = includeOffsets(clientPoint->x, boundingRect.left, padding.Left, scaleFactor);
-    clientPoint->y = includeOffsets(clientPoint->y, boundingRect.top, padding.Top, scaleFactor);
+    clientPoint->x = includeOffsets(clientPoint->x, boundingRect.left, padding.left, scaleFactor);
+    clientPoint->y = includeOffsets(clientPoint->y, boundingRect.top, padding.top, scaleFactor);
 }
 
 // Method Description:
@@ -124,11 +125,11 @@ void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 //                (0,0) is the top-left of the screen
 // Return Value:
 // - <none>
-void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
+void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
 {
-    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
-    auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
+    const auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
         auto result = base::ClampedNumeric<double>(screenPos);
         result -= termControlPos;
         result /= scaleFactor;
@@ -144,17 +145,17 @@ void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
     const auto padding = provider->GetPadding();
 
     // Get scale factor for display
-    const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+    const auto scaleFactor = provider->GetScaleFactor();
 
-    screenPoint->x = includeOffsets(screenPoint->x, boundingRect.left, padding.Left, scaleFactor);
-    screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.Top, scaleFactor);
+    screenPoint->x = includeOffsets(screenPoint->x, boundingRect.left, padding.left, scaleFactor);
+    screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
 }
 
-const COORD UiaTextRange::_getScreenFontSize() const
+const COORD TermControlUiaTextRange::_getScreenFontSize() const
 {
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to
     // ask our parent to get it for us.
-    auto provider = static_cast<TermControlUiaProvider*>(_pProvider);
+    const gsl::not_null<const TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
     return provider->GetFontSize();
 }

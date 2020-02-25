@@ -378,6 +378,16 @@
           "minimum": 0,
           "type": "number"
         },
+        "antialiasingMode": {
+          "default": "grayscale",
+          "description": "Controls how text is antialiased in the renderer. Possible values are \"grayscale\", \"cleartype\" and \"aliased\". Note that changing this setting will require starting a new terminal instance.",
+          "enum": [
+            "grayscale",
+            "cleartype",
+            "aliased"
+          ],
+          "type": "string"
+        },
         "background": {
           "$ref": "#/definitions/Color",
           "default": "#0c0c0c",

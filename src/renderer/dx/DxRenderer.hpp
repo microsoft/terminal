@@ -104,6 +104,7 @@ namespace Microsoft::Console::Render
         float GetScaling() const noexcept;
 
         void SetSelectionBackground(const COLORREF color) noexcept;
+        void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -189,6 +190,8 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11Buffer> _screenQuadVertexBuffer;
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
+
+        D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
         HRESULT _SetupTerminalEffects();

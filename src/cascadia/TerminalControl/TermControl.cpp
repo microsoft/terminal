@@ -638,6 +638,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // here, the setting will only be used when the Terminal is initialized.
         dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
 
+        // TODO:GH#3927 - hot-reload this one too
+        // Update DxEngine's AntialiasingMode
+        switch (_settings.AntialiasingMode())
+        {
+        case TextAntialiasingMode::Cleartype:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            break;
+        case TextAntialiasingMode::Aliased:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            break;
+        case TextAntialiasingMode::Grayscale:
+        default:
+            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            break;
+        }
+
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
 

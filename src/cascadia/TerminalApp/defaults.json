@@ -30,7 +30,8 @@
             "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false
+            "useAcrylic": false,
+            "antialiasingMode": "grayscale"
         },
         {
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -48,7 +49,8 @@
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": false
+            "useAcrylic": false,
+            "antialiasingMode": "grayscale"
         }
     ],
     "schemes":

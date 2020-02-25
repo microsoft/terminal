@@ -82,6 +82,7 @@ DxEngine::DxEngine() :
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
+    _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -504,7 +505,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
                                                                     &props,
                                                                     &_d2dRenderTarget));
 
-        _d2dRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+        _d2dRenderTarget->SetTextAntialiasMode(_antialiasingMode);
+
         RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
                                                                  &_d2dBrushBackground));
 
@@ -2114,4 +2116,18 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
                                         0.5f);
+}
+
+// Routine Description:
+// - Changes the antialiasing mode of the renderer. This must be called before
+//   _PrepareRenderTarget, otherwise the renderer will default to
+//   D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE.
+// Arguments:
+// - antialiasingMode: a value from the D2D1_TEXT_ANTIALIAS_MODE enum. See:
+//          https://docs.microsoft.com/en-us/windows/win32/api/d2d1/ne-d2d1-d2d1_text_antialias_mode
+// Return Value:
+// - N/A
+void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
+{
+    _antialiasingMode = antialiasingMode;
 }

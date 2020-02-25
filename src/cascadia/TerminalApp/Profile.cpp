@@ -49,6 +49,8 @@ static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
+static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
+static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 
 // Possible values for closeOnExit
 static constexpr std::string_view CloseOnExitAlways{ "always" };
@@ -83,8 +85,10 @@ static constexpr std::string_view ImageAlignmentTopRight{ "topRight" };
 static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
-// Terminal effects
-static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
+// Possible values for TextAntialiasingMode
+static constexpr std::wstring_view AntialiasingModeGrayscale{ L"grayscale" };
+static constexpr std::wstring_view AntialiasingModeCleartype{ L"cleartype" };
+static constexpr std::wstring_view AntialiasingModeAliased{ L"aliased" };
 
 Profile::Profile() :
     Profile(std::nullopt)
@@ -124,7 +128,8 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _backgroundImageOpacity{},
     _backgroundImageStretchMode{},
     _backgroundImageAlignment{},
-    _retroTerminalEffect{}
+    _retroTerminalEffect{},
+    _antialiasingMode{ TextAntialiasingMode::Grayscale }
 {
 }
 
@@ -257,6 +262,8 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
         terminalSettings.RetroTerminalEffect(_retroTerminalEffect.value());
     }
 
+    terminalSettings.AntialiasingMode(_antialiasingMode);
+
     return terminalSettings;
 }
 
@@ -376,6 +383,8 @@ Json::Value Profile::ToJson() const
     {
         root[JsonKey(RetroTerminalEffectKey)] = _retroTerminalEffect.value();
     }
+
+    root[JsonKey(AntialiasingModeKey)] = SerializeTextAntialiasingMode(_antialiasingMode).data();
 
     return root;
 }
@@ -742,6 +751,12 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
 
     JsonUtils::GetOptionalValue(json, RetroTerminalEffectKey, _retroTerminalEffect, Profile::_ConvertJsonToBool);
+
+    if (json.isMember(JsonKey(AntialiasingModeKey)))
+    {
+        auto antialiasingMode{ json[JsonKey(AntialiasingModeKey)] };
+        _antialiasingMode = ParseTextAntialiasingMode(GetWstringFromJson(antialiasingMode));
+    }
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
@@ -1348,4 +1363,50 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 void Profile::SetRetroTerminalEffect(bool value) noexcept
 {
     _retroTerminalEffect = value;
+}
+
+// Method Description:
+// - Helper function for converting a user-specified antialiasing mode
+//   corresponding TextAntialiasingMode enum value
+// Arguments:
+// - antialiasingMode: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+TextAntialiasingMode Profile::ParseTextAntialiasingMode(const std::wstring& antialiasingMode)
+{
+    if (antialiasingMode == AntialiasingModeCleartype)
+    {
+        return TextAntialiasingMode::Cleartype;
+    }
+    else if (antialiasingMode == AntialiasingModeAliased)
+    {
+        return TextAntialiasingMode::Aliased;
+    }
+    else if (antialiasingMode == AntialiasingModeGrayscale)
+    {
+        return TextAntialiasingMode::Grayscale;
+    }
+    // default behavior for invalid data
+    return TextAntialiasingMode::Grayscale;
+}
+
+// Method Description:
+// - Helper function for converting a TextAntialiasingMode to its corresponding
+//   string value.
+// Arguments:
+// - antialiasingMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given TextAntialiasingMode
+std::wstring_view Profile::SerializeTextAntialiasingMode(const TextAntialiasingMode antialiasingMode)
+{
+    switch (antialiasingMode)
+    {
+    case TextAntialiasingMode::Cleartype:
+        return AntialiasingModeCleartype;
+    case TextAntialiasingMode::Aliased:
+        return AntialiasingModeAliased;
+    default:
+    case TextAntialiasingMode::Grayscale:
+        return AntialiasingModeGrayscale;
+    }
 }
