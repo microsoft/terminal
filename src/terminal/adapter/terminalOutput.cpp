@@ -62,6 +62,8 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar
     case L'&':
         switch (charset.second)
         {
+        case L'4': // DEC Cyrillic
+            return _SetTranslationTable(gsetNumber, DecCyrillic);
         case L'5': // Russian NRCS
             return _SetTranslationTable(gsetNumber, RussianNrcs);
         }
@@ -69,8 +71,12 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar
     case L'"':
         switch (charset.second)
         {
+        case L'?': // DEC Greek
+            return _SetTranslationTable(gsetNumber, DecGreek);
         case L'>': // Greek NRCS
             return _SetTranslationTable(gsetNumber, GreekNrcs);
+        case L'4': // DEC Hebrew
+            return _SetTranslationTable(gsetNumber, DecHebrew);
         }
         return false;
     case L'%':
@@ -78,6 +84,8 @@ bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar
         {
         case L'=': // Hebrew NRCS
             return _SetTranslationTable(gsetNumber, HebrewNrcs);
+        case L'0': // DEC Turkish
+            return _SetTranslationTable(gsetNumber, DecTurkish);
         case L'2': // Turkish NRCS
             return _SetTranslationTable(gsetNumber, TurkishNrcs);
         case L'5': // DEC Supplemental
