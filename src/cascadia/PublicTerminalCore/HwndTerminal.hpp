@@ -89,9 +89,9 @@ private:
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 
     void _UpdateFont(int newDpi);
-    void _WriteTextToConnection(std::wstring& text) noexcept;
-    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting) noexcept;
-    HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat) noexcept;
+    void _WriteTextToConnection(const std::wstring& text) noexcept;
+    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting);
+    HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
     void _PasteTextFromClipboard() noexcept;
     void _StringPaste(const wchar_t* const pData) noexcept;
 

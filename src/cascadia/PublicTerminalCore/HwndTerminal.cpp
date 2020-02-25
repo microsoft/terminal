@@ -160,7 +160,7 @@ HRESULT HwndTerminal::Initialize()
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
     _terminal->SetDefaultBackground(RGB(5, 27, 80));
     _terminal->SetDefaultForeground(RGB(255, 255, 255));
-    _terminal->SetWriteInputCallback([=](std::wstring& input) { _WriteTextToConnection(input); });
+    _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     return S_OK;
@@ -171,7 +171,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
-void HwndTerminal::_WriteTextToConnection(std::wstring& input) noexcept
+void HwndTerminal::_WriteTextToConnection(const std::wstring& input) noexcept
 {
     if (!_pfnWriteCallback)
     {
@@ -185,15 +185,22 @@ void HwndTerminal::_WriteTextToConnection(std::wstring& input) noexcept
 
     callingText = static_cast<wchar_t*>(::CoTaskMemAlloc(textBytes));
 
-    if (callingText == nullptr)
+    try
     {
-        _pfnWriteCallback(nullptr);
-    }
-    else
-    {
-        wcscpy_s(callingText, textChars, text);
+        if (callingText == nullptr)
+        {
+            _pfnWriteCallback(nullptr);
+        }
+        else
+        {
+            wcscpy_s(callingText, textChars, text);
 
-        _pfnWriteCallback(callingText);
+            _pfnWriteCallback(callingText);
+        }
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
     }
 }
 
@@ -362,22 +369,22 @@ void _stdcall TerminalUserScroll(void* terminal, int viewTop)
 
 HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
 {
-    bool altPressed = GetKeyState(VK_MENU) < 0;
-    COORD cursorPosition{
-        GET_X_LPARAM(lParam),
-        GET_Y_LPARAM(lParam),
-    };
-
-    const auto fontSize = this->_actualFont.GetSize();
-
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
-
-    cursorPosition.X /= fontSize.X;
-    cursorPosition.Y /= fontSize.Y;
-
     try
     {
+        const bool altPressed = GetKeyState(VK_MENU) < 0;
+        COORD cursorPosition{
+            GET_X_LPARAM(lParam),
+            GET_Y_LPARAM(lParam),
+        };
+
+        const auto fontSize = this->_actualFont.GetSize();
+
+        RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
+        RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
+
+        cursorPosition.X /= fontSize.X;
+        cursorPosition.Y /= fontSize.Y;
+
         this->_terminal->SetSelectionAnchor(cursorPosition);
         this->_terminal->SetBlockSelection(altPressed);
 
@@ -393,18 +400,20 @@ HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
 
 HRESULT HwndTerminal::_MoveSelection(LPARAM lParam) noexcept
 {
-    COORD cursorPosition{
-        GET_X_LPARAM(lParam),
-        GET_Y_LPARAM(lParam),
-    };
+    try
+    {
+        COORD cursorPosition{
+            GET_X_LPARAM(lParam),
+            GET_Y_LPARAM(lParam),
+        };
 
-    const auto fontSize = this->_actualFont.GetSize();
+        const auto fontSize = this->_actualFont.GetSize();
 
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
-    RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
+        RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
+        RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.Y == 0);
 
-    cursorPosition.X /= fontSize.X;
-    cursorPosition.Y /= fontSize.Y;
+        cursorPosition.X /= fontSize.X;
+        cursorPosition.Y /= fontSize.Y;
 
     try
     {
@@ -565,7 +574,7 @@ void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
 // Arguments:
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting) noexcept
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
 {
     std::wstring finalString;
 
@@ -581,7 +590,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
 
-    PWSTR pwszClipboard = (PWSTR)GlobalLock(globalHandle.get());
+    PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
     RETURN_LAST_ERROR_IF_NULL(pwszClipboard);
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
@@ -594,7 +603,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
     RETURN_LAST_ERROR_IF(!OpenClipboard(_hwnd.get()));
 
     { // Clipboard Scope
-        auto clipboardCloser = wil::scope_exit([]() {
+        auto clipboardCloser = wil::scope_exit([]() noexcept {
             LOG_LAST_ERROR_IF(!CloseClipboard());
         });
 
@@ -628,7 +637,7 @@ HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor&
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat) noexcept
+HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
 {
     const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)
@@ -636,7 +645,7 @@ HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR l
         wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
         RETURN_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        PSTR pszClipboardHTML = (PSTR)GlobalLock(globalHandleData.get());
+        PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
         RETURN_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
@@ -661,25 +670,20 @@ HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR l
 
 void HwndTerminal::_PasteTextFromClipboard() noexcept
 {
-    HANDLE ClipboardDataHandle;
-
-    // Clear any selection or scrolling that may be active.
-    _terminal->ClearSelection();
-
     // Get paste data from clipboard
     if (!OpenClipboard(_hwnd.get()))
     {
         return;
     }
 
-    ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
+    HANDLE ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
     if (ClipboardDataHandle == nullptr)
     {
         CloseClipboard();
         return;
     }
 
-    PWCHAR pwstr = (PWCHAR)GlobalLock(ClipboardDataHandle);
+    PCWCH pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
 
     _StringPaste(pwstr);
 
