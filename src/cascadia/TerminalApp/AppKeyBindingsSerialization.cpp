@@ -441,7 +441,9 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
 
         if (keys)
         {
-            if ((!keys.isString() && !keys.isArray()) || keys.size() != 1)
+            const auto validString = keys.isString();
+            const auto validArray = keys.isArray() && keys.size() == 1;
+            if (!validString && !validArray)
             {
                 continue;
             }
