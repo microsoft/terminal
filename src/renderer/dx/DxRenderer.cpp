@@ -2121,8 +2121,7 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 // Routine Description:
 // - Changes the antialiasing mode of the renderer. This must be called before
 //   _PrepareRenderTarget, otherwise the renderer will default to
-//   D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE. This has only been tested with
-//   CLEARTYPE and GRAYSCALE.
+//   D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE.
 // Arguments:
 // - antialiasingMode: a value from the D2D1_TEXT_ANTIALIAS_MODE enum. See:
 //          https://docs.microsoft.com/en-us/windows/win32/api/d2d1/ne-d2d1-d2d1_text_antialias_mode
