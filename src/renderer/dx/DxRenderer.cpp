@@ -2124,10 +2124,12 @@ float DxEngine::GetScaling() const noexcept
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd: {
+    case SwapChainMode::ForHwnd:
+    {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition: {
+    case SwapChainMode::ForComposition:
+    {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
