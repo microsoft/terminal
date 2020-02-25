@@ -293,7 +293,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     _ComputePixelShaderSettings();
 
     D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
-    pixelShaderSettingsInitData.pSysMem = static_cast<const void*>(&_pixelShaderSettings);
+    pixelShaderSettingsInitData.pSysMem = &_pixelShaderSettings;
 
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&pixelShaderSettingsBufferDesc, &pixelShaderSettingsInitData, &_pixelShaderSettingsBuffer));
 
@@ -1619,7 +1619,11 @@ CATCH_RETURN()
     if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
     {
         _ComputePixelShaderSettings();
+        try
+        {
         _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
+    }
+        CATCH_RETURN();
     }
 
     return S_OK;
@@ -2120,12 +2124,10 @@ float DxEngine::GetScaling() const noexcept
 
     switch (_chainMode)
     {
-    case SwapChainMode::ForHwnd:
-    {
+    case SwapChainMode::ForHwnd: {
         return D2D1::ColorF(rgb);
     }
-    case SwapChainMode::ForComposition:
-    {
+    case SwapChainMode::ForComposition: {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
