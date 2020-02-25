@@ -287,7 +287,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     D3D11_BUFFER_DESC pixelShaderSettingsBufferDesc{};
     pixelShaderSettingsBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings) + (16 - sizeof(_pixelShaderSettings) % 16) % 16;
+    pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings);
     pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
     _ComputePixelShaderSettings();
