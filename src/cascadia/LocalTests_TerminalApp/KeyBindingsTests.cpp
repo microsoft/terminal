@@ -482,6 +482,5 @@ namespace TerminalAppLocalTests
             // Verify the args have the expected value
             VERIFY_IS_TRUE(realArgs.TrimWhitespace());
         }
-
     }
 }
