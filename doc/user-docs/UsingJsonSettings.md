@@ -54,8 +54,8 @@ object under a root property `"globals"`.
 This is an array of key chords and shortcuts to invoke various commands.
 Each command can have more than one key binding.
 
-NOTE: Key bindings is a subfield of the global settings and
-key bindings apply to all profiles in the same manner.
+> 👉 **Note**: Key bindings is a subfield of the global settings and
+> key bindings apply to all profiles in the same manner.
 
 For example, here's a sample of the default keybindings:
 
@@ -69,8 +69,25 @@ For example, here's a sample of the default keybindings:
         // etc.
     ]
 }
-
 ```
+
+A string value for `"keys"` can be used and is interpreted
+as a key chord of size 1. Thus, the above code snippet can be simplified
+to the following:
+
+```json
+{
+    "keybindings":
+    [
+        { "command": "closePane", "keys": "ctrl+shift+w" },
+        { "command": "copy", "keys": "ctrl+shift+c" },
+        { "command": "newTab", "keys": "ctrl+shift+t" },
+        // etc.
+    ]
+}
+```
+
+
 
 ### Unbinding keys
 
