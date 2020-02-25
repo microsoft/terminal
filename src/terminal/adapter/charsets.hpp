@@ -53,6 +53,333 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma warning(push)
 #pragma warning(disable : 26483) // Suppress spurious "value is outside the bounds" warnings
 
+    // https://en.wikipedia.org/wiki/ISO/IEC_8859-2
+    static constexpr auto Latin2 = Latin1BasedCharSet96{
+        { L'\xa1', L'\u0104' }, // Latin Capital Letter A With Ogonek
+        { L'\xa2', L'\u02d8' }, // Breve
+        { L'\xa3', L'\u0141' }, // Latin Capital Letter L With Stroke
+        { L'\xa5', L'\u013d' }, // Latin Capital Letter L With Caron
+        { L'\xa6', L'\u015a' }, // Latin Capital Letter S With Acute
+        { L'\xa9', L'\u0160' }, // Latin Capital Letter S With Caron
+        { L'\xaa', L'\u015e' }, // Latin Capital Letter S With Cedilla
+        { L'\xab', L'\u0164' }, // Latin Capital Letter T With Caron
+        { L'\xac', L'\u0179' }, // Latin Capital Letter Z With Acute
+        { L'\xae', L'\u017d' }, // Latin Capital Letter Z With Caron
+        { L'\xaf', L'\u017b' }, // Latin Capital Letter Z With Dot Above
+        { L'\xb1', L'\u0105' }, // Latin Small Letter A With Ogonek
+        { L'\xb2', L'\u02db' }, // Ogonek
+        { L'\xb3', L'\u0142' }, // Latin Small Letter L With Stroke
+        { L'\xb5', L'\u013e' }, // Latin Small Letter L With Caron
+        { L'\xb6', L'\u015b' }, // Latin Small Letter S With Acute
+        { L'\xb7', L'\u02c7' }, // Caron
+        { L'\xb9', L'\u0161' }, // Latin Small Letter S With Caron
+        { L'\xba', L'\u015f' }, // Latin Small Letter S With Cedilla
+        { L'\xbb', L'\u0165' }, // Latin Small Letter T With Caron
+        { L'\xbc', L'\u017a' }, // Latin Small Letter Z With Acute
+        { L'\xbd', L'\u02dd' }, // Double Acute Accent
+        { L'\xbe', L'\u017e' }, // Latin Small Letter Z With Caron
+        { L'\xbf', L'\u017c' }, // Latin Small Letter Z With Dot Above
+        { L'\xc0', L'\u0154' }, // Latin Capital Letter R With Acute
+        { L'\xc3', L'\u0102' }, // Latin Capital Letter A With Breve
+        { L'\xc5', L'\u0139' }, // Latin Capital Letter L With Acute
+        { L'\xc6', L'\u0106' }, // Latin Capital Letter C With Acute
+        { L'\xc8', L'\u010c' }, // Latin Capital Letter C With Caron
+        { L'\xca', L'\u0118' }, // Latin Capital Letter E With Ogonek
+        { L'\xcc', L'\u011a' }, // Latin Capital Letter E With Caron
+        { L'\xcf', L'\u010e' }, // Latin Capital Letter D With Caron
+        { L'\xd0', L'\u0110' }, // Latin Capital Letter D With Stroke
+        { L'\xd1', L'\u0143' }, // Latin Capital Letter N With Acute
+        { L'\xd2', L'\u0147' }, // Latin Capital Letter N With Caron
+        { L'\xd5', L'\u0150' }, // Latin Capital Letter O With Double Acute
+        { L'\xd8', L'\u0158' }, // Latin Capital Letter R With Caron
+        { L'\xd9', L'\u016e' }, // Latin Capital Letter U With Ring Above
+        { L'\xdb', L'\u0170' }, // Latin Capital Letter U With Double Acute
+        { L'\xde', L'\u0162' }, // Latin Capital Letter T With Cedilla
+        { L'\xe0', L'\u0155' }, // Latin Small Letter R With Acute
+        { L'\xe3', L'\u0103' }, // Latin Small Letter A With Breve
+        { L'\xe5', L'\u013a' }, // Latin Small Letter L With Acute
+        { L'\xe6', L'\u0107' }, // Latin Small Letter C With Acute
+        { L'\xe8', L'\u010d' }, // Latin Small Letter C With Caron
+        { L'\xea', L'\u0119' }, // Latin Small Letter E With Ogonek
+        { L'\xec', L'\u011b' }, // Latin Small Letter E With Caron
+        { L'\xef', L'\u010f' }, // Latin Small Letter D With Caron
+        { L'\xf0', L'\u0111' }, // Latin Small Letter D With Stroke
+        { L'\xf1', L'\u0144' }, // Latin Small Letter N With Acute
+        { L'\xf2', L'\u0148' }, // Latin Small Letter N With Caron
+        { L'\xf5', L'\u0151' }, // Latin Small Letter O With Double Acute
+        { L'\xf8', L'\u0159' }, // Latin Small Letter R With Caron
+        { L'\xf9', L'\u016f' }, // Latin Small Letter U With Ring Above
+        { L'\xfb', L'\u0171' }, // Latin Small Letter U With Double Acute
+        { L'\xfe', L'\u0163' }, // Latin Small Letter T With Cedilla
+        { L'\xff', L'\u02d9' }, // Dot Above
+    };
+
+    // https://en.wikipedia.org/wiki/ISO/IEC_8859-5
+    static constexpr auto LatinCyrillic = Latin1BasedCharSet96{
+        { L'\xa1', L'\u0401' }, // Cyrillic Capital Letter Io
+        { L'\xa2', L'\u0402' }, // Cyrillic Capital Letter Dje
+        { L'\xa3', L'\u0403' }, // Cyrillic Capital Letter Gje
+        { L'\xa4', L'\u0404' }, // Cyrillic Capital Letter Ukrainian Ie
+        { L'\xa5', L'\u0405' }, // Cyrillic Capital Letter Dze
+        { L'\xa6', L'\u0406' }, // Cyrillic Capital Letter Byelorussian-Ukrainian I
+        { L'\xa7', L'\u0407' }, // Cyrillic Capital Letter Yi
+        { L'\xa8', L'\u0408' }, // Cyrillic Capital Letter Je
+        { L'\xa9', L'\u0409' }, // Cyrillic Capital Letter Lje
+        { L'\xaa', L'\u040a' }, // Cyrillic Capital Letter Nje
+        { L'\xab', L'\u040b' }, // Cyrillic Capital Letter Tshe
+        { L'\xac', L'\u040c' }, // Cyrillic Capital Letter Kje
+        { L'\xae', L'\u040e' }, // Cyrillic Capital Letter Short U
+        { L'\xaf', L'\u040f' }, // Cyrillic Capital Letter Dzhe
+        { L'\xb0', L'\u0410' }, // Cyrillic Capital Letter A
+        { L'\xb1', L'\u0411' }, // Cyrillic Capital Letter Be
+        { L'\xb2', L'\u0412' }, // Cyrillic Capital Letter Ve
+        { L'\xb3', L'\u0413' }, // Cyrillic Capital Letter Ghe
+        { L'\xb4', L'\u0414' }, // Cyrillic Capital Letter De
+        { L'\xb5', L'\u0415' }, // Cyrillic Capital Letter Ie
+        { L'\xb6', L'\u0416' }, // Cyrillic Capital Letter Zhe
+        { L'\xb7', L'\u0417' }, // Cyrillic Capital Letter Ze
+        { L'\xb8', L'\u0418' }, // Cyrillic Capital Letter I
+        { L'\xb9', L'\u0419' }, // Cyrillic Capital Letter Short I
+        { L'\xba', L'\u041a' }, // Cyrillic Capital Letter Ka
+        { L'\xbb', L'\u041b' }, // Cyrillic Capital Letter El
+        { L'\xbc', L'\u041c' }, // Cyrillic Capital Letter Em
+        { L'\xbd', L'\u041d' }, // Cyrillic Capital Letter En
+        { L'\xbe', L'\u041e' }, // Cyrillic Capital Letter O
+        { L'\xbf', L'\u041f' }, // Cyrillic Capital Letter Pe
+        { L'\xc0', L'\u0420' }, // Cyrillic Capital Letter Er
+        { L'\xc1', L'\u0421' }, // Cyrillic Capital Letter Es
+        { L'\xc2', L'\u0422' }, // Cyrillic Capital Letter Te
+        { L'\xc3', L'\u0423' }, // Cyrillic Capital Letter U
+        { L'\xc4', L'\u0424' }, // Cyrillic Capital Letter Ef
+        { L'\xc5', L'\u0425' }, // Cyrillic Capital Letter Ha
+        { L'\xc6', L'\u0426' }, // Cyrillic Capital Letter Tse
+        { L'\xc7', L'\u0427' }, // Cyrillic Capital Letter Che
+        { L'\xc8', L'\u0428' }, // Cyrillic Capital Letter Sha
+        { L'\xc9', L'\u0429' }, // Cyrillic Capital Letter Shcha
+        { L'\xca', L'\u042a' }, // Cyrillic Capital Letter Hard Sign
+        { L'\xcb', L'\u042b' }, // Cyrillic Capital Letter Yeru
+        { L'\xcc', L'\u042c' }, // Cyrillic Capital Letter Soft Sign
+        { L'\xcd', L'\u042d' }, // Cyrillic Capital Letter E
+        { L'\xce', L'\u042e' }, // Cyrillic Capital Letter Yu
+        { L'\xcf', L'\u042f' }, // Cyrillic Capital Letter Ya
+        { L'\xd0', L'\u0430' }, // Cyrillic Small Letter A
+        { L'\xd1', L'\u0431' }, // Cyrillic Small Letter Be
+        { L'\xd2', L'\u0432' }, // Cyrillic Small Letter Ve
+        { L'\xd3', L'\u0433' }, // Cyrillic Small Letter Ghe
+        { L'\xd4', L'\u0434' }, // Cyrillic Small Letter De
+        { L'\xd5', L'\u0435' }, // Cyrillic Small Letter Ie
+        { L'\xd6', L'\u0436' }, // Cyrillic Small Letter Zhe
+        { L'\xd7', L'\u0437' }, // Cyrillic Small Letter Ze
+        { L'\xd8', L'\u0438' }, // Cyrillic Small Letter I
+        { L'\xd9', L'\u0439' }, // Cyrillic Small Letter Short I
+        { L'\xda', L'\u043a' }, // Cyrillic Small Letter Ka
+        { L'\xdb', L'\u043b' }, // Cyrillic Small Letter El
+        { L'\xdc', L'\u043c' }, // Cyrillic Small Letter Em
+        { L'\xdd', L'\u043d' }, // Cyrillic Small Letter En
+        { L'\xde', L'\u043e' }, // Cyrillic Small Letter O
+        { L'\xdf', L'\u043f' }, // Cyrillic Small Letter Pe
+        { L'\xe0', L'\u0440' }, // Cyrillic Small Letter Er
+        { L'\xe1', L'\u0441' }, // Cyrillic Small Letter Es
+        { L'\xe2', L'\u0442' }, // Cyrillic Small Letter Te
+        { L'\xe3', L'\u0443' }, // Cyrillic Small Letter U
+        { L'\xe4', L'\u0444' }, // Cyrillic Small Letter Ef
+        { L'\xe5', L'\u0445' }, // Cyrillic Small Letter Ha
+        { L'\xe6', L'\u0446' }, // Cyrillic Small Letter Tse
+        { L'\xe7', L'\u0447' }, // Cyrillic Small Letter Che
+        { L'\xe8', L'\u0448' }, // Cyrillic Small Letter Sha
+        { L'\xe9', L'\u0449' }, // Cyrillic Small Letter Shcha
+        { L'\xea', L'\u044a' }, // Cyrillic Small Letter Hard Sign
+        { L'\xeb', L'\u044b' }, // Cyrillic Small Letter Yeru
+        { L'\xec', L'\u044c' }, // Cyrillic Small Letter Soft Sign
+        { L'\xed', L'\u044d' }, // Cyrillic Small Letter E
+        { L'\xee', L'\u044e' }, // Cyrillic Small Letter Yu
+        { L'\xef', L'\u044f' }, // Cyrillic Small Letter Ya
+        { L'\xf0', L'\u2116' }, // Numero Sign
+        { L'\xf1', L'\u0451' }, // Cyrillic Small Letter Io
+        { L'\xf2', L'\u0452' }, // Cyrillic Small Letter Dje
+        { L'\xf3', L'\u0453' }, // Cyrillic Small Letter Gje
+        { L'\xf4', L'\u0454' }, // Cyrillic Small Letter Ukrainian Ie
+        { L'\xf5', L'\u0455' }, // Cyrillic Small Letter Dze
+        { L'\xf6', L'\u0456' }, // Cyrillic Small Letter Byelorussian-Ukrainian I
+        { L'\xf7', L'\u0457' }, // Cyrillic Small Letter Yi
+        { L'\xf8', L'\u0458' }, // Cyrillic Small Letter Je
+        { L'\xf9', L'\u0459' }, // Cyrillic Small Letter Lje
+        { L'\xfa', L'\u045a' }, // Cyrillic Small Letter Nje
+        { L'\xfb', L'\u045b' }, // Cyrillic Small Letter Tshe
+        { L'\xfc', L'\u045c' }, // Cyrillic Small Letter Kje
+        { L'\xfd', L'\u00a7' }, // Section Sign
+        { L'\xfe', L'\u045e' }, // Cyrillic Small Letter Short U
+        { L'\xff', L'\u045f' }, // Cyrillic Small Letter Dzhe
+    };
+
+    // https://en.wikipedia.org/wiki/ISO/IEC_8859-7
+    // Note that this is the 1987 version of the standard, and not the 2003
+    // update, which has three additional characters.
+    static constexpr auto LatinGreek = Latin1BasedCharSet96{
+        { L'\xa1', L'\u2018' }, // Left Single Quotation Mark
+        { L'\xa2', L'\u2019' }, // Right Single Quotation Mark
+        { L'\xa4', L'\u2426' }, // Undefined
+        { L'\xa5', L'\u2426' }, // Undefined
+        { L'\xaa', L'\u2426' }, // Undefined
+        { L'\xae', L'\u2426' }, // Undefined
+        { L'\xaf', L'\u2015' }, // Horizontal Bar
+        { L'\xb4', L'\u0384' }, // Greek Tonos
+        { L'\xb5', L'\u0385' }, // Greek Dialytika Tonos
+        { L'\xb6', L'\u0386' }, // Greek Capital Letter Alpha With Tonos
+        { L'\xb8', L'\u0388' }, // Greek Capital Letter Epsilon With Tonos
+        { L'\xb9', L'\u0389' }, // Greek Capital Letter Eta With Tonos
+        { L'\xba', L'\u038a' }, // Greek Capital Letter Iota With Tonos
+        { L'\xbc', L'\u038c' }, // Greek Capital Letter Omicron With Tonos
+        { L'\xbe', L'\u038e' }, // Greek Capital Letter Upsilon With Tonos
+        { L'\xbf', L'\u038f' }, // Greek Capital Letter Omega With Tonos
+        { L'\xc0', L'\u0390' }, // Greek Small Letter Iota With Dialytika And Tonos
+        { L'\xc1', L'\u0391' }, // Greek Capital Letter Alpha
+        { L'\xc2', L'\u0392' }, // Greek Capital Letter Beta
+        { L'\xc3', L'\u0393' }, // Greek Capital Letter Gamma
+        { L'\xc4', L'\u0394' }, // Greek Capital Letter Delta
+        { L'\xc5', L'\u0395' }, // Greek Capital Letter Epsilon
+        { L'\xc6', L'\u0396' }, // Greek Capital Letter Zeta
+        { L'\xc7', L'\u0397' }, // Greek Capital Letter Eta
+        { L'\xc8', L'\u0398' }, // Greek Capital Letter Theta
+        { L'\xc9', L'\u0399' }, // Greek Capital Letter Iota
+        { L'\xca', L'\u039a' }, // Greek Capital Letter Kappa
+        { L'\xcb', L'\u039b' }, // Greek Capital Letter Lamda
+        { L'\xcc', L'\u039c' }, // Greek Capital Letter Mu
+        { L'\xcd', L'\u039d' }, // Greek Capital Letter Nu
+        { L'\xce', L'\u039e' }, // Greek Capital Letter Xi
+        { L'\xcf', L'\u039f' }, // Greek Capital Letter Omicron
+        { L'\xd0', L'\u03a0' }, // Greek Capital Letter Pi
+        { L'\xd1', L'\u03a1' }, // Greek Capital Letter Rho
+        { L'\xd2', L'\u2426' }, // Undefined
+        { L'\xd3', L'\u03a3' }, // Greek Capital Letter Sigma
+        { L'\xd4', L'\u03a4' }, // Greek Capital Letter Tau
+        { L'\xd5', L'\u03a5' }, // Greek Capital Letter Upsilon
+        { L'\xd6', L'\u03a6' }, // Greek Capital Letter Phi
+        { L'\xd7', L'\u03a7' }, // Greek Capital Letter Chi
+        { L'\xd8', L'\u03a8' }, // Greek Capital Letter Psi
+        { L'\xd9', L'\u03a9' }, // Greek Capital Letter Omega
+        { L'\xda', L'\u03aa' }, // Greek Capital Letter Iota With Dialytika
+        { L'\xdb', L'\u03ab' }, // Greek Capital Letter Upsilon With Dialytika
+        { L'\xdc', L'\u03ac' }, // Greek Small Letter Alpha With Tonos
+        { L'\xdd', L'\u03ad' }, // Greek Small Letter Epsilon With Tonos
+        { L'\xde', L'\u03ae' }, // Greek Small Letter Eta With Tonos
+        { L'\xdf', L'\u03af' }, // Greek Small Letter Iota With Tonos
+        { L'\xe0', L'\u03b0' }, // Greek Small Letter Upsilon With Dialytika And Tonos
+        { L'\xe1', L'\u03b1' }, // Greek Small Letter Alpha
+        { L'\xe2', L'\u03b2' }, // Greek Small Letter Beta
+        { L'\xe3', L'\u03b3' }, // Greek Small Letter Gamma
+        { L'\xe4', L'\u03b4' }, // Greek Small Letter Delta
+        { L'\xe5', L'\u03b5' }, // Greek Small Letter Epsilon
+        { L'\xe6', L'\u03b6' }, // Greek Small Letter Zeta
+        { L'\xe7', L'\u03b7' }, // Greek Small Letter Eta
+        { L'\xe8', L'\u03b8' }, // Greek Small Letter Theta
+        { L'\xe9', L'\u03b9' }, // Greek Small Letter Iota
+        { L'\xea', L'\u03ba' }, // Greek Small Letter Kappa
+        { L'\xeb', L'\u03bb' }, // Greek Small Letter Lamda
+        { L'\xec', L'\u03bc' }, // Greek Small Letter Mu
+        { L'\xed', L'\u03bd' }, // Greek Small Letter Nu
+        { L'\xee', L'\u03be' }, // Greek Small Letter Xi
+        { L'\xef', L'\u03bf' }, // Greek Small Letter Omicron
+        { L'\xf0', L'\u03c0' }, // Greek Small Letter Pi
+        { L'\xf1', L'\u03c1' }, // Greek Small Letter Rho
+        { L'\xf2', L'\u03c2' }, // Greek Small Letter Final Sigma
+        { L'\xf3', L'\u03c3' }, // Greek Small Letter Sigma
+        { L'\xf4', L'\u03c4' }, // Greek Small Letter Tau
+        { L'\xf5', L'\u03c5' }, // Greek Small Letter Upsilon
+        { L'\xf6', L'\u03c6' }, // Greek Small Letter Phi
+        { L'\xf7', L'\u03c7' }, // Greek Small Letter Chi
+        { L'\xf8', L'\u03c8' }, // Greek Small Letter Psi
+        { L'\xf9', L'\u03c9' }, // Greek Small Letter Omega
+        { L'\xfa', L'\u03ca' }, // Greek Small Letter Iota With Dialytika
+        { L'\xfb', L'\u03cb' }, // Greek Small Letter Upsilon With Dialytika
+        { L'\xfc', L'\u03cc' }, // Greek Small Letter Omicron With Tonos
+        { L'\xfd', L'\u03cd' }, // Greek Small Letter Upsilon With Tonos
+        { L'\xfe', L'\u03ce' }, // Greek Small Letter Omega With Tonos
+        { L'\xff', L'\u2426' }, // Undefined
+    };
+
+    // https://en.wikipedia.org/wiki/ISO/IEC_8859-8
+    static constexpr auto LatinHebrew = Latin1BasedCharSet96{
+        { L'\xa1', L'\u2426' }, // Undefined
+        { L'\xaa', L'\u00d7' }, // Multiplication Sign
+        { L'\xba', L'\u00f7' }, // Division Sign
+        { L'\xbf', L'\u2426' }, // Undefined
+        { L'\xc0', L'\u2426' }, // Undefined
+        { L'\xc1', L'\u2426' }, // Undefined
+        { L'\xc2', L'\u2426' }, // Undefined
+        { L'\xc3', L'\u2426' }, // Undefined
+        { L'\xc4', L'\u2426' }, // Undefined
+        { L'\xc5', L'\u2426' }, // Undefined
+        { L'\xc6', L'\u2426' }, // Undefined
+        { L'\xc7', L'\u2426' }, // Undefined
+        { L'\xc8', L'\u2426' }, // Undefined
+        { L'\xc9', L'\u2426' }, // Undefined
+        { L'\xca', L'\u2426' }, // Undefined
+        { L'\xcb', L'\u2426' }, // Undefined
+        { L'\xcc', L'\u2426' }, // Undefined
+        { L'\xcd', L'\u2426' }, // Undefined
+        { L'\xce', L'\u2426' }, // Undefined
+        { L'\xcf', L'\u2426' }, // Undefined
+        { L'\xd0', L'\u2426' }, // Undefined
+        { L'\xd1', L'\u2426' }, // Undefined
+        { L'\xd2', L'\u2426' }, // Undefined
+        { L'\xd3', L'\u2426' }, // Undefined
+        { L'\xd4', L'\u2426' }, // Undefined
+        { L'\xd5', L'\u2426' }, // Undefined
+        { L'\xd6', L'\u2426' }, // Undefined
+        { L'\xd7', L'\u2426' }, // Undefined
+        { L'\xd8', L'\u2426' }, // Undefined
+        { L'\xd9', L'\u2426' }, // Undefined
+        { L'\xda', L'\u2426' }, // Undefined
+        { L'\xdb', L'\u2426' }, // Undefined
+        { L'\xdc', L'\u2426' }, // Undefined
+        { L'\xdd', L'\u2426' }, // Undefined
+        { L'\xde', L'\u2426' }, // Undefined
+        { L'\xdf', L'\u2017' }, // Double Low Line
+        { L'\xe0', L'\u05d0' }, // Hebrew Letter Alef
+        { L'\xe1', L'\u05d1' }, // Hebrew Letter Bet
+        { L'\xe2', L'\u05d2' }, // Hebrew Letter Gimel
+        { L'\xe3', L'\u05d3' }, // Hebrew Letter Dalet
+        { L'\xe4', L'\u05d4' }, // Hebrew Letter He
+        { L'\xe5', L'\u05d5' }, // Hebrew Letter Vav
+        { L'\xe6', L'\u05d6' }, // Hebrew Letter Zayin
+        { L'\xe7', L'\u05d7' }, // Hebrew Letter Het
+        { L'\xe8', L'\u05d8' }, // Hebrew Letter Tet
+        { L'\xe9', L'\u05d9' }, // Hebrew Letter Yod
+        { L'\xea', L'\u05da' }, // Hebrew Letter Final Kaf
+        { L'\xeb', L'\u05db' }, // Hebrew Letter Kaf
+        { L'\xec', L'\u05dc' }, // Hebrew Letter Lamed
+        { L'\xed', L'\u05dd' }, // Hebrew Letter Final Mem
+        { L'\xee', L'\u05de' }, // Hebrew Letter Mem
+        { L'\xef', L'\u05df' }, // Hebrew Letter Final Nun
+        { L'\xf0', L'\u05e0' }, // Hebrew Letter Nun
+        { L'\xf1', L'\u05e1' }, // Hebrew Letter Samekh
+        { L'\xf2', L'\u05e2' }, // Hebrew Letter Ayin
+        { L'\xf3', L'\u05e3' }, // Hebrew Letter Final Pe
+        { L'\xf4', L'\u05e4' }, // Hebrew Letter Pe
+        { L'\xf5', L'\u05e5' }, // Hebrew Letter Final Tsadi
+        { L'\xf6', L'\u05e6' }, // Hebrew Letter Tsadi
+        { L'\xf7', L'\u05e7' }, // Hebrew Letter Qof
+        { L'\xf8', L'\u05e8' }, // Hebrew Letter Resh
+        { L'\xf9', L'\u05e9' }, // Hebrew Letter Shin
+        { L'\xfa', L'\u05ea' }, // Hebrew Letter Tav
+        { L'\xfb', L'\u2426' }, // Undefined
+        { L'\xfc', L'\u2426' }, // Undefined
+        { L'\xfd', L'\u200e' }, // Left-To-Right Mark
+        { L'\xfe', L'\u200f' }, // Right-To-Left Mark
+        { L'\xff', L'\u2426' }, // Undefined
+    };
+
+    // https://en.wikipedia.org/wiki/ISO/IEC_8859-9
+    static constexpr auto Latin5 = Latin1BasedCharSet96{
+        { L'\xd0', L'\u011e' }, // Latin Capital Letter G With Breve
+        { L'\xdd', L'\u0130' }, // Latin Capital Letter I With Dot Above
+        { L'\xde', L'\u015e' }, // Latin Capital Letter S With Cedilla
+        { L'\xf0', L'\u011f' }, // Latin Small Letter G With Breve
+        { L'\xfd', L'\u0131' }, // Latin Small Letter Dotless I
+        { L'\xfe', L'\u015f' }, // Latin Small Letter S With Cedilla
+    };
+
     // https://www.vt100.net/docs/vt220-rm/table2-3b.html
     static constexpr auto DecSupplemental = Latin1BasedCharSet94{
         { L'\xa4', L'\u2426' }, // Undefined

@@ -106,6 +106,16 @@ bool TerminalOutput::Designate96Charset(size_t gsetNumber, const std::pair<wchar
     case L'A': // ISO Latin-1 Supplemental
     case L'<': // (UPSS when assigned to Latin-1)
         return _SetTranslationTable(gsetNumber, Latin1);
+    case L'B': // ISO Latin-2 Supplemental
+        return _SetTranslationTable(gsetNumber, Latin2);
+    case L'L': // ISO Latin-Cyrillic Supplemental
+        return _SetTranslationTable(gsetNumber, LatinCyrillic);
+    case L'F': // ISO Latin-Greek Supplemental
+        return _SetTranslationTable(gsetNumber, LatinGreek);
+    case L'H': // ISO Latin-Hebrew Supplemental
+        return _SetTranslationTable(gsetNumber, LatinHebrew);
+    case L'M': // ISO Latin-5 Supplemental
+        return _SetTranslationTable(gsetNumber, Latin5);
     default:
         return false;
     }
