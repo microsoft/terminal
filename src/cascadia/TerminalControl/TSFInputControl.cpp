@@ -216,7 +216,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            _sendAndClearText();
+            _SendAndClearText();
         }
     }
 
@@ -317,7 +317,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
             if (!_inComposition)
             {
-                _sendAndClearText();
+                _SendAndClearText();
             }
 
             // Notify the TSF that the update succeeded
@@ -340,7 +340,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TSFInputControl::_sendAndClearText()
+    void TSFInputControl::_SendAndClearText()
     {
         // call event handler with data handled by parent
         _compositionCompletedHandlers(_inputBuffer);
