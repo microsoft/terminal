@@ -64,7 +64,7 @@ AppHost::~AppHost()
 }
 
 // Method Description:
-// - Retrieve any commandline args passed on the commandline, and pass them to
+// - Retrieve the normalized command line arguments, and pass them to
 //   the app logic for processing.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
@@ -78,38 +78,187 @@ AppHost::~AppHost()
 // - <none>
 void AppHost::_HandleCommandlineArgs()
 {
-    if (auto commandline{ GetCommandLineW() })
+    const auto args{ _NormalizedArgs() };
+    if (!args.empty())
     {
-        int argc = 0;
-
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
+        const auto result = _logic.SetStartupCommandline({ args });
+        const auto message = _logic.EarlyExitMessage();
+        if (!message.empty())
         {
-            std::vector<winrt::hstring> args;
-            for (auto& elem : wil::make_range(argv.get(), argc))
-            {
-                args.emplace_back(elem);
-            }
+            const auto displayHelp = result == 0;
+            const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
+            const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
+            // TODO:GH#4134: polish this dialog more, to make the text more
+            // like msiexec /?
+            MessageBoxW(nullptr,
+                        message.data(),
+                        GetStringResource(messageTitle).data(),
+                        MB_OK | messageIcon);
 
-            const auto result = _logic.SetStartupCommandline({ args });
-            const auto message = _logic.EarlyExitMessage();
-            if (!message.empty())
-            {
-                const auto displayHelp = result == 0;
-                const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
-                const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
-                // TODO:GH#4134: polish this dialog more, to make the text more
-                // like msiexec /?
-                MessageBoxW(nullptr,
-                            message.data(),
-                            GetStringResource(messageTitle).data(),
-                            MB_OK | messageIcon);
-
-                ExitProcess(result);
-            }
+            ExitProcess(result);
         }
     }
+}
+
+// Method Description:
+// - Retrieve the command line arguments passed,
+//   prepend the full name of the application in case it was missing (GH#4170),
+//   and return the arguments as vector of hstrings.
+// Arguments:
+// - <none>
+// Return Value:
+// - Program arguments as vector of hstrings. If the function fails it returns an empty vector.
+std::vector<winrt::hstring> AppHost::_NormalizedArgs() const noexcept
+{
+    try
+    {
+        // get the full name of the terminal app
+        auto hProc{ GetCurrentProcess() };
+        DWORD appPathLen{};
+        DWORD capacity{ 256UL }; // begin with a reasonable string size to avoid any additional iteration of the do-while loop
+        std::wstring appPath{};
+        do
+        {
+            if (capacity > (std::numeric_limits<DWORD>::max() >> 1))
+            {
+                return {};
+            }
+
+            capacity <<= 1;
+            appPath.resize(static_cast<size_t>(capacity));
+            appPathLen = GetModuleFileNameExW(hProc, nullptr, appPath.data(), capacity);
+        } while (appPathLen >= capacity - 1UL);
+
+        appPath.resize(static_cast<size_t>(appPathLen));
+
+        // get the program arguments
+        std::vector<std::wstring> wstrArgs{};
+        if (!_GetArgs(wstrArgs))
+        {
+            return {};
+        }
+
+        // check if the first argument is the own call of the terminal app
+        std::vector<winrt::hstring> hstrArgs{};
+        hstrArgs.reserve(wstrArgs.size() + 1);
+        if (wstrArgs.empty())
+        {
+            hstrArgs.emplace_back(appPath);
+        }
+        else
+        {
+            // If the terminal app is in the current directory or in the
+            // PATH environment then it might be called with its base name only.
+            // So, the base name is the only part of the path we can compare.
+            // But it's even worse. The base name could be `WindowsTerminal` if
+            // called from within the IDE, it could be `wt` if the alias was called,
+            // or `wtd` for the alias of a developer's build. Thus, we only know
+            // that the base name has to have a length of at least two characters,
+            // and it has to begin with 'w' or 'W'.
+            const auto arg0Name = _GetBaseName(wstrArgs.front());
+            if (arg0Name.length() < 2U || std::towlower(arg0Name.front()) != L'w')
+            {
+                hstrArgs.emplace_back(appPath);
+            }
+        }
+
+        std::for_each(wstrArgs.cbegin(), wstrArgs.cend(), [&hstrArgs](const auto& elem) { hstrArgs.emplace_back(elem); });
+        return hstrArgs;
+    }
+    catch (...)
+    {
+        return {};
+    }
+}
+
+// Method Description:
+// - Retrieve the command line.
+// - Use our own algorithm to tokenize it because `CommandLineToArgvW` treats \"
+//   as an escape sequence to preserve the quotation mark (GH#4571)
+// - Populate the arguments as vector of wstrings.
+// Arguments:
+// - args: Reference to a vector of wstrings which receives the arguments.
+// Return Value:
+// - `true` if the function succeeds, `false` if retrieving the coomand line failed.
+// Mothods used may throw.
+bool AppHost::_GetArgs(std::vector<std::wstring>& args) const
+{
+    // get the command line
+    const wchar_t* const cmdLnPtr{ GetCommandLineW() };
+    if (!cmdLnPtr)
+    {
+        return false;
+    }
+
+    std::wstring cmdLn{ cmdLnPtr };
+    auto cmdLnEnd{ cmdLn.end() }; // end of still valid content in the command line
+    auto iter{ cmdLn.begin() }; // iterator pointing to the current position in the command line
+    auto argBegin{ iter }; // iterator pointing to the begin of an argument
+    auto quoted{ false }; // indicates whether a substring is quoted
+    auto within{ false }; // indicates whether the current character is inside of an argument
+
+    args.reserve(gsl::narrow_cast<size_t>(64U)); // pre-allocate some space for the string handles
+    while (iter < cmdLnEnd)
+    {
+        auto increment{ true }; // used to avoid iterator incrementation if a quotation mark has been removed
+        switch (*iter)
+        {
+        case L' ': // space and tab are the usual separators for arguments
+        case L'\t':
+            if (!quoted && within)
+            {
+                within = false;
+                args.emplace_back(argBegin, iter);
+            }
+            break;
+
+        case L'"': // quotation marks need special handling
+            std::move(iter + 1, cmdLnEnd, iter); // move the rest of the command line to the left to overwrite the quote
+            --cmdLnEnd; // the string isn't shorter but its valid content is, we can't just resize without potentially invalidate iterators
+            quoted = !quoted;
+            increment = false; // indicate that iter shall not be incremented because it already points to a new character
+        default: // any other character (including quotation mark)
+            if (!within)
+            {
+                within = true;
+                argBegin = iter;
+            }
+            break;
+        }
+
+        if (increment)
+        {
+            ++iter;
+        }
+    }
+
+    if (within)
+    {
+        args.emplace_back(argBegin, iter);
+    }
+
+    return true;
+}
+
+// Method Description:
+// - Take a file path and return the file name without file extension.
+// Arguments:
+// - path: A wstring_view containing the file path.
+// Return Value:
+// - A wstring_view containing the base name of the file.
+std::wstring_view AppHost::_GetBaseName(std::wstring_view path) const noexcept
+{
+    auto lastPoint = path.find_last_of(L'.');
+    const auto lastBackslash = path.find_last_of(L'\\');
+    auto lastSlash = path.find_last_of(L'/');
+    lastSlash = (lastBackslash != std::wstring::npos && lastSlash != std::wstring::npos) ? std::max(lastBackslash, lastSlash) : std::min(lastBackslash, lastSlash);
+    if ((lastSlash != std::wstring::npos && lastPoint < lastSlash) || lastPoint == std::wstring::npos)
+    {
+        lastPoint = path.size();
+    }
+
+    lastSlash = lastSlash == std::wstring::npos ? static_cast<size_t>(0U) : lastSlash + 1U;
+    return { &path.at(lastSlash), lastPoint - lastSlash };
 }
 
 // Method Description:
