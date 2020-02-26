@@ -34,7 +34,7 @@
         //      PreviewKeyDown for our purposes
         // These two handlers _must_ be on this, not _root.-->
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <Image x:Name="BackgroundImage" />
         <Grid>
             <Grid.ColumnDefinitions>

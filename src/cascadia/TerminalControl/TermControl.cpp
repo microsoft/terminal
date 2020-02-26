@@ -288,7 +288,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
-            auto acrylic = Background().try_as<Media::AcrylicBrush>();
+            auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>();
 
             // Instantiate a brush if there's not already one there
             if (acrylic == nullptr)
@@ -313,15 +313,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             acrylic.TintOpacity(_settings.TintOpacity());
 
             // Apply brush to control if it's not already there
-            if (Background() != acrylic)
+            if (RootGrid().Background() != acrylic)
             {
-                Background(acrylic);
+                RootGrid().Background(acrylic);
             }
         }
         else
         {
             Media::SolidColorBrush solidColor{};
-            Background(solidColor);
+            RootGrid().Background(solidColor);
         }
 
         if (!_settings.BackgroundImage().empty())
@@ -381,12 +381,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             bgColor.B = B;
             bgColor.A = 255;
 
-            if (auto acrylic = Background().try_as<Media::AcrylicBrush>())
+            if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
             {
                 acrylic.FallbackColor(bgColor);
                 acrylic.TintColor(bgColor);
             }
-            else if (auto solidColor = Background().try_as<Media::SolidColorBrush>())
+            else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
                 solidColor.Color(bgColor);
             }
@@ -1049,7 +1049,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             try
             {
-                auto acrylicBrush = Background().as<Media::AcrylicBrush>();
+                auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
                 acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
             }
             CATCH_LOG();
