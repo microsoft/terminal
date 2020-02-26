@@ -286,12 +286,24 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&bd, &InitData, &_screenQuadVertexBuffer));
 
+    D3D11_BUFFER_DESC pixelShaderSettingsBufferDesc{};
+    pixelShaderSettingsBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    pixelShaderSettingsBufferDesc.ByteWidth = sizeof(_pixelShaderSettings);
+    pixelShaderSettingsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+    _ComputePixelShaderSettings();
+
+    D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
+    pixelShaderSettingsInitData.pSysMem = &_pixelShaderSettings;
+
+    RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&pixelShaderSettingsBufferDesc, &pixelShaderSettingsInitData, &_pixelShaderSettingsBuffer));
+
     // Sampler state is needed to use texture as input to shader.
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
@@ -306,6 +318,22 @@ HRESULT DxEngine::_SetupTerminalEffects()
     RETURN_IF_FAILED(_d3dDevice->CreateSamplerState(&samplerDesc, &_samplerState));
 
     return S_OK;
+}
+
+// Routine Description:
+// - Puts the correct values in _pixelShaderSettings, so the struct can be
+//   passed the GPU.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void DxEngine::_ComputePixelShaderSettings() noexcept
+{
+    // Retro scan lines alternate every pixel row at 100% scaling.
+    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;
+
+    // Gaussian distribution sigma used for blurring.
+    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;
 }
 
 // Routine Description;
@@ -1097,18 +1125,18 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK on success, E_PENDING to indicate a retry or a relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::Present() noexcept
 {
-    if (_retroTerminalEffects)
-    {
-        const HRESULT hr2 = _PaintTerminalEffects();
-        if (FAILED(hr2))
-        {
-            _retroTerminalEffects = false;
-            LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
-        }
-    }
-
     if (_presentReady)
     {
+        if (_retroTerminalEffects)
+        {
+            const HRESULT hr2 = _PaintTerminalEffects();
+            if (FAILED(hr2))
+            {
+                _retroTerminalEffects = false;
+                LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+            }
+        }
+
         try
         {
             HRESULT hr = S_OK;
@@ -1492,6 +1520,7 @@ try
     _d3dDeviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
     _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
     _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
+    _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
     _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
 
     return S_OK;
@@ -1588,6 +1617,16 @@ CATCH_RETURN()
     _scale = _dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 
     RETURN_IF_FAILED(InvalidateAll());
+
+    if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
+    {
+        _ComputePixelShaderSettings();
+        try
+        {
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
+        }
+        CATCH_RETURN();
+    }
 
     return S_OK;
 }
