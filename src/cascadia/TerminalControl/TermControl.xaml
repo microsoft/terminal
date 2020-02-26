@@ -22,17 +22,11 @@
     CharacterReceived="_CharacterHandler"
     GotFocus="_GotFocusHandler"
     LostFocus="_LostFocusHandler">
-        <!--// No matter what order these guys are in, The KeyDown's will fire
-        //      before the CharacterReceived, so we can't easily get characters
-        //      first, then fallback to getting keys from vkeys.
-        // TODO: This apparently handles keys and characters correctly, though
-        //      I'd keep an eye on it, and test more.
-        // I presume that the characters that aren't translated by terminalInput
-        //      just end up getting ignored, and the rest of the input comes
-        //      through CharacterReceived.
-        // I don't believe there's a difference between KeyDown and
-        //      PreviewKeyDown for our purposes
-        // These two handlers _must_ be on this, not _root.-->
+    <!--
+        TODO GH#4031: We've investigated whether we should be using KeyDown or PreviewKeyDown
+        but not necessarily come to a consensus. It's possible that moving input to the SwapChainPanel
+        will solve a bunch of the search input issues we found last time we switched.
+    -->
 
     <Grid x:Name="RootGrid">
         <Image x:Name="BackgroundImage" />
