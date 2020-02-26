@@ -140,8 +140,8 @@ std::vector<winrt::hstring> AppHost::_NormalizedArgs() const noexcept
             // that the base name has to have a length of at least two characters,
             // and it has to begin with 'w' or 'W'.
             const std::filesystem::path arg0path{ wstrArgs.front() };
-            const auto arg0name{ arg0path.stem() };
-            if (arg0name.wstring.length() < 2U || std::towlower(arg0name.wstring.front()) != L'w')
+            const auto arg0name{ arg0path.stem().wstring() };
+            if (arg0name.length() < 2U || std::towlower(arg0name.front()) != L'w')
             {
                 hstrArgs.emplace_back(appPath);
             }
