@@ -37,7 +37,7 @@
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControl.h">
-      <DependentUpon>TermControl.idl</DependentUpon>
+      <DependentUpon>TermControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
@@ -56,7 +56,7 @@
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="TermControl.cpp">
-      <DependentUpon>TermControl.idl</DependentUpon>
+      <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="TSFInputControl.cpp">
       <DependentUpon>TSFInputControl.idl</DependentUpon>
@@ -71,7 +71,9 @@
     <Midl Include="SearchBoxControl.idl">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </Midl>
-    <Midl Include="TermControl.idl" />
+    <Midl Include="TermControl.idl">
+      <DependentUpon>TermControl.xaml</DependentUpon>
+    </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
     <Midl Include="TSFInputControl.idl" />
   </ItemGroup>
@@ -107,6 +109,9 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="SearchBoxControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TermControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
