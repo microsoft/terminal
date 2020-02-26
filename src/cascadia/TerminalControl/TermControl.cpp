@@ -331,7 +331,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
-        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+        const short fontHeight = gsl::narrow_cast<short>(_settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -1508,7 +1508,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(fontSize), static_cast<short>(1));
+            const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
             const auto fontFace = _settings.FontFace();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
@@ -1860,7 +1860,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Initialize our font information.
         const auto fontFace = settings.FontFace();
-        const short fontHeight = gsl::narrow<short>(settings.FontSize());
+        const short fontHeight = gsl::narrow_cast<short>(settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -1894,8 +1894,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // the Terminal). At runtime, this is fine, as we'll transform
         // everything by our scaling, so it'll work out. However, right now we
         // need to get the exact pixel count.
-        const float fFontWidth = gsl::narrow<float>(fontSize.X * scale);
-        const float fFontHeight = gsl::narrow<float>(fontSize.Y * scale);
+        const float fFontWidth = gsl::narrow_cast<float>(fontSize.X * scale);
+        const float fFontHeight = gsl::narrow_cast<float>(fontSize.Y * scale);
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
@@ -2141,7 +2141,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
         const COORD cursorPos = _terminal->GetCursorPosition();
-        Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
+        Windows::Foundation::Point p = { gsl::narrow_cast<float>(cursorPos.X), gsl::narrow_cast<float>(cursorPos.Y) };
         eventArgs.CurrentPosition(p);
     }
 

@@ -171,10 +171,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto rect = GetBoundingRectangle();
         return {
-            gsl::narrow<LONG>(rect.X),
-            gsl::narrow<LONG>(rect.Y),
-            gsl::narrow<LONG>(rect.X + rect.Width),
-            gsl::narrow<LONG>(rect.Y + rect.Height)
+            gsl::narrow_cast<LONG>(rect.X),
+            gsl::narrow_cast<LONG>(rect.Y),
+            gsl::narrow_cast<LONG>(rect.X + rect.Width),
+            gsl::narrow_cast<LONG>(rect.Y + rect.Height)
         };
     }
 
