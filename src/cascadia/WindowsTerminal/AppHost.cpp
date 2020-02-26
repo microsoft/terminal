@@ -113,23 +113,7 @@ std::vector<winrt::hstring> AppHost::_NormalizedArgs() const noexcept
     try
     {
         // get the full name of the terminal app
-        auto hProc{ GetCurrentProcess() };
-        DWORD appPathLen{};
-        DWORD capacity{ 256UL }; // begin with a reasonable string size to avoid any additional iteration of the do-while loop
-        std::wstring appPath{};
-        do
-        {
-            if (capacity > (std::numeric_limits<DWORD>::max() >> 1))
-            {
-                return {};
-            }
-
-            capacity <<= 1;
-            appPath.resize(static_cast<size_t>(capacity));
-            appPathLen = GetModuleFileNameExW(hProc, nullptr, appPath.data(), capacity);
-        } while (appPathLen >= capacity - 1UL);
-
-        appPath.resize(static_cast<size_t>(appPathLen));
+        std::wstring appPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
 
         // get the program arguments
         std::vector<std::wstring> wstrArgs{};
@@ -155,8 +139,9 @@ std::vector<winrt::hstring> AppHost::_NormalizedArgs() const noexcept
             // or `wtd` for the alias of a developer's build. Thus, we only know
             // that the base name has to have a length of at least two characters,
             // and it has to begin with 'w' or 'W'.
-            const auto arg0Name = _GetBaseName(wstrArgs.front());
-            if (arg0Name.length() < 2U || std::towlower(arg0Name.front()) != L'w')
+            const std::filesystem::path arg0path{ wstrArgs.front() };
+            const auto arg0name{ arg0path.stem() };
+            if (arg0name.wstring.length() < 2U || std::towlower(arg0name.wstring.front()) != L'w')
             {
                 hstrArgs.emplace_back(appPath);
             }
@@ -238,27 +223,6 @@ bool AppHost::_GetArgs(std::vector<std::wstring>& args) const
     }
 
     return true;
-}
-
-// Method Description:
-// - Take a file path and return the file name without file extension.
-// Arguments:
-// - path: A wstring_view containing the file path.
-// Return Value:
-// - A wstring_view containing the base name of the file.
-std::wstring_view AppHost::_GetBaseName(std::wstring_view path) const noexcept
-{
-    auto lastPoint = path.find_last_of(L'.');
-    const auto lastBackslash = path.find_last_of(L'\\');
-    auto lastSlash = path.find_last_of(L'/');
-    lastSlash = (lastBackslash != std::wstring::npos && lastSlash != std::wstring::npos) ? std::max(lastBackslash, lastSlash) : std::min(lastBackslash, lastSlash);
-    if ((lastSlash != std::wstring::npos && lastPoint < lastSlash) || lastPoint == std::wstring::npos)
-    {
-        lastPoint = path.size();
-    }
-
-    lastSlash = lastSlash == std::wstring::npos ? static_cast<size_t>(0U) : lastSlash + 1U;
-    return { &path.at(lastSlash), lastPoint - lastSlash };
 }
 
 // Method Description:
