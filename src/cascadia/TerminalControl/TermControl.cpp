@@ -1384,7 +1384,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
         _focused = true;
+
+        // If the searchbox is focused, we don't want TSFInputControl to think
+        // it has focus so it doesn't intercept IME input. We also don't want the
+        // terminal's cursor to start blinking. So, we'll just return quickly here.
+        if (_searchBox && _searchBox->ContainsFocus())
+        {
+            return;
+        }
 
         if (_uiaEngine.get())
         {
