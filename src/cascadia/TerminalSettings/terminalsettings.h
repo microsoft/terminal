@@ -55,6 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CopyOnSelect(bool value) noexcept;
         // ------------------------ End of Core Settings -----------------------
 
+        hstring ProfileName();
+        void ProfileName(hstring const& value);
         bool UseAcrylic() noexcept;
         void UseAcrylic(bool value) noexcept;
         double TintOpacity() noexcept;
@@ -117,6 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t _cursorHeight;
         hstring _wordDelimiters;
 
+        hstring _profileName;
         bool _useAcrylic;
         double _tintOpacity;
         hstring _fontFace;
