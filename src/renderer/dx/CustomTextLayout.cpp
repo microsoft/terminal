@@ -361,13 +361,16 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // If scale corrections were needed, we need to split the run.
         for (auto [index, scale] : _glyphScaleCorrections)
         {
+            // Don't split in the middle of a surrogate pair.
+            const auto after = IS_HIGH_SURROGATE(_text.at(index)) ? 2 : 1;
+
             // Split after the adjustment first so it
             // takes a copy of all the run properties before we modify them.
             // GH 4665: This is the other half of the potential future perf item.
             //       If glyphs needing the same scale are coalesced, we could
             //       break fewer times and have fewer runs.
-            _SetCurrentRun(index + 1);
-            _SplitCurrentRun(index + 1);
+            _SetCurrentRun(index + after);
+            _SplitCurrentRun(index + after);
 
             // Now split just this glyph off.
             _SetCurrentRun(index);
