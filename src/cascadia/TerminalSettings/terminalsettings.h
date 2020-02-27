@@ -104,6 +104,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         bool RetroTerminalEffect() noexcept;
         void RetroTerminalEffect(bool value) noexcept;
 
+        TextAntialiasingMode AntialiasingMode() const noexcept;
+        void AntialiasingMode(winrt::Microsoft::Terminal::Settings::TextAntialiasingMode const& value) noexcept;
+
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
@@ -140,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         Settings::ScrollbarState _scrollbarState;
 
         bool _retroTerminalEffect;
+
+        Settings::TextAntialiasingMode _antialiasingMode;
     };
 }
 

@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "HwndTerminal.hpp"
+#include "../../types/TermControlUiaProvider.hpp"
 #include <DefaultSettings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -14,13 +15,27 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
-static LRESULT CALLBACK HwndTerminalWndProc(
+LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     HWND hwnd,
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam) noexcept
 {
-    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
+    HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
+    if (terminal)
+    {
+        switch (uMsg)
+        {
+        case WM_GETOBJECT:
+            if (lParam == UiaRootObjectId)
+            {
+                return UiaReturnRawElementProvider(hwnd, wParam, lParam, terminal->_GetUiaProvider());
+            }
+        }
+    }
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 static bool RegisterTermClass(HINSTANCE hInstance) noexcept
@@ -32,7 +47,7 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
     }
 
     wc.style = 0;
-    wc.lpfnWndProc = HwndTerminalWndProc;
+    wc.lpfnWndProc = HwndTerminal::HwndTerminalWndProc;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = hInstance;
@@ -47,7 +62,10 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 
 HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _desiredFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8 },
-    _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8, false }
+    _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8, false },
+    _uiaProvider{ nullptr },
+    _uiaProviderInitialized{ false },
+    _currentDpi{ USER_DEFAULT_SCREEN_DPI }
 {
     HINSTANCE hInstance = wil::GetModuleInstanceHandle();
 
@@ -69,6 +87,9 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
             nullptr,
             hInstance,
             nullptr));
+
+#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
+        SetWindowLongPtr(_hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     }
 }
 
@@ -141,13 +162,51 @@ void HwndTerminal::RegisterWriteCallback(const void _stdcall callback(wchar_t*))
     });
 }
 
+::Microsoft::Console::Types::IUiaData* HwndTerminal::GetUiaData() const noexcept
+{
+    return _terminal.get();
+}
+
+HWND HwndTerminal::GetHwnd() const noexcept
+{
+    return _hwnd.get();
+}
+
 void HwndTerminal::_UpdateFont(int newDpi)
 {
+    _currentDpi = newDpi;
     auto lock = _terminal->LockForWriting();
 
     // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
     //      actually fail. We need a way to gracefully fallback.
     _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+}
+
+IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
+{
+    if (nullptr == _uiaProvider && !_uiaProviderInitialized)
+    {
+        std::unique_lock<std::shared_mutex> lock;
+        try
+        {
+#pragma warning(suppress : 26441) // The lock is named, this appears to be a false positive
+            lock = _terminal->LockForWriting();
+            if (_uiaProviderInitialized)
+            {
+                return _uiaProvider.Get();
+            }
+
+            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            _uiaProvider = nullptr;
+        }
+        _uiaProviderInitialized = true;
+    }
+
+    return _uiaProvider.Get();
 }
 
 HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
@@ -186,10 +245,29 @@ void HwndTerminal::SendOutput(std::wstring_view data)
 
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
-    auto _terminal = std::make_unique<HwndTerminal>(parentHwnd);
+    // In order for UIA to hook up properly there needs to be a "static" window hosting the
+    // inner win32 control. If the static window is not present then WM_GETOBJECT messages
+    // will not reach the child control, and the uia element will not be present in the tree.
+    auto _hostWindow = CreateWindowEx(
+        0,
+        L"static",
+        nullptr,
+        WS_CHILD |
+            WS_CLIPCHILDREN |
+            WS_CLIPSIBLINGS |
+            WS_VISIBLE,
+        0,
+        0,
+        0,
+        0,
+        parentHwnd,
+        nullptr,
+        nullptr,
+        0);
+    auto _terminal = std::make_unique<HwndTerminal>(_hostWindow);
     RETURN_IF_FAILED(_terminal->Initialize());
 
-    *hwnd = _terminal->_hwnd.get();
+    *hwnd = _hostWindow;
     *terminal = _terminal.release();
 
     return S_OK;
@@ -216,6 +294,15 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
 HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+
+    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(
+        publicTerminal->GetHwnd(),
+        nullptr,
+        0,
+        0,
+        static_cast<int>(width),
+        static_cast<int>(height),
+        0));
 
     const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
     return publicTerminal->Refresh(windowSize, dimensions);
@@ -412,4 +499,36 @@ void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->SetCursorVisible(visible);
+}
+
+COORD HwndTerminal::GetFontSize() const
+{
+    return _actualFont.GetSize();
+}
+
+RECT HwndTerminal::GetBounds() const noexcept
+{
+    RECT windowRect;
+    GetWindowRect(_hwnd.get(), &windowRect);
+    return windowRect;
+}
+
+RECT HwndTerminal::GetPadding() const noexcept
+{
+    return { 0 };
+}
+
+double HwndTerminal::GetScaleFactor() const noexcept
+{
+    return static_cast<double>(_currentDpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
+}
+
+void HwndTerminal::ChangeViewport(const SMALL_RECT NewWindow)
+{
+    _terminal->UserScrollViewport(NewWindow.Top);
+}
+
+HRESULT HwndTerminal::GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept
+{
+    return UiaHostProviderFromHwnd(_hwnd.get(), provider);
 }

@@ -6,6 +6,9 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
+#include <UIAutomationCore.h>
+#include "../../types/IControlAccessibilityInfo.h"
+#include "../../types/TermControlUiaProvider.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -39,20 +42,35 @@ __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 };
 
-struct HwndTerminal
+struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
 {
 public:
     HwndTerminal(HWND hwnd);
+
+    HwndTerminal(const HwndTerminal&) = default;
+    HwndTerminal(HwndTerminal&&) = default;
+    HwndTerminal& operator=(const HwndTerminal&) = default;
+    HwndTerminal& operator=(HwndTerminal&&) = default;
+    ~HwndTerminal() = default;
+
     HRESULT Initialize();
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
+    ::Microsoft::Console::Types::IUiaData* GetUiaData() const noexcept;
+    HWND GetHwnd() const noexcept;
+
+    static LRESULT CALLBACK HwndTerminalWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
 private:
     wil::unique_hwnd _hwnd;
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
+    int _currentDpi;
+    bool _uiaProviderInitialized;
+
+    ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
@@ -74,4 +92,13 @@ private:
     friend void _stdcall TerminalBlinkCursor(void* terminal);
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
     void _UpdateFont(int newDpi);
+    IRawElementProviderSimple* _GetUiaProvider() noexcept;
+
+    // Inherited via IControlAccessibilityInfo
+    COORD GetFontSize() const override;
+    RECT GetBounds() const noexcept override;
+    double GetScaleFactor() const noexcept override;
+    void ChangeViewport(const SMALL_RECT NewWindow) override;
+    HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept override;
+    RECT GetPadding() const noexcept override;
 };

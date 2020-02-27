@@ -26,7 +26,7 @@ namespace Microsoft.Terminal.Wpf
         private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
         /// </summary>
@@ -35,7 +35,7 @@ namespace Microsoft.Terminal.Wpf
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
-
+            
             var blinkTime = NativeMethods.GetCaretBlinkTime();
 
             if (blinkTime != uint.MaxValue)
@@ -71,6 +71,8 @@ namespace Microsoft.Terminal.Wpf
         /// Gets the character columns available to the terminal.
         /// </summary>
         internal int Columns { get; private set; }
+
+        internal IntPtr Hwnd => this.hwnd;
 
         /// <summary>
         /// Sets the connection to the terminal backend.
@@ -172,7 +174,6 @@ namespace Microsoft.Terminal.Wpf
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
-
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;

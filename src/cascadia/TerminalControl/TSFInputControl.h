@@ -75,6 +75,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::wstring _inputBuffer;
 
         void _Create();
+
+        bool _inComposition;
+        void _SendAndClearText();
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
