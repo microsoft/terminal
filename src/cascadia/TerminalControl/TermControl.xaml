@@ -11,22 +11,13 @@
     d:DesignHeight="768"
     d:DesignWidth="1024"
     TabNavigation="Cycle"
-    IsTabStop="True"
-    AllowFocusOnInteraction="True"
+    IsTabStop="False"
+    AllowFocusOnInteraction="True" 
     AllowDrop="True"
     Drop="_DragDropHandler"
     DragOver="_DragOverHandler"
     Tapped="_TappedHandler"
-    PointerWheelChanged="_MouseWheelHandler"
-    PreviewKeyDown="_KeyDownHandler"
-    CharacterReceived="_CharacterHandler"
-    GotFocus="_GotFocusHandler"
-    LostFocus="_LostFocusHandler">
-    <!--
-        TODO GH#4031: We've investigated whether we should be using KeyDown or PreviewKeyDown
-        but not necessarily come to a consensus. It's possible that moving input to the SwapChainPanel
-        will solve a bunch of the search input issues we found last time we switched.
-    -->
+    PointerWheelChanged="_MouseWheelHandler">
 
     <Grid x:Name="RootGrid">
         <Image x:Name="BackgroundImage" />
@@ -42,7 +33,20 @@
                                 CompositionScaleChanged="_SwapChainScaleChanged"
                                 PointerPressed="_PointerPressedHandler"
                                 PointerMoved="_PointerMovedHandler"
-                                PointerReleased="_PointerReleasedHandler" />
+                                PointerReleased="_PointerReleasedHandler">
+                    <!-- The pointer events must be on the panel,
+                         because our empty input site control can't
+                         be hit-test... but the keyboard events must
+                         be on the input target, because a SwapChainPanel
+                         can't be focused... -->
+                    <UserControl x:Name="TerminalInputTarget"
+                                 KeyDown="_KeyDownHandler"
+                                 IsTabStop="True"
+                                 AllowFocusOnInteraction="True"
+                                 CharacterReceived="_CharacterHandler"
+                                 GotFocus="_GotFocusHandler"
+                                 LostFocus="_LostFocusHandler" />
+                </SwapChainPanel>
 
                 <!-- Putting this in a grid w/ the SwapChainPanel
                 ensures that it's always aligned w/ the scrollbar -->
@@ -74,7 +78,9 @@
         <local:TSFInputControl x:Name="TSFInputControl"
                                CompositionCompleted="_CompositionCompleted"
                                CurrentCursorPosition="_CurrentCursorPositionHandler"
-                               CurrentFontInfo="_FontInfoHandler" />
+                               CurrentFontInfo="_FontInfoHandler"
+                               IsTabStop="False"
+                               AllowFocusOnInteraction="False" />
 
     </Grid>
 

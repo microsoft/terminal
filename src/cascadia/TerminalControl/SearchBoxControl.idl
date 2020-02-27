@@ -8,8 +8,6 @@ namespace Microsoft.Terminal.TerminalControl
     [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
     {
         SearchBoxControl();
-        void SetFocusOnTextbox();
-        Boolean ContainsFocus();
 
         event SearchHandler Search;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> Closed;

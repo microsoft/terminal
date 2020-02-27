@@ -95,37 +95,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Handler for pressing Enter on TextBox, trigger
-    //   text search
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::SetFocusOnTextbox()
+    // - Funnels focus into the textbox and selects it
+    // - Selects all text.
+    void SearchBoxControl::OnGotFocus(/*const IInspectable& sender,*/ Windows::UI::Xaml::RoutedEventArgs const& args)
     {
-        if (TextBox())
+        if (args.OriginalSource() == *this)
         {
-            Input::FocusManager::TryFocusAsync(TextBox(), FocusState::Keyboard);
+            // The text box gets focus because it's our first focusable element,
+            // but let's be safe.
+            TextBox().Focus(FocusState::Keyboard);
             TextBox().SelectAll();
         }
-    }
-
-    // Method Description:
-    // - Check if the current focus is on any element within the
-    //   search box
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - bool: whether the current focus is on the search box
-    bool SearchBoxControl::ContainsFocus()
-    {
-        auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
-        if (_focusableElements.count(focusedElement) > 0)
-        {
-            return true;
-        }
-
-        return false;
     }
 
     // Method Description:

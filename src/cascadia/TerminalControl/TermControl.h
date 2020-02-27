@@ -14,7 +14,6 @@
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
-#include "SearchBoxControl.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -57,6 +56,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
+
+        void OnGotFocus(Windows::UI::Xaml::RoutedEventArgs const& args);
 
         winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);
 
@@ -109,8 +110,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
-
-        winrt::com_ptr<SearchBoxControl> _searchBox;
 
         event_token _connectionOutputEventToken;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;

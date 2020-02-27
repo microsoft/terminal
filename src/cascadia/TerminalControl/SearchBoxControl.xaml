@@ -3,7 +3,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Microsoft.Terminal.TerminalControl"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     x:Name="Root"
@@ -11,7 +10,8 @@
     VerticalAlignment="Top"
     d:DesignHeight="55"
     d:DesignWidth="285"
-    TabNavigation="Cycle">
+    TabNavigation="Cycle"
+    IsTabStop="True">
 
     <UserControl.Resources>
         <ResourceDictionary>

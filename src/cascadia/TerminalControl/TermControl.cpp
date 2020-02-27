@@ -67,7 +67,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _cursorTimer{},
         _lastMouseClick{},
         _lastMouseClickPos{},
-        _searchBox{ nullptr },
         _unfocusedClickPos{ std::nullopt },
         _isClickDragSelection{ false }
     {
@@ -98,19 +97,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Funnels focus from TermControl to its input control
+    // Arguments:
+    // - e: the event args for the focus event
+    void TermControl::OnGotFocus(const RoutedEventArgs& e)
+    {
+        if (e.OriginalSource() == *this)
+        {
+            // If we're about to get focus, funnel it into our input site.
+            TerminalInputTarget().Focus(FocusState::Programmatic);
+        }
+    }
+
+    // Method Description:
     // - Loads the search box from the xaml UI and focuses it.
     void TermControl::CreateSearchBoxControl()
     {
         // Lazy load the search box control.
         if (auto loadedSearchBox{ FindName(L"SearchBox") })
         {
-            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::TerminalControl::SearchBoxControl>() })
-            {
-                // get at its private implementation
-                _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
-                _searchBox->Visibility(Visibility::Visible);
-                _searchBox->SetFocusOnTextbox();
-            }
+            // We loaded it, so Xaml wired it up to this property.
+            SearchBox().Visibility(Visibility::Visible);
+            SearchBox().Focus(FocusState::Programmatic);
         }
     }
 
@@ -158,10 +166,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _searchBox->Visibility(Visibility::Collapsed);
+        SearchBox().Visibility(Visibility::Collapsed);
 
         // Set focus back to terminal control
-        this->Focus(FocusState::Programmatic);
+        TerminalInputTarget().Focus(FocusState::Programmatic);
     }
 
     // Method Description:
@@ -632,7 +640,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
         //      becomes a no-op.
-        this->Focus(FocusState::Programmatic);
+        TerminalInputTarget().Focus(FocusState::Programmatic);
 
         _connection.Start();
         _initializedTerminal = true;
@@ -657,13 +665,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
-        // If the current focused element is a child element of searchbox,
-        // we do not send this event up to terminal
-        if (_searchBox && _searchBox->ContainsFocus())
-        {
-            return;
-        }
-
         // mark event as handled and do nothing if...
         //   - closing
         //   - key modifier is pressed
@@ -764,7 +765,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - args: event data
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
-        Focus(FocusState::Pointer);
+        TerminalInputTarget().Focus(FocusState::Pointer);
         e.Handled(true);
     }
 
@@ -783,7 +784,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!_focused)
         {
-            Focus(FocusState::Pointer);
+            TerminalInputTarget().Focus(FocusState::Pointer);
 
             // Save the click position here when the terminal does not have focus
             // because they might be performing a click-drag selection. Since we
@@ -1262,14 +1263,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _focused = true;
-
-        // If the searchbox is focused, we don't want TSFInputControl to think
-        // it has focus so it doesn't intercept IME input. We also don't want the
-        // terminal's cursor to start blinking. So, we'll just return quickly here.
-        if (_searchBox && _searchBox->ContainsFocus())
-        {
-            return;
-        }
 
         if (_uiaEngine.get())
         {
