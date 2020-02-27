@@ -194,7 +194,8 @@ private:
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction
-    //   this is particularly useful when a selection is extended over its starting point
+    //   this is particularly useful when a word selection is extended over its starting point
+    //   see TerminalSelection.cpp for more information
     struct SelectionAnchors
     {
         COORD start;

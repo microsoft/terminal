@@ -7,6 +7,38 @@
 
 using namespace Microsoft::Terminal::Core;
 
+/* Selection Pivot Description:
+ *   The pivot helps properly update the selection when a user moves a selection over itself
+ *   See SelectionTest::DoubleClickDrag_Left for an example of the functionality mentioned here
+ *   As an example, consider the following scenario...
+ *     1. Perform a word selection (double-click) on a word
+ *
+ *                  |-position where we double-clicked
+ *                 _|_
+ *               |word|
+ *                |--| 
+ *  start & pivot-|  |-end
+ *
+ *     2. Drag your mouse down a line
+ *
+ *                    
+ *  start & pivot-|__________ 
+ *             __|word_______|
+ *            |______| 
+ *                  |
+ *                  |-end & mouse position
+ *
+ *     3. Drag your mouse up two lines
+ *
+ *                  |-start & mouse position
+ *                  |________
+ *             ____|   ______|
+ *            |___w|ord           
+ *                |-end & pivot
+ *
+ *    The pivot never moves until a new selection is created. It ensures that that cell will always be selected.
+ */
+
 // Method Description:
 // - Helper to determine the selected region of the buffer. Used for rendering.
 // Return Value:
