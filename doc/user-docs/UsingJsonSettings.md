@@ -71,9 +71,9 @@ For example, here's a sample of the default keybindings:
 }
 ```
 
-A string value for `"keys"` can be used and is interpreted
-as a key chord of size 1. Thus, the above code snippet can be simplified
-to the following:
+You can also use a single key chord string as the value of `"keys"`.
+It will be treated as a chord of length one.
+This will allow you to simplify the above snippet as follows:
 
 ```json
 {
