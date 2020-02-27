@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
+#include <LibraryResources.h>
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.cpp"
@@ -88,8 +89,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
     {
-        // TODO GitHub #2142: Localize string
-        return L"TerminalControl";
+        return RS_(L"TerminalControl_ControlType");
     }
 
     Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
