@@ -26,8 +26,7 @@ private:
     winrt::TerminalApp::AppLogic _logic;
 
     void _HandleCommandlineArgs();
-    std::vector<winrt::hstring> _NormalizedArgs() const noexcept;
-    bool _GetArgs(std::vector<std::wstring>& args) const;
+    std::vector<winrt::hstring> _GetArgs() const noexcept;
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,

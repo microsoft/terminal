@@ -64,8 +64,7 @@ AppHost::~AppHost()
 }
 
 // Method Description:
-// - Retrieve the normalized command line arguments, and pass them to
-//   the app logic for processing.
+// - Retrieve the command line arguments, and pass them to the app logic for processing.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
 //    * We display a message box because we're a Win32 application (not a
@@ -78,7 +77,7 @@ AppHost::~AppHost()
 // - <none>
 void AppHost::_HandleCommandlineArgs()
 {
-    const auto args{ _NormalizedArgs() };
+    const auto args{ _GetArgs() };
     if (!args.empty())
     {
         const auto result = _logic.SetStartupCommandline({ args });
@@ -101,128 +100,79 @@ void AppHost::_HandleCommandlineArgs()
 }
 
 // Method Description:
-// - Retrieve the command line arguments passed,
-//   prepend the full name of the application in case it was missing (GH#4170),
-//   and return the arguments as vector of hstrings.
+// - Retrieve the command line.
+// - Use our own algorithm to tokenize it because `CommandLineToArgvW` treats \"
+//   as an escape sequence to preserve the quotation mark (GH#4571)
+// - Populate the arguments as vector of hstrings.
 // Arguments:
 // - <none>
 // Return Value:
 // - Program arguments as vector of hstrings. If the function fails it returns an empty vector.
-std::vector<winrt::hstring> AppHost::_NormalizedArgs() const noexcept
+std::vector<winrt::hstring> AppHost::_GetArgs() const noexcept
 {
     try
     {
-        // get the full name of the terminal app
-        std::wstring appPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-
-        // get the program arguments
-        std::vector<std::wstring> wstrArgs{};
-        if (!_GetArgs(wstrArgs))
+        std::vector<winrt::hstring> args{};
+        // get the command line
+        const wchar_t* const cmdLnPtr{ GetCommandLineW() };
+        if (!cmdLnPtr)
         {
             return {};
         }
 
-        // check if the first argument is the own call of the terminal app
-        std::vector<winrt::hstring> hstrArgs{};
-        hstrArgs.reserve(wstrArgs.size() + 1);
-        if (wstrArgs.empty())
+        std::wstring cmdLn{ cmdLnPtr };
+        auto cmdLnEnd{ cmdLn.end() }; // end of still valid content in the command line
+        auto iter{ cmdLn.begin() }; // iterator pointing to the current position in the command line
+        auto argBegin{ iter }; // iterator pointing to the begin of an argument
+        auto quoted{ false }; // indicates whether a substring is quoted
+        auto within{ false }; // indicates whether the current character is inside of an argument
+
+        args.reserve(gsl::narrow_cast<size_t>(64U)); // pre-allocate some space for the string handles
+        while (iter < cmdLnEnd)
         {
-            hstrArgs.emplace_back(appPath);
-        }
-        else
-        {
-            // If the terminal app is in the current directory or in the
-            // PATH environment then it might be called with its base name only.
-            // So, the base name is the only part of the path we can compare.
-            // But it's even worse. The base name could be `WindowsTerminal` if
-            // called from within the IDE, it could be `wt` if the alias was called,
-            // or `wtd` for the alias of a developer's build. Thus, we only know
-            // that the base name has to have a length of at least two characters,
-            // and it has to begin with 'w' or 'W'.
-            const std::filesystem::path arg0path{ wstrArgs.front() };
-            const auto arg0name{ arg0path.stem().wstring() };
-            if (arg0name.length() < 2U || std::towlower(arg0name.front()) != L'w')
+            auto increment{ true }; // used to avoid iterator incrementation if a quotation mark has been removed
+            switch (*iter)
             {
-                hstrArgs.emplace_back(appPath);
+            case L' ': // space and tab are the usual separators for arguments
+            case L'\t':
+                if (!quoted && within)
+                {
+                    within = false;
+                    args.emplace_back(std::wstring{ argBegin, iter });
+                }
+                break;
+
+            case L'"': // quotation marks need special handling
+                std::move(iter + 1, cmdLnEnd, iter); // move the rest of the command line to the left to overwrite the quote
+                --cmdLnEnd; // the string isn't shorter but its valid content is, we can't just resize without potentially invalidate iterators
+                quoted = !quoted;
+                increment = false; // indicate that iter shall not be incremented because it already points to a new character
+            default: // any other character (including quotation mark)
+                if (!within)
+                {
+                    within = true;
+                    argBegin = iter;
+                }
+                break;
+            }
+
+            if (increment)
+            {
+                ++iter;
             }
         }
 
-        std::for_each(wstrArgs.cbegin(), wstrArgs.cend(), [&hstrArgs](const auto& elem) { hstrArgs.emplace_back(elem); });
-        return hstrArgs;
+        if (within)
+        {
+            args.emplace_back(std::wstring{ argBegin, iter });
+        }
+
+        return args;
     }
     catch (...)
     {
         return {};
     }
-}
-
-// Method Description:
-// - Retrieve the command line.
-// - Use our own algorithm to tokenize it because `CommandLineToArgvW` treats \"
-//   as an escape sequence to preserve the quotation mark (GH#4571)
-// - Populate the arguments as vector of wstrings.
-// Arguments:
-// - args: Reference to a vector of wstrings which receives the arguments.
-// Return Value:
-// - `true` if the function succeeds, `false` if retrieving the coomand line failed.
-// Mothods used may throw.
-bool AppHost::_GetArgs(std::vector<std::wstring>& args) const
-{
-    // get the command line
-    const wchar_t* const cmdLnPtr{ GetCommandLineW() };
-    if (!cmdLnPtr)
-    {
-        return false;
-    }
-
-    std::wstring cmdLn{ cmdLnPtr };
-    auto cmdLnEnd{ cmdLn.end() }; // end of still valid content in the command line
-    auto iter{ cmdLn.begin() }; // iterator pointing to the current position in the command line
-    auto argBegin{ iter }; // iterator pointing to the begin of an argument
-    auto quoted{ false }; // indicates whether a substring is quoted
-    auto within{ false }; // indicates whether the current character is inside of an argument
-
-    args.reserve(gsl::narrow_cast<size_t>(64U)); // pre-allocate some space for the string handles
-    while (iter < cmdLnEnd)
-    {
-        auto increment{ true }; // used to avoid iterator incrementation if a quotation mark has been removed
-        switch (*iter)
-        {
-        case L' ': // space and tab are the usual separators for arguments
-        case L'\t':
-            if (!quoted && within)
-            {
-                within = false;
-                args.emplace_back(argBegin, iter);
-            }
-            break;
-
-        case L'"': // quotation marks need special handling
-            std::move(iter + 1, cmdLnEnd, iter); // move the rest of the command line to the left to overwrite the quote
-            --cmdLnEnd; // the string isn't shorter but its valid content is, we can't just resize without potentially invalidate iterators
-            quoted = !quoted;
-            increment = false; // indicate that iter shall not be incremented because it already points to a new character
-        default: // any other character (including quotation mark)
-            if (!within)
-            {
-                within = true;
-                argBegin = iter;
-            }
-            break;
-        }
-
-        if (increment)
-        {
-            ++iter;
-        }
-    }
-
-    if (within)
-    {
-        args.emplace_back(argBegin, iter);
-    }
-
-    return true;
 }
 
 // Method Description:
