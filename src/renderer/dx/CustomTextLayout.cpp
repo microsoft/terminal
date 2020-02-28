@@ -519,6 +519,7 @@ try
 
     // Walk through every glyph in the run, collect them into clusters, then adjust them to fit in
     // however many columns are expected for display by the text buffer.
+#pragma warning(suppress : 26496) // clusterBegin is updated at the bottom of the loop but analysis isn't seeing it.
     for (auto clusterBegin = clusterMapBegin; clusterBegin < clusterMapEnd; /* we will increment this inside the loop*/)
     {
         // One or more glyphs might belong to a single cluster.
@@ -656,7 +657,7 @@ try
 
             // Set the advance of the final glyph in the set to all excess space not consumed by the first few so
             // we get the perfect width we want.
-            _glyphAdvances.at((size_t)clusterGlyphBegin + clusterGlyphLength - 1) += diff;
+            _glyphAdvances.at(static_cast<size_t>(clusterGlyphBegin) + clusterGlyphLength - 1) += diff;
         }
         // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
         else if (advanceExpected < advanceActual)
