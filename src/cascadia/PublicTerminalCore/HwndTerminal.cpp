@@ -54,10 +54,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
                     LOG_IF_FAILED(terminal->_CopyTextToSystemClipboard(bufferData, true));
                     terminal->_terminal->ClearSelection();
                 }
-                catch (...)
-                {
-                    LOG_HR(wil::ResultFromCaughtException());
-                }
+                CATCH_LOG();
             }
             else
             {
@@ -178,30 +175,12 @@ void HwndTerminal::_WriteTextToConnection(const std::wstring& input) noexcept
         return;
     }
 
-    const wchar_t* text = input.c_str();
-    const size_t textChars = wcslen(text) + 1;
-    const size_t textBytes = textChars * sizeof(wchar_t);
-    wchar_t* callingText = nullptr;
-
-    callingText = static_cast<wchar_t*>(::CoTaskMemAlloc(textBytes));
-
     try
     {
-        if (callingText == nullptr)
-        {
-            _pfnWriteCallback(nullptr);
-        }
-        else
-        {
-            wcscpy_s(callingText, textChars, text);
-
-            _pfnWriteCallback(callingText);
-        }
+        auto callingText{ wil::make_cotaskmem_string(input.data(), input.size()) };
+        _pfnWriteCallback(callingText.release());
     }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
+    CATCH_LOG();
 }
 
 void HwndTerminal::RegisterWriteCallback(const void _stdcall callback(wchar_t*))
@@ -368,7 +347,6 @@ void _stdcall TerminalUserScroll(void* terminal, int viewTop)
 }
 
 HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
-{
     try
     {
         const bool altPressed = GetKeyState(VK_MENU) < 0;
@@ -389,17 +367,12 @@ HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
         this->_terminal->SetBlockSelection(altPressed);
 
         this->_renderer->TriggerSelection();
-    }
-    catch (...)
-    {
-        RETURN_HR(wil::ResultFromCaughtException());
-    }
 
-    return S_OK;
-}
+        return S_OK;
+    }
+    CATCH_RETURN();
 
 HRESULT HwndTerminal::_MoveSelection(LPARAM lParam) noexcept
-{
     try
     {
         COORD cursorPosition{
@@ -419,14 +392,10 @@ HRESULT HwndTerminal::_MoveSelection(LPARAM lParam) noexcept
     {
         this->_terminal->SetSelectionEnd(cursorPosition);
         this->_renderer->TriggerSelection();
-    }
-    catch (...)
-    {
-        RETURN_HR(wil::ResultFromCaughtException());
-    }
 
-    return S_OK;
-}
+        return S_OK;
+    }
+    CATCH_RETURN();
 
 void _stdcall TerminalClearSelection(void* terminal)
 {
@@ -704,10 +673,7 @@ void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
         std::wstring text(pData);
         _WriteTextToConnection(text);
     }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
+    CATCH_LOG();
 }
 
 COORD HwndTerminal::GetFontSize() const
