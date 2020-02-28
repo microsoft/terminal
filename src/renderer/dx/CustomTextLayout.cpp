@@ -465,24 +465,34 @@ try
         //  - columns: number of terminal columns this cluster should occupy
 
         // Advance is how wide in pixels the glyph is
+        // Prior is for all pieces of the glyph run before the last one, which we might pad out.
+        const auto advancePrior = std::accumulate(_glyphAdvances.cbegin() + iClusterBegin, _glyphAdvances.cbegin() + i, 0.0f);
+
+        // This is the last one in the run which we may pad out.
         auto& advance = _glyphAdvances.at(i);
 
-        const auto advanceExpected = static_cast<float>(columns* _width);
+        const auto advanceTotal = advancePrior + advance;
+
+        // This is how many columns we expected it to take based on the text buffer's representation.
+        const auto advanceExpected = static_cast<float>(columns * _width);
 
         // If what we expect is bigger than what we have... pad it out.
-        if (advanceExpected > advance)
+        if (advanceExpected > advanceTotal)
         {
             // Get the amount of space we have leftover.
-            const auto diff = advanceExpected - advance;
+            const auto diff = advanceExpected - advanceTotal;
 
             // Move the X offset (pixels to the right from the left edge) by half the excess space
             // so half of it will be left of the glyph and the other half on the right.
             // Here we need to move every glyph in the cluster.
             for (auto j = iClusterBegin; j <= i; j++)
+            {
                 _glyphOffsets.at(j).advanceOffset += diff / 2;
+            }
 
-            // Set the advance to the perfect width we want.
-            advance = advanceExpected;
+            // Set the advance of the final glyph in the set to all excess space not consumed by the first few so
+            // we get the perfect width we want.
+            advance = advanceExpected - advancePrior;
         }
         // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
         else if (advanceExpected < advance)
