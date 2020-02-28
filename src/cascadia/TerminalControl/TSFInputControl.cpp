@@ -18,7 +18,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
-        _inComposition{ false }
+        _inComposition{ false },
+        _prevCompositionCompleted{ 0 },
+        _currCompositionCompleted{ 0 }
     {
         _Create();
     }
@@ -216,6 +218,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
+            _currCompositionCompleted = _inputBuffer.length();
             _SendAndClearText();
         }
     }
@@ -311,13 +314,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 length,
                 text);
 
-            _textBlock.Text(_inputBuffer);
+            TextBlock().Text(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
 
             // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
             if (!_inComposition)
             {
-                _SendAndClearText();
+                _compositionCompletedHandlers(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
+                _prevCompositionCompleted = _currCompositionCompleted = range.EndCaretPosition;
+                TextBlock().Text(L"");
+                Canvas().Visibility(Visibility::Collapsed);
             }
 
             // Notify the TSF that the update succeeded
@@ -343,18 +349,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TSFInputControl::_SendAndClearText()
     {
         // call event handler with data handled by parent
-        _compositionCompletedHandlers(_inputBuffer);
+        _compositionCompletedHandlers(_inputBuffer.substr(_prevCompositionCompleted, _currCompositionCompleted - _prevCompositionCompleted));
+        _prevCompositionCompleted = _currCompositionCompleted;
 
         // clear the buffer for next round
-        const auto bufferLength = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
-        _inputBuffer.clear();
-        _textBlock.Text(L"");
+        //const auto bufferLength = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
+        //_inputBuffer.clear();
+        TextBlock().Text(L"");
 
         // Leaving focus before NotifyTextChanged seems to guarantee that the next
         // composition will send us a CompositionStarted event.
-        _editContext.NotifyFocusLeave();
-        _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
-        _editContext.NotifyFocusEnter();
+        //_editContext.NotifyFocusLeave();
+        //_editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
+        //_editContext.NotifyFocusEnter();
 
         // hide the controls until text input starts again
         _canvas.Visibility(Visibility::Collapsed);
