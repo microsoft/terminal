@@ -380,16 +380,102 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             // GH 4665: This is the other half of the potential future perf item.
             //       If glyphs needing the same scale are coalesced, we could
             //       break fewer times and have fewer runs.
-            _SetCurrentRun(c.textIndex + c.textLength);
-            _SplitCurrentRun(c.textIndex + c.textLength);
+
+            // Example
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1---------^2-------
+            // Scale Factors:
+            //  1.0   1.0        1.0
+            // (arrows are run begin)
+            // 0: IDX = 0, LEN = 6
+            // 1: IDX = 6, LEN = 11
+            // 2: IDX = 17, LEN = 9
+
+            // From the scale correction... we get
+            // IDX = where the scale starts
+            // LEN = how long the scale adjustment runs
+            // SCALE = the scale factor.
+
+            // We need to split the run so the SCALE factor
+            // only applies from IDX to LEN.
+            
+            // This is the index after the segment we're splitting.
+            const auto afterIndex = c.textIndex + c.textLength;
+
+            // If the after index is still within the text, split the back
+            // half off first so we don't apply the scale factor to anything
+            // after this glyph/run segment.
+            // Example relative to above sample state:
+            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+            // We must split off first at 14 to leave the existing factor from 14-16.
+            // (because the act of splitting copies all properties, we don't want to
+            //  adjust the scale factor BEFORE splitting off the existing one.)
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1----xx^2-^3-------
+            // (xx is where we're going to put the correction when all is said and done.
+            //  We're adjusting the scale of the "MN" text only.)
+            // Scale Factors:
+            //  1     1      1   1 
+            // (arrows are run begin)
+            // 0: IDX = 0, LEN = 6
+            // 1: IDX = 6, LEN = 8
+            // 2: IDX = 14, LEN = 3
+            // 3: IDX = 17, LEN = 9
+            if (afterIndex < _text.size())
+            {
+                _SetCurrentRun(afterIndex);
+                _SplitCurrentRun(afterIndex);
+            }
+            // If it's after the text, don't bother. The correction will just apply
+            // from the begin point to the end of the text.
+            // Example relative to above sample state:
+            // Correction says: IDX = 24, LEN = 2
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1---------^2-----xx
+            // xx is where we're going to put the correction when all is said and done.
+            // We don't need to split off the back portion because there's nothing after the xx.
 
             // Now split just this glyph off.
+            // Example versus the one above where we did already split the back half off..
+            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1----^2^3-^4-------
+            // (The MN text has been broken into its own run, 2.)
+            // Scale Factors:
+            //  1     1     1 1  1
+            // (arrows are run begin)
+            // 0: IDX = 0, LEN = 6
+            // 1: IDX = 6, LEN = 6
+            // 2: IDX = 12, LEN = 2
+            // 2: IDX = 14, LEN = 3
+            // 3: IDX = 17, LEN = 9
             _SetCurrentRun(c.textIndex);
             _SplitCurrentRun(c.textIndex);
-
+            
             // Get the run with the one glyph and adjust the scale.
             auto& run = _GetCurrentRun();
             run.fontScale = c.scale;
+            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1----^2^3-^4-------
+            // (We've now only corrected run 2, selecting only the MN to 0.8)
+            // Scale Factors:
+            //  1     1    .8 1  1
         }
 
         _OrderRuns();
@@ -507,23 +593,6 @@ try
         // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
         else if (advanceExpected < advanceTotal)
         {
-            //// We need to retrieve the design information for this specific glyph so we can figure out the appropriate
-            //// height proportional to the width that we desire.
-            //INT32 advanceInDesignUnits;
-            //RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices.at(i), &advanceInDesignUnits));
-
-            //// When things are drawn, we want the font size (as specified in the base font in the original format)
-            //// to be scaled by some factor.
-            //// i.e. if the original font size was 16, we might want to draw this glyph with a 15.2 size font so
-            //// the width (and height) of the glyph will shrink to fit the monospace cell box.
-
-            //// This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
-            //// and was advised by the DirectWrite team.
-            //const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
-            //const auto fontSizeWant = advanceExpected / widthAdvance;
-            //const auto fontSizeWas = _format->GetFontSize();
-            //const auto scaleProposed = fontSizeWant / fontSizeWas;
-
             const auto scaleProposed = advanceExpected / advanceTotal;
 
             const auto textIndex = gsl::narrow<UINT16>(std::distance(_glyphClusters.begin(), firstIterator));
@@ -539,9 +608,6 @@ try
             {
                 _glyphAdvances.at(j) *= scaleProposed;
             }
-
-            //// Set the advance to the perfect width that we want.
-            //advance = advanceExpected;
         }
     }
 
