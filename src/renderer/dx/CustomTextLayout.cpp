@@ -502,16 +502,16 @@ try
     DWRITE_FONT_METRICS1 metrics;
     run.fontFace->GetMetrics(&metrics);
 
-    // Glyph Indicies represents the number inside the selected font where the glyph image/paths are found.
+    // Glyph Indices represents the number inside the selected font where the glyph image/paths are found.
     // Text represents the original text we gave in.
-    // Glyph Clusters represents the map between Text and Glyph Indicies.
+    // Glyph Clusters represents the map between Text and Glyph Indices.
     //  - There is one Glyph Clusters map column per character of text.
     //  - The value of the cluster at any given position is relative to the 0 index of this run.
     //    (a.k.a. it resets to 0 for every run)
     //  - If multiple Glyph Cluster map values point to the same index, then multiple text chars were used
     //    to create the same glyph cluster.
     //  - The delta between the value from one Glyph Cluster's value and the next one is how many
-    //    Glyph Indicies are consumed to make that cluster.
+    //    Glyph Indices are consumed to make that cluster.
 
     // We're going to walk the map to find what spans of text and glyph indices make one cluster.
     const auto clusterMapBegin = _glyphClusters.cbegin() + run.textStart;
@@ -529,9 +529,9 @@ try
         // U+00C1 is Á.
         // That is text of length one.
         // A given font might have a complete single glyph for this
-        // which will be mapped into the _glyphIndicies array.
+        // which will be mapped into the _glyphIndices array.
         // _text[0] = Á
-        // _glyphIndicies[0] = 153
+        // _glyphIndices[0] = 153
         // _glyphClusters[0] = 0
         // _glyphClusters[1] = 1
         // The delta between the value of Clusters 0 and 1 is 1.
@@ -542,11 +542,11 @@ try
         // U+0041 is A and U+0301 is a combinine acute accent ´.
         // That is a text length of two.
         // A given font might have two glyphs for this
-        // which will be mapped into the _glyphIndicies array.
+        // which will be mapped into the _glyphIndices array.
         // _text[0] = A
         // _text[1] = ´ (U+0301, combining acute)
-        // _glyphIndicies[0] = 153
-        // _glyphIndicies[1] = 421
+        // _glyphIndices[0] = 153
+        // _glyphIndices[1] = 421
         // _glyphClusters[0] = 0
         // _glyphClusters[1] = 0
         // _glyphClusters[2] = 2
@@ -561,10 +561,10 @@ try
         // U+00C1 is Á.
         // That is text of length one.
         // A given font might represent this as two glyphs
-        // which will be mapped into the _glyphIndicies array.
+        // which will be mapped into the _glyphIndices array.
         // _text[0] = Á
-        // _glyphIndicies[0] = 153
-        // _glyphIndicies[1] = 421
+        // _glyphIndices[0] = 153
+        // _glyphIndices[1] = 421
         // _glyphClusters[0] = 0
         // _glyphClusters[1] = 2
         // The delta between the value of Clusters 0 and 1 is 2.
@@ -575,10 +575,10 @@ try
         // U+0041 is A and U+0301 is a combinine acute accent ´.
         // That is a text length of two.
         // A given font might represent this as one glyph
-        // which will be mapped into the _glyphIndicies array.
+        // which will be mapped into the _glyphIndices array.
         // _text[0] = A
         // _text[1] = ´ (U+0301, combining acute)
-        // _glyphIndicies[0] = 984
+        // _glyphIndices[0] = 984
         // _glyphClusters[0] = 0
         // _glyphClusters[1] = 0
         // _glyphClusters[2] = 1
@@ -1268,7 +1268,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // f  i  ñ  e
         // CLUSTERMAP (_glyphClusters)
         // 0  0  1  3
-        // GLYPH INDICIES (_glyphIndicies)
+        // GLYPH INDICIES (_glyphIndices)
         // 19 81 23 72
         // With _runs length = 1
         // _runs(0):
@@ -1284,7 +1284,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // f  i  ñ  e
         // CLUSTERMAP (_glyphClusters)
         // 0  0  1  3
-        // GLYPH INDICIES (_glyphIndicies)
+        // GLYPH INDICIES (_glyphIndices)
         // 19 81 23 72
         // With _runs length = 2
         // _runs(0):
@@ -1318,10 +1318,10 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // In this case, that's 1 corresponding with the ñ.
         const auto mapOffset = _glyphClusters.at(backHalf.textStart);
 
-        // The front half's glyph start index (position in _glyphIndicies)
+        // The front half's glyph start index (position in _glyphIndices)
         // stays the same.
 
-        // The front half's glyph count (items in _glyphIndicies to consume)
+        // The front half's glyph count (items in _glyphIndices to consume)
         // is the offset value as that's now one past the end of the front half.
         // (and count is end index + 1)
         frontHalf.glyphCount = mapOffset;
