@@ -117,8 +117,10 @@ namespace Microsoft::Console::Render
         };
 
         [[nodiscard]] LinkedRun& _FetchNextRun(UINT32& textLength);
+        [[nodiscard]] LinkedRun& _GetCurrentRun();
         void _SetCurrentRun(const UINT32 textPosition);
         void _SplitCurrentRun(const UINT32 splitPosition);
+        void _OrderRuns();
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
@@ -164,9 +166,28 @@ namespace Microsoft::Console::Render
         UINT32 _runIndex;
 
         // Glyph shaping results
+
         std::vector<DWRITE_GLYPH_OFFSET> _glyphOffsets;
+
+        // Clusters are complicated. They're in respect to each individual run.
+        // The offsets listed here are in respect to the _text string, but from the beginning index of
+        // each run.
+        // That means if we have two runs, we will see 0 1 2 3 4 0 1 2 3 4 5 6 7... in this clusters count.
         std::vector<UINT16> _glyphClusters;
+
+        // This appears to be the index of the glyph inside each font.
         std::vector<UINT16> _glyphIndices;
+
         std::vector<float> _glyphAdvances;
+
+        // These are used to further break the runs apart and adjust the font size so glyphs fit inside the cells.
+        std::vector<std::tuple<UINT32, float>> _glyphScaleCorrections;
+
+#ifdef UNIT_TESTING
+    public:
+        CustomTextLayout() = default;
+
+        friend class CustomTextLayoutTests;
+#endif
     };
 }

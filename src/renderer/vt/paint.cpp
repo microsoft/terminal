@@ -472,10 +472,11 @@ using namespace Microsoft::Console::Types;
     // cursor, if we're trying to move it to the start of the next line,
     // we'll remember that this line was wrapped, and not manually break the
     // line.
-    // Don't do this is the last character we're writing is a space - The last
+    // Don't do this if the last character we're writing is a space - The last
     // char will always be a space, but if we see that, we shouldn't wrap.
+    const short lastWrittenChar = base::ClampAdd(_lastText.X, base::ClampSub(totalWidth, numSpaces));
     if (lineWrapped &&
-        (_lastText.X + (totalWidth - numSpaces)) > _lastViewport.RightInclusive())
+        lastWrittenChar > _lastViewport.RightInclusive())
     {
         _wrappedRow = coord.Y;
     }
@@ -500,12 +501,12 @@ using namespace Microsoft::Console::Types;
     {
         _lastText.X += static_cast<short>(columnsActual);
     }
-    // GH#1245: If we wrote the exactly last char of the row, then we're
-    // probably in the "delayed EOL wrap" state. Different terminals (conhost,
-    // gnome-terminal, wt) all behave differently with how the cursor behaves at
-    // an end of line. Marke that we're in the delayed EOL wrap state - we don't
-    // want to be clever about how we move the cursor in this state, since
-    // different terminals will handle a backspace differently in this state.
+    // GH#1245: If we wrote the exactly last char of the row, then we're in the
+    // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
+    // wt) all behave differently with how the cursor behaves at an end of line.
+    // Mark that we're in the delayed EOL wrap state - we don't want to be
+    // clever about how we move the cursor in this state, since different
+    // terminals will handle a backspace differently in this state.
     if (_lastText.X >= _lastViewport.RightInclusive())
     {
         _delayedEolWrap = true;

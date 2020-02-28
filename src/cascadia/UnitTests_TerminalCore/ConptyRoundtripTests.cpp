@@ -152,12 +152,15 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleWriteOutputTest);
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
+
     TEST_METHOD(PassthroughClearScrollback);
 
     TEST_METHOD(TestWrappingALongString);
     TEST_METHOD(TestAdvancedWrapping);
     TEST_METHOD(TestExactWrappingWithoutSpaces);
     TEST_METHOD(TestExactWrappingWithSpaces);
+
+    TEST_METHOD(MoveCursorAtEOL);
 
     TEST_METHOD(TestResizeHeight);
 
@@ -368,8 +371,8 @@ void ConptyRoundtripTests::TestWrappingALongString()
 
     const auto initialTermView = term->GetViewport();
 
-    const auto charsToWrite = TestUtils::Test100CharsString.size();
-    VERIFY_ARE_EQUAL(100u, charsToWrite);
+    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialTermView.Top());
     VERIFY_ARE_EQUAL(32, initialTermView.BottomExclusive());
@@ -417,8 +420,8 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
 
     _flushFirstFrame();
 
-    const auto charsToWrite = TestUtils::Test100CharsString.size();
-    VERIFY_ARE_EQUAL(100u, charsToWrite);
+    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    VERIFY_ARE_EQUAL(100, charsToWrite);
 
     hostSm.ProcessString(TestUtils::Test100CharsString);
     hostSm.ProcessString(L"\n");
@@ -482,6 +485,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
     auto& termTb = *term->_buffer;
+
     const auto initialTermView = term->GetViewport();
 
     _flushFirstFrame();
@@ -500,7 +504,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"1234567890");
 
-    auto verifyBuffer = [&](const TextBuffer& tb) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const bool isTerminal) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
         VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
@@ -508,20 +512,22 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
 
         // TODO: GH#780 - In the Terminal, neither line should be wrapped.
         // Unfortunately, until WriteCharsLegacy2ElectricBoogaloo is complete,
-        // the Terminal will still treat the first line as wrapped.
+        // the Terminal will still treat the first line as wrapped. When #780 is
+        // implemented, these tests will fail, and should again expect the first
+        // line to not be wrapped.
 
-        // // Verify that we marked the 0th row as _wrapped_
-        // const auto& row0 = tb.GetRowByOffset(0);
-        // VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
+        // Verify that we marked the 0th row as _not wrapped_
+        const auto& row0 = tb.GetRowByOffset(0);
+        VERIFY_ARE_EQUAL(isTerminal, row0.GetCharRow().WasWrapForced());
 
-        // const auto& row1 = tb.GetRowByOffset(1);
-        // VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+        const auto& row1 = tb.GetRowByOffset(1);
+        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
 
         TestUtils::VerifyExpectedString(tb, LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)", { 0, 0 });
         TestUtils::VerifyExpectedString(tb, L"1234567890", { 0, 1 });
     };
 
-    verifyBuffer(hostTb);
+    verifyBuffer(hostTb, false);
 
     // First write the first 80 characters from the string
     expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
@@ -534,12 +540,13 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    verifyBuffer(termTb);
+    verifyBuffer(termTb, true);
 }
 
 void ConptyRoundtripTests::TestExactWrappingWithSpaces()
 {
     // This test is also explained by the comment at the top of TestExactWrappingWithoutSpaces
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -567,7 +574,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     hostSm.ProcessString(L"          ");
     hostSm.ProcessString(L"1234567890");
 
-    auto verifyBuffer = [&](const TextBuffer& tb) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const bool isTerminal) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
         VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
@@ -575,20 +582,22 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
 
         // TODO: GH#780 - In the Terminal, neither line should be wrapped.
         // Unfortunately, until WriteCharsLegacy2ElectricBoogaloo is complete,
-        // the Terminal will still treat the first line as wrapped.
+        // the Terminal will still treat the first line as wrapped. When #780 is
+        // implemented, these tests will fail, and should again expect the first
+        // line to not be wrapped.
 
-        // // Verify that we marked the 0th row as _wrapped_
-        // const auto& row0 = tb.GetRowByOffset(0);
-        // VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
+        // Verify that we marked the 0th row as _not wrapped_
+        const auto& row0 = tb.GetRowByOffset(0);
+        VERIFY_ARE_EQUAL(isTerminal, row0.GetCharRow().WasWrapForced());
 
-        // const auto& row1 = tb.GetRowByOffset(1);
-        // VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
+        const auto& row1 = tb.GetRowByOffset(1);
+        VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
 
         TestUtils::VerifyExpectedString(tb, LR"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)", { 0, 0 });
         TestUtils::VerifyExpectedString(tb, L"          1234567890", { 0, 1 });
     };
 
-    verifyBuffer(hostTb);
+    verifyBuffer(hostTb, false);
 
     // First write the first 80 characters from the string
     expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
@@ -601,7 +610,71 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    verifyBuffer(termTb);
+    verifyBuffer(termTb, true);
+}
+
+void ConptyRoundtripTests::MoveCursorAtEOL()
+{
+    // This is a test for GH#1245
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+    _flushFirstFrame();
+
+    Log::Comment(NoThrowString().Format(
+        L"Write exactly a full line of text"));
+    hostSm.ProcessString(std::wstring(TerminalViewWidth, L'A'));
+
+    auto verifyData0 = [](TextBuffer& tb) {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter, 0, TerminalViewWidth);
+        TestUtils::VerifySpanOfText(L" ", iter, 0, TerminalViewWidth);
+    };
+
+    verifyData0(hostTb);
+
+    // TODO: GH#405/#4415 - Before #405 merges, the VT sequences conpty emits
+    // might change, but the buffer contents shouldn't.
+    // If they do change and these tests break, that's to be expected.
+    expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    expectedOutput.push_back("\x1b[1;80H");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyData0(termTb);
+
+    Log::Comment(NoThrowString().Format(
+        L"Emulate backspacing at a bash prompt when the previous line wrapped.\n"
+        L"We'll move the cursor up to the last char of the prev line, and erase it."));
+    hostSm.ProcessString(L"\x1b[1;80H");
+    hostSm.ProcessString(L"\x1b[K");
+
+    auto verifyData1 = [](TextBuffer& tb) {
+        auto iter = tb.GetCellDataAt({ 0, 0 });
+        // There should be 79 'A's, followed by a space, and the following line should be blank.
+        TestUtils::VerifySpanOfText(L"A", iter, 0, TerminalViewWidth - 1);
+        TestUtils::VerifySpanOfText(L" ", iter, 0, 1);
+        TestUtils::VerifySpanOfText(L" ", iter, 0, TerminalViewWidth);
+
+        auto& cursor = tb.GetCursor();
+        VERIFY_ARE_EQUAL(TerminalViewWidth - 1, cursor.GetPosition().X);
+        VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+    };
+
+    verifyData1(hostTb);
+
+    expectedOutput.push_back(" ");
+    expectedOutput.push_back("\x1b[1;80H");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyData1(termTb);
 }
 
 void ConptyRoundtripTests::TestResizeHeight()
