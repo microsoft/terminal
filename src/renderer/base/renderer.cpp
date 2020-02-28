@@ -597,15 +597,23 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Retrieve the cell information iterator limited to just this line we want to redraw.
             auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
+            // Calculate if two things are true:
+            // 1. this row wrapped
+            // 2. We're painting the last col of the row.
+            // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+            const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
+                                     (bufferLine.RightExclusive() == buffer.GetSize().Width());
+
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
+            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
         }
     }
 }
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
-                                        const COORD target)
+                                        const COORD target,
+                                        const bool lineWrapped)
 {
     // If we have valid data, let's figure out how to draw it.
     if (it)
@@ -694,7 +702,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             } while (it);
 
             // Do the painting.
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft));
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
@@ -843,7 +851,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 
                 auto it = overlay.buffer.GetCellLineDataAt(source);
 
-                _PaintBufferOutputHelper(&engine, it, target);
+                _PaintBufferOutputHelper(&engine, it, target, false);
             }
         }
     }

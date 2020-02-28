@@ -276,7 +276,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
-                                                 const bool /*trimLeft*/) noexcept
+                                                 const bool /*trimLeft*/,
+                                                 const bool /*lineWrapped*/) noexcept
 {
     return S_FALSE;
 }

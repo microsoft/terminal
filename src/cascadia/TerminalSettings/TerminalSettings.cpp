@@ -28,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
         _copyOnSelect{ false },
+        _profileName{},
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
@@ -194,6 +195,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::CopyOnSelect(bool value) noexcept
     {
         _copyOnSelect = value;
+    }
+
+    void TerminalSettings::ProfileName(hstring const& value)
+    {
+        _profileName = value;
+    }
+
+    hstring TerminalSettings::ProfileName()
+    {
+        return _profileName;
     }
 
     bool TerminalSettings::UseAcrylic() noexcept

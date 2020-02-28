@@ -105,7 +105,7 @@ HRESULT ScreenInfoUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple*
     const auto start = _pData->GetSelectionAnchor();
 
     // we need to make end exclusive
-    auto end = _pData->GetEndSelectionPosition();
+    auto end = _pData->GetSelectionEnd();
     _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
 
     // TODO GH #4509: Box Selection is misrepresented here as a line selection.

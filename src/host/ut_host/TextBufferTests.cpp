@@ -148,6 +148,8 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+
+    TEST_METHOD(GetTextRects);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2134,5 +2136,70 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::GetTextRects()
+{
+    // GetTextRects() is used to...
+    //  - Represent selection rects
+    //  - Represent UiaTextRanges for accessibility
+
+    // This is the burrito emoji: 🌯
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto burrito = std::wstring(L"\xD83C\xDF2F");
+
+    COORD bufferSize{ 20, 50 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::vector<std::wstring> text = { L"0123456789",
+                                             L" " + burrito + L"3456" + burrito,
+                                             L"  " + burrito + L"45" + burrito,
+                                             burrito + L"234567" + burrito,
+                                             L"0123456789" };
+    WriteLinesToBuffer(text, *_buffer);
+    // - - - Text Buffer Contents - - -
+    // |0123456789
+    // | 🌯3456🌯
+    // |  🌯45🌯
+    // |🌯234567🌯
+    // |0123456789
+    // - - - - - - - - - - - - - - - -
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:blockSelection", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool blockSelection;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
+
+    std::vector<SMALL_RECT> expected{};
+    if (blockSelection)
+    {
+        expected.push_back({ 1, 0, 7, 0 });
+        expected.push_back({ 1, 1, 8, 1 }); // expand right
+        expected.push_back({ 1, 2, 7, 2 });
+        expected.push_back({ 0, 3, 7, 3 }); // expand left
+        expected.push_back({ 1, 4, 7, 4 });
+    }
+    else
+    {
+        expected.push_back({ 1, 0, 19, 0 });
+        expected.push_back({ 0, 1, 19, 1 });
+        expected.push_back({ 0, 2, 19, 2 });
+        expected.push_back({ 0, 3, 19, 3 });
+        expected.push_back({ 0, 4, 7, 4 });
+    }
+
+    COORD start{ 1, 0 };
+    COORD end{ 7, 4 };
+    const auto result = _buffer->GetTextRects(start, end, blockSelection);
+    VERIFY_ARE_EQUAL(expected.size(), result.size());
+    for (size_t i = 0; i < expected.size(); ++i)
+    {
+        VERIFY_ARE_EQUAL(expected.at(i), result.at(i));
     }
 }

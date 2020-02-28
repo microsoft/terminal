@@ -400,7 +400,7 @@ const COORD RenderData::GetSelectionAnchor() const noexcept
 // - none
 // Return Value:
 // - current selection anchor
-const COORD RenderData::GetEndSelectionPosition() const noexcept
+const COORD RenderData::GetSelectionEnd() const noexcept
 {
     // The selection area in ConHost is encoded as two things...
     //  - SelectionAnchor: the initial position where the selection was started
