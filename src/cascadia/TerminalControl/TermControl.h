@@ -61,6 +61,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
+        hstring GetProfileName() const;
 
         bool CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();

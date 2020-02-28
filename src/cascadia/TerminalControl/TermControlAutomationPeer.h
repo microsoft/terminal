@@ -39,12 +39,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ::Microsoft::Console::Types::IControlAccessibilityInfo
     {
     public:
-        TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl* owner);
+        TermControlAutomationPeer(Microsoft::Terminal::TerminalControl::implementation::TermControl* owner);
 
-        winrt::hstring GetClassNameCore() const;
-        winrt::Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
-        winrt::hstring GetLocalizedControlTypeCore() const;
-        winrt::Windows::Foundation::IInspectable GetPatternCore(winrt::Windows::UI::Xaml::Automation::Peers::PatternInterface patternInterface) const;
+#pragma region FrameworkElementAutomationPeer
+        hstring GetClassNameCore() const;
+        Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
+        hstring GetLocalizedControlTypeCore() const;
+        Windows::Foundation::IInspectable GetPatternCore(Windows::UI::Xaml::Automation::Peers::PatternInterface patternInterface) const;
+        Windows::UI::Xaml::Automation::Peers::AutomationOrientation GetOrientationCore() const;
+        hstring GetNameCore() const;
+        hstring GetHelpTextCore() const;
+        Windows::UI::Xaml::Automation::Peers::AutomationLiveSetting GetLiveSettingCore() const;
+#pragma endregion
 
 #pragma region IUiaEventDispatcher
         void SignalSelectionChanged() override;
@@ -55,8 +61,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 #pragma region ITextProvider Pattern
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromPoint(Windows::Foundation::Point screenLocation);
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement);
-        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetVisibleRanges();
-        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetSelection();
+        com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetVisibleRanges();
+        com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetSelection();
         Windows::UI::Xaml::Automation::SupportedTextSelection SupportedTextSelection();
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
