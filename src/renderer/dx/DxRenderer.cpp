@@ -1220,7 +1220,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                 COORD const coord,
-                                                const bool /*trimLeft*/) noexcept
+                                                const bool /*trimLeft*/,
+                                                const bool /*lineWrapped*/) noexcept
 {
     try
     {

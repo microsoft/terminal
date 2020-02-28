@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
+#include <LibraryResources.h>
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.cpp"
@@ -77,7 +78,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
     }
 
-    winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
+    hstring TermControlAutomationPeer::GetClassNameCore() const
     {
         return L"TermControl";
     }
@@ -87,13 +88,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return AutomationControlType::Text;
     }
 
-    winrt::hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
+    hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
     {
-        // TODO GitHub #2142: Localize string
-        return L"TerminalControl";
+        return RS_(L"TerminalControl_ControlType");
     }
 
-    winrt::Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
+    Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
     {
         switch (patternInterface)
         {
@@ -105,15 +105,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    AutomationOrientation TermControlAutomationPeer::GetOrientationCore() const
+    {
+        return AutomationOrientation::Vertical;
+    }
+
+    hstring TermControlAutomationPeer::GetNameCore() const
+    {
+        // fallback to title if profile name is empty
+        auto profileName = _termControl->GetProfileName();
+        if (profileName.empty())
+        {
+            return _termControl->Title();
+        }
+        return profileName;
+    }
+
+    hstring TermControlAutomationPeer::GetHelpTextCore() const
+    {
+        return _termControl->Title();
+    }
+
+    AutomationLiveSetting TermControlAutomationPeer::GetLiveSettingCore() const
+    {
+        return AutomationLiveSetting::Polite;
+    }
+
 #pragma region ITextProvider
-    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
+    com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
         SAFEARRAY* pReturnVal;
         THROW_IF_FAILED(_uiaProvider->GetSelection(&pReturnVal));
         return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
-    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
+    com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
         SAFEARRAY* pReturnVal;
         THROW_IF_FAILED(_uiaProvider->GetVisibleRanges(&pReturnVal));
@@ -152,7 +178,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
-    Windows::UI::Xaml::Automation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
+    XamlAutomation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
         UIA::SupportedTextSelection returnVal;
         THROW_IF_FAILED(_uiaProvider->get_SupportedTextSelection(&returnVal));
@@ -214,7 +240,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - SAFEARRAY of UIA::UiaTextRange (ITextRangeProviders)
     // Return Value:
     // - com_array of Xaml Wrapped UiaTextRange (ITextRangeProviders)
-    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges)
+    com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges)
     {
         // transfer ownership of UiaTextRanges to this new vector
         auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
@@ -225,11 +251,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto parentProvider = this->ProviderFromPeer(*this);
         for (int i = 0; i < count; i++)
         {
-            auto xutr = winrt::make_self<XamlUiaTextRange>(providers[i].detach(), parentProvider);
+            auto xutr = make_self<XamlUiaTextRange>(providers[i].detach(), parentProvider);
             vec.emplace_back(xutr.as<XamlAutomation::ITextRangeProvider>());
         }
 
-        winrt::com_array<XamlAutomation::ITextRangeProvider> result{ vec };
+        com_array<XamlAutomation::ITextRangeProvider> result{ vec };
 
         return result;
     }

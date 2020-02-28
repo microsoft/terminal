@@ -1314,6 +1314,101 @@ TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_vie
     }
 }
 
+// Method Description:
+// - Determines the line-by-line rectangles based on two COORDs
+// - expands the rectangles to support wide glyphs
+// - used for selection rects and UIA bounding rects
+// Arguments:
+// - start: a corner of the text region of interest (inclusive)
+// - end: the other corner of the text region of interest (inclusive)
+// - blockSelection: when enabled, only get the rectangular text region,
+//                   as opposed to the text extending to the left/right
+//                   buffer margins
+// Return Value:
+// - the delimiter class for the given char
+const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection) const
+{
+    std::vector<SMALL_RECT> textRects;
+
+    const auto bufferSize = GetSize();
+
+    // (0,0) is the top-left of the screen
+    // the physically "higher" coordinate is closer to the top-left
+    // the physically "lower" coordinate is closer to the bottom-right
+    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+                                               std::make_tuple(start, end) :
+                                               std::make_tuple(end, start);
+
+    const auto textRectSize = base::ClampedNumeric<short>(1) + lowerCoord.Y - higherCoord.Y;
+    textRects.reserve(textRectSize);
+    for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
+    {
+        SMALL_RECT textRow;
+
+        textRow.Top = row;
+        textRow.Bottom = row;
+
+        if (blockSelection || higherCoord.Y == lowerCoord.Y)
+        {
+            // set the left and right margin to the left-/right-most respectively
+            textRow.Left = std::min(higherCoord.X, lowerCoord.X);
+            textRow.Right = std::max(higherCoord.X, lowerCoord.X);
+        }
+        else
+        {
+            textRow.Left = (row == higherCoord.Y) ? higherCoord.X : bufferSize.Left();
+            textRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferSize.RightInclusive();
+        }
+
+        _ExpandTextRow(textRow);
+        textRects.emplace_back(textRow);
+    }
+
+    return textRects;
+}
+
+// Method Description:
+// - Expand the selection row according to include wide glyphs fully
+// - this is particularly useful for box selections (ALT + selection)
+// Arguments:
+// - selectionRow: the selection row to be expanded
+// Return Value:
+// - modifies selectionRow's Left and Right values to expand properly
+void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
+{
+    const auto bufferSize = GetSize();
+
+    // expand left side of rect
+    COORD targetPoint{ textRow.Left, textRow.Top };
+    if (GetCellDataAt(targetPoint)->DbcsAttr().IsTrailing())
+    {
+        if (targetPoint.X == bufferSize.Left())
+        {
+            bufferSize.IncrementInBounds(targetPoint);
+        }
+        else
+        {
+            bufferSize.DecrementInBounds(targetPoint);
+        }
+        textRow.Left = targetPoint.X;
+    }
+
+    // expand right side of rect
+    targetPoint = { textRow.Right, textRow.Bottom };
+    if (GetCellDataAt(targetPoint)->DbcsAttr().IsLeading())
+    {
+        if (targetPoint.X == bufferSize.RightInclusive())
+        {
+            bufferSize.DecrementInBounds(targetPoint);
+        }
+        else
+        {
+            bufferSize.IncrementInBounds(targetPoint);
+        }
+        textRow.Right = targetPoint.X;
+    }
+}
+
 // Routine Description:
 // - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
 // Arguments:

@@ -96,7 +96,8 @@ namespace Microsoft::Console::Render
 
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                       TextBufferCellIterator it,
-                                      const COORD target);
+                                      const COORD target,
+                                      const bool lineWrapped);
 
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 

@@ -334,7 +334,7 @@ HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bo
     terminalPosition.Y /= fontSize.Y;
 
     publicTerminal->_terminal->SetSelectionAnchor(terminalPosition);
-    publicTerminal->_terminal->SetBoxSelection(altPressed);
+    publicTerminal->_terminal->SetBlockSelection(altPressed);
 
     publicTerminal->_renderer->TriggerSelection();
 
@@ -354,7 +354,7 @@ HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition)
     terminalPosition.X /= fontSize.X;
     terminalPosition.Y /= fontSize.Y;
 
-    publicTerminal->_terminal->SetEndSelectionPosition(terminalPosition);
+    publicTerminal->_terminal->SetSelectionEnd(terminalPosition);
     publicTerminal->_renderer->TriggerSelection();
 
     return S_OK;
