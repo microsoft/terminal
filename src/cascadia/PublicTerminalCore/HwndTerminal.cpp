@@ -388,322 +388,320 @@ try
     cursorPosition.X /= fontSize.X;
     cursorPosition.Y /= fontSize.Y;
 
-    try
+    this->_terminal->SetSelectionEnd(cursorPosition);
+    this->_renderer->TriggerSelection();
+
+    return S_OK;
+}
+CATCH_RETURN();
+
+void _stdcall TerminalClearSelection(void* terminal)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    publicTerminal->_terminal->ClearSelection();
+}
+bool _stdcall TerminalIsSelectionActive(void* terminal)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
+    return selectionActive;
+}
+
+// Returns the selected text in the terminal.
+const wchar_t* _stdcall TerminalGetSelection(void* terminal)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+
+    // convert text: vector<string> --> string
+    std::wstring selectedText;
+    for (const auto& text : bufferData.text)
     {
-        this->_terminal->SetSelectionEnd(cursorPosition);
-        this->_renderer->TriggerSelection();
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-
-    void _stdcall TerminalClearSelection(void* terminal)
-    {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-        publicTerminal->_terminal->ClearSelection();
-    }
-    bool _stdcall TerminalIsSelectionActive(void* terminal)
-    {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-        const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
-        return selectionActive;
-    }
-
-    // Returns the selected text in the terminal.
-    const wchar_t* _stdcall TerminalGetSelection(void* terminal)
-    {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-
-        const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
-
-        // convert text: vector<string> --> string
-        std::wstring selectedText;
-        for (const auto& text : bufferData.text)
-        {
-            selectedText += text;
-        }
-
-        auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
-        TerminalClearSelection(terminal);
-
-        return returnText.release();
+        selectedText += text;
     }
 
-    void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
+    auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
+    TerminalClearSelection(terminal);
+
+    return returnText.release();
+}
+
+void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    const auto scanCode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
+    struct KeyModifier
     {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-        const auto scanCode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
-        struct KeyModifier
-        {
-            int vkey;
-            ControlKeyStates flags;
-        };
-
-        constexpr std::array<KeyModifier, 5> modifiers{ {
-            { VK_RMENU, ControlKeyStates::RightAltPressed },
-            { VK_LMENU, ControlKeyStates::LeftAltPressed },
-            { VK_RCONTROL, ControlKeyStates::RightCtrlPressed },
-            { VK_LCONTROL, ControlKeyStates::LeftCtrlPressed },
-            { VK_SHIFT, ControlKeyStates::ShiftPressed },
-        } };
-
+        int vkey;
         ControlKeyStates flags;
+    };
 
-        for (const auto& mod : modifiers)
+    constexpr std::array<KeyModifier, 5> modifiers{ {
+        { VK_RMENU, ControlKeyStates::RightAltPressed },
+        { VK_LMENU, ControlKeyStates::LeftAltPressed },
+        { VK_RCONTROL, ControlKeyStates::RightCtrlPressed },
+        { VK_LCONTROL, ControlKeyStates::LeftCtrlPressed },
+        { VK_SHIFT, ControlKeyStates::ShiftPressed },
+    } };
+
+    ControlKeyStates flags;
+
+    for (const auto& mod : modifiers)
+    {
+        const auto state = GetKeyState(mod.vkey);
+        const auto isDown = state < 0;
+
+        if (isDown)
         {
-            const auto state = GetKeyState(mod.vkey);
-            const auto isDown = state < 0;
-
-            if (isDown)
-            {
-                flags |= mod.flags;
-            }
+            flags |= mod.flags;
         }
-
-        publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
     }
 
-    void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
+    publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
+}
+
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
+{
+    if (ch == '\t')
     {
-        if (ch == '\t')
+        return;
+    }
+
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    publicTerminal->_terminal->SendCharEvent(ch);
+}
+
+void _stdcall DestroyTerminal(void* terminal)
+{
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    delete publicTerminal;
+}
+
+// Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
+void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
+{
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    {
+        auto lock = publicTerminal->_terminal->LockForWriting();
+
+        publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
+        publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+
+        // Set the font colors
+        for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
-            return;
+            // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
+            [[gsl::suppress(bounds .3)]] publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
-
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-        publicTerminal->_terminal->SendCharEvent(ch);
     }
 
-    void _stdcall DestroyTerminal(void* terminal)
+    publicTerminal->_terminal->SetCursorStyle(theme.CursorStyle);
+
+    publicTerminal->_desiredFont = { fontFamily, 0, 10, { 0, fontSize }, CP_UTF8 };
+    publicTerminal->_UpdateFont(newDpi);
+
+    // When the font changes the terminal dimensions need to be recalculated since the available row and column
+    // space will have changed.
+    RECT windowRect;
+    GetWindowRect(publicTerminal->_hwnd.get(), &windowRect);
+
+    COORD dimensions = {};
+    const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
+    publicTerminal->Refresh(windowSize, &dimensions);
+}
+
+// Resizes the terminal to the specified rows and columns.
+HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    return publicTerminal->_terminal->UserResize(dimensions);
+}
+
+void _stdcall TerminalBlinkCursor(void* terminal)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    if (!publicTerminal->_terminal->IsCursorBlinkingAllowed() && publicTerminal->_terminal->IsCursorVisible())
     {
-        const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-        delete publicTerminal;
+        return;
     }
 
-    // Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
-    void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
+    publicTerminal->_terminal->SetCursorVisible(!publicTerminal->_terminal->IsCursorVisible());
+}
+
+void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    publicTerminal->_terminal->SetCursorVisible(visible);
+}
+
+// Routine Description:
+// - Copies the text given onto the global system clipboard.
+// Arguments:
+// - rows - Rows of text data to copy
+// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+{
+    std::wstring finalString;
+
+    // Concatenate strings into one giant string to put onto the clipboard.
+    for (const auto& str : rows.text)
     {
-        const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+        finalString += str;
+    }
+
+    // allocate the final clipboard data
+    const size_t cchNeeded = finalString.size() + 1;
+    const size_t cbNeeded = sizeof(wchar_t) * cchNeeded;
+    wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
+    RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
+
+    PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
+    RETURN_LAST_ERROR_IF_NULL(pwszClipboard);
+
+    // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
+    // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
+    const HRESULT hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    GlobalUnlock(globalHandle.get());
+    RETURN_IF_FAILED(hr);
+
+    // Set global data to clipboard
+    RETURN_LAST_ERROR_IF(!OpenClipboard(_hwnd.get()));
+
+    { // Clipboard Scope
+        auto clipboardCloser = wil::scope_exit([]() noexcept {
+            LOG_LAST_ERROR_IF(!CloseClipboard());
+        });
+
+        RETURN_LAST_ERROR_IF(!EmptyClipboard());
+        RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
+
+        if (fAlsoCopyFormatting)
         {
-            auto lock = publicTerminal->_terminal->LockForWriting();
+            const auto& fontData = _actualFont;
+            int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / this->_currentDpi;
+            const COLORREF bgColor = _terminal->GetBackgroundColor(_terminal->GetDefaultBrushColors());
 
-            publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
-            publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Hwnd Console Host");
+            _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            // Set the font colors
-            for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
-            {
-                // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-                [[gsl::suppress(bounds .3)]] publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
-            }
+            std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
-
-        publicTerminal->_terminal->SetCursorStyle(theme.CursorStyle);
-
-        publicTerminal->_desiredFont = { fontFamily, 0, 10, { 0, fontSize }, CP_UTF8 };
-        publicTerminal->_UpdateFont(newDpi);
-
-        // When the font changes the terminal dimensions need to be recalculated since the available row and column
-        // space will have changed.
-        RECT windowRect;
-        GetWindowRect(publicTerminal->_hwnd.get(), &windowRect);
-
-        COORD dimensions = {};
-        const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
-        publicTerminal->Refresh(windowSize, &dimensions);
     }
 
-    // Resizes the terminal to the specified rows and columns.
-    HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
+    // only free if we failed.
+    // the memory has to remain allocated if we successfully placed it on the clipboard.
+    // Releasing the smart pointer will leave it allocated as we exit scope.
+    globalHandle.release();
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Copies the given string onto the global system clipboard in the specified format
+// Arguments:
+// - stringToCopy - The string to copy
+// - lpszFormat - the name of the format
+HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+{
+    const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
+    if (cbData)
     {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+        wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
+        RETURN_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        return publicTerminal->_terminal->UserResize(dimensions);
-    }
-
-    void _stdcall TerminalBlinkCursor(void* terminal)
-    {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-        if (!publicTerminal->_terminal->IsCursorBlinkingAllowed() && publicTerminal->_terminal->IsCursorVisible())
-        {
-            return;
-        }
-
-        publicTerminal->_terminal->SetCursorVisible(!publicTerminal->_terminal->IsCursorVisible());
-    }
-
-    void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
-    {
-        const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-        publicTerminal->_terminal->SetCursorVisible(visible);
-    }
-
-    // Routine Description:
-    // - Copies the text given onto the global system clipboard.
-    // Arguments:
-    // - rows - Rows of text data to copy
-    // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-    HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
-    {
-        std::wstring finalString;
-
-        // Concatenate strings into one giant string to put onto the clipboard.
-        for (const auto& str : rows.text)
-        {
-            finalString += str;
-        }
-
-        // allocate the final clipboard data
-        const size_t cchNeeded = finalString.size() + 1;
-        const size_t cbNeeded = sizeof(wchar_t) * cchNeeded;
-        wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
-        RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
-
-        PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
-        RETURN_LAST_ERROR_IF_NULL(pwszClipboard);
+        PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
+        RETURN_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
         // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const HRESULT hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
-        GlobalUnlock(globalHandle.get());
-        RETURN_IF_FAILED(hr);
+        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
+        GlobalUnlock(globalHandleData.get());
+        RETURN_IF_FAILED(hr2);
 
-        // Set global data to clipboard
-        RETURN_LAST_ERROR_IF(!OpenClipboard(_hwnd.get()));
+        UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
+        RETURN_LAST_ERROR_IF(0 == CF_FORMAT);
 
-        { // Clipboard Scope
-            auto clipboardCloser = wil::scope_exit([]() noexcept {
-                LOG_LAST_ERROR_IF(!CloseClipboard());
-            });
-
-            RETURN_LAST_ERROR_IF(!EmptyClipboard());
-            RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
-
-            if (fAlsoCopyFormatting)
-            {
-                const auto& fontData = _actualFont;
-                int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / this->_currentDpi;
-                const COLORREF bgColor = _terminal->GetBackgroundColor(_terminal->GetDefaultBrushColors());
-
-                std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, "Hwnd Console Host");
-                _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
-
-                std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
-                _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
-            }
-        }
+        RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
 
         // only free if we failed.
         // the memory has to remain allocated if we successfully placed it on the clipboard.
         // Releasing the smart pointer will leave it allocated as we exit scope.
-        globalHandle.release();
-
-        return S_OK;
+        globalHandleData.release();
     }
 
-    // Routine Description:
-    // - Copies the given string onto the global system clipboard in the specified format
-    // Arguments:
-    // - stringToCopy - The string to copy
-    // - lpszFormat - the name of the format
-    HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+    return S_OK;
+}
+
+void HwndTerminal::_PasteTextFromClipboard() noexcept
+{
+    // Get paste data from clipboard
+    if (!OpenClipboard(_hwnd.get()))
     {
-        const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
-        if (cbData)
-        {
-            wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
-            RETURN_LAST_ERROR_IF_NULL(globalHandleData.get());
-
-            PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
-            RETURN_LAST_ERROR_IF_NULL(pszClipboardHTML);
-
-            // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
-            // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-            const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
-            GlobalUnlock(globalHandleData.get());
-            RETURN_IF_FAILED(hr2);
-
-            UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
-            RETURN_LAST_ERROR_IF(0 == CF_FORMAT);
-
-            RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
-
-            // only free if we failed.
-            // the memory has to remain allocated if we successfully placed it on the clipboard.
-            // Releasing the smart pointer will leave it allocated as we exit scope.
-            globalHandleData.release();
-        }
-
-        return S_OK;
+        return;
     }
 
-    void HwndTerminal::_PasteTextFromClipboard() noexcept
+    HANDLE ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
+    if (ClipboardDataHandle == nullptr)
     {
-        // Get paste data from clipboard
-        if (!OpenClipboard(_hwnd.get()))
-        {
-            return;
-        }
-
-        HANDLE ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
-        if (ClipboardDataHandle == nullptr)
-        {
-            CloseClipboard();
-            return;
-        }
-
-        PCWCH pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
-
-        _StringPaste(pwstr);
-
-        GlobalUnlock(ClipboardDataHandle);
-
         CloseClipboard();
+        return;
     }
 
-    void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
+    PCWCH pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
+
+    _StringPaste(pwstr);
+
+    GlobalUnlock(ClipboardDataHandle);
+
+    CloseClipboard();
+}
+
+void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
+{
+    if (pData == nullptr)
     {
-        if (pData == nullptr)
-        {
-            return;
-        }
-
-        try
-        {
-            std::wstring text(pData);
-            _WriteTextToConnection(text);
-        }
-        CATCH_LOG();
+        return;
     }
 
-    COORD HwndTerminal::GetFontSize() const
+    try
     {
-        return _actualFont.GetSize();
+        std::wstring text(pData);
+        _WriteTextToConnection(text);
     }
+    CATCH_LOG();
+}
 
-    RECT HwndTerminal::GetBounds() const noexcept
-    {
-        RECT windowRect;
-        GetWindowRect(_hwnd.get(), &windowRect);
-        return windowRect;
-    }
+COORD HwndTerminal::GetFontSize() const
+{
+    return _actualFont.GetSize();
+}
 
-    RECT HwndTerminal::GetPadding() const noexcept
-    {
-        return { 0 };
-    }
+RECT HwndTerminal::GetBounds() const noexcept
+{
+    RECT windowRect;
+    GetWindowRect(_hwnd.get(), &windowRect);
+    return windowRect;
+}
 
-    double HwndTerminal::GetScaleFactor() const noexcept
-    {
-        return static_cast<double>(_currentDpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
-    }
+RECT HwndTerminal::GetPadding() const noexcept
+{
+    return { 0 };
+}
 
-    void HwndTerminal::ChangeViewport(const SMALL_RECT NewWindow)
-    {
-        _terminal->UserScrollViewport(NewWindow.Top);
-    }
+double HwndTerminal::GetScaleFactor() const noexcept
+{
+    return static_cast<double>(_currentDpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
+}
 
-    HRESULT HwndTerminal::GetHostUiaProvider(IRawElementProviderSimple * *provider) noexcept
-    {
-        return UiaHostProviderFromHwnd(_hwnd.get(), provider);
-    }
+void HwndTerminal::ChangeViewport(const SMALL_RECT NewWindow)
+{
+    _terminal->UserScrollViewport(NewWindow.Top);
+}
+
+HRESULT HwndTerminal::GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept
+{
+    return UiaHostProviderFromHwnd(_hwnd.get(), provider);
+}
