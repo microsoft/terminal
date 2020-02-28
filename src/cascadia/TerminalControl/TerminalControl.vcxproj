@@ -43,7 +43,7 @@
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TSFInputControl.h">
-      <DependentUpon>TSFInputControl.idl</DependentUpon>
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
@@ -59,7 +59,7 @@
       <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="TSFInputControl.cpp">
-      <DependentUpon>TSFInputControl.idl</DependentUpon>
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="TermControlAutomationPeer.cpp">
@@ -75,7 +75,9 @@
       <DependentUpon>TermControl.xaml</DependentUpon>
     </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
-    <Midl Include="TSFInputControl.idl" />
+    <Midl Include="TSFInputControl.idl">
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -112,6 +114,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TermControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TSFInputControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
