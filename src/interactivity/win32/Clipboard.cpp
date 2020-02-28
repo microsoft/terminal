@@ -188,10 +188,10 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
 // - Copies the selected area onto the global system clipboard.
 // - NOTE: Throws on allocation and other clipboard failures.
 // Arguments:
-// - fAlsoCopyFormatting - This will also place colored HTML & RTF text onto the clipboard as well as the usual plain text.
+// - copyFormatting - This will also place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
 //   <none>
-void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyFormatting)
+void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
 {
     const auto& selection = Selection::Instance();
 
@@ -222,12 +222,12 @@ void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyFormatting)
     }
 
     const auto text = buffer.GetText(includeCRLF,
-                                     /*trimTrailingWhitespace*/ true,
+                                     trimTrailingWhitespace,
                                      selectionRects,
                                      GetForegroundColor,
                                      GetBackgroundColor);
 
-    CopyTextToSystemClipboard(text, fAlsoCopyFormatting);
+    CopyTextToSystemClipboard(text, copyFormatting);
 }
 
 // Routine Description:

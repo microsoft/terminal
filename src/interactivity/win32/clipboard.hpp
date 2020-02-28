@@ -40,7 +40,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         void StoreSelectionToClipboard(_In_ bool const fAlsoCopyFormatting);
 
-        void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const fAlsoCopyFormatting);
+        void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const copyFormatting);
         void CopyToSystemClipboard(std::string stringToPlaceOnClip, LPCWSTR lpszFormat);
 
         bool FilterCharacterOnPaste(_Inout_ WCHAR* const pwch);

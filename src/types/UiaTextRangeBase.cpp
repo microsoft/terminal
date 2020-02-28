@@ -501,6 +501,8 @@ try
     const auto text = _getTextValue(maxLength);
 
     *pRetVal = SysAllocString(text.c_str());
+    RETURN_HR_IF_NULL(E_OUTOFMEMORY, *pRetVal);
+
     UiaTracing::TextRange::GetText(*this, maxLength, text);
     return S_OK;
 }

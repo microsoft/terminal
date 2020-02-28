@@ -260,8 +260,8 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool col
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    return _buffer->GetText(/*includeCRLF*/ !collapseText,
-                            /*trimTrailingWhitespace*/ !collapseText,
+    return _buffer->GetText(!collapseText,
+                            !collapseText,
                             selectionRects,
                             GetForegroundColor,
                             GetBackgroundColor);
