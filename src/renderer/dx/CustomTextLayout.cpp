@@ -45,8 +45,19 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     for (const auto& cluster : clusters)
     {
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
+        const auto text = cluster.GetText();
+
+        // Push back the number of columns for this bit of text.
         _textClusterColumns.push_back(cols);
-        _text += cluster.GetText();
+
+        // If there is more than one text character here, push 0s for the rest of the columns
+        // of the text run.
+        for (auto i = 1; i < text.size(); ++i)
+        {
+            _textClusterColumns.push_back(0);
+        }
+
+        _text += text;
     }
 }
 
