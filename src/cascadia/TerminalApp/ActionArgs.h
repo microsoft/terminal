@@ -115,7 +115,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_TrimWhitespace = trimWhitespace.asBool();
             }
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 
@@ -139,7 +139,7 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 
@@ -168,7 +168,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_TabIndex = tabIndex.asUInt();
             }
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 
@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 
@@ -261,7 +261,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 
@@ -290,7 +290,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Delta = jsonDelta.asInt();
             }
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 
@@ -345,7 +345,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SplitStyle = ParseSplitState(jsonStyle.asString());
             }
-            return { *args, std::vector<::TerminalApp::SettingsLoadWarnings>{} };
+            return { *args, {} };
         }
     };
 }
