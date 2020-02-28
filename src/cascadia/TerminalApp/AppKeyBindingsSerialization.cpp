@@ -433,6 +433,10 @@ static ShortcutAction GetActionFromString(const std::string_view actionString)
 // - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
 std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
 {
+    // It's possible that the user provided keybindings have some warnings in
+    // them - problems that we should alert the user to, but we can recover
+    // from. Most of these warnings cannot be detected later in the Validate
+    // settings phase, so we'll collect them now.
     std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
 
     for (const auto& value : json)
@@ -450,6 +454,9 @@ std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementat
             const auto validString = keys.isString();
             const auto validArray = keys.isArray() && keys.size() == 1;
 
+            // microsoft/terminal#4239 - If the user provided more than one key
+            // chord to a "keys" array, warn the user here.
+            // TODO: GH#1334 - remove this check.
             if (keys.isArray() && keys.size() > 1)
             {
                 warnings.push_back(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord);

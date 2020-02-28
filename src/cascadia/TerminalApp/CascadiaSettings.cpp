@@ -206,9 +206,10 @@ void CascadiaSettings::_ValidateSettings()
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
 
-    // TODO:GH#3522 With variable args to keybindings, it's possible that a user
+    // GH#3522 - With variable args to keybindings, it's possible that a user
     // set a keybinding without all the required args for an action. Display a
     // warning if an action didn't have a required arg.
+    // This will also catch other keybinding warnings, like from GH#4239
     _ValidateKeybindings();
 }
 
@@ -654,16 +655,14 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
 }
 
 // Method Description:
-// - Ensures that all specified images resources (icons and background images) are valid URIs.
-//   This does not verify that the icon or background image files are encoded as an image.
+// - If there were any warnings we generated while parsing the user's
+//   keybindings, add them to the list of warnings here. If there were warnings
+//   generated in this way, we'll add a AtLeastOneKeybindingWarning, which will
+//   act as a header for the other warnings
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
-//   we find any invalid background images.
-// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
-//   we find any invalid icon images.
 void CascadiaSettings::_ValidateKeybindings()
 {
     auto keybindingWarnings = _globals.GetKeybindingsWarnings();
