@@ -146,7 +146,9 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { FindKey, ShortcutAction::Find },
 };
 
-using ParseActionFunction = std::function<IActionArgs(const Json::Value&)>;
+// using ParseActionFunction = std::function<IActionArgs(const Json::Value
+using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
+using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
 // Function Description:
 // - Creates a function that can be used to generate a SplitPaneArgs for the
@@ -161,10 +163,10 @@ using ParseActionFunction = std::function<IActionArgs(const Json::Value&)>;
 //   Split[SplitState] args.
 ParseActionFunction LegacyParseSplitPaneArgs(SplitState style)
 {
-    auto pfn = [style](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [style](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SplitPaneArgs>();
         args->SplitStyle(style);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -182,10 +184,10 @@ ParseActionFunction LegacyParseSplitPaneArgs(SplitState style)
 //   MoveFocus[Direction] args.
 ParseActionFunction LegacyParseMoveFocusArgs(Direction direction)
 {
-    auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [direction](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::MoveFocusArgs>();
         args->Direction(direction);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -203,10 +205,10 @@ ParseActionFunction LegacyParseMoveFocusArgs(Direction direction)
 //   ResizePane[Direction] args.
 ParseActionFunction LegacyParseResizePaneArgs(Direction direction)
 {
-    auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [direction](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::ResizePaneArgs>();
         args->Direction(direction);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -224,12 +226,12 @@ ParseActionFunction LegacyParseResizePaneArgs(Direction direction)
 //   NewTabWithProfile[Index] args.
 ParseActionFunction LegacyParseNewTabWithProfileArgs(int index)
 {
-    auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [index](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
         auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
         newTerminalArgs->ProfileIndex(index);
         args->TerminalArgs(*newTerminalArgs);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -247,10 +249,10 @@ ParseActionFunction LegacyParseNewTabWithProfileArgs(int index)
 //   SwitchToTab[Index] args.
 ParseActionFunction LegacyParseSwitchToTabArgs(int index)
 {
-    auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [index](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
         args->TabIndex(index);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -263,11 +265,11 @@ ParseActionFunction LegacyParseSwitchToTabArgs(int index)
 // - direction: the direction to create the parse function for.
 // Return Value:
 // - A CopyTextArgs with TrimWhitespace set to true, to emulate "CopyTextWithoutNewlines".
-IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
+ParseResult LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 {
     auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
     args->TrimWhitespace(false);
-    return *args;
+    return { *args, {} };
 };
 
 // Function Description:
@@ -280,10 +282,10 @@ IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 // - A function that can be used to "parse" json into an AdjustFontSizeArgs.
 ParseActionFunction LegacyParseAdjustFontSizeArgs(int delta)
 {
-    auto pfn = [delta](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [delta](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::AdjustFontSizeArgs>();
         args->Delta(delta);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -488,13 +490,14 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             // does, we'll try to deserialize any "args" that were provided with
             // the binding.
             IActionArgs args{ nullptr };
+            std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
             const auto deserializersIter = argParsers.find(action);
             if (deserializersIter != argParsers.end())
             {
                 auto pfn = deserializersIter->second;
                 if (pfn)
                 {
-                    args = pfn(argsVal);
+                    std::tie(args, warnings) = pfn(argsVal);
                 }
             }
 
