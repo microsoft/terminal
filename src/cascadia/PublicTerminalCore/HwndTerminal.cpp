@@ -39,7 +39,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
             LOG_IF_FAILED(terminal->_StartSelection(lParam));
             return 0;
         case WM_MOUSEMOVE:
-            if ((wParam & 0x0001) == 1)
+            if (WI_IsFlagSet(wParam, MK_LBUTTON))
             {
                 LOG_IF_FAILED(terminal->_MoveSelection(lParam));
                 return 0;
@@ -93,8 +93,8 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
     _uiaProviderInitialized{ false },
-    _currentDpi{ USER_DEFAULT_SCREEN_DPI }
-//_pfnWriteCallback{ nullptr }
+    _currentDpi{ USER_DEFAULT_SCREEN_DPI },
+    _pfnWriteCallback{ nullptr }
 {
     HINSTANCE hInstance = wil::GetModuleInstanceHandle();
 
