@@ -543,6 +543,11 @@ try
         }
     }
 
+    if (maxLength > -1)
+    {
+        textData.resize(maxLength);
+    }
+
     return textData;
 }
 catch (...)

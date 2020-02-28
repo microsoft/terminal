@@ -1325,7 +1325,7 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::_CopyText(const bool trimTrailingWhitespace)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(trimTrailingWhitespace);
+        return control.CopySelectionToClipboard(!trimTrailingWhitespace);
     }
 
     // Method Description:
