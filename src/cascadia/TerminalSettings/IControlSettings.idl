@@ -26,6 +26,8 @@ namespace Microsoft.Terminal.Settings
     //      for specifically the control.
     interface IControlSettings requires Microsoft.Terminal.Settings.ICoreSettings
     {
+        String ProfileName;
+
         Boolean UseAcrylic;
         Double TintOpacity;
         ScrollbarState ScrollState;

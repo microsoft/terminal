@@ -19,7 +19,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _previousLineWrapped(false),
     _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
@@ -235,6 +234,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
 
+    _trace.TraceMoveCursor(_lastText, coord);
+
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -248,8 +249,15 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            if (_previousLineWrapped)
+            bool previousLineWrapped = false;
+            if (_wrappedRow.has_value())
             {
+                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
+            }
+
+            if (previousLineWrapped)
+            {
+                _trace.TraceWrapped();
                 hr = S_OK;
             }
             else
@@ -312,7 +320,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         _newBottomLine = false;
     }
     _deferredCursorPos = INVALID_COORDS;
+
+    _wrappedRow = std::nullopt;
+
     _delayedEolWrap = false;
+
     return hr;
 }
 
@@ -430,15 +442,19 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                    const COORD coord,
-                                                   const bool /*trimLeft*/) noexcept
+                                                   const bool /*trimLeft*/,
+                                                   const bool lineWrapped) noexcept
 {
     return _fUseAsciiOnly ?
                VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintUtf8BufferLine(clusters, coord, lineWrapped);
 }
 
 // Method Description:

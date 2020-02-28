@@ -183,6 +183,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     terminalSettings.CursorShape(_cursorShape);
 
     // Fill in the remaining properties from the profile
+    terminalSettings.ProfileName(_name);
     terminalSettings.UseAcrylic(_useAcrylic);
     terminalSettings.TintOpacity(_acrylicTransparency);
 

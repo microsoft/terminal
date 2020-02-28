@@ -16,15 +16,15 @@ using namespace Microsoft::Terminal::Core;
  *                  |-position where we double-clicked
  *                 _|_
  *               |word|
- *                |--| 
+ *                |--|
  *  start & pivot-|  |-end
  *
  *     2. Drag your mouse down a line
  *
- *                    
- *  start & pivot-|__________ 
+ *
+ *  start & pivot-|__________
  *             __|word_______|
- *            |______| 
+ *            |______|
  *                  |
  *                  |-end & mouse position
  *
@@ -33,7 +33,7 @@ using namespace Microsoft::Terminal::Core;
  *                  |-start & mouse position
  *                  |________
  *             ____|   ______|
- *            |___w|ord           
+ *            |___w|ord
  *                |-end & pivot
  *
  *    The pivot never moves until a new selection is created. It ensures that that cell will always be selected.
