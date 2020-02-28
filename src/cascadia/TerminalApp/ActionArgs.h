@@ -261,7 +261,14 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return { *args, {} };
+            if (args->_Direction == TerminalApp::Direction::None)
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
     };
 

@@ -223,6 +223,18 @@ Temporarily using the Windows Terminal default settings.
   <data name="InvalidIcon" xml:space="preserve">
     <value>Found a profile with an invalid "icon". Defaulting that profile to have no icon. Make sure that when setting an "icon", the value is a valid file path to an image.</value>
   </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>Warnings were found while parsing your keybindings:
+  </value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>    Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.
+  </value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>    Found a keybinding that was missing a required parameter value. This keybinding will be ignored.
+  </value>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>

@@ -209,6 +209,7 @@ void CascadiaSettings::_ValidateSettings()
     // TODO:GH#3522 With variable args to keybindings, it's possible that a user
     // set a keybinding without all the required args for an action. Display a
     // warning if an action didn't have a required arg.
+    _ValidateKeybindings();
 }
 
 // Method Description:
@@ -650,4 +651,26 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
         profileGuid = _globals.GetDefaultProfile();
     }
     return profileGuid;
+}
+
+// Method Description:
+// - Ensures that all specified images resources (icons and background images) are valid URIs.
+//   This does not verify that the icon or background image files are encoded as an image.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
+//   we find any invalid background images.
+// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
+//   we find any invalid icon images.
+void CascadiaSettings::_ValidateKeybindings()
+{
+    auto keybindingWarnings = _globals.GetKeybindingsWarnings();
+
+    if (!keybindingWarnings.empty())
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+    }
 }

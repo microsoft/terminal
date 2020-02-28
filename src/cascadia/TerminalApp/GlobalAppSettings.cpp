@@ -43,6 +43,7 @@ static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
+    _keybindingsWarnings{},
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
@@ -330,7 +331,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        _keybindings->LayerJson(keybindings);
+        auto warnings = _keybindings->LayerJson(keybindings);
+        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
 
     if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
@@ -536,4 +538,9 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
     _colorSchemes[name] = std::move(scheme);
+}
+
+std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
+{
+    return _keybindingsWarnings;
 }

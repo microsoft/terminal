@@ -431,8 +431,10 @@ static ShortcutAction GetActionFromString(const std::string_view actionString)
 //   `"unbound"`, then we'll clear the keybinding from the existing keybindings.
 // Arguments:
 // - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
-void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
+std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
 {
+    std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+
     for (const auto& value : json)
     {
         if (!value.isObject())
@@ -447,6 +449,12 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
         {
             const auto validString = keys.isString();
             const auto validArray = keys.isArray() && keys.size() == 1;
+
+            if (keys.isArray() && keys.size() > 1)
+            {
+                warnings.push_back(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord);
+            }
+
             if (!validString && !validArray)
             {
                 continue;
@@ -490,15 +498,21 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             // does, we'll try to deserialize any "args" that were provided with
             // the binding.
             IActionArgs args{ nullptr };
-            std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+            std::vector<::TerminalApp::SettingsLoadWarnings> parseWarnings;
             const auto deserializersIter = argParsers.find(action);
             if (deserializersIter != argParsers.end())
             {
                 auto pfn = deserializersIter->second;
                 if (pfn)
                 {
-                    std::tie(args, warnings) = pfn(argsVal);
+                    std::tie(args, parseWarnings) = pfn(argsVal);
                 }
+            }
+            warnings.insert(warnings.end(), parseWarnings.begin(), parseWarnings.end());
+
+            if (args == nullptr)
+            {
+                continue;
             }
 
             // Try parsing the chord
@@ -528,4 +542,6 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             }
         }
     }
+
+    return warnings;
 }
