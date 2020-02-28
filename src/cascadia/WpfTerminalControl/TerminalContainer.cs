@@ -230,23 +230,6 @@ namespace Microsoft.Terminal.Wpf
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
                         break;
-                    case NativeMethods.WindowMessage.WM_LBUTTONDOWN:
-                        this.LeftClickHandler((int)lParam);
-                        break;
-                    case NativeMethods.WindowMessage.WM_RBUTTONDOWN:
-                        if (NativeMethods.TerminalIsSelectionActive(this.terminal))
-                        {
-                            Clipboard.SetText(NativeMethods.TerminalGetSelection(this.terminal));
-                        }
-                        else
-                        {
-                            this.connection.WriteInput(Clipboard.GetText());
-                        }
-
-                        break;
-                    case NativeMethods.WindowMessage.WM_MOUSEMOVE:
-                        this.MouseMoveHandler((int)wParam, (int)lParam);
-                        break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         NativeMethods.TerminalSetCursorVisible(this.terminal, true);
                         NativeMethods.TerminalClearSelection(this.terminal);
