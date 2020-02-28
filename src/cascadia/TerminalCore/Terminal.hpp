@@ -142,7 +142,7 @@ public:
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const noexcept override;
-    const COORD GetEndSelectionPosition() const noexcept override;
+    const COORD GetSelectionEnd() const noexcept override;
     const std::wstring GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
@@ -157,12 +157,17 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    enum class SelectionExpansionMode
+    {
+        Cell,
+        Word,
+        Line
+    };
     const bool IsCopyOnSelectActive() const noexcept;
-    void DoubleClickSelection(const COORD position);
-    void TripleClickSelection(const COORD position);
+    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetEndSelectionPosition(const COORD position);
-    void SetBoxSelection(const bool isEnabled) noexcept;
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetBlockSelection(const bool isEnabled) noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
@@ -187,19 +192,20 @@ private:
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
-    enum class SelectionExpansionMode
+    // a selection is represented as a range between two COORDs (start and end)
+    // the pivot is the COORD that remains selected when you extend a selection in any direction
+    //   this is particularly useful when a word selection is extended over its starting point
+    //   see TerminalSelection.cpp for more information
+    struct SelectionAnchors
     {
-        Cell,
-        Word,
-        Line
+        COORD start;
+        COORD end;
+        COORD pivot;
     };
-    COORD _selectionAnchor;
-    COORD _endSelectionPosition;
-    bool _boxSelection;
-    bool _selectionActive;
+    std::optional<SelectionAnchors> _selection;
+    bool _blockSelection;
     bool _allowSingleCharSelection;
     bool _copyOnSelect;
-    SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -248,15 +254,10 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
-    SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
-    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
-    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
+    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
+    std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
-    std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
-    SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
-    void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 #pragma endregion
 
 #ifdef UNIT_TESTING

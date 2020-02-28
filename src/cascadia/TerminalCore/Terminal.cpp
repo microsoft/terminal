@@ -44,12 +44,10 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _boxSelection{ false },
-    _selectionActive{ false },
+    _blockSelection{ false },
+    _selection{ std::nullopt },
     _allowSingleCharSelection{ true },
-    _copyOnSelect{ false },
-    _selectionAnchor{ 0, 0 },
-    _endSelectionPosition{ 0, 0 }
+    _copyOnSelect{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));

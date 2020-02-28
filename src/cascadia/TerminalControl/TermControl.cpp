@@ -142,7 +142,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto lock = _terminal->LockForWriting();
         if (search.FindNext())
         {
-            _terminal->SetBoxSelection(false);
+            _terminal->SetBlockSelection(false);
             search.Select();
             _renderer->TriggerSelection();
         }
@@ -817,7 +817,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
                 // handle ALT key
-                _terminal->SetBoxSelection(altEnabled);
+                _terminal->SetBlockSelection(altEnabled);
 
                 auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
 
@@ -828,17 +828,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 if (multiClickMapper == 3)
                 {
-                    _terminal->TripleClickSelection(terminalPosition);
+                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
                 }
                 else if (multiClickMapper == 2)
                 {
-                    _terminal->DoubleClickSelection(terminalPosition);
+                    _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
                 }
                 else
                 {
                     if (shiftEnabled && _terminal->IsSelectionActive())
                     {
-                        _terminal->SetEndSelectionPosition(terminalPosition);
+                        _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
                     }
                     else
                     {
@@ -1474,7 +1474,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         terminalPosition.X = std::clamp<short>(terminalPosition.X, 0, lastVisibleCol);
 
         // save location (for rendering) + render
-        _terminal->SetEndSelectionPosition(terminalPosition);
+        _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
     }
 

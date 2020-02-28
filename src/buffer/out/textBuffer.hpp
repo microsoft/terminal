@@ -135,6 +135,8 @@ public:
     bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
     bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
 
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
+
     class TextAndColor
     {
     public:
@@ -192,6 +194,8 @@ private:
 
     ROW& _GetFirstRow();
     ROW& _GetPrevRowNoWrap(const ROW& row);
+
+    void _ExpandTextRow(SMALL_RECT& selectionRow) const;
 
     enum class DelimiterClass
     {
