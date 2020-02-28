@@ -146,6 +146,8 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { FindKey, ShortcutAction::Find },
 };
 
+using ParseActionFunction = std::function<IActionArgs(const Json::Value&)>;
+
 // Function Description:
 // - Creates a function that can be used to generate a SplitPaneArgs for the
 //   legacy Split[SplitState] actions. These actions don't accept args from
@@ -157,7 +159,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   Split[SplitState] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseSplitPaneArgs(SplitState style)
+ParseActionFunction LegacyParseSplitPaneArgs(SplitState style)
 {
     auto pfn = [style](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SplitPaneArgs>();
@@ -178,7 +180,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSplitPaneArgs(SplitSta
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   MoveFocus[Direction] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Direction direction)
+ParseActionFunction LegacyParseMoveFocusArgs(Direction direction)
 {
     auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::MoveFocusArgs>();
@@ -199,7 +201,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Directio
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   ResizePane[Direction] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Direction direction)
+ParseActionFunction LegacyParseResizePaneArgs(Direction direction)
 {
     auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::ResizePaneArgs>();
@@ -220,7 +222,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Directi
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   NewTabWithProfile[Index] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(int index)
+ParseActionFunction LegacyParseNewTabWithProfileArgs(int index)
 {
     auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
@@ -243,7 +245,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   SwitchToTab[Index] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int index)
+ParseActionFunction LegacyParseSwitchToTabArgs(int index)
 {
     auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
@@ -276,7 +278,7 @@ IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 // - delta: the font size delta to create the parse function for.
 // Return Value:
 // - A function that can be used to "parse" json into an AdjustFontSizeArgs.
-std::function<IActionArgs(const Json::Value&)> LegacyParseAdjustFontSizeArgs(int delta)
+ParseActionFunction LegacyParseAdjustFontSizeArgs(int delta)
 {
     auto pfn = [delta](const Json::Value & /*value*/) -> IActionArgs {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::AdjustFontSizeArgs>();
@@ -291,7 +293,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseAdjustFontSizeArgs(int
 // from json. Each type of IActionArgs that can accept arbitrary args should be
 // placed into this map, with the corresponding deserializer function as the
 // value.
-static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Value&)>, std::less<>> argParsers{
+static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParsers{
     { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
     { ShortcutAction::CopyTextWithoutNewlines, LegacyParseCopyTextWithoutNewlinesArgs },
 
