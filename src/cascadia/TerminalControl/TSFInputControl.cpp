@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
             if (!_inComposition)
             {
-                _compositionCompletedHandlers(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
+                _compositionCompletedHandlers(text);
                 _prevCompositionCompleted = _currCompositionCompleted = range.EndCaretPosition;
                 TextBlock().Text(L"");
                 Canvas().Visibility(Visibility::Collapsed);
@@ -322,7 +322,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TSFInputControl::_SendAndClearText()
     {
         // call event handler with data handled by parent
-        _compositionCompletedHandlers(_inputBuffer.substr(_prevCompositionCompleted, _currCompositionCompleted - _prevCompositionCompleted));
+        const auto toSend = _inputBuffer.substr(_prevCompositionCompleted, _currCompositionCompleted - _prevCompositionCompleted);
+        _compositionCompletedHandlers(toSend);
         _prevCompositionCompleted = _currCompositionCompleted;
 
         // clear the buffer for next round
