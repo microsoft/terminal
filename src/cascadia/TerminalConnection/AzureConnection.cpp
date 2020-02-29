@@ -42,6 +42,29 @@ static constexpr auto HttpUserAgent = L"Terminal/0.0";
         }                                   \
     } while (0, 0)
 
+static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
+static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
+
+static inline std::wstring _colorize(const unsigned int colorCode, const std::wstring_view text)
+{
+    return wil::str_printf<std::wstring>(L"\x1b[%um%.*s\x1b[m", colorCode, gsl::narrow_cast<size_t>(text.size()), text.data());
+}
+
+// Takes N resource names, loads the first one as a format string, and then
+// loads all the remaining ones into the %s arguments in the first one after
+// colorizing them in the USER_INPUT_COLOR.
+// This is intended to be used to drop UserEntry resources into an existing string.
+template<typename... Args>
+static inline std::wstring _formatResWithColoredUserInputOptions(const std::wstring_view resourceKey, Args&&... args)
+{
+    return wil::str_printf<std::wstring>(GetLibraryResourceString(resourceKey).data(), (_colorize(USER_INPUT_COLOR, GetLibraryResourceString(args)).data())...);
+}
+
+static inline std::wstring _formatTenantLine(int tenantNumber, const std::wstring_view tenantName, const std::wstring_view tenantID)
+{
+    return wil::str_printf<std::wstring>(RS_(L"AzureIthTenant").data(), _colorize(USER_INPUT_COLOR, std::to_wstring(tenantNumber)).data(), _colorize(USER_INFO_COLOR, tenantName).data(), tenantID.data());
+}
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     // This function exists because the clientID only gets added by the release pipelines
@@ -63,7 +86,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper that will write an unterminated string (generally, from a resource) to the output stream.
     // Arguments:
     // - str: the string to write.
-    void AzureConnection::_WriteStringWithNewline(const winrt::hstring& str)
+    void AzureConnection::_WriteStringWithNewline(const std::wstring_view str)
     {
         _TerminalOutputHandlers(str + L"\r\n");
     }
@@ -399,7 +422,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 continue;
             }
 
-            winrt::hstring tenantLine{ wil::str_printf<std::wstring>(RS_(L"AzureIthTenant").c_str(), numTenants, nameJson.at(L"displayName").as_string().c_str(), nameJson.at(L"tenantID").as_string().c_str()) };
+            _WriteStringWithNewline(_formatTenantLine(numTenants, nameJson.at(L"displayName").as_string(), nameJson.at(L"tenantID").as_string()));
             numTenants++;
         }
 
@@ -415,8 +438,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
-        _WriteStringWithNewline(RS_(L"AzureNewLogin"));
-        _WriteStringWithNewline(RS_(L"AzureRemoveStored"));
+        _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureNewLogin"), USES_RESOURCE(L"AzureUserEntry_NewLogin")));
+        _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureRemoveStored"), USES_RESOURCE(L"AzureUserEntry_RemoveStored")));
 
         int selectedTenant{ -1 };
         do
@@ -457,7 +480,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // if we got here, we didn't break out of the loop early and need to go 'round again
-            _WriteStringWithNewline(RS_(L"AzureInvalidAccessInput"));
+            _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureInvalidAccessInput"), USES_RESOURCE(L"AzureUserEntry_NewLogin"), USES_RESOURCE(L"AzureUserEntry_RemoveStored")));
         } while (true);
 
         // User wants to login with one of the saved connection settings
@@ -568,8 +591,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 const auto& tenant = tenantListAsArray.at(i);
                 const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
-                winrt::hstring tenantLine{ wil::str_printf<std::wstring>(RS_(L"AzureIthTenant").c_str(), i, tenantDisplayName.c_str(), tenantId.c_str()) };
-                _WriteStringWithNewline(tenantLine);
+                _WriteStringWithNewline(_formatTenantLine(i, tenantDisplayName, tenantId));
             }
             _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
 
@@ -622,7 +644,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - S_OK otherwise
     HRESULT AzureConnection::_StoreHelper()
     {
-        _WriteStringWithNewline(RS_(L"AzureStorePrompt"));
+        _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureStorePrompt"), USES_RESOURCE(L"AzureUserEntry_Yes"), USES_RESOURCE(L"AzureUserEntry_No")));
         // Wait for user input
         do
         {
@@ -642,7 +664,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // if we got here, we didn't break out of the loop early and need to go 'round again
-            _WriteStringWithNewline(RS_(L"AzureInvalidStoreInput"));
+            _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureInvalidStoreInput"), USES_RESOURCE(L"AzureUserEntry_Yes"), USES_RESOURCE(L"AzureUserEntry_No")));
         } while (true);
 
         _state = AzureState::TermConnecting;
