@@ -103,6 +103,7 @@ void AppHost::_HandleCommandlineArgs()
 // - Retrieve the command line.
 // - Use our own algorithm to tokenize it because `CommandLineToArgvW` treats \"
 //   as an escape sequence to preserve the quotation mark (GH#4571)
+//   Instead treat a pair of consecutive quotation marks as a single quotation mark.
 // - Populate the arguments as vector of hstrings.
 // Arguments:
 // - <none>
@@ -124,6 +125,7 @@ std::vector<winrt::hstring> AppHost::_GetArgs() const noexcept
         auto cmdLnEnd{ cmdLn.end() }; // end of still valid content in the command line
         auto iter{ cmdLn.begin() }; // iterator pointing to the current position in the command line
         auto argBegin{ iter }; // iterator pointing to the begin of an argument
+        auto firstQuote{ cmdLnEnd }; // iterator pointing to the first quotation mark of a pair of quotation marks
         auto quoted{ false }; // indicates whether a substring is quoted
         auto within{ false }; // indicates whether the current character is inside of an argument
 
@@ -143,10 +145,18 @@ std::vector<winrt::hstring> AppHost::_GetArgs() const noexcept
                 break;
 
             case L'"': // quotation marks need special handling
-                std::move(iter + 1, cmdLnEnd, iter); // move the rest of the command line to the left to overwrite the quote
-                --cmdLnEnd; // the string isn't shorter but its valid content is, we can't just resize without potentially invalidate iterators
                 quoted = !quoted;
-                increment = false; // indicate that iter shall not be incremented because it already points to a new character
+                if (firstQuote == iter) // treat "" as a single "
+                {
+                    firstQuote = cmdLnEnd;
+                }
+                else
+                {
+                    firstQuote = iter;
+                    std::move(iter + 1, cmdLnEnd, iter); // move the rest of the command line to the left to overwrite the quote
+                    --cmdLnEnd; // the string isn't shorter but its valid content is, we can't just resize without potentially invalidate iterators
+                    increment = false; // indicate that iter shall not be incremented because it already points to a new character
+                }
             default: // any other character (including quotation mark)
                 if (!within)
                 {
