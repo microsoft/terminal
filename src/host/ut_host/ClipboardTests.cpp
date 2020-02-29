@@ -85,7 +85,7 @@ class ClipboardTests
         selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
 
         const auto& buffer = screenInfo.GetTextBuffer();
-        return buffer.GetText(fLineSelection, /*trimTrailingWhitespace*/ true, selection).text;
+        return buffer.GetText(true, fLineSelection, selection).text;
     }
 
 #pragma prefast(push)
