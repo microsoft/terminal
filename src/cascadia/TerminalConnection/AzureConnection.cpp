@@ -956,17 +956,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _WriteStringWithNewline(RS_(L"AzureNoTokens"));
             return;
         }
-        while (credList.Size() > 0)
+
+        for (const auto& cred : credList)
         {
             try
             {
-                vault.Remove(credList.GetAt(0));
+                vault.Remove(cred);
             }
-            catch (...)
-            {
-                _WriteStringWithNewline(RS_(L"AzureTokensRemoved"));
-                return;
-            }
+            CATCH_LOG();
         }
+        _WriteStringWithNewline(RS_(L"AzureTokensRemoved"));
     }
 }
