@@ -693,11 +693,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
-        // We only support bash for now, so don't bother with the user's preferred shell
-        // fyi: we can't call powershell yet because it sends VT sequences we don't support yet
-        // TODO: GitHub #1883
-        //const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
-        const auto shellType = L"bash";
+        const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
         _TerminalOutputHandlers(L"\r\n");
@@ -880,9 +876,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_request shellRequest(L"PUT");
         shellRequest.set_request_uri(L"providers/Microsoft.Portal/consoles/default?api-version=2018-10-01");
         _HeaderHelper(shellRequest);
-        const auto innerBody = json::value::parse(U("{ \"osType\" : \"linux\" }"));
-        json::value body;
-        body[U("properties")] = innerBody;
+        // { "properties": { "osType": "linux" } }
+        auto body = json::value::object({ { U("properties"), json::value::object({ { U("osType"), json::value::string(U("linux")) } }) } });
         shellRequest.set_body(body);
 
         // Send the request and get the response as a json value
