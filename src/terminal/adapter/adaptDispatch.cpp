@@ -951,6 +951,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
+    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        success = SetAnsiMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
@@ -1128,6 +1131,16 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
     return _pConApi->DeleteLines(distance);
+}
+
+// - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
+{
+    return _pConApi->PrivateSetAnsiMode(ansiMode);
 }
 
 // Routine Description:

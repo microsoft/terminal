@@ -162,6 +162,13 @@ public:
         return _privateSetKeypadModeResult;
     }
 
+    bool PrivateSetAnsiMode(const bool /*ansiMode*/) override
+    {
+        Log::Comment(L"PrivateSetAnsiMode MOCK called...");
+
+        return true;
+    }
+
     bool PrivateSetScreenMode(const bool /*reverseMode*/) override
     {
         Log::Comment(L"PrivateSetScreenMode MOCK called...");

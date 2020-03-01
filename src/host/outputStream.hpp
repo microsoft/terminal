@@ -93,6 +93,7 @@ public:
     bool PrivateSetCursorKeysMode(const bool applicationMode) override;
     bool PrivateSetKeypadMode(const bool applicationMode) override;
 
+    bool PrivateSetAnsiMode(const bool ansiMode) override;
     bool PrivateSetScreenMode(const bool reverseMode) override;
     bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 
