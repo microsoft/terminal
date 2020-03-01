@@ -32,6 +32,8 @@ public:
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
+    virtual void MakeWindow() noexcept override;
+
     virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
@@ -51,11 +53,8 @@ private:
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
 
-    wil::unique_hbrush _backgroundBrush;
-    COLORREF _backgroundBrushColor;
-
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
-    wil::unique_hrgn _dragBarRegion;
+    wil::unique_hwnd _dragBarWindow;
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
@@ -68,7 +67,6 @@ private:
     [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
-    [[nodiscard]] LRESULT _OnPaint() noexcept;
     void _OnMaximizeChange() noexcept;
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
 
@@ -78,6 +76,6 @@ private:
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
-    void _UpdateIslandRegion() const;
+    void _UpdateDragBarWindowPosition() const;
     void _UpdateFrameTheme() const;
 };
