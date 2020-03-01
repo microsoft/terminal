@@ -51,11 +51,17 @@ void NonClientIslandWindow::_MakeDragBarWindow() noexcept
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
     wc.lpszClassName = L"DRAG_BAR_WINDOW_CLASS";
-    wc.style = CS_DBLCLKS;
+    wc.style = 0;
     wc.lpfnWndProc = DefWindowProc;
     WINRT_ASSERT(RegisterClass(&wc) != 0);
 
-    const auto ret = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+    // Description of window styles:
+    // - Use WS_CLIPSIBLING to clip the XAML Island window to make
+    //   sure that our window is on top of it and receives all mouse
+    //   input.
+    // - WS_EX_LAYERED is required. If it is not present, then for
+    //   some reason, the window will not receive any mouse input.
+    const auto ret = CreateWindowEx(WS_EX_LAYERED,
                                     wc.lpszClassName,
                                     L"",
                                     WS_CHILD | WS_CLIPSIBLINGS,
@@ -515,6 +521,39 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     case WM_PARENTNOTIFY:
         if (wParam == WM_LBUTTONDOWN)
         {
+            _reallyBadWorkaround = !_reallyBadWorkaround;
+
+            if (_reallyBadWorkaround)
+            {
+                break;
+            }
+
+            const auto timeNow = std::chrono::high_resolution_clock::now();
+
+            if (_lastDragBarMouseDown.has_value())
+            {
+                const auto delta = timeNow - _lastDragBarMouseDown.value();
+                const auto deltaMs = std::chrono::duration_cast<std::chrono::milliseconds>(delta).count();
+                if (deltaMs <= GetDoubleClickTime())
+                {
+                    if (_isMaximized)
+                    {
+                        PostMessage(GetWindowHandle(), WM_SYSCOMMAND, SC_RESTORE, 0);
+                    }
+                    else
+                    {
+                        PostMessage(GetWindowHandle(), WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+                    }
+
+                    // reset, so that next click is not interpreted as double click again
+                    _lastDragBarMouseDown = { std::nullopt };
+
+                    break;
+                }
+            }
+
+            _lastDragBarMouseDown = { timeNow };
+
             POINT clientPt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
             POINT screenPt = clientPt;

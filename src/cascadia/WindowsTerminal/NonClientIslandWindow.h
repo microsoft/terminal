@@ -55,6 +55,8 @@ private:
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hwnd _dragBarWindow;
+    std::optional<std::chrono::high_resolution_clock::time_point> _lastDragBarMouseDown;
+    bool _reallyBadWorkaround = false;
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
