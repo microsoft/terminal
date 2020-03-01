@@ -93,6 +93,7 @@ public:
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
+    virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
     virtual bool DesignateCharset(const wchar_t wchCharset) = 0; // SCS
 

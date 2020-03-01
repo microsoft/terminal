@@ -710,6 +710,19 @@ bool AdaptDispatch::DeviceAttributes()
 }
 
 // Routine Description:
+// - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
+//   An actual VT52 terminal would typically identify itself with ESC / K.
+//   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::Vt52DeviceAttributes()
+{
+    return _WriteResponse(L"\x1b/Z");
+}
+
+// Routine Description:
 // - DSR-OS - Reports the operating status back to the input channel
 // Arguments:
 // - <none>

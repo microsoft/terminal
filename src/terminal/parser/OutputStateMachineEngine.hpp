@@ -143,6 +143,7 @@ namespace Microsoft::Console::VirtualTerminal
             EraseToEndOfScreen = L'J',
             EraseToEndOfLine = L'K',
             DirectCursorAddress = L'Y',
+            Identify = L'Z',
             ExitVt52Mode = L'<'
         };
 

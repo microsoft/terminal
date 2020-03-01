@@ -342,6 +342,9 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
             // the lowest value being a space, representing an address of 1.
             success = _dispatch->CursorPosition(parameters.at(0) - ' ' + 1, parameters.at(1) - ' ' + 1);
             break;
+        case Vt52ActionCodes::Identify:
+            success = _dispatch->Vt52DeviceAttributes();
+            break;
         case Vt52ActionCodes::ExitVt52Mode:
         {
             const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };
