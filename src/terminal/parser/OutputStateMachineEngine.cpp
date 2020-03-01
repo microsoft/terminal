@@ -296,12 +296,68 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // - parameters - Set of parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t /*wch*/,
-                                                     const std::basic_string_view<wchar_t> /*intermediates*/,
-                                                     const std::basic_string_view<size_t> /*parameters*/)
+bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
+                                                     const std::basic_string_view<wchar_t> intermediates,
+                                                     const std::basic_string_view<size_t> parameters)
 {
-    // TBD
-    return false;
+    bool success = false;
+
+    // no intermediates.
+    if (intermediates.empty())
+    {
+        switch (wch)
+        {
+        case Vt52ActionCodes::CursorUp:
+            success = _dispatch->CursorUp(1);
+            break;
+        case Vt52ActionCodes::CursorDown:
+            success = _dispatch->CursorDown(1);
+            break;
+        case Vt52ActionCodes::CursorRight:
+            success = _dispatch->CursorForward(1);
+            break;
+        case Vt52ActionCodes::CursorLeft:
+            success = _dispatch->CursorBackward(1);
+            break;
+        case Vt52ActionCodes::EnterGraphicsMode:
+            success = _dispatch->DesignateCharset(DispatchTypes::VTCharacterSets::DEC_LineDrawing);
+            break;
+        case Vt52ActionCodes::ExitGraphicsMode:
+            success = _dispatch->DesignateCharset(DispatchTypes::VTCharacterSets::USASCII);
+            break;
+        case Vt52ActionCodes::CursorToHome:
+            success = _dispatch->CursorPosition(1, 1);
+            break;
+        case Vt52ActionCodes::ReverseLineFeed:
+            success = _dispatch->ReverseLineFeed();
+            break;
+        case Vt52ActionCodes::EraseToEndOfScreen:
+            success = _dispatch->EraseInDisplay(DispatchTypes::EraseType::ToEnd);
+            break;
+        case Vt52ActionCodes::EraseToEndOfLine:
+            success = _dispatch->EraseInLine(DispatchTypes::EraseType::ToEnd);
+            break;
+        case Vt52ActionCodes::DirectCursorAddress:
+            // VT52 cursor addresses are provided as ASCII characters, with
+            // the lowest value being a space, representing an address of 1.
+            success = _dispatch->CursorPosition(parameters.at(0) - ' ' + 1, parameters.at(1) - ' ' + 1);
+            break;
+        case Vt52ActionCodes::ExitVt52Mode:
+        {
+            const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };
+            success = _dispatch->SetPrivateModes(mode);
+            break;
+        }
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            success = false;
+            break;
+        }
+    }
+
+    _ClearLastChar();
+
+    return success;
 }
 
 // Routine Description:

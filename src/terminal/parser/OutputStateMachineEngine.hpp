@@ -130,6 +130,22 @@ namespace Microsoft::Console::VirtualTerminal
             DECALN_ScreenAlignmentPattern = L'8'
         };
 
+        enum Vt52ActionCodes : wchar_t
+        {
+            CursorUp = L'A',
+            CursorDown = L'B',
+            CursorRight = L'C',
+            CursorLeft = L'D',
+            EnterGraphicsMode = L'F',
+            ExitGraphicsMode = L'G',
+            CursorToHome = L'H',
+            ReverseLineFeed = L'I',
+            EraseToEndOfScreen = L'J',
+            EraseToEndOfLine = L'K',
+            DirectCursorAddress = L'Y',
+            ExitVt52Mode = L'<'
+        };
+
         enum OscActionCodes : unsigned int
         {
             SetIconAndWindowTitle = 0,
