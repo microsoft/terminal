@@ -144,6 +144,8 @@ namespace Microsoft::Console::VirtualTerminal
             EraseToEndOfLine = L'K',
             DirectCursorAddress = L'Y',
             Identify = L'Z',
+            EnterAlternateKeypadMode = L'=',
+            ExitAlternateKeypadMode = L'>',
             ExitVt52Mode = L'<'
         };
 

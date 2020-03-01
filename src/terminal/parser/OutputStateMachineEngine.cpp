@@ -345,6 +345,12 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const wchar_t wch,
         case Vt52ActionCodes::Identify:
             success = _dispatch->Vt52DeviceAttributes();
             break;
+        case Vt52ActionCodes::EnterAlternateKeypadMode:
+            success = _dispatch->SetKeypadMode(true);
+            break;
+        case Vt52ActionCodes::ExitAlternateKeypadMode:
+            success = _dispatch->SetKeypadMode(false);
+            break;
         case Vt52ActionCodes::ExitVt52Mode:
         {
             const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };

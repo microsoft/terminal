@@ -68,6 +68,15 @@ static constexpr std::array<TermKeyMap, 6> s_cursorKeysApplicationMapping{
     TermKeyMap{ VK_END, L"\x1bOF" },
 };
 
+static constexpr std::array<TermKeyMap, 6> s_cursorKeysVt52Mapping{
+    TermKeyMap{ VK_UP, L"\033A" },
+    TermKeyMap{ VK_DOWN, L"\033B" },
+    TermKeyMap{ VK_RIGHT, L"\033C" },
+    TermKeyMap{ VK_LEFT, L"\033D" },
+    TermKeyMap{ VK_HOME, L"\033H" },
+    TermKeyMap{ VK_END, L"\033F" },
+};
+
 static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
     TermKeyMap{ VK_BACK, L"\x7f" },
@@ -150,6 +159,29 @@ static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
     // TermKeyMap{ VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
 };
 
+static constexpr std::array<TermKeyMap, 20> s_keypadVt52Mapping{
+    TermKeyMap{ VK_TAB, L"\x09" },
+    TermKeyMap{ VK_BACK, L"\x7f" },
+    TermKeyMap{ VK_PAUSE, L"\x1a" },
+    TermKeyMap{ VK_ESCAPE, L"\x1b" },
+    TermKeyMap{ VK_INSERT, L"\x1b[2~" },
+    TermKeyMap{ VK_DELETE, L"\x1b[3~" },
+    TermKeyMap{ VK_PRIOR, L"\x1b[5~" },
+    TermKeyMap{ VK_NEXT, L"\x1b[6~" },
+    TermKeyMap{ VK_F1, L"\x1bP" },
+    TermKeyMap{ VK_F2, L"\x1bQ" },
+    TermKeyMap{ VK_F3, L"\x1bR" },
+    TermKeyMap{ VK_F4, L"\x1bS" },
+    TermKeyMap{ VK_F5, L"\x1b[15~" },
+    TermKeyMap{ VK_F6, L"\x1b[17~" },
+    TermKeyMap{ VK_F7, L"\x1b[18~" },
+    TermKeyMap{ VK_F8, L"\x1b[19~" },
+    TermKeyMap{ VK_F9, L"\x1b[20~" },
+    TermKeyMap{ VK_F10, L"\x1b[21~" },
+    TermKeyMap{ VK_F11, L"\x1b[23~" },
+    TermKeyMap{ VK_F12, L"\x1b[24~" },
+};
+
 // Sequences to send when a modifier is pressed with any of these keys
 // Basically, the 'm' will be replaced with a character indicating which
 //      modifier keys are pressed.
@@ -220,6 +252,11 @@ const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
 const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
 const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
+void TerminalInput::ChangeAnsiMode(const bool ansiMode) noexcept
+{
+    _ansiMode = ansiMode;
+}
+
 void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
 {
     _keypadApplicationMode = applicationMode;
@@ -231,29 +268,44 @@ void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
 }
 
 static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
+                                                               const bool ansiMode,
                                                                const bool cursorApplicationMode,
                                                                const bool keypadApplicationMode) noexcept
 {
-    if (keyEvent.IsCursorKey())
+    if (ansiMode)
     {
-        if (cursorApplicationMode)
+        if (keyEvent.IsCursorKey())
         {
-            return { s_cursorKeysApplicationMapping.data(), s_cursorKeysApplicationMapping.size() };
+            if (cursorApplicationMode)
+            {
+                return { s_cursorKeysApplicationMapping.data(), s_cursorKeysApplicationMapping.size() };
+            }
+            else
+            {
+                return { s_cursorKeysNormalMapping.data(), s_cursorKeysNormalMapping.size() };
+            }
         }
         else
         {
-            return { s_cursorKeysNormalMapping.data(), s_cursorKeysNormalMapping.size() };
+            if (keypadApplicationMode)
+            {
+                return { s_keypadApplicationMapping.data(), s_keypadApplicationMapping.size() };
+            }
+            else
+            {
+                return { s_keypadNumericMapping.data(), s_keypadNumericMapping.size() };
+            }
         }
     }
     else
     {
-        if (keypadApplicationMode)
+        if (keyEvent.IsCursorKey())
         {
-            return { s_keypadApplicationMapping.data(), s_keypadApplicationMapping.size() };
+            return { s_cursorKeysVt52Mapping.data(), s_cursorKeysVt52Mapping.size() };
         }
         else
         {
-            return { s_keypadNumericMapping.data(), s_keypadNumericMapping.size() };
+            return { s_keypadVt52Mapping.data(), s_keypadVt52Mapping.size() };
         }
     }
 }
@@ -560,7 +612,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     // Check any other key mappings (like those for the F1-F12 keys).
-    const auto mapping = _getKeyMapping(keyEvent, _cursorApplicationMode, _keypadApplicationMode);
+    const auto mapping = _getKeyMapping(keyEvent, _ansiMode, _cursorApplicationMode, _keypadApplicationMode);
     if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
     {
         return true;

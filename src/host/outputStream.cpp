@@ -357,6 +357,8 @@ bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
     stateMachine.SetAnsiMode(ansiMode);
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.ChangeAnsiMode(ansiMode);
     return true;
 }
 
