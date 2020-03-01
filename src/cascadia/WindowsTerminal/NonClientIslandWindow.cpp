@@ -32,7 +32,21 @@ NonClientIslandWindow::~NonClientIslandWindow()
 void NonClientIslandWindow::MakeWindow() noexcept
 {
     IslandWindow::MakeWindow();
+    _MakeDragBarWindow();
+}
 
+// Method Description:
+// - Create the drag bar window.
+// - The drag bar window is a child window of the top level window that is put
+//   right on top of the drag bar. The XAML island window "steals" our mouse
+//   messages which makes it hard to implement a custom drag area. By putting
+//   a window on top of it, we prevent it from "stealing" the mouse messages.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_MakeDragBarWindow() noexcept
+{
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
@@ -53,10 +67,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
                                     nullptr,
                                     wc.hInstance,
                                     0);
-    if (ret == NULL)
-    {
-        winrt::throw_last_error();
-    }
+    WINRT_ASSERT(ret != NULL);
 
     _dragBarWindow = wil::unique_hwnd(ret);
 }
@@ -274,59 +285,45 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 }
 
 // Method Description:
-// TODO DOC
-// TODO DOC
-// TODO DOC
-// TODO DOC
-// TODO DOC
-// - Update the region of our window that is the draggable area. This happens in
-//   response to a OnDragBarSizeChanged event. We'll calculate the areas of the
-//   window that we want to display XAML content in, and set the window region
-//   of our child xaml-island window to that region. That way, the parent window
-//   will still get NCHITTEST'ed _outside_ the XAML content area, for things
-//   like dragging and resizing.
-// - We won't cut this region out if we're fullscreen/borderless. Instead, we'll
-//   make sure to update our region to take the entirety of the window.
+// - Update the position of the window that is put on top of the drag bar.
+// - This happens in response to a OnDragBarSizeChanged event.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void NonClientIslandWindow::_UpdateDragBarWindowPosition() const
 {
-    if (!_interopWindowHandle || !_dragBar)
+    if (!_dragBarWindow || !_dragBar)
     {
         return;
     }
 
-    // If we're showing the titlebar (when we're not fullscreen/borderless), cut
-    // a region of the window out for the drag bar. Otherwise we want the entire
-    // window to be given to the XAML island
-    if (_IsTitlebarVisible())
-    {
-        // in island space coordinates
-        const auto dragBarRect = _GetDragAreaRect();
+    // in island space coordinates
+    const auto dragBarRect = _GetDragAreaRect();
 
-        // in client space coordinates
-        const auto topBorderHeight = _GetTopBorderHeight();
-        const RECT clientDragBarRect = {
-            dragBarRect.left,
-            dragBarRect.top + topBorderHeight,
-            dragBarRect.right,
-            dragBarRect.bottom + topBorderHeight,
-        };
-
-        winrt::check_bool(SetWindowPos(_dragBarWindow.get(),
-                                       HWND_TOP,
-                                       clientDragBarRect.left,
-                                       clientDragBarRect.top,
-                                       clientDragBarRect.right - clientDragBarRect.left,
-                                       clientDragBarRect.bottom - clientDragBarRect.top,
-                                       SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOREDRAW));
-    }
-    else
+    if (dragBarRect.right - dragBarRect.left == 0 ||
+        dragBarRect.bottom - dragBarRect.top == 0)
     {
-        winrt::check_bool(ShowWindow(_dragBarWindow.get(), SW_HIDE));
+        ShowWindow(_dragBarWindow.get(), SW_HIDE);
+        return;
     }
+
+    // in client space coordinates
+    const auto topBorderHeight = _GetTopBorderHeight();
+    const RECT clientDragBarRect = {
+        dragBarRect.left,
+        dragBarRect.top + topBorderHeight,
+        dragBarRect.right,
+        dragBarRect.bottom + topBorderHeight,
+    };
+
+    winrt::check_bool(SetWindowPos(_dragBarWindow.get(),
+                                   HWND_TOP,
+                                   clientDragBarRect.left,
+                                   clientDragBarRect.top,
+                                   clientDragBarRect.right - clientDragBarRect.left,
+                                   clientDragBarRect.bottom - clientDragBarRect.top,
+                                   SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOREDRAW));
 }
 
 // Method Description:

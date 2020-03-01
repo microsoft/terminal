@@ -60,6 +60,8 @@ private:
 
     bool _isMaximized;
 
+    void _MakeDragBarWindow() noexcept;
+
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
     int _GetTopBorderHeight() const noexcept;
