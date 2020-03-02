@@ -45,8 +45,16 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     for (const auto& cluster : clusters)
     {
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
+        const auto text = cluster.GetText();
+
+        // Push back the number of columns for this bit of text.
         _textClusterColumns.push_back(cols);
-        _text += cluster.GetText();
+
+        // If there is more than one text character here, push 0s for the rest of the columns
+        // of the text run.
+        _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(cols, 1u), gsl::narrow_cast<UINT16>(0u));
+
+        _text += text;
     }
 }
 
@@ -359,26 +367,109 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         }
 
         // If scale corrections were needed, we need to split the run.
-        for (auto [index, scale] : _glyphScaleCorrections)
+        for (auto& c : _glyphScaleCorrections)
         {
-            // Don't split in the middle of a surrogate pair.
-            const auto after = IS_HIGH_SURROGATE(_text.at(index)) ? 2 : 1;
-
             // Split after the adjustment first so it
             // takes a copy of all the run properties before we modify them.
             // GH 4665: This is the other half of the potential future perf item.
             //       If glyphs needing the same scale are coalesced, we could
             //       break fewer times and have fewer runs.
-            _SetCurrentRun(index + after);
-            _SplitCurrentRun(index + after);
+
+            // Example
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1---------^2-------
+            // Scale Factors:
+            //  1.0   1.0        1.0
+            // (arrows are run begin)
+            // 0: IDX = 0, LEN = 6
+            // 1: IDX = 6, LEN = 11
+            // 2: IDX = 17, LEN = 9
+
+            // From the scale correction... we get
+            // IDX = where the scale starts
+            // LEN = how long the scale adjustment runs
+            // SCALE = the scale factor.
+
+            // We need to split the run so the SCALE factor
+            // only applies from IDX to LEN.
+
+            // This is the index after the segment we're splitting.
+            const auto afterIndex = c.textIndex + c.textLength;
+
+            // If the after index is still within the text, split the back
+            // half off first so we don't apply the scale factor to anything
+            // after this glyph/run segment.
+            // Example relative to above sample state:
+            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+            // We must split off first at 14 to leave the existing factor from 14-16.
+            // (because the act of splitting copies all properties, we don't want to
+            //  adjust the scale factor BEFORE splitting off the existing one.)
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1----xx^2-^3-------
+            // (xx is where we're going to put the correction when all is said and done.
+            //  We're adjusting the scale of the "MN" text only.)
+            // Scale Factors:
+            //  1     1      1   1
+            // (arrows are run begin)
+            // 0: IDX = 0, LEN = 6
+            // 1: IDX = 6, LEN = 8
+            // 2: IDX = 14, LEN = 3
+            // 3: IDX = 17, LEN = 9
+            if (afterIndex < _text.size())
+            {
+                _SetCurrentRun(afterIndex);
+                _SplitCurrentRun(afterIndex);
+            }
+            // If it's after the text, don't bother. The correction will just apply
+            // from the begin point to the end of the text.
+            // Example relative to above sample state:
+            // Correction says: IDX = 24, LEN = 2
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1---------^2-----xx
+            // xx is where we're going to put the correction when all is said and done.
+            // We don't need to split off the back portion because there's nothing after the xx.
 
             // Now split just this glyph off.
-            _SetCurrentRun(index);
-            _SplitCurrentRun(index);
+            // Example versus the one above where we did already split the back half off..
+            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1----^2^3-^4-------
+            // (The MN text has been broken into its own run, 2.)
+            // Scale Factors:
+            //  1     1     1 1  1
+            // (arrows are run begin)
+            // 0: IDX = 0, LEN = 6
+            // 1: IDX = 6, LEN = 6
+            // 2: IDX = 12, LEN = 2
+            // 2: IDX = 14, LEN = 3
+            // 3: IDX = 17, LEN = 9
+            _SetCurrentRun(c.textIndex);
+            _SplitCurrentRun(c.textIndex);
 
             // Get the run with the one glyph and adjust the scale.
             auto& run = _GetCurrentRun();
-            run.fontScale = scale;
+            run.fontScale = c.scale;
+            // Correction says: IDX = 12, LEN = 2, FACTOR = 0.8
+            // Text:
+            // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            // LEN = 26
+            // Runs:
+            // ^0----^1----^2^3-^4-------
+            // (We've now only corrected run 2, selecting only the MN to 0.8)
+            // Scale Factors:
+            //  1     1    .8 1  1
         }
 
         _OrderRuns();
@@ -408,59 +499,183 @@ try
     DWRITE_FONT_METRICS1 metrics;
     run.fontFace->GetMetrics(&metrics);
 
-    // Walk through advances and space out characters that are too small to consume their box.
-    for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
+    // Glyph Indices represents the number inside the selected font where the glyph image/paths are found.
+    // Text represents the original text we gave in.
+    // Glyph Clusters represents the map between Text and Glyph Indices.
+    //  - There is one Glyph Clusters map column per character of text.
+    //  - The value of the cluster at any given position is relative to the 0 index of this run.
+    //    (a.k.a. it resets to 0 for every run)
+    //  - If multiple Glyph Cluster map values point to the same index, then multiple text chars were used
+    //    to create the same glyph cluster.
+    //  - The delta between the value from one Glyph Cluster's value and the next one is how many
+    //    Glyph Indices are consumed to make that cluster.
+
+    // We're going to walk the map to find what spans of text and glyph indices make one cluster.
+    const auto clusterMapBegin = _glyphClusters.cbegin() + run.textStart;
+    const auto clusterMapEnd = clusterMapBegin + run.textLength;
+
+    // Walk through every glyph in the run, collect them into clusters, then adjust them to fit in
+    // however many columns are expected for display by the text buffer.
+#pragma warning(suppress : 26496) // clusterBegin is updated at the bottom of the loop but analysis isn't seeing it.
+    for (auto clusterBegin = clusterMapBegin; clusterBegin < clusterMapEnd; /* we will increment this inside the loop*/)
     {
-        // Advance is how wide in pixels the glyph is
-        auto& advance = _glyphAdvances.at(i);
+        // One or more glyphs might belong to a single cluster.
+        // Consider the following examples:
 
-        // Offsets is how far to move the origin (in pixels) from where it is
-        auto& offset = _glyphOffsets.at(i);
+        // 1.
+        // U+00C1 is Á.
+        // That is text of length one.
+        // A given font might have a complete single glyph for this
+        // which will be mapped into the _glyphIndices array.
+        // _text[0] = Á
+        // _glyphIndices[0] = 153
+        // _glyphClusters[0] = 0
+        // _glyphClusters[1] = 1
+        // The delta between the value of Clusters 0 and 1 is 1.
+        // The number of times "0" is specified is once.
+        // This means that we've represented one text with one glyph.
 
-        // Get how many columns we expected the glyph to have and mutiply into pixels.
-        const auto columns = _textClusterColumns.at(i);
+        // 2.
+        // U+0041 is A and U+0301 is a combinine acute accent ´.
+        // That is a text length of two.
+        // A given font might have two glyphs for this
+        // which will be mapped into the _glyphIndices array.
+        // _text[0] = A
+        // _text[1] = ´ (U+0301, combining acute)
+        // _glyphIndices[0] = 153
+        // _glyphIndices[1] = 421
+        // _glyphClusters[0] = 0
+        // _glyphClusters[1] = 0
+        // _glyphClusters[2] = 2
+        // The delta between the value of Clusters 0/1 and 2 is 2.
+        // The number of times "0" is specified is twice.
+        // This means that we've represented two text with two glyphs.
+
+        // There are two more scenarios that can occur that get us into
+        // NxM territory (N text by M glyphs)
+
+        // 3.
+        // U+00C1 is Á.
+        // That is text of length one.
+        // A given font might represent this as two glyphs
+        // which will be mapped into the _glyphIndices array.
+        // _text[0] = Á
+        // _glyphIndices[0] = 153
+        // _glyphIndices[1] = 421
+        // _glyphClusters[0] = 0
+        // _glyphClusters[1] = 2
+        // The delta between the value of Clusters 0 and 1 is 2.
+        // The number of times "0" is specified is once.
+        // This means that we've represented one text with two glyphs.
+
+        // 4.
+        // U+0041 is A and U+0301 is a combining acute accent ´.
+        // That is a text length of two.
+        // A given font might represent this as one glyph
+        // which will be mapped into the _glyphIndices array.
+        // _text[0] = A
+        // _text[1] = ´ (U+0301, combining acute)
+        // _glyphIndices[0] = 984
+        // _glyphClusters[0] = 0
+        // _glyphClusters[1] = 0
+        // _glyphClusters[2] = 1
+        // The delta between the value of Clusters 0/1 and 2 is 1.
+        // The number of times "0" is specified is twice.
+        // This means that we've represented two text with one glyph.
+
+        // Finally, there's one more dimension.
+        // Due to supporting a specific coordinate system, the text buffer
+        // has told us how many columns it expects the text it gave us to take
+        // when displayed.
+        // That is stored in _textClusterColumns with one value for each
+        // character in the _text array.
+        // It isn't aware of how glyphs actually get mapped.
+        // So it's giving us a column count in terms of text characters
+        // but expecting it to be applied to all the glyphs in the cluster
+        // required to represent that text.
+        // We'll collect that up and use it at the end to adjust our drawing.
+
+        // Our goal below is to walk through and figure out...
+        // A. How many glyphs belong to this cluster?
+        // B. Which text characters belong with those glyphs?
+        // C. How many columns, in total, were we told we could use
+        //    to draw the glyphs?
+
+        // This is the value under the beginning position in the map.
+        const auto clusterValue = *clusterBegin;
+
+        // Find the cluster end point inside the map.
+        // We want to walk forward in the map until it changes (or we reach the end).
+        const auto clusterEnd = std::find_if(clusterBegin, clusterMapEnd, [clusterValue](auto compareVal) -> bool { return clusterValue != compareVal; });
+
+        // The beginning of the text span is just how far the beginning of the cluster is into the map.
+        const auto clusterTextBegin = std::distance(_glyphClusters.cbegin(), clusterBegin);
+
+        // The distance from beginning to end is the cluster text length.
+        const auto clusterTextLength = std::distance(clusterBegin, clusterEnd);
+
+        // The beginning of the glyph span is just the original cluster value.
+        const auto clusterGlyphBegin = clusterValue + run.glyphStart;
+
+        // The difference between the value inside the end iterator and the original value is the glyph length.
+        // If the end iterator was off the end of the map, then it's the total run glyph count minus wherever we started.
+        const auto clusterGlyphLength = (clusterEnd != clusterMapEnd ? *clusterEnd : run.glyphCount) - clusterValue;
+
+        // Now we can specify the spans within the text-index and glyph-index based vectors
+        // that store our drawing metadata.
+        // All the text ones run [clusterTextBegin, clusterTextBegin + clusterTextLength)
+        // All the cluster ones run [clusterGlyphBegin, clusterGlyphBegin + clusterGlyphLength)
+
+        // Get how many columns we expected the glyph to have.
+        const auto columns = base::saturated_cast<UINT16>(std::accumulate(_textClusterColumns.cbegin() + clusterTextBegin,
+                                                                          _textClusterColumns.cbegin() + clusterTextBegin + clusterTextLength,
+                                                                          0u));
+
+        // Multiply into pixels to get the "advance" we expect this text/glyphs to take when drawn.
         const auto advanceExpected = static_cast<float>(columns * _width);
 
+        // Sum up the advances across the entire cluster to find what the actual value is that we've been told.
+        const auto advanceActual = std::accumulate(_glyphAdvances.cbegin() + clusterGlyphBegin,
+                                                   _glyphAdvances.cbegin() + clusterGlyphBegin + clusterGlyphLength,
+                                                   0.0f);
+
         // If what we expect is bigger than what we have... pad it out.
-        if (advanceExpected > advance)
+        if (advanceExpected > advanceActual)
         {
             // Get the amount of space we have leftover.
-            const auto diff = advanceExpected - advance;
+            const auto diff = advanceExpected - advanceActual;
 
             // Move the X offset (pixels to the right from the left edge) by half the excess space
             // so half of it will be left of the glyph and the other half on the right.
-            offset.advanceOffset += diff / 2;
+            // Here we need to move every glyph in the cluster.
+            std::for_each(_glyphOffsets.begin() + clusterGlyphBegin,
+                          _glyphOffsets.begin() + clusterGlyphBegin + clusterGlyphLength,
+                          [halfDiff = diff / 2](DWRITE_GLYPH_OFFSET& offset) -> void { offset.advanceOffset += halfDiff; });
 
-            // Set the advance to the perfect width we want.
-            advance = advanceExpected;
+            // Set the advance of the final glyph in the set to all excess space not consumed by the first few so
+            // we get the perfect width we want.
+            _glyphAdvances.at(static_cast<size_t>(clusterGlyphBegin) + clusterGlyphLength - 1) += diff;
         }
         // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
-        else if (advanceExpected < advance)
+        else if (advanceExpected < advanceActual)
         {
-            // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
-            // height proportional to the width that we desire.
-            INT32 advanceInDesignUnits;
-            RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices.at(i), &advanceInDesignUnits));
-
-            // When things are drawn, we want the font size (as specified in the base font in the original format)
-            // to be scaled by some factor.
-            // i.e. if the original font size was 16, we might want to draw this glyph with a 15.2 size font so
-            // the width (and height) of the glyph will shrink to fit the monospace cell box.
-
-            // This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
-            // and was advised by the DirectWrite team.
-            const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
-            const auto fontSizeWant = advanceExpected / widthAdvance;
-            const auto scaleProposed = fontSizeWant / _format->GetFontSize();
+            const auto scaleProposed = advanceExpected / advanceActual;
 
             // Store the glyph scale correction for future run breaking
             // GH 4665: In theory, we could also store the length of the new run and coalesce
             //       in case two adjacent glyphs need the same scale factor.
-            _glyphScaleCorrections.push_back(std::tuple{ i, scaleProposed });
+            _glyphScaleCorrections.push_back(ScaleCorrection{
+                gsl::narrow<UINT32>(clusterTextBegin),
+                gsl::narrow<UINT32>(clusterTextLength),
+                scaleProposed });
 
-            // Set the advance to the perfect width that we want before figuring out if the scale factor doesn't match this run
-            advance = advanceExpected;
+            // Adjust all relevant advances by the scale factor.
+            std::for_each(_glyphAdvances.begin() + clusterGlyphBegin,
+                          _glyphAdvances.begin() + clusterGlyphBegin + clusterGlyphLength,
+                          [scaleProposed](float& advance) -> void { advance *= scaleProposed; });
         }
+
+        clusterBegin = clusterEnd;
     }
 
     // Certain fonts, like Batang, contain glyphs for hidden control
@@ -1050,7 +1265,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // f  i  ñ  e
         // CLUSTERMAP (_glyphClusters)
         // 0  0  1  3
-        // GLYPH INDICIES (_glyphIndicies)
+        // GLYPH INDICES (_glyphIndices)
         // 19 81 23 72
         // With _runs length = 1
         // _runs(0):
@@ -1066,7 +1281,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // f  i  ñ  e
         // CLUSTERMAP (_glyphClusters)
         // 0  0  1  3
-        // GLYPH INDICIES (_glyphIndicies)
+        // GLYPH INDICES (_glyphIndices)
         // 19 81 23 72
         // With _runs length = 2
         // _runs(0):
@@ -1100,16 +1315,16 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // In this case, that's 1 corresponding with the ñ.
         const auto mapOffset = _glyphClusters.at(backHalf.textStart);
 
-        // The front half's glyph start index (position in _glyphIndicies)
+        // The front half's glyph start index (position in _glyphIndices)
         // stays the same.
 
-        // The front half's glyph count (items in _glyphIndicies to consume)
+        // The front half's glyph count (items in _glyphIndices to consume)
         // is the offset value as that's now one past the end of the front half.
         // (and count is end index + 1)
         frontHalf.glyphCount = mapOffset;
 
         // The back half starts at the index that's one past the end of the front
-        backHalf.glyphStart = mapOffset;
+        backHalf.glyphStart += mapOffset;
 
         // And the back half count (since it was copied from the front half above)
         // now just needs to be subtracted by how many we gave the front half.
@@ -1124,7 +1339,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // slide all the glyph mapping values to be relative to the new
         // backHalf.glyphStart, or adjust it by the offset we just set it to.
         const auto updateBegin = _glyphClusters.begin() + backHalf.textStart;
-        std::for_each_n(updateBegin, backHalf.textLength, [mapOffset](UINT16& n) {
+        std::for_each(updateBegin, updateBegin + backHalf.textLength, [mapOffset](UINT16& n) {
             n -= mapOffset;
         });
     }
