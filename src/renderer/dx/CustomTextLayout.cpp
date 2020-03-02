@@ -52,10 +52,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         // If there is more than one text character here, push 0s for the rest of the columns
         // of the text run.
-        for (auto i = 1; i < text.size(); ++i)
-        {
-            _textClusterColumns.push_back(0);
-        }
+        std::fill(_textClusterColumns.begin() + 1, _textClusterColumns.end(), gsl::narrow_cast<UINT16>(0u));
 
         _text += text;
     }
