@@ -28,8 +28,6 @@ __declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(void* terminal, dou
 __declspec(dllexport) HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-__declspec(dllexport) HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-__declspec(dllexport) HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition);
 __declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
 __declspec(dllexport) const wchar_t* _stdcall TerminalGetSelection(void* terminal);
 __declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
@@ -69,7 +67,7 @@ private:
     FontInfo _actualFont;
     int _currentDpi;
     bool _uiaProviderInitialized;
-
+    std::function<void(wchar_t*)> _pfnWriteCallback;
     ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
@@ -81,8 +79,6 @@ private:
     friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-    friend HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-    friend HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition);
     friend void _stdcall TerminalClearSelection(void* terminal);
     friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
@@ -91,7 +87,16 @@ private:
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     friend void _stdcall TerminalBlinkCursor(void* terminal);
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
+
     void _UpdateFont(int newDpi);
+    void _WriteTextToConnection(const std::wstring& text) noexcept;
+    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting);
+    HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
+    void _PasteTextFromClipboard() noexcept;
+    void _StringPaste(const wchar_t* const pData) noexcept;
+
+    HRESULT _StartSelection(LPARAM lParam) noexcept;
+    HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
 
     // Inherited via IControlAccessibilityInfo
