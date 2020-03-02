@@ -738,7 +738,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     // If we've printed more lines than the height of the buffer, then we're
     // expecting the viewport to have moved down. Otherwise, the terminal's
     // viewport will stay at 0,0.
-    const auto expectedTerminalViewBottom = std::max(std::min(::base::ClampedNumeric<short>(printedRows + 1),
+    const auto expectedTerminalViewBottom = std::max(std::min(::base::saturated_cast<short>(printedRows + 1),
                                                               term->GetBufferHeight()),
                                                      term->GetViewport().Height());
 
@@ -752,7 +752,7 @@ void ConptyRoundtripTests::TestResizeHeight()
         const auto numLostRows = std::max(0,
                                           printedRows - std::min(term->GetTextBuffer().GetSize().Height(), initialTerminalBufferHeight) + 1);
 
-        const auto rowsWithText = std::min(::base::ClampedNumeric<short>(printedRows),
+        const auto rowsWithText = std::min(::base::saturated_cast<short>(printedRows),
                                            expectedTerminalViewBottom) -
                                   1 + std::min(resizeDy, 0);
 
@@ -790,7 +790,7 @@ void ConptyRoundtripTests::TestResizeHeight()
         //   characters, but then we'll want to look for more blank rows at the
         //   bottom. The characters in the initial viewport won't have moved.
 
-        const short originalViewHeight = ::base::ClampedNumeric<short>(resizeDy < 0 ?
+        const short originalViewHeight = ::base::saturated_cast<short>(resizeDy < 0 ?
                                                                            initialHostView.Height() + resizeDy :
                                                                            initialHostView.Height());
         const auto rowsWithText = std::min(originalViewHeight - 1, printedRows);
@@ -836,8 +836,8 @@ void ConptyRoundtripTests::TestResizeHeight()
     verifyTermData(*termTb);
 
     const COORD newViewportSize{
-        ::base::ClampedNumeric<short>(TerminalViewWidth + dx),
-        ::base::ClampedNumeric<short>(TerminalViewHeight + dy)
+        ::base::saturated_cast<short>(TerminalViewWidth + dx),
+        ::base::saturated_cast<short>(TerminalViewHeight + dy)
     };
 
     Log::Comment(NoThrowString().Format(L"Resize the Terminal and conpty here"));
