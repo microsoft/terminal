@@ -18,6 +18,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+ATOM NonClientIslandWindow::_dragBarWindowClass = 0;
+
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
     _theme{ requestedTheme },
@@ -32,7 +34,59 @@ NonClientIslandWindow::~NonClientIslandWindow()
 void NonClientIslandWindow::MakeWindow() noexcept
 {
     IslandWindow::MakeWindow();
-    _MakeDragBarWindow();
+}
+
+LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+{
+    if (message == WM_LBUTTONDOWN)
+    {
+        POINT clientPt = { GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+
+        POINT screenPt = clientPt;
+        if (ClientToScreen(window, &screenPt))
+        {
+            std::optional<WPARAM> cmd;
+
+            const auto parentWindow = GetAncestor(window, GA_PARENT);
+            WINRT_ASSERT(parentWindow != NULL);
+
+            LRESULT hitTest = SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
+            switch (hitTest)
+            {
+            case HTCAPTION:
+                cmd = { SC_MOVE + hitTest };
+                break;
+            case HTTOP:
+                cmd = { SC_SIZE + WMSZ_TOP };
+                break;
+            }
+
+            if (cmd.has_value())
+            {
+                PostMessage(parentWindow, WM_SYSCOMMAND, cmd.value(), MAKELPARAM(screenPt.x, screenPt.y));
+            }
+        }
+    }
+    else if (message == WM_LBUTTONDBLCLK)
+    {
+        const auto parentWindow = GetAncestor(window, GA_PARENT);
+        WINRT_ASSERT(parentWindow != NULL);
+
+        WINDOWPLACEMENT placement;
+        if (GetWindowPlacement(parentWindow, &placement))
+        {
+            if (placement.showCmd == SW_SHOWMAXIMIZED)
+            {
+                PostMessage(parentWindow, WM_SYSCOMMAND, SC_RESTORE, 0);
+            }
+            else
+            {
+                PostMessage(parentWindow, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+            }
+        }
+    }
+
+    return DefWindowProc(window, message, wparam, lparam);
 }
 
 // Method Description:
@@ -47,35 +101,42 @@ void NonClientIslandWindow::MakeWindow() noexcept
 // - <none>
 void NonClientIslandWindow::_MakeDragBarWindow() noexcept
 {
-    WNDCLASS wc{};
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
-    wc.lpszClassName = L"DRAG_BAR_WINDOW_CLASS";
-    wc.style = 0;
-    wc.lpfnWndProc = DefWindowProc;
-    WINRT_ASSERT(RegisterClass(&wc) != 0);
+    constexpr const wchar_t* className = L"DRAG_BAR_WINDOW_CLASS";
 
-    // Description of window styles:
-    // - Use WS_CLIPSIBLING to clip the XAML Island window to make
-    //   sure that our window is on top of it and receives all mouse
-    //   input.
-    // - WS_EX_LAYERED is required. If it is not present, then for
-    //   some reason, the window will not receive any mouse input.
-    const auto ret = CreateWindowEx(WS_EX_LAYERED,
-                                    wc.lpszClassName,
+    if (_dragBarWindowClass == 0)
+    {
+        WNDCLASS wc{};
+        wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
+        wc.lpszClassName = className;
+        wc.style = CS_DBLCLKS;
+        wc.lpfnWndProc = _DragWindowWndProc;
+        _dragBarWindowClass = RegisterClass(&wc);
+        WINRT_ASSERT(_dragBarWindowClass != 0);
+    }
+
+    const auto dragBarRect = _GetDragAreaRect();
+
+    // WS_EX_LAYERED is required. If it is not present, then for
+    // some reason, the window will not receive any mouse input.
+    const auto ret = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+                                    className,
                                     L"",
-                                    WS_CHILD | WS_CLIPSIBLINGS,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
+                                    WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+                                    dragBarRect.left,
+                                    dragBarRect.top + _GetTopBorderHeight(),
+                                    dragBarRect.right - dragBarRect.left,
+                                    dragBarRect.bottom - dragBarRect.top,
                                     GetWindowHandle(),
                                     nullptr,
-                                    wc.hInstance,
+                                    reinterpret_cast<HINSTANCE>(&__ImageBase),
                                     0);
     WINRT_ASSERT(ret != NULL);
 
     _dragBarWindow = wil::unique_hwnd(ret);
+
+    // bring on top
+    WINRT_ASSERT(SetWindowPos(_dragBarWindow.get(), HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOREDRAW));
 }
 
 // Method Description:
@@ -87,9 +148,11 @@ void NonClientIslandWindow::_MakeDragBarWindow() noexcept
 // Return Value:
 // - <none>
 void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/) const
+                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
-    _UpdateDragBarWindowPosition();
+    // We have to recreate it, we can't just move it. Otherwise for some reason
+    // it doesn't get any window message on the new resized area. 
+    _MakeDragBarWindow();
 }
 
 void NonClientIslandWindow::OnAppInitialized()
@@ -284,52 +347,10 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
         // NonClientIslandWindow::OnDragBarSizeChanged method because this
         // method is only called when the position of the drag bar changes
         // **inside** the island which is not the case here.
-        _UpdateDragBarWindowPosition();
+        _MakeDragBarWindow();
 
         _oldIslandPos = { newIslandPos };
     }
-}
-
-// Method Description:
-// - Update the position of the window that is put on top of the drag bar.
-// - This happens in response to a OnDragBarSizeChanged event.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void NonClientIslandWindow::_UpdateDragBarWindowPosition() const
-{
-    if (!_dragBarWindow || !_dragBar)
-    {
-        return;
-    }
-
-    // in island space coordinates
-    const auto dragBarRect = _GetDragAreaRect();
-
-    if (dragBarRect.right - dragBarRect.left == 0 ||
-        dragBarRect.bottom - dragBarRect.top == 0)
-    {
-        ShowWindow(_dragBarWindow.get(), SW_HIDE);
-        return;
-    }
-
-    // in client space coordinates
-    const auto topBorderHeight = _GetTopBorderHeight();
-    const RECT clientDragBarRect = {
-        dragBarRect.left,
-        dragBarRect.top + topBorderHeight,
-        dragBarRect.right,
-        dragBarRect.bottom + topBorderHeight,
-    };
-
-    winrt::check_bool(SetWindowPos(_dragBarWindow.get(),
-                                   HWND_TOP,
-                                   clientDragBarRect.left,
-                                   clientDragBarRect.top,
-                                   clientDragBarRect.right - clientDragBarRect.left,
-                                   clientDragBarRect.bottom - clientDragBarRect.top,
-                                   SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOREDRAW));
 }
 
 // Method Description:
@@ -518,67 +539,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     switch (message)
     {
-    case WM_PARENTNOTIFY:
-        if (wParam == WM_LBUTTONDOWN)
-        {
-            _reallyBadWorkaround = !_reallyBadWorkaround;
-
-            if (_reallyBadWorkaround)
-            {
-                break;
-            }
-
-            const auto timeNow = std::chrono::high_resolution_clock::now();
-
-            if (_lastDragBarMouseDown.has_value())
-            {
-                const auto delta = timeNow - _lastDragBarMouseDown.value();
-                const auto deltaMs = std::chrono::duration_cast<std::chrono::milliseconds>(delta).count();
-                if (deltaMs <= GetDoubleClickTime())
-                {
-                    if (_isMaximized)
-                    {
-                        PostMessage(GetWindowHandle(), WM_SYSCOMMAND, SC_RESTORE, 0);
-                    }
-                    else
-                    {
-                        PostMessage(GetWindowHandle(), WM_SYSCOMMAND, SC_MAXIMIZE, 0);
-                    }
-
-                    // reset, so that next click is not interpreted as double click again
-                    _lastDragBarMouseDown = { std::nullopt };
-
-                    break;
-                }
-            }
-
-            _lastDragBarMouseDown = { timeNow };
-
-            POINT clientPt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-
-            POINT screenPt = clientPt;
-            if (ClientToScreen(GetWindowHandle(), &screenPt))
-            {
-                std::optional<WPARAM> cmd;
-
-                LRESULT hitTest = SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
-                switch (hitTest)
-                {
-                case HTCAPTION:
-                    cmd = { SC_MOVE + hitTest };
-                    break;
-                case HTTOP:
-                    cmd = { SC_SIZE + WMSZ_TOP };
-                    break;
-                }
-
-                if (cmd.has_value())
-                {
-                    PostMessage(GetWindowHandle(), WM_SYSCOMMAND, cmd.value(), MAKELPARAM(screenPt.x, screenPt.y));
-                }
-            }
-        }
-        break;
     case WM_SETCURSOR:
     {
         if (LOWORD(lParam) == HTCLIENT)

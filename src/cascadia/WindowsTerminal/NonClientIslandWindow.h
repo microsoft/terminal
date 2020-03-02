@@ -48,6 +48,8 @@ public:
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
 private:
+    static ATOM _dragBarWindowClass;
+
     std::optional<COORD> _oldIslandPos;
 
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
@@ -55,12 +57,12 @@ private:
 
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
     wil::unique_hwnd _dragBarWindow;
-    std::optional<std::chrono::high_resolution_clock::time_point> _lastDragBarMouseDown;
-    bool _reallyBadWorkaround = false;
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
     bool _isMaximized;
+
+    [[nodiscard]] static LRESULT __stdcall _DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
     void _MakeDragBarWindow() noexcept;
 
@@ -72,7 +74,7 @@ private:
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     void _OnMaximizeChange() noexcept;
-    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs) const;
+    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     void _SetIsFullscreen(const bool fFullscreenEnabled) override;
     bool _IsTitlebarVisible() const;
@@ -80,6 +82,5 @@ private:
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
-    void _UpdateDragBarWindowPosition() const;
     void _UpdateFrameTheme() const;
 };
