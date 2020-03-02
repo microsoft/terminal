@@ -648,9 +648,9 @@ try
             // Move the X offset (pixels to the right from the left edge) by half the excess space
             // so half of it will be left of the glyph and the other half on the right.
             // Here we need to move every glyph in the cluster.
-            std::for_each_n(_glyphOffsets.begin() + clusterGlyphBegin,
-                            clusterGlyphLength,
-                            [halfDiff = diff / 2](DWRITE_GLYPH_OFFSET& offset) -> void { offset.advanceOffset += halfDiff; });
+            std::for_each(_glyphOffsets.begin() + clusterGlyphBegin,
+                          _glyphOffsets.begin() + clusterGlyphBegin + clusterGlyphLength,
+                          [halfDiff = diff / 2](DWRITE_GLYPH_OFFSET& offset) -> void { offset.advanceOffset += halfDiff; });
 
             // Set the advance of the final glyph in the set to all excess space not consumed by the first few so
             // we get the perfect width we want.
@@ -670,9 +670,9 @@ try
                 scaleProposed });
 
             // Adjust all relevant advances by the scale factor.
-            std::for_each_n(_glyphAdvances.begin() + clusterGlyphBegin,
-                            clusterGlyphLength,
-                            [scaleProposed](float& advance) -> void { advance *= scaleProposed; });
+            std::for_each(_glyphAdvances.begin() + clusterGlyphBegin,
+                          _glyphAdvances.begin() + clusterGlyphBegin + clusterGlyphLength,
+                          [scaleProposed](float& advance) -> void { advance *= scaleProposed; });
         }
 
         clusterBegin = clusterEnd;
@@ -1339,7 +1339,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // slide all the glyph mapping values to be relative to the new
         // backHalf.glyphStart, or adjust it by the offset we just set it to.
         const auto updateBegin = _glyphClusters.begin() + backHalf.textStart;
-        std::for_each_n(updateBegin, backHalf.textLength, [mapOffset](UINT16& n) {
+        std::for_each(updateBegin, updateBegin + backHalf.textLength, [mapOffset](UINT16& n) {
             n -= mapOffset;
         });
     }
