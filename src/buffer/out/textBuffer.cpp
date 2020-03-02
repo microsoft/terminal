@@ -1919,12 +1919,12 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     // place the new cursor back on the equivalent character in
     // the new buffer.
     const COORD cOldCursorPos = oldCursor.GetPosition();
-    COORD cOldLastChar = lastCharacterViewport.has_value() ?
-                             oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport.value()) :
-                             oldBuffer.GetLastNonSpaceCharacter();
+    const COORD cOldLastChar = lastCharacterViewport.has_value() ?
+                                   oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport.value()) :
+                                   oldBuffer.GetLastNonSpaceCharacter();
 
-    short const cOldRowsTotal = cOldLastChar.Y + 1;
-    short const cOldColsTotal = oldBuffer.GetSize().Width();
+    const short cOldRowsTotal = cOldLastChar.Y + 1;
+    const short cOldColsTotal = oldBuffer.GetSize().Width();
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;

@@ -217,7 +217,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     auto proposedTop = oldTop + adjustment;
 
-    const auto newView = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+    const auto newView = Viewport::FromDimensions({ 0, ::base::ClampedNumeric<short>(proposedTop) }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
     // If the new bottom would be below the bottom of the buffer, then slide the
     // top up so that we'll still fit within the buffer.
@@ -226,7 +226,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         proposedTop -= (proposedBottom - bufferSize.Y);
     }
 
-    _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow_cast<short>(proposedTop) }, viewportSize);
+    _mutableViewport = Viewport::FromDimensions({ 0, ::base::ClampedNumeric<short>(proposedTop) }, viewportSize);
 
     _buffer.swap(newTextBuffer);
 
