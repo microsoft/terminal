@@ -31,58 +31,48 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
-void NonClientIslandWindow::MakeWindow() noexcept
-{
-    IslandWindow::MakeWindow();
-}
-
 LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
-    if (message == WM_LBUTTONDOWN)
+    std::optional<UINT> nonClientMessage{ std::nullopt };
+
+    // translate WM_ messages on the window to WM_NC* on the top level window
+    switch (message)
+    {
+    case WM_LBUTTONDOWN:
+        nonClientMessage = { WM_NCLBUTTONDOWN };
+        break;
+    case WM_LBUTTONDBLCLK:
+        nonClientMessage = { WM_NCLBUTTONDBLCLK };
+        break;
+    case WM_LBUTTONUP:
+        nonClientMessage = { WM_NCLBUTTONUP };
+        break;
+    case WM_RBUTTONDOWN:
+        nonClientMessage = { WM_NCRBUTTONDOWN };
+        break;
+    case WM_RBUTTONDBLCLK:
+        nonClientMessage = { WM_NCRBUTTONDBLCLK };
+        break;
+    case WM_RBUTTONUP:
+        nonClientMessage = { WM_NCRBUTTONUP };
+        break;
+    }
+
+    if (nonClientMessage.has_value())
     {
         POINT clientPt = { GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
 
         POINT screenPt = clientPt;
         if (ClientToScreen(window, &screenPt))
         {
-            std::optional<WPARAM> cmd;
-
             const auto parentWindow = GetAncestor(window, GA_PARENT);
             WINRT_ASSERT(parentWindow != NULL);
 
             LRESULT hitTest = SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
-            switch (hitTest)
-            {
-            case HTCAPTION:
-                cmd = { SC_MOVE + hitTest };
-                break;
-            case HTTOP:
-                cmd = { SC_SIZE + WMSZ_TOP };
-                break;
-            }
 
-            if (cmd.has_value())
-            {
-                PostMessage(parentWindow, WM_SYSCOMMAND, cmd.value(), MAKELPARAM(screenPt.x, screenPt.y));
-            }
-        }
-    }
-    else if (message == WM_LBUTTONDBLCLK)
-    {
-        const auto parentWindow = GetAncestor(window, GA_PARENT);
-        WINRT_ASSERT(parentWindow != NULL);
+            SendMessage(parentWindow, nonClientMessage.value(), hitTest, 0);
 
-        WINDOWPLACEMENT placement;
-        if (GetWindowPlacement(parentWindow, &placement))
-        {
-            if (placement.showCmd == SW_SHOWMAXIMIZED)
-            {
-                PostMessage(parentWindow, WM_SYSCOMMAND, SC_RESTORE, 0);
-            }
-            else
-            {
-                PostMessage(parentWindow, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
-            }
+            return 0;
         }
     }
 
@@ -90,16 +80,18 @@ LRESULT __stdcall NonClientIslandWindow::_DragWindowWndProc(HWND const window, U
 }
 
 // Method Description:
-// - Create the drag bar window.
+// - Create/re-creates the drag bar window.
 // - The drag bar window is a child window of the top level window that is put
 //   right on top of the drag bar. The XAML island window "steals" our mouse
 //   messages which makes it hard to implement a custom drag area. By putting
 //   a window on top of it, we prevent it from "stealing" the mouse messages.
+// - We have to recreate it, we can't just move it. Otherwise for some reason
+//   it doesn't get any window message on the new resized area.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void NonClientIslandWindow::_MakeDragBarWindow() noexcept
+void NonClientIslandWindow::_RecreateDragBarWindow() noexcept
 {
     constexpr const wchar_t* className = L"DRAG_BAR_WINDOW_CLASS";
 
@@ -135,7 +127,7 @@ void NonClientIslandWindow::_MakeDragBarWindow() noexcept
 
     _dragBarWindow = wil::unique_hwnd(ret);
 
-    // bring on top
+    // bring it on top of the XAML Islands window
     WINRT_ASSERT(SetWindowPos(_dragBarWindow.get(), HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOREDRAW));
 }
 
@@ -150,9 +142,7 @@ void NonClientIslandWindow::_MakeDragBarWindow() noexcept
 void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
                                                   winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
-    // We have to recreate it, we can't just move it. Otherwise for some reason
-    // it doesn't get any window message on the new resized area. 
-    _MakeDragBarWindow();
+    _RecreateDragBarWindow();
 }
 
 void NonClientIslandWindow::OnAppInitialized()
@@ -347,7 +337,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
         // NonClientIslandWindow::OnDragBarSizeChanged method because this
         // method is only called when the position of the drag bar changes
         // **inside** the island which is not the case here.
-        _MakeDragBarWindow();
+        _RecreateDragBarWindow();
 
         _oldIslandPos = { newIslandPos };
     }
@@ -458,6 +448,45 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     return HTCAPTION;
 }
 
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept
+{
+    if (LOWORD(lParam) == HTCLIENT)
+    {
+        // Get the cursor position from the _last message_ and not from
+        // `GetCursorPos` (which returns the cursor position _at the
+        // moment_) because if we're lagging behind the cursor's position,
+        // we still want to get the cursor position that was associated
+        // with that message at the time it was sent to handle the message
+        // correctly.
+        const auto screenPtDword = GetMessagePos();
+        POINT screenPt = { GET_X_LPARAM(screenPtDword), GET_Y_LPARAM(screenPtDword) };
+
+        LRESULT hitTest = SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
+        if (hitTest == HTTOP)
+        {
+            // We have to set the vertical resize cursor manually on
+            // the top resize handle because Windows thinks that the
+            // cursor is on the client area because it asked the asked
+            // the drag window with `WM_NCHITTEST` and it returned
+            // `HTCLIENT`.
+            // We don't want to modify the drag window's `WM_NCHITTEST`
+            // handling to return `HTTOP` because otherwise, the system
+            // would resize the drag window instead of the top level
+            // window!
+            SetCursor(LoadCursor(nullptr, IDC_SIZENS));
+            return TRUE;
+        }
+        else
+        {
+            // reset cursor
+            SetCursor(LoadCursor(nullptr, IDC_ARROW));
+            return TRUE;
+        }
+    }
+
+    return DefWindowProc(GetWindowHandle(), WM_SETCURSOR, wParam, lParam);
+}
+
 // Method Description:
 // - Gets the difference between window and client area size.
 // Arguments:
@@ -541,40 +570,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     {
     case WM_SETCURSOR:
     {
-        if (LOWORD(lParam) == HTCLIENT)
-        {
-            // Get the cursor position from the _last message_ and not from
-            // `GetCursorPos` (which returns the cursor position _at the
-            // moment_) because if we're lagging behind the cursor's position,
-            // we still want to get the cursor position that was associated
-            // with that message at the time it was sent to handle the message
-            // correctly.
-            const auto screenPtDword = GetMessagePos();
-            POINT screenPt = { GET_X_LPARAM(screenPtDword), GET_Y_LPARAM(screenPtDword) };
-
-            LRESULT hitTest = SendMessage(GetWindowHandle(), WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y));
-            if (hitTest == HTTOP)
-            {
-                // We have to set the vertical resize cursor manually on
-                // the top resize handle because Windows thinks that the
-                // cursor is on the client area because it asked the asked
-                // the drag window with `WM_NCHITTEST` and it returned
-                // `HTCLIENT`.
-                // We don't want to modify the drag window's `WM_NCHITTEST`
-                // handling to return `HTTOP` because otherwise, the system
-                // would resize the drag window instead of the top level
-                // window!
-                SetCursor(LoadCursor(nullptr, IDC_SIZENS));
-                return TRUE;
-            }
-            else
-            {
-                // reset cursor
-                SetCursor(LoadCursor(nullptr, IDC_ARROW));
-                return TRUE;
-            }
-        }
-        break;
+        return _OnSetCursor(wParam, lParam);
     }
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
