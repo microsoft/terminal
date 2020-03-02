@@ -1077,6 +1077,7 @@ namespace winrt::TerminalApp::implementation
             {
                 profileFound = true;
                 controlSettings = _settings->BuildSettings(current_guid.value());
+                realGuid = current_guid.value();
             }
         }
         if (!profileFound)
