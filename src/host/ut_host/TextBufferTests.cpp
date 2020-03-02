@@ -2033,7 +2033,7 @@ void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, 
             // TODO GH#780: writing up to (but not past) the end of the line
             //              should NOT set the wrap flag
             std::optional<bool> wrap = true;
-            if (line.size() == bufferSize.RightExclusive())
+            if (line.size() == static_cast<size_t>(bufferSize.RightExclusive()))
             {
                 wrap = std::nullopt;
             }
