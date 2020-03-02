@@ -569,7 +569,7 @@ try
         // This means that we've represented one text with two glyphs.
 
         // 4.
-        // U+0041 is A and U+0301 is a combinine acute accent ´.
+        // U+0041 is A and U+0301 is a combining acute accent ´.
         // That is a text length of two.
         // A given font might represent this as one glyph
         // which will be mapped into the _glyphIndices array.
@@ -1265,7 +1265,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // f  i  ñ  e
         // CLUSTERMAP (_glyphClusters)
         // 0  0  1  3
-        // GLYPH INDICIES (_glyphIndices)
+        // GLYPH INDICES (_glyphIndices)
         // 19 81 23 72
         // With _runs length = 1
         // _runs(0):
@@ -1281,7 +1281,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
         // f  i  ñ  e
         // CLUSTERMAP (_glyphClusters)
         // 0  0  1  3
-        // GLYPH INDICIES (_glyphIndices)
+        // GLYPH INDICES (_glyphIndices)
         // 19 81 23 72
         // With _runs length = 2
         // _runs(0):
