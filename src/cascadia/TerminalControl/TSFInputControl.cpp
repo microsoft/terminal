@@ -19,8 +19,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
         _inComposition{ false },
-        _activeTextStart{ 0 },
-        _activeTextEnd{ 0 }
+        _activeTextStart{ 0 }
     {
         InitializeComponent();
 
@@ -327,21 +326,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Sends the portion of the input buffer that is "active text" to the terminal.
-    //   Then clears the TextBlock and hides it until the next time text is received.
+    // - Send the portion of the textBuffer starting at _activeTextStart to the end of the buffer.
+    //   Then clear the TextBlock and hide it until the next time text is received.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TSFInputControl::_SendAndClearText()
     {
-        _activeTextEnd = _inputBuffer.length();
-
-        const auto text = _inputBuffer.substr(_activeTextStart, _activeTextEnd - _activeTextStart);
+        const auto text = _inputBuffer.substr(_activeTextStart, _inputBuffer.length() - _activeTextStart);
 
         _compositionCompletedHandlers(text);
 
-        _activeTextStart = _activeTextEnd;
+        _activeTextStart = _inputBuffer.length();
 
         TextBlock().Text(L"");
 
