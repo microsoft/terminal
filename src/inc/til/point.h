@@ -35,12 +35,65 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
-        constexpr ptrdiff_t x()
+        bool operator==(const point& other) const
+        {
+            return _x == other._x &&
+                _y == other._y;
+        }
+
+        bool operator!=(const point& other) const
+        {
+            return !(*this == other);
+        }
+
+        bool operator<(const point& other) const
+        {
+            if (_y < other._y)
+            {
+                return true;
+            }
+            else if (_y > other._y)
+            {
+                return false;
+            }
+            else
+            {
+                return _x < other._x;
+            }
+        }
+
+        bool operator>(const point& other) const
+        {
+            if (_y > other._y)
+            {
+                return true;
+            }
+            else if (_y < other._y)
+            {
+                return false;
+            }
+            else
+            {
+                return _x > other._x;
+            }
+        }
+
+        constexpr ptrdiff_t x() const
         {
             return _x;
         }
 
-        constexpr ptrdiff_t y()
+        ptrdiff_t& x()
+        {
+            return _x;
+        }
+
+        constexpr ptrdiff_t y() const
+        {
+            return _y;
+        }
+
+        ptrdiff_t& y()
         {
             return _y;
         }

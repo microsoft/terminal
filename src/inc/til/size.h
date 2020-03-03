@@ -35,14 +35,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
+        bool operator==(const size& other) const
+        {
+            return _width == other._width &&
+                _height == other._height;
+        }
+
+        bool operator!=(const size& other) const
+        {
+            return !(*this == other);
+        }
+
         constexpr size_t width() const
         {
             return _width;
         }
 
+        constexpr ptrdiff_t width_signed() const
+        {
+            return static_cast<ptrdiff_t>(_width);
+        }
+
         constexpr size_t height() const
         {
             return _height;
+        }
+
+        constexpr ptrdiff_t height_signed() const
+        {
+            return static_cast<ptrdiff_t>(_height);
         }
 
         constexpr size_t area() const

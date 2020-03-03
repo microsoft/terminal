@@ -142,6 +142,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] RECT _GetDisplayRect() const noexcept;
 
+        til::bitmap _invalidMap;
+
         bool _isInvalidUsed;
         RECT _invalidRect;
         SIZE _invalidScroll;

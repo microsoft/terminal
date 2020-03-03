@@ -46,6 +46,9 @@ class BitmapTests
         til::bitmap x(mapSize);
         x.set({ 4, 4 });
 
+        til::rectangle area(til::point{ 5,5 }, til::size{ 2,2 });
+        x.set(area);
+
         Log::Comment(L"Row 4!");
         for (auto it = x.begin_row(4); it < x.end_row(4); ++it)
         {
@@ -75,5 +78,30 @@ class BitmapTests
             }
         }
 
+        SMALL_RECT smrc;
+        smrc.Top = 31;
+        smrc.Bottom = 41;
+        smrc.Left = 59;
+        smrc.Right = 265;
+
+        til::rectangle smrectangle(smrc);
+
+        VERIFY_ARE_EQUAL(smrc.Top, smrectangle.top());
+        VERIFY_ARE_EQUAL(smrc.Bottom, smrectangle.bottom());
+        VERIFY_ARE_EQUAL(smrc.Left, smrectangle.left());
+        VERIFY_ARE_EQUAL(smrc.Right, smrectangle.right());
+
+        RECT bgrc;
+        bgrc.top = 3;
+        bgrc.bottom = 5;
+        bgrc.left = 8;
+        bgrc.right = 9;
+
+        til::rectangle bgrectangle(bgrc);
+
+        VERIFY_ARE_EQUAL(bgrc.top, bgrectangle.top());
+        VERIFY_ARE_EQUAL(bgrc.bottom, bgrectangle.bottom());
+        VERIFY_ARE_EQUAL(bgrc.left, bgrectangle.left());
+        VERIFY_ARE_EQUAL(bgrc.right, bgrectangle.right());
     }
 };

@@ -935,6 +935,8 @@ void DxEngine::_InvalidOr(SMALL_RECT sr) noexcept
 // - <none>
 void DxEngine::_InvalidOr(RECT rc) noexcept
 {
+    
+
     if (_isInvalidUsed)
     {
         UnionRect(&_invalidRect, &_invalidRect, &rc);

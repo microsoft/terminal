@@ -107,6 +107,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return bitterator(_bits, (row + 1) * _size.width());
         }
+
         
         void set(til::point pt)
         {
@@ -116,6 +117,27 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void reset(til::point pt)
         {
             _bits[pt.y() * _size.width() + pt.x()] = false;
+        }
+
+        void set(til::rectangle rc)
+        {
+            for (auto pt : rc)
+            {
+                set(pt);
+            }
+        }
+
+        void reset(til::rectangle rc)
+        {
+            for (auto pt : rc)
+            {
+                reset(pt);
+            }
+        }
+
+        void set_all()
+        {
+            _bits.assign(_size.area(), true);
         }
 
         void reset_all()
