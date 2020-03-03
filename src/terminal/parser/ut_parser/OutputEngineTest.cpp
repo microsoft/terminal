@@ -675,6 +675,7 @@ public:
         _statusReportType{ (DispatchTypes::AnsiStatusType)-1 },
         _deviceStatusReport{ false },
         _deviceAttributes{ false },
+        _vt52DeviceAttributes{ false },
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
@@ -686,6 +687,7 @@ public:
         _carriageReturn{ false },
         _lineFeed{ false },
         _lineFeedType{ (DispatchTypes::LineFeedType)-1 },
+        _reverseLineFeed{ false },
         _forwardTab{ false },
         _numTabs{ 0 },
         _isDECCOLMAllowed{ false },
@@ -848,6 +850,13 @@ public:
         return true;
     }
 
+    bool Vt52DeviceAttributes() noexcept override
+    {
+        _vt52DeviceAttributes = true;
+
+        return true;
+    }
+
     bool _PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
@@ -975,6 +984,12 @@ public:
         return true;
     }
 
+    bool ReverseLineFeed() noexcept override
+    {
+        _reverseLineFeed = true;
+        return true;
+    }
+
     bool ForwardTab(const size_t numTabs) noexcept override
     {
         _forwardTab = true;
@@ -1026,6 +1041,7 @@ public:
     DispatchTypes::AnsiStatusType _statusReportType;
     bool _deviceStatusReport;
     bool _deviceAttributes;
+    bool _vt52DeviceAttributes;
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
@@ -1037,6 +1053,7 @@ public:
     bool _carriageReturn;
     bool _lineFeed;
     DispatchTypes::LineFeedType _lineFeedType;
+    bool _reverseLineFeed;
     bool _forwardTab;
     size_t _numTabs;
     bool _isDECCOLMAllowed;
@@ -2041,5 +2058,96 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(1u, pDispatch->_numTabs);
 
         pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestVt52Sequences)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // ANSI mode must be reset for VT52 sequences to be recognized.
+        mach.SetAnsiMode(false);
+
+        Log::Comment(L"Cursor Up");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'A');
+        VERIFY_IS_TRUE(pDispatch->_cursorUp);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_cursorDistance);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Cursor Down");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'B');
+        VERIFY_IS_TRUE(pDispatch->_cursorDown);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_cursorDistance);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Cursor Right");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'C');
+        VERIFY_IS_TRUE(pDispatch->_cursorForward);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_cursorDistance);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Cursor Left");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'D');
+        VERIFY_IS_TRUE(pDispatch->_cursorBackward);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_cursorDistance);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Cursor to Home");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'H');
+        VERIFY_IS_TRUE(pDispatch->_cursorPosition);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_line);
+        VERIFY_ARE_EQUAL(1u, pDispatch->_column);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Reverse Line Feed");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'I');
+        VERIFY_IS_TRUE(pDispatch->_reverseLineFeed);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Erase to End of Screen");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'J');
+        VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
+        VERIFY_ARE_EQUAL(DispatchTypes::EraseType::ToEnd, pDispatch->_eraseType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Erase to End of Line");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'K');
+        VERIFY_IS_TRUE(pDispatch->_eraseLine);
+        VERIFY_ARE_EQUAL(DispatchTypes::EraseType::ToEnd, pDispatch->_eraseType);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Direct Cursor Address");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'Y');
+        mach.ProcessCharacter(L' ' + 3); // Coordinates must be printable ASCII values,
+        mach.ProcessCharacter(L' ' + 5); // so are relative to 0x20 (the space character).
+        VERIFY_IS_TRUE(pDispatch->_cursorPosition);
+        VERIFY_ARE_EQUAL(3u, pDispatch->_line - 1); // CursorPosition coordinates are 1-based,
+        VERIFY_ARE_EQUAL(5u, pDispatch->_column - 1); // so are 1 more than the expected values.
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Identify Device");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'Z');
+        VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
     }
 };
