@@ -678,6 +678,7 @@ public:
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
+        _isInAnsiMode{ true },
         _isScreenModeReversed{ false },
         _isOriginModeRelative{ false },
         _isAutoWrapEnabled{ true },
@@ -856,6 +857,9 @@ public:
             // set - Enable Application Mode, reset - Numeric/normal mode
             fSuccess = SetVirtualTerminalInputMode(fEnable);
             break;
+        case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+            fSuccess = SetAnsiMode(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
@@ -925,6 +929,12 @@ public:
     bool EnableCursorBlinking(const bool bEnable) noexcept override
     {
         _cursorBlinking = bEnable;
+        return true;
+    }
+
+    bool SetAnsiMode(const bool ansiMode) noexcept override
+    {
+        _isInAnsiMode = ansiMode;
         return true;
     }
 
@@ -1019,6 +1029,7 @@ public:
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
+    bool _isInAnsiMode;
     bool _isScreenModeReversed;
     bool _isOriginModeRelative;
     bool _isAutoWrapEnabled;
@@ -1295,6 +1306,26 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[?1l");
         VERIFY_IS_FALSE(pDispatch->_cursorKeysMode);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestAnsiMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?2l");
+        VERIFY_IS_FALSE(pDispatch->_isInAnsiMode);
+
+        pDispatch->ClearState();
+        pDispatch->_isInAnsiMode = false;
+        mach.SetAnsiMode(false);
+
+        mach.ProcessString(L"\x1b<");
+        VERIFY_IS_TRUE(pDispatch->_isInAnsiMode);
 
         pDispatch->ClearState();
     }
