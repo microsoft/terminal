@@ -52,7 +52,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         // If there is more than one text character here, push 0s for the rest of the columns
         // of the text run.
-        _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(cols, 1u), gsl::narrow_cast<UINT16>(0u));
+        _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(text.size(), 1u), gsl::narrow_cast<UINT16>(0u));
 
         _text += text;
     }
