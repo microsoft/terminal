@@ -94,22 +94,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Clears the input buffer and tells the text server to clear their buffer as well.
+    //   Also clears the TextBlock and sets the active text starting point to 0.
     // Arguments:
-    // - sender: not used
-    // - e: event data
+    // - <none>
     // Return Value:
     // - <none>
-    void TSFInputControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                          Input::KeyRoutedEventArgs const& e)
+    void TSFInputControl::ClearBuffer()
     {
-        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
-        {
-            _inputBuffer.clear();
-            const auto bufLen = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
-            _editContext.NotifyFocusLeave();
-            _editContext.NotifyTextChanged({ 0,  bufLen }, 0, { 0, 0 });
-            _editContext.NotifyFocusEnter();
-        }
+        TextBlock().Text(L"");
+        _inputBuffer.clear();
+        _editContext.NotifyFocusLeave();
+        _editContext.NotifyTextChanged({ 0, ::base::ClampedNumeric<int32_t>(_inputBuffer.length()) }, 0, { 0, 0 });
+        _editContext.NotifyFocusEnter();
+        _activeTextStart = 0;
+        _inComposition = false;
     }
 
     // Method Description:
@@ -296,14 +295,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            Canvas().Visibility(Visibility::Visible);
-
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
                 text);
-
-            TextBlock().Text(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
 
             // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
@@ -311,6 +306,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _activeTextStart = range.StartCaretPosition;
                 _SendAndClearText();
+            }
+            else
+            {
+                Canvas().Visibility(Visibility::Visible);
+                TextBlock().Text(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
             }
 
             // Notify the TSF that the update succeeded
