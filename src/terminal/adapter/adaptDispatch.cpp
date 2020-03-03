@@ -1153,6 +1153,10 @@ bool AdaptDispatch::DeleteLine(const size_t distance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 {
+    // When an attempt is made to update the mode, the designated character sets
+    // need to be reset to defaults, even if the mode doesn't actually change.
+    _termOutput = {};
+
     return _pConApi->PrivateSetAnsiMode(ansiMode);
 }
 
