@@ -4,9 +4,12 @@
 #pragma once
 
 #include "til/at.h"
-#include "til/bitmap.h"
+#include "til/point.h"
+#include "til/size.h"
+#include "til/rectangle.h"
 #include "til/some.h"
 #include "til/u8u16convert.h"
+#include "til/bitmap.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
