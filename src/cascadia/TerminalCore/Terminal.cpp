@@ -179,6 +179,9 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const short newBufferHeight = viewportSize.Y + _scrollbackLines;
     COORD bufferSize{ viewportSize.X, newBufferHeight };
 
+    // Save cursor's relative height versus the viewport
+    const short sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
+
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -192,45 +195,86 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(), *newTextBuffer.get(), _mutableViewport));
 
-    // However conpty resizes a little oddly - if the height decreased, and
-    // there were blank lines at the bottom, those lines will get trimmed.
-    // If there's not blank lines, then the top will get "shifted down",
-    // moving the top line into scrollback.
-    // See GH#3490 for more details.
+    // {
+    //     // Original code
+    //     auto proposedTop = oldTop;
+    //     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    //     const auto proposedBottom = newView.BottomExclusive();
+    //     // If the new bottom would be below the bottom of the buffer, then slide the
+    //     // top up so that we'll still fit within the buffer.
+    //     if (proposedBottom > bufferSize.Y)
+    //     {
+    //         proposedTop -= (proposedBottom - bufferSize.Y);
+    //     }
 
-    // If the final position in the buffer is on the bottom row of the new
-    // viewport, then we're going to need to move the top down. Otherwise,
-    // move the bottom up.
-    const auto dy = viewportSize.Y - oldDimensions.Y;
-    const COORD oldCursorPos = _buffer->GetCursor().GetPosition();
+    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
+    // }
 
+    {
+        // RwR PR code
+
+        // However conpty resizes a little oddly - if the height decreased, and
+        // there were blank lines at the bottom, those lines will get trimmed.
+        // If there's not blank lines, then the top will get "shifted down",
+        // moving the top line into scrollback.
+        // See GH#3490 for more details.
+
+        // If the final position in the buffer is on the bottom row of the new
+        // viewport, then we're going to need to move the top down. Otherwise,
+        // move the bottom up.
+        const auto dy = viewportSize.Y - oldDimensions.Y;
+        const COORD oldCursorPos = _buffer->GetCursor().GetPosition();
+
+        const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
-    COORD oldLastChar = oldCursorPos;
-    try
-    {
-        oldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
-    }
-    CATCH_LOG();
+        COORD oldLastChar = oldCursorPos;
+        // COORD newLastChar = newCursorPos;
+        try
+        {
+            oldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
+            // newLastChar = newTextBuffer->GetLastNonSpaceCharacter(_mutableViewport);
+        }
+        CATCH_LOG();
 #pragma warning(pop)
 
-    const auto maxRow = std::max(oldLastChar.Y, oldCursorPos.Y);
+        const short sCursorHeightInViewportAfter = newTextBuffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
+        const auto coordCursorHeightDiff = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
 
-    const bool beforeLastRowOfView = maxRow < _mutableViewport.BottomInclusive();
-    const auto adjustment = beforeLastRowOfView ? 0 : std::max(0, -dy);
+        const auto maxRow = std::max(oldLastChar.Y, oldCursorPos.Y);
+        const bool beforeLastRowOfView = maxRow < _mutableViewport.BottomInclusive();
+        // const auto adjustment = beforeLastRowOfView ? 0 : std::max(0, -dy); // original calculation
+        // const auto adjustment = coordCursorHeightDiff; // For decreasing width leading to scrollback lines newly wrapping, this works nicely. For lines in the viewport wrapping, this _does not_
+        // const auto adjustment = -(oldCursorPos.Y - (newCursorPos.Y + sCursorHeightInViewportAfter));
+        const auto adjustment = coordCursorHeightDiff;
 
-    auto proposedTop = oldTop + adjustment;
+        auto proposedTop = oldTop + adjustment;
+        // auto proposedTop = adjustment;
 
-    const auto newView = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
-    const auto proposedBottom = newView.BottomExclusive();
-    // If the new bottom would be below the bottom of the buffer, then slide the
-    // top up so that we'll still fit within the buffer.
-    if (proposedBottom > bufferSize.Y)
-    {
-        proposedTop -= (proposedBottom - bufferSize.Y);
+        const auto newView = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
+        const auto proposedBottom = newView.BottomExclusive();
+        // If the new bottom would be below the bottom of the buffer, then slide the
+        // top up so that we'll still fit within the buffer.
+        if (proposedBottom > bufferSize.Y)
+        {
+            proposedTop -= (proposedBottom - bufferSize.Y);
+        }
+
+        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
     }
 
-    _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
+    // {
+    //     // screeninfo code
+
+    //     Cursor& newCursor = newTextBuffer->GetCursor();
+    //     // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+    //     // SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
+    //     // COORD coordCursorHeightDiff = { 0 };
+    //     // coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+    //     // LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+    //     const auto newTop = newCursor.GetPosition().Y - sCursorHeightInViewportBefore + 1;
+    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(newTop) }, viewportSize);
+    // }
 
     _buffer.swap(newTextBuffer);
 
