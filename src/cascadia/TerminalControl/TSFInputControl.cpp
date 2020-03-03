@@ -304,7 +304,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
             if (!_inComposition)
             {
-                _activeTextStart = range.StartCaretPosition;
                 _SendAndClearText();
             }
             else
