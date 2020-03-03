@@ -1907,7 +1907,8 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            TextBuffer& newBuffer,
-                           const std::optional<Viewport> lastCharacterViewport) noexcept
+                           const std::optional<Viewport> lastCharacterViewport,
+                           short* const lastScrollbackRow) noexcept
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1928,11 +1929,20 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
-
+    bool foundScrollbackEnd = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
     {
+        if (lastScrollbackRow && !foundScrollbackEnd)
+        {
+            if (iOldRow >= *lastScrollbackRow)
+            {
+                *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y - 1);
+                foundScrollbackEnd = true;
+            }
+        }
+
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const CharRow& charRow = row.GetCharRow();
