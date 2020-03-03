@@ -6,7 +6,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     d:DesignHeight="768"
-    d:DesignWidth="1024">
+    d:DesignWidth="1024"
+    KeyDown="_KeyDownHandler">
 
     <Canvas x:Name="Canvas" Visibility="Collapsed">
         <TextBlock x:Name="TextBlock"

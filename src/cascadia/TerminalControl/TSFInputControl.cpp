@@ -19,8 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
         _inComposition{ false },
-        _prevCompositionCompleted{ 0 },
-        _currCompositionCompleted{ 0 }
+        _activeTextStart{ 0 },
+        _activeTextEnd{ 0 }
     {
         InitializeComponent();
 
@@ -91,6 +91,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusLeave();
+        }
+    }
+
+    // Method Description:
+    // Arguments:
+    // - sender: not used
+    // - e: event data
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                          Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            _inputBuffer.clear();
+            const auto bufLen = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
+            _editContext.NotifyFocusLeave();
+            _editContext.NotifyTextChanged({ 0,  bufLen }, 0, { 0, 0 });
+            _editContext.NotifyFocusEnter();
         }
     }
 
@@ -192,7 +211,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            _currCompositionCompleted = _inputBuffer.length();
             _SendAndClearText();
         }
     }
@@ -281,10 +299,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             Canvas().Visibility(Visibility::Visible);
 
-            const auto length = ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition);
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                length,
+                ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
                 text);
 
             TextBlock().Text(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
@@ -293,10 +310,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
             if (!_inComposition)
             {
-                _compositionCompletedHandlers(text);
-                _prevCompositionCompleted = _currCompositionCompleted = range.EndCaretPosition;
-                TextBlock().Text(L"");
-                Canvas().Visibility(Visibility::Collapsed);
+                _activeTextStart = range.StartCaretPosition;
+                _SendAndClearText();
             }
 
             // Notify the TSF that the update succeeded
@@ -312,30 +327,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Sends the currently held text in the input buffer to the parent and
-    //   clears the input buffer and text block for the next round of input.
-    //   Then hides the text block control until the next time text received.
+    // - Sends the portion of the input buffer that is "active text" to the terminal.
+    //   Then clears the TextBlock and hides it until the next time text is received.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TSFInputControl::_SendAndClearText()
     {
-        // call event handler with data handled by parent
-        const auto toSend = _inputBuffer.substr(_prevCompositionCompleted, _currCompositionCompleted - _prevCompositionCompleted);
-        _compositionCompletedHandlers(toSend);
-        _prevCompositionCompleted = _currCompositionCompleted;
+        _activeTextEnd = _inputBuffer.length();
 
-        // clear the buffer for next round
-        //const auto bufferLength = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
-        //_inputBuffer.clear();
+        const auto text = _inputBuffer.substr(_activeTextStart, _activeTextEnd - _activeTextStart);
+
+        _compositionCompletedHandlers(text);
+
+        _activeTextStart = _activeTextEnd;
+
         TextBlock().Text(L"");
-
-        // Leaving focus before NotifyTextChanged seems to guarantee that the next
-        // composition will send us a CompositionStarted event.
-        //_editContext.NotifyFocusLeave();
-        //_editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
-        //_editContext.NotifyFocusEnter();
 
         // hide the controls until text input starts again
         Canvas().Visibility(Visibility::Collapsed);
