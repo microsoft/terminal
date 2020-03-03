@@ -4,6 +4,7 @@
 #pragma once
 
 #include "til/at.h"
+#include "til/bitmap.h"
 #include "til/some.h"
 #include "til/u8u16convert.h"
 
