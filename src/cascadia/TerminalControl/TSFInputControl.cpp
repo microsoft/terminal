@@ -310,7 +310,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else
             {
                 Canvas().Visibility(Visibility::Visible);
-                TextBlock().Text(_inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1));
+                const auto text = _inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1);
+                TextBlock().Text(text);
             }
 
             // Notify the TSF that the update succeeded
