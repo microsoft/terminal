@@ -12,7 +12,6 @@
             Visibility="Collapsed">
         <TextBlock x:Name="TextBlock"
                    IsTextSelectionEnabled="false"
-                   TextDecorations="Underline"
-                   AutomationProperties.AccessibilityView="Raw"/>
+                   TextDecorations="Underline"/>
     </Canvas>
 </UserControl>

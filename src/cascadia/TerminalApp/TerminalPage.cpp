@@ -63,8 +63,6 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        Automation::AutomationProperties::SetAccessibilityView(_tabView, Automation::Peers::AccessibilityView::Raw);
-
         _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
