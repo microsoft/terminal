@@ -374,25 +374,84 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(realProposedTop) }, viewportSize);
     // }
 
+    // {
+    //     // screenInfo + de-wrap last scrollback line adjustment  - method.7
+    //     //
+    //     // This one seems a tad bit hacky, but works alright enough.
+    //     //
+    //     // This is basically the screeninfo method with a small change. After
+    //     // calculating where the viewport should be, check the scrollback line
+    //     // that was immediately before the viewport. If it previously wrapped,
+    //     // that means the old top line of the viewport had wrapped from a
+    //     // scrollback line. If that scrollback line doesn't wrap anymore, we
+    //     // took the content from the top line of the viewport and moved it into
+    //     // that scrollback line. Conpty however couldn't do that, so it's going
+    //     // to reprint that top line, even if it's now been successfully
+    //     // dewrapped into the scrollback. To avoid losing output, we'll shift
+    //     // our new viewport location down one row, so that the new output from
+    //     // conpty doesn't blow away the previously scrolled back line.
+    //     //
+    //     // I have yet to test this with vertical resizing, but I want to
+    //     // checkpoint this as-is
+    //     //
+    //     // LOL this doesn't handle decreasing height at all. We'll just stay at
+    //     // the same top position, and not move the viewport down to make the new
+    //     // cursor actually visible. That's horrible. Method.8 will try to fix this.
+    //     //
+
+    //     Cursor& newCursor = newTextBuffer->GetCursor();
+    //     // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+    //     const auto sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
+    //     const auto cursorHeightDiff = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+
+    //     const auto screenInfoProposedTop = _mutableViewport.Top() + cursorHeightDiff;
+
+    //     auto realProposedTop = screenInfoProposedTop;
+
+    //     const auto& originalBufferLastScrollbackLine = _buffer->GetRowByOffset(_mutableViewport.Top() - 1);
+    //     const auto& newBufferLastScrollbackLine = newTextBuffer->GetRowByOffset(_scrollbackLines - 1);
+
+    //     const bool oldLineWrapped = originalBufferLastScrollbackLine.GetCharRow().WasWrapForced();
+    //     const bool oldExactlyFit = originalBufferLastScrollbackLine.GetCharRow().MeasureRight() == _mutableViewport.Width();
+    //     const bool newLineWrapped = newBufferLastScrollbackLine.GetCharRow().WasWrapForced();
+
+    //     // if ((oldLineWrapped || oldExactlyFit) && !newLineWrapped)
+    //     if ((oldLineWrapped) && !newLineWrapped)
+    //     {
+    //         realProposedTop++;
+    //     }
+
+    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(realProposedTop) }, viewportSize);
+    // }
+
     {
-        // screenInfo + de-wrap last scrollback line adjustment  - method.7
+        // method.7 & fix resizing down - method.8
         //
-        // This one seems a tad bit hacky, but works alright enough.
+        // B-A-B-Y this works for both horizontal and vertical resizes. It's
+        // really a mix of m.7 and m.2. Basically took that m.2 code for
+        // figuring out if the text was on the last line of the viewport and put
+        // it in here too.
         //
-        // This is basically the screeninfo method with a small change. After
-        // calculating where the viewport should be, check the scrollback line
-        // that was immediately before the viewport. If it previously wrapped,
-        // that means the old top line of the viewport had wrapped from a
-        // scrollback line. If that scrollback line doesn't wrap anymore, we
-        // took the content from the top line of the viewport and moved it into
-        // that scrollback line. Conpty however couldn't do that, so it's going
-        // to reprint that top line, even if it's now been successfully
-        // dewrapped into the scrollback. To avoid losing output, we'll shift
-        // our new viewport location down one row, so that the new output from
-        // conpty doesn't blow away the previously scrolled back line.
-        //
-        // I have yet to test this with vertical resizing, but I want to
-        // checkpoint this as-is
+        // Lets cross our fingers that it works for a real conpty as well.
+
+        const auto dy = viewportSize.Y - oldDimensions.Y;
+        const COORD oldCursorPos = _buffer->GetCursor().GetPosition();
+
+#pragma warning(push)
+#pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
+        COORD oldLastChar = oldCursorPos;
+        // COORD newLastChar = newCursorPos;
+        try
+        {
+            oldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
+            // newLastChar = newTextBuffer->GetLastNonSpaceCharacter(_mutableViewport);
+        }
+        CATCH_LOG();
+#pragma warning(pop)
+
+        const auto maxRow = std::max(oldLastChar.Y, oldCursorPos.Y);
+
+        const bool beforeLastRowOfView = maxRow < _mutableViewport.BottomInclusive();
 
         Cursor& newCursor = newTextBuffer->GetCursor();
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
@@ -416,8 +475,15 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
             realProposedTop++;
         }
 
+        if (!beforeLastRowOfView)
+        {
+            realProposedTop += std::max(0, -dy);
+            // const auto adjustment = beforeLastRowOfView ? 0 : std::max(0, -dy); // original calculation
+        }
+
         _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(realProposedTop) }, viewportSize);
     }
+
     _buffer.swap(newTextBuffer);
 
     _scrollOffset = 0;
