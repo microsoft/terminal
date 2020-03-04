@@ -198,7 +198,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(), *newTextBuffer.get(), _mutableViewport, &scrollbackLines));
 
     // {
-    //     // Original code
+    //     // Original code - Method 1
     //     // This doesn't work, because the top stays in the same place. As lines
     //     // in the scrollback begin to wrap, they'll push the contents of the
     //     // buffer down, and the real mutable viewport will be below this.
@@ -220,7 +220,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // }
 
     //     {
-    //         // RwR PR code
+    //         // RwR PR code - Method 2
 
     //         // However conpty resizes a little oddly - if the height decreased, and
     //         // there were blank lines at the bottom, those lines will get trimmed.
@@ -272,20 +272,30 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //         _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
     //     }
 
-    // {
-    //     // screeninfo code
+    {
+        // screeninfo code  - Method 3
+        //
+        // I don't know what crack I was smoking before, this code didn't even
+        // sorta resemble the screenInfo code. Re-written like this, it handles
+        // the scrollback lines wrapping and unwrapping just fine - viewport is
+        // in the right spot.
+        //
+        // Unfortunately this suffers from the same problem as #5. As the lines
+        // in the original viewport get unwrapped, they come back into view, but
+        // they'll be gone from conpty. So when conpty re-prints, we'll blow
+        // them away. Maybe we could combo this with #4?
 
-    //     Cursor& newCursor = newTextBuffer->GetCursor();
-    //     // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-    //     // SHORT const sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
-    //     // COORD coordCursorHeightDiff = { 0 };
-    //     // coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
-    //     // LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
-    //     const auto newTop = newCursor.GetPosition().Y - sCursorHeightInViewportBefore + 1;
-    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(newTop) }, viewportSize);
-    // }
+        Cursor& newCursor = newTextBuffer->GetCursor();
+        // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+        const auto sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
+        const auto coordCursorHeightDiff = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+        const auto newTop = _mutableViewport.Top() + coordCursorHeightDiff;
+
+        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(newTop) }, viewportSize);
+    }
 
     // {
+    //     // Ask the TextBuffer for the scrollback start - Method 4
     //     // This works very well for decreasing width up until the point where
     //     // the lines _in_ the viewport start wrapping. In that case, the
     //     // viewport really _should_ be moving down as well, but this method
@@ -298,29 +308,30 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //     // TextBuffer::Reflow
     //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(scrollbackLines + 1) }, viewportSize);
     // }
-    {
-        // Instead of trying to figure out the last scrollback row, try figuring
-        // out the last viewport row in the new buffer.
-        //
-        // This works quite well for the decreasing width. As lines get wrapped,
-        // we'll move down with them appropriately. Where it falls apart is in
-        // the unwrapping of lines - we'll basically keep the bottom in the same
-        // place, and when conpty reprints, we'll duplicate the lines. This is
-        // because the top line that conpty actually still knows about will get
-        // moved up in our buffer (from previous lines de-wrapping).  We need to
-        // instead keep the top in the same place in that case, so that all the
-        // lines conpty knows about stay on the screen.
-        //
-        // This should be paired with
-        //   short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.BottomInclusive());
-        // and
-        //   *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y - 1);
-        // TextBuffer::Reflow
-        auto proposedBottom = scrollbackLines;
-        auto proposedTop = proposedBottom - viewportSize.Y;
-        // Honestly, we should be using +1 here, and not a -1 in TextBuffer, but (shrug)
-        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop + 2) }, viewportSize);
-    }
+    // {
+    //     // Ask the TextBuffer for the viewport bottom - Method 5
+    //     // Instead of trying to figure out the last scrollback row, try figuring
+    //     // out the last viewport row in the new buffer.
+    //     //
+    //     // This works quite well for the decreasing width. As lines get wrapped,
+    //     // we'll move down with them appropriately. Where it falls apart is in
+    //     // the unwrapping of lines - we'll basically keep the bottom in the same
+    //     // place, and when conpty reprints, we'll duplicate the lines. This is
+    //     // because the top line that conpty actually still knows about will get
+    //     // moved up in our buffer (from previous lines de-wrapping).  We need to
+    //     // instead keep the top in the same place in that case, so that all the
+    //     // lines conpty knows about stay on the screen.
+    //     //
+    //     // This should be paired with
+    //     //   short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.BottomInclusive());
+    //     // and
+    //     //   *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y - 1);
+    //     // TextBuffer::Reflow
+    //     auto proposedBottom = scrollbackLines;
+    //     auto proposedTop = proposedBottom - viewportSize.Y;
+    //     // Honestly, we should be using +1 here, and not a -1 in TextBuffer, but (shrug)
+    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop + 2) }, viewportSize);
+    // }
 
     _buffer.swap(newTextBuffer);
 
