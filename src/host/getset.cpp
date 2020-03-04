@@ -776,7 +776,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
             context.PostUpdateWindowSize();
-            WriteToScreen(context, context.GetViewport());
+
+            // Use WriteToScreen to invalidate the viewport with the renderer.
+            // GH#3490 - If we're in conpty mode, don't invalidate the entire
+            // viewport. In conpty mode, the VtEngine will later decide what
+            // part of the buffer actually needs to be re-sent to the terminal.
+            if (!g.getConsoleInformation().IsInVtIoMode())
+            {
+                WriteToScreen(context, context.GetViewport());
+            }
         }
         return S_OK;
     }

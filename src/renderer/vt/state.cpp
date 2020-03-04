@@ -278,38 +278,12 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
 
-    if (SUCCEEDED(hr))
-    {
-        // Viewport is smaller now - just update it all.
-        if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
-        {
-            hr = InvalidateAll();
-        }
-        else
-        {
-            // At least one of the directions grew.
-            // First try and add everything to the right of the old viewport,
-            //      then everything below where the old viewport ended.
-            if (oldView.Width() < newView.Width())
-            {
-                short left = oldView.RightExclusive();
-                short top = 0;
-                short right = newView.RightInclusive();
-                short bottom = oldView.BottomInclusive();
-                Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                hr = _InvalidCombine(rightOfOldViewport);
-            }
-            if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
-            {
-                short left = 0;
-                short top = oldView.BottomExclusive();
-                short right = newView.RightInclusive();
-                short bottom = newView.BottomInclusive();
-                Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                hr = _InvalidCombine(belowOldViewport);
-            }
-        }
-    }
+    // GH#3490 - When the viewport width changed, don't do anything extra here.
+    // If the buffer had areas that were invalid due to the resize, then the
+    // buffer will have triggered it's own invalidations for what it knows is
+    // invalid. Previously, we'd invalidate everything if the width changed,
+    // because we couldn't be sure if lines were reflowed.
+
     _resized = true;
     return hr;
 }
