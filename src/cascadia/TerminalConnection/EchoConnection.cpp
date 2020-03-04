@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstringstream prettyPrint;
         for (const auto& wch : data)
         {
-            if (wch < 0x20)
+            if (wch < 0x20 && (wch != L'\r' && wch != L'\n'))
             {
                 prettyPrint << L"^" << gsl::narrow_cast<wchar_t>(wch + 0x40);
             }

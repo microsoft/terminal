@@ -637,6 +637,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.Start();
         _initializedTerminal = true;
         _InitializedHandlers(*this, nullptr);
+
+        {
+            for (int i = 0; i < 40; i++)
+            {
+                _connection.WriteInput(L"01234567890123456789012345678901234567890123456789 ");
+                _connection.WriteInput({ std::wstring(40 - i, static_cast<wchar_t>(L'@' + i)) });
+                _connection.WriteInput(L"\r\n");
+            }
+        }
+
         return true;
     }
 
