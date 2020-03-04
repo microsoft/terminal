@@ -509,8 +509,8 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        // const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
-        const auto connection = TerminalConnection::EchoConnection();
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        // const auto connection = TerminalConnection::EchoConnection();
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.

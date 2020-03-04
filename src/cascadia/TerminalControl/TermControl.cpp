@@ -638,15 +638,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _initializedTerminal = true;
         _InitializedHandlers(*this, nullptr);
 
-        {
-            for (int i = 0; i < 40; i++)
-            {
-                // _connection.WriteInput(L"01234567890123456789012345678901234567890123456789 ");
-                _connection.WriteInput(L"0123456789 123456789 ");
-                _connection.WriteInput({ std::wstring(80 - (i * 2), static_cast<wchar_t>(L'@' + i)) });
-                _connection.WriteInput(L"\r\n");
-            }
-        }
+        // {
+        //     for (int i = 0; i < 40; i++)
+        //     {
+        //         // _connection.WriteInput(L"01234567890123456789012345678901234567890123456789 ");
+        //         _connection.WriteInput(L"0123456789 123456789 ");
+        //         _connection.WriteInput({ std::wstring(80 - (i * 2), static_cast<wchar_t>(L'@' + i)) });
+        //         _connection.WriteInput(L"\r\n");
+        //     }
+        // }
 
         return true;
     }
