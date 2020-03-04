@@ -142,12 +142,6 @@ bool Terminal::CursorLineFeed(const bool withReturn) noexcept
 try
 {
     auto cursorPos = _buffer->GetCursor().GetPosition();
-    if (_deferredNewline && cursorPos.Y >= 1)
-    {
-        _buffer->GetRowByOffset(cursorPos.Y - 1).GetCharRow().SetWrapForced(false);
-        _deferredNewline = false;
-    }
-
     cursorPos.Y++;
     if (withReturn)
     {

@@ -196,20 +196,20 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(), *newTextBuffer.get(), _mutableViewport, &scrollbackLines));
 
-    {
-        // Original code
-        auto proposedTop = oldTop;
-        const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-        const auto proposedBottom = newView.BottomExclusive();
-        // If the new bottom would be below the bottom of the buffer, then slide the
-        // top up so that we'll still fit within the buffer.
-        if (proposedBottom > bufferSize.Y)
-        {
-            proposedTop -= (proposedBottom - bufferSize.Y);
-        }
+    // {
+    //     // Original code
+    //     auto proposedTop = oldTop;
+    //     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    //     const auto proposedBottom = newView.BottomExclusive();
+    //     // If the new bottom would be below the bottom of the buffer, then slide the
+    //     // top up so that we'll still fit within the buffer.
+    //     if (proposedBottom > bufferSize.Y)
+    //     {
+    //         proposedTop -= (proposedBottom - bufferSize.Y);
+    //     }
 
-        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
-    }
+    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
+    // }
 
     //     {
     //         // RwR PR code
@@ -277,9 +277,9 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(newTop) }, viewportSize);
     // }
 
-    // {
-    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(scrollbackLines + 1) }, viewportSize);
-    // }
+    {
+        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(scrollbackLines + 1) }, viewportSize);
+    }
     _buffer.swap(newTextBuffer);
 
     _scrollOffset = 0;
@@ -532,7 +532,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
             proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
             i += inputDistance - 1;
-            _deferredNewline = false;
         }
         else
         {
@@ -559,10 +558,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // leaving it like this for now - it'll break for lines that
             // _exactly_ wrap, but we can't re-wrap lines now anyways, so it
             // doesn't matter.
-            const bool nextCharIsNewline = (i + 1 < stringView.size()) && stringView.at(i) == UNICODE_CARRIAGERETURN;
-            const bool nextCharIsSpace = (i + 1 < stringView.size()) && stringView.at(i) == UNICODE_SPACE;
-            _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(!nextCharIsSpace);
-            _deferredNewline = true;
+            _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(true);
         }
 
         _AdjustCursorPosition(proposedCursorPosition);

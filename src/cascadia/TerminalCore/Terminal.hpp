@@ -191,8 +191,6 @@ private:
     bool _snapOnInput;
     bool _suppressApplicationTitle;
 
-    bool _deferredNewline = false;
-
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction
