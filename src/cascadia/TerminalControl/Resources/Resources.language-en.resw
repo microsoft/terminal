@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -117,27 +117,48 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CaseSensitivityButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SearchBox_CaseSensitivity.ToolTipService.ToolTip" xml:space="preserve">
     <value>Match Case</value>
-    <comment>The tooltip text for CaseSensitivityButton</comment>
+    <comment>The tooltip text for the case sensitivity button on the search box control.</comment>
   </data>
-  <data name="CloseButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SearchBox_Close.ToolTipService.ToolTip" xml:space="preserve">
     <value>Close</value>
-    <comment>The tooltip text for CloseButton</comment>
+    <comment>The tooltip text for the close button on the search box control.</comment>
   </data>
-  <data name="GoBackwardButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SearchBox_SearchBackwards.ToolTipService.ToolTip" xml:space="preserve">
     <value>Find Up</value>
-    <comment>The tooltip text for GoBackward Button</comment>
+    <comment>The tooltip text for the search backward button.</comment>
   </data>
-  <data name="GoForwardButtonLocalizedText.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SearchBox_SearchForwards.ToolTipService.ToolTip" xml:space="preserve">
     <value>Find Down</value>
-    <comment>The tooltip text for GoForward Button</comment>
+    <comment>The tooltip text for the search forward button.</comment>
   </data>
-  <data name="TextBoxLocalizedText.PlaceholderText" xml:space="preserve">
+  <data name="SearchBox_TextBox.PlaceholderText" xml:space="preserve">
     <value>Find...</value>
-    <comment>The placeholder text in the search dialog TextBox</comment>
+    <comment>The placeholder text in the search box control.</comment>
   </data>
   <data name="DragFileCaption" xml:space="preserve">
     <value>Copy path to file</value>
+    <comment>The displayed caption for dragging a file onto a terminal.</comment>
+  </data>
+  <data name="SearchBox_CaseSensitivity.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Case Sensitivity</value>
+    <comment>The name of the case sensitivity button on the search box control for accessibility.</comment>
+  </data>
+  <data name="SearchBox_SearchForwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search Forward</value>
+    <comment>The name of the search forward button for accessibility.</comment>
+  </data>
+  <data name="SearchBox_SearchBackwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search Backward</value>
+    <comment>The name of the search backward button for accessibility.</comment>
+  </data>
+  <data name="SearchBox_TextBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search Text</value>
+    <comment>The name of the text box on the search box control for accessibility.</comment>
+  </data>
+  <data name="TerminalControl_ControlType" xml:space="preserve">
+    <value>terminal</value>
+    <comment>The type of control that the terminal ahderes to. Used to identify how a user can interact with this kind of control.</comment>
   </data>
 </root>

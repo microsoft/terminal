@@ -61,7 +61,7 @@ public:
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const noexcept;
-    const COORD GetEndSelectionPosition() const noexcept;
+    const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
 #pragma endregion
 };

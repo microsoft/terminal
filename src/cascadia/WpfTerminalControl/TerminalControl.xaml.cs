@@ -9,7 +9,7 @@ namespace Microsoft.Terminal.Wpf
     using System.Windows.Controls;
     using System.Windows.Input;
     using System.Windows.Media;
-
+    
     /// <summary>
     /// A basic terminal control. This control can receive and render standard VT100 sequences.
     /// </summary>

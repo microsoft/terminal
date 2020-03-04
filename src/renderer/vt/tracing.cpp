@@ -225,3 +225,48 @@ void RenderTracing::TraceLastText(const COORD lastTextPos) const
     UNREFERENCED_PARAMETER(lastTextPos);
 #endif UNIT_TESTING
 }
+void RenderTracing::TraceMoveCursor(const COORD lastTextPos, const COORD cursor) const
+{
+#ifndef UNIT_TESTING
+    const auto lastTextStr = _CoordToString(lastTextPos);
+    const auto lastText = lastTextStr.c_str();
+
+    const auto cursorStr = _CoordToString(cursor);
+    const auto cursorPos = cursorStr.c_str();
+
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TraceMoveCursor",
+                      TraceLoggingString(lastText),
+                      TraceLoggingString(cursorPos),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+    UNREFERENCED_PARAMETER(lastTextPos);
+    UNREFERENCED_PARAMETER(cursor);
+#endif UNIT_TESTING
+}
+
+void RenderTracing::TraceWrapped() const
+{
+#ifndef UNIT_TESTING
+    const auto* const msg = "Wrapped instead of \\r\\n";
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TraceWrapped",
+                      TraceLoggingString(msg),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+#endif UNIT_TESTING
+}
+
+void RenderTracing::TracePaintCursor(const COORD coordCursor) const
+{
+#ifndef UNIT_TESTING
+    const auto cursorPosString = _CoordToString(coordCursor);
+    const auto cursorPos = cursorPosString.c_str();
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TracePaintCursor",
+                      TraceLoggingString(cursorPos),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+    UNREFERENCED_PARAMETER(coordCursor);
+#endif UNIT_TESTING
+}

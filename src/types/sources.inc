@@ -45,6 +45,8 @@ SOURCES= \
     ..\WindowUiaProviderBase.cpp \
     ..\ScreenInfoUiaProviderBase.cpp \
     ..\UiaTextRangeBase.cpp \
+    ..\TermControlUiaProvider.cpp \
+    ..\TermControlUiaTextRange.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

@@ -93,9 +93,7 @@
        roll up our subproject resources. We have to suppress that rule but keep part of its logic, because that rule is
        where the AppxPackagePayload items are created. -->
   <PropertyGroup>
-    <!-- Only for MSBuild versions <= 16.4.0 -->
-    <!-- TODO: Change this to hard less than once the 16.4.0 previews fix the bug. -->
-    <WapProjBeforeGenerateAppxManifestDependsOn Condition="$(MSBuildVersion) &lt;= '16.4.0'">
+    <WapProjBeforeGenerateAppxManifestDependsOn>
         $([MSBuild]::Unescape('$(WapProjBeforeGenerateAppxManifestDependsOn.Replace('_RemoveAllNonWapUWPItems', '_OpenConsoleRemoveAllNonWapUWPItems'))'))
     </WapProjBeforeGenerateAppxManifestDependsOn>
   </PropertyGroup>
