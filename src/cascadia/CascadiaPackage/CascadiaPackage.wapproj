@@ -43,7 +43,8 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\Resources.language-en.resw" />
+    <PRIResource Include="Resources\Resources.resw" />
   </ItemGroup>
   <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
     <!-- This is picked up by CascadiaResources.build.items. -->
@@ -54,6 +55,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
+    <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
   </ItemGroup>
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
@@ -91,9 +93,7 @@
        roll up our subproject resources. We have to suppress that rule but keep part of its logic, because that rule is
        where the AppxPackagePayload items are created. -->
   <PropertyGroup>
-    <!-- Only for MSBuild versions <= 16.4.0 -->
-    <!-- TODO: Change this to hard less than once the 16.4.0 previews fix the bug. -->
-    <WapProjBeforeGenerateAppxManifestDependsOn Condition="$(MSBuildVersion) &lt;= '16.4.0'">
+    <WapProjBeforeGenerateAppxManifestDependsOn>
         $([MSBuild]::Unescape('$(WapProjBeforeGenerateAppxManifestDependsOn.Replace('_RemoveAllNonWapUWPItems', '_OpenConsoleRemoveAllNonWapUWPItems'))'))
     </WapProjBeforeGenerateAppxManifestDependsOn>
   </PropertyGroup>

@@ -14,7 +14,7 @@ Author(s):
 - Paul Campbell (paulcam) 18-Jun-2014
 
 Revision History:
-- Tranformed to header-only class so it can be included by multiple
+- Transformed to header-only class so it can be included by multiple
 unit testing projects in the codebase without a bunch of overhead.
 --*/
 

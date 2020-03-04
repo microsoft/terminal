@@ -84,7 +84,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 {
                     // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the string
                     const size_t stopLen{ std::min(_buffer.length(), gsl::narrow_cast<size_t>(3u)) };
-                    for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen)
+                    for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen
                     {
                         --backIter;
                         // If Lead Byte found

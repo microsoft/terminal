@@ -148,6 +148,8 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+
+    TEST_METHOD(GetTextRects);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -1543,7 +1545,7 @@ void TextBufferTests::TestBackspaceStrings()
 
 void TextBufferTests::TestBackspaceStringsAPI()
 {
-    // Pretty much the same as the above test, but explicitly DOESNT use the
+    // Pretty much the same as the above test, but explicitly DOESN'T use the
     //  state machine.
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -1593,7 +1595,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     seqCb = 2;
 
     Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as seperate strings."));
+        L"Using DoWriteConsole, write \\b \\b as separate strings."));
 
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
@@ -1604,7 +1606,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
     Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as seperate strings."));
+        L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
         wchar_t* str = L"a";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
@@ -1835,7 +1837,7 @@ void TextBufferTests::ResizeTraditional()
             }
             else
             {
-                Log::Comment(L"This position is below our ouriginal write area. It should have filled blank lines (space lines) with the default fill color.");
+                Log::Comment(L"This position is below our original write area. It should have filled blank lines (space lines) with the default fill color.");
                 // Otherwise, we use the default.
                 VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
                 VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());
@@ -1862,13 +1864,13 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
-    const auto bbutton = L"\xD83C\xDD71";
-    position = bbutton;
+    const auto bButton = L"\xD83C\xDD71";
+    position = bButton;
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
     const auto readBackText = *readBack;
-    VERIFY_ARE_EQUAL(String(bbutton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
     const SHORT delta = _buffer->GetFirstRowIndex() - pos.Y;
@@ -1884,7 +1886,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const auto shouldBeEmojiText = *_buffer->GetTextDataAt(newPos);
 
     VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
-    VERIFY_ARE_EQUAL(String(bbutton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
+    VERIFY_ARE_EQUAL(String(bButton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
 }
 
 // This tests that when buffer storage rows are rotated around during a scroll buffer operation,
@@ -2134,5 +2136,70 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::GetTextRects()
+{
+    // GetTextRects() is used to...
+    //  - Represent selection rects
+    //  - Represent UiaTextRanges for accessibility
+
+    // This is the burrito emoji: 🌯
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto burrito = std::wstring(L"\xD83C\xDF2F");
+
+    COORD bufferSize{ 20, 50 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::vector<std::wstring> text = { L"0123456789",
+                                             L" " + burrito + L"3456" + burrito,
+                                             L"  " + burrito + L"45" + burrito,
+                                             burrito + L"234567" + burrito,
+                                             L"0123456789" };
+    WriteLinesToBuffer(text, *_buffer);
+    // - - - Text Buffer Contents - - -
+    // |0123456789
+    // | 🌯3456🌯
+    // |  🌯45🌯
+    // |🌯234567🌯
+    // |0123456789
+    // - - - - - - - - - - - - - - - -
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:blockSelection", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool blockSelection;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
+
+    std::vector<SMALL_RECT> expected{};
+    if (blockSelection)
+    {
+        expected.push_back({ 1, 0, 7, 0 });
+        expected.push_back({ 1, 1, 8, 1 }); // expand right
+        expected.push_back({ 1, 2, 7, 2 });
+        expected.push_back({ 0, 3, 7, 3 }); // expand left
+        expected.push_back({ 1, 4, 7, 4 });
+    }
+    else
+    {
+        expected.push_back({ 1, 0, 19, 0 });
+        expected.push_back({ 0, 1, 19, 1 });
+        expected.push_back({ 0, 2, 19, 2 });
+        expected.push_back({ 0, 3, 19, 3 });
+        expected.push_back({ 0, 4, 7, 4 });
+    }
+
+    COORD start{ 1, 0 };
+    COORD end{ 7, 4 };
+    const auto result = _buffer->GetTextRects(start, end, blockSelection);
+    VERIFY_ARE_EQUAL(expected.size(), result.size());
+    for (size_t i = 0; i < expected.size(); ++i)
+    {
+        VERIFY_ARE_EQUAL(expected.at(i), result.at(i));
     }
 }

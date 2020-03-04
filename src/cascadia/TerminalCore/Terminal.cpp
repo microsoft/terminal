@@ -44,12 +44,10 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _boxSelection{ false },
-    _selectionActive{ false },
+    _blockSelection{ false },
+    _selection{ std::nullopt },
     _allowSingleCharSelection{ true },
-    _copyOnSelect{ false },
-    _selectionAnchor{ 0, 0 },
-    _endSelectionPosition{ 0, 0 }
+    _copyOnSelect{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -245,7 +243,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     // pressed, manually get the character that's being typed, and put it in the
     // KeyEvent.
     // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximimize, size, move, close
+    // the system menu for restore, min/maximize, size, move, close
     wchar_t ch = UNICODE_NULL;
     if (states.IsAltPressed() && vkey != VK_SPACE)
     {
@@ -345,7 +343,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a read lock on the terminal.
+// - Acquire a read lock on the terminal.
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
@@ -355,7 +353,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a write lock on the terminal.
+// - Acquire a write lock on the terminal.
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
@@ -454,6 +452,22 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // With well behaving shells during normal operation this safeguard should normally not be encountered.
             proposedCursorPosition.X = 0;
             proposedCursorPosition.Y++;
+
+            // Try the character again.
+            i--;
+
+            // Mark the line we're currently on as wrapped
+
+            // TODO: GH#780 - This should really be a _deferred_ newline. If
+            // the next character to come in is a newline or a cursor
+            // movement or anything, then we should _not_ wrap this line
+            // here.
+            //
+            // This is more WriteCharsLegacy2ElectricBoogaloo work. I'm
+            // leaving it like this for now - it'll break for lines that
+            // _exactly_ wrap, but we can't re-wrap lines now anyways, so it
+            // doesn't matter.
+            _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(true);
         }
 
         _AdjustCursorPosition(proposedCursorPosition);
