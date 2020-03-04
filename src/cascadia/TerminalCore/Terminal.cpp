@@ -377,6 +377,22 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         // screenInfo + de-wrap last scrollback line adjustment  - method.7
         //
+        // This one seems a tad bit hacky, but works alright enough.
+        //
+        // This is basically the screeninfo method with a small change. After
+        // calculating where the viewport should be, check the scrollback line
+        // that was immediately before the viewport. If it previously wrapped,
+        // that means the old top line of the viewport had wrapped from a
+        // scrollback line. If that scrollback line doesn't wrap anymore, we
+        // took the content from the top line of the viewport and moved it into
+        // that scrollback line. Conpty however couldn't do that, so it's going
+        // to reprint that top line, even if it's now been successfully
+        // dewrapped into the scrollback. To avoid losing output, we'll shift
+        // our new viewport location down one row, so that the new output from
+        // conpty doesn't blow away the previously scrolled back line.
+        //
+        // I have yet to test this with vertical resizing, but I want to
+        // checkpoint this as-is
 
         Cursor& newCursor = newTextBuffer->GetCursor();
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
