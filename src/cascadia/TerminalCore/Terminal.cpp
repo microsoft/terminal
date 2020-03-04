@@ -182,7 +182,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // Save cursor's relative height versus the viewport
     const short sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
 
-    short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top() - 1);
+    short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top());
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -198,6 +198,13 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     // {
     //     // Original code
+    //     // This doesn't work, because the top stays in the same place. As lines
+    //     // in the scrollback begin to wrap, they'll push the contents of the
+    //     // buffer down, and the real mutable viewport will be below this.
+    //     //
+    //     // This will lead to "losing lines" of scrollback, as conpty will blat
+    //     // the viewport contents over thse lines.
+    //
     //     auto proposedTop = oldTop;
     //     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     //     const auto proposedBottom = newView.BottomExclusive();
@@ -278,8 +285,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // }
 
     {
+        // This works very well for decreasing width up until the point where the lines _in_ the viewport start wrapping. In that case, the viewport really _should_ be moving down as well, but this method can't really tell that.
         _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(scrollbackLines + 1) }, viewportSize);
     }
+
     _buffer.swap(newTextBuffer);
 
     _scrollOffset = 0;
