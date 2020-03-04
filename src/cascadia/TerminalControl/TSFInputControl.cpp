@@ -102,13 +102,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::ClearBuffer()
     {
-        TextBlock().Text(L"");
-        _inputBuffer.clear();
-        _editContext.NotifyFocusLeave();
-        _editContext.NotifyTextChanged({ 0, ::base::ClampedNumeric<int32_t>(_inputBuffer.length()) }, 0, { 0, 0 });
-        _editContext.NotifyFocusEnter();
-        _activeTextStart = 0;
-        _inComposition = false;
+        if (!_inputBuffer.empty())
+        {
+            TextBlock().Text(L"");
+            _inputBuffer.clear();
+            _editContext.NotifyFocusLeave();
+            _editContext.NotifyTextChanged({ 0, ::base::ClampedNumeric<int32_t>(_inputBuffer.length()) }, 0, { 0, 0 });
+            _editContext.NotifyFocusEnter();
+            _activeTextStart = 0;
+            _inComposition = false;
+        }
     }
 
     // Method Description:
