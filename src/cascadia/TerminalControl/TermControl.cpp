@@ -741,6 +741,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
+        if (vkey == VK_ESCAPE ||
+            vkey == VK_RETURN)
+        {
+            TSFInputControl().ClearBuffer();
+        }
+
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
