@@ -12,6 +12,6 @@
             Visibility="Collapsed">
         <TextBlock x:Name="TextBlock"
                    IsTextSelectionEnabled="false"
-                   TextDecorations="Underline"/>
+                   TextDecorations="Underline" />
     </Canvas>
 </UserControl>
