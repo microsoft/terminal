@@ -73,6 +73,7 @@ VtIo::VtIo() :
 [[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
+    _resizeQuirk = pArgs->GetResizeQuirk();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -192,6 +193,7 @@ VtIo::VtIo() :
             if (_pVtRenderEngine)
             {
                 _pVtRenderEngine->SetTerminalOwner(this);
+                _pVtRenderEngine->SetResizeQuirk(_resizeQuirk);
             }
         }
     }
@@ -446,3 +448,8 @@ void VtIo::EnableConptyModeForTests()
     _objectsCreated = true;
 }
 #endif
+
+bool VtIo::GetResizeQuirk() const
+{
+    return _resizeQuirk;
+}

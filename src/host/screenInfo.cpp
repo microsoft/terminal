@@ -2182,7 +2182,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     // Force repaint of entire viewport, unless we're in conpty mode. In that
     // case, we don't really need to force a redraw of the entire screen just
     // because the text attributes changed.
-    if (!gci.IsInVtIoMode())
+    if (!(gci.IsInVtIoMode()))
     {
         GetRenderTarget().TriggerRedrawAll();
     }

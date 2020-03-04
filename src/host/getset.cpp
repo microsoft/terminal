@@ -781,7 +781,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             // GH#3490 - If we're in conpty mode, don't invalidate the entire
             // viewport. In conpty mode, the VtEngine will later decide what
             // part of the buffer actually needs to be re-sent to the terminal.
-            if (!g.getConsoleInformation().IsInVtIoMode())
+            if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->GetResizeQuirk()))
             {
                 WriteToScreen(context, context.GetViewport());
             }

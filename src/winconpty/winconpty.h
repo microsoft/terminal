@@ -19,6 +19,9 @@ typedef struct _PseudoConsole
 //      the signal pipe.
 #define PTY_SIGNAL_RESIZE_WINDOW (8u)
 
+//
+#define PSEUDOCONSOLE_RESIZE_QUIRK (2u)
+
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,
                              const COORD size,
