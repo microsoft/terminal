@@ -243,7 +243,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _Utf8BitMasks::IsLeadByteThreeByteSequence,
         };
 
-        std::basic_string<charT> _buffer; // buffer to which the poulated string_view refers
+        std::basic_string<charT> _buffer; // buffer to which the populated string_view refers
         std::array<charT, 4> _utfPartials; // buffer for code units of a partial code point that have to be cached
         size_t _partialsLen{}; // number of cached code units
     };
