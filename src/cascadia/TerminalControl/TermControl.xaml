@@ -30,7 +30,7 @@
 
     <Grid x:Name="RootGrid">
         <Image x:Name="BackgroundImage"
-               AutomationProperties.AccessibilityView="Raw"/>
+               AutomationProperties.AccessibilityView="Raw" />
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
