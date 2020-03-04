@@ -9,7 +9,7 @@
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
 
-// Either a ; at the start of a line, or a ; preceeded by any non-\ char.
+// Either a ; at the start of a line, or a ; preceded by any non-\ char.
 const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
 
 AppCommandlineArgs::AppCommandlineArgs()
