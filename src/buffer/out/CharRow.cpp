@@ -277,16 +277,16 @@ std::wstring CharRow::GetText() const
 // - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
 // Return Value:
 // - the delimiter class for the given char
-const DelimiterClass CharRow::DelimiterClassAt(const size_t column, std::wstring_view wordDelimiters) const
+const DelimiterClass CharRow::DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const
 {
     THROW_HR_IF(E_INVALIDARG, column >= _data.size());
 
-    const auto glyph = GlyphAt(column).begin();
-    if (*glyph <= UNICODE_SPACE)
+    const auto glyph = *GlyphAt(column).begin();
+    if (glyph <= UNICODE_SPACE)
     {
         return DelimiterClass::ControlChar;
     }
-    else if (wordDelimiters.find(*glyph) != std::wstring_view::npos)
+    else if (wordDelimiters.find(glyph) != std::wstring_view::npos)
     {
         return DelimiterClass::DelimiterChar;
     }

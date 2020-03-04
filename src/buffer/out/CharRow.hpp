@@ -71,7 +71,7 @@ public:
     void ClearGlyph(const size_t column);
     std::wstring GetText() const;
 
-    const DelimiterClass DelimiterClassAt(const size_t column, std::wstring_view wordDelimiters) const;
+    const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
 
     // working with glyphs
     const reference GlyphAt(const size_t column) const;
