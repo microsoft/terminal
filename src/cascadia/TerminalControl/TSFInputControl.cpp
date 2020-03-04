@@ -105,9 +105,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_inputBuffer.empty())
         {
             TextBlock().Text(L"");
+            const auto bufLen = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
             _inputBuffer.clear();
             _editContext.NotifyFocusLeave();
-            _editContext.NotifyTextChanged({ 0, ::base::ClampedNumeric<int32_t>(_inputBuffer.length()) }, 0, { 0, 0 });
+            _editContext.NotifyTextChanged({ 0, bufLen }, 0, { 0, 0 });
             _editContext.NotifyFocusEnter();
             _activeTextStart = 0;
             _inComposition = false;
@@ -293,7 +294,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
     {
-        const auto text = args.Text();
+        const auto incomingText = args.Text();
         const auto range = args.Range();
 
         try
@@ -301,7 +302,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
-                text);
+                incomingText);
 
             // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
             // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
