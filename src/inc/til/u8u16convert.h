@@ -51,12 +51,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             try
             {
-                size_t remainingLength{ in.length() };
                 size_t capacity{};
-                if (FAILED(SizeTAdd(remainingLength, _partialsLen, &capacity)))
-                {
-                    return E_ABORT;
-                }
+                RETURN_HR_IF(E_ABORT, !base::CheckAdd(in.length(), _partialsLen).AssignIfValid(&capacity));
 
                 _buffer.clear();
                 _buffer.reserve(capacity);
@@ -79,14 +75,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     return S_FALSE; // the partial is populated
                 }
 
-                auto backIter = in.end() - 1;
+                _buffer.append(in);
+                size_t remainingLength{ _buffer.length() };
+
+                auto backIter = _buffer.end();
                 // If the last byte in the string was a byte belonging to a UTF-8 multi-byte character
-                if ((*backIter & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
+                if ((*(backIter - 1) & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
                 {
                     // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the string
-                    const size_t stopLen{ std::min(in.length(), gsl::narrow_cast<size_t>(3u)) };
-                    for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen, --backIter)
+                    const size_t stopLen{ std::min(_buffer.length(), gsl::narrow_cast<size_t>(3u)) };
+                    for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen)
                     {
+                        --backIter;
                         // If Lead Byte found
                         if ((*backIter & _Utf8BitMasks::MaskContinuationByte) > _Utf8BitMasks::IsContinuationByte)
                         {
@@ -96,7 +96,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion into a UTF-16 string.
                             if ((*backIter & _cmpMasks.at(sequenceLen)) != _cmpOperands.at(sequenceLen))
                             {
-                                std::move(backIter, in.end(), _utfPartials.begin());
+                                std::move(backIter, _buffer.end(), _utfPartials.begin());
                                 remainingLength -= sequenceLen;
                                 _partialsLen = sequenceLen;
                             }
@@ -107,8 +107,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
 
                 // populate the part of the string that contains complete code points only
-                _buffer.append(in, 0u, remainingLength);
-                out = _buffer;
+                out = { _buffer.data(), remainingLength };
 
                 return S_OK;
             }
@@ -146,10 +145,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 size_t remainingLength{ in.length() };
                 size_t capacity{};
-                if (FAILED(SizeTAdd(remainingLength, _partialsLen, &capacity)))
-                {
-                    return E_ABORT;
-                }
+
+                RETURN_HR_IF(E_ABORT, !base::CheckAdd(remainingLength, _partialsLen).AssignIfValid(&capacity));
 
                 _buffer.clear();
                 _buffer.reserve(capacity);
@@ -280,7 +277,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             int lengthRequired{};
             // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
-            RETURN_HR_IF(E_ABORT, FAILED(SizeTToInt(in.length(), &lengthRequired)));
+            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthRequired));
             out.resize(in.length()); // avoid to call MultiByteToWideChar twice only to get the required size
             const int lengthOut = MultiByteToWideChar(gsl::narrow_cast<UINT>(CP_UTF8), 0ul, in.data(), lengthRequired, out.data(), lengthRequired);
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
@@ -349,7 +346,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Code Point U+0000..U+FFFF: 1 UTF-16 code unit --> 1..3 UTF-8 code units.
             // Code Points >U+FFFF: 2 UTF-16 code units --> 4 UTF-8 code units.
             // Thus, the worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
-            RETURN_HR_IF(E_ABORT, FAILED(SizeTToInt(in.length(), &lengthIn)) || FAILED(IntMult(lengthIn, 3, &lengthRequired)));
+            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthIn) || !base::CheckMul(lengthIn, 3).AssignIfValid(&lengthRequired));
             out.resize(gsl::narrow_cast<size_t>(lengthRequired)); // avoid to call WideCharToMultiByte twice only to get the required size
             const int lengthOut = WideCharToMultiByte(gsl::narrow_cast<UINT>(CP_UTF8), 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr);
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
