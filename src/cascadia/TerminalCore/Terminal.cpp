@@ -182,10 +182,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // Save cursor's relative height versus the viewport
     const short sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
 
-    // short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top()); // method.4
-    // short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.BottomInclusive()); // method.5
+    short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top()); // method.4, 10
+    // short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.BottomInclusive()); // method.5, 9
     // short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top() + 1); // method.6
-    short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top()); // method.7
+    // short scrollbackLines = ::base::saturated_cast<short>(_mutableViewport.Top()); // method.7, 8
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -310,6 +310,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //     // TextBuffer::Reflow
     //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(scrollbackLines + 1) }, viewportSize);
     // }
+
     // {
     //     // Ask the TextBuffer for the viewport bottom - Method.5
     //     // Instead of trying to figure out the last scrollback row, try figuring
@@ -424,64 +425,105 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(realProposedTop) }, viewportSize);
     // }
 
+    //     {
+    //         // method.7 & fix resizing down - method.8
+    //         //
+    //         // B-A-B-Y this works for both horizontal and vertical resizes. It's
+    //         // really a mix of m.7 and m.2. Basically took that m.2 code for
+    //         // figuring out if the text was on the last line of the viewport and put
+    //         // it in here too.
+    //         //
+    //         // Lets cross our fingers that it works for a real conpty as well.
+
+    //         const auto dy = viewportSize.Y - oldDimensions.Y;
+    //         const COORD oldCursorPos = _buffer->GetCursor().GetPosition();
+
+    // #pragma warning(push)
+    // #pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
+    //         COORD oldLastChar = oldCursorPos;
+    //         // COORD newLastChar = newCursorPos;
+    //         try
+    //         {
+    //             oldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
+    //             // newLastChar = newTextBuffer->GetLastNonSpaceCharacter(_mutableViewport);
+    //         }
+    //         CATCH_LOG();
+    // #pragma warning(pop)
+
+    //         const auto maxRow = std::max(oldLastChar.Y, oldCursorPos.Y);
+
+    //         const bool beforeLastRowOfView = maxRow < _mutableViewport.BottomInclusive();
+
+    //         Cursor& newCursor = newTextBuffer->GetCursor();
+    //         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+    //         const auto sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
+    //         const auto cursorHeightDiff = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+
+    //         const auto screenInfoProposedTop = _mutableViewport.Top() + cursorHeightDiff;
+
+    //         auto realProposedTop = screenInfoProposedTop;
+
+    //         const auto& originalBufferLastScrollbackLine = _buffer->GetRowByOffset(_mutableViewport.Top() - 1);
+    //         const auto& newBufferLastScrollbackLine = newTextBuffer->GetRowByOffset(_scrollbackLines - 1);
+
+    //         const bool oldLineWrapped = originalBufferLastScrollbackLine.GetCharRow().WasWrapForced();
+    //         const bool oldExactlyFit = originalBufferLastScrollbackLine.GetCharRow().MeasureRight() == _mutableViewport.Width();
+    //         const bool newLineWrapped = newBufferLastScrollbackLine.GetCharRow().WasWrapForced();
+
+    //         // if ((oldLineWrapped || oldExactlyFit) && !newLineWrapped)
+    //         if ((oldLineWrapped) && !newLineWrapped)
+    //         {
+    //             realProposedTop++;
+    //         }
+
+    //         if (!beforeLastRowOfView)
+    //         {
+    //             realProposedTop += std::max(0, -dy);
+    //             // const auto adjustment = beforeLastRowOfView ? 0 : std::max(0, -dy); // original calculation
+    //         }
+
+    //         _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(realProposedTop) }, viewportSize);
+    //     }
+
+    // {
+    //     // Ask the TextBuffer for the viewport bottom - Method.9
+    //     //
+    //     // This is basically method.5. This has some other conpty changes, and the TextBuffer code was changed too, so this is only a +1
+    //     auto proposedBottom = scrollbackLines;
+    //     auto proposedTop = proposedBottom - viewportSize.Y;
+    //     // Honestly, we should be using +1 here, and not a -1 in TextBuffer, but (shrug)
+    //     _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop + 1) }, viewportSize);
+    // }
+
     {
-        // method.7 & fix resizing down - method.8
-        //
-        // B-A-B-Y this works for both horizontal and vertical resizes. It's
-        // really a mix of m.7 and m.2. Basically took that m.2 code for
-        // figuring out if the text was on the last line of the viewport and put
-        // it in here too.
-        //
-        // Lets cross our fingers that it works for a real conpty as well.
+        // Ask the TextBuffer for the scrollback start - Method.10
 
         const auto dy = viewportSize.Y - oldDimensions.Y;
-        const COORD oldCursorPos = _buffer->GetCursor().GetPosition();
+        const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();
+        // const COORD oldCursorPos = _buffer->GetCursor().GetPosition();
 
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
-        COORD oldLastChar = oldCursorPos;
-        // COORD newLastChar = newCursorPos;
+        // COORD oldLastChar = oldCursorPos;
+        COORD newLastChar = newCursorPos;
         try
         {
-            oldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
-            // newLastChar = newTextBuffer->GetLastNonSpaceCharacter(_mutableViewport);
+            // oldLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
+            newLastChar = newTextBuffer->GetLastNonSpaceCharacter(_mutableViewport);
         }
         CATCH_LOG();
 #pragma warning(pop)
 
-        const auto maxRow = std::max(oldLastChar.Y, oldCursorPos.Y);
+        // const auto maxRow = std::max(oldLastChar.Y, oldCursorPos.Y);
+        const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
-        const bool beforeLastRowOfView = maxRow < _mutableViewport.BottomInclusive();
+        const auto proposedTopFromLastLine = maxRow - viewportSize.Y;
+        const auto proposedTopFromScrollback = scrollbackLines;
 
-        Cursor& newCursor = newTextBuffer->GetCursor();
-        // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-        const auto sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _mutableViewport.Top();
-        const auto cursorHeightDiff = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+        const short proposedTop = std::max(::base::saturated_cast<short>(proposedTopFromLastLine),
+                                           ::base::saturated_cast<short>(proposedTopFromScrollback));
 
-        const auto screenInfoProposedTop = _mutableViewport.Top() + cursorHeightDiff;
-
-        auto realProposedTop = screenInfoProposedTop;
-
-        const auto& originalBufferLastScrollbackLine = _buffer->GetRowByOffset(_mutableViewport.Top() - 1);
-        const auto& newBufferLastScrollbackLine = newTextBuffer->GetRowByOffset(_scrollbackLines - 1);
-
-        const bool oldLineWrapped = originalBufferLastScrollbackLine.GetCharRow().WasWrapForced();
-        const bool oldExactlyFit = originalBufferLastScrollbackLine.GetCharRow().MeasureRight() == _mutableViewport.Width();
-        const bool newLineWrapped = newBufferLastScrollbackLine.GetCharRow().WasWrapForced();
-
-        // if ((oldLineWrapped || oldExactlyFit) && !newLineWrapped)
-        if ((oldLineWrapped) && !newLineWrapped)
-        {
-            realProposedTop++;
-        }
-
-        if (!beforeLastRowOfView)
-        {
-            realProposedTop += std::max(0, -dy);
-            // const auto adjustment = beforeLastRowOfView ? 0 : std::max(0, -dy); // original calculation
-        }
-
-        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(realProposedTop) }, viewportSize);
+        _mutableViewport = Viewport::FromDimensions({ 0, ::base::saturated_cast<short>(proposedTop) }, viewportSize);
     }
 
     _buffer.swap(newTextBuffer);
