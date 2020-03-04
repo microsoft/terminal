@@ -132,7 +132,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     </StackPanel.Resources>
 
     <Button Height="36.0" MinWidth="46.0" Width="46.0" x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Click="_MinimizeClick"
-            AutomationProperties.Name="Minimize">
+            AutomationProperties.Name="Minimize"
+            AutomationProperties.AccessibilityView="Raw">
         <Button.Resources>
             <ResourceDictionary>
                 <x:String x:Key="CaptionButtonPath">M 0 0 H 10</x:String>
@@ -140,7 +141,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Button.Resources>
     </Button>
     <Button Height="36.0" MinWidth="46.0" Width="46.0" x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Click="_MaximizeClick"
-            AutomationProperties.Name="Maximize">
+            AutomationProperties.Name="Maximize"
+            AutomationProperties.AccessibilityView="Raw">
         <Button.Resources>
             <ResourceDictionary>
                 <x:String x:Key="CaptionButtonPath">M 0 0 H 10 V 10 H 0 V 0</x:String>
@@ -149,7 +151,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Button.Resources>
     </Button>
     <Button Height="36.0" MinWidth="46.0" Width="46.0" x:Name="CloseButton" Style="{StaticResource CaptionButton}" Click="_CloseClick"
-            AutomationProperties.Name="Close">
+            AutomationProperties.Name="Close"
+            AutomationProperties.AccessibilityView="Raw">
         <Button.Resources>
             <ResourceDictionary>
                 <ResourceDictionary.ThemeDictionaries>

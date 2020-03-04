@@ -192,6 +192,7 @@ namespace winrt::TerminalApp::implementation
         {
             IconPath(_lastIconPath);
             _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+            Automation::AutomationProperties::SetAccessibilityView(_tabViewItem.IconSource(), Automation::Peers::AccessibilityView::Raw);
         }
     }
 

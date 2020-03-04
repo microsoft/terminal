@@ -63,6 +63,8 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
+        Automation::AutomationProperties::SetAccessibilityView(_tabView, Automation::Peers::AccessibilityView::Raw);
+
         _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
@@ -372,6 +374,7 @@ namespace winrt::TerminalApp::implementation
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
                 profileMenuItem.Icon(iconElement);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
             if (profile.GetGuid() == defaultProfileGuid)
