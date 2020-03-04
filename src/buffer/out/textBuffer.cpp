@@ -1938,7 +1938,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         {
             if (iOldRow >= *lastScrollbackRow)
             {
-                *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y - 1);
+                // *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y - 1);
+                *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y);
                 foundScrollbackEnd = true;
             }
         }
