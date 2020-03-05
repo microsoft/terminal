@@ -182,7 +182,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16OneByOne()
         gsl::narrow_cast<wchar_t>(0xDCF7)
     };
 
-    til::u8state state{};
+    til::astate state{};
 
     std::wstring u16Out1{};
     VERIFY_SUCCEEDED(til::u8u16(u8String1_1, u16Out1, state));

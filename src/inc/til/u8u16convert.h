@@ -95,24 +95,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     return S_FALSE; // the partial is populated
                 }
 
-                size_t remainingLength{};
+                _buffer.append(in);
+                size_t remainingLength = _buffer.length();
 
                 if (codepage == gsl::narrow_cast<unsigned int>(CP_UTF8)) // UTF-8
                 {
-                _buffer.append(in);
-                remainingLength = _buffer.length();
-
-                auto backIter = _buffer.end();
-                // If the last byte in the string was a byte belonging to a UTF-8 multi-byte character
-                if ((*(backIter - 1) & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
-                {
-                    // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the string
-                    const size_t stopLen{ std::min(_buffer.length(), gsl::narrow_cast<size_t>(3u)) };
-                    for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen)
+                    auto backIter = _buffer.end();
+                    // If the last byte in the string was a byte belonging to a UTF-8 multi-byte character
+                    if ((*(backIter - 1) & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
                     {
-                        --backIter;
-                        // If Lead Byte found
-                        if ((*backIter & _Utf8BitMasks::MaskContinuationByte) > _Utf8BitMasks::IsContinuationByte)
+                        // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the string
+                        const size_t stopLen{ std::min(_buffer.length(), gsl::narrow_cast<size_t>(3u)) };
+                        for (size_t sequenceLen{ 1u }; sequenceLen <= stopLen; ++sequenceLen)
+                        {
+                            --backIter;
+                            // If Lead Byte found
+                            if ((*backIter & _Utf8BitMasks::MaskContinuationByte) > _Utf8BitMasks::IsContinuationByte)
                             {
                                 // If the Lead Byte indicates that the last bytes in the string is a partial UTF-8 code point then cache them:
                                 //  Use the bitmask at index `sequenceLen`. Compare the result with the operand having the same index. If they
@@ -120,7 +118,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion to hstring.
                                 if ((*backIter & _cmpMasks.at(sequenceLen)) != _cmpOperands.at(sequenceLen))
                                 {
-                                    std::move(backIter, in.end(), _partials.begin());
+                                    std::move(backIter, _buffer.end(), _partials.begin());
                                     remainingLength -= sequenceLen;
                                     _partialsLen = sequenceLen;
                                 }
@@ -132,14 +130,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 else // ANSI codepages
                 {
-                    remainingLength = in.length();
                     if (_cpInfo.MaxCharSize == 2u && !!_cpInfo.LeadByte[0]) // DBCS codepages
                     {
                         auto foundLeadByte{ false };
 
                         // Start at the beginning of the string (or the second bvte if a lead byte has been cached in the previous call) and scan forward,
                         // keep track when it encounters a lead byte, and treat the next byte as the trailing part of the same character.
-                        std::for_each(_buffer.empty() ? in.cbegin() : in.cbegin() + 1, in.cend(), [&](const auto& ch) {
+                        std::for_each(_buffer.cbegin(), _buffer.cend(), [&](const auto& ch) {
                             if (foundLeadByte)
                             {
                                 foundLeadByte = false; // because it's the trailing part
@@ -169,7 +166,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                         if (foundLeadByte)
                         {
-                            _partials.front() = in.back();
+                            _partials.front() = _buffer.back();
                             --remainingLength;
                             _partialsLen = 1u;
                         }
@@ -183,19 +180,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         auto foundLeadByte{ false };
                         size_t left{};
                         auto sequence{ gsl::narrow_cast<size_t>(1u) };
-                        if (_buffer.size() > 1u)
-                        {
-                            left = 4u - _buffer.size();
-                            sequence = 4u;
-                        }
-                        else if (_buffer.size() == 1u)
-                        {
-                            foundLeadByte = true;
-                            left = 1u;
-                            sequence = 2u;
-                        }
-
-                        std::for_each(in.cbegin(), in.cend(), [&](const auto& ch) {
+                        std::for_each(_buffer.cbegin(), _buffer.cend(), [&](const auto& ch) {
                             if (left > 0u && !foundLeadByte) // skip 3rd and 4th byte of a 4-byte sequence
                             {
                                 --left;
@@ -239,16 +224,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         {
                             _partialsLen = sequence - left;
                             remainingLength -= _partialsLen;
-                            std::move(in.end() - _partialsLen, in.end(), _partials.begin());
+                            std::move(_buffer.end() - _partialsLen, _buffer.end(), _partials.begin());
                         }
                     }
                     else if (codepage >= 55000u && codepage <= 55004u) // GSM 7-bit
                     {
-                        if (in.back() == '\x1B') // escape character for a 2-byte sequence
+                        if (_buffer.back() == '\x1B') // escape character for a 2-byte sequence
                         {
                             _partialsLen = 1u;
                             --remainingLength;
-                            _partials.front() = in.back();
+                            _partials.front() = _buffer.back();
                         }
                         else
                         {
@@ -573,7 +558,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             int lengthIn{};
             RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthIn));
- 
+
             int lengthRequired{};
             if (codepage == gsl::narrow_cast<unsigned int>(CP_UTF8)) // UTF-8
             {
