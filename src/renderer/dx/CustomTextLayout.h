@@ -180,8 +180,15 @@ namespace Microsoft::Console::Render
 
         std::vector<float> _glyphAdvances;
 
+        struct ScaleCorrection
+        {
+            UINT32 textIndex;
+            UINT32 textLength;
+            float scale;
+        };
+
         // These are used to further break the runs apart and adjust the font size so glyphs fit inside the cells.
-        std::vector<std::tuple<UINT32, float>> _glyphScaleCorrections;
+        std::vector<ScaleCorrection> _glyphScaleCorrections;
 
 #ifdef UNIT_TESTING
     public:

@@ -1045,6 +1045,10 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
                 resultPos = bufferEnd;
                 (*pAmountMoved)++;
             }
+            else
+            {
+                success = false;
+            }
             break;
         }
         case MovementDirection::Backward:
