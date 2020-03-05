@@ -43,6 +43,7 @@ static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
+    _keybindingsWarnings{},
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
@@ -330,7 +331,14 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        _keybindings->LayerJson(keybindings);
+        auto warnings = _keybindings->LayerJson(keybindings);
+        // It's possible that the user provided keybindings have some warnings
+        // in them - problems that we should alert the user to, but we can
+        // recover from. Most of these warnings cannot be detected later in the
+        // Validate settings phase, so we'll collect them now. If there were any
+        // warnings generated from parsing these keybindings, add them to our
+        // list of warnings.
+        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
 
     if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
@@ -536,4 +544,18 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
     _colorSchemes[name] = std::move(scheme);
+}
+
+// Method Description:
+// - Return the warnings that we've collected during parsing the JSON for the
+//   keybindings. It's possible that the user provided keybindings have some
+//   warnings in them - problems that we should alert the user to, but we can
+//   recover from.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
+{
+    return _keybindingsWarnings;
 }

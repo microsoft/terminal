@@ -16,6 +16,7 @@ class Utf8Utf16ConvertTests
     TEST_METHOD(TestU16ToU8);
     TEST_METHOD(TestU8ToU16Partials);
     TEST_METHOD(TestU16ToU8Partials);
+    TEST_METHOD(TestU8ToU16OneByOne);
 };
 
 void Utf8Utf16ConvertTests::TestU8ToU16()
@@ -164,4 +165,29 @@ void Utf8Utf16ConvertTests::TestU16ToU8Partials()
     const HRESULT hRes2{ til::u16u8(u16String2, u8Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out2);
+}
+
+void Utf8Utf16ConvertTests::TestU8ToU16OneByOne()
+{
+    const std::string u8String1_1{ '\xF0' }; // U+1F4F7 CAMERA (4 bytes)
+    const std::string u8String1_2{ '\x9F' };
+    const std::string u8String1_3{ '\x93' };
+    const std::string u8String1_4{ '\xB7' };
+
+    const std::wstring u16StringComp1{
+        gsl::narrow_cast<wchar_t>(0xD83D), // U+1F4F7 CAMERA (surrogate pair)
+        gsl::narrow_cast<wchar_t>(0xDCF7)
+    };
+
+    til::u8state state{};
+
+    std::wstring u16Out1{};
+    VERIFY_SUCCEEDED(til::u8u16(u8String1_1, u16Out1, state));
+    VERIFY_ARE_EQUAL(L"", u16Out1); // There should be no output for the first three bytes
+    VERIFY_SUCCEEDED(til::u8u16(u8String1_2, u16Out1, state));
+    VERIFY_ARE_EQUAL(L"", u16Out1);
+    VERIFY_SUCCEEDED(til::u8u16(u8String1_3, u16Out1, state));
+    VERIFY_ARE_EQUAL(L"", u16Out1);
+    VERIFY_SUCCEEDED(til::u8u16(u8String1_4, u16Out1, state));
+    VERIFY_ARE_EQUAL(u16StringComp1, u16Out1);
 }

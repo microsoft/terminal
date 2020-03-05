@@ -63,6 +63,15 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
+bool AppHost::OnF7Pressed()
+{
+    if (_logic)
+    {
+        return _logic.OnF7Pressed();
+    }
+    return false;
+}
+
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the app logic for processing.

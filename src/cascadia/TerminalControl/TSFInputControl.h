@@ -36,10 +36,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void NotifyFocusEnter();
         void NotifyFocusLeave();
+        void ClearBuffer();
 
         void Close();
-
-        static void OnCompositionChanged(Windows::UI::Xaml::DependencyObject const&, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const&);
 
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(CurrentCursorPosition, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
@@ -72,6 +71,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::wstring _inputBuffer;
 
         bool _inComposition;
+        size_t _activeTextStart;
         void _SendAndClearText();
     };
 }
