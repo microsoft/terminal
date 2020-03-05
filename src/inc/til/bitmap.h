@@ -8,56 +8,69 @@
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class bitterator // Bit Iterator. Bitterator.
+    class const_bitterator // Bit Iterator. Bitterator.
     {
     public:
-        bitterator(const std::vector<bool>& values, size_t pos) :
+        const_bitterator(const std::vector<bool>& values, size_t pos) :
             _map(values),
             _pos(pos)
         {
-
         }
 
-        bitterator& operator++()
+        const_bitterator operator+(const ptrdiff_t movement)
+        {
+            auto copy = *this;
+            copy += movement;
+            return copy;
+        }
+
+        const_bitterator operator-(const ptrdiff_t movement)
+        {
+            auto copy = *this;
+            copy -= movement;
+            return copy;
+        }
+
+        const_bitterator& operator++()
         {
             ++_pos;
             return (*this);
         }
 
-        bitterator& operator--()
+        const_bitterator& operator--()
         {
             --_pos;
             return (*this);
         }
 
-        bitterator& operator+=(const ptrdiff_t& movement)
+        const_bitterator& operator+=(const ptrdiff_t& movement)
         {
             _pos += movement;
             return (*this);
         }
 
-        bitterator& operator-=(const ptrdiff_t& movement)
+        const_bitterator& operator-=(const ptrdiff_t& movement)
         {
             _pos -= movement;
             return (*this);
         }
 
-        bool operator==(const bitterator& other) const
+        bool operator==(const const_bitterator& other) const
         {
             return _pos == other._pos && _map == other._map;
         }
 
-        bool operator!=(const bitterator& other) const
+        bool operator!=(const const_bitterator& other) const
         {
             return !(*this == other);
         }
 
-        bool operator<(const bitterator& other) const
+        bool operator<(const const_bitterator& other) const
         {
             return _pos < other._pos;
         }
 
-        bool operator>(const bitterator& other) const
+        bool operator>(const const_bitterator& other) const
         {
             return _pos > other._pos;
         }
@@ -66,7 +79,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _map[_pos];
         }
-        
+               
     private:
         size_t _pos;
         const std::vector<bool>& _map;
@@ -75,8 +88,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     class bitmap
     {
     public:
-        using const_iterator = bitterator;
-        
+        using const_iterator = const const_bitterator;
+
+        bitmap() :
+            bitmap(0, 0)
+        {
+        }
+
         bitmap(size_t width, size_t height) :
             bitmap(til::size{ width, height })
         {
@@ -90,25 +108,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         const_iterator begin() const
         {
-            return bitterator(_bits, 0);
+            return const_bitterator(_bits, 0);
         }
 
         const_iterator end() const
         {
-            return bitterator(_bits, _size.area());
+            return const_bitterator(_bits, _size.area());
         }
 
         const_iterator begin_row(size_t row) const
         {
-            return bitterator(_bits, row * _size.width());
+            return const_bitterator(_bits, row * _size.width());
         }
 
         const_iterator end_row(size_t row) const
         {
-            return bitterator(_bits, (row + 1) * _size.width());
+            return const_bitterator(_bits, (row + 1) * _size.width());
         }
 
-        
         void set(til::point pt)
         {
             _bits[pt.y() * _size.width() + pt.x()] = true;
@@ -143,6 +160,39 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void reset_all()
         {
             _bits.assign(_size.area(), false);
+        }
+
+        const til::size& size() const
+        {
+            return _size;
+        }
+
+        bitmap operator+(const point& pt) const
+        {
+            auto temp = *this;
+            return temp += pt;
+        }
+
+        bitmap& operator+=(const point& pt)
+        {
+            // early return if nothing to do.
+            if (pt.x() == 0 && pt.y() == 0)
+            {
+                return (*this);
+            }
+
+            // If we're told to shift the whole thing by an entire width or height,
+            // the effect is to just clear the whole bitmap.
+            if (pt.x() >= _size.width() || pt.y() >= _size.height())
+            {
+                reset_all();
+                return(*this);
+            }
+
+            // TODO: any way to reconcile this with walk directions from scrolling apis?
+            // TODO: actually implement translation.
+
+            return (*this);
         }
 
 #ifdef UNIT_TESTING

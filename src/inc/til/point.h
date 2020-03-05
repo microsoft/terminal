@@ -3,6 +3,10 @@
 
 #pragma once
 
+#ifdef UNIT_TESTING
+class PointTests;
+#endif
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     class point
@@ -98,8 +102,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _y;
         }
 
+#ifdef _WINCONTYPES_
+        operator COORD() const
+        {
+            COORD ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
+            return ret;
+        }
+#endif
+
+#ifdef _WINDEF_
+        operator POINT() const
+        {
+            POINT ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.x));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.y));
+            return ret;
+        }
+#endif
+
+#ifdef DCOMMON_H_INCLUDED
+        constexpr operator D2D1_POINT_2F() const noexcept
+        {
+            return D2D1_POINT_2F{ gsl::narrow_cast<float>(_x), gsl::narrow_cast<float>(_y) };
+        }
+#endif
+
 #ifdef UNIT_TESTING
-        friend class PointTests;
+        friend class ::PointTests;
 #endif
 
     protected:

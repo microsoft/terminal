@@ -11,6 +11,8 @@
 #include "til/u8u16convert.h"
 #include "til/bitmap.h"
 
+#include "til/operators.h"
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
 }

@@ -30,7 +30,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         recterator& operator++()
         {
             ++_current.x();
-            if (_current.x() >= _topLeft.x() + _size.width_signed())
+            if (_current.x() >= _topLeft.x() + _size.width())
             {
                 _current.x() = _topLeft.x();
                 ++_current.y();
@@ -84,8 +84,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
+        rectangle(ptrdiff_t left, ptrdiff_t top, ptrdiff_t right, ptrdiff_t bottom):
+            rectangle(til::point{ left, top }, til::point{ right, bottom })
+        {
+
+        }
+
         rectangle(til::point topLeft, til::point bottomRight) :
-            rectangle(topLeft, til::size{ static_cast<size_t>(bottomRight.x() - topLeft.x()), static_cast<size_t>(bottomRight.y() - topLeft.y()) })
+            rectangle(topLeft, til::size{ bottomRight.x() - topLeft.x(), bottomRight.y() - topLeft.y() })
         {
 
         }
@@ -118,7 +124,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         const_iterator end() const
         {
-            return recterator(_topLeft, _size, { _topLeft.x(), _topLeft.y() + _size.height_signed() });
+            return recterator(_topLeft, _size, { _topLeft.x(), _topLeft.y() + _size.height() });
         }
 
         ptrdiff_t top() const
@@ -128,7 +134,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         ptrdiff_t bottom() const
         {
-            return top() + _size.height_signed();
+            return top() + _size.height();
         }
 
         ptrdiff_t bottom_inclusive() const
@@ -143,13 +149,58 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         ptrdiff_t right() const
         {
-            return left() + _size.width_signed();
+            return left() + _size.width();
         }
 
         ptrdiff_t right_inclusive() const
         {
             return right() - 1;
         }
+
+        ptrdiff_t width() const
+        {
+            return _size.width();
+        }
+
+        ptrdiff_t height() const
+        {
+            return _size.height();
+        }
+
+        rectangle& operator=(const rectangle other)
+        {
+            _size = other._size;
+            _topLeft = other._topLeft;
+            return (*this);
+        }
+
+        bool operator==(const til::rectangle& other) const
+        {
+            return _size == other._size &&
+                _topLeft == other._topLeft;
+        }
+
+        // TODO: chromium math and throw on not fitting?
+#ifdef _WINCONTYPES_
+        operator SMALL_RECT() const
+        {
+            return SMALL_RECT{gsl::narrow<SHORT>(left()), gsl::narrow<SHORT>(top()), gsl::narrow<SHORT>(right_inclusive()), gsl::narrow<SHORT>(bottom_inclusive())};
+        }
+#endif
+
+#ifdef _WINDEF_
+        operator RECT() const
+        {
+            return RECT{ gsl::narrow<LONG>(left()), gsl::narrow<LONG>(top()), gsl::narrow<LONG>(right()), gsl::narrow<LONG>(bottom()) };
+        }
+#endif
+
+#ifdef DCOMMON_H_INCLUDED
+        operator D2D1_RECT_F() const
+        {
+            return D2D1_RECT_F{ gsl::narrow<FLOAT>(left()), gsl::narrow<FLOAT>(top()), gsl::narrow<FLOAT>(right()), gsl::narrow<FLOAT>(bottom()) };
+        }
+#endif
 
 #ifdef UNIT_TESTING
         friend class RectangleTests;
@@ -159,3 +210,43 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         til::size _size;
     };
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<::til::rectangle>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::rectangle& rect)
+        {
+            return WEX::Common::NoThrowString().Format(L"(L:%td, T:%td, R:%td, B:%td) [W:%td, H:%td]", rect.left(), rect.top(), rect.right(), rect.bottom(), rect.width(), rect.height());
+        }
+    };
+
+    template<>
+    class VerifyCompareTraits<::til::rectangle, ::til::rectangle>
+    {
+    public:
+        static bool AreEqual(const ::til::rectangle& expected, const ::til::rectangle& actual)
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const ::til::rectangle& expected, const ::til::rectangle& actual)
+        {
+            return &expected == &actual;
+        }
+
+        static bool IsLessThan(const ::til::rectangle& expectedLess, const ::til::rectangle& expectedGreater) = delete;
+
+        static bool IsGreaterThan(const ::til::rectangle& expectedGreater, const ::til::rectangle& expectedLess) = delete;
+
+        static bool IsNull(const ::til::rectangle& object)
+        {
+            return object == til::rectangle{};
+        }
+    };
+
+};
+#endif

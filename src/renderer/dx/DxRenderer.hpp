@@ -143,9 +143,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] RECT _GetDisplayRect() const noexcept;
 
         til::bitmap _invalidMap;
+        std::vector<til::rectangle> _dirtyRects;
+        std::vector<RECT> _dirtyRectRects;
 
-        bool _isInvalidUsed;
-        RECT _invalidRect;
+        //bool _isInvalidUsed;
+        //RECT _invalidRect;
         SIZE _invalidScroll;
 
         void _InvalidOr(SMALL_RECT sr) noexcept;
@@ -154,7 +156,7 @@ namespace Microsoft::Console::Render
         void _InvalidOffset(POINT pt);
 
         bool _presentReady;
-        RECT _presentDirty;
+        /*RECT _presentDirty;*/
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;

@@ -4,6 +4,7 @@
 #pragma once
 
 // This includes support libraries from the CRT, STL, WIL, and GSL
+#define BLOCK_TIL
 #include "LibraryIncludes.h"
 
 #include <windows.h>
@@ -33,5 +34,8 @@
 #include <dwrite_1.h>
 #include <dwrite_2.h>
 #include <dwrite_3.h>
+
+// Include TIL after DX so we can use the DX conversions.
+#include "til.h"
 
 #pragma hdrstop

@@ -65,13 +65,13 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
-    _isInvalidUsed{ false },
-    _invalidRect{ 0 },
+    /*_isInvalidUsed{ false },
+    _invalidRect{ 0 },*/
     _invalidScroll{ 0 },
     _presentParams{ 0 },
     _presentReady{ false },
     _presentScroll{ 0 },
-    _presentDirty{ 0 },
+    /*_presentDirty{ 0 },*/
     _presentOffset{ 0 },
     _isEnabled{ false },
     _isPainting{ false },
@@ -748,39 +748,42 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
     {
         try
         {
-            POINT delta = { 0 };
-            delta.x = pcoordDelta->X * _glyphCell.cx;
-            delta.y = pcoordDelta->Y * _glyphCell.cy;
+            /*til::point delta(*pcoordDelta);*/
+            // TODO: do this.
 
-            _InvalidOffset(delta);
+            //POINT delta = { 0 };
+            //delta.x = pcoordDelta->X * _glyphCell.cx;
+            //delta.y = pcoordDelta->Y * _glyphCell.cy;
 
-            _invalidScroll.cx += delta.x;
-            _invalidScroll.cy += delta.y;
+            //_InvalidOffset(delta);
 
-            // Add the revealed portion of the screen from the scroll to the invalid area.
-            const RECT display = _GetDisplayRect();
-            RECT reveal = display;
+            //_invalidScroll.cx += delta.x;
+            //_invalidScroll.cy += delta.y;
 
-            // X delta first
-            OffsetRect(&reveal, delta.x, 0);
-            IntersectRect(&reveal, &reveal, &display);
-            SubtractRect(&reveal, &display, &reveal);
+            //// Add the revealed portion of the screen from the scroll to the invalid area.
+            //const RECT display = _GetDisplayRect();
+            //RECT reveal = display;
 
-            if (!IsRectEmpty(&reveal))
-            {
-                _InvalidOr(reveal);
-            }
+            //// X delta first
+            //OffsetRect(&reveal, delta.x, 0);
+            //IntersectRect(&reveal, &reveal, &display);
+            //SubtractRect(&reveal, &display, &reveal);
 
-            // Y delta second (subtract rect won't work if you move both)
-            reveal = display;
-            OffsetRect(&reveal, 0, delta.y);
-            IntersectRect(&reveal, &reveal, &display);
-            SubtractRect(&reveal, &display, &reveal);
+            //if (!IsRectEmpty(&reveal))
+            //{
+            //    _InvalidOr(reveal);
+            //}
 
-            if (!IsRectEmpty(&reveal))
-            {
-                _InvalidOr(reveal);
-            }
+            //// Y delta second (subtract rect won't work if you move both)
+            //reveal = display;
+            //OffsetRect(&reveal, 0, delta.y);
+            //IntersectRect(&reveal, &reveal, &display);
+            //SubtractRect(&reveal, &display, &reveal);
+
+            //if (!IsRectEmpty(&reveal))
+            //{
+            //    _InvalidOr(reveal);
+            //}
         }
         CATCH_RETURN();
     }
@@ -796,8 +799,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateAll() noexcept
 {
-    const RECT screen = _GetDisplayRect();
-    _InvalidOr(screen);
+    _invalidMap.set_all();
+    /*const RECT screen = _GetDisplayRect();
+    _InvalidOr(screen);*/
 
     return S_OK;
 }
@@ -849,21 +853,21 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
     }
 }
 
-// Routine Description:
-// - Helper to multiply all parameters of a rectangle by the font size
-//   to convert from characters to pixels.
-// Arguments:
-// - cellsToPixels - rectangle to update
-// - fontSize - scaling factors
-// Return Value:
-// - <none> - Updates reference
-void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
-{
-    cellsToPixels.left *= fontSize.cx;
-    cellsToPixels.right *= fontSize.cx;
-    cellsToPixels.top *= fontSize.cy;
-    cellsToPixels.bottom *= fontSize.cy;
-}
+//// Routine Description:
+//// - Helper to multiply all parameters of a rectangle by the font size
+////   to convert from characters to pixels.
+//// Arguments:
+//// - cellsToPixels - rectangle to update
+//// - fontSize - scaling factors
+//// Return Value:
+//// - <none> - Updates reference
+//void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
+//{
+//    cellsToPixels.left *= fontSize.cx;
+//    cellsToPixels.right *= fontSize.cx;
+//    cellsToPixels.top *= fontSize.cy;
+//    cellsToPixels.bottom *= fontSize.cy;
+//}
 
 // Routine Description:
 // - Retrieves a rectangle representation of the pixel size of the
@@ -887,22 +891,25 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 // - <none>
 void DxEngine::_InvalidOffset(POINT delta)
 {
-    if (_isInvalidUsed)
-    {
-        // Copy the existing invalid rect
-        RECT invalidNew = _invalidRect;
+    til::point pt{ delta };
+    _invalidMap += pt;
 
-        // Offset it to the new position
-        THROW_IF_WIN32_BOOL_FALSE(OffsetRect(&invalidNew, delta.x, delta.y));
+    //if (_isInvalidUsed)
+    //{
+    //    // Copy the existing invalid rect
+    //    RECT invalidNew = _invalidRect;
 
-        // Get the rect representing the display
-        const RECT rectScreen = _GetDisplayRect();
+    //    // Offset it to the new position
+    //    THROW_IF_WIN32_BOOL_FALSE(OffsetRect(&invalidNew, delta.x, delta.y));
 
-        // Ensure that the new invalid rectangle is still on the display
-        IntersectRect(&invalidNew, &invalidNew, &rectScreen);
+    //    // Get the rect representing the display
+    //    const RECT rectScreen = _GetDisplayRect();
 
-        _invalidRect = invalidNew;
-    }
+    //    // Ensure that the new invalid rectangle is still on the display
+    //    IntersectRect(&invalidNew, &invalidNew, &rectScreen);
+
+    //    _invalidRect = invalidNew;
+    //}
 }
 
 // Routine description:
@@ -914,17 +921,19 @@ void DxEngine::_InvalidOffset(POINT delta)
 // - <none>
 void DxEngine::_InvalidOr(SMALL_RECT sr) noexcept
 {
-    RECT region;
-    region.left = sr.Left;
-    region.top = sr.Top;
-    region.right = sr.Right;
-    region.bottom = sr.Bottom;
-    _ScaleByFont(region, _glyphCell);
+    _invalidMap.set(sr);
 
-    region.right += _glyphCell.cx;
-    region.bottom += _glyphCell.cy;
+    //RECT region;
+    //region.left = sr.Left;
+    //region.top = sr.Top;
+    //region.right = sr.Right;
+    //region.bottom = sr.Bottom;
+    //_ScaleByFont(region, _glyphCell);
 
-    _InvalidOr(region);
+    //region.right += _glyphCell.cx;
+    //region.bottom += _glyphCell.cy;
+
+    //_InvalidOr(region);
 }
 
 // Routine Description:
@@ -933,22 +942,20 @@ void DxEngine::_InvalidOr(SMALL_RECT sr) noexcept
 // - rc - Dirty pixel rectangle
 // Return Value:
 // - <none>
-void DxEngine::_InvalidOr(RECT rc) noexcept
+void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
 {
-    
+    //if (_isInvalidUsed)
+    //{
+    //    UnionRect(&_invalidRect, &_invalidRect, &rc);
 
-    if (_isInvalidUsed)
-    {
-        UnionRect(&_invalidRect, &_invalidRect, &rc);
-
-        const RECT rcScreen = _GetDisplayRect();
-        IntersectRect(&_invalidRect, &_invalidRect, &rcScreen);
-    }
-    else
-    {
-        _invalidRect = rc;
-        _isInvalidUsed = true;
-    }
+    //    const RECT rcScreen = _GetDisplayRect();
+    //    IntersectRect(&_invalidRect, &_invalidRect, &rcScreen);
+    //}
+    //else
+    //{
+    //    _invalidRect = rc;
+    //    _isInvalidUsed = true;
+    //}
 }
 
 // Routine Description:
@@ -976,21 +983,21 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
-    TraceLoggingWrite(g_hDxRenderProvider,
-                      "Invalid",
-                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
-                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
-                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
-                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
-                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
-                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
-                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
-                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
-                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
-                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
-                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
-                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
+//#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
+//    TraceLoggingWrite(g_hDxRenderProvider,
+//                      "Invalid",
+//                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
+//                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
+//                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
+//                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
+//                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
+//                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
+//                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
+//                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
+//                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
+//                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
+//                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
+//                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
 
     if (_isEnabled)
     {
@@ -1056,15 +1063,19 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         {
             if (_invalidScroll.cy != 0 || _invalidScroll.cx != 0)
             {
-                _presentDirty = _invalidRect;
+                // The scroll rect is the entire screen minus the revealed areas.
+                // Get the entire screen into a rectangle.
+                til::rectangle scrollArea = _GetDisplayRect();
 
-                const RECT display = _GetDisplayRect();
-                SubtractRect(&_presentScroll, &display, &_presentDirty);
+                // Reduce the size of the rectangle by the scroll
+                scrollArea -= _invalidScroll;
+
+                _presentScroll = scrollArea;
                 _presentOffset.x = _invalidScroll.cx;
                 _presentOffset.y = _invalidScroll.cy;
 
-                _presentParams.DirtyRectsCount = 1;
-                _presentParams.pDirtyRects = &_presentDirty;
+                _presentParams.DirtyRectsCount = _dirtyRectRects.size();
+                _presentParams.pDirtyRects = _dirtyRectRects.data();
 
                 _presentParams.pScrollOffset = &_presentOffset;
                 _presentParams.pScrollRect = &_presentScroll;
@@ -1085,8 +1096,11 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         }
     }
 
-    _invalidRect = { 0 };
-    _isInvalidUsed = false;
+    _dirtyRects.clear();
+    _invalidMap.reset_all();
+
+    /*_invalidRect = { 0 };
+    _isInvalidUsed = false;*/
 
     _invalidScroll = { 0 };
 
@@ -1163,7 +1177,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
             RETURN_IF_FAILED(_CopyFrontToBack());
             _presentReady = false;
 
-            _presentDirty = { 0 };
+            _dirtyRectRects.clear();
+            /*_presentDirty = { 0 };*/
             _presentOffset = { 0 };
             _presentScroll = { 0 };
             _presentParams = { 0 };
@@ -1186,27 +1201,20 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 }
 
 // Routine Description:
-// - This paints in the back most layer of the frame with the background color.
+// - This paints in the back most layer of the frame with clear/nothing so it can
+//   be transparent if it wants to be.
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 {
-    switch (_chainMode)
+    const D2D1_COLOR_F nothing = { 0 }; // 0 alpha and color is black.
+    for (const D2D1_RECT_F rect : _dirtyRects)
     {
-    case SwapChainMode::ForHwnd:
-        _d2dRenderTarget->FillRectangle(D2D1::RectF(static_cast<float>(_invalidRect.left),
-                                                    static_cast<float>(_invalidRect.top),
-                                                    static_cast<float>(_invalidRect.right),
-                                                    static_cast<float>(_invalidRect.bottom)),
-                                        _d2dBrushBackground.Get());
-        break;
-    case SwapChainMode::ForComposition:
-        D2D1_COLOR_F nothing = { 0 };
-
+        _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->Clear(nothing);
-        break;
+        _d2dRenderTarget->PopAxisAlignedClip();
     }
 
     return S_OK;
@@ -1690,17 +1698,7 @@ float DxEngine::GetScaling() const noexcept
 // - Rectangle describing dirty area in characters.
 [[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 {
-    SMALL_RECT r;
-    r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
-    r.Left = gsl::narrow<SHORT>(floor(_invalidRect.left / _glyphCell.cx));
-    r.Bottom = gsl::narrow<SHORT>(floor(_invalidRect.bottom / _glyphCell.cy));
-    r.Right = gsl::narrow<SHORT>(floor(_invalidRect.right / _glyphCell.cx));
-
-    // Exclusive to inclusive
-    r.Bottom--;
-    r.Right--;
-
-    return r;
+    return til::rectangle{};
 }
 
 // Routine Description:
