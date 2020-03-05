@@ -39,18 +39,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
-        bool operator==(const point& other) const
+        constexpr bool operator==(const point& other) const noexcept
         {
             return _x == other._x &&
                 _y == other._y;
         }
 
-        bool operator!=(const point& other) const
+        constexpr bool operator!=(const point& other) const noexcept
         {
             return !(*this == other);
         }
 
-        bool operator<(const point& other) const
+        constexpr bool operator<(const point& other) const noexcept
         {
             if (_y < other._y)
             {
@@ -66,7 +66,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        bool operator>(const point& other) const
+        constexpr bool operator>(const point& other) const noexcept
         {
             if (_y > other._y)
             {
@@ -82,22 +82,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        constexpr ptrdiff_t x() const
+        constexpr ptrdiff_t x() const noexcept
         {
             return _x;
         }
 
-        ptrdiff_t& x()
+        constexpr ptrdiff_t& x() noexcept
         {
             return _x;
         }
 
-        constexpr ptrdiff_t y() const
+        constexpr ptrdiff_t y() const noexcept
         {
             return _y;
         }
 
-        ptrdiff_t& y()
+        constexpr ptrdiff_t& y() noexcept
         {
             return _y;
         }
@@ -138,3 +138,43 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         ptrdiff_t _y;
     };
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<::til::point>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::point& point)
+        {
+            return WEX::Common::NoThrowString().Format(L"(X:%td, Y:%td)", point.x(), point.y());
+        }
+    };
+
+    template<>
+    class VerifyCompareTraits<::til::point, ::til::point>
+    {
+    public:
+        static bool AreEqual(const ::til::point& expected, const ::til::point& actual)
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const ::til::point& expected, const ::til::point& actual)
+        {
+            return &expected == &actual;
+        }
+
+        static bool IsLessThan(const ::til::point& expectedLess, const ::til::point& expectedGreater) = delete;
+
+        static bool IsGreaterThan(const ::til::point& expectedGreater, const ::til::point& expectedLess) = delete;
+
+        static bool IsNull(const ::til::point& object)
+        {
+            return object == til::point{};
+        }
+    };
+};
+#endif
+

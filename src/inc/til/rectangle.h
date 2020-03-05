@@ -6,6 +6,10 @@
 #include "point.h"
 #include "size.h"
 
+#ifdef UNIT_TESTING
+class RectangleTests;
+#endif
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     class recterator
@@ -180,30 +184,39 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _topLeft == other._topLeft;
         }
 
-        // TODO: chromium math and throw on not fitting?
 #ifdef _WINCONTYPES_
         operator SMALL_RECT() const
         {
-            return SMALL_RECT{gsl::narrow<SHORT>(left()), gsl::narrow<SHORT>(top()), gsl::narrow<SHORT>(right_inclusive()), gsl::narrow<SHORT>(bottom_inclusive())};
+            SMALL_RECT ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.Left));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.Top));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(right_inclusive()).AssignIfValid(&ret.Right));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(bottom_inclusive()).AssignIfValid(&ret.Bottom));
+            return ret;
         }
 #endif
 
 #ifdef _WINDEF_
         operator RECT() const
         {
-            return RECT{ gsl::narrow<LONG>(left()), gsl::narrow<LONG>(top()), gsl::narrow<LONG>(right()), gsl::narrow<LONG>(bottom()) };
+            RECT ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.left));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.top));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(right()).AssignIfValid(&ret.right));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(bottom()).AssignIfValid(&ret.bottom));
+            return ret;
         }
 #endif
 
 #ifdef DCOMMON_H_INCLUDED
-        operator D2D1_RECT_F() const
+        constexpr operator D2D1_RECT_F() const noexcept
         {
-            return D2D1_RECT_F{ gsl::narrow<FLOAT>(left()), gsl::narrow<FLOAT>(top()), gsl::narrow<FLOAT>(right()), gsl::narrow<FLOAT>(bottom()) };
+            return D2D1_RECT_F{ gsl::narrow_cast<FLOAT>(left()), gsl::narrow_cast<FLOAT>(top()), gsl::narrow_cast<FLOAT>(right()), gsl::narrow_cast<FLOAT>(bottom()) };
         }
 #endif
 
 #ifdef UNIT_TESTING
-        friend class RectangleTests;
+        friend class ::RectangleTests;
 #endif
     protected:
         til::point _topLeft;
