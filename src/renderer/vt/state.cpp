@@ -469,6 +469,17 @@ void VtEngine::EndResizeRequest()
     _inResizeRequest = false;
 }
 
+// Method Description:
+// - Configure the renderer for the resize quirk. This changes the behavior of
+//   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
+//   This is used by the Windows Terminal, because it is prepared to be
+//   connected to a conpty, and handles it's own buffer specifically for a
+//   conpty scenario.
+// - See also: GH#3490, #4354, #4741
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we were started with the `--resizeQuirk` flag enabled.
 void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;

@@ -1903,12 +1903,15 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - lastCharacterViewport - Optional. If the caller knows that the last
 //   nonspace character is in a particular Viewport, the caller can provide this
 //   parameter as an optimization, as opposed to searching the entire buffer.
+// - oldViewportTop - Optional. The caller can provide a row in this parameter
+//   and we'll calculate that row's position in the new buffer. The row's new
+//   value is placed back into this pointer.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            TextBuffer& newBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
-                           short* const lastScrollbackRow) noexcept
+                           short* const oldViewportTop) noexcept
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1929,18 +1932,20 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
-    bool foundScrollbackEnd = false;
+    bool foundOldRow = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
     {
-        if (lastScrollbackRow && !foundScrollbackEnd)
+        // If we found the old row that the caller was interested in, set the
+        // out value of that parameter to the cursor's current Y position (the
+        // new location of that row in the buffer).
+        if (oldViewportTop && !foundOldRow)
         {
-            if (iOldRow >= *lastScrollbackRow)
+            if (iOldRow >= *oldViewportTop)
             {
-                // *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y - 1);
-                *lastScrollbackRow = gsl::narrow_cast<short>(newCursor.GetPosition().Y);
-                foundScrollbackEnd = true;
+                *oldViewportTop = newCursor.GetPosition().Y;
+                foundOldRow = true;
             }
         }
 
