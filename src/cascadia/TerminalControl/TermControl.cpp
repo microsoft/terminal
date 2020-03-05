@@ -65,11 +65,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
-        _lastMouseClick{},
+        _lastMouseClickTS{},
         _lastMouseClickPos{},
         _searchBox{ nullptr },
-        _unfocusedClickPos{ std::nullopt },
-        _isClickDragSelection{ false }
+        _focusRaisedClickPos{ std::nullopt },
+        _clickDrag{ false },
+        _wasLeftButtonPressed{ false }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -790,13 +791,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_focused)
         {
             Focus(FocusState::Pointer);
-
-            // Save the click position here when the terminal does not have focus
-            // because they might be performing a click-drag selection. Since we
-            // only want to start the selection when the user moves the pointer with
-            // the left mouse button held down, the PointerMovedHandler will use
-            // this saved position to set the SelectionAnchor.
-            _unfocusedClickPos = point.Position();
+            _focusRaisedClickPos = point.Position();
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
@@ -807,13 +802,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            if (point.Properties().IsLeftButtonPressed())
+            if (_wasLeftButtonPressed = point.Properties().IsLeftButtonPressed())
             {
-                // _unfocusedClickPos having a value signifies to us that
-                // the user clicked on an unfocused terminal. We don't want
-                // a single left click from out of focus to start a selection,
-                // so we return fast here.
-                if (_unfocusedClickPos)
+                // A single left click from out of focus should only focus.
+                if (_focusRaisedClickPos)
                 {
                     args.Handled(true);
                     return;
@@ -848,18 +840,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                     else
                     {
-                        // save location before rendering
                         _terminal->SetSelectionAnchor(terminalPosition);
                     }
 
-                    _lastMouseClick = point.Timestamp();
+                    _lastMouseClickTS = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
                 }
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // copyOnSelect causes right-click to always paste
+                // CopyOnSelect Right Click always pastes
                 if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
@@ -895,15 +886,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             if (point.Properties().IsLeftButtonPressed())
             {
-                _isClickDragSelection = true;
+                _clickDrag = true;
 
-                // If this does not have a value, it means that PointerPressedHandler already
-                // set the SelectionAnchor. If it does have a value, that means the user is
-                // performing a click-drag selection on an unfocused terminal, so
-                // a SelectionAnchor isn't set yet. We'll have to set it here.
-                if (_unfocusedClickPos)
+                // PointerPressedHandler doesn't set the SelectionAnchor when the click was
+                // from out of focus, so PointerMoved gets to set it.
+                if (_focusRaisedClickPos)
                 {
-                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_unfocusedClickPos));
+                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_focusRaisedClickPos));
                 }
 
                 const auto cursorPosition = point.Position();
@@ -980,16 +969,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-            // macro directly with a VirtualKeyModifiers
-            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-
-            if (_terminal->IsCopyOnSelectActive())
+            if (_wasLeftButtonPressed && _terminal->IsCopyOnSelectActive())
             {
-                // If the terminal was in focus, copy to clipboard.
-                // If the terminal was unfocused AND a click-drag selection happened, copy to clipboard.
-                if (!_unfocusedClickPos || (_unfocusedClickPos && _isClickDragSelection))
+                const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+                // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+                // macro directly with a VirtualKeyModifiers
+                const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+                // All left click drags should copy.
+                // Only single left clicks on a focused pane should copy.
+                if (_clickDrag || !_focusRaisedClickPos)
                 {
                     CopySelectionToClipboard(!shiftEnabled);
                 }
@@ -1000,8 +989,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _touchAnchor = std::nullopt;
         }
 
-        _unfocusedClickPos = std::nullopt;
-        _isClickDragSelection = false;
+        _focusRaisedClickPos = std::nullopt;
+        _clickDrag = false;
+        _wasLeftButtonPressed = false;
 
         _TryStopAutoScroll(ptr.PointerId());
 
@@ -2069,7 +2059,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // if click occurred at a different location or past the multiClickTimer...
         Timestamp delta;
-        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClick, &delta));
+        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTS, &delta));
         if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
         {
             // exit early. This is a single click.
