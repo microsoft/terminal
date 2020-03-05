@@ -654,6 +654,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.Handled(handled);
     }
 
+    // Method Description:
+    // - Manually generate an F7 event into the key bindings or terminal.
+    //   This is required as part of GH#638.
+    // Return value:
+    // - Whether F7 was handled.
+    bool TermControl::OnF7Pressed()
+    {
+        bool handled{ false };
+        auto bindings{ _settings.KeyBindings() };
+
+        const auto modifiers{ _GetPressedModifierKeys() };
+
+        if (bindings)
+        {
+            handled = bindings.TryKeyChord({
+                modifiers.IsCtrlPressed(),
+                modifiers.IsAltPressed(),
+                modifiers.IsShiftPressed(),
+                VK_F7,
+            });
+        }
+
+        if (!handled)
+        {
+            // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
+            (void)_TrySendKeyEvent(VK_F7, 0, modifiers);
+            handled = true;
+        }
+
+        return handled;
+    }
+
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {

@@ -7,6 +7,14 @@ namespace Microsoft.Terminal.TerminalControl
     delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
+    // c++/winrt makes it difficult to share this idl between two projects,
+    // so just pin the uuid and include it in both TermControl and App
+    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")]
+    interface IF7Listener
+    {
+        Boolean OnF7Pressed();
+    }
+
     runtimeclass CopyToClipboardEventArgs
     {
         String Text { get; };
@@ -19,7 +27,7 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IF7Listener
     {
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);

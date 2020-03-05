@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
 
         hstring Title();
         void TitlebarClicked();
+        bool OnF7Pressed();
 
         void WindowCloseButtonClicked();
 
