@@ -17,6 +17,7 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
+#include "TerminalWarnings.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
 // * All properties specific to an action should be defined as an ActionArgs
@@ -26,6 +27,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
+    using FromJsonResult = std::tuple<winrt::TerminalApp::IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
         ActionEventArgs() = default;
@@ -104,7 +107,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
@@ -112,7 +115,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_TrimWhitespace = trimWhitespace.asBool();
             }
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -131,12 +134,12 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -157,7 +160,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SwitchToTabArgs>();
@@ -165,7 +168,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_TabIndex = tabIndex.asUInt();
             }
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -221,7 +224,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ResizePaneArgs>();
@@ -229,7 +232,14 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return *args;
+            if (args->_Direction == TerminalApp::Direction::None)
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
     };
 
@@ -250,7 +260,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MoveFocusArgs>();
@@ -258,7 +268,14 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Direction = ParseDirection(directionString.asString());
             }
-            return *args;
+            if (args->_Direction == TerminalApp::Direction::None)
+            {
+                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
     };
 
@@ -279,7 +296,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<AdjustFontSizeArgs>();
@@ -287,7 +304,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_Delta = jsonDelta.asInt();
             }
-            return *args;
+            return { *args, {} };
         }
     };
 
@@ -333,7 +350,7 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         };
-        static winrt::TerminalApp::IActionArgs FromJson(const Json::Value& json)
+        static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SplitPaneArgs>();
@@ -342,7 +359,7 @@ namespace winrt::TerminalApp::implementation
             {
                 args->_SplitStyle = ParseSplitState(jsonStyle.asString());
             }
-            return *args;
+            return { *args, {} };
         }
     };
 }

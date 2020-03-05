@@ -206,9 +206,11 @@ void CascadiaSettings::_ValidateSettings()
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
 
-    // TODO:GH#3522 With variable args to keybindings, it's possible that a user
+    // GH#3522 - With variable args to keybindings, it's possible that a user
     // set a keybinding without all the required args for an action. Display a
     // warning if an action didn't have a required arg.
+    // This will also catch other keybinding warnings, like from GH#4239
+    _ValidateKeybindings();
 }
 
 // Method Description:
@@ -650,4 +652,24 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
         profileGuid = _globals.GetDefaultProfile();
     }
     return profileGuid;
+}
+
+// Method Description:
+// - If there were any warnings we generated while parsing the user's
+//   keybindings, add them to the list of warnings here. If there were warnings
+//   generated in this way, we'll add a AtLeastOneKeybindingWarning, which will
+//   act as a header for the other warnings
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_ValidateKeybindings()
+{
+    auto keybindingWarnings = _globals.GetKeybindingsWarnings();
+
+    if (!keybindingWarnings.empty())
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+    }
 }

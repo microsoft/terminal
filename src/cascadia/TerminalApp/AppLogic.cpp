@@ -27,14 +27,17 @@ namespace winrt
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 5> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
     USES_RESOURCE(L"InvalidBackgroundImage"),
-    USES_RESOURCE(L"InvalidIcon")
+    USES_RESOURCE(L"InvalidIcon"),
+    USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
+    USES_RESOURCE(L"TooManyKeysForChord"),
+    USES_RESOURCE(L"MissingRequiredParameter")
 };
-static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
