@@ -618,7 +618,7 @@ bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
 }
-bool ConsoleArguments::GetResizeQuirk() const
+bool ConsoleArguments::IsResizeQuirkEnabled() const
 {
     return _resizeQuirk;
 }

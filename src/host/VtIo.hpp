@@ -43,7 +43,7 @@ namespace Microsoft::Console::VirtualTerminal
         void EnableConptyModeForTests();
 #endif
 
-        bool GetResizeQuirk() const;
+        bool IsResizeQuirkEnabled() const;
 
     private:
         // After CreateIoHandlers is called, these will be invalid.

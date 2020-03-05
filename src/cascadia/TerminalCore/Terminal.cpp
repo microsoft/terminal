@@ -496,7 +496,41 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // }
 
     {
-        // Ask the TextBuffer for the scrollback start - Method.10
+        // Scrollback start & last line combo - Method.10
+        //
+        // This is basically method.4. This has some other conpty changes, and
+        // the TextBuffer code was changed too, so this is only a +1
+        //
+        // I also added the maxRow bits from method.2, but changed to use the
+        // newBuffer, not the old buffer.
+        //
+        // Conpty resizes a little oddly - if the height decreased, and
+        // there were blank lines at the bottom, those lines will get trimmed.
+        // If there's not blank lines, then the top will get "shifted down",
+        // moving the top line into scrollback.
+        // See GH#3490 for more details.
+        //
+        // If the final position in the buffer is on the bottom row of the new
+        // viewport, then we're going to need to move the top down. Otherwise,
+        // move the bottom up.
+        //
+        // There are also important things to consider with line wrapping.
+        // * If a line in scrollback wrapped that didn't previously, we'll need
+        //   to make sure to have the new viewport down another line. This will
+        //   cause our top to move down.
+        // * If a line _in the viewport_ wrapped that didn't previously, then
+        //   the conpty buffer will also have that wrapped line, and will move
+        //   the cursor & text down a line in response. This causes our bottom
+        //   to move down.
+        //
+        // We're going to use a combo of both these things to calculate where
+        // the new viewport should be. To keep in sync with conpty, we'll need
+        // to make sure that any lines that entered the scrollback _stay in
+        // scrollback_. We do that by taking the max of
+        // * Where the old top line in the viewport exists in the new buffer (as
+        //   calculated by TextBuffer::Reflow)
+        // * Where the bottom of the text in the new buffer is (and using that
+        //   to calculate another proposed top location).
 
         const auto dy = viewportSize.Y - oldDimensions.Y;
         const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();

@@ -50,7 +50,7 @@ public:
     short GetWidth() const;
     short GetHeight() const;
     bool GetInheritCursor() const;
-    bool GetResizeQuirk() const;
+    bool IsResizeQuirkEnabled() const;
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
