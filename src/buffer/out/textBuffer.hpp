@@ -165,7 +165,7 @@ public:
     static HRESULT Reflow(TextBuffer& oldBuffer,
                           TextBuffer& newBuffer,
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport = std::nullopt,
-                          short* const lastScrollbackRow = nullptr) noexcept;
+                          short* const lastScrollbackRow = nullptr);
 
 private:
     std::deque<ROW> _storage;

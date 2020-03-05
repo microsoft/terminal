@@ -193,13 +193,13 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      _buffer->GetCurrentAttributes(),
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
+
+        RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
+                                            *newTextBuffer.get(),
+                                            _mutableViewport,
+                                            &oldViewportTop));
     }
     CATCH_RETURN();
-
-    RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
-                                        *newTextBuffer.get(),
-                                        _mutableViewport,
-                                        &oldViewportTop));
 
     // Conpty resizes a little oddly - if the height decreased, and there were
     // blank lines at the bottom, those lines will get trimmed. If there's not
