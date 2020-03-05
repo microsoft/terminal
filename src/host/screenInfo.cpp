@@ -1428,9 +1428,6 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         _textBuffer.swap(newTextBuffer);
     }
 
-    // const auto cursorPos = _textBuffer->GetCursor().GetPosition();
-    // GetRenderTarget().TriggerRedrawCursor(&cursorPos);
-
     return NTSTATUS_FROM_HRESULT(hr);
 }
 
