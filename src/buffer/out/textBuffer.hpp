@@ -162,7 +162,10 @@ public:
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
 
-    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport = std::nullopt) noexcept;
+    static HRESULT Reflow(TextBuffer& oldBuffer,
+                          TextBuffer& newBuffer,
+                          const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport = std::nullopt,
+                          short* const lastScrollbackRow = nullptr) noexcept;
 
 private:
     std::deque<ROW> _storage;
