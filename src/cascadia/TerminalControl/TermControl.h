@@ -159,7 +159,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::optional<winrt::Windows::Foundation::Point> _focusRaisedClickPos;
         bool _clickDrag;
-        bool _wasLeftButtonPressed;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 

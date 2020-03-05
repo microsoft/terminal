@@ -69,8 +69,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClickPos{},
         _searchBox{ nullptr },
         _focusRaisedClickPos{ std::nullopt },
-        _clickDrag{ false },
-        _wasLeftButtonPressed{ false }
+        _clickDrag{ false }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -802,7 +801,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            if (_wasLeftButtonPressed = point.Properties().IsLeftButtonPressed())
+            if (point.Properties().IsLeftButtonPressed())
             {
                 // A single left click from out of focus should only focus.
                 if (_focusRaisedClickPos)
@@ -850,7 +849,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // CopyOnSelect Right Click always pastes
+                // CopyOnSelect right click always pastes
                 if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
@@ -963,13 +962,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& sender,
                                               Input::PointerRoutedEventArgs const& args)
     {
-        _ReleasePointerCapture(sender, args);
-
         const auto ptr = args.Pointer();
+        const auto point = args.GetCurrentPoint(*this);
+
+        _ReleasePointerCapture(sender, args);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_wasLeftButtonPressed && _terminal->IsCopyOnSelectActive())
+            if (_terminal->IsCopyOnSelectActive() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
             {
                 const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
                 // static_cast to a uint32_t because we can't use the WI_IsFlagSet
@@ -977,7 +977,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
                 // All left click drags should copy.
-                // Only single left clicks on a focused pane should copy.
+                // Single left click releases on a focused pane should copy any active selection.
                 if (_clickDrag || !_focusRaisedClickPos)
                 {
                     CopySelectionToClipboard(!shiftEnabled);
@@ -991,7 +991,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _focusRaisedClickPos = std::nullopt;
         _clickDrag = false;
-        _wasLeftButtonPressed = false;
 
         _TryStopAutoScroll(ptr.PointerId());
 
