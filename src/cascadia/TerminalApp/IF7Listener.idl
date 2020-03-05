@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")]
+    interface IF7Listener
+    {
+        Boolean OnF7Pressed();
+    }
+}
