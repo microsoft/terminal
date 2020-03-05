@@ -5,6 +5,7 @@
 
 #include "point.h"
 #include "size.h"
+#include "some.h"
 
 #ifdef UNIT_TESTING
 class RectangleTests;
@@ -82,29 +83,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     public:
         using const_iterator = recterator;
 
-        rectangle() :
-            rectangle(til::point{ 0, 0 }, til::size{ 0, 0 })
+        constexpr rectangle() noexcept :
+            rectangle(til::point{ 0, 0 }, til::point{ 0, 0 })
         {
 
         }
 
-        rectangle(ptrdiff_t left, ptrdiff_t top, ptrdiff_t right, ptrdiff_t bottom):
+        constexpr rectangle(ptrdiff_t left, ptrdiff_t top, ptrdiff_t right, ptrdiff_t bottom) noexcept:
             rectangle(til::point{ left, top }, til::point{ right, bottom })
         {
 
         }
 
-        rectangle(til::point topLeft, til::point bottomRight) :
-            rectangle(topLeft, til::size{ bottomRight.x() - topLeft.x(), bottomRight.y() - topLeft.y() })
+        constexpr rectangle(til::point topLeft, til::point bottomRight) noexcept :
+            _topLeft(topLeft),
+            _bottomRight(bottomRight)
         {
 
         }
 
         rectangle(til::point topLeft, til::size size) :
-            _topLeft(topLeft),
-            _size(size)
+            _topLeft(topLeft)
         {
+            ptrdiff_t right;
+            ptrdiff_t bottom;
 
+            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(topLeft.x()) + size.width()).AssignIfValid(&right));
+            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(topLeft.y()) + size.height()).AssignIfValid(&bottom));
+
+            _bottomRight = til::point{ right, bottom };
         }
 
         template<typename TOther>
@@ -123,65 +130,282 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         const_iterator begin() const
         {
-            return recterator(_topLeft, _size);
+            return recterator(_topLeft, size());
         }
 
         const_iterator end() const
         {
-            return recterator(_topLeft, _size, { _topLeft.x(), _topLeft.y() + _size.height() });
+            return recterator(_topLeft, size(), { _topLeft.x(), _topLeft.y() + height() });
         }
 
-        ptrdiff_t top() const
+        constexpr ptrdiff_t top() const noexcept
         {
             return _topLeft.y();
         }
 
-        ptrdiff_t bottom() const
+        constexpr ptrdiff_t bottom() const noexcept
         {
-            return top() + _size.height();
+            return _bottomRight.y();
         }
 
         ptrdiff_t bottom_inclusive() const
         {
-            return bottom() - 1;
+            ptrdiff_t ret;
+            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - 1).AssignIfValid(&ret));
+            return ret;
         }
 
-        ptrdiff_t left() const
+        constexpr ptrdiff_t left() const noexcept
         {
             return _topLeft.x();
         }
 
-        ptrdiff_t right() const
+        constexpr ptrdiff_t right() const noexcept
         {
-            return left() + _size.width();
+            return _bottomRight.x();
         }
 
         ptrdiff_t right_inclusive() const
         {
-            return right() - 1;
+            ptrdiff_t ret;
+            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - 1).AssignIfValid(&ret));
+            return ret;
         }
 
         ptrdiff_t width() const
         {
-            return _size.width();
+            ptrdiff_t ret;
+            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - left()).AssignIfValid(&ret));
+            return ret;
         }
 
-        ptrdiff_t height() const
+        ptrdiff_t height() const 
         {
-            return _size.height();
+            ptrdiff_t ret;
+            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - top()).AssignIfValid(&ret));
+            return ret;
         }
 
-        rectangle& operator=(const rectangle other)
+        constexpr point origin() const noexcept
         {
-            _size = other._size;
+            return _topLeft;
+        }
+
+        constexpr bool empty() const noexcept
+        {
+            return _topLeft.x() >= _bottomRight.x() ||
+                _topLeft.y() >= _bottomRight.y();
+        }
+
+        size size() const 
+        {
+            return til::size{ width(), height() };
+        }
+
+        constexpr rectangle& operator=(const rectangle other) noexcept
+        {
             _topLeft = other._topLeft;
+            _bottomRight = other._bottomRight;
             return (*this);
         }
 
-        bool operator==(const til::rectangle& other) const
+        constexpr bool operator==(const rectangle& other) const noexcept
         {
-            return _size == other._size &&
-                _topLeft == other._topLeft;
+            return _topLeft == other._topLeft &&
+                _bottomRight == other._bottomRight;
+        }
+
+        constexpr bool operator!=(const rectangle& other) const noexcept
+        {
+            return !(*this == other);
+        }
+
+        // OR = union
+        constexpr rectangle operator|(const rectangle& other) const noexcept
+        {
+            const auto thisEmpty = empty();
+            const auto otherEmpty = other.empty();
+
+            // If both are empty, return empty rect.
+            if (thisEmpty && otherEmpty)
+            {
+                return rectangle{};
+            }
+
+            // If this is empty but not the other one, then give the other.
+            if (thisEmpty)
+            {
+                return other;
+            }
+
+            // If the other is empty but not this, give this.
+            if (otherEmpty)
+            {
+                return *this;
+            }
+
+            // If we get here, they're both not empty. Do math.
+            const auto l = std::min(left(), other.left());
+            const auto t = std::min(top(), other.top());
+            const auto r = std::max(right(), other.right());
+            const auto b = std::max(bottom(), other.bottom());
+            return rectangle{ l, t, r, b };
+        }
+
+        // AND = intersect
+        constexpr rectangle operator&(const rectangle& other) const noexcept
+        {
+            const auto l = std::max(left(), other.left());
+            const auto r = std::min(right(), other.right());
+
+            // If the width dimension would be empty, give back empty rectangle.
+            if (l >= r)
+            {
+                return rectangle{};
+            }
+
+            const auto t = std::max(top(), other.top());
+            const auto b = std::max(bottom(), other.bottom());
+
+            // If the height dimension would be empty, give back empty rectangle.
+            if (t >= b)
+            {
+                return rectangle{};
+            }
+
+            return rectangle{ l, t, r, b };
+        }
+
+        // - = subtract
+        some<rectangle, 4> operator-(const rectangle& other) const
+        {
+            some<rectangle, 4> result;
+
+            // We could have up to four rectangles describing the area resulting when you take removeMe out of main.
+            // Find the intersection of the two so we know which bits of removeMe are actually applicable
+            // to the original rectangle for subtraction purposes.
+            const auto intersect = *this & other;
+
+            // If there's no intersect, there's nothing to remove.
+            if (intersect.empty())
+            {
+                // Just put the original rectangle into the results and return early.
+                result.push_back(*this);
+            }
+            // If the original rectangle matches the intersect, there is nothing to return.
+            else if (*this != intersect)
+            {
+                // Generate our potential four viewports that represent the region of the original that falls outside of the remove area.
+                // We will bias toward generating wide rectangles over tall rectangles (if possible) so that optimizations that apply
+                // to manipulating an entire row at once can be realized by other parts of the console code. (i.e. Run Length Encoding)
+                // In the following examples, the found remaining regions are represented by:
+                // T = Top      B = Bottom      L = Left        R = Right
+                //
+                // 4 Sides but Identical:
+                // |-----------this-----------|             |-----------this-----------|
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |                          |    ======>  |        intersect         |  ======>  early return of nothing
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |-----------other----------|             |--------------------------|
+                //
+                // 4 Sides:
+                // |-----------this-----------|             |-----------this-----------|           |--------------------------|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |        |---------|       |             |        |---------|       |           |LLLLLLLL|---------|RRRRRRR|
+                // |        |other    |       |    ======>  |        |intersect|       |  ======>  |LLLLLLLL|         |RRRRRRR|
+                // |        |---------|       |             |        |---------|       |           |LLLLLLLL|---------|RRRRRRR|
+                // |                          |             |                          |           |BBBBBBBBBBBBBBBBBBBBBBBBBB|
+                // |                          |             |                          |           |BBBBBBBBBBBBBBBBBBBBBBBBBB|
+                // |--------------------------|             |--------------------------|           |--------------------------|
+                //
+                // 3 Sides:
+                // |-----------this-----------|             |-----------this-----------|           |--------------------------|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |        |--------------------|          |        |-----------------|           |LLLLLLLL|-----------------|
+                // |        |other               | ======>  |        |intersect        |  ======>  |LLLLLLLL|                 |
+                // |        |--------------------|          |        |-----------------|           |LLLLLLLL|-----------------|
+                // |                          |             |                          |           |BBBBBBBBBBBBBBBBBBBBBBBBBB|
+                // |                          |             |                          |           |BBBBBBBBBBBBBBBBBBBBBBBBBB|
+                // |--------------------------|             |--------------------------|           |--------------------------|
+                //
+                // 2 Sides:
+                // |-----------this-----------|             |-----------this-----------|           |--------------------------|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |        |--------------------|          |        |-----------------|           |LLLLLLLL|-----------------|
+                // |        |other               | ======>  |        |intersect        |  ======>  |LLLLLLLL|                 |
+                // |        |                    |          |        |                 |           |LLLLLLLL|                 |
+                // |        |                    |          |        |                 |           |LLLLLLLL|                 |
+                // |        |                    |          |        |                 |           |LLLLLLLL|                 |
+                // |--------|                    |          |--------------------------|           |--------------------------|
+                //          |                    |
+                //          |--------------------|
+                //
+                // 1 Side:
+                // |-----------this-----------|             |-----------this-----------|           |--------------------------|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
+                // |-----------------------------|          |--------------------------|           |--------------------------|
+                // |         other               | ======>  |         intersect        |  ======>  |                          |
+                // |                             |          |                          |           |                          |
+                // |                             |          |                          |           |                          |
+                // |                             |          |                          |           |                          |
+                // |                             |          |--------------------------|           |--------------------------|
+                // |                             |
+                // |-----------------------------|
+                //
+                // 0 Sides:
+                // |-----------this-----------|             |-----------this-----------|
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |                          |    ======>  |                          |  ======>  early return of this
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |                          |             |                          |
+                // |--------------------------|             |--------------------------|
+                //
+                //
+                //         |---------------|
+                //         | other         |
+                //         |---------------|
+
+                // We generate these rectangles by the original and intersect points, but some of them might be empty when the intersect
+                // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
+                // We will filter those out below when adding them to the result.
+                const auto t = rectangle({ left(), top(), right(), intersect.top()});
+                const auto b = rectangle({ left(), intersect.bottom(), right(), bottom() });
+                const auto l = rectangle({ left(), intersect.top(), intersect.left(), intersect.bottom() });
+                const auto r = rectangle({ intersect.right(), intersect.top(), right(), intersect.bottom() });
+
+                if (!t.empty())
+                {
+                    result.push_back(t);
+                }
+
+                if (!b.empty())
+                {
+                    result.push_back(b);
+                }
+
+                if (!l.empty())
+                {
+                    result.push_back(l);
+                }
+
+                if (!r.empty())
+                {
+                    result.push_back(r);
+                }
+            }
+
+            return result;
         }
 
 #ifdef _WINCONTYPES_
@@ -220,7 +444,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
     protected:
         til::point _topLeft;
-        til::size _size;
+        til::point _bottomRight;
     };
 }
 

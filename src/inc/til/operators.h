@@ -183,7 +183,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return rectangle{ til::point{l, t}, til::point{r, b} };
     }
 
-    _INLINEPREFIX  rectangle& operator-=(rectangle& lhs, const size& rhs)
+    _INLINEPREFIX rectangle& operator-=(rectangle& lhs, const size& rhs)
     {
         lhs = lhs - rhs;
         return lhs;
