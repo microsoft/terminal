@@ -146,7 +146,6 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { FindKey, ShortcutAction::Find },
 };
 
-// using ParseActionFunction = std::function<IActionArgs(const Json::Value
 using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
 using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
@@ -454,7 +453,7 @@ std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementat
             const auto validString = keys.isString();
             const auto validArray = keys.isArray() && keys.size() == 1;
 
-            // microsoft/terminal#4239 - If the user provided more than one key
+            // GH#4239 - If the user provided more than one key
             // chord to a "keys" array, warn the user here.
             // TODO: GH#1334 - remove this check.
             if (keys.isArray() && keys.size() > 1)
