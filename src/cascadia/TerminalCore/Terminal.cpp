@@ -196,7 +196,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
     CATCH_RETURN();
 
-    RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(), *newTextBuffer.get(), _mutableViewport, &oldViewportTop));
+    RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
+                                        *newTextBuffer.get(),
+                                        _mutableViewport,
+                                        &oldViewportTop));
 
     // Conpty resizes a little oddly - if the height decreased, and there were
     // blank lines at the bottom, those lines will get trimmed. If there's not
@@ -240,10 +243,19 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
     const short proposedTopFromLastLine = ::base::saturated_cast<short>(maxRow - viewportSize.Y + 1);
-    const short proposedTopFromScrollback = scrollbackLines;
+    const short proposedTopFromScrollback = oldViewportTop;
 
-    const short proposedTop = std::max(proposedTopFromLastLine,
-                                       proposedTopFromScrollback);
+    short proposedTop = std::max(proposedTopFromLastLine,
+                                 proposedTopFromScrollback);
+
+    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    const auto proposedBottom = newView.BottomExclusive();
+    // If the new bottom would be below the bottom of the buffer, then slide the
+    // top up so that we'll still fit within the buffer.
+    if (proposedBottom > bufferSize.Y)
+    {
+        proposedTop = ::base::saturated_cast<short>(proposedTop - (proposedBottom - bufferSize.Y));
+    }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
 

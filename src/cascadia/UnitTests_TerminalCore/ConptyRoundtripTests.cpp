@@ -115,6 +115,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         _pVtRenderEngine->SetTestCallback(pfn);
 
+        // Enable the resize quirk, as the Terminal is going to be reacting as if it's enabled.
+        _pVtRenderEngine->SetResizeQuirk(true);
+
         // Configure the OutputStateMachine's _pfnFlushToTerminal
         // Use OutputStateMachineEngine::SetTerminalConnection
         g.pRender->AddRenderEngine(_pVtRenderEngine.get());
