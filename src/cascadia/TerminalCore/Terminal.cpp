@@ -526,18 +526,15 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // Try the character again.
             i--;
 
-            // Mark the line we're currently on as wrapped
+            // If we write the last cell of the row here, TextBuffer::Write will
+            // mark this line as wrapped for us. If the next character we
+            // process is a newline, the Terminal::CursorLineFeed will unmark
+            // this line as wrapped.
 
             // TODO: GH#780 - This should really be a _deferred_ newline. If
             // the next character to come in is a newline or a cursor
             // movement or anything, then we should _not_ wrap this line
             // here.
-            //
-            // This is more WriteCharsLegacy2ElectricBoogaloo work. I'm
-            // leaving it like this for now - it'll break for lines that
-            // _exactly_ wrap, but we can't re-wrap lines now anyways, so it
-            // doesn't matter.
-            _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(true);
         }
 
         _AdjustCursorPosition(proposedCursorPosition);

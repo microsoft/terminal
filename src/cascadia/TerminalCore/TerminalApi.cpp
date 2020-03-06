@@ -142,6 +142,11 @@ bool Terminal::CursorLineFeed(const bool withReturn) noexcept
 try
 {
     auto cursorPos = _buffer->GetCursor().GetPosition();
+
+    // since we explicitly just moved down a row, clear the wrap status on the
+    // row we just came from
+    _buffer->GetRowByOffset(cursorPos.Y).GetCharRow().SetWrapForced(false);
+
     cursorPos.Y++;
     if (withReturn)
     {
