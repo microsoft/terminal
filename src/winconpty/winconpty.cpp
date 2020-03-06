@@ -83,7 +83,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    const wchar_t* pwszFormat = L"\"%s\" --headless %s%s --width %hu --height %hu --signal 0x%x --server 0x%x";
+    const wchar_t* pwszFormat = L"\"%s\" --headless %s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
@@ -93,7 +93,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                pwszFormat,
                _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
-               bResizeQuirk ? L"--resizeQuirk" : L"",
+               bResizeQuirk ? L"--resizeQuirk " : L"",
                size.X,
                size.Y,
                signalPipeConhostSide.get(),
