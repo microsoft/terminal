@@ -412,7 +412,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     try
     {
-        if (GetUiaData())
+        if (_initializedTerminal)
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
@@ -465,7 +465,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            if (_terminal)
+            if (_initializedTerminal)
             {
                 auto lock = _terminal->LockForWriting();
                 auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
@@ -483,7 +483,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            if (_terminal)
+            if (_initializedTerminal)
             {
                 auto lock = _terminal->LockForWriting();
                 auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
@@ -494,7 +494,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     bool TermControl::_InitializeTerminal()
     {
-        auto lock = _terminal.LockForWriting();
+        // auto lock = _terminal->LockForWriting();
+
+        auto lock{ std::unique_lock<std::shared_mutex>(_createCloseLock) };
 
         if (_initializedTerminal)
         {
@@ -508,6 +510,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return false;
         }
+
+        _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // First create the render thread.
         // Then stash a local pointer to the render thread so we can initialize it and enable it
@@ -1667,7 +1671,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
         // no selection --> nothing to copy
-        if (_terminal == nullptr || !_terminal->IsSelectionActive())
+        if (!_initializedTerminal || !_terminal->IsSelectionActive())
         {
             return false;
         }
@@ -1723,10 +1727,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::Close()
     {
-        auto lock = _terminal.LockForWriting();
+        auto lock{ std::unique_lock<std::shared_mutex>(_createCloseLock) };
 
         if (!_closing.exchange(true))
         {
+            // auto lock = _terminal->LockForWriting();
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();

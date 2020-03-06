@@ -163,6 +163,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        std::shared_mutex _createCloseLock;
+
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const uint32_t color);
