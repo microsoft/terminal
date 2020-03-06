@@ -13,23 +13,6 @@
 namespace til
 {
     // Routine Description:
-    // - Takes a reference to an array of constant data and returns the element at the given offset.
-    //   NOTE: The function relies on a sufficient check that the access is in range.
-    // Arguments:
-    // - array - Reference to constant data in an array.
-    // - index - Offset of the element to be returned.
-    // Return Value:
-    // - Element in the array at the offset given by the index parameter.
-    template<class T, class U, const size_t N>
-    constexpr auto at(const T (&array)[N], const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(array[0])>::type
-    {
-#pragma warning(push)
-#pragma warning(suppress : 26482 26485 26446) // Suppress checks for indexing with constant expressions, array to pointer decay, and subscript operator.
-        return array[index];
-#pragma warning(pop)
-    }
-
-    // Routine Description:
     // - Takes a reference to an array of data and returns the element at the given offset.
     //   NOTE: The function relies on a sufficient check that the access is in range.
     // Arguments:
@@ -38,10 +21,10 @@ namespace til
     // Return Value:
     // - Element in the array at the offset given by the index parameter.
     template<class T, class U, const size_t N>
-    constexpr auto at(T (&array)[N], const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(array[0])>::type
+    constexpr auto at(T (&&array)[N], const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(array[0])>::type
     {
 #pragma warning(push)
-#pragma warning(suppress : 26482 26485 26446) // Suppress checks for indexing with constant expressions, array to pointer decay, and subscript operator.
+#pragma warning(suppress : 26482 26446) // Suppress checks for indexing with constant expressions, and subscript operator.
         return array[index];
 #pragma warning(pop)
     }
