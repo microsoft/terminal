@@ -201,6 +201,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret));
             return ret;
         }
+
+        template <typename T, typename... Args>
+        auto capture(T&& func, Args&&... args) -> decltype(func(args..., static_cast<RECT*>(nullptr))) {
+            RECT r{};
+            auto rv = func(std::forward<Args>(args)..., &r);
+            *this = static_cast<rectangle>(r);
+            return rv;
+        }
         
         constexpr point origin() const noexcept
         {

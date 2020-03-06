@@ -429,11 +429,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             {
                 // use the HWND's dimensions for the swap chain dimensions.
                 til::rectangle clientRect;
-                {
-                    RECT rect = { 0 };
-                    RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
-                    clientRect = rect;
-                }
+                RETURN_IF_WIN32_BOOL_FALSE(clientRect.capture(&::GetClientRect, _hwndTarget));
 
                 SwapChainDesc.Width = clientRect.width<UINT>();
                 SwapChainDesc.Height = clientRect.height<UINT>();
