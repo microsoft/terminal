@@ -367,11 +367,26 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         const auto [_, settings] = _settings->BuildSettings(nullptr);
 
+        auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
+
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() || _settings->GlobalSettings().GetAlwaysShowTabs())
+        {
+            auto tabControl = TabRowControl();
+            // auto tab = ::winrt::MUX::Controls::TabViewItem{};
+            // tabControl.TabView().TabItems().Append(tab);
 
-        return TermControl::GetProposedDimensions(settings, dpi);
+            tabControl.Measure({ 1000, 1000 });
+            auto dh = tabControl.DesiredSize().Height;
+            float scale = ::base::saturated_cast<float>(dpi / 96.0f);
+            // proposedSize.Y += dh + (scale * 6);
+            // proposedSize.Y += dh;
+            proposedSize.Y += (dh + 6) * scale; //  + (scale * 6);
+        }
+
+        return proposedSize;
     }
 
     // Method Description:

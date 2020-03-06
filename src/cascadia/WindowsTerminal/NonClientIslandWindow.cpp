@@ -403,9 +403,12 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // - Gets the difference between window and client area size.
 // Arguments:
 // - dpi: dpi of a monitor on which the window is placed
+// - availableSpace: If provided, this is the space available on the monitor the
+//   window is on. This is used during creation of the NonClientIslandWindow to
+//   determine the size we should reserve for the titlebar.
 // Return Value
 // - The size difference
-SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi, const std::optional<RECT> availableSpace) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -417,7 +420,33 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 
     islandFrame.top = -topBorderVisibleHeight;
 
-    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+    LONG titleBarHeight = 0;
+    if (_titlebar)
+    {
+        // If we have a titlebar, this is being called after we've initialized,
+        // and we can just ask that titlebar how big it wants to be.
+        titleBarHeight = static_cast<LONG>(_titlebar.ActualHeight());
+    }
+    else
+    {
+        // If we don't yet have a titlebar, this is being called in MakeWindow,
+        // before the XAML island exists. We can't ask the actual titlebar how
+        // big it wants to be, but we can _fake it_.
+        //
+        // We'll create a fake TitlebarControl, and we'll propose an available
+        // size to it with Measure(). After Measure() is called, the
+        // TitlebarControl's DesiredSize will contain the _unscaled_ size that
+        // the titlebar would like to use. We'll use that as part of the height
+        // calculation here.
+        if (availableSpace.has_value())
+        {
+            const auto space = availableSpace.value();
+            auto titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
+            titlebar.Measure({ ::base::saturated_cast<float>(space.right - space.left),
+                               ::base::saturated_cast<float>(space.bottom - space.top) });
+            titleBarHeight = ::base::saturated_cast<LONG>(titlebar.DesiredSize().Height * GetCurrentDpiScale());
+        }
+    }
 
     return {
         islandFrame.right - islandFrame.left,
