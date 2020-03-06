@@ -498,7 +498,10 @@ try
         return E_INVALIDARG;
     }
 
-    const auto text = _getTextValue(maxLength);
+    const auto maxLengthOpt = (maxLength == -1) ?
+                                  std::nullopt :
+                                  std::optional<unsigned int>{ maxLength };
+    const auto text = _getTextValue(maxLengthOpt);
 
     *pRetVal = SysAllocString(text.c_str());
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, *pRetVal);
@@ -511,12 +514,12 @@ CATCH_RETURN();
 // Method Description:
 // - Helper method for GetText(). Retrieves the text that the UiaTextRange encompasses as a wstring
 // Arguments:
-// - maxLength - the maximum size of the retrieved text. -1 means we don't care about the size.
+// - maxLength - the maximum size of the retrieved text. nullopt means we don't care about the size.
 // Return Value:
 // - the text that the UiaTextRange encompasses
 #pragma warning(push)
 #pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
-std::wstring UiaTextRangeBase::_getTextValue(int maxLength) const noexcept
+std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const noexcept
 try
 {
     _pData->LockConsole();
@@ -539,15 +542,17 @@ try
                                                false,
                                                textRects);
 
+        const size_t textDataSize = base::ClampMul(bufferData.text.size(), bufferSize.Width());
+        textData.reserve(textDataSize);
         for (const auto& text : bufferData.text)
         {
             textData += text;
         }
     }
 
-    if (maxLength > -1)
+    if (maxLength.has_value())
     {
-        textData.resize(maxLength);
+        textData.resize(*maxLength);
     }
 
     return textData;

@@ -1412,8 +1412,8 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // Routine Description:
 // - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
 // Arguments:
-// - lineSelection - true if entire line is being selected. False otherwise (block selection)
-// - trimTrailingWhitespace - setting flag removes trailing whitespace at the end of each row in selection
+// - includeCRLF - inject CRLF pairs to the end of each line
+// - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
 // - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
 // - GetForegroundColor - function used to map TextAttribute to RGB COLORREF for foreground color. If null, only extract the text.
 // - GetBackgroundColor - function used to map TextAttribute to RGB COLORREF for background color. If null, only extract the text.
@@ -1426,11 +1426,12 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const
 {
     TextAndColor data;
+    const bool copyTextColor = GetForegroundColor && GetBackgroundColor;
 
     // preallocate our vectors to reduce reallocs
     size_t const rows = selectionRects.size();
     data.text.reserve(rows);
-    if (GetForegroundColor && GetBackgroundColor)
+    if (copyTextColor)
     {
         data.FgAttr.reserve(rows);
         data.BkAttr.reserve(rows);
@@ -1453,7 +1454,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
         // preallocate to avoid reallocs
         selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
-        if (GetForegroundColor && GetBackgroundColor)
+        if (copyTextColor)
         {
             selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
             selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
@@ -1468,8 +1469,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
             {
                 selectionText.append(cell.Chars());
 
-                // Copy Foreground/Background color
-                if (GetForegroundColor && GetBackgroundColor)
+                if (copyTextColor)
                 {
                     auto cellData = cell.TextAttr();
                     COLORREF const CellFgAttr = GetForegroundColor(cellData);
@@ -1497,7 +1497,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
                 {
                     selectionText.pop_back();
-                    if (GetForegroundColor && GetBackgroundColor)
+                    if (copyTextColor)
                     {
                         selectionFgAttr.pop_back();
                         selectionBkAttr.pop_back();
@@ -1517,7 +1517,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                 selectionText.push_back(UNICODE_CARRIAGERETURN);
                 selectionText.push_back(UNICODE_LINEFEED);
 
-                if (GetForegroundColor && GetBackgroundColor)
+                if (copyTextColor)
                 {
                     // cant see CR/LF so just use black FG & BK
                     COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
@@ -1530,7 +1530,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         }
 
         data.text.emplace_back(std::move(selectionText));
-        if (GetForegroundColor && GetBackgroundColor)
+        if (copyTextColor)
         {
             data.FgAttr.emplace_back(std::move(selectionFgAttr));
             data.BkAttr.emplace_back(std::move(selectionBkAttr));
