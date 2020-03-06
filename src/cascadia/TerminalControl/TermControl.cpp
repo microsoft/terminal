@@ -790,6 +790,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_focused)
         {
             Focus(FocusState::Pointer);
+            // Save the click position that brought this control into focus
+            // in case the user wants to perform a click-drag selection.
             _focusRaisedClickPos = point.Position();
         }
 
@@ -888,7 +890,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _clickDrag = true;
 
                 // PointerPressedHandler doesn't set the SelectionAnchor when the click was
-                // from out of focus, so PointerMoved gets to set it.
+                // from out of focus, so PointerMoved has to set it.
                 if (_focusRaisedClickPos)
                 {
                     _terminal->SetSelectionAnchor(_GetTerminalPosition(*_focusRaisedClickPos));
@@ -976,8 +978,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // macro directly with a VirtualKeyModifiers
                 const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-                // All left click drags should copy.
-                // Single left click releases on a focused pane should copy any active selection.
+                // In a Copy on Select scenario,
+                // All left click drags should copy,
+                // All left clicks on a focused control should copy if a selection is active.
                 if (_clickDrag || !_focusRaisedClickPos)
                 {
                     CopySelectionToClipboard(!shiftEnabled);
