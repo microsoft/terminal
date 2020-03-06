@@ -571,6 +571,11 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     {
     case WM_SETCURSOR:
         return _OnSetCursor(wParam, lParam);
+    case WM_DISPLAYCHANGE:
+        // GH#4166: When the DPI of the monitor changes out from underneath us,
+        // resize our drag bar, to reflect its newly scaled size.
+        _RecreateDragBarWindow();
+        return 0;
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
     case WM_NCHITTEST:
