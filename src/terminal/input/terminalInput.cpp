@@ -543,7 +543,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
     }
 }
 
-void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const
+void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const noexcept
 {
     if (!sequence.empty())
     {
