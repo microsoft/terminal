@@ -7,11 +7,13 @@
 #include "size.h"
 #include "bitmap.h"
 
-#define _INLINEPREFIX __declspec(noinline) inline
+#define _TIL_INLINEPREFIX __declspec(noinline) inline
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    _INLINEPREFIX rectangle operator+(const rectangle& lhs, const size& rhs)
+    // RECTANGLE VS SIZE
+    // ADD will grow the total area of the rectangle. The sign is the direction to grow.
+    _TIL_INLINEPREFIX rectangle operator+(const rectangle& lhs, const size& rhs)
     {
         // Fetch the pieces of the rectangle.
         auto l = lhs.left();
@@ -40,7 +42,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // |         |    |            |
             // |---------|    |------------|
             // BEFORE         AFTER
-            r += width;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(r, width).AssignIfValid(&r));
         }
         else
         {
@@ -55,7 +57,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // |         |    |            |
             // |---------|    |------------|
             // BEFORE             AFTER
-            l += width;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(l, width).AssignIfValid(&l));
         }
 
         if (height > 0)
@@ -73,7 +75,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //                |         |
             //                |---------|
             // BEFORE         AFTER
-            b += height;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(b, height).AssignIfValid(&b));
         }
         else
         {
@@ -90,19 +92,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // |         |    |         |
             // |---------|    |---------|
             // BEFORE         AFTER
-            t += height;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(t, height).AssignIfValid(&t));
         }
 
         return rectangle{ til::point{l, t}, til::point{r, b} };
     }
 
-    _INLINEPREFIX rectangle& operator+=(rectangle& lhs, const size& rhs)
+    _TIL_INLINEPREFIX rectangle& operator+=(rectangle& lhs, const size& rhs)
     {
         lhs = lhs + rhs;
         return lhs;
     }
 
-    _INLINEPREFIX rectangle operator-(const rectangle& lhs, const size& rhs)
+    // SUB will shrink the total area of the rectangle. The sign is the direction to shrink.
+    _TIL_INLINEPREFIX rectangle operator-(const rectangle& lhs, const size& rhs)
     {
         // Fetch the pieces of the rectangle.
         auto l = lhs.left();
@@ -131,7 +134,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // |         |    |      |
             // |---------|    |------|
             // BEFORE         AFTER
-            r -= width;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(r, width).AssignIfValid(&r));
         }
         else
         {
@@ -146,7 +149,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // |         |       |      |
             // |---------|       |------|
             // BEFORE         AFTER
-            l -= width;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(l, width).AssignIfValid(&l));
         }
 
         if (height > 0)
@@ -162,7 +165,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
            // |         |
            // |---------|
            // BEFORE         AFTER
-            b -= height;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(b, height).AssignIfValid(&b));
         }
         else
         {
@@ -177,90 +180,65 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
            // |         |    |---------|
            // |---------|    |---------|
            // BEFORE         AFTER
-            t -= height;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(t, height).AssignIfValid(&t));
         }
 
         return rectangle{ til::point{l, t}, til::point{r, b} };
     }
 
-    _INLINEPREFIX rectangle& operator-=(rectangle& lhs, const size& rhs)
+    _TIL_INLINEPREFIX rectangle& operator-=(rectangle& lhs, const size& rhs)
     {
         lhs = lhs - rhs;
         return lhs;
     }
 
-    //rectangle operator+(const rectangle& lhs, const point& rhs)
-    //{
-    //    const auto l = lhs.left() + rhs.x();
-    //    const auto r = lhs.right() + rhs.x();
-    //    const auto t = lhs.top() + rhs.y();
-    //    const auto b = lhs.bottom() + rhs.y();
-    //    return rectangle{ til::point{l, t}, til::point{r, b} };
-    //}
+    // MUL will scale the entire rectangle by the size L/R * WIDTH and T/B * HEIGHT.
+    _TIL_INLINEPREFIX rectangle operator*(const rectangle& lhs, const size& rhs)
+    {
+        return lhs * til::rectangle{ rhs.width(), rhs.height(), rhs.width(), rhs.height() };
+    }
+    
+    // POINT VS SIZE
+    // This is a convenience and will take X vs WIDTH and Y vs HEIGHT.
+    _TIL_INLINEPREFIX point operator+(const point& lhs, const size& rhs)
+    {
+        return lhs + til::point{ rhs.width(), rhs.height() };
+    }
 
-    //rectangle& operator+=(rectangle& lhs, const point& rhs)
-    //{
-    //    lhs = lhs + rhs;
-    //    return lhs;
-    //}
+    _TIL_INLINEPREFIX point operator-(const point& lhs, const size& rhs)
+    {
+        return lhs - til::point{ rhs.width(), rhs.height() };
+    }
 
-    //rectangle operator+(const rectangle& lhs, const rectangle& rhs)
-    //{
-    //    const auto l = lhs.left() + rhs.left();
-    //    const auto r = lhs.right() + rhs.right();
-    //    const auto t = lhs.top() + rhs.top();
-    //    const auto b = lhs.bottom() + rhs.bottom();
-    //    return rectangle{ til::point{l, t}, til::point{r, b} };
-    //}
+    _TIL_INLINEPREFIX point operator*(const point& lhs, const size& rhs)
+    {
+        return lhs * til::point{ rhs.width(), rhs.height() };
+    }
 
-    //rectangle& operator+=(rectangle& lhs, const rectangle& rhs)
-    //{
-    //    lhs = lhs + rhs;
-    //    return lhs;
-    //}
+    _TIL_INLINEPREFIX point operator/(const point& lhs, const size& rhs)
+    {
+        return lhs / til::point{ rhs.width(), rhs.height() };
+    }
 
-    //rectangle operator/(const rectangle& rect, const size& size)
-    //{
-    //    const auto l = rect.left() / size.width_signed();
-    //    const auto r = rect.right() / size.width_signed();
-    //    const auto t = rect.top() / size.height_signed();
-    //    const auto b = rect.bottom() / size.height_signed();
-    //    return rectangle{ til::point{l, t}, til::point{r, b} };
-    //}
+    // SIZE VS POINT
+    // This is a convenience and will take WIDTH vs X and HEIGHT vs Y.
+    _TIL_INLINEPREFIX size operator+(const size& lhs, const point& rhs)
+    {
+        return lhs + til::size(rhs.x(), rhs.y());
+    }
 
-    //rectangle& operator/=(rectangle& lhs, const size& rhs)
-    //{
-    //    lhs = lhs / rhs;
-    //    return lhs;
-    //}
+    _TIL_INLINEPREFIX size operator-(const size& lhs, const point& rhs)
+    {
+        return lhs - til::size(rhs.x(), rhs.y());
+    }
 
-    //rectangle operator%(const rectangle& rect, const size& size)
-    //{
-    //    const auto l = rect.left() % size.width_signed();
-    //    const auto r = rect.right() % size.width_signed();
-    //    const auto t = rect.top() % size.height_signed();
-    //    const auto b = rect.bottom() % size.height_signed();
-    //    return rectangle{ til::point{l, t}, til::point{r, b} };
-    //}
+    _TIL_INLINEPREFIX size operator*(const size& lhs, const point& rhs)
+    {
+        return lhs * til::size(rhs.x(), rhs.y());
+    }
 
-    //rectangle& operator%=(rectangle& lhs, const size& rhs)
-    //{
-    //    lhs = lhs % rhs;
-    //    return lhs;
-    //}
-
-    //rectangle operator*(const rectangle& rect, const bool& flag)
-    //{
-    //    const auto l = static_cast<decltype(rect.left())>(!(flag ^ static_cast<bool>(rect.left())));
-    //    const auto r = static_cast<decltype(rect.right())>(!(flag ^ static_cast<bool>(rect.right())));
-    //    const auto t = static_cast<decltype(rect.top())>(!(flag ^ static_cast<bool>(rect.top())));
-    //    const auto b = static_cast<decltype(rect.bottom())>(!(flag ^ static_cast<bool>(rect.bottom())));
-    //    return rectangle{ til::point{l, t}, til::point{r, b} };
-    //}
-
-    //rectangle& operator*=(rectangle& lhs, const bool& rhs)
-    //{
-    //    lhs = lhs * rhs;
-    //    return lhs;
-    //}
+    _TIL_INLINEPREFIX size operator/(const size& lhs, const point& rhs)
+    {
+        return lhs / til::size(rhs.x(), rhs.y());
+    }
 }

@@ -62,6 +62,93 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
+        size operator+(const size& other) const
+        {
+            ptrdiff_t width;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(_width, other._width).AssignIfValid(&width));
+
+            ptrdiff_t height;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(_height, other._height).AssignIfValid(&height));
+
+            return size{ width, height };
+        }
+
+        size operator-(const size& other) const
+        {
+            ptrdiff_t width;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(_width, other._width).AssignIfValid(&width));
+
+            ptrdiff_t height;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(_height, other._height).AssignIfValid(&height));
+
+            return size{ width, height };
+        }
+
+        size operator*(const size& other) const
+        {
+            ptrdiff_t width;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_width, other._width).AssignIfValid(&width));
+
+            ptrdiff_t height;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_height, other._height).AssignIfValid(&height));
+
+            return size{ width, height };
+        }
+
+        size operator/(const size& other) const
+        {
+            ptrdiff_t width;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_width, other._width).AssignIfValid(&width));
+
+            ptrdiff_t height;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_height, other._height).AssignIfValid(&height));
+
+            return size{ width, height};
+        }
+
+        size divide_ceil(const size& other) const
+        {
+            // Divide normally to get the floor.
+            const size floor = *this / other;
+
+            ptrdiff_t adjWidth = 0;
+            ptrdiff_t adjHeight = 0;
+
+            // Check for width remainder, anything not 0.
+            if (_width % other._width)
+            {
+                // If there was any remainder, 
+                // Grow the magnitude by 1 in the
+                // direction of the sign.
+                if (floor.width() >= 0)
+                {
+                    ++adjWidth;
+                }
+                else
+                {
+                    --adjWidth;
+                }
+            }
+
+            // Check for height remainder, anything not 0.
+            if (_height % other._height)
+            {
+                // If there was any remainder, 
+                // Grow the magnitude by 1 in the
+                // direction of the sign.
+                if (_height >= 0)
+                {
+                    ++adjHeight;
+                }
+                else
+                {
+                    --adjHeight;
+                }
+            }
+
+            return floor + size{ adjWidth, adjHeight };
+        }
+
         constexpr ptrdiff_t width() const noexcept
         {
             return _width;

@@ -95,6 +95,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
+        rectangle(til::point topLeft):
+            _topLeft(topLeft)
+        {
+            _bottomRight = _topLeft + 1;
+        }
+
         constexpr rectangle(til::point topLeft, til::point bottomRight) noexcept :
             _topLeft(topLeft),
             _bottomRight(bottomRight)
@@ -234,6 +240,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool operator!=(const rectangle& other) const noexcept
         {
             return !(*this == other);
+        }
+
+        rectangle operator+(const rectangle& other) const
+        {
+            return rectangle{ _topLeft + other._topLeft, _bottomRight + other._bottomRight };
+        }
+
+        rectangle operator*(const rectangle& other) const
+        {
+            return rectangle{ _topLeft * other._topLeft, _bottomRight * other._bottomRight };
         }
 
         // OR = union

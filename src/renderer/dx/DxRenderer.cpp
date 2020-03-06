@@ -80,7 +80,7 @@ DxEngine::DxEngine() :
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
-    _glyphCell{ 0 },
+    _glyphCell{ 1, 1 },
     _haveDeviceResources{ false },
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
@@ -410,6 +410,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 
     _displaySizePixels = _GetClientSize();
 
+    _invalidMap.resize(_displaySizePixels / _glyphCell);
+
     if (createSwapChain)
     {
         DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = { 0 };
@@ -634,7 +636,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
                                             gsl::narrow<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
                                             _displaySizePixels.width<float>(),
-                                            _glyphCell.cy != 0 ? _glyphCell.cy : _displaySizePixels.height<float>(),
+                                            _glyphCell.height() != 0 ? _glyphCell.height<float>() : _displaySizePixels.height<float>(),
                                             ppTextLayout);
 }
 
@@ -1035,6 +1037,8 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
 
                 // And persist the new size.
                 _displaySizePixels = clientSize;
+
+                _invalidMap.resize(_displaySizePixels / _glyphCell);
             }
 
             _d2dRenderTarget->BeginDraw();
@@ -1240,10 +1244,10 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
 {
     try
     {
+        const til::point cellPoint{ coord };
+
         // Calculate positioning of our origin.
-        D2D1_POINT_2F origin;
-        origin.x = static_cast<float>(coord.X * _glyphCell.cx);
-        origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
+        const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
         // Create the text layout
         CustomTextLayout layout(_dwriteFactory.Get(),
@@ -1251,7 +1255,7 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
                                 _dwriteTextFormat.Get(),
                                 _dwriteFontFace.Get(),
                                 clusters,
-                                _glyphCell.cx);
+                                _glyphCell.width());
 
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
@@ -1263,7 +1267,7 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
                                _d2dBrushBackground.Get(),
                                _dwriteFactory.Get(),
                                spacing,
-                               D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
+                               _glyphCell,
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
         // Layout then render the text
@@ -1371,18 +1375,8 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    RECT pixels;
-    pixels.left = rect.Left * _glyphCell.cx;
-    pixels.top = rect.Top * _glyphCell.cy;
-    pixels.right = rect.Right * _glyphCell.cx;
-    pixels.bottom = rect.Bottom * _glyphCell.cy;
-
-    D2D1_RECT_F draw = { 0 };
-    draw.left = static_cast<float>(pixels.left);
-    draw.top = static_cast<float>(pixels.top);
-    draw.right = static_cast<float>(pixels.right);
-    draw.bottom = static_cast<float>(pixels.bottom);
-
+    /* rect is SMALL_RECT */
+    const D2D1_RECT_F draw = til::rectangle{ rect } * _glyphCell;
     _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 
     return S_OK;
@@ -1410,16 +1404,12 @@ enum class CursorPaintType
         return S_FALSE;
     }
     // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = { 0 };
-    rect.left = static_cast<float>(options.coordCursor.X * _glyphCell.cx);
-    rect.top = static_cast<float>(options.coordCursor.Y * _glyphCell.cy);
-    rect.right = static_cast<float>(rect.left + _glyphCell.cx);
-    rect.bottom = static_cast<float>(rect.top + _glyphCell.cy);
+    D2D1_RECT_F rect = til::rectangle{ options.coordCursor } * _glyphCell;
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)
     {
-        rect.right += _glyphCell.cx;
+        rect.right += _glyphCell.width();
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
@@ -1431,7 +1421,7 @@ enum class CursorPaintType
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
 
-        ulHeight = gsl::narrow<ULONG>((_glyphCell.cy * ulHeight) / 100);
+        ulHeight = gsl::narrow<ULONG>((_glyphCell.height() * ulHeight) / 100);
         rect.top = rect.bottom - ulHeight;
         break;
     }
@@ -1601,10 +1591,9 @@ CATCH_RETURN()
 
     try
     {
-        const auto size = fiFontInfo.GetSize();
+        _glyphCell = fiFontInfo.GetSize();
 
-        _glyphCell.cx = size.X;
-        _glyphCell.cy = size.Y;
+        _invalidMap.resize(_displaySizePixels / _glyphCell);
     }
     CATCH_RETURN();
 
@@ -1613,10 +1602,9 @@ CATCH_RETURN()
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.cx);
-    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    const auto cellSize = til::size{ viewInPixels.Dimensions() } / _glyphCell;
 
-    return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
+    return Viewport::FromDimensions(viewInPixels.Origin(), cellSize);
 }
 
 // Routine Description:
@@ -1715,7 +1703,7 @@ float DxEngine::GetScaling() const noexcept
 // - Nearest integer short x and y values for each cell.
 [[nodiscard]] COORD DxEngine::_GetFontSize() const noexcept
 {
-    return { gsl::narrow<SHORT>(_glyphCell.cx), gsl::narrow<SHORT>(_glyphCell.cy) };
+    return _glyphCell;
 }
 
 // Routine Description:
@@ -1751,7 +1739,7 @@ float DxEngine::GetScaling() const noexcept
                                 _dwriteTextFormat.Get(),
                                 _dwriteFontFace.Get(),
                                 { &cluster, 1 },
-                                _glyphCell.cx);
+                                _glyphCell.width());
 
         UINT32 columns = 0;
         RETURN_IF_FAILED(layout.GetColumns(&columns));

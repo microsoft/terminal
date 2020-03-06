@@ -101,9 +101,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         bitmap(til::size sz) :
-            _size(sz)
+            _size(sz),
+            _bits(sz.area(), true)
         {
-            _bits.resize(_size.area());
         }
 
         const_iterator begin() const
@@ -154,12 +154,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void set_all()
         {
-            _bits.assign(_size.area(), true);
+            // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
+            // .assign(_size(), true) throws an assert (unsupported operation)
+
+            set(til::rectangle{ til::point{0, 0}, _size });
         }
 
         void reset_all()
         {
-            _bits.assign(_size.area(), false);
+            // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
+            // .assign(_size(), false) throws an assert (unsupported operation)
+            reset(til::rectangle{ til::point{0, 0}, _size });
+        }
+
+        void resize(til::size size)
+        {
+            _size = size;
+            // .resize(_size(), true) throws an assert (unsupported operation)
+            _bits = std::vector<bool>(_size.area(), true);
+        }
+
+        void resize(size_t width, size_t height)
+        {
+            resize(til::size{ width, height });
         }
 
         const til::size& size() const
@@ -200,7 +217,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
     private:
-        const til::size _size;
+        til::size _size;
         std::vector<bool> _bits;
     };
 }

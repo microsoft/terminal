@@ -82,6 +82,70 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
+        point operator+(const ptrdiff_t other) const
+        {
+            return *this + point{ other, other };
+        }
+
+        point operator-(const ptrdiff_t other) const
+        {
+            return *this - point{ other, other };
+        }
+
+        point operator*(const ptrdiff_t other) const
+        {
+            return *this * point{ other, other };
+        }
+
+        point operator/(const ptrdiff_t other) const
+        {
+            return *this / point{ other, other };
+        }
+
+        point operator+(const point& other) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(_x, other._x).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckAdd(_y, other._y).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point operator-(const point& other) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(_x, other._x).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckSub(_y, other._y).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point operator*(const point& other) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, other._x).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, other._y).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point operator/(const point& other) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, other._x).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, other._y).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
         constexpr ptrdiff_t x() const noexcept
         {
             return _x;

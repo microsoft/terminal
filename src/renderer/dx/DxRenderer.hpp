@@ -27,6 +27,9 @@
 
 #include <TraceLoggingProvider.h>
 
+#include "til/bitmap.h"
+#include "til/operators.h"
+
 TRACELOGGING_DECLARE_PROVIDER(g_hDxRenderProvider);
 
 namespace Microsoft::Console::Render
@@ -131,7 +134,7 @@ namespace Microsoft::Console::Render
         bool _isPainting;
 
         til::size _displaySizePixels;
-        SIZE _glyphCell;
+        til::size _glyphCell;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
