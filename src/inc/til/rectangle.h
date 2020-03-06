@@ -179,6 +179,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
+        template<typename T>
+        T width() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width()).AssignIfValid(&ret));
+            return ret;
+        }
+
         ptrdiff_t height() const 
         {
             ptrdiff_t ret;
@@ -186,6 +194,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
+        template<typename T>
+        T height() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret));
+            return ret;
+        }
+        
         constexpr point origin() const noexcept
         {
             return _topLeft;

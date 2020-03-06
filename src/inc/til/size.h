@@ -61,15 +61,42 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return !(*this == other);
         }
-        
+
         constexpr ptrdiff_t width() const noexcept
         {
             return _width;
         }
 
+        template<typename T>
+        T width() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width()).AssignIfValid(&ret));
+            return ret;
+        }
+
         constexpr ptrdiff_t height() const noexcept
         {
             return _height;
+        }
+
+        template<typename T>
+        T height() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        size operator*(const float& other) const
+        {
+            ptrdiff_t w;
+            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(width()) * other).AssignIfValid(&w));
+
+            ptrdiff_t h;
+            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(height()) * other).AssignIfValid(&h));
+
+            return size{ w, h };
         }
 
         ptrdiff_t area() const 

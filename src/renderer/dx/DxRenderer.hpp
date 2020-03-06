@@ -121,7 +121,7 @@ namespace Microsoft::Console::Render
         SwapChainMode _chainMode;
 
         HWND _hwndTarget;
-        SIZE _sizeTarget;
+        til::size _sizeTarget;
         int _dpi;
         float _scale;
 
@@ -130,7 +130,7 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
-        SIZE _displaySizePixels;
+        til::size _displaySizePixels;
         SIZE _glyphCell;
 
         D2D1_COLOR_F _defaultForegroundColor;
@@ -140,7 +140,7 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
 
-        [[nodiscard]] RECT _GetDisplayRect() const noexcept;
+        [[nodiscard]] til::rectangle _GetDisplayRect() const noexcept;
 
         til::bitmap _invalidMap;
         std::vector<til::rectangle> _dirtyRects;
@@ -250,7 +250,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] COORD _GetFontSize() const noexcept;
 
-        [[nodiscard]] SIZE _GetClientSize() const noexcept;
+        [[nodiscard]] til::size _GetClientSize() const noexcept;
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

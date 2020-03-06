@@ -65,6 +65,7 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
+    _invalidMap{},
     /*_isInvalidUsed{ false },
     _invalidRect{ 0 },*/
     _invalidScroll{ 0 },
@@ -75,7 +76,7 @@ DxEngine::DxEngine() :
     _presentOffset{ 0 },
     _isEnabled{ false },
     _isPainting{ false },
-    _displaySizePixels{ 0 },
+    _displaySizePixels{},
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
@@ -84,7 +85,7 @@ DxEngine::DxEngine() :
     _retroTerminalEffects{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
-    _sizeTarget{ 0 },
+    _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
@@ -238,8 +239,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     // Setup the viewport.
     D3D11_VIEWPORT vp;
-    vp.Width = static_cast<FLOAT>(_displaySizePixels.cx);
-    vp.Height = static_cast<FLOAT>(_displaySizePixels.cy);
+    vp.Width = _displaySizePixels.width<FLOAT>();
+    vp.Height = _displaySizePixels.height<FLOAT>();
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
     vp.TopLeftX = 0;
@@ -427,11 +428,15 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             case SwapChainMode::ForHwnd:
             {
                 // use the HWND's dimensions for the swap chain dimensions.
-                RECT rect = { 0 };
-                RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
+                til::rectangle clientRect;
+                {
+                    RECT rect = { 0 };
+                    RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
+                    clientRect = rect;
+                }
 
-                SwapChainDesc.Width = rect.right - rect.left;
-                SwapChainDesc.Height = rect.bottom - rect.top;
+                SwapChainDesc.Width = clientRect.width<UINT>();
+                SwapChainDesc.Height = clientRect.height<UINT>();
 
                 // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
                 SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
@@ -457,8 +462,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             case SwapChainMode::ForComposition:
             {
                 // Use the given target size for compositions.
-                SwapChainDesc.Width = _displaySizePixels.cx;
-                SwapChainDesc.Height = _displaySizePixels.cy;
+                SwapChainDesc.Width = _displaySizePixels.width<UINT>();
+                SwapChainDesc.Height = _displaySizePixels.height<UINT>();
 
                 // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
                 SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
@@ -628,8 +633,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     return _dwriteFactory->CreateTextLayout(string,
                                             gsl::narrow<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
-                                            gsl::narrow<float>(_displaySizePixels.cx),
-                                            _glyphCell.cy != 0 ? _glyphCell.cy : gsl::narrow<float>(_displaySizePixels.cy),
+                                            _displaySizePixels.width<float>(),
+                                            _glyphCell.cy != 0 ? _glyphCell.cy : _displaySizePixels.height<float>(),
                                             ppTextLayout);
 }
 
@@ -826,7 +831,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - <none>
 // Return Value:
 // - X by Y area in pixels of the surface
-[[nodiscard]] SIZE DxEngine::_GetClientSize() const noexcept
+[[nodiscard]] til::size DxEngine::_GetClientSize() const noexcept
 {
     switch (_chainMode)
     {
@@ -835,18 +840,19 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
-        SIZE clientSize = { 0 };
-        clientSize.cx = clientRect.right - clientRect.left;
-        clientSize.cy = clientRect.bottom - clientRect.top;
+        til::rectangle client{ clientRect };
 
-        return clientSize;
+        return client.size();
     }
     case SwapChainMode::ForComposition:
     {
-        SIZE size = _sizeTarget;
-        size.cx = static_cast<LONG>(size.cx * _scale);
-        size.cy = static_cast<LONG>(size.cy * _scale);
-        return size;
+        try
+        {
+            return _sizeTarget * _scale;
+        }
+        CATCH_LOG();
+
+        return _sizeTarget;
     }
     default:
         FAIL_FAST_HR(E_NOTIMPL);
@@ -876,9 +882,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - <none>
 // Return Value;
 // - Origin-placed rectangle representing the pixel size of the surface
-[[nodiscard]] RECT DxEngine::_GetDisplayRect() const noexcept
+[[nodiscard]] til::rectangle DxEngine::_GetDisplayRect() const noexcept
 {
-    return { 0, 0, _displaySizePixels.cx, _displaySizePixels.cy };
+    return til::rectangle{ til::point{0, 0}, _displaySizePixels };
 }
 
 // Routine Description:
@@ -1008,8 +1014,7 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
             {
                 RETURN_IF_FAILED(_CreateDeviceResources(true));
             }
-            else if (_displaySizePixels.cy != clientSize.cy ||
-                     _displaySizePixels.cx != clientSize.cx)
+            else if (_displaySizePixels != clientSize)
             {
                 // OK, we're going to play a dangerous game here for the sake of optimizing resize
                 // First, set up a complete clear of all device resources if something goes terribly wrong.
@@ -1022,7 +1027,7 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
                 _d2dRenderTarget.Reset();
 
                 // Change the buffer size and recreate the render target (and surface)
-                RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+                RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
                 RETURN_IF_FAILED(_PrepareRenderTarget());
 
                 // OK we made it past the parts that can cause errors. We can release our failure handler.
@@ -1074,7 +1079,7 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
                 _presentOffset.x = _invalidScroll.cx;
                 _presentOffset.y = _invalidScroll.cy;
 
-                _presentParams.DirtyRectsCount = _dirtyRectRects.size();
+                _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_dirtyRectRects.size());
                 _presentParams.pDirtyRects = _dirtyRectRects.data();
 
                 _presentParams.pScrollOffset = &_presentOffset;
