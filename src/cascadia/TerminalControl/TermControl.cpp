@@ -76,18 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            // This event fires every time the layout changes, but it is always the last one to fire
-            // in any layout change chain. That gives us great flexibility in finding the right point
-            // at which to initialize our renderer (and our terminal).
-            // Any earlier than the last layout update and we may not know the terminal's starting size.
-
-            if (_InitializeTerminal())
-            {
-                // Only let this succeed once.
-                _layoutUpdatedRevoker.revoke();
-            }
-        });
+        _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated({ get_weak(), &TermControl::_LayoutUpdated });
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
@@ -95,6 +84,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
 
         _ApplyUISettings();
+    }
+
+    void TermControl::_LayoutUpdated(Windows::Foundation::IInspectable const& sender,
+                                     Windows::UI::Xaml::RoutedEventArgs const& e)
+    {
+        // This event fires every time the layout changes, but it is always the last one to fire
+        // in any layout change chain. That gives us great flexibility in finding the right point
+        // at which to initialize our renderer (and our terminal).
+        // Any earlier than the last layout update and we may not know the terminal's starting size.
+
+        if (_InitializeTerminal())
+        {
+            // Only let this succeed once.
+            _layoutUpdatedRevoker.revoke();
+        }
     }
 
     // Method Description:
