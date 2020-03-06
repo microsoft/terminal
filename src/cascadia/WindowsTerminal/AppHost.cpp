@@ -269,10 +269,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
         // Get the size of a window we'd need to host that client rect. This will
         // add the titlebar space.
-
-        // TODO: This doesnt account for the tab row space, which it should!
-
-        const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix, { monitorInfo.rcWork });
+        const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
         adjustedWidth = islandWidth + nonClientSize.cx;
         adjustedHeight = islandHeight + nonClientSize.cy;
     }

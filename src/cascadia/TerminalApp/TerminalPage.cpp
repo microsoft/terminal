@@ -469,16 +469,6 @@ namespace winrt::TerminalApp::implementation
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
-        auto ah = _tabRow.ActualHeight();
-        auto dh = _tabRow.DesiredSize().Height;
-        auto h = _tabRow.Height();
-        ah, dh, h;
-
-        auto ah2 = _tabContent.ActualHeight();
-        auto dh2 = _tabContent.DesiredSize().Height;
-        auto h2 = _tabContent.Height();
-        ah2, dh2, h2;
-
         const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
         _CreateNewTabFromSettings(profileGuid, settings);

@@ -396,7 +396,7 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 // - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi, const std::optional<RECT> /*availableSpace*/) const noexcept
+SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};

@@ -36,7 +36,7 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    virtual SIZE GetTotalNonClientExclusiveSize(UINT dpi, const std::optional<RECT> availableSpace = std::nullopt) const noexcept override;
+    virtual SIZE GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
 
     void Initialize() override;
 
