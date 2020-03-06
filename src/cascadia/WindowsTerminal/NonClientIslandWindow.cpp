@@ -320,7 +320,6 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
-    // I'm not sure that HWND_BOTTOM does anything different than HWND_TOP for us.
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
                                    newIslandPos.X,
@@ -575,12 +574,86 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcCalcSize(wParam, lParam);
     case WM_NCHITTEST:
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
+    case WM_PAINT:
+        return _OnPaint();
     case WM_ACTIVATE:
         // If we do this every time we're activated, it should be close enough to correct.
         TerminalTrySetDarkTheme(_window.get());
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
+}
+
+// Method Description:
+// - This method is called when the window receives the WM_PAINT message.
+// - It paints the client area with the color of the title bar to hide the
+//   system's title bar behind the XAML Islands window during a resize.
+//   Indeed, the XAML Islands window doesn't resize at the same time than
+//   the top level window
+//   (see https://github.com/microsoft/microsoft-ui-xaml/issues/759).
+// Return Value:
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT NonClientIslandWindow::_OnPaint() noexcept
+{
+    if (!_titlebar)
+    {
+        return 0;
+    }
+
+    PAINTSTRUCT ps{ 0 };
+    const auto hdc = wil::BeginPaint(_window.get(), &ps);
+    if (!hdc)
+    {
+        return 0;
+    }
+
+    const auto topBorderHeight = _GetTopBorderHeight();
+
+    if (ps.rcPaint.top < topBorderHeight)
+    {
+        RECT rcTopBorder = ps.rcPaint;
+        rcTopBorder.bottom = topBorderHeight;
+
+        // To show the original top border, we have to paint on top of it with
+        // the alpha component set to 0. This page recommends to paint the area
+        // in black using the stock BLACK_BRUSH to do this:
+        // https://docs.microsoft.com/en-us/windows/win32/dwm/customframe#extending-the-client-frame
+        ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
+    }
+
+    if (ps.rcPaint.bottom > topBorderHeight)
+    {
+        RECT rcRest = ps.rcPaint;
+        rcRest.top = topBorderHeight;
+
+        const auto backgroundBrush = _titlebar.Background();
+        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
+        const auto backgroundColor = backgroundSolidBrush.Color();
+        const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+
+        if (!_backgroundBrush || color != _backgroundBrushColor)
+        {
+            // Create brush for titlebar color.
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+        }
+
+        // To hide the original title bar, we have to paint on top of it with
+        // the alpha component set to 255. This is a hack to do it with GDI.
+        // See NonClientIslandWindow::_UpdateFrameMargins for more information.
+        HDC opaqueDc;
+        BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
+        HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+        if (!buf || !opaqueDc)
+        {
+            winrt::throw_last_error();
+        }
+
+        ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
+        ::BufferedPaintSetAlpha(buf, NULL, 255);
+        ::EndBufferedPaint(buf, TRUE);
+    }
+
+    return 0;
 }
 
 // Method Description:
