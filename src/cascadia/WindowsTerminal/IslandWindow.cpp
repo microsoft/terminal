@@ -45,7 +45,6 @@ void IslandWindow::MakeWindow() noexcept
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
-    wc.hbrBackground = GetStockBrush(BLACK_BRUSH);
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
