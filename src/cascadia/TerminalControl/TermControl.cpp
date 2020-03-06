@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
+        _terminal{ std::make_unique<::Microsoft::Terminal::Core::Terminal>() },
         _connection{ connection },
         _initializedTerminal{ false },
         _settings{ settings },
@@ -497,6 +498,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     bool TermControl::_InitializeTerminal()
     {
+        auto lock = _terminal.LockForWriting();
+
         if (_initializedTerminal)
         {
             return false;
@@ -509,8 +512,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return false;
         }
-
-        _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // First create the render thread.
         // Then stash a local pointer to the render thread so we can initialize it and enable it
@@ -1726,6 +1727,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::Close()
     {
+        auto lock = _terminal.LockForWriting();
+
         if (!_closing.exchange(true))
         {
             // Stop accepting new output and state changes before we disconnect everything.
