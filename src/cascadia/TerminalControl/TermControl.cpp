@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
-        _lastMouseClickTS{},
+        _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _searchBox{ nullptr },
         _focusRaisedClickPos{ std::nullopt },
@@ -844,7 +844,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                         _terminal->SetSelectionAnchor(terminalPosition);
                     }
 
-                    _lastMouseClickTS = point.Timestamp();
+                    _lastMouseClickTimestamp = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
                 }
                 _renderer->TriggerSelection();
@@ -971,6 +971,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
+            // Only a left click release when copy on select is active should perform a copy.
+            // Right clicks and middle clicks should not need to do anything when released.
             if (_terminal->IsCopyOnSelectActive() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
             {
                 const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
@@ -2061,7 +2063,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // if click occurred at a different location or past the multiClickTimer...
         Timestamp delta;
-        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTS, &delta));
+        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
         if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
         {
             // exit early. This is a single click.
