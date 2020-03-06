@@ -23,6 +23,7 @@ ATOM NonClientIslandWindow::_dragBarWindowClass = 0;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
+    _backgroundBrushColor{ RGB(0, 0, 0) },
     _theme{ requestedTheme },
     _isMaximized{ false }
 {
