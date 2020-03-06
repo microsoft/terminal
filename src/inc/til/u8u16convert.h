@@ -115,7 +115,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 // If the Lead Byte indicates that the last bytes in the string is a partial UTF-8 code point then cache them:
                                 //  Use the bitmask at index `sequenceLen`. Compare the result with the operand having the same index. If they
                                 //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
-                                //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion to hstring.
+                                //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion to wstring.
                                 if ((*backIter & _cmpMasks.at(sequenceLen)) != _cmpOperands.at(sequenceLen))
                                 {
                                     std::move(backIter, _buffer.end(), _partials.begin());
@@ -134,7 +134,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     {
                         auto foundLeadByte{ false };
 
-                        // Start at the beginning of the string (or the second bvte if a lead byte has been cached in the previous call) and scan forward,
+                        // Start at the beginning of the string (or the second byte if a lead byte has been cached in the previous call) and scan forward,
                         // keep track when it encounters a lead byte, and treat the next byte as the trailing part of the same character.
                         std::for_each(_buffer.cbegin(), _buffer.cend(), [&](const auto& ch) {
                             if (foundLeadByte)
@@ -145,17 +145,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             {
                                 // We use our own algorithm because IsDBCSLeadByteEx() supports only a subset of DBCS codepages.
                                 const auto uCh{ gsl::narrow_cast<byte>(ch) };
-#pragma warning(push)
-#pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions.
-#pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-                                for (int idx{}; _cpInfo.LeadByte[idx] != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
-#pragma warning(pop)
+                                for (ptrdiff_t idx{}; til::at(_cpInfo.LeadByte, idx) != 0; idx += 2) // OK because the LeadByte array is guaranteed to end with two 0 bytes.
                                 {
-#pragma warning(push)
-#pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions.
-#pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-                                    if (uCh >= _cpInfo.LeadByte[idx] && uCh <= _cpInfo.LeadByte[idx + 1])
-#pragma warning(pop)
+                                    if (uCh >= til::at(_cpInfo.LeadByte, idx) && uCh <= til::at(_cpInfo.LeadByte, idx + 1))
                                     {
                                         foundLeadByte = true;
                                         break;
@@ -317,7 +309,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     _partialsLen = 0u;
                 }
 
-                // poulate the part of the string that contains complete code points only
+                // populate the part of the string that contains complete code points only
                 _buffer.append(in, 0u, remainingLength);
                 out = _buffer;
 
@@ -407,7 +399,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         unsigned int _codepage; // previously used codepage
         CPINFO _cpInfo;
-        std::basic_string<charT> _buffer; // buffer to which the poulated string_view refers
+        std::basic_string<charT> _buffer; // buffer to which the populated string_view refers
         std::array<charT, 4> _partials; // buffer for code units of a partial code point that have to be cached
         size_t _partialsLen{}; // number of cached code units
     };
@@ -423,7 +415,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - in - ANSI string to be converted
     // - out - reference to the resulting UTF-16 string
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
@@ -477,7 +469,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-16 string
     // - state - reference to a til::astate class holding the status of the current partials handling
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
@@ -533,7 +525,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - in - UTF-16 string to be converted
     // - out - reference to the resulting ANSI string
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
@@ -542,6 +534,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     [[nodiscard]] typename std::enable_if<std::is_same<typename inT::value_type, wchar_t>::value && std::is_same<typename outT::value_type, char>::value, HRESULT>::type
     u16a(const unsigned int codepage, const inT in, outT& out) noexcept
     {
+#pragma warning(push)
+#pragma prefast(suppress \
+                : __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
         try
         {
             out.clear();
@@ -570,8 +565,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             else // ANSI codepages
             {
-#pragma prefast(suppress \
-                : __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
                 // We have to call WideCharToMultiByte to get the required size because we can't predict it for all possible codepages.
                 lengthRequired = WideCharToMultiByte(codepage, 0ul, in.data(), lengthIn, nullptr, 0, nullptr, nullptr);
                 if (lengthRequired == 0)
@@ -581,8 +574,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             out.resize(gsl::narrow_cast<size_t>(lengthRequired));
-#pragma prefast(suppress \
-                : __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
             const int lengthOut{ WideCharToMultiByte(codepage, 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr) };
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
 
@@ -600,6 +591,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return E_UNEXPECTED;
         }
+#pragma warning(pop)
     }
 
     // Routine Description:
@@ -610,7 +602,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting ANSI string
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
-    // - S_OK          - the conversion succeded without any change of the represented code points
+    // - S_OK          - the conversion succeeded without any change of the represented code points
     // - E_INVALIDARG  - the codepage id is invalid
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
@@ -665,7 +657,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - in - UTF-8 string to be converted
     // - out - reference to the resulting UTF-16 string
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -683,7 +675,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-16 string
     // - state - reference to a til::astate class holding the status of the current partials handling
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -735,7 +727,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - in - UTF-16 string to be converted
     // - out - reference to the resulting UTF-8 string
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -753,7 +745,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-8 string
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
-    // - S_OK          - the conversion succeded without any change of the represented code points
+    // - S_OK          - the conversion succeeded without any change of the represented code points
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
