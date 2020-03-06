@@ -513,12 +513,13 @@ std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementat
                 {
                     std::tie(args, parseWarnings) = pfn(argsVal);
                 }
-            }
-            warnings.insert(warnings.end(), parseWarnings.begin(), parseWarnings.end());
+                warnings.insert(warnings.end(), parseWarnings.begin(), parseWarnings.end());
 
-            if (args == nullptr)
-            {
-                continue;
+                // if an arg parser was registered, but failed, bail
+                if (args == nullptr)
+                {
+                    continue;
+                }
             }
 
             // Try parsing the chord
