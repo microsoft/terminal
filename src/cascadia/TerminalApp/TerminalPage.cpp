@@ -1045,10 +1045,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
+    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
+                                  const TerminalApp::SplitType splitMode,
                                   const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
@@ -1067,7 +1069,24 @@ namespace winrt::TerminalApp::implementation
 
         auto focusedTab = _GetStrongTabImpl(*indexOpt);
 
-        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
+        winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
+        GUID realGuid;
+        bool profileFound = false;
+
+        if (splitMode == TerminalApp::SplitType::Duplicate)
+        {
+            std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
+            if (current_guid)
+            {
+                profileFound = true;
+                controlSettings = _settings->BuildSettings(current_guid.value());
+                realGuid = current_guid.value();
+            }
+        }
+        if (!profileFound)
+        {
+            std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
+        }
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 

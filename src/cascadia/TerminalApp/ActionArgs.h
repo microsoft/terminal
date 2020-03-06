@@ -331,13 +331,26 @@ namespace winrt::TerminalApp::implementation
         return TerminalApp::SplitState::None;
     };
 
+    // Possible SplitType values
+    static constexpr std::string_view DuplicateKey{ "duplicate" };
+    static TerminalApp::SplitType ParseSplitModeState(const std::string& stateString)
+    {
+        if (stateString == DuplicateKey)
+        {
+            return TerminalApp::SplitType::Duplicate;
+        }
+        return TerminalApp::SplitType::Manual;
+    }
+
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
         GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::None);
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(winrt::TerminalApp::SplitType, SplitMode, winrt::TerminalApp::SplitType::Manual);
 
         static constexpr std::string_view SplitKey{ "split" };
+        static constexpr std::string_view SplitModeKey{ "splitMode" };
 
     public:
         bool Equals(const IActionArgs& other)
@@ -346,7 +359,8 @@ namespace winrt::TerminalApp::implementation
             if (otherAsUs)
             {
                 return otherAsUs->_SplitStyle == _SplitStyle &&
-                       otherAsUs->_TerminalArgs == _TerminalArgs;
+                       otherAsUs->_TerminalArgs == _TerminalArgs &&
+                       otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
         };
@@ -358,6 +372,10 @@ namespace winrt::TerminalApp::implementation
             if (auto jsonStyle{ json[JsonKey(SplitKey)] })
             {
                 args->_SplitStyle = ParseSplitState(jsonStyle.asString());
+            }
+            if (auto jsonStyle{ json[JsonKey(SplitModeKey)] })
+            {
+                args->_SplitMode = ParseSplitModeState(jsonStyle.asString());
             }
             return { *args, {} };
         }
