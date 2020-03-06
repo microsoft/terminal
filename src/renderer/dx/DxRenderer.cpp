@@ -1988,7 +1988,7 @@ float DxEngine::GetScaling() const noexcept
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
 
-        const UINT32 spaceCodePoint = UNICODE_SPACE;
+        const UINT32 spaceCodePoint = L'M';
         UINT16 spaceGlyphIndex;
         THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
 

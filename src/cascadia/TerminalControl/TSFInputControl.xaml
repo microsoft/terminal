@@ -8,7 +8,8 @@
     d:DesignHeight="768"
     d:DesignWidth="1024">
 
-    <Canvas x:Name="Canvas" Visibility="Collapsed">
+    <Canvas x:Name="Canvas"
+            Visibility="Collapsed">
         <TextBlock x:Name="TextBlock"
                    IsTextSelectionEnabled="false"
                    TextDecorations="Underline" />

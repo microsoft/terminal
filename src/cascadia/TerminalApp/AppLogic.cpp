@@ -27,14 +27,17 @@ namespace winrt
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 5> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
     USES_RESOURCE(L"InvalidBackgroundImage"),
-    USES_RESOURCE(L"InvalidIcon")
+    USES_RESOURCE(L"InvalidIcon"),
+    USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
+    USES_RESOURCE(L"TooManyKeysForChord"),
+    USES_RESOURCE(L"MissingRequiredParameter")
 };
-static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
@@ -702,6 +705,41 @@ namespace winrt::TerminalApp::implementation
         {
             _root->TitlebarClicked();
         }
+    }
+
+    // Method Description:
+    // - Implements the F7 handler (per GH#638)
+    // Return value:
+    // - whether F7 was handled
+    bool AppLogic::OnF7Pressed()
+    {
+        if (_root)
+        {
+            // Manually bubble the OnF7Pressed event up through the focus tree.
+            auto xamlRoot{ _root->XamlRoot() };
+            auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
+            do
+            {
+                if (auto f7Listener{ focusedObject.try_as<IF7Listener>() })
+                {
+                    if (f7Listener.OnF7Pressed())
+                    {
+                        return true;
+                    }
+                    // otherwise, keep walking. bubble the event manually.
+                }
+
+                if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
+                {
+                    focusedObject = focusedElement.Parent();
+                }
+                else
+                {
+                    break; // we hit a non-FE object, stop bubbling.
+                }
+            } while (focusedObject);
+        }
+        return false;
     }
 
     // Method Description:
