@@ -24,7 +24,7 @@ namespace til
     constexpr auto at(const T (&array)[N], const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(array[0])>::type
     {
 #pragma warning(push)
-#pragma warning(suppress : 26482 26446) // Suppress checks for indexing with constant expressions, and subscript operator.
+#pragma warning(suppress : 26482 26485 26446) // Suppress checks for indexing with constant expressions, array to pointer decay, and subscript operator.
         return array[index];
 #pragma warning(pop)
     }
@@ -41,7 +41,7 @@ namespace til
     constexpr auto at(T (&array)[N], const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(array[0])>::type
     {
 #pragma warning(push)
-#pragma warning(suppress : 26482 26446) // Suppress checks for indexing with constant expressions, and subscript operator.
+#pragma warning(suppress : 26482 26485 26446) // Suppress checks for indexing with constant expressions, array to pointer decay, and subscript operator.
         return array[index];
 #pragma warning(pop)
     }
