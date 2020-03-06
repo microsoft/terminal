@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "XamlUiaTextRange.h"
-#include "UiaTextRange.hpp"
+#include "../types/TermControlUiaTextRange.hpp"
 #include <UIAutomationClient.h>
 
 // the same as COR_E_NOTSUPPORTED

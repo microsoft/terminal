@@ -372,6 +372,7 @@ namespace winrt::TerminalApp::implementation
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
                 profileMenuItem.Icon(iconElement);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
             if (profile.GetGuid() == defaultProfileGuid)
@@ -602,8 +603,10 @@ namespace winrt::TerminalApp::implementation
             profile->GetConnectionType() == AzureConnectionType &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
-                                                             settings.InitialCols());
+            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
+            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
+            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(), L".", L"Azure", settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }
 
         else if (profile->HasConnectionType() &&

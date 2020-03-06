@@ -952,6 +952,19 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcep
 }
 
 // Method Description:
+// - get delimiter class for buffer cell position
+// - used for double click selection and uia word navigation
+// Arguments:
+// - pos: the buffer cell under observation
+// - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
+// Return Value:
+// - the delimiter class for the given char
+const DelimiterClass TextBuffer::_GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const
+{
+    return GetRowByOffset(pos.Y).GetCharRow().DelimiterClassAt(pos.X, wordDelimiters);
+}
+
+// Method Description:
 // - Get the COORD for the beginning of the word you are on
 // Arguments:
 // - target - a COORD on the word you are currently on
@@ -1001,16 +1014,11 @@ const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const 
     COORD result = target;
     const auto bufferSize = GetSize();
     bool stayAtOrigin = false;
-    auto bufferIterator = GetTextDataAt(result);
 
     // ignore left boundary. Continue until readable text found
-    while (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
     {
-        if (bufferSize.DecrementInBounds(result))
-        {
-            --bufferIterator;
-        }
-        else
+        if (!bufferSize.DecrementInBounds(result))
         {
             // first char in buffer is a DelimiterChar or ControlChar
             // we can't move any further back
@@ -1020,13 +1028,9 @@ const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const 
     }
 
     // make sure we expand to the left boundary or the beginning of the word
-    while (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
     {
-        if (bufferSize.DecrementInBounds(result))
-        {
-            --bufferIterator;
-        }
-        else
+        if (!bufferSize.DecrementInBounds(result))
         {
             // first char in buffer is a RegularChar
             // we can't move any further back
@@ -1035,7 +1039,7 @@ const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const 
     }
 
     // move off of delimiter and onto word start
-    if (!stayAtOrigin && _GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+    if (!stayAtOrigin && _GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
     {
         bufferSize.IncrementInBounds(result);
     }
@@ -1054,17 +1058,16 @@ const COORD TextBuffer::_GetWordStartForSelection(const COORD target, const std:
 {
     COORD result = target;
     const auto bufferSize = GetSize();
-    auto bufferIterator = GetTextDataAt(result);
-    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+
+    const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
 
     // expand left until we hit the left boundary or a different delimiter class
-    while (result.X > bufferSize.Left() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+    while (result.X > bufferSize.Left() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
     {
         bufferSize.DecrementInBounds(result);
-        --bufferIterator;
     }
 
-    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
     {
         // move off of delimiter
         bufferSize.IncrementInBounds(result);
@@ -1116,31 +1119,20 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
 {
     const auto bufferSize = GetSize();
     COORD result = target;
-    auto bufferIterator = GetTextDataAt(result);
 
     // ignore right boundary. Continue through readable text found
-    while (_GetDelimiterClass(*bufferIterator, wordDelimiters) == DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
     {
-        if (bufferSize.IncrementInBounds(result, true))
+        if (!bufferSize.IncrementInBounds(result, true))
         {
-            ++bufferIterator;
-        }
-        else
-        {
-            // last char in buffer is a RegularChar
-            // we can't move any further forward
             break;
         }
     }
 
     // make sure we expand to the beginning of the NEXT word
-    while (_GetDelimiterClass(*bufferIterator, wordDelimiters) != DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
     {
-        if (bufferSize.IncrementInBounds(result, true))
-        {
-            ++bufferIterator;
-        }
-        else
+        if (!bufferSize.IncrementInBounds(result, true))
         {
             // we are at the EndInclusive COORD
             // this signifies that we must include the last char in the buffer
@@ -1162,25 +1154,23 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
 const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const
 {
     const auto bufferSize = GetSize();
-    COORD result = target;
-    auto bufferIterator = GetTextDataAt(result);
 
     // can't expand right
     if (target.X == bufferSize.RightInclusive())
     {
-        return result;
+        return target;
     }
 
-    const auto initialDelimiter = _GetDelimiterClass(*bufferIterator, wordDelimiters);
+    COORD result = target;
+    const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
 
     // expand right until we hit the right boundary or a different delimiter class
-    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClass(*bufferIterator, wordDelimiters) == initialDelimiter))
+    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
     {
         bufferSize.IncrementInBounds(result);
-        ++bufferIterator;
     }
 
-    if (_GetDelimiterClass(*bufferIterator, wordDelimiters) != initialDelimiter)
+    if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
     {
         // move off of delimiter
         bufferSize.DecrementInBounds(result);
@@ -1203,11 +1193,8 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
     auto copy = pos;
     const auto bufferSize = GetSize();
 
-    auto text = GetTextDataAt(copy)->data();
-    auto delimiterClass = _GetDelimiterClass(text, wordDelimiters);
-
     // started on a word, continue until the end of the word
-    while (delimiterClass == DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(copy, wordDelimiters) == DelimiterClass::RegularChar)
     {
         if (!bufferSize.IncrementInBounds(copy))
         {
@@ -1215,8 +1202,6 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
             // thus there is no next word
             return false;
         }
-        text = GetTextDataAt(copy)->data();
-        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
     }
 
     // we are already on/past the last RegularChar
@@ -1226,7 +1211,7 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
     }
 
     // on whitespace, continue until the beginning of the next word
-    while (delimiterClass != DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(copy, wordDelimiters) != DelimiterClass::RegularChar)
     {
         if (!bufferSize.IncrementInBounds(copy))
         {
@@ -1234,8 +1219,6 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
             // there is no next word
             return false;
         }
-        text = GetTextDataAt(copy)->data();
-        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
     }
 
     // successful move, copy result out
@@ -1256,11 +1239,8 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
     auto copy = pos;
     auto bufferSize = GetSize();
 
-    auto text = GetTextDataAt(copy)->data();
-    auto delimiterClass = _GetDelimiterClass(text, wordDelimiters);
-
     // started on whitespace/delimiter, continue until the end of the previous word
-    while (delimiterClass != DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(copy, wordDelimiters) != DelimiterClass::RegularChar)
     {
         if (!bufferSize.DecrementInBounds(copy))
         {
@@ -1268,12 +1248,10 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
             // there is no previous word
             return false;
         }
-        text = GetTextDataAt(copy)->data();
-        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
     }
 
     // on a word, continue until the beginning of the word
-    while (delimiterClass == DelimiterClass::RegularChar)
+    while (_GetDelimiterClassAt(copy, wordDelimiters) == DelimiterClass::RegularChar)
     {
         if (!bufferSize.DecrementInBounds(copy))
         {
@@ -1281,8 +1259,6 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
             // there is no previous word
             return false;
         }
-        text = GetTextDataAt(copy)->data();
-        delimiterClass = _GetDelimiterClass(text, wordDelimiters);
     }
 
     // successful move, copy result out
@@ -1291,26 +1267,97 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 }
 
 // Method Description:
-// - get delimiter class for buffer cell data
-// - used for double click selection and uia word navigation
+// - Determines the line-by-line rectangles based on two COORDs
+// - expands the rectangles to support wide glyphs
+// - used for selection rects and UIA bounding rects
 // Arguments:
-// - cellChar: the char saved to the buffer cell under observation
-// - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
+// - start: a corner of the text region of interest (inclusive)
+// - end: the other corner of the text region of interest (inclusive)
+// - blockSelection: when enabled, only get the rectangular text region,
+//                   as opposed to the text extending to the left/right
+//                   buffer margins
 // Return Value:
 // - the delimiter class for the given char
-TextBuffer::DelimiterClass TextBuffer::_GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept
+const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection) const
 {
-    if (cellChar.at(0) <= UNICODE_SPACE)
+    std::vector<SMALL_RECT> textRects;
+
+    const auto bufferSize = GetSize();
+
+    // (0,0) is the top-left of the screen
+    // the physically "higher" coordinate is closer to the top-left
+    // the physically "lower" coordinate is closer to the bottom-right
+    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+                                               std::make_tuple(start, end) :
+                                               std::make_tuple(end, start);
+
+    const auto textRectSize = base::ClampedNumeric<short>(1) + lowerCoord.Y - higherCoord.Y;
+    textRects.reserve(textRectSize);
+    for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
     {
-        return DelimiterClass::ControlChar;
+        SMALL_RECT textRow;
+
+        textRow.Top = row;
+        textRow.Bottom = row;
+
+        if (blockSelection || higherCoord.Y == lowerCoord.Y)
+        {
+            // set the left and right margin to the left-/right-most respectively
+            textRow.Left = std::min(higherCoord.X, lowerCoord.X);
+            textRow.Right = std::max(higherCoord.X, lowerCoord.X);
+        }
+        else
+        {
+            textRow.Left = (row == higherCoord.Y) ? higherCoord.X : bufferSize.Left();
+            textRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferSize.RightInclusive();
+        }
+
+        _ExpandTextRow(textRow);
+        textRects.emplace_back(textRow);
     }
-    else if (wordDelimiters.find(cellChar) != std::wstring_view::npos)
+
+    return textRects;
+}
+
+// Method Description:
+// - Expand the selection row according to include wide glyphs fully
+// - this is particularly useful for box selections (ALT + selection)
+// Arguments:
+// - selectionRow: the selection row to be expanded
+// Return Value:
+// - modifies selectionRow's Left and Right values to expand properly
+void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
+{
+    const auto bufferSize = GetSize();
+
+    // expand left side of rect
+    COORD targetPoint{ textRow.Left, textRow.Top };
+    if (GetCellDataAt(targetPoint)->DbcsAttr().IsTrailing())
     {
-        return DelimiterClass::DelimiterChar;
+        if (targetPoint.X == bufferSize.Left())
+        {
+            bufferSize.IncrementInBounds(targetPoint);
+        }
+        else
+        {
+            bufferSize.DecrementInBounds(targetPoint);
+        }
+        textRow.Left = targetPoint.X;
     }
-    else
+
+    // expand right side of rect
+    targetPoint = { textRow.Right, textRow.Bottom };
+    if (GetCellDataAt(targetPoint)->DbcsAttr().IsLeading())
     {
-        return DelimiterClass::RegularChar;
+        if (targetPoint.X == bufferSize.RightInclusive())
+        {
+            bufferSize.DecrementInBounds(targetPoint);
+        }
+        else
+        {
+            bufferSize.IncrementInBounds(targetPoint);
+        }
+        textRow.Right = targetPoint.X;
     }
 }
 
