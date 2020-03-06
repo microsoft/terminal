@@ -9,6 +9,7 @@
 #include "TermControlAutomationPeer.g.cpp"
 
 #include "XamlUiaTextRange.h"
+#include "..\types\UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
@@ -44,6 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControlAutomationPeer::SignalSelectionChanged()
     {
+        UiaTracing::Signal::SelectionChanged();
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text selection is modified.
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
@@ -58,6 +60,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControlAutomationPeer::SignalTextChanged()
     {
+        UiaTracing::Signal::TextChanged();
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when textual content is modified.
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
@@ -72,6 +75,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControlAutomationPeer::SignalCursorChanged()
     {
+        UiaTracing::Signal::CursorChanged();
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text was changed in an edit control.
             RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);

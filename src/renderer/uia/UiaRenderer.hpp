@@ -82,6 +82,7 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
         bool _selectionChanged;
+        bool _textBufferChanged;
 
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 

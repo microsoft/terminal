@@ -42,7 +42,7 @@ try
     stream << " _end: { " << end.X << ", " << end.Y << " }";
     stream << " _degenerate: " << utr.IsDegenerate();
     stream << " _wordDelimiters: " << utr._wordDelimiters;
-    stream << " content: " << utr._getTextValue();
+    //stream << " content: " << utr._getTextValue();
     return stream.str();
 }
 catch (...)
@@ -613,4 +613,41 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 }
+
+void UiaTracing::Signal::SelectionChanged() noexcept
+{
+    if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        EnsureRegistration();
+        TraceLoggingWrite(
+            g_UiaProviderTraceProvider,
+            "Signal::SelectionChanged",
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+}
+
+void UiaTracing::Signal::TextChanged() noexcept
+{
+    if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        EnsureRegistration();
+        TraceLoggingWrite(
+            g_UiaProviderTraceProvider,
+            "Signal::TextChanged",
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+}
+
+void UiaTracing::Signal::CursorChanged() noexcept
+{
+    if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        EnsureRegistration();
+        TraceLoggingWrite(
+            g_UiaProviderTraceProvider,
+            "Signal::CursorChanged",
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+}
+
 #pragma warning(pop)
