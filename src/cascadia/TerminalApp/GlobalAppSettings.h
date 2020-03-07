@@ -50,6 +50,9 @@ public:
     bool GetShowTitleInTitlebar() const noexcept;
     void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
 
+    bool GetConfirmCloseAllTabs() const noexcept;
+    void SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept;
+
     void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
 
     void SetTabWidthMode(const winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode tabWidthMode);
@@ -80,11 +83,14 @@ public:
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
+    std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
+
     GETSET_PROPERTY(bool, SnapToGridOnResize, true);
 
 private:
     GUID _defaultProfile;
     winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
+    std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
     std::unordered_map<std::wstring, ColorScheme> _colorSchemes;
 
@@ -99,6 +105,7 @@ private:
     bool _showStatusline;
     bool _alwaysShowTabs;
     bool _showTitleInTitlebar;
+    bool _confirmCloseAllTabs;
 
     bool _showTabsInTitlebar;
     std::wstring _wordDelimiters;

@@ -94,6 +94,7 @@ public:
     bool PrivateSetKeypadMode(const bool applicationMode) override;
 
     bool PrivateSetScreenMode(const bool reverseMode) override;
+    bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 
     bool PrivateShowCursor(const bool show) noexcept override;
     bool PrivateAllowCursorBlinking(const bool enable) override;

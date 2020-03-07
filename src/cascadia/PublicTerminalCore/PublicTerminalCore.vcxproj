@@ -49,4 +49,12 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+
+  <!-- LATE LINK LINE OVERRIDES. This project must link named forwarders
+       instead of APISet forwarders for easier Windows 7 compatibility. -->
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
 </Project>

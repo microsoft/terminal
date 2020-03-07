@@ -44,12 +44,10 @@ Terminal::Terminal() :
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
-    _boxSelection{ false },
-    _selectionActive{ false },
+    _blockSelection{ false },
+    _selection{ std::nullopt },
     _allowSingleCharSelection{ true },
-    _copyOnSelect{ false },
-    _selectionAnchor{ 0, 0 },
-    _endSelectionPosition{ 0, 0 }
+    _copyOnSelect{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -245,7 +243,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     // pressed, manually get the character that's being typed, and put it in the
     // KeyEvent.
     // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximimize, size, move, close
+    // the system menu for restore, min/maximize, size, move, close
     wchar_t ch = UNICODE_NULL;
     if (states.IsAltPressed() && vkey != VK_SPACE)
     {
@@ -345,7 +343,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a read lock on the terminal.
+// - Acquire a read lock on the terminal.
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
@@ -355,7 +353,7 @@ catch (...)
 }
 
 // Method Description:
-// - Aquire a write lock on the terminal.
+// - Acquire a write lock on the terminal.
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
@@ -414,7 +412,6 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
-    const Viewport bufferSize = _buffer->GetSize();
 
     // Defer the cursor drawing while we are iterating the string, for a better performance.
     // We can not waste time displaying a cursor event when we know more text is coming right behind it.
@@ -425,104 +422,101 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         const auto wch = stringView.at(i);
         const COORD cursorPosBefore = cursor.GetPosition();
         COORD proposedCursorPosition = cursorPosBefore;
-        bool notifyScroll = false;
 
-        if (wch == UNICODE_LINEFEED)
+        // TODO: MSFT 21006766
+        // This is not great but I need it demoable. Fix by making a buffer stream writer.
+        //
+        // If wch is a surrogate character we need to read 2 code units
+        // from the stringView to form a single code point.
+        const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
+        const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
+        const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
+        const auto end = _buffer->Write(it);
+        const auto cellDistance = end.GetCellDistance(it);
+        const auto inputDistance = end.GetInputDistance(it);
+
+        if (inputDistance > 0)
         {
-            proposedCursorPosition.Y++;
-        }
-        else if (wch == UNICODE_CARRIAGERETURN)
-        {
-            proposedCursorPosition.X = 0;
-        }
-        else if (wch == UNICODE_BACKSPACE)
-        {
-            if (cursorPosBefore.X == 0)
-            {
-                proposedCursorPosition.X = bufferSize.Width() - 1;
-                proposedCursorPosition.Y--;
-            }
-            else
-            {
-                proposedCursorPosition.X--;
-            }
-        }
-        else if (wch == UNICODE_BEL)
-        {
-            // TODO: GitHub #1883
-            // For now its empty just so we don't try to write the BEL character
+            // If "wch" was a surrogate character, we just consumed 2 code units above.
+            // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
+            proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+            i += inputDistance - 1;
         }
         else
         {
-            // TODO: MSFT 21006766
-            // This is not great but I need it demoable. Fix by making a buffer stream writer.
+            // If _WriteBuffer() is called with a consecutive string longer than the viewport/buffer width
+            // the call to _buffer->Write() will refuse to write anything on the current line.
+            // GetInputDistance() thus returns 0, which would in turn cause i to be
+            // decremented by 1 below and force the outer loop to loop forever.
+            // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
+            // With well behaving shells during normal operation this safeguard should normally not be encountered.
+            proposedCursorPosition.X = 0;
+            proposedCursorPosition.Y++;
+
+            // Try the character again.
+            i--;
+
+            // Mark the line we're currently on as wrapped
+
+            // TODO: GH#780 - This should really be a _deferred_ newline. If
+            // the next character to come in is a newline or a cursor
+            // movement or anything, then we should _not_ wrap this line
+            // here.
             //
-            // If wch is a surrogate character we need to read 2 code units
-            // from the stringView to form a single code point.
-            const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
-            const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
-            const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
-            const auto end = _buffer->Write(it);
-            const auto cellDistance = end.GetCellDistance(it);
-            const auto inputDistance = end.GetInputDistance(it);
-
-            if (inputDistance > 0)
-            {
-                // If "wch" was a surrogate character, we just consumed 2 code units above.
-                // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
-                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
-                i += inputDistance - 1;
-            }
-            else
-            {
-                // If _WriteBuffer() is called with a consecutive string longer than the viewport/buffer width
-                // the call to _buffer->Write() will refuse to write anything on the current line.
-                // GetInputDistance() thus returns 0, which would in turn cause i to be
-                // decremented by 1 below and force the outer loop to loop forever.
-                // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
-                // With well behaving shells during normal operation this safeguard should normally not be encountered.
-                proposedCursorPosition.X = 0;
-                proposedCursorPosition.Y++;
-            }
+            // This is more WriteCharsLegacy2ElectricBoogaloo work. I'm
+            // leaving it like this for now - it'll break for lines that
+            // _exactly_ wrap, but we can't re-wrap lines now anyways, so it
+            // doesn't matter.
+            _buffer->GetRowByOffset(cursorPosBefore.Y).GetCharRow().SetWrapForced(true);
         }
 
-        // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
-        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
-        if (newRows > 0)
-        {
-            for (auto dy = 0; dy < newRows; dy++)
-            {
-                _buffer->IncrementCircularBuffer();
-                proposedCursorPosition.Y--;
-            }
-            notifyScroll = true;
-        }
-
-        // This section is essentially equivalent to `AdjustCursorPosition`
-        // Update Cursor Position
-        cursor.SetPosition(proposedCursorPosition);
-
-        const COORD cursorPosAfter = cursor.GetPosition();
-
-        // Move the viewport down if the cursor moved below the viewport.
-        if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
-        {
-            const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
-            if (newViewTop != _mutableViewport.Top())
-            {
-                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
-                notifyScroll = true;
-            }
-        }
-
-        if (notifyScroll)
-        {
-            _buffer->GetRenderTarget().TriggerRedrawAll();
-            _NotifyScrollEvent();
-        }
+        _AdjustCursorPosition(proposedCursorPosition);
     }
 
     cursor.EndDeferDrawing();
+}
+
+void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
+{
+#pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
+    auto proposedCursorPosition = proposedPosition;
+    auto& cursor = _buffer->GetCursor();
+    const Viewport bufferSize = _buffer->GetSize();
+    bool notifyScroll = false;
+
+    // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
+    const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
+    if (newRows > 0)
+    {
+        for (auto dy = 0; dy < newRows; dy++)
+        {
+            _buffer->IncrementCircularBuffer();
+            proposedCursorPosition.Y--;
+        }
+        notifyScroll = true;
+    }
+
+    // Update Cursor Position
+    cursor.SetPosition(proposedCursorPosition);
+
+    const COORD cursorPosAfter = cursor.GetPosition();
+
+    // Move the viewport down if the cursor moved below the viewport.
+    if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+    {
+        const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+        if (newViewTop != _mutableViewport.Top())
+        {
+            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
+            notifyScroll = true;
+        }
+    }
+
+    if (notifyScroll)
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _NotifyScrollEvent();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

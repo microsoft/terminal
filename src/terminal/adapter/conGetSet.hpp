@@ -27,6 +27,7 @@ namespace Microsoft::Console::VirtualTerminal
     class ConGetSet
     {
     public:
+        virtual ~ConGetSet() = default;
         virtual bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const = 0;
         virtual bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual bool SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;
@@ -58,6 +59,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateSetKeypadMode(const bool applicationMode) = 0;
 
         virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
+        virtual bool PrivateSetAutoWrapMode(const bool wrapAtEOL) = 0;
 
         virtual bool PrivateShowCursor(const bool show) = 0;
         virtual bool PrivateAllowCursorBlinking(const bool enable) = 0;

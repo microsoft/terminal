@@ -55,6 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CopyOnSelect(bool value) noexcept;
         // ------------------------ End of Core Settings -----------------------
 
+        hstring ProfileName();
+        void ProfileName(hstring const& value);
         bool UseAcrylic() noexcept;
         void UseAcrylic(bool value) noexcept;
         double TintOpacity() noexcept;
@@ -102,6 +104,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         bool RetroTerminalEffect() noexcept;
         void RetroTerminalEffect(bool value) noexcept;
 
+        TextAntialiasingMode AntialiasingMode() const noexcept;
+        void AntialiasingMode(winrt::Microsoft::Terminal::Settings::TextAntialiasingMode const& value) noexcept;
+
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
@@ -117,6 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t _cursorHeight;
         hstring _wordDelimiters;
 
+        hstring _profileName;
         bool _useAcrylic;
         double _tintOpacity;
         hstring _fontFace;
@@ -137,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         Settings::ScrollbarState _scrollbarState;
 
         bool _retroTerminalEffect;
+
+        Settings::TextAntialiasingMode _antialiasingMode;
     };
 }
 

@@ -1321,6 +1321,22 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
+// - A private API call for setting the ENABLE_WRAP_AT_EOL_OUTPUT mode.
+//     This controls whether the cursor moves to the beginning of the next row
+//     when it reaches the end of the current row.
+// Parameters:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return value:
+// - STATUS_SUCCESS if handled successfully.
+[[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& outputMode = gci.GetActiveOutputBuffer().GetActiveBuffer().OutputMode;
+    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
 // - A private API call for making the cursor visible or not. Does not modify
 //      blinking state.
 // Parameters:
@@ -1341,7 +1357,14 @@ void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noe
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable)
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(!fEnable);
+
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
 }
 
 // Routine Description:
@@ -1479,7 +1502,7 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 }
 
 // Routine Description:
-// - A private API call for swaping to the main screen buffer. From the
+// - A private API call for swapping to the main screen buffer. From the
 //     alternate buffer, returns to the main screen buffer. From the main
 //     screen buffer, does nothing. The alternate is discarded.
 // Parameters:
@@ -2058,7 +2081,7 @@ void DoSrvPrivateSetDefaultTabStops()
 
 // Routine Description:
 // - internal logic for adding or removing lines in the active screen buffer
-//   this also moves the cursor to the left margin, which is expected behaviour for IL and DL
+//   this also moves the cursor to the left margin, which is expected behavior for IL and DL
 // Parameters:
 // - count - the number of lines to modify
 // - insert - true if inserting lines, false if deleting lines

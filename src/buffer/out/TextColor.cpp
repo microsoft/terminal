@@ -49,8 +49,8 @@ void TextColor::SetDefault() noexcept
 //   * If we're an indexed color table value, we'll use that index to look up
 //     our value in the provided color table.
 //     - If brighten is true, and the index is in the "dark" portion of the
-//       color table (indicies [0,7]), then we'll look up the bright version of
-//       this color (from indicies [8,15]). This should be true for
+//       color table (indices [0,7]), then we'll look up the bright version of
+//       this color (from indices [8,15]). This should be true for
 //       TextAttributes that are "Bold" and we're treating bold as bright
 //       (which is the default behavior of most terminals.)
 //   * If we're a default color, we'll return the default color provided.

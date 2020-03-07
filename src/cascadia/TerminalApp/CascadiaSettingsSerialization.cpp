@@ -39,7 +39,6 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
-static constexpr std::string_view DefaultProfilesIndentation{ "        " };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
@@ -58,6 +57,11 @@ static constexpr std::string_view SettingsSchemaFragment{ "\n"
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
     auto resultPtr = LoadDefaults();
+
+    // GH 3588, we need this below to know if the user chose something that wasn't our default.
+    // Collect it up here in case it gets modified by any of the other layers between now and when
+    // the user's preferences are loaded and layered.
+    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().GetDefaultProfile();
 
     std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
@@ -128,6 +132,57 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
+
+    // GH 3855 - Gathering Data on custom profiles to inform better defaults
+    // Do it after everything else so it won't happen unless validation passed.
+    // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
+    // is a lot of computation we can skip if no one cares.
+    if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        auto guid = resultPtr->GlobalSettings().GetDefaultProfile();
+
+        // Compare to the defaults.json one that we set on install.
+        // If it's different, log what the user chose.
+        if (hardcodedDefaultGuid != guid)
+        {
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "CustomDefaultProfile",
+                TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
+                TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        // If the user had keybinding settings preferences, we want to learn from them to make better defaults
+        auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
+        if (!userKeybindings.empty())
+        {
+            // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
+
+            // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
+            // and avoid extraneous data.
+            auto akb = winrt::make_self<implementation::AppKeyBindings>();
+            akb->LayerJson(userKeybindings);
+            auto value = akb->ToJson();
+
+            // Reserialize the keybindings
+            Json::StreamWriterBuilder wbuilder;
+            // Use 4 spaces to indent instead of \t
+            wbuilder.settings_["indentation"] = "    ";
+            wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+
+            const auto keybindingsString = Json::writeString(wbuilder, value);
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "CustomKeybindings",
+                TraceLoggingDescription("Event emitted when custom keybindings are idenfitied on load/reload"),
+                TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+    }
 
     return resultPtr;
 }
@@ -250,7 +305,7 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
         actualDataStart += Utf8Bom.size();
     }
 
-    std::string errs; // This string will recieve any error text from failing to parse.
+    std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
     // Parse the json data into either our defaults or user settings. We'll keep
@@ -358,6 +413,11 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     const auto numProfiles = userProfilesObj.size();
     const auto lastProfile = userProfilesObj[numProfiles - 1];
     size_t currentInsertIndex = lastProfile.getOffsetLimit();
+    // Find the position of the first non-tab/space character before the last profile...
+    const auto lastProfileIndentStartsAt{ _userSettingsString.find_last_not_of(" \t", lastProfile.getOffsetStart() - 1) };
+    // ... and impute the user's preferred indentation.
+    // (we're taking a copy because a string_view into a string we mutate is a no-no.)
+    const std::string indentation{ _userSettingsString, lastProfileIndentStartsAt + 1, lastProfile.getOffsetStart() - lastProfileIndentStartsAt - 1 };
 
     bool changedFile = false;
 
@@ -388,17 +448,17 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         const auto diff = profile.GenerateStub();
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
-        // Add 8 spaces to the start of each line
-        profileSerialization.insert(0, DefaultProfilesIndentation);
+        // Add the user's indent to the start of each line
+        profileSerialization.insert(0, indentation);
         // Get the first newline
         size_t pos = profileSerialization.find("\n");
         // for each newline...
         while (pos != std::string::npos)
         {
             // Insert 8 spaces immediately following the current newline
-            profileSerialization.insert(pos + 1, DefaultProfilesIndentation);
+            profileSerialization.insert(pos + 1, indentation);
             // Get the next newline
-            pos = profileSerialization.find("\n", pos + 9);
+            pos = profileSerialization.find("\n", pos + indentation.size() + 1);
         }
 
         // Write a comma, newline to the file
@@ -722,7 +782,7 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
             // that two instances of the app will try and move the settings file
             // simultaneously. We don't know what might happen in that scenario,
             // but we're also not sure how to safely lock the file to prevent
-            // that from ocurring.
+            // that from occurring.
             THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
                                           pathToSettingsFile.c_str()));
 

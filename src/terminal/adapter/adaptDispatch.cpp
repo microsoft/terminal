@@ -83,7 +83,7 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 
 // Routine Description:
 // - CUU - Handles cursor upward movement by given distance.
-// CUU and CUD are handled seperately from other CUP sequences, because they are
+// CUU and CUD are handled separately from other CUP sequences, because they are
 //      constrained by the margins.
 // See: https://vt100.net/docs/vt510-rm/CUU.html
 //  "The cursor stops at the top margin. If the cursor is already above the top
@@ -99,7 +99,7 @@ bool AdaptDispatch::CursorUp(const size_t distance)
 
 // Routine Description:
 // - CUD - Handles cursor downward movement by given distance
-// CUU and CUD are handled seperately from other CUP sequences, because they are
+// CUU and CUD are handled separately from other CUP sequences, because they are
 //      constrained by the margins.
 // See: https://vt100.net/docs/vt510-rm/CUD.html
 //  "The cursor stops at the bottom margin. If the cursor is already above the
@@ -470,7 +470,7 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // Arguments:
 // - count - The number of characters to delete
 // Return Value:
-// - True if handled successfuly. False otherwise.
+// - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeleteCharacter(const size_t count)
 {
     return _InsertDeleteHelper(count, false);
@@ -533,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
 // - ECH - Erase Characters from the current cursor position, by replacing
 //     them with a space. This will only erase characters in the current line,
 //     and won't wrap to the next. The attributes of any erased positions
-//     recieve the currently selected attributes.
+//     receive the currently selected attributes.
 // Arguments:
 // - numChars - The number of characters to erase.
 // Return Value:
@@ -578,7 +578,14 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
-        return _EraseScrollback();
+        const bool eraseScrollbackResult = _EraseScrollback();
+        // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
+        // make the state machine propogate this ED sequence to the connected
+        // terminal application. While we're in conpty mode, we don't really
+        // have a scrollback, but the attached terminal might.
+        bool isPty = false;
+        _pConApi->IsConsolePty(isPty);
+        return eraseScrollbackResult && (!isPty);
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
@@ -748,7 +755,7 @@ bool AdaptDispatch::_CursorPositionReport() const
 // Arguments:
 // - reply - The reply string to transmit back to the input stream
 // Return Value:
-// - True if the string was converted to input events and placed into the console input buffer successfuly. False otherwise.
+// - True if the string was converted to input events and placed into the console input buffer successfully. False otherwise.
 bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 {
     bool success = false;
@@ -855,7 +862,7 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 // Routine Description:
 // - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
 // DECCOLM also clear the screen (like a CSI 2 J sequence), while DECSCPP just sets the width.
-// (DECCOLM will do this seperately of this function)
+// (DECCOLM will do this separately of this function)
 // Arguments:
 // - columns - Number of columns
 // Return Value:
@@ -940,6 +947,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
         break;
+    case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+        success = SetAutoWrapMode(enable);
+        break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
@@ -952,7 +962,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
     case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
@@ -1106,6 +1116,19 @@ bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
 {
     _isOriginModeRelative = relativeMode;
     return true;
+}
+
+// Routine Description:
+// - DECAWM - Sets the Auto Wrap Mode.
+//    This controls whether the cursor moves to the beginning of the next row
+//    when it reaches the end of the current row.
+// Arguments:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
+{
+    return _pConApi->PrivateSetAutoWrapMode(wrapAtEOL);
 }
 
 // Routine Description:
@@ -1391,7 +1414,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
 //  X Text cursor enable          DECTCEM     Cursor enabled.
 //    Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
-//    Autowrap                    DECAWM      No autowrap.
+//  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
 //        character set
 //    Keyboard action             KAM         Unlocked.
@@ -1420,6 +1443,10 @@ bool AdaptDispatch::SoftReset()
     if (success)
     {
         success = SetOriginMode(false); // Absolute cursor addressing.
+    }
+    if (success)
+    {
+        success = SetAutoWrapMode(true); // Wrap at end of line.
     }
     if (success)
     {
@@ -1504,6 +1531,17 @@ bool AdaptDispatch::HardReset()
 
     // delete all current tab stops and reapply
     _pConApi->PrivateSetDefaultTabStops();
+
+    // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
+    // make the state machine propogate this RIS sequence to the connected
+    // terminal application. We've reset our state, but the connected terminal
+    // might need to do more.
+    bool isPty = false;
+    _pConApi->IsConsolePty(isPty);
+    if (isPty)
+    {
+        return false;
+    }
 
     return success;
 }
@@ -1874,7 +1912,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
 //      window state, forcing the window to repaint, etc.
-//  This is kept seperate from the input version, as there may be
+//  This is kept separate from the input version, as there may be
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform

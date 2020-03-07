@@ -116,7 +116,7 @@ HRESULT GdiEngine::InvalidateAll() noexcept
 //      doesn't care if we lose text - we're only painting visible text anyways,
 //      so we return false.
 // Arguments:
-// - Recieves a bool indicating if we should force the repaint.
+// - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_FALSE - we succeeded, but the result was false.
 HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
@@ -131,7 +131,7 @@ HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 //      doesn't care if we lose text - we're only painting visible text anyways,
 //      so we return false.
 // Arguments:
-// - Recieves a bool indicating if we should force the repaint.
+// - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_FALSE - we succeeded, but the result was false.
 HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept

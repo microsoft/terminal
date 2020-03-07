@@ -27,7 +27,9 @@ using namespace Microsoft::Console::Types;
 
 class ConptyOutputTests
 {
-    TEST_CLASS(ConptyOutputTests);
+    BEGIN_TEST_CLASS(ConptyOutputTests)
+        TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
+    END_TEST_CLASS()
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -86,6 +88,11 @@ class ConptyOutputTests
         gci.GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
 
         expectedOutput.clear();
+
+        // Manually set the console into conpty mode. We're not actually going
+        // to set up the pipes for conpty, but we want the console to behave
+        // like it would in conpty mode.
+        g.EnableConptyModeForTests();
 
         return true;
     }

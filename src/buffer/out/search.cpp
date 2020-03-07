@@ -15,7 +15,7 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Constructs a Search object.
 // - Make a Search object then call .FindNext() to locate items.
-// - Once you've found something, you can perfom actions like .Select() or .Color()
+// - Once you've found something, you can perform actions like .Select() or .Color()
 // Arguments:
 // - textBuffer - The screen text buffer to search through (the "haystack")
 // - uiaData - The IUiaData type reference, it is for providing selection methods
@@ -38,7 +38,7 @@ Search::Search(IUiaData& uiaData,
 // Routine Description:
 // - Constructs a Search object.
 // - Make a Search object then call .FindNext() to locate items.
-// - Once you've found something, you can perfom actions like .Select() or .Color()
+// - Once you've found something, you can perform actions like .Select() or .Color()
 // Arguments:
 // - textBuffer - The screen text buffer to search through (the "haystack")
 // - uiaData - The IUiaData type reference, it is for providing selection methods

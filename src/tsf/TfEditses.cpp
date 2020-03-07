@@ -374,7 +374,7 @@ CEditSessionObject::Release()
             //
             no_display_attribute_range->CompareStart(ec, pPropRange.get(), TF_ANCHOR_START, &result_comp);
 
-            // Adjust GAP range's start anchor to the end of proprty range.
+            // Adjust GAP range's start anchor to the end of property range.
             gap_range->ShiftStartToRange(ec, pPropRange.get(), TF_ANCHOR_END);
 
             //
@@ -656,7 +656,7 @@ CEditSessionObject::Release()
 
         if (!fCompExist)
         {
-            // Adjust GAP range's start anchor to the end of proprty range.
+            // Adjust GAP range's start anchor to the end of property range.
             no_display_attribute_range->ShiftStartToRange(ec, pRange.get(), TF_ANCHOR_START);
         }
 

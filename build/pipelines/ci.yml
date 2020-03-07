@@ -19,6 +19,10 @@ pr:
       - samples/*
       - tools/*
 
+variables:
+  - name: runCodesignValidationInjectionBG
+    value: false
+
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)

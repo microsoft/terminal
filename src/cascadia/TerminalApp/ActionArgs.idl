@@ -30,6 +30,12 @@ namespace TerminalApp
         Automatic
     };
 
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;
@@ -59,7 +65,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
-        Int32 TabIndex { get; };
+        UInt32 TabIndex { get; };
     };
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
@@ -81,5 +87,6 @@ namespace TerminalApp
     {
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
+        SplitType SplitMode { get; };
     };
 }

@@ -171,14 +171,14 @@ wt my-commandline.exe with some args and a \; literal semicolon ; new-tab anothe
 
 # Start cmd.exe, then split it vertically (with the first taking 70% of it's
 #  space, and the new pane taking 30%), and run wsl.exe in that pane (user story 13)
-wt cmd.exe ; split-pane --target 0 -v -% 30 wsl.exe
+wt cmd.exe ; split-pane --target 0 -V -% 30 wsl.exe
 wt cmd.exe ; split-pane -% 30 wsl.exe
 
 # Create a new window with the default profile, create a vertical split with the
 #  default profile, then create a horizontal split in the second pane and run
 #  "media.exe" (user story 13)
-wt new-tab ; split-pane -v ; split-pane --target 1 -h media.exe
-wt new-tab ; split-pane -v ; split-pane -t 1 -h media.exe
+wt new-tab ; split-pane -V ; split-pane --target 1 -H media.exe
+wt new-tab ; split-pane -V ; split-pane -t 1 -H media.exe
 
 ```
 
@@ -315,7 +315,7 @@ same window.
 
 #### `split-pane`
 
-`split-pane [--target,-t target-pane] [-h]|[-v] [--percent,-% split-percentage] [terminal_parameters]`
+`split-pane [--target,-t target-pane] [-H]|[-V] [--percent,-% split-percentage] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
@@ -325,10 +325,10 @@ vertically or horizontally.
   Each pane has a unique index (per-tab) which can be used to identify them.
   These indicies are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane.
-* `-h`, `-v`: Used to indicate which direction to split the pane. `-v` is
-  "vertically" (think `[|]`), and `-h` is "horizontally" (think `[-]`). If
+* `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
+  "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
   omitted, defaults to "auto", which splits the current pane in whatever the
-  larger dimension is. If both `-h` and `-v` are provided, defaults to vertical.
+  larger dimension is. If both `-H` and `-V` are provided, defaults to vertical.
 * `--percent,-% split-percentage`: Designates the amount of space that the new
   pane should take as a percentage of the parent's space. If omitted, the pane
   will take 50% by default.
@@ -440,7 +440,7 @@ developed, to make the initialization of many commands as seamless as possible.
 As this is a very complex feature, there will need to be a number of steps taken
 in the codebase to enable this functionality in a way that users are expecting.
 The following is a suggestion of the individual changelists that could be made
-to iteratively work towards fulling implementing this funcionality.
+to iteratively work towards fulling implementing this functionality.
 
 * [x] Refactor `ShortcutAction` dispatching into its own class
   - Right now, the `AppKeyBindings` is responsible for triggering all
@@ -507,7 +507,7 @@ runtimeclass TerminalParameters {
 * [ ] Add a `ShortcutAction` for `FocusPane`, which accepts a single parameter
   `index`.
   - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
-    quicky switch to the i'th `Pane`.
+    quickly switch to the i'th `Pane`.
   - This is in order to support the `-t,--target` parameter of `split-pane`.
 
 ## Capabilities
@@ -537,7 +537,7 @@ This change should not regress any existing behaviors.
 
 ### Performance, Power, and Efficiency
 
-This change should not particularily impact startup time or any of these other categories.
+This change should not particularly impact startup time or any of these other categories.
 
 ## Potential Issues
 
@@ -549,7 +549,7 @@ itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
 we've been caught in before, so extensive testing will be necessary to make sure
 this works as expected.
 
-Painfully, powershell uses `;` as a seperator between commands as well. So, if
+Painfully, powershell uses `;` as a separator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
 the user would need to also escape those semicolons for powershell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab
@@ -580,7 +580,7 @@ As noted by @jantari:
 > semicolon-problem could also be addressed by the following syntax:
 > ```sh
 > # wt.exe still needs to be interpreted by PowerShell as it's a command in PATH, but nothing after it
-> wt.exe --% cmd.exe ; split-pane --target-pane 0 -v -% 30 wsl.exe
+> wt.exe --% cmd.exe ; split-pane --target-pane 0 -V -% 30 wsl.exe
 > ```
 
 ### `/SUBSYSTEM:Windows` or `/SUBSYSTEM:Console`?
@@ -627,7 +627,7 @@ environment, it's also the least bad option available to us.
 Consider the following commandline:
 
 ```sh
-wt.exe split-pane -v ; new-tab
+wt.exe split-pane -V ; new-tab
 ```
 
 In the future, maybe we could presume in this case that the commands are
