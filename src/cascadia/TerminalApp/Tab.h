@@ -72,4 +72,4 @@ namespace winrt::TerminalApp::implementation
 
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToLeafPane(std::shared_ptr<LeafPane> pane);
-};
+    };
