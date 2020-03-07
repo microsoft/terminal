@@ -183,7 +183,7 @@ void ParentPane::_OnChildSplittedOrCollapsed(const bool isFirstChild, std::share
 
     (isFirstChild ? _firstChild : _secondChild) = newChild;
     _root.Children().SetAt(isFirstChild ? 0 : 1, newChild->GetRootElement());
-    _GetGridSetColOrRowFunc()(child->GetRootElement(), isFirstChild ? 0 : 1);
+    _GetGridSetColOrRowFunc()(newChild->GetRootElement(), isFirstChild ? 0 : 1);
 
     // The child is now a LeafPane. Setup events appropriate for him.
     _SetupChildEventHandlers(isFirstChild);
