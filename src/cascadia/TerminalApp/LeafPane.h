@@ -50,8 +50,8 @@ public:
     void SetActive(const bool focusControl);
     void ClearActive();
     bool WasLastActive() const noexcept;
-    void UpdateBorderWithClosedNeightbour(std::shared_ptr<LeafPane> closedNeightbour,
-                                          const winrt::TerminalApp::Direction& neightbourDirection);
+    void UpdateBorderWithClosedNeighbour(std::shared_ptr<LeafPane> closedNeighbour,
+                                          const winrt::TerminalApp::Direction& neighbourDirection);
     void Close();
     void Shutdown();
 

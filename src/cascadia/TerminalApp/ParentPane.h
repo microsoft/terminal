@@ -45,8 +45,9 @@ private:
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _secondTypeChangedToken{ 0 };
 
-    void _SetupChildEventHandlers(bool firstChild);
-    void _RemoveAllChildEventHandlers(bool firstChild);
+    void _SetupChildEventHandlers(const bool firstChild);
+    void _RemoveAllChildEventHandlers(const bool firstChild);
+    void _OnChildSplittedOrCollapsed(const bool firstChild, std::shared_ptr<Pane> newChild);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     std::function<void(winrt::Windows::UI::Xaml::FrameworkElement const&, int32_t)> _GetGridSetColOrRowFunc() const noexcept;
 

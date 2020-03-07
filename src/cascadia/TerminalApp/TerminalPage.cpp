@@ -517,7 +517,7 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
-        newTabImpl->BindEventHandlers();
+        //newTabImpl->BindEventHandlers();
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -542,7 +542,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        newTabImpl->RootPaneChanged([weakTab, weakThis{ get_weak() }]() {
+       /* newTabImpl->RootPaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
@@ -551,7 +551,7 @@ namespace winrt::TerminalApp::implementation
                 page->_tabContent.Children().Clear();
                 page->_tabContent.Children().Append(tab->GetRootElement());
             }
-        });
+        });*/
 
         auto tabViewItem = newTabImpl->GetTabViewItem();
         _tabView.TabItems().Append(tabViewItem);

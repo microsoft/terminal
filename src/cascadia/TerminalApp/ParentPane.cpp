@@ -94,57 +94,48 @@ void ParentPane::InitializeChildren()
 // - It is called on initialization, for both children, and when one of our children
 //   changes (this is, it gets splitted or collapsed after split).
 // Arguments:
-// - firstChild - true to deal with first child, false for second child
+// - isFirstChild - true to deal with first child, false for second child
 // Return Value:
 // - <none>
-void ParentPane::_SetupChildEventHandlers(bool firstChild)
+void ParentPane::_SetupChildEventHandlers(const bool isFirstChild)
 {
-    auto& child = firstChild ? _firstChild : _secondChild;
-    auto& closedToken = firstChild ? _firstClosedToken : _secondClosedToken;
-    auto& typeChangedToken = firstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
+    auto& child = isFirstChild ? _firstChild : _secondChild;
+    auto& closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
+    auto& typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
 
     if (const auto childAsLeaf = std::dynamic_pointer_cast<LeafPane>(child))
     {
         // When our child is a leaf and got closed, we, well, just close him.
-        closedToken = childAsLeaf->Closed([=, &child](auto&& /*s*/, auto&& /*e*/) {
-            // Unsubscribe from events of both our children, as we ourself will also
-            // get closed when our child does.
-            _RemoveAllChildEventHandlers(true);
-            _RemoveAllChildEventHandlers(false);
+        closedToken = childAsLeaf->Closed([=, weakThis = weak_from_this()](auto&& /*s*/, auto&& /*e*/) {
+            if (auto pane{ weakThis.lock() })
+            {
+                // Unsubscribe from events of both our children, as we ourself will also
+                // get closed when our child does.
+                pane->_RemoveAllChildEventHandlers(true);
+                pane->_RemoveAllChildEventHandlers(false);
 
-            _CloseChild(firstChild);
+                pane->_CloseChild(isFirstChild);
+            }
         });
 
         // When our child is a leaf and got splitted, it produces the new parent pane that contains
         // both him and the new leaf near him. We then replace that child with the new parent pane.
-        typeChangedToken = childAsLeaf->Splitted([=, &child](std::shared_ptr<ParentPane> splittedChild) {
-            // Unsub form all the events of the child. It will now have a new parent and we
-            // don't care about him anymore.
-            _RemoveAllChildEventHandlers(firstChild);
-
-            child = splittedChild;
-            _root.Children().SetAt(firstChild ? 0 : 1, child->GetRootElement());
-            _GetGridSetColOrRowFunc()(child->GetRootElement(), firstChild ? 0 : 1);
-
-            // The child is now a ParentPane. Setup events appropriate for him.
-            _SetupChildEventHandlers(firstChild);
+        typeChangedToken = childAsLeaf->Splitted([=, weakThis = weak_from_this(), &child](std::shared_ptr<ParentPane> splittedChild) {
+            if (auto pane{ weakThis.lock() })
+            {
+                pane->_OnChildSplittedOrCollapsed(isFirstChild, splittedChild);
+            }
         });
     }
     else if (const auto childAsParent = std::dynamic_pointer_cast<ParentPane>(child))
     {
         // When our child is a parent and one of its children got closed (and so the parent collapses),
         // we take in its remaining, orphaned child as our own.
-        typeChangedToken = childAsParent->ChildClosed([=, &child](std::shared_ptr<Pane> collapsedChild) {
-            // Unsub form all the events of the parent child. It will get destroyed, so don't
-            // leak its ref count.
-            _RemoveAllChildEventHandlers(firstChild);
-
-            child = collapsedChild;
-            _root.Children().SetAt(firstChild ? 0 : 1, child->GetRootElement());
-            _GetGridSetColOrRowFunc()(child->GetRootElement(), firstChild ? 0 : 1);
-
-            // The child is now a LeafPane. Setup events appropriate for him.
-            _SetupChildEventHandlers(firstChild);
+        typeChangedToken = childAsParent->ChildClosed([=, weakThis = weak_from_this(), &child](std::shared_ptr<Pane> collapsedChild) {
+            if (auto pane{ weakThis.lock() })
+            {
+                pane->_OnChildSplittedOrCollapsed(isFirstChild, collapsedChild);
+            }
         });
     }
 }
@@ -154,14 +145,14 @@ void ParentPane::_SetupChildEventHandlers(bool firstChild)
 // - Called when the child gets splitted/collapsed (because it is now our child then),
 //   when a child closes and in dtor.
 // Arguments:
-// - firstChild - true to deal with first child, false for second child
+// - isFirstChild - true to deal with first child, false for second child
 // Return Value:
 // - <none>
-void ParentPane::_RemoveAllChildEventHandlers(bool firstChild)
+void ParentPane::_RemoveAllChildEventHandlers(const bool isFirstChild)
 {
-    const auto child = firstChild ? _firstChild : _secondChild;
-    const auto closedToken = firstChild ? _firstClosedToken : _secondClosedToken;
-    const auto typeChangedToken = firstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
+    const auto child = isFirstChild ? _firstChild : _secondChild;
+    const auto closedToken = isFirstChild ? _firstClosedToken : _secondClosedToken;
+    const auto typeChangedToken = isFirstChild ? _firstTypeChangedToken : _secondTypeChangedToken;
 
     if (const auto childAsLeaf = std::dynamic_pointer_cast<LeafPane>(child))
     {
@@ -172,6 +163,30 @@ void ParentPane::_RemoveAllChildEventHandlers(bool firstChild)
     {
         childAsParent->ChildClosed(typeChangedToken);
     }
+}
+
+// Method Description:
+// - Called when one of our children either:
+//   - Was a leaf pane and got splitted, in which case we replace him with the new parent
+//     pane that now holds him and his new neighbour, or
+//   - Was a parent pane and one of its children got closed, in which case we replace him
+//     with his remaining child, which we take over as our own
+// Arguments:
+// - isFirstChild - true if this applies to the first child, false for the second child
+// - newChild - the pane to replace the specified child with
+// Return Value:
+// - <none>
+void ParentPane::_OnChildSplittedOrCollapsed(const bool isFirstChild, std::shared_ptr<Pane> newChild)
+{
+    // Unsub from all the events of the parent child.
+    _RemoveAllChildEventHandlers(isFirstChild);
+
+    (isFirstChild ? _firstChild : _secondChild) = newChild;
+    _root.Children().SetAt(isFirstChild ? 0 : 1, newChild->GetRootElement());
+    _GetGridSetColOrRowFunc()(child->GetRootElement(), isFirstChild ? 0 : 1);
+
+    // The child is now a LeafPane. Setup events appropriate for him.
+    _SetupChildEventHandlers(isFirstChild);
 }
 
 // Method Description:
@@ -499,7 +514,7 @@ void ParentPane::_CloseChild(const bool closeFirst)
     // On all the leaf descendants that were adjacent to the closed child, update its
     // border, so that it matches the border of the closed child.
     remainingChild->PropagateToLeavesOnEdge(closedChildDir, [=](LeafPane& paneOnEdge) {
-        paneOnEdge.UpdateBorderWithClosedNeightbour(closedChild, closedChildDir);
+        paneOnEdge.UpdateBorderWithClosedNeighbour(closedChild, closedChildDir);
     });
 
     // When we invoke the ChildClosed event, our reference count might (and should) drop

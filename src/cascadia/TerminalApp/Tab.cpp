@@ -372,32 +372,40 @@ namespace winrt::TerminalApp::implementation
             _AttachEventHandlersToControl(rootPaneAsLeaf->GetTerminalControl());
 
             // When root pane closes, the tab also closes.
-            _rootPaneClosedToken = rootPaneAsLeaf->Closed([=](auto&& /*s*/, auto&& /*e*/) {
-                _RemoveAllRootPaneEventHandlers();
-
-                _ClosedHandlers(nullptr, nullptr);
+            _rootPaneClosedToken = rootPaneAsLeaf->Closed([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_RemoveAllRootPaneEventHandlers();
+                    tab->_ClosedHandlers(nullptr, nullptr);
+                }
             });
 
             // When root pane is a leaf and got splitted, it produces the new parent pane that contains
             // both him and the new leaf near him. We then replace that child with the new parent pane.
-            _rootPaneTypeChangedToken = rootPaneAsLeaf->Splitted([=](std::shared_ptr<ParentPane> splittedPane) {
-                _RemoveAllRootPaneEventHandlers();
+            _rootPaneTypeChangedToken = rootPaneAsLeaf->Splitted([weakThis = get_weak()](std::shared_ptr<ParentPane> splittedPane) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_RemoveAllRootPaneEventHandlers();
 
-                _rootPane = splittedPane;
-                _SetupRootPaneEventHandlers();
-                _RootPaneChangedHandlers();
+                    tab->_rootPane = splittedPane;
+                    tab->_SetupRootPaneEventHandlers();
+                    tab->_RootPaneChangedHandlers();
+                }
             });
         }
         else if (const auto rootPaneAsParent = std::dynamic_pointer_cast<ParentPane>(_rootPane))
         {
             // When root pane is a parent and one of its children got closed (and so the parent collapses),
             // we take in its remaining, orphaned child as our own.
-            _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([=](std::shared_ptr<Pane> collapsedPane) {
-                _RemoveAllRootPaneEventHandlers();
+            _rootPaneTypeChangedToken = rootPaneAsParent->ChildClosed([weakThis = get_weak()](std::shared_ptr<Pane> collapsedPane) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_RemoveAllRootPaneEventHandlers();
 
-                _rootPane = collapsedPane;
-                _SetupRootPaneEventHandlers();
-                _RootPaneChangedHandlers();
+                    tab->_rootPane = collapsedPane;
+                    tab->_SetupRootPaneEventHandlers();
+                    tab->_RootPaneChangedHandlers();
+                }
             });
         }
     }
