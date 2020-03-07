@@ -1058,12 +1058,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         auto& screenInfo{ context.GetActiveBuffer() };
         const auto codepage{ ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP };
         std::wstring wstr{};
-        static til::astate aState{};
 
         // Convert our input parameters to Unicode
-        const auto leadByteConsumed{ !aState.empty(codepage) }; // only used for DBCS
-        RETURN_IF_FAILED(til::au16(codepage, buffer, wstr, aState));
-        const auto leadByteCaptured{ !aState.empty(codepage) }; // only used for DBCS
+        const auto leadByteConsumed{ !screenInfo.aState.empty(codepage) }; // only used for DBCS
+        RETURN_IF_FAILED(til::au16(codepage, buffer, wstr, screenInfo.aState));
+        const auto leadByteCaptured{ !screenInfo.aState.empty(codepage) }; // only used for DBCS
 
         if (codepage == CP_UTF8)
         {

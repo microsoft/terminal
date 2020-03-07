@@ -42,6 +42,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     Next{ nullptr },
     ConvScreenInfo{ nullptr },
     ScrollScale{ 1ul },
+    aState{},
     _pConsoleWindowMetrics{ pMetrics },
     _pAccessibilityNotifier{ pNotifier },
     _stateMachine{ nullptr },

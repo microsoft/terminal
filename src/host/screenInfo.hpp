@@ -178,6 +178,8 @@ public:
 
     UINT ScrollScale;
 
+    til::astate aState{};
+
     bool IsActiveScreenBuffer() const;
 
     const Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() const;
