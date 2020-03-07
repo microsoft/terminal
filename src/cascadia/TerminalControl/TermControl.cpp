@@ -464,9 +464,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            auto lock = _terminal->LockForWriting();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -479,10 +482,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            _terminal->LockConsole();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockConsole();
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -2070,6 +2075,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
+        // If we haven't initialized yet, just quick return.
+        if (!_terminal)
+        {
+            return;
+        }
         const COORD cursorPos = _terminal->GetCursorPosition();
         Windows::Foundation::Point p = { gsl::narrow_cast<float>(cursorPos.X), gsl::narrow_cast<float>(cursorPos.Y) };
         eventArgs.CurrentPosition(p);
