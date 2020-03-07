@@ -51,7 +51,7 @@ public:
     void ClearActive();
     bool WasLastActive() const noexcept;
     void UpdateBorderWithClosedNeighbour(std::shared_ptr<LeafPane> closedNeighbour,
-                                          const winrt::TerminalApp::Direction& neighbourDirection);
+                                         const winrt::TerminalApp::Direction& neighbourDirection);
     void Close();
     void Shutdown();
 

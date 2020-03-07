@@ -542,7 +542,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-       /* newTabImpl->RootPaneChanged([weakTab, weakThis{ get_weak() }]() {
+        /* newTabImpl->RootPaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 

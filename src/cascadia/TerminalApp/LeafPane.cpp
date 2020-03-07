@@ -436,76 +436,76 @@ Pane::SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, c
 
     const auto minSize = _GetMinSize();
     const auto minDimension = widthOrHeight ? minSize.Width :
-            minSize.Height;
+                                              minSize.Height;
 
-            if (dimension <= minDimension)
-            {
-                return { minDimension, minDimension };
-            }
+    if (dimension <= minDimension)
+    {
+        return { minDimension, minDimension };
+    }
 
-            float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
-            if (widthOrHeight)
-            {
-                lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
-                lower += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
-            }
-            else
-            {
-                lower += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
-                lower += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
-            }
+    float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
+    if (widthOrHeight)
+    {
+        lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+        lower += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+    }
+    else
+    {
+        lower += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+        lower += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+    }
 
-            if (lower == dimension)
-            {
-                // If we happen to be already snapped, then just return this size
-                // as both lower and higher values.
-                return { lower, lower };
-            }
-            else
-            {
-                const auto cellSize = _control.CharacterDimensions();
-                const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
-                return { lower, higher };
-            }
-        }
+    if (lower == dimension)
+    {
+        // If we happen to be already snapped, then just return this size
+        // as both lower and higher values.
+        return { lower, lower };
+    }
+    else
+    {
+        const auto cellSize = _control.CharacterDimensions();
+        const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
+        return { lower, higher };
+    }
+}
 
-        void LeafPane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
-        {
-            // We're a leaf pane, so just add one more row or column (unless isMinimumSize
-            // is true, see below).
+void LeafPane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
+{
+    // We're a leaf pane, so just add one more row or column (unless isMinimumSize
+    // is true, see below).
 
-            if (sizeNode.isMinimumSize)
-            {
-                // If the node is of its minimum size, this size might not be snapped (it might
-                // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
-                // however be already snapped, so add 1 to make sure it really increases
-                // (not strictly necessary but to avoid surprises).
-                sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
-            }
-            else
-            {
-                const auto cellSize = _control.CharacterDimensions();
-                sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
-            }
+    if (sizeNode.isMinimumSize)
+    {
+        // If the node is of its minimum size, this size might not be snapped (it might
+        // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
+        // however be already snapped, so add 1 to make sure it really increases
+        // (not strictly necessary but to avoid surprises).
+        sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
+    }
+    else
+    {
+        const auto cellSize = _control.CharacterDimensions();
+        sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
+    }
 
-            // Because we have grown, we're certainly no longer of our
-            // minimal size (if we've ever been).
-            sizeNode.isMinimumSize = false;
-        }
+    // Because we have grown, we're certainly no longer of our
+    // minimal size (if we've ever been).
+    sizeNode.isMinimumSize = false;
+}
 
-        Size LeafPane::_GetMinSize() const
-        {
-            auto controlSize = _control.MinimumSize();
-            auto newWidth = controlSize.Width;
-            auto newHeight = controlSize.Height;
+Size LeafPane::_GetMinSize() const
+{
+    auto controlSize = _control.MinimumSize();
+    auto newWidth = controlSize.Width;
+    auto newHeight = controlSize.Height;
 
-            newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
-            newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
-            newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
-            newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+    newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+    newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+    newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+    newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
 
-            return { newWidth, newHeight };
-        }
+    return { newWidth, newHeight };
+}
 
-        DEFINE_EVENT(LeafPane, Splitted, _SplittedHandlers, winrt::delegate<std::shared_ptr<ParentPane>>);
-        DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<LeafPane>>);
+DEFINE_EVENT(LeafPane, Splitted, _SplittedHandlers, winrt::delegate<std::shared_ptr<ParentPane>>);
+DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<LeafPane>>);
