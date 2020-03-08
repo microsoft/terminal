@@ -36,18 +36,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Takes an ANSI or UTF-8 string and populates it with *complete* codepoints.
-        //   If it receives an incomplete codepoint, it will cache it until it can be completed.
-        //   NOTE: The caching of incomplete codepoints is not supported if the codepage id is either of
+        // - Takes an ANSI or UTF-8 string and populates it with *complete* code points.
+        //   If it receives an incomplete code point, it will cache it until it can be completed.
+        //   NOTE: The caching of incomplete code points is not supported if the codepage id is either of
         //         50220, 50221, 50222, 50225, 50227, 50229, 52936, 57002, 57003, 57004, 57005, 57006, 57007, 57008, 57009, 57010, 57011, 65000.
         //         In these cases incomplete code points are silently replaced with the default replacement
         //         character in the involved conversion functions, and the conversion is treated as successful.
         // Arguments:
         // - codepage - id of the codepage the received string is encoded
         // - in - ANSI or UTF-8 string_view potentially containing partial code points
-        // - out - on return, populated with complete codepoints at the string end
+        // - out - on return, populated with complete code points at the string end
         // Return Value:
-        // - S_OK          - the resulting string doesn't end with a partial, or caching is not nupported (see above)
+        // - S_OK          - the resulting string doesn't end with a partial, or caching is not supported (see above)
         // - S_FALSE       - the resulting string contains the previously cached partials only
         // - E_INVALIDARG  - the codepage id is invalid
         // - E_OUTOFMEMORY - the method failed to allocate memory for the resulting string
@@ -254,11 +254,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Takes a UTF-16 string and populates it with *complete* UTF-16 codepoints.
-        //   If it receives an incomplete codepoint, it will cache it until it can be completed.
+        // - Takes a UTF-16 string and populates it with *complete* UTF-16 code points.
+        //   If it receives an incomplete code point, it will cache it until it can be completed.
         // Arguments:
         // - in - UTF-16 string_view potentially containing partial code points
-        // - out - on return, populated with complete codepoints at the string end
+        // - out - on return, populated with complete code points at the string end
         // Return Value:
         // - S_OK          - the resulting string doesn't end with a partial
         // - S_FALSE       - the resulting string contains the previously cached partials only

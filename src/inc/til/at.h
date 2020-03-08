@@ -25,7 +25,7 @@ namespace til
     constexpr auto at(const T& sequence, const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(sequence[0])>::type
     {
 #pragma warning(push)
-#pragma warning(suppress : 26481 26482 26446) // Suppress checks for pointer arithmetik, indexing with constant expressions, and subscript operator.
+#pragma warning(suppress : 26481 26482 26446) // Suppress checks for pointer arithmetic, indexing with constant expressions, and subscript operator.
         return sequence[index];
 #pragma warning(pop)
     }
@@ -43,7 +43,7 @@ namespace til
     constexpr auto at(T& sequence, const U index) -> typename std::enable_if<std::is_integral<U>::value, decltype(sequence[0])>::type
     {
 #pragma warning(push)
-#pragma warning(suppress : 26481 26482 26446) // Suppress checks for pointer arithmetik, indexing with constant expressions, and subscript operator.
+#pragma warning(suppress : 26481 26482 26446) // Suppress checks for pointer arithmetic, indexing with constant expressions, and subscript operator.
         return sequence[index];
 #pragma warning(pop)
     }
