@@ -21,7 +21,7 @@ Notes:
 
 #include "precomp.h"
 #include "ConsoleTSF.h"
-#include "TfEditses.h"
+#include "TfEditSession.h"
 
 //+---------------------------------------------------------------------------
 //
