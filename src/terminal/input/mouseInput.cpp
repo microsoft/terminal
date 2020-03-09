@@ -379,10 +379,10 @@ bool TerminalInput::HandleMouse(const COORD position,
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
 std::wstring TerminalInput::_GenerateDefaultSequence(const COORD position,
-                                                  const unsigned int button,
-                                                  const bool isHover,
-                                                  const short modifierKeyState,
-                                                  const short delta)
+                                                     const unsigned int button,
+                                                     const bool isHover,
+                                                     const short modifierKeyState,
+                                                     const short delta)
 {
     // In the default, non-extended encoding scheme, coordinates above 94 shouldn't be supported,
     //   because (95+32+1)=128, which is not an ASCII character.
@@ -416,10 +416,10 @@ std::wstring TerminalInput::_GenerateDefaultSequence(const COORD position,
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
 std::wstring TerminalInput::_GenerateUtf8Sequence(const COORD position,
-                                               const unsigned int button,
-                                               const bool isHover,
-                                               const short modifierKeyState,
-                                               const short delta)
+                                                  const unsigned int button,
+                                                  const bool isHover,
+                                                  const short modifierKeyState,
+                                                  const short delta)
 {
     // So we have some complications here.
     // The windows input stream is typically encoded as UTF16.
@@ -467,11 +467,11 @@ std::wstring TerminalInput::_GenerateUtf8Sequence(const COORD position,
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
 std::wstring TerminalInput::_GenerateSGRSequence(const COORD position,
-                                              const unsigned int button,
-                                              const bool isDown,
-                                              const bool isHover,
-                                              const short modifierKeyState,
-                                              const short delta)
+                                                 const unsigned int button,
+                                                 const bool isDown,
+                                                 const bool isHover,
+                                                 const short modifierKeyState,
+                                                 const short delta)
 {
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'

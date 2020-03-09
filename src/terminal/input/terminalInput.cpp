@@ -367,7 +367,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() == InputEventType::KeyEvent)
     {
-        const auto senderFunc = [this](const std::wstring_view seq) { _SendInputSequence(seq); };
+        const auto senderFunc = [this](const std::wstring_view seq) noexcept { _SendInputSequence(seq); };
 
         auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
