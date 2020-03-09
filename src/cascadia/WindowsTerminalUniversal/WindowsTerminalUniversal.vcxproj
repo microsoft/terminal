@@ -86,7 +86,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;$(OpenConsoleDir)\dep\wil\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\chromium;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;$(OpenConsoleDir)\dep\wil\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile>
       <!-- Manually include the generated TerminalCore header's path, because
@@ -123,8 +123,18 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\Resources.language-en.resw" />
+    <PRIResource Include="Resources\Resources.resw" />
+    <PRIResource Include="Resources\Resources.devicefamily-core.resw" />
   </ItemGroup>
+  <PropertyGroup>
+    <!-- This is picked up by CascadiaResources.build.items. -->
+    <WindowsTerminalAssetSuffix>-Universal</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">
+    <!-- This is picked up by CascadiaResources.build.items. -->
+    <WindowsTerminalAssetSuffix>$(WindowsTerminalAssetSuffix)Dev</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -140,6 +150,9 @@
     <ProjectReference Include="..\TerminalApp\TerminalApp.vcxproj">
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="internal-background.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

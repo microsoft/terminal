@@ -198,13 +198,19 @@ void CascadiaSettings::_ValidateSettings()
     // just use the hardcoded defaults
     _ValidateAllSchemesExist();
 
+    // Ensure all profile's with specified images resources have valid file path.
+    // This validates icons and background images.
+    _ValidateMediaResources();
+
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
 
-    // TODO:GH#3522 With variable args to keybindings, it's possible that a user
+    // GH#3522 - With variable args to keybindings, it's possible that a user
     // set a keybinding without all the required args for an action. Display a
     // warning if an action didn't have a required arg.
+    // This will also catch other keybinding warnings, like from GH#4239
+    _ValidateKeybindings();
 }
 
 // Method Description:
@@ -228,7 +234,7 @@ void CascadiaSettings::_ValidateProfilesExist()
 // Method Description:
 // - Walks through each profile, and ensures that they had a GUID set at some
 //   point. If the profile did _not_ have a GUID ever set for it, generate a
-//   temporary runtime GUID for it. This valitation does not add any warnnings.
+//   temporary runtime GUID for it. This validation does not add any warnings.
 void CascadiaSettings::_ValidateProfilesHaveGuid()
 {
     for (auto& profile : _profiles)
@@ -279,7 +285,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 {
     bool foundDupe = false;
 
-    std::vector<size_t> indiciesToDelete;
+    std::vector<size_t> indicesToDelete;
 
     std::set<GUID> uniqueGuids;
 
@@ -290,13 +296,13 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
         if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
         {
             foundDupe = true;
-            indiciesToDelete.push_back(i);
+            indicesToDelete.push_back(i);
         }
     }
 
     // Remove all the duplicates we've marked
     // Walk backwards, so we don't accidentally shift any of the elements
-    for (auto iter = indiciesToDelete.rbegin(); iter != indiciesToDelete.rend(); iter++)
+    for (auto iter = indicesToDelete.rbegin(); iter != indicesToDelete.rend(); iter++)
     {
         _profiles.erase(_profiles.begin() + *iter);
     }
@@ -421,6 +427,64 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     if (foundInvalidScheme)
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
+    }
+}
+
+// Method Description:
+// - Ensures that all specified images resources (icons and background images) are valid URIs.
+//   This does not verify that the icon or background image files are encoded as an image.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
+//   we find any invalid background images.
+// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
+//   we find any invalid icon images.
+void CascadiaSettings::_ValidateMediaResources()
+{
+    bool invalidBackground{ false };
+    bool invalidIcon{ false };
+
+    for (auto& profile : _profiles)
+    {
+        if (profile.HasBackgroundImage())
+        {
+            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+            // This covers file paths on the machine, app data, URLs, and other resource paths.
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedBackgroundImagePath() };
+            }
+            catch (...)
+            {
+                profile.ResetBackgroundImagePath();
+                invalidBackground = true;
+            }
+        }
+
+        if (profile.HasIcon())
+        {
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedIconPath() };
+            }
+            catch (...)
+            {
+                profile.ResetIconPath();
+                invalidIcon = true;
+            }
+        }
+    }
+
+    if (invalidBackground)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
+    }
+
+    if (invalidIcon)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidIcon);
     }
 }
 
@@ -588,4 +652,24 @@ GUID CascadiaSettings::_GetProfileForIndex(std::optional<int> index) const
         profileGuid = _globals.GetDefaultProfile();
     }
     return profileGuid;
+}
+
+// Method Description:
+// - If there were any warnings we generated while parsing the user's
+//   keybindings, add them to the list of warnings here. If there were warnings
+//   generated in this way, we'll add a AtLeastOneKeybindingWarning, which will
+//   act as a header for the other warnings
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_ValidateKeybindings()
+{
+    auto keybindingWarnings = _globals.GetKeybindingsWarnings();
+
+    if (!keybindingWarnings.empty())
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+    }
 }

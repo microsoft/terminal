@@ -9,11 +9,17 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `copyOnSelect` | Optional | Boolean | `false` | When set to `true`, a selection is immediately copied to your clipboard upon creation. When set to `false`, the selection persists and awaits further action. |
 | `defaultProfile` | _Required_ | String | PowerShell guid | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
 | `initialCols` | _Required_ | Integer | `120` | The number of columns displayed in the window upon first load. |
+| `initialPosition` | Optional | String | `","` | The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If `launchMode` is set to `"maximized"`, the window will be maximized on the monitor specified by those coordinates. |
 | `initialRows` | _Required_ | Integer | `30` | The number of rows displayed in the window upon first load. |
+| `launchMode` | Optional | String | `default` | Defines whether the Terminal will launch as maximized or not. Possible values: `"default"`, `"maximized"` |
+| `rowsToScroll` | Optional | Integer | `system` | The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or "system". |
 | `requestedTheme` | _Required_ | String | `system` | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | `true` | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
 | `showTabsInTitlebar` | Optional | Boolean | `true` | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |
+| `snapToGridOnResize` | Optional | Boolean | `false` | When set to `true`, the window will snap to the nearest character boundary on resize. When `false`, the window will resize "smoothly" |
+| `tabWidthMode` | Optional | String | `equal` | Sets the width of the tabs. Possible values: `"equal"`, `"titleLength"` |
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
+| `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
 
 ## Profiles
 Properties listed below are specific to each unique profile.
@@ -21,8 +27,9 @@ Properties listed below are specific to each unique profile.
 | Property | Necessity | Type | Default | Description |
 | -------- | --------- | ---- | ------- | ----------- |
 | `guid` | _Required_ | String | | Unique identifier of the profile. Written in registry format: `"{00000000-0000-0000-0000-000000000000}"`. |
-| `name` | _Required_ | String | | Name of the profile. Displays in the dropdown menu. <br>Additionally, this value will be used as the "title" to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application. This "title" behavior can be overriden by using `tabTitle`. |
+| `name` | _Required_ | String | | Name of the profile. Displays in the dropdown menu. <br>Additionally, this value will be used as the "title" to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application. This "title" behavior can be overridden by using `tabTitle`. |
 | `acrylicOpacity` | Optional | Number | `0.5` | When `useAcrylic` is set to `true`, it sets the transparency of the window for the profile. Accepts floating point values from 0-1. |
+| `antialiasingMode` | Optional | String | `"grayscale"` | Controls how text is antialiased in the renderer. Possible values are "grayscale", "cleartype" and "aliased". Note that changing this setting will require starting a new terminal instance. |
 | `background` | Optional | String | | Sets the background color of the profile. Overrides `background` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `backgroundImage` | Optional | String | | Sets the file location of the Image to draw over the window background. |
 | `backgroundImageAlignment` | Optional | String | `center` | Sets how the background image aligns to the boundaries of the window. Possible values: `"center"`, `"left"`, `"top"`, `"right"`, `"bottom"`, `"topLeft"`, `"topRight"`, `"bottomLeft"`, `"bottomRight"` |
@@ -38,18 +45,18 @@ Properties listed below are specific to each unique profile.
 | `fontFace` | Optional | String | `Consolas` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | Optional | Integer | `12` | Sets the font size. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `#rgb` or `"#rrggbb"`. |
-| `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file. |
+| `hidden` | Optional | Boolean | `false` | If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file. |
 | `historySize` | Optional | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |
 | `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `padding` | Optional | String | `8, 8, 8, 8` | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
 | `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
-| `selectionBackground` | Optional | String | Sets the selection background color of the profile. Overrides `selectionBackground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
+| `selectionBackground` | Optional | String | | Sets the selection background color of the profile. Overrides `selectionBackground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `snapOnInput` | Optional | Boolean | `true` | When set to `true`, the window will scroll to the command input line when typing. When set to `false`, the window will not scroll when you start typing. |
 | `source` | Optional | String | | Stores the name of the profile generator that originated this profile. _There are no discoverable values for this field._ |
 | `startingDirectory` | Optional | String | `%USERPROFILE%` | The directory the shell starts in when it is loaded. |
 | `suppressApplicationTitle` | Optional | Boolean | | When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal. |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
-| `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
+| `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. The transparency only applies to focused windows due to OS limitation. |
 | `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
 
 ## Schemes
@@ -85,68 +92,63 @@ Properties listed below are specific to each custom key binding.
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+| `action` | Optional | String | Adds additional functionality to certain commands. |
 
-### Implemented Commands
+### Implemented Commands and Actions
 
-Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp)
+Commands listed below are per the implementation in [`src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`](https://github.com/microsoft/terminal/blob/master/src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp).
 
-- copy
-- copyTextWithoutNewlines
-- paste
-- newTab
-- openNewTabDropdown
-- duplicateTab
-- newTabProfile0
-- newTabProfile1
-- newTabProfile2
-- newTabProfile3
-- newTabProfile4
-- newTabProfile5
-- newTabProfile6
-- newTabProfile7
-- newTabProfile8
-- closeWindow
-- closeTab
-- closePane
-- switchToTab
-- nextTab
-- prevTab
-- increaseFontSize
-- decreaseFontSize
-- resetFontSize
-- scrollUp
-- scrollDown
-- scrollUpPage
-- scrollDownPage
-- switchToTab0
-- switchToTab1
-- switchToTab2
-- switchToTab3
-- switchToTab4
-- switchToTab5
-- switchToTab6
-- switchToTab7
-- switchToTab8
-- openSettings
-- splitPane
-- resizePaneLeft
-- resizePaneRight
-- resizePaneUp
-- resizePaneDown
-- moveFocusLeft
-- moveFocusRight
-- moveFocusUp
-- moveFocusDown
-- toggleFullscreen
+Keybindings can be structured in the following manners:
 
-## Example Keys
-- ctrl+1
-- ctrl+plus
-- alt+-
-- shift+numpad_1
-- ctrL+shift+numpad_plus
-- ctrl+pgdn
-- ctrl+alt+shift+pgup
+For commands without arguments:
+<br>
+`{ "command": "commandName", "keys": [ "modifiers+key" ] }`
+
+For commands with arguments:
+<br>
+`{ "command": { "action": "commandName", "argument": "value" }, "keys": ["modifiers+key"] }`
+
+| Command | Command Description | Action (*=required) | Action Arguments | Argument Descriptions |
+| ------- | ------------------- | ------ | ---------------- | ----------------- |
+| closePane | Close the active pane. | | | |
+| closeTab | Close the current tab. | | | |
+| closeWindow | Close the current window and all tabs within it. | | | |
+| copy | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
+| decreaseFontSize | Make the text smaller by one delta. | `delta` | integer | Amount of size decrease per command invocation. |
+| duplicateTab | Make a copy and open the current tab. | | | |
+| find | Open the search dialog box. | | | |
+| increaseFontSize | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
+| moveFocus | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
+| newTab | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
+| nextTab | Open the tab to the right of the current one. | | | |
+| openNewTabDropdown | Open the dropdown menu. | | | |
+| openSettings | Open the settings file. | | | |
+| paste | Insert the content that was copied onto the clipboard. | | | |
+| prevTab | Open the tab to the left of the current one. | | | |
+| resetFontSize | Reset the text size to the default value. | | | |
+| resizePane | Change the size of the active pane. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the pane will be resized. |
+| scrollDown | Move the screen down. | | | |
+| scrollUp | Move the screen up. | | | |
+| scrollUpPage | Move the screen up a whole page. | | | |
+| scrollDownPage | Move the screen down a whole page. | | | |
+| splitPane | Halve the size of the active pane and open another. Without any arguments, this will open the default profile in the new pane. | 1. `split`*<br>2. `commandLine`<br>3. `startingDirectory`<br>4. `tabTitle`<br>5. `index`<br>6. `profile` | 1. `vertical`, `horizontal`, `auto`<br>2. string<br>3. string<br>4. string<br>5. integer<br>6. string | 1. How the pane will split. `auto` will split in the direction that provides the most surface area.<br>2. Executable run within the pane.<br>3. Directory in which the pane will open.<br>4. Title of the tab when the new pane is focused.<br>5. Profile that will open based on its position in the dropdown (starting at 0).<br>6. Profile that will open based on its GUID or name. |
+| switchToTab | Open a specific tab depending on index. | `index`* | integer | Tab that will open based on its position in the tab bar (starting at 0). |
+| toggleFullscreen | Switch between fullscreen and default window sizes. | | | |
+| unbound | Unbind the associated keys from any command. | | | |
+
+### Accepted Modifiers and Keys
+
+#### Modifiers
+`Ctrl+`, `Shift+`, `Alt+`
+
+#### Keys
+| Type | Keys |
+| ---- | ---- |
+| Function and Alphanumeric Keys | `f1-f24`, `a-z`, `0-9` |
+| Symbols | ``` ` ```, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/` |
+| Arrow Keys | `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus` |
+| Action Keys | `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert` |
+| Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
 
 ## Background Images and Icons
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).

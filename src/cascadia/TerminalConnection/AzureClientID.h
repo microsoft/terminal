@@ -3,6 +3,4 @@
 
 #pragma once
 
-#include <cpprest/details/web_utilities.h>
-
-const utility::string_t AzureClientID = U("0");
+static constexpr std::wstring_view AzureClientID = L"0";

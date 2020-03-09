@@ -147,7 +147,8 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
 [[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::basic_string_view<Cluster> clusters,
                                                   const COORD coord,
-                                                  const bool /*trimLeft*/) noexcept
+                                                  const bool /*trimLeft*/,
+                                                  const bool /*lineWrapped*/) noexcept
 {
     try
     {

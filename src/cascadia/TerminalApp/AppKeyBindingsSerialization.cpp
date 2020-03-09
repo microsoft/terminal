@@ -77,6 +77,7 @@ static constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" }; // Legacy
 static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" }; // Legacy
 static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" }; // Legacy
 static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" }; // Legacy
+static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
@@ -142,7 +143,11 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
     { SplitPaneKey, ShortcutAction::SplitPane },
     { UnboundKey, ShortcutAction::Invalid },
+    { FindKey, ShortcutAction::Find },
 };
+
+using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
+using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
 // Function Description:
 // - Creates a function that can be used to generate a SplitPaneArgs for the
@@ -155,12 +160,12 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   Split[SplitState] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseSplitPaneArgs(SplitState style)
+ParseActionFunction LegacyParseSplitPaneArgs(SplitState style)
 {
-    auto pfn = [style](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [style](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SplitPaneArgs>();
         args->SplitStyle(style);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -176,12 +181,12 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSplitPaneArgs(SplitSta
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   MoveFocus[Direction] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Direction direction)
+ParseActionFunction LegacyParseMoveFocusArgs(Direction direction)
 {
-    auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [direction](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::MoveFocusArgs>();
         args->Direction(direction);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -197,12 +202,12 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseMoveFocusArgs(Directio
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   ResizePane[Direction] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Direction direction)
+ParseActionFunction LegacyParseResizePaneArgs(Direction direction)
 {
-    auto pfn = [direction](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [direction](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::ResizePaneArgs>();
         args->Direction(direction);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -218,14 +223,14 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseResizePaneArgs(Directi
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   NewTabWithProfile[Index] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(int index)
+ParseActionFunction LegacyParseNewTabWithProfileArgs(int index)
 {
-    auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [index](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
         auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
         newTerminalArgs->ProfileIndex(index);
         args->TerminalArgs(*newTerminalArgs);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -241,12 +246,12 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseNewTabWithProfileArgs(
 // Return Value:
 // - A function that can be used to "parse" json into one of the legacy
 //   SwitchToTab[Index] args.
-std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int index)
+ParseActionFunction LegacyParseSwitchToTabArgs(int index)
 {
-    auto pfn = [index](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [index](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::SwitchToTabArgs>();
         args->TabIndex(index);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -259,11 +264,11 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseSwitchToTabArgs(int in
 // - direction: the direction to create the parse function for.
 // Return Value:
 // - A CopyTextArgs with TrimWhitespace set to true, to emulate "CopyTextWithoutNewlines".
-IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
+ParseResult LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 {
     auto args = winrt::make_self<winrt::TerminalApp::implementation::CopyTextArgs>();
     args->TrimWhitespace(false);
-    return *args;
+    return { *args, {} };
 };
 
 // Function Description:
@@ -274,12 +279,12 @@ IActionArgs LegacyParseCopyTextWithoutNewlinesArgs(const Json::Value& /*json*/)
 // - delta: the font size delta to create the parse function for.
 // Return Value:
 // - A function that can be used to "parse" json into an AdjustFontSizeArgs.
-std::function<IActionArgs(const Json::Value&)> LegacyParseAdjustFontSizeArgs(int delta)
+ParseActionFunction LegacyParseAdjustFontSizeArgs(int delta)
 {
-    auto pfn = [delta](const Json::Value & /*value*/) -> IActionArgs {
+    auto pfn = [delta](const Json::Value & /*value*/) -> ParseResult {
         auto args = winrt::make_self<winrt::TerminalApp::implementation::AdjustFontSizeArgs>();
         args->Delta(delta);
-        return *args;
+        return { *args, {} };
     };
     return pfn;
 }
@@ -289,7 +294,7 @@ std::function<IActionArgs(const Json::Value&)> LegacyParseAdjustFontSizeArgs(int
 // from json. Each type of IActionArgs that can accept arbitrary args should be
 // placed into this map, with the corresponding deserializer function as the
 // value.
-static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Value&)>, std::less<>> argParsers{
+static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParsers{
     { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
     { ShortcutAction::CopyTextWithoutNewlines, LegacyParseCopyTextWithoutNewlinesArgs },
 
@@ -339,7 +344,7 @@ static const std::map<ShortcutAction, std::function<IActionArgs(const Json::Valu
 
 // Function Description:
 // - Small helper to create a json value serialization of a single
-//   KeyBinding->Action maping. The created object is of schema:
+//   KeyBinding->Action maping.
 //   {
 //      keys:[String],
 //      command:String
@@ -425,8 +430,14 @@ static ShortcutAction GetActionFromString(const std::string_view actionString)
 //   `"unbound"`, then we'll clear the keybinding from the existing keybindings.
 // Arguments:
 // - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
-void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
+std::vector<::TerminalApp::SettingsLoadWarnings> winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
 {
+    // It's possible that the user provided keybindings have some warnings in
+    // them - problems that we should alert the user to, but we can recover
+    // from. Most of these warnings cannot be detected later in the Validate
+    // settings phase, so we'll collect them now.
+    std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+
     for (const auto& value : json)
     {
         if (!value.isObject())
@@ -439,11 +450,22 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
 
         if (keys)
         {
-            if (!keys.isArray() || keys.size() != 1)
+            const auto validString = keys.isString();
+            const auto validArray = keys.isArray() && keys.size() == 1;
+
+            // GH#4239 - If the user provided more than one key
+            // chord to a "keys" array, warn the user here.
+            // TODO: GH#1334 - remove this check.
+            if (keys.isArray() && keys.size() > 1)
+            {
+                warnings.push_back(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord);
+            }
+
+            if (!validString && !validArray)
             {
                 continue;
             }
-            const auto keyChordString = winrt::to_hstring(keys[0].asString());
+            const auto keyChordString = keys.isString() ? winrt::to_hstring(keys.asString()) : winrt::to_hstring(keys[0].asString());
             // Invalid is our placeholder that the action was not parsed.
             ShortcutAction action = ShortcutAction::Invalid;
 
@@ -456,7 +478,7 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             //    Json::Value::null to the parse function.
             // 2. In the second case, the "command" is an object. We'll use the
             //    "action" in that object as the action name. We'll then pass
-            //    the "command" object to the arg parser, for furhter parsing.
+            //    the "command" object to the arg parser, for further parsing.
 
             auto argsVal = Json::Value::null;
 
@@ -482,13 +504,21 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             // does, we'll try to deserialize any "args" that were provided with
             // the binding.
             IActionArgs args{ nullptr };
+            std::vector<::TerminalApp::SettingsLoadWarnings> parseWarnings;
             const auto deserializersIter = argParsers.find(action);
             if (deserializersIter != argParsers.end())
             {
                 auto pfn = deserializersIter->second;
                 if (pfn)
                 {
-                    args = pfn(argsVal);
+                    std::tie(args, parseWarnings) = pfn(argsVal);
+                }
+                warnings.insert(warnings.end(), parseWarnings.begin(), parseWarnings.end());
+
+                // if an arg parser was registered, but failed, bail
+                if (args == nullptr)
+                {
+                    continue;
                 }
             }
 
@@ -519,4 +549,6 @@ void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::V
             }
         }
     }
+
+    return warnings;
 }

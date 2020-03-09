@@ -35,6 +35,7 @@
     <ClInclude Include="TitlebarControl.h" />
     <ClInclude Include="TabRowControl.h" />
     <ClInclude Include="App.h" />
+    <ClInclude Include="Tab.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>

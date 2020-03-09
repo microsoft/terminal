@@ -47,5 +47,7 @@ namespace Microsoft::Console::Render
         IRenderer* _pRenderer; // Non-ownership pointer
 
         bool _fKeepRunning;
+        std::atomic<bool> _fNextFrameRequested;
+        std::atomic<bool> _fWaiting;
     };
 }

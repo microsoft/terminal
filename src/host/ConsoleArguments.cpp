@@ -100,7 +100,7 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _commandline(commandline),
     _vtInHandle(hStdIn),
     _vtOutHandle(hStdOut),
-    _recievedEarlySizeChange{ false },
+    _receivedEarlySizeChange{ false },
     _originalWidth{ -1 },
     _originalHeight{ -1 }
 {
@@ -138,7 +138,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _width = other._width;
         _height = other._height;
         _inheritCursor = other._inheritCursor;
-        _recievedEarlySizeChange = other._recievedEarlySizeChange;
+        _receivedEarlySizeChange = other._receivedEarlySizeChange;
     }
 
     return *this;
@@ -630,11 +630,25 @@ void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
     // Stash away the original values we parsed when this is called.
     // This is to help debugging - if the signal thread DOES change these values,
     //      we can still recover what was given to us on the commandline.
-    if (!_recievedEarlySizeChange)
+    if (!_receivedEarlySizeChange)
     {
         _originalWidth = _width;
         _originalHeight = _height;
         // Mark that we've changed size from what our commandline values were
-        _recievedEarlySizeChange = true;
+        _receivedEarlySizeChange = true;
     }
 }
+
+#ifdef UNIT_TESTING
+// Method Description:
+// - This is a test helper method. It can be used to trick us into thinking
+//   we're headless (in conpty mode), even without parsing any arguments.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConsoleArguments::EnableConptyModeForTests()
+{
+    _headless = true;
+}
+#endif

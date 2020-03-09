@@ -14,7 +14,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
                  IsAddTabButtonVisible="false"
-                 TabWidthMode="SizeToContent"
+                 TabWidthMode="Equal"
                  CanReorderTabs="True"
                  CanDragTabs="True"
                  AllowDropTabs="True">
@@ -22,6 +22,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <mux:TabView.TabStripFooter>
             <mux:SplitButton
                 x:Name="NewTabButton"
+                x:Uid="NewTabSplitButton"
                 Click="OnNewTabButtonClick"
                 VerticalAlignment="Stretch"
                 HorizontalAlignment="Left"
@@ -29,7 +30,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 UseLayoutRounding="true"
                 FontFamily="Segoe MDL2 Assets"
                 FontWeight="SemiLight"
-                FontSize="12">
+                FontSize="12"
+                AutomationProperties.AccessibilityView="Control">
                 <!-- U+E710 is the fancy plus icon. -->
                 <mux:SplitButton.Resources>
 		    <!-- Override the SplitButton* resources to match the tab view's button's styles. -->

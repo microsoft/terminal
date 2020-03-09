@@ -44,6 +44,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ScrollDownPage,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(OpenSettings,      TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ResizePane,        TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(Find,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(MoveFocus,         TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ToggleFullscreen,  TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         // clang-format on

@@ -34,7 +34,7 @@ namespace TerminalAppLocalTests
         // details on that.
         BEGIN_TEST_CLASS(SettingsTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
@@ -69,6 +69,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestLayerUserDefaultsOnDynamics);
 
         TEST_METHOD(TestTerminalArgsForBinding);
+
+        TEST_METHOD(ValidateKeybindingsWarnings);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -433,7 +435,8 @@ namespace TerminalAppLocalTests
             "globals": {
                 "alwaysShowTabs": true,
                 "initialCols" : 120,
-                "initialRows" : 30
+                "initialRows" : 30,
+                "rowsToScroll" :  4
             }
         })" };
         const std::string settings1String{ R"(
@@ -441,7 +444,8 @@ namespace TerminalAppLocalTests
             "globals": {
                 "showTabsInTitlebar": false,
                 "initialCols" : 240,
-                "initialRows" : 60
+                "initialRows" : 60,
+                "rowsToScroll" : 8
             }
         })" };
         const auto settings0Json = VerifyParseSucceeded(settings0String);
@@ -453,12 +457,14 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
         VERIFY_ARE_EQUAL(120, settings._globals._initialCols);
         VERIFY_ARE_EQUAL(30, settings._globals._initialRows);
+        VERIFY_ARE_EQUAL(4, settings._globals._rowsToScroll);
         VERIFY_ARE_EQUAL(true, settings._globals._showTabsInTitlebar);
 
         settings.LayerJson(settings1Json);
         VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
         VERIFY_ARE_EQUAL(240, settings._globals._initialCols);
         VERIFY_ARE_EQUAL(60, settings._globals._initialRows);
+        VERIFY_ARE_EQUAL(8, settings._globals._rowsToScroll);
         VERIFY_ARE_EQUAL(false, settings._globals._showTabsInTitlebar);
     }
 
@@ -2085,4 +2091,48 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
     }
+
+    void SettingsTests::ValidateKeybindingsWarnings()
+    {
+        const std::string badSettings{ R"(
+        {
+            "globals": {
+                "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+            },
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "keybindings": [
+                { "command": { "action": "splitPane", "split":"auto" }, "keys": [ "ctrl+alt+t", "ctrl+a" ] },
+                { "command": { "action": "moveFocus" }, "keys": [ "ctrl+a" ] },
+                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] }
+            ]
+        })" };
+
+        const auto settingsObject = VerifyParseSucceeded(badSettings);
+        auto settings = CascadiaSettings::FromJson(settingsObject);
+
+        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+
+        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_globals._keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+
+        settings->_ValidateKeybindings();
+
+        VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
+    }
+
 }

@@ -247,17 +247,17 @@ COORD Selection::WordByWordSelection(const bool fReverse,
         // - Then we want to keep going UNTIL (!) we move from a delimiter (fPrevIsDelim) to a normal character (!fCurrIsDelim)
         //   This will then eat up all delimiters after a word and stop once we reach the first letter of the next word.
         // If we're going Right to Left (fReverse)...
-        // - Then we want to keep going UNTIL (!) we move from a normal character (!fPrevIsDelim) to a delimeter (fCurrIsDelim)
+        // - Then we want to keep going UNTIL (!) we move from a normal character (!fPrevIsDelim) to a delimiter (fCurrIsDelim)
         //   This will eat up all letters of the word and stop once we see the delimiter before the word.
     } while (!fReverse ? !(fPrevIsDelim && !fCurrIsDelim) : !(!fPrevIsDelim && fCurrIsDelim));
 
-    // To stop the loop, we had to move the cursor one too far to figure out that the delta occurred from delimeter to not (or vice versa)
+    // To stop the loop, we had to move the cursor one too far to figure out that the delta occurred from delimiter to not (or vice versa)
     // Therefore move back by one character after proceeding through the loop.
     // EXCEPT:
     // 1. If we broke out of the loop by reaching the beginning of the buffer, leave it alone.
     // 2. If we're un-highlighting a region, also leave it alone.
     //    This is an oddity that occurs because our cursor is on a character, not between two characters like most text editors.
-    //    We want the current position to be ON the first letter of the word (or the last delimeter after the word) so it stays highlighted.
+    //    We want the current position to be ON the first letter of the word (or the last delimiter after the word) so it stays highlighted.
     if (fMoveSucceeded && !fUnhighlighting)
     {
         if (!fReverse)

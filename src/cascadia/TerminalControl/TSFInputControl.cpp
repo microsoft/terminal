@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -17,35 +17,11 @@ using namespace winrt::Windows::UI::Xaml;
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TSFInputControl::TSFInputControl() :
-        _editContext{ nullptr }
+        _editContext{ nullptr },
+        _inComposition{ false },
+        _activeTextStart{ 0 }
     {
-        _Create();
-    }
-
-    // Method Description:
-    // - Creates XAML controls for displaying user input and hooks up CoreTextEditContext handlers
-    //   for handling text input from the Text Services Framework.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TSFInputControl::_Create()
-    {
-        // TextBlock for user input form TSF
-        _textBlock = Controls::TextBlock();
-        _textBlock.Visibility(Visibility::Collapsed);
-        _textBlock.IsTextSelectionEnabled(false);
-        _textBlock.TextDecorations(TextDecorations::Underline);
-
-        // Canvas for controlling exact position of the TextBlock
-        _canvas = Windows::UI::Xaml::Controls::Canvas();
-        _canvas.Visibility(Visibility::Collapsed);
-
-        // add the Textblock to the Canvas
-        _canvas.Children().Append(_textBlock);
-
-        // set the content of this control to be the Canvas
-        this->Content(_canvas);
+        InitializeComponent();
 
         // Create a CoreTextEditingContext for since we are acting like a custom edit control
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
@@ -59,23 +35,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // set the input scope to Text because this control is for any text.
         _editContext.InputScope(Core::CoreTextInputScope::Text);
 
-        _editContext.TextRequested({ this, &TSFInputControl::_textRequestedHandler });
+        _textRequestedRevoker = _editContext.TextRequested(winrt::auto_revoke, { this, &TSFInputControl::_textRequestedHandler });
 
-        _editContext.SelectionRequested({ this, &TSFInputControl::_selectionRequestedHandler });
+        _selectionRequestedRevoker = _editContext.SelectionRequested(winrt::auto_revoke, { this, &TSFInputControl::_selectionRequestedHandler });
 
-        _editContext.FocusRemoved({ this, &TSFInputControl::_focusRemovedHandler });
+        _focusRemovedRevoker = _editContext.FocusRemoved(winrt::auto_revoke, { this, &TSFInputControl::_focusRemovedHandler });
 
-        _editContext.TextUpdating({ this, &TSFInputControl::_textUpdatingHandler });
+        _textUpdatingRevoker = _editContext.TextUpdating(winrt::auto_revoke, { this, &TSFInputControl::_textUpdatingHandler });
 
-        _editContext.SelectionUpdating({ this, &TSFInputControl::_selectionUpdatingHandler });
+        _selectionUpdatingRevoker = _editContext.SelectionUpdating(winrt::auto_revoke, { this, &TSFInputControl::_selectionUpdatingHandler });
 
-        _editContext.FormatUpdating({ this, &TSFInputControl::_formatUpdatingHandler });
+        _formatUpdatingRevoker = _editContext.FormatUpdating(winrt::auto_revoke, { this, &TSFInputControl::_formatUpdatingHandler });
 
-        _editContext.LayoutRequested({ this, &TSFInputControl::_layoutRequestedHandler });
+        _layoutRequestedRevoker = _editContext.LayoutRequested(winrt::auto_revoke, { this, &TSFInputControl::_layoutRequestedHandler });
 
-        _editContext.CompositionStarted({ this, &TSFInputControl::_compositionStartedHandler });
+        _compositionStartedRevoker = _editContext.CompositionStarted(winrt::auto_revoke, { this, &TSFInputControl::_compositionStartedHandler });
 
-        _editContext.CompositionCompleted({ this, &TSFInputControl::_compositionCompletedHandler });
+        _compositionCompletedRevoker = _editContext.CompositionCompleted(winrt::auto_revoke, { this, &TSFInputControl::_compositionCompletedHandler });
+    }
+
+    // Method Description:
+    // - Prepares this TSFInputControl to be removed from the UI hierarchy.
+    void TSFInputControl::Close()
+    {
+        // Explicitly disconnect the LayoutRequested handler -- it can cause problems during application teardown.
+        // See GH#4159 for more info.
+        _layoutRequestedRevoker.revoke();
     }
 
     // Method Description:
@@ -104,7 +89,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_editContext != nullptr)
         {
-            // _editContext.NotifyFocusLeave(); TODO GitHub #3645: Enabling causes IME to no longer show up, need to determine if required
+            _editContext.NotifyFocusLeave();
+        }
+    }
+
+    // Method Description:
+    // - Clears the input buffer and tells the text server to clear their buffer as well.
+    //   Also clears the TextBlock and sets the active text starting point to 0.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::ClearBuffer()
+    {
+        if (!_inputBuffer.empty())
+        {
+            TextBlock().Text(L"");
+            const auto bufLen = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
+            _inputBuffer.clear();
+            _editContext.NotifyFocusLeave();
+            _editContext.NotifyTextChanged({ 0, bufLen }, 0, { 0, 0 });
+            _editContext.NotifyFocusEnter();
+            _activeTextStart = 0;
+            _inComposition = false;
         }
     }
 
@@ -129,32 +136,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) };
+        const COORD cursorPos = { ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().Y) };
 
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
 
-        const float fontWidth = fontArgs->FontSize().Width;
-        const float fontHeight = fontArgs->FontSize().Height;
+        const auto fontWidth = fontArgs->FontSize().Width;
+        const auto fontHeight = fontArgs->FontSize().Height;
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
-        COORD screenCursorPos;
-        THROW_IF_FAILED(ShortMult(cursorPos.X, gsl::narrow<SHORT>(fontWidth), &clientCursorPos.X));
-        THROW_IF_FAILED(ShortMult(cursorPos.Y, gsl::narrow<SHORT>(fontHeight), &clientCursorPos.Y));
+        clientCursorPos.X = ::base::ClampMul(cursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
+        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
 
         // Convert from client coordinate to screen coordinate by adding window position
-        THROW_IF_FAILED(ShortAdd(clientCursorPos.X, gsl::narrow_cast<SHORT>(windowBounds.X), &screenCursorPos.X));
-        THROW_IF_FAILED(ShortAdd(clientCursorPos.Y, gsl::narrow_cast<SHORT>(windowBounds.Y), &screenCursorPos.Y));
+        COORD screenCursorPos;
+        screenCursorPos.X = ::base::ClampAdd(clientCursorPos.X, ::base::ClampedNumeric<short>(windowBounds.X));
+        screenCursorPos.Y = ::base::ClampAdd(clientCursorPos.Y, ::base::ClampedNumeric<short>(windowBounds.Y));
 
         // get any offset (margin + tabs, etc..) of the control within the window
         const auto offsetPoint = this->TransformToVisual(nullptr).TransformPoint(winrt::Windows::Foundation::Point(0, 0));
 
         // add the margin offsets if any
-        const auto currentMargin = this->Margin();
-        THROW_IF_FAILED(ShortAdd(screenCursorPos.X, gsl::narrow_cast<SHORT>(offsetPoint.X), &screenCursorPos.X));
-        THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, gsl::narrow_cast<SHORT>(offsetPoint.Y), &screenCursorPos.Y));
+        screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
+        screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
@@ -168,23 +174,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
 
         // position textblock to cursor position
-        _canvas.SetLeft(_textBlock, clientCursorPos.X);
-        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y));
+        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
+        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
 
-        // width is cursor to end of canvas
-        _textBlock.Width(200); // TODO GitHub #3640: Determine proper Width
-        _textBlock.Height(fontHeight);
-
+        TextBlock().Height(fontHeight);
         // calculate FontSize in pixels from DIPs
         const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        _textBlock.FontSize(fontSizePx);
+        TextBlock().FontSize(fontSizePx);
 
-        _textBlock.FontFamily(Media::FontFamily(fontArgs->FontFace()));
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
     }
 
     // Method Description:
     // - Handler for CompositionStarted event by CoreEditContext responsible
-    //   for making internal TSFInputControl controls visisble.
+    //   for making internal TSFInputControl controls visible.
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
     // - args: CoreTextCompositionStartedEventArgs. Not used in method.
@@ -192,13 +195,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& /*args*/)
     {
-        _canvas.Visibility(Visibility::Visible);
-        _textBlock.Visibility(Visibility::Visible);
+        _inComposition = true;
     }
 
     // Method Description:
     // - Handler for CompositionCompleted event by CoreEditContext responsible
-    //   for making internal TSFInputControl controls visisble.
+    //   for making internal TSFInputControl controls visible.
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
     // - args: CoreTextCompositionCompletedEventArgs. Not used in method.
@@ -206,37 +208,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& /*args*/)
     {
+        _inComposition = false;
+
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            const auto hstr = to_hstring(_inputBuffer.c_str());
-
-            // call event handler with data handled by parent
-            _compositionCompletedHandlers(hstr);
-
-            // clear the buffer for next round
-            _inputBuffer.clear();
-            _textBlock.Text(L"");
-
-            // tell the input server that we've cleared the buffer
-            CoreTextRange emptyTextRange;
-            emptyTextRange.StartCaretPosition = 0;
-            emptyTextRange.EndCaretPosition = 0;
-
-            // indicate text is now 0
-            _editContext.NotifyTextChanged(emptyTextRange, 0, emptyTextRange);
-            _editContext.NotifySelectionChanged(emptyTextRange);
-
-            // hide the controls until composition starts again
-            _canvas.Visibility(Visibility::Collapsed);
-            _textBlock.Visibility(Visibility::Collapsed);
+            _SendAndClearText();
         }
     }
 
     // Method Description:
     // - Handler for FocusRemoved event by CoreEditContext responsible
     //   for removing focus for the TSFInputControl control accordingly
-    //   when focus was forecibly removed from text input control. (TODO GitHub #3644)
+    //   when focus was forcibly removed from text input control.
     //   NOTE: Documentation says application should handle this event
     // Arguments:
     // - sender: CoreTextEditContext sending the request. Not used in method.
@@ -263,9 +247,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
-            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
+            const auto textEnd = ::base::ClampMin<size_t>(range.EndCaretPosition, _inputBuffer.length());
+            const auto length = ::base::ClampSub<size_t>(textEnd, range.StartCaretPosition);
+            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, length);
 
-            args.Request().Text(winrt::to_hstring(textRequested.c_str()));
+            args.Request().Text(textRequested);
         }
         CATCH_LOG();
     }
@@ -308,17 +294,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
     {
-        const auto text = args.Text();
+        const auto incomingText = args.Text();
         const auto range = args.Range();
 
         try
         {
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
-                text.c_str());
+                ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
+                incomingText);
 
-            _textBlock.Text(_inputBuffer);
+            // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
+            // will be sent straight through to the terminal.
+            if (!_inComposition)
+            {
+                _SendAndClearText();
+            }
+            else
+            {
+                Canvas().Visibility(Visibility::Visible);
+                const auto text = _inputBuffer.substr(_activeTextStart);
+                TextBlock().Text(text);
+            }
 
             // Notify the TSF that the update succeeded
             args.Result(CoreTextTextUpdatingResult::Succeeded);
@@ -330,6 +327,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // indicate updating failed.
             args.Result(CoreTextTextUpdatingResult::Failed);
         }
+    }
+
+    // Method Description:
+    // - Send the portion of the textBuffer starting at _activeTextStart to the end of the buffer.
+    //   Then clear the TextBlock and hide it until the next time text is received.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_SendAndClearText()
+    {
+        const auto text = _inputBuffer.substr(_activeTextStart);
+
+        _compositionCompletedHandlers(text);
+
+        _activeTextStart = _inputBuffer.length();
+
+        TextBlock().Text(L"");
+
+        // hide the controls until text input starts again
+        Canvas().Visibility(Visibility::Collapsed);
     }
 
     // Method Description:

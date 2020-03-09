@@ -50,7 +50,7 @@ We will create a `SearchBoxControl` Xaml `UserControl` element. When a search pr
 
 Above is the `SearchBoxControl` in dark theme and light theme.
   - The two buttons with up/down arrows controls the search direction, Each button will be styled to indicate which search direction is currently selected. 
-  - The button with a "Aa" icon, if pressed, means that we are searching case-sensitivily. 
+  - The button with a "Aa" icon, if pressed, means that we are searching case-sensitivity. 
   - The current style puts all elements - the `X` button, the text box and the search pattern control buttons on one single line. This ensures that the `SearchBoxControl` won't be too high and block terminal text. This is similar with VSCode. Another possible layout style is to put elements in multiple layers. This will occupy more lines, but the search dialog will narrower. Considering that there is not many elements, we do not need multiple layers. 
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
@@ -92,7 +92,7 @@ This feature should not introduce any new security issues.
 ### Reliability
 
 1. The key input of Terminal command line and the search box should be separated. Search box should not block interaction with the command line when it is open. 
-2. The search box should not block too much text. The search box only occupies one line, so it won't have big impact on the readibility of the terminal output. 
+2. The search box should not block too much text. The search box only occupies one line, so it won't have big impact on the readability of the terminal output. 
 
 ### Compatibility
 
@@ -106,7 +106,7 @@ This feature only launches in need. It does not impact the performance of Termin
                                                               
 1. If the terminal window is not wide enough for the search box to be visible, the buttons on the right of the `TextBox` will become invisible, but the `TextBox` is still visible and the window could not be narrower than the `TextBox`. This is similar to the behavior of other editors. Please see the image below:
    ![SearchBox width not enough](images/SearchBoxControlNoEnoughWidth.png)
-2. If the terminal window is not high enough for the search box to be visible, the whole terminal screen, inlcuding the `SearchBoxControl` can disappear. This is similar to the behavior of other editors.
+2. If the terminal window is not high enough for the search box to be visible, the whole terminal screen, including the `SearchBoxControl` can disappear. This is similar to the behavior of other editors.
 
 ## Future considerations
 

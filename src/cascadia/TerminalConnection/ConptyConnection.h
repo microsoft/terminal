@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
-        void Close();
+        void Close() noexcept;
 
         winrt::guid Guid() const noexcept;
 
@@ -41,8 +41,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingDirectory;
         hstring _startingTitle;
         guid _guid{}; // A unique session identifier for connected client
+        hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
-        bool _recievedFirstByte{ false };
+        bool _receivedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 
         wil::unique_hfile _inPipe; // The pipe for writing input to
@@ -51,6 +52,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_process_information _piClient;
         wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
+
+        til::u8state _u8State;
+        std::wstring _u16Str;
+        std::array<char, 4096> _buffer;
 
         DWORD _OutputThread();
     };

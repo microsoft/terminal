@@ -47,6 +47,7 @@ Renderer::Renderer(IRenderData* pData,
 Renderer::~Renderer()
 {
     _destructing = true;
+    _pThread.reset();
 }
 
 // Routine Description:
@@ -67,6 +68,11 @@ Renderer::~Renderer()
         auto tries = maxRetriesForRenderEngine;
         while (tries > 0)
         {
+            if (_destructing)
+            {
+                return S_FALSE;
+            }
+
             const auto hr = _PaintFrameForEngine(pEngine);
             if (E_PENDING == hr)
             {
@@ -153,8 +159,12 @@ CATCH_RETURN()
 
 void Renderer::_NotifyPaintFrame()
 {
-    // The thread will provide throttling for us.
-    _pThread->NotifyPaint();
+    // If we're running in the unittests, we might not have a render thread.
+    if (_pThread)
+    {
+        // The thread will provide throttling for us.
+        _pThread->NotifyPaint();
+    }
 }
 
 // Routine Description:
@@ -208,7 +218,7 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // Routine Description:
 // - Called when the cursor has moved in the buffer. Allows for RenderEngines to
 //      differentiate between cursor movements and other invalidates.
-//   Visual Renderers (ex GDI) sohuld invalidate the position, while the VT
+//   Visual Renderers (ex GDI) should invalidate the position, while the VT
 //      engine ignores this. See MSFT:14711161.
 // Arguments:
 // - pcoord: The buffer-space position of the cursor.
@@ -539,7 +549,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // Routine Description:
 // - Paint helper to copy the primary console buffer text onto the screen.
 // - This portion primarily handles figuring the current viewport, comparing it/trimming it versus the invalid portion of the frame, and queuing up, row by row, which pieces of text need to be further processed.
-// - See also: Helper functions that seperate out each complexity of text rendering.
+// - See also: Helper functions that separate out each complexity of text rendering.
 // Arguments:
 // - <none>
 // Return Value:
@@ -587,15 +597,23 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Retrieve the cell information iterator limited to just this line we want to redraw.
             auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
+            // Calculate if two things are true:
+            // 1. this row wrapped
+            // 2. We're painting the last col of the row.
+            // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+            const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
+                                     (bufferLine.RightExclusive() == buffer.GetSize().Width());
+
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
+            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
         }
     }
 }
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
-                                        const COORD target)
+                                        const COORD target,
+                                        const bool lineWrapped)
 {
     // If we have valid data, let's figure out how to draw it.
     if (it)
@@ -632,6 +650,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Ensure that our cluster vector is clear.
             clusters.clear();
 
+            // Reset our flag to know when we're in the special circumstance
+            // of attempting to draw only the right-half of a two-column character
+            // as the first item in our run.
+            bool trimLeft = false;
+
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
             do
@@ -643,7 +666,33 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
-                clusters.emplace_back(it->Chars(), it->Columns());
+
+                // If we're on the first cluster to be added and it's marked as "trailing"
+                // (a.k.a. the right half of a two column character), then we need some special handling.
+                if (clusters.empty() && it->DbcsAttr().IsTrailing())
+                {
+                    // If we have room to move to the left to start drawing...
+                    if (screenPoint.X > 0)
+                    {
+                        // Move left to the one so the whole character can be struck correctly.
+                        --screenPoint.X;
+                        // And tell the next function to trim off the left half of it.
+                        trimLeft = true;
+                        // And add one to the number of columns we expect it to take as we insert it.
+                        clusters.emplace_back(it->Chars(), it->Columns() + 1);
+                    }
+                    else
+                    {
+                        // If we didn't have room, move to the right one and just skip this one.
+                        screenPoint.X++;
+                        continue;
+                    }
+                }
+                // Otherwise if it's not a special case, just insert it as is.
+                else
+                {
+                    clusters.emplace_back(it->Chars(), it->Columns());
+                }
 
                 // Advance the cluster and column counts.
                 const auto columnCount = clusters.back().GetColumns();
@@ -653,8 +702,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             } while (it);
 
             // Do the painting.
-            // TODO: Calculate when trim left should be TRUE
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, false));
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             if (_pData->IsGridLineDrawingAllowed())
@@ -672,7 +720,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
-// - a GridLines containing all the gridline info from the TextAtribute
+// - a GridLines containing all the gridline info from the TextAttribute
 IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
@@ -803,7 +851,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 
                 auto it = overlay.buffer.GetCellLineDataAt(source);
 
-                _PaintBufferOutputHelper(&engine, it, target);
+                _PaintBufferOutputHelper(&engine, it, target, false);
             }
         }
     }
@@ -933,6 +981,6 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 //      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
-    THROW_IF_NULL_ALLOC(pEngine);
+    THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
     _rgpEngines.push_back(pEngine);
 }

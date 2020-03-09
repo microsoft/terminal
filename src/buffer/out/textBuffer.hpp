@@ -123,15 +123,19 @@ public:
 
     void Reset();
 
-    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
     UnicodeStorage& GetUnicodeStorage() noexcept;
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
-    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool includeCharacterRun = false) const;
-    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool includeDelimiterRun = false) const;
+    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
+    bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
+    bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
+
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
     class TextAndColor
     {
@@ -141,11 +145,11 @@ public:
         std::vector<std::vector<COLORREF>> BkAttr;
     };
 
-    const TextAndColor GetTextForClipboard(const bool lineSelection,
-                                           const bool trimTrailingWhitespace,
-                                           const std::vector<SMALL_RECT>& selectionRects,
-                                           std::function<COLORREF(TextAttribute&)> GetForegroundColor,
-                                           std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const;
+    const TextAndColor GetText(const bool lineSelection,
+                               const bool trimTrailingWhitespace,
+                               const std::vector<SMALL_RECT>& textRects,
+                               std::function<COLORREF(TextAttribute&)> GetForegroundColor = nullptr,
+                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor = nullptr) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
@@ -157,6 +161,8 @@ public:
                               const int fontHeightPoints,
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
+
+    static HRESULT Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer);
 
 private:
     std::deque<ROW> _storage;
@@ -189,13 +195,13 @@ private:
     ROW& _GetFirstRow();
     ROW& _GetPrevRowNoWrap(const ROW& row);
 
-    enum class DelimiterClass
-    {
-        ControlChar,
-        DelimiterChar,
-        RegularChar
-    };
-    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar, const std::wstring_view wordDelimiters) const noexcept;
+    void _ExpandTextRow(SMALL_RECT& selectionRow) const;
+
+    const DelimiterClass _GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

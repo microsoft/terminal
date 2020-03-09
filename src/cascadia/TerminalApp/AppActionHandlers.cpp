@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), realArgs.TerminalArgs());
+            _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -214,6 +214,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
+                                   const TerminalApp::ActionEventArgs& args)
+    {
+        _Find();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const TerminalApp::ActionEventArgs& args)
     {
@@ -228,5 +235,4 @@ namespace winrt::TerminalApp::implementation
         _ToggleFullscreen();
         args.Handled(true);
     }
-
 }

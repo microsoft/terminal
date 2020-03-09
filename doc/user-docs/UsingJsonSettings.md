@@ -46,7 +46,7 @@ Example settings include
     ...
 ```
 
-These global properties can exist either in the root json object, or in and
+These global properties can exist either in the root json object, or in an
 object under a root property `"globals"`.
 
 ## Key Bindings
@@ -54,8 +54,8 @@ object under a root property `"globals"`.
 This is an array of key chords and shortcuts to invoke various commands.
 Each command can have more than one key binding.
 
-NOTE: Key bindings is a subfield of the global settings and
-key bindings apply to all profiles in the same manner.
+> 👉 **Note**: Key bindings is a subfield of the global settings and
+> key bindings apply to all profiles in the same manner.
 
 For example, here's a sample of the default keybindings:
 
@@ -69,8 +69,43 @@ For example, here's a sample of the default keybindings:
         // etc.
     ]
 }
-
 ```
+
+You can also use a single key chord string as the value of `"keys"`.
+It will be treated as a chord of length one.
+This will allow you to simplify the above snippet as follows:
+
+```json
+{
+    "keybindings":
+    [
+        { "command": "closePane", "keys": "ctrl+shift+w" },
+        { "command": "copy", "keys": "ctrl+shift+c" },
+        { "command": "newTab", "keys": "ctrl+shift+t" },
+        // etc.
+    ]
+}
+```
+
+
+
+### Unbinding keys
+
+If you ever come across a key binding that you're unhappy with, it's possible to
+easily change the keybindings. For example, vim uses <kbd>Ctrl+^</kbd> as a
+binding for "switch to previous buffer", which conflicts with the Terminal's
+default keybinding for "open a new tab with the sixth profile". If you'd like to
+unbind that keybinding, and allow the keystroke to fall through to vim, you can
+add the following to your keybindings:
+
+```json
+{
+    "command" : null, "keys" : ["ctrl+shift+6"]
+},
+```
+
+This will _unbind_ <kbd>Ctrl+Shift+6</kbd>, allowing vim to use the keystroke
+instead of the terminal.
 
 ## Profiles
 
@@ -86,7 +121,7 @@ profile is identified by a GUID and contains a number of other fields.
 * Which color scheme to use (see Schemes below)
 * Font face and size
 * Various settings to control appearance. E.g. Opacity, icon, cursor appearance, display name etc.
-* Other behavioural settings. E.g. Close on exit, snap on input, .....
+* Other behavioral settings. E.g. Close on exit, snap on input, .....
 
 Example settings include
 
@@ -118,7 +153,7 @@ the property `"hidden": true` to the profile's json. This can also be used to
 remove the default `cmd` and PowerShell profiles, if the user does not wish to
 see them.
 
-##  Color Schemes
+## Color Schemes
 
 Each scheme defines the color values to be used for various terminal escape sequences.
 Each schema is identified by the name field. Examples include
@@ -141,6 +176,7 @@ The schema name can then be referenced in one or more profiles.
 ## Settings layering
 
 The runtime settings are actually constructed from _three_ sources:
+
 * The default settings, which are hardcoded into the application, and available
   in `defaults.json`. This includes the default keybindings, color schemes, and
   profiles for both Windows PowerShell and Command Prompt (`cmd.exe`).
@@ -162,7 +198,7 @@ would like to only change the color scheme of the default `cmd` profile to
         }
 ```
 
-Here, we're know we're changing the `cmd` profile, because the `guid`
+Here, we know we're changing the `cmd` profile, because the `guid`
 `"{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"` is `cmd`'s unique GUID. Any profiles
 with that GUID will all be treated as the same object. Any changes in that
 profile will overwrite those from the defaults.
@@ -251,7 +287,7 @@ properties for all your profiles, like so:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -263,12 +299,13 @@ properties for all your profiles, like so:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 Note that the `profiles` property has changed in this example from a _list_ of
 profiles, to an _object_ with two properties:
+
 * a `list` that contains the list of all the profiles
 * the new `defaults` object, which contains all the settings that should apply to
   every profile.
@@ -291,7 +328,7 @@ could achieve that with the following:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -304,19 +341,18 @@ could achieve that with the following:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
 `"fontFace"` from the `defaults`.
 
-
-## Configuration Examples:
+## Configuration Examples
 
 ### Add a custom background to the WSL Debian terminal profile
 
-1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
+1. Download the [Debian JPG logo](https://www.debian.org/logos/openlogo-100.jpg)
 2. Put the image in the
  `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\`
  directory (same directory as your `profiles.json` file).
@@ -324,17 +360,20 @@ In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
     __NOTE__:  You can put the image anywhere you like, the above suggestion happens to be convenient.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
+
 ```json
     "backgroundImage": "ms-appdata:///Local/openlogo-100.jpg",
     "backgroundImageOpacity": 1,
     "backgroundImageStretchMode" : "none",
     "backgroundImageAlignment" : "topRight",
 ```
+
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
 7. Jump over to WT and verify your changes.
 
 Notes:
+
 1. You will need to experiment with different color settings
 and schemes to make your terminal text visible on top of your image
 2. If you store the image in the UWP directory (the same directory as your profiles.json file),
@@ -395,7 +434,6 @@ an interrupt to the commandline application using <kbd>Ctrl+C</kbd> when there's
 no text selection. Additionally, if you set `paste` to `"ctrl+v"`, commandline
 applications won't be able to read a ctrl+v from the input. For these reasons,
 we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`
-
 
 ### Setting the `startingDirectory` of WSL Profiles to `~`
 

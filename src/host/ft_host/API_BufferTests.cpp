@@ -50,7 +50,7 @@ void BufferTests::TestCookedReadOnNonShareableScreenBuffer()
 
     Log::Comment(L"Create alternate buffer that is read/writeable but not shareable.");
     const auto otherBuffer = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
-                                                       0, // This says non-sharable
+                                                       0, // This says non-shareable
                                                        nullptr,
                                                        CONSOLE_TEXTMODE_BUFFER,
                                                        nullptr);
@@ -250,7 +250,7 @@ void BufferTests::ChafaGifPerformance()
     for (DWORD pos = 0; pos < res_size; pos += 1000)
     {
         DWORD written = 0;
-        WriteConsoleA(Out, res_data + pos, min(1000, res_size - pos), &written, nullptr);
+        WriteConsoleA(Out, res_data + pos, std::min<DWORD>(1000, res_size - pos), &written, nullptr);
         count++;
     }
 

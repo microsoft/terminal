@@ -58,7 +58,7 @@ DeviceHandle::CreateServerHandle(
     return _CreateHandle(Handle,
                          L"\\Device\\ConDrv\\Server",
                          GENERIC_ALL,
-                         NULL,
+                         nullptr,
                          Inheritable,
                          0);
 }
@@ -98,16 +98,18 @@ DeviceHandle::_CreateHandle(
     }
 
     UNICODE_STRING Name;
-    Name.Buffer = (wchar_t*)DeviceName;
-    Name.Length = (USHORT)(wcslen(DeviceName) * sizeof(wchar_t));
+#pragma warning(suppress : 26492) // const_cast is prohibited, but we can't avoid it for filling UNICODE_STRING.
+    Name.Buffer = const_cast<wchar_t*>(DeviceName);
+    Name.Length = gsl::narrow_cast<USHORT>((wcslen(DeviceName) * sizeof(wchar_t)));
     Name.MaximumLength = Name.Length + sizeof(wchar_t);
 
     OBJECT_ATTRIBUTES ObjectAttributes;
+#pragma warning(suppress : 26477) // The QOS part of this macro in the define is 0. Can't fix that.
     InitializeObjectAttributes(&ObjectAttributes,
                                &Name,
                                Flags,
                                Parent,
-                               NULL);
+                               nullptr);
 
     IO_STATUS_BLOCK IoStatus;
     return WinNTControl::NtOpenFile(Handle,

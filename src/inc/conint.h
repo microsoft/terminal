@@ -33,7 +33,6 @@ namespace Microsoft::Console::Internal
         [[nodiscard]] HRESULT CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
                                                         bool& fIsWrongWayBlocked) noexcept;
 
-        
     }
 
     namespace EdpPolicy

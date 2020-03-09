@@ -32,7 +32,7 @@ namespace TerminalAppLocalTests
         // details on that.
         BEGIN_TEST_CLASS(KeyBindingsTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
-            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
         TEST_METHOD(ManyKeysSameAction);
@@ -41,6 +41,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestArbitraryArgs);
         TEST_METHOD(TestSplitPaneArgs);
+
+        TEST_METHOD(TestStringOverload);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -362,7 +364,9 @@ namespace TerminalAppLocalTests
             { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
             { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
             { "keys": ["ctrl+f"], "command": { "action": "splitPane", "split": "none" } },
-            { "keys": ["ctrl+g"], "command": { "action": "splitPane" } }
+            { "keys": ["ctrl+g"], "command": { "action": "splitPane" } },
+            { "keys": ["ctrl+h"], "command": { "action": "splitPane", "split": "auto" } },
+            { "keys": ["ctrl+i"], "command": { "action": "splitPane", "split": "foo" } }
         ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -371,7 +375,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
         appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(7u, appKeyBindings->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(9u, appKeyBindings->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
@@ -436,6 +440,47 @@ namespace TerminalAppLocalTests
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
         }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::None, realArgs.SplitStyle());
+        }
     }
 
+    void KeyBindingsTests::TestStringOverload()
+    {
+        const std::string bindings0String{ R"([
+            { "command": "copy", "keys": "ctrl+c" }
+        ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
+        VERIFY_IS_NOT_NULL(appKeyBindings);
+        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        appKeyBindings->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_TRUE(realArgs.TrimWhitespace());
+        }
+    }
 }

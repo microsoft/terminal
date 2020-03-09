@@ -3,11 +3,19 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema'",
   "definitions": {
+    "KeyChordSegment": {
+      "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
+      "type": "string"
+    },
     "Color": {
       "default": "#",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "type": "string",
       "format": "color"
+    },
+    "Coordinates": {
+      "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
+      "type": "string"
     },
     "ProfileGuid": {
       "default": "{}",
@@ -67,7 +75,8 @@
         "switchToTab6",
         "switchToTab7",
         "switchToTab8",
-        "toggleFullscreen"
+        "toggleFullscreen",
+        "find"
       ],
       "type": "string"
     },
@@ -83,7 +92,8 @@
     "SplitState": {
       "enum": [
         "vertical",
-        "horizontal"
+        "horizontal",
+        "auto"
       ],
       "type": "string"
     },
@@ -213,8 +223,8 @@
             "action": { "type": "string", "pattern": "splitPane" },
             "split": {
               "$ref": "#/definitions/SplitState",
-              "default": "vertical",
-              "description": "The orientation to split the pane in, either vertical (think [|]) or horizontal (think [-])"
+              "default": "auto",
+              "description": "The orientation to split the pane in, either vertical (think [|]), horizontal (think [-]), or auto (splits pane based on remaining space)"
             }
           }
         }
@@ -238,12 +248,18 @@
         },
         "keys": {
           "description": "Defines the key combinations used to call the command.",
-          "items": {
-            "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/KeyChordSegment"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/KeyChordSegment"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          ]
         }
       },
       "required": [
@@ -277,12 +293,32 @@
           "minimum": 1,
           "type": "integer"
         },
+        "initialPosition": {
+          "$ref": "#/definitions/Coordinates",
+          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If launchMode is set to maximized, the window will be maximized on the monitor specified by those coordinates."
+        },
         "initialRows": {
           "default": 30,
           "description": "The number of rows displayed in the window upon first load.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
+        },
+        "launchMode": {
+          "default": "default",
+          "description": "Defines whether the Terminal will launch as maximized or not.",
+          "enum": [
+            "maximized",
+            "default"
+          ],
+          "type": "string"
+        },
+        "rowsToScroll": {
+          "default": "system",
+          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or 'system'.",
+          "maximum": 999,
+          "minimum": 0,
+          "type": ["integer", "string"]
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
@@ -311,10 +347,29 @@
           "description": "When set to true, titlebar displays the title of the selected tab. When set to false, titlebar displays 'Windows Terminal'.",
           "type": "boolean"
         },
+        "snapToGridOnResize": {
+          "default": false,
+          "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize 'smoothly'",
+          "type": "boolean"
+        },
+        "tabWidthMode": {
+          "default": "equal",
+          "description": "Sets the width of the tabs.",
+          "enum": [
+            "equal",
+            "titleLength"
+          ],
+          "type": "string"
+        },
         "wordDelimiters": {
           "default": " ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?│",
           "description": "Determines the delimiters used in a double click selection.",
           "type": "string"
+        },
+        "confirmCloseAllTabs": {
+          "default": true,
+          "description": " When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation.",
+          "type":"boolean"
         }
       },
       "required": [
@@ -333,9 +388,20 @@
           "minimum": 0,
           "type": "number"
         },
+        "antialiasingMode": {
+          "default": "grayscale",
+          "description": "Controls how text is antialiased in the renderer. Possible values are \"grayscale\", \"cleartype\" and \"aliased\". Note that changing this setting will require starting a new terminal instance.",
+          "enum": [
+            "grayscale",
+            "cleartype",
+            "aliased"
+          ],
+          "type": "string"
+        },
         "background": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
+          "default": "#0c0c0c",
+          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "backgroundImage": {
@@ -526,7 +592,8 @@
         },
         "foreground": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+          "default": "#cccccc",
+          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "guid": {
@@ -535,7 +602,7 @@
         },
         "hidden": {
           "default": false,
-          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file.",
+          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.",
           "type": "boolean"
         },
         "historySize": {
@@ -586,7 +653,7 @@
           "type": "string"
         },
         "suppressApplicationTitle": {
-          "description": "When set to `true`, `tabTitle` overrides the default title of the tab and any title change messages from the application will be suppressed. When set to `false`, `tabTitle` behaves as normal.",
+          "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",
           "type": "boolean"
         },
         "tabTitle": {
@@ -622,7 +689,8 @@
           "description": "The default settings that apply to every profile.",
           "$ref": "#/definitions/Profile"
         }
-      }
+      },
+      "type": "object"
     },
     "SchemeList": {
       "description": "Properties are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.",

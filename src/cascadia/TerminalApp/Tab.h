@@ -3,54 +3,66 @@
 
 #pragma once
 #include "Pane.h"
+#include "Tab.g.h"
 
-class Tab : public std::enable_shared_from_this<Tab>
+namespace winrt::TerminalApp::implementation
 {
-public:
-    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    struct Tab : public TabT<Tab>
+    {
+    public:
+        Tab() = delete;
+        Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    // Called after construction to setup events with weak_ptr
-    void BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
+        // Called after construction to setup events with weak_ptr
+        void BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
 
-    winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-    winrt::Windows::UI::Xaml::UIElement GetRootElement();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
-    std::optional<GUID> GetFocusedProfile() const noexcept;
+        winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
+        winrt::Windows::UI::Xaml::UIElement GetRootElement();
+        winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
+        std::optional<GUID> GetFocusedProfile() const noexcept;
 
-    bool IsFocused() const noexcept;
-    void SetFocused(const bool focused);
+        bool IsFocused() const noexcept;
+        void SetFocused(const bool focused);
 
-    void Scroll(const int delta);
+        winrt::fire_and_forget Scroll(const int delta);
 
-    bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
-    void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
+        void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void UpdateIcon(const winrt::hstring iconPath);
+        winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
 
-    void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-    void ResizePane(const winrt::TerminalApp::Direction& direction);
-    void NavigateFocus(const winrt::TerminalApp::Direction& direction);
+        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
-    winrt::hstring GetActiveTitle() const;
-    void SetTabText(const winrt::hstring& text);
+        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
+        void ResizePane(const winrt::TerminalApp::Direction& direction);
+        void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-    void ClosePane();
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+        winrt::hstring GetActiveTitle() const;
+        winrt::fire_and_forget SetTabText(const winrt::hstring text);
 
-    WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
-    DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+        void Shutdown();
+        void ClosePane();
 
-private:
-    std::shared_ptr<Pane> _rootPane{ nullptr };
-    std::shared_ptr<Pane> _activePane{ nullptr };
-    winrt::hstring _lastIconPath{};
+        WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 
-    bool _focused{ false };
-    winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
 
-    void _MakeTabViewItem();
-    void _Focus();
+    private:
+        std::shared_ptr<Pane> _rootPane{ nullptr };
+        std::shared_ptr<Pane> _activePane{ nullptr };
+        winrt::hstring _lastIconPath{};
 
-    void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
-};
+        bool _focused{ false };
+        winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
+
+        void _MakeTabViewItem();
+        void _Focus();
+
+        void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
+    };
+}
