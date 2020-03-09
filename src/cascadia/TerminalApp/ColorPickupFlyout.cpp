@@ -18,15 +18,9 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        auto okText = RS_(L"Ok");
-        auto customColorText = RS_(L"TabCustomColorChoose");
-        auto clearColorText = RS_(L"TabColorClear");
-
-        btnOk().Content(winrt::box_value(okText));
-        btnCustomColor().Content(winrt::box_value(customColorText));
-        btnClearColor().Content(winrt::box_value(clearColorText));
-
-        customColorPicker().ColorChanged({ get_weak(), &ColorPickupFlyout::_ColorChangedHandler });
+        btnOk().Content(winrt::box_value(RS_(L"Ok")));
+        btnCustomColor().Content(winrt::box_value(RS_(L"TabColorCustomButton/Content")));
+        btnClearColor().Content(winrt::box_value(RS_(L"TabColorClearButton/Content")));
     }
 
     // Method Description:
@@ -42,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         auto btn{ sender.as<Windows::UI::Xaml::Controls::Button>() };
         auto rectangle{ btn.Content().as<Windows::UI::Xaml::Shapes::Rectangle>() };
         auto rectClr{ rectangle.Fill().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
-        _colorSelected(rectClr.Color());
+        _ColorSelectedHandlers(rectClr.Color());
         Hide();
     }
 
@@ -55,7 +49,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void ColorPickupFlyout::ClearColorButton_Click(IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
     {
-        _colorCleared();
+        _ColorClearedHandlers();
         Hide();
     }
 
@@ -98,15 +92,12 @@ namespace winrt::TerminalApp::implementation
     void ColorPickupFlyout::CustomColorButton_Click(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
     {
         auto color = customColorPicker().Color();
-        _colorSelected(color);
+        _ColorSelectedHandlers(color);
         Hide();
     }
 
-    void ColorPickupFlyout::_ColorChangedHandler(const Windows::UI::Xaml::Controls::ColorPicker&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args)
+    void ColorPickupFlyout::ColorPicker_ColorChanged(const Windows::UI::Xaml::Controls::ColorPicker&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args)
     {
-        _colorSelected(args.NewColor());
+        _ColorSelectedHandlers(args.NewColor());
     }
-
-    DEFINE_EVENT(ColorPickupFlyout, ColorSelected, _colorSelected, TerminalApp::ColorSelectedArgs);
-    DEFINE_EVENT(ColorPickupFlyout, ColorCleared, _colorCleared, TerminalApp::ColorClearedArgs);
 }

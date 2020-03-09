@@ -221,13 +221,13 @@ Temporarily using the Windows Terminal default settings.
     <value>Close</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
-    <value>Choose a tab color</value>
+    <value>Color...</value>
   </data>
-  <data name="TabColorClear" xml:space="preserve">
-    <value>Clear the current color</value>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Custom</value>
   </data>
-  <data name="TabCustomColorChoose" xml:space="preserve">
-    <value>Select a custom color</value>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Reset</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
