@@ -10,14 +10,16 @@
 #include "ConptyConnection.h"
 
 #include <windows.h>
+//#include <winrt/Windows.Foundation.Collections.h>
 
 #include "ConptyConnection.g.cpp"
 
-#include "../../types/inc/Utils.hpp"
+#include "../../types/inc/utils.hpp"
 #include "../../types/inc/Environment.hpp"
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
+//using namespace winrt::Windows::Foundation::Collections;
 
 // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
@@ -110,7 +112,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
+            for (auto item: _environment)
+            {
+                environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
+                //item.Key().c_str() // to wstring
+            }
+
             auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
+            //
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
             wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
@@ -173,6 +182,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     ConptyConnection::ConptyConnection(const hstring& commandline,
                                        const hstring& startingDirectory,
                                        const hstring& startingTitle,
+                                       const Windows::Foundation::Collections::IMapView<hstring,hstring>& environment,
                                        const uint32_t initialRows,
                                        const uint32_t initialCols,
                                        const guid& initialGuid) :
@@ -181,6 +191,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
+        _environment{ environment },
         _guid{ initialGuid },
         _u8State{},
         _u16Str{},
