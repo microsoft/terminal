@@ -464,7 +464,6 @@ namespace winrt::TerminalApp::implementation
         closeTabMenuItem.Text(RS_(L"TabClose"));
         closeTabMenuItem.Icon(closeSymbol);
 
-
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         Controls::FontIcon colorPickSymbol;
