@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
-            if (_environment != nullptr)
+            if (_environment)
             {
                 for (auto item : _environment)
                 {
