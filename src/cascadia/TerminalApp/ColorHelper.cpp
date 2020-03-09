@@ -3,6 +3,7 @@
 #include <limits>
 
 using namespace winrt::TerminalApp;
+namespace WUI = ::winrt::Windows::UI;
 
 // Method Description:
 // Determines whether or not a given color is light

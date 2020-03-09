@@ -1752,6 +1752,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
     {
+        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
         bool IsBrightColor = ColorHelper::IsBrightColor(color);
         bool isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
         winrt::Windows::UI::Color pressedColor{};
@@ -1808,6 +1809,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_ClearNewTabButtonColor()
     {
+        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
         winrt::hstring keys[] = {
             L"SplitButtonBackground",
             L"SplitButtonBackgroundPointerOver",
@@ -1866,10 +1868,9 @@ namespace winrt::TerminalApp::implementation
     // - selectedTabColor: The color of the newly selected tab
     // Return Value:
     // - <none>
-    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor)
+    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& /*selectedTabColor*/)
     {
-        auto accentColor = ColorHelper::GetAccentColor(selectedTabColor);
-        _SetNewTabButtonColor(selectedTabColor, accentColor);
+        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
     // Method Description:
@@ -1882,7 +1883,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_ClearNonClientAreaColors()
     {
-        _ClearNewTabButtonColor();
+        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
     // -------------------------------- WinRT Events ---------------------------------
