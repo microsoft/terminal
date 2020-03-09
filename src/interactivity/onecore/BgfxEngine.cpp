@@ -232,7 +232,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-SMALL_RECT BgfxEngine::GetDirtyRectInChars()
+std::vector<SMALL_RECT> BgfxEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
@@ -240,7 +240,7 @@ SMALL_RECT BgfxEngine::GetDirtyRectInChars()
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return r;
+    return { r };
 }
 
 [[nodiscard]] HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept

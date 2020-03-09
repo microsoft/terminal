@@ -63,8 +63,19 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirtyRect = GetDirtyRectInChars();
-        const auto dirtyView = Viewport::FromInclusive(dirtyRect);
+        const auto dirty = GetDirtyArea();
+
+        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+
+        // If there's more than 1, union them all up with the 1 we already have.
+        for (size_t i = 1; i < dirty.size(); ++i)
+        {
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
+        }
+
+        // This is expecting the dirty view to be the union of all dirty regions as one big
+        // rectangle descrbing them all.
         if (!_resized && dirtyView == _lastViewport)
         {
             // TODO: MSFT:21096414 - This is never actually hit. We set
