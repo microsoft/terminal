@@ -15,14 +15,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr size() noexcept :
             size(0, 0)
         {
-
         }
 
 #if defined(_M_AMD64) || defined(_M_ARM64)
         constexpr size(int width, int height) noexcept :
             size(static_cast<ptrdiff_t>(width), static_cast<ptrdiff_t>(height))
         {
-
         }
 #endif
 
@@ -36,27 +34,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _width(width),
             _height(height)
         {
-
         }
 
         template<typename TOther>
         constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             size(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
         {
-
         }
 
         template<typename TOther>
         constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().cx)> && std::is_integral_v<decltype(std::declval<TOther>().cy)>, int> /*sentinel*/ = 0) :
             size(static_cast<ptrdiff_t>(other.cx), static_cast<ptrdiff_t>(other.cy))
         {
-
         }
 
         constexpr bool operator==(const size& other) const noexcept
         {
             return _width == other._width &&
-                _height == other._height;
+                   _height == other._height;
         }
 
         constexpr bool operator!=(const size& other) const noexcept
@@ -105,7 +100,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ptrdiff_t height;
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_height, other._height).AssignIfValid(&height));
 
-            return size{ width, height};
+            return size{ width, height };
         }
 
         size divide_ceil(const size& other) const
@@ -119,7 +114,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Check for width remainder, anything not 0.
             if (_width % other._width)
             {
-                // If there was any remainder, 
+                // If there was any remainder,
                 // Grow the magnitude by 1 in the
                 // direction of the sign.
                 if (floor.width() >= 0)
@@ -135,7 +130,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Check for height remainder, anything not 0.
             if (_height % other._height)
             {
-                // If there was any remainder, 
+                // If there was any remainder,
                 // Grow the magnitude by 1 in the
                 // direction of the sign.
                 if (_height >= 0)
@@ -177,7 +172,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        ptrdiff_t area() const 
+        ptrdiff_t area() const
         {
             ptrdiff_t result;
             THROW_HR_IF(E_ABORT, !base::CheckMul(_width, _height).AssignIfValid(&result));
