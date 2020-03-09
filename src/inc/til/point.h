@@ -151,17 +151,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _x;
         }
 
-        constexpr ptrdiff_t& x() noexcept
-        {
-            return _x;
-        }
-
         constexpr ptrdiff_t y() const noexcept
-        {
-            return _y;
-        }
-
-        constexpr ptrdiff_t& y() noexcept
         {
             return _y;
         }

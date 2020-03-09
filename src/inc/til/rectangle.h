@@ -34,11 +34,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         recterator& operator++()
         {
-            ++_current.x();
-            if (_current.x() >= _topLeft.x() + _size.width())
+            if (_current.x() + 1 >= _topLeft.x() + _size.width())
             {
-                _current.x() = _topLeft.x();
-                ++_current.y();
+                _current = { _topLeft.x(), _current.y() + 1 };
+            }
+            else
+            {
+                _current = { _current.x() + 1, _current.y() };
             }
 
             return (*this);
