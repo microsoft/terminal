@@ -112,9 +112,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
-            for (auto item : _environment)
+            if (_environment != nullptr)
             {
-                environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
+                for (auto item : _environment)
+                {
+                    environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
+                }
             }
 
             auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
