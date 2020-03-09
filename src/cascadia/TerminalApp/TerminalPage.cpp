@@ -609,12 +609,12 @@ namespace winrt::TerminalApp::implementation
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
             connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(),
-                L".",
-                L"Azure",
-                nullptr,
-                settings.InitialRows(),
-                settings.InitialCols(),
-                winrt::guid());
+                                                              L".",
+                                                              L"Azure",
+                                                              nullptr,
+                                                              settings.InitialRows(),
+                                                              settings.InitialCols(),
+                                                              winrt::guid());
         }
 
         else if (profile->HasConnectionType() &&
@@ -625,7 +625,7 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            StringMap envMap{ };            
+            StringMap envMap{};
             envMap.Insert(L"WT_DEFAULTS", _settings->GetDefaultSettingsPath());
             envMap.Insert(L"WT_PROFILES", _settings->GetSettingsPath());
             envMap.Insert(L"WSLENV", L"WT_DEFAULTS/p:WT_PROFILES/p");

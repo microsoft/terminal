@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
-            for (auto item: _environment)
+            for (auto item : _environment)
             {
                 environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
             }
@@ -181,7 +181,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     ConptyConnection::ConptyConnection(const hstring& commandline,
                                        const hstring& startingDirectory,
                                        const hstring& startingTitle,
-                                       const Windows::Foundation::Collections::IMapView<hstring,hstring>& environment,
+                                       const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                        const uint32_t initialRows,
                                        const uint32_t initialCols,
                                        const guid& initialGuid) :
