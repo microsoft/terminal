@@ -606,7 +606,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 // 2. We're painting the last col of the row.
                 // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
                 const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
-                    (bufferLine.RightExclusive() == buffer.GetSize().Width());
+                                         (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
                 // Ask the helper to paint through this specific line.
                 _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
