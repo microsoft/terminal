@@ -1689,7 +1689,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<SMALL_RECT> DxEngine::GetDirtyArea() noexcept
+[[nodiscard]] std::vector<SMALL_RECT> DxEngine::GetDirtyArea()
 {
     return { til::rectangle{} };
 }
