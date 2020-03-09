@@ -110,6 +110,16 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _titlebar.Content(content);
+
+    // GH#4288 - add a SizeChanged handler to this content. It's possible that
+    // this element's size will change after the dragbar's. When that happens,
+    // the drag bar won't send another SizeChanged event, because the dragbar's
+    // _size_ didn't change, only it's position.
+    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    if (fwe)
+    {
+        fwe.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    }
 }
 
 // Method Description:
