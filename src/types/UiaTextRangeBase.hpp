@@ -337,66 +337,66 @@ namespace Microsoft::Console::Types
         static std::pair<Endpoint, Endpoint> _moveByCharacter(gsl::not_null<IUiaData*> pData,
                                                               const int moveCount,
                                                               const MoveState moveState,
-                                                              _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                              gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByCharacterForward(gsl::not_null<IUiaData*> pData,
                                                                      const int moveCount,
                                                                      const MoveState moveState,
-                                                                     _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                                     gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(gsl::not_null<IUiaData*> pData,
                                                                       const int moveCount,
                                                                       const MoveState moveState,
-                                                                      _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                                      gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWord(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
                                                          const std::wstring_view wordDelimiters,
-                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                         gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWordForward(gsl::not_null<IUiaData*> pData,
                                                                 const int moveCount,
                                                                 const MoveState moveState,
                                                                 const std::wstring_view wordDelimiters,
-                                                                _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                                gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByWordBackward(gsl::not_null<IUiaData*> pData,
                                                                  const int moveCount,
                                                                  const MoveState moveState,
                                                                  const std::wstring_view wordDelimiters,
-                                                                 _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                                 gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
-                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                         gsl::not_null<int*> const pAmountMoved);
 
         static std::pair<Endpoint, Endpoint> _moveByDocument(gsl::not_null<IUiaData*> pData,
                                                              const int moveCount,
                                                              const MoveState moveState,
-                                                             _Out_ gsl::not_null<int*> const pAmountMoved);
+                                                             gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
                                      const int moveCount,
                                      const TextPatternRangeEndpoint endpoint,
                                      const MoveState moveState,
-                                     _Out_ gsl::not_null<int*> const pAmountMoved);
+                                     gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> pData,
                                             const int moveCount,
                                             const TextPatternRangeEndpoint endpoint,
                                             const MoveState moveState,
-                                            _Out_ gsl::not_null<int*> const pAmountMoved);
+                                            gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> pData,
                                              const int moveCount,
                                              const TextPatternRangeEndpoint endpoint,
                                              const MoveState moveState,
-                                             _Out_ gsl::not_null<int*> const pAmountMoved);
+                                             gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitWord(gsl::not_null<IUiaData*> pData,
@@ -404,7 +404,7 @@ namespace Microsoft::Console::Types
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
                                 const std::wstring_view wordDelimiters,
-                                _Out_ gsl::not_null<int*> const pAmountMoved);
+                                gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitWordForward(gsl::not_null<IUiaData*> pData,
@@ -412,7 +412,7 @@ namespace Microsoft::Console::Types
                                        const TextPatternRangeEndpoint endpoint,
                                        const MoveState moveState,
                                        const std::wstring_view wordDelimiters,
-                                       _Out_ gsl::not_null<int*> const pAmountMoved);
+                                       gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitWordBackward(gsl::not_null<IUiaData*> pData,
@@ -420,21 +420,21 @@ namespace Microsoft::Console::Types
                                         const TextPatternRangeEndpoint endpoint,
                                         const MoveState moveState,
                                         const std::wstring_view wordDelimiters,
-                                        _Out_ gsl::not_null<int*> const pAmountMoved);
+                                        gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitLine(gsl::not_null<IUiaData*> pData,
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
-                                _Out_ gsl::not_null<int*> const pAmountMoved);
+                                gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
         _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
                                     const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
-                                    _Out_ gsl::not_null<int*> const pAmountMoved);
+                                    gsl::not_null<int*> const pAmountMoved);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
