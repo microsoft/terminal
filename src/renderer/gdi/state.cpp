@@ -470,7 +470,7 @@ GdiEngine::~GdiEngine()
 // Routine Description:
 // - Retrieves the current pixel size of the font we have selected for drawing.
 // Arguments:
-// - pFontSize - recieves the current X by Y size of the font.
+// - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT GdiEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept

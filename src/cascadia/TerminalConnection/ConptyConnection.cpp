@@ -15,7 +15,6 @@
 
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/Environment.hpp"
-#include "../../types/inc/UTF8OutPipeReader.hpp"
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
@@ -154,6 +153,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
 
+        const std::filesystem::path processName = wil::GetModuleFileNameExW<std::wstring>(_piClient.hProcess, nullptr);
+        _clientName = processName.filename().wstring();
+
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ConPtyConnected",
+            TraceLoggingDescription("Event emitted when ConPTY connection is started"),
+            TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+            TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -169,7 +181,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
         _startingTitle{ startingTitle },
-        _guid{ initialGuid }
+        _guid{ initialGuid },
+        _u8State{},
+        _u16Str{},
+        _buffer{}
     {
         if (_guid == guid{})
         {
@@ -344,14 +359,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
-        UTF8OutPipeReader pipeReader{ _outPipe.get() };
-        std::string_view strView{};
-
         // process the data of the output pipe in a loop
         while (true)
         {
-            const HRESULT result = pipeReader.Read(strView);
-            if (FAILED(result) || result == S_FALSE)
+            DWORD read{};
+
+            const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+            if (readFail) // reading failed (we must check this first, because read will also be 0.)
+            {
+                const auto lastError = GetLastError();
+                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                {
+                    // EXIT POINT
+                    _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
+                    _transitionToState(ConnectionState::Failed);
+                    return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
+                }
+                // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
+            }
+
+            const HRESULT result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+            if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
                 {
@@ -362,35 +390,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
-                return gsl::narrow_cast<DWORD>(-1);
+                return gsl::narrow_cast<DWORD>(result);
             }
 
-            if (strView.empty())
+            if (_u16Str.empty())
             {
                 return 0;
             }
 
-            if (!_recievedFirstByte)
+            if (!_receivedFirstByte)
             {
                 const auto now = std::chrono::high_resolution_clock::now();
                 const std::chrono::duration<double> delta = now - _startTime;
 
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
                 TraceLoggingWrite(g_hTerminalConnectionProvider,
-                                  "RecievedFirstByte",
-                                  TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
+                                  "ReceivedFirstByte",
+                                  TraceLoggingDescription("An event emitted when the connection receives the first byte"),
                                   TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
                                   TraceLoggingFloat64(delta.count(), "Duration"),
                                   TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                   TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-                _recievedFirstByte = true;
+                _receivedFirstByte = true;
             }
 
-            // Convert buffer to hstring
-            auto hstr{ winrt::to_hstring(strView) };
-
             // Pass the output to our registered event handlers
-            _TerminalOutputHandlers(hstr);
+            _TerminalOutputHandlers(_u16Str);
         }
 
         return 0;

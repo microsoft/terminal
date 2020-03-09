@@ -68,7 +68,7 @@ original files. You could alternatively put all the source in one directory, and
 have separate `dll/` and `lib/` subdirectories from the source that are solely
 responsible for building their binary.
 
-At this point, you might face some difficulty including the right wimnd
+At this point, you might face some difficulty including the right winmd
 references, especially from other C++/WinRT dependencies for this project that
 exist in your solution. I don't know why, but I had a fair amount of difficulty
 using a `ProjectReference` from a C++/WinRT StaticLibrary to another C++/WinRT

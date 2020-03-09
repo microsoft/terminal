@@ -53,6 +53,10 @@ public:
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
+#ifdef UNIT_TESTING
+    void EnableConptyModeForTests();
+#endif
+
     static const std::wstring_view VT_MODE_ARG;
     static const std::wstring_view HEADLESS_ARG;
     static const std::wstring_view SERVER_HANDLE_ARG;
@@ -96,7 +100,7 @@ private:
         _serverHandle(serverHandle),
         _signalHandle(signalHandle),
         _inheritCursor(inheritCursor),
-        _recievedEarlySizeChange{ false },
+        _receivedEarlySizeChange{ false },
         _originalWidth{ -1 },
         _originalHeight{ -1 }
     {
@@ -124,7 +128,7 @@ private:
     DWORD _signalHandle;
     bool _inheritCursor;
 
-    bool _recievedEarlySizeChange;
+    bool _receivedEarlySizeChange;
     short _originalWidth;
     short _originalHeight;
 

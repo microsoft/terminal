@@ -173,7 +173,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         std::wstring_view writtenView(wideChars);
         writtenView = writtenView.substr(0, wideCharsWritten);
 
-        // Look over written wide chars to find equilalent count of ascii chars so we can properly report back
+        // Look over written wide chars to find equivalent count of ascii chars so we can properly report back
         // how many elements were actually written
         used = GetALengthFromW(codepage, writtenView);
     }
@@ -303,7 +303,11 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                    const size_t lengthToWrite,
                                                                    const COORD startingCoordinate,
                                                                    size_t& cellsModified) noexcept
+try
 {
+    // In case ConvertToW throws causing an early return, set modified cells to 0.
+    cellsModified = 0;
+
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // convert to wide chars and call W version
@@ -313,3 +317,4 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     return FillConsoleOutputCharacterWImpl(OutContext, wchs.at(0), lengthToWrite, startingCoordinate, cellsModified);
 }
+CATCH_RETURN()

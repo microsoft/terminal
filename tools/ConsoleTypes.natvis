@@ -9,7 +9,7 @@
     </Type>
 
     <Type Name="TextAttribute">
-        <!-- You can't do too much trickyness inside the DisplayString format
+        <!-- You can't do too much trickiness inside the DisplayString format
                 string, so we'd have to add entries for each flag if we really
                 wanted them to show up like that. -->
         <DisplayString>{{FG: {_foreground}, BG: {_background}, Legacy: {_wAttrLegacy}, {_extendedAttrs}}</DisplayString>

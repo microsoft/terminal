@@ -33,6 +33,7 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
 static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
@@ -42,9 +43,11 @@ static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
+    _keybindingsWarnings{},
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
+    _confirmCloseAllTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
     _rowsToScroll{ DEFAULT_ROWSTOSCROLL },
@@ -158,6 +161,15 @@ void GlobalAppSettings::SetLaunchMode(const LaunchMode launchMode)
 {
     _launchMode = launchMode;
 }
+bool GlobalAppSettings::GetConfirmCloseAllTabs() const noexcept
+{
+    return _confirmCloseAllTabs;
+}
+
+void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) noexcept
+{
+    _confirmCloseAllTabs = confirmCloseAllTabs;
+}
 
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
@@ -223,6 +235,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(TabWidthModeKey)] = winrt::to_string(_SerializeTabWidthMode(_tabWidthMode));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
+    jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
     jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
 
     return jsonObject;
@@ -252,6 +265,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
     {
         _alwaysShowTabs = alwaysShowTabs.asBool();
+    }
+    if (auto confirmCloseAllTabs{ json[JsonKey(ConfirmCloseAllKey)] })
+    {
+        _confirmCloseAllTabs = confirmCloseAllTabs.asBool();
     }
     if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
     {
@@ -314,7 +331,14 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        _keybindings->LayerJson(keybindings);
+        auto warnings = _keybindings->LayerJson(keybindings);
+        // It's possible that the user provided keybindings have some warnings
+        // in them - problems that we should alert the user to, but we can
+        // recover from. Most of these warnings cannot be detected later in the
+        // Validate settings phase, so we'll collect them now. If there were any
+        // warnings generated from parsing these keybindings, add them to our
+        // list of warnings.
+        _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
     }
 
     if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
@@ -367,7 +391,7 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
 // Method Description:
 // - Helper function for converting the initial position string into
 //   2 coordinate values. We allow users to only provide one coordinate,
-//   thus, we use comma as the separater:
+//   thus, we use comma as the separator:
 //   (100, 100): standard input string
 //   (, 100), (100, ): if a value is missing, we set this value as a default
 //   (,): both x and y are set to default
@@ -520,4 +544,18 @@ void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };
     _colorSchemes[name] = std::move(scheme);
+}
+
+// Method Description:
+// - Return the warnings that we've collected during parsing the JSON for the
+//   keybindings. It's possible that the user provided keybindings have some
+//   warnings in them - problems that we should alert the user to, but we can
+//   recover from.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
+{
+    return _keybindingsWarnings;
 }

@@ -196,7 +196,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 // - Resizes the conpty
 // Arguments:
 // - hSignal: A signal pipe as returned by CreateConPty.
-// - size: The new dimenstions of the conpty, in characters.
+// - size: The new dimensions of the conpty, in characters.
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the resize message to the pty.
@@ -270,7 +270,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 // Function Description:
 // - This closes each of the members of a PseudoConsole, and HeapFree's the
 //      memory allocated to it. This should be used to cleanup any
-//      PseudoConosles that were created with CreatePseudoConsole.
+//      PseudoConsoles that were created with CreatePseudoConsole.
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
 // Return Value:
@@ -302,7 +302,7 @@ VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 //      for applications like `ssh`, where ssh (currently running in a terminal)
 //      might want to create a pseudoterminal session for an child application
 //      and the child inherit the cursor position of ssh.
-//      The creted conpty will immediately emit a "Device Status Request" VT
+//      The created conpty will immediately emit a "Device Status Request" VT
 //      sequence to hOutput, that should be replied to on hInput in the format
 //      "\x1b[<r>;<c>R", where `<r>` is the row and `<c>` is the column of the
 //      cursor position.

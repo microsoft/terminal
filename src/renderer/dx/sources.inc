@@ -35,3 +35,5 @@ SOURCES = \
     ..\DxRenderer.cpp \
     ..\CustomTextRenderer.cpp \
     ..\CustomTextLayout.cpp \
+
+C_DEFINES=$(C_DEFINES) -D__INSIDE_WINDOWS

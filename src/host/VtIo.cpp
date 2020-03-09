@@ -35,7 +35,7 @@ VtIo::VtIo() :
 // Arguments:
 //  VtIoMode: A string containing the console's requested VT mode. This can be
 //      any of the strings in VtIoModes.hpp
-//  pIoMode: recieves the VtIoMode that the string prepresents if it's a valid
+//  pIoMode: receives the VtIoMode that the string represents if it's a valid
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
@@ -374,7 +374,7 @@ void VtIo::CloseOutput()
 
 void VtIo::_ShutdownIfNeeded()
 {
-    // The callers should have both accquired the _shutdownLock at this point -
+    // The callers should have both acquired the _shutdownLock at this point -
     //      we dont want a race on who is actually responsible for closing it.
     if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
     {
@@ -431,3 +431,18 @@ void VtIo::EndResize()
         _pVtRenderEngine->EndResizeRequest();
     }
 }
+
+#ifdef UNIT_TESTING
+// Method Description:
+// - This is a test helper method. It can be used to trick VtIo into responding
+//   true to `IsUsingVt`, which will cause the console host to act in conpty
+//   mode.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtIo::EnableConptyModeForTests()
+{
+    _objectsCreated = true;
+}
+#endif

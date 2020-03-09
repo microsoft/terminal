@@ -15,7 +15,7 @@ Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
 
 ```json
 {
-    "commandline" : "cmd.exe /K %USERPROFILE%\\Anaconda3\\Scripts\\activate.bat %USERPROFILE%\\Anaconda3",
+    "commandline" : "cmd.exe /k \"%USERPROFILE%\\Anaconda3\\Scripts\\activate.bat %USERPROFILE%\\Anaconda3\"",
     "icon" : "%USERPROFILE%/Anaconda3/Menu/anaconda-navigator.ico",
     "name" : "Anaconda3",
     "startingDirectory" : "%USERPROFILE%"
@@ -28,7 +28,7 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
 
 ```json
 {
-    "commandline" : "cmd.exe /k %CMDER_ROOT%\\vendor\\init.bat",
+    "commandline" : "cmd.exe /k \"%CMDER_ROOT%\\vendor\\init.bat\"",
     "name" : "cmder",
     "startingDirectory" : "%USERPROFILE%"
 }
@@ -50,6 +50,19 @@ Assuming that you've installed Cygwin into `C:/Cygwin`:
 Note that the starting directory of Cygwin is set as it is to make the path
 work. The default directory opened when starting Cygwin will be `$HOME` because
 of the `--login` flag.
+
+## Far Manager
+
+Assuming that you've installed Far into `c:\Program Files\Far Manager`:
+
+```json
+{
+    "name" : "Far",
+    "commandline" : "\"c:\\program files\\far manager\\far.exe\"",
+    "startingDirectory" : "%USERPROFILE%",
+    "useAcrylic" : false
+},
+```
 
 ## Git Bash
 

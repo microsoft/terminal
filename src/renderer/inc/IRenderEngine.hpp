@@ -93,7 +93,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                       const COORD coord,
-                                                      const bool fTrimLeft) noexcept = 0;
+                                                      const bool fTrimLeft,
+                                                      const bool lineWrapped) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLines lines,
                                                            const COLORREF color,
                                                            const size_t cchLine,

@@ -39,26 +39,43 @@ ITermDispatch& OutputStateMachineEngine::Dispatch() noexcept
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
-    // microsoft/terminal#1825 - VT applications expect to be able to write NUL
-    // and have _nothing_ happen. Filter the NULs here, so they don't fill the
-    // buffer with empty spaces.
-    if (wch == AsciiChars::NUL)
+    switch (wch)
     {
-        return true;
-    }
-
-    _dispatch->Execute(wch);
-    _ClearLastChar();
-
-    if (wch == AsciiChars::BEL)
-    {
+    case AsciiChars::NUL:
+        // microsoft/terminal#1825 - VT applications expect to be able to write NUL
+        // and have _nothing_ happen. Filter the NULs here, so they don't fill the
+        // buffer with empty spaces.
+        break;
+    case AsciiChars::BEL:
+        _dispatch->WarningBell();
         // microsoft/terminal#2952
         // If we're attached to a terminal, let's also pass the BEL through.
         if (_pfnFlushToTerminal != nullptr)
         {
             _pfnFlushToTerminal();
         }
+        break;
+    case AsciiChars::BS:
+        _dispatch->CursorBackward(1);
+        break;
+    case AsciiChars::TAB:
+        _dispatch->ForwardTab(1);
+        break;
+    case AsciiChars::CR:
+        _dispatch->CarriageReturn();
+        break;
+    case AsciiChars::LF:
+    case AsciiChars::FF:
+    case AsciiChars::VT:
+        // LF, FF, and VT are identical in function.
+        _dispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode);
+        break;
+    default:
+        _dispatch->Execute(wch);
+        break;
     }
+
+    _ClearLastChar();
 
     return true;
 }
@@ -184,6 +201,14 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
             success = _dispatch->SetKeypadMode(false);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECKPNM);
             break;
+        case VTActionCodes::NEL_NextLine:
+            success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::NEL);
+            break;
+        case VTActionCodes::IND_Index:
+            success = _dispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::IND);
+            break;
         case VTActionCodes::RI_ReverseLineFeed:
             success = _dispatch->ReverseLineFeed();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RI);
@@ -261,7 +286,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
 // Arguments:
 // - wch - Character to dispatch.
 // - intermediates - Intermediate characters in the sequence
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
@@ -298,6 +323,8 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case VTActionCodes::CHA_CursorHorizontalAbsolute:
         case VTActionCodes::HPA_HorizontalPositionAbsolute:
         case VTActionCodes::VPA_VerticalLinePositionAbsolute:
+        case VTActionCodes::HPR_HorizontalPositionRelative:
+        case VTActionCodes::VPR_VerticalPositionRelative:
         case VTActionCodes::ICH_InsertCharacter:
         case VTActionCodes::DCH_DeleteCharacter:
         case VTActionCodes::ECH_EraseCharacters:
@@ -391,6 +418,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             case VTActionCodes::VPA_VerticalLinePositionAbsolute:
                 success = _dispatch->VerticalLinePositionAbsolute(distance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
+                break;
+            case VTActionCodes::HPR_HorizontalPositionRelative:
+                success = _dispatch->HorizontalPositionRelative(distance);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
+                break;
+            case VTActionCodes::VPR_VerticalPositionRelative:
+                success = _dispatch->VerticalPositionRelative(distance);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
                 break;
             case VTActionCodes::CUP_CursorPosition:
             case VTActionCodes::HVP_HorizontalVerticalPosition:
@@ -677,7 +712,7 @@ bool OutputStateMachineEngine::ActionIgnore() noexcept
 // - parameter - identifier of the OSC action to perform
 // - string - OSC string we've collected. NOT null terminated.
 // Return Value:
-// - true if we handled the dsipatch.
+// - true if we handled the dispatch.
 bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const size_t parameter,
                                                  const std::wstring_view string)
@@ -1256,7 +1291,7 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t intermediate,
 }
 
 // Routine Description:
-// - Returns true if the engine should dispatch on the last charater of a string
+// - Returns true if the engine should dispatch on the last character of a string
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
@@ -1298,7 +1333,7 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 // - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
-// - value - recieves the int value of the char
+// - value - receives the int value of the char
 // Return Value:
 // - true iff the character is a hex character.
 bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
@@ -1361,7 +1396,7 @@ static constexpr bool _isHexNumber(const wchar_t wch) noexcept
 //          where <color> is one or two hex digits, upper or lower case.
 // Arguments:
 // - string - The string containing the color spec string to parse.
-// - rgb - recieves the color that we parsed
+// - rgb - receives the color that we parsed
 // Return Value:
 // - True if a color was successfully parsed
 bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
@@ -1469,8 +1504,8 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
 //          where <color> is two hex digits
 // Arguments:
 // - string - the Osc String to parse
-// - tableIndex - recieves the table index
-// - rgb - recieves the color that we parsed in the format: 0x00BBGGRR
+// - tableIndex - receives the table index
+// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
@@ -1544,7 +1579,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 //          where <color> is two hex digits
 // Arguments:
 // - string - the Osc String to parse
-// - rgb - recieves the color that we parsed in the format: 0x00BBGGRR
+// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
@@ -1568,7 +1603,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
-//  This is kept seperate from the input version, as there may be
+//  This is kept separate from the input version, as there may be
 //      codes that are supported in one direction but not the other.
 // Arguments:
 // - parameters - The parameters to parse

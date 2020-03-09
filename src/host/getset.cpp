@@ -1292,6 +1292,51 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
+// - A private API call for changing the screen mode between normal and reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Parameters:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return value:
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate error code.
+[[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode)
+{
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetScreenReversed(reverseMode);
+
+        if (g.pRender)
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return STATUS_SUCCESS;
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+}
+
+// Routine Description:
+// - A private API call for setting the ENABLE_WRAP_AT_EOL_OUTPUT mode.
+//     This controls whether the cursor moves to the beginning of the next row
+//     when it reaches the end of the current row.
+// Parameters:
+// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// Return value:
+// - STATUS_SUCCESS if handled successfully.
+[[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& outputMode = gci.GetActiveOutputBuffer().GetActiveBuffer().OutputMode;
+    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
 // - A private API call for making the cursor visible or not. Does not modify
 //      blinking state.
 // Parameters:
@@ -1312,7 +1357,14 @@ void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noe
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable)
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(!fEnable);
+
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
 }
 
 // Routine Description:
@@ -1345,6 +1397,35 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     }
 
     return Status;
+}
+
+// Routine Description:
+// - A private API call for performing a line feed, possibly preceded by carriage return.
+//    Moves the cursor down one line, and possibly also to the leftmost column.
+// Parameters:
+// - screenInfo - A pointer to the screen buffer that should perform the line feed.
+// - withReturn - Set to true if a carriage return should be performed as well.
+// Return value:
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
+[[nodiscard]] NTSTATUS DoSrvPrivateLineFeed(SCREEN_INFORMATION& screenInfo, const bool withReturn)
+{
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+
+    // We turn the cursor on before an operation that might scroll the viewport, otherwise
+    // that can result in an old copy of the cursor being left behind on the screen.
+    textBuffer.GetCursor().SetIsOn(true);
+
+    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
+    textBuffer.GetRowByOffset(cursorPosition.Y).GetCharRow().SetWrapForced(false);
+
+    cursorPosition.Y += 1;
+    if (withReturn)
+    {
+        cursorPosition.X = 0;
+    }
+
+    return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
 }
 
 // Routine Description:
@@ -1408,67 +1489,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 }
 
 // Routine Description:
-// - A private API call for moving the cursor vertically in the buffer. This is
-//      because the vertical cursor movements in VT are constrained by the
-//      scroll margins, while the absolute positioning is not.
-// Parameters:
-// - screenInfo - a reference to the screen buffer we should move the cursor for
-// - lines - The number of lines to move the cursor. Up is negative, down positive.
-// Return value:
-// - S_OK if handled successfully. Otherwise an appropriate HRESULT for failing to clamp.
-[[nodiscard]] HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
-{
-    auto& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
-    COORD clampedPos = { cursor.GetPosition().X, cursor.GetPosition().Y + lines };
-
-    // Make sure the cursor doesn't move outside the viewport.
-    screenInfo.GetViewport().Clamp(clampedPos);
-
-    // Make sure the cursor stays inside the margins
-    if (screenInfo.AreMarginsSet())
-    {
-        const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-
-        const auto cursorY = cursor.GetPosition().Y;
-
-        const auto lo = margins.Top;
-        const auto hi = margins.Bottom;
-
-        // See microsoft/terminal#2929 - If the cursor is _below_ the top
-        // margin, it should stay below the top margin. If it's _above_ the
-        // bottom, it should stay above the bottom. Cursor movements that stay
-        // outside the margins shouldn't necessarily be affected. For example,
-        // moving up while below the bottom margin shouldn't just jump straight
-        // to the bottom margin. See
-        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
-        // behavior.
-        const bool cursorBelowTop = cursorY >= lo;
-        const bool cursorAboveBottom = cursorY <= hi;
-
-        if (cursorBelowTop)
-        {
-            try
-            {
-                clampedPos.Y = std::max(clampedPos.Y, lo);
-            }
-            CATCH_RETURN();
-        }
-
-        if (cursorAboveBottom)
-        {
-            try
-            {
-                clampedPos.Y = std::min(clampedPos.Y, hi);
-            }
-            CATCH_RETURN();
-        }
-    }
-    cursor.SetPosition(clampedPos);
-
-    return S_OK;
-}
-
-// Routine Description:
 // - A private API call for swapping to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded.
@@ -1482,7 +1502,7 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 }
 
 // Routine Description:
-// - A private API call for swaping to the main screen buffer. From the
+// - A private API call for swapping to the main screen buffer. From the
 //     alternate buffer, returns to the main screen buffer. From the main
 //     screen buffer, does nothing. The alternate is discarded.
 // Parameters:
@@ -2061,7 +2081,7 @@ void DoSrvPrivateSetDefaultTabStops()
 
 // Routine Description:
 // - internal logic for adding or removing lines in the active screen buffer
-//   this also moves the cursor to the left margin, which is expected behaviour for IL and DL
+//   this also moves the cursor to the left margin, which is expected behavior for IL and DL
 // Parameters:
 // - count - the number of lines to modify
 // - insert - true if inserting lines, false if deleting lines
