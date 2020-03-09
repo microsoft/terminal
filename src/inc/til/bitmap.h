@@ -85,6 +85,94 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         const std::vector<bool>& _map;
     };
 
+    class const_runerator // Run Iterator. Runerator.
+    {
+    public:
+        const_runerator(const std::vector<bool>& values, til::size sz, size_t pos) :
+            _values(values),
+            _size(sz),
+            _pos(pos)
+        {
+            _calculateArea();
+        }
+
+        const_runerator& operator++()
+        {
+            _pos = _nextPos;
+            return (*this);
+        }
+
+        bool operator==(const const_runerator& other) const
+        {
+            return _pos == other._pos && _values == other._values;
+        }
+
+        bool operator!=(const const_runerator& other) const
+        {
+            return !(*this == other);
+        }
+
+        bool operator<(const const_runerator& other) const
+        {
+            return _pos < other._pos;
+        }
+
+        bool operator>(const const_runerator& other) const
+        {
+            return _pos > other._pos;
+        }
+
+        til::rectangle operator*() const
+        {
+            return _run;
+        }
+
+    private:
+        const std::vector<bool>& _values;
+        const til::size _size;
+        size_t _pos;
+        size_t _nextPos;
+        til::rectangle _run;
+
+        til::point _indexToPoint(size_t index)
+        {
+            return til::point{ (ptrdiff_t)index % _size.width(), (ptrdiff_t)index / _size.width() };
+        }
+
+        void _calculateArea()
+        {
+            const size_t end = (size_t)_size.area();
+
+            _nextPos = _pos;
+
+            while (_nextPos < end && !_values.at(_nextPos))
+            {
+                ++_nextPos;
+            }
+
+            if (_nextPos < end)
+            {
+                // pos is now at the first on bit.
+                const auto runStart = _indexToPoint(_nextPos);
+                const size_t rowEndIndex = (size_t)(runStart.y() * _size.width() + 1);
+
+                ptrdiff_t runLength = 0;
+
+                do
+                {
+                    ++_nextPos;
+                    ++runLength;
+                } while (_nextPos < end && _nextPos < rowEndIndex && _values.at(_nextPos));
+
+                _run = til::rectangle{ runStart, til::size{runLength, static_cast<ptrdiff_t>(1)} };
+            }
+            else
+            {
+                _run = til::rectangle{};
+            }
+        }
+    };
+
     class bitmap
     {
     public:

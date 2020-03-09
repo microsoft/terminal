@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+#include "til/bitmap.h"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

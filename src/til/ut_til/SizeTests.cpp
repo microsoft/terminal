@@ -170,16 +170,205 @@ class SizeTests
         }
     }
 
+    TEST_METHOD(Addition)
+    {
+        Log::Comment(L"0.) Addition of two things that should be in bounds.");
+        {
+            const til::size sz{ 5,10 };
+            const til::size sz2{ 23, 47 };
+
+            const til::size expected{ sz.width() + sz2.width(), sz.height() + sz2.height() };
+
+            VERIFY_ARE_EQUAL(expected, sz + sz2);
+        }
+
+        Log::Comment(L"1.) Addition results in value that is too large (width).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::size sz2{ 1, 1 };
+
+            auto fn = [&]()
+            {
+                sz + sz2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Addition results in value that is too large (height).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::size sz2{ 1, 1 };
+
+            auto fn = [&]()
+            {
+                sz + sz2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(Subtraction)
+    {
+        Log::Comment(L"0.) Subtraction of two things that should be in bounds.");
+        {
+            const til::size sz{ 5,10 };
+            const til::size sz2{ 23, 47 };
+
+            const til::size expected{ sz.width() - sz2.width(), sz.height() - sz2.height() };
+
+            VERIFY_ARE_EQUAL(expected, sz - sz2);
+        }
+
+        Log::Comment(L"1.) Subtraction results in value that is too small (width).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::size sz2{ -2, -2 };
+
+            auto fn = [&]()
+            {
+                sz2 - sz;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Subtraction results in value that is too small (height).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::size sz2{ -2, -2 };
+
+            auto fn = [&]()
+            {
+                sz2 - sz;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(Multiplication)
+    {
+        Log::Comment(L"0.) Multiplication of two things that should be in bounds.");
+        {
+            const til::size sz{ 5,10 };
+            const til::size sz2{ 23, 47 };
+
+            const til::size expected{ sz.width() * sz2.width(), sz.height() * sz2.height() };
+
+            VERIFY_ARE_EQUAL(expected, sz * sz2);
+        }
+
+        Log::Comment(L"1.) Multiplication results in value that is too large (width).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::size sz2{ 10, 10 };
+
+            auto fn = [&]()
+            {
+                sz * sz2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Multiplication results in value that is too large (height).");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ static_cast<ptrdiff_t>(0), bigSize };
+            const til::size sz2{ 10, 10 };
+
+            auto fn = [&]()
+            {
+                sz * sz2;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(Division)
+    {
+        Log::Comment(L"0.) Division of two things that should be in bounds.");
+        {
+            const til::size sz{ 555, 510 };
+            const til::size sz2{ 23, 47 };
+
+            const til::size expected{ sz.width() / sz2.width(), sz.height() / sz2.height() };
+
+            VERIFY_ARE_EQUAL(expected, sz / sz2);
+        }
+
+        Log::Comment(L"1.) Division by zero");
+        {
+            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            const til::size sz2{ 1, 1 };
+
+            auto fn = [&]()
+            {
+                sz2 / sz;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(DivisionRoundingUp)
+    {
+        Log::Comment(L"1.) Division rounding up with positive result.");
+        {
+            const til::size sz{ 10, 5 };
+            const til::size divisor{ 3, 2 };
+
+            // 10 / 3 is 3.333, rounded up is 4.
+            // 5 / 2 is 2.5, rounded up is 3.
+            const til::size expected{ 4, 3 };
+
+            VERIFY_ARE_EQUAL(expected, sz.divide_ceil(divisor));
+        }
+
+        Log::Comment(L"2.) Division rounding larger(up) with negative result.");
+        {
+            const til::size sz{ -10, -5 };
+            const til::size divisor{ 3, 2 };
+
+            // -10 / 3 is -3.333, rounded up is -4.
+            // -5 / 2 is -2.5, rounded up is -3.
+            const til::size expected{ -4, -3 };
+
+            VERIFY_ARE_EQUAL(expected, sz.divide_ceil(divisor));
+        }
+    }
+
     TEST_METHOD(Width)
     {
         const til::size sz{ 5,10 };
         VERIFY_ARE_EQUAL(sz._width, sz.width());
     }
 
+    TEST_METHOD(WidthCast)
+    {
+        const til::size sz{ 5,10 };
+        VERIFY_ARE_EQUAL(static_cast<SHORT>(sz._width), sz.width<SHORT>());
+    }
+
     TEST_METHOD(Height)
     {
         const til::size sz{ 5,10 };
         VERIFY_ARE_EQUAL(sz._height, sz.height());
+    }
+
+    TEST_METHOD(HeightCast)
+    {
+        const til::size sz{ 5,10 };
+        VERIFY_ARE_EQUAL(static_cast<SHORT>(sz._height), sz.height<SHORT>());
     }
 
     TEST_METHOD(Area)

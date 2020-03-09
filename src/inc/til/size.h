@@ -175,17 +175,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        size operator*(const float& other) const
-        {
-            ptrdiff_t w;
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(width()) * other).AssignIfValid(&w));
-
-            ptrdiff_t h;
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(height()) * other).AssignIfValid(&h));
-
-            return size{ w, h };
-        }
-
         ptrdiff_t area() const 
         {
             ptrdiff_t result;
