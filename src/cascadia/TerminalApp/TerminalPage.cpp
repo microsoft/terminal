@@ -627,8 +627,8 @@ namespace winrt::TerminalApp::implementation
         {
             StringMap envMap{ };            
             envMap.Insert(L"WT_DEFAULTS", _settings->GetDefaultSettingsPath());
-            envMap.Insert(L"WT_PROFILE", _settings->GetSettingsPath());
-            envMap.Insert(L"WSLENV", L"WT_DEFAULTS/p:WT_PROFILE/p");
+            envMap.Insert(L"WT_PROFILES", _settings->GetSettingsPath());
+            envMap.Insert(L"WSLENV", L"WT_DEFAULTS/p:WT_PROFILES/p");
 
             auto conhostConn = TerminalConnection::ConptyConnection(
                 settings.Commandline(),
