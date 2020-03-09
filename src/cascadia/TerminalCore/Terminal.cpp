@@ -284,6 +284,27 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     return translated && manuallyHandled;
 }
 
+// Method Description:
+// - Send this particular mouse event to the terminal. The terminal will translate
+//   the button and the modifiers pressed into the appropriate VT sequence for that
+//   mouse event. If we do translate the key, we'll return true. In that case, the
+//   event should NOT be processed any further. If we return false, the event
+//   was NOT translated, and we should instead use the event normally
+// Arguments:
+// - viewportPos: the position of the mouse event relative to the viewport origin.
+// - uiButton: the WM mouse button event code
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+// - wheelDelta: the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
+// Return Value:
+// - true if we translated the key event, and it should not be processed any further.
+// - false if we did not translate the key, and it should be processed into a character.
+bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
+{
+    const COORD bufferPos = _ConvertToBufferCell(viewportPos);
+
+    return _terminalInput->HandleMouse(bufferPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+}
+
 bool Terminal::SendCharEvent(const wchar_t ch)
 {
     return _terminalInput->HandleChar(ch);

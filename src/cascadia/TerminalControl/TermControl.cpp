@@ -813,6 +813,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Send this particular mouse event to the terminal.
+    //   See Terminal::SendMouseEvent for more information.
+    // Arguments:
+    // - point: the PointerPoint object representing a mouse event from our XAML input handler
+    // - goingDown: true, if the button was pressed. False, if it was released.
+    bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point, bool goingDown)
+    {
+        const auto props = point.Properties();
+
+        // Get the terminal position relative to the viewport
+        const auto terminalPosition = _GetTerminalPosition(point.Position());
+
+        // Which mouse buttons were pressed
+        unsigned int uiButton{};
+
+        if (props.IsLeftButtonPressed())
+        {
+            uiButton = goingDown ? WM_LBUTTONDOWN : WM_LBUTTONUP;
+        }
+        else if (props.IsMiddleButtonPressed())
+        {
+            uiButton = goingDown ? WM_MBUTTONDOWN : WM_MBUTTONUP;
+        }
+        else if (props.IsRightButtonPressed())
+        {
+            uiButton = goingDown ? WM_RBUTTONDOWN : WM_RBUTTONUP;
+        }
+
+        // Which modifier keys are pressed
+        const auto modifiers = _GetPressedModifierKeys();
+
+        // Mouse wheel data
+        const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
+
+        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
+    }
+
+    // Method Description:
     // - handle a mouse click event. Begin selection process.
     // Arguments:
     // - sender: the XAML element responding to the pointer input
@@ -846,6 +884,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+            if (_TrySendMouseEvent(point, true))
+            {
+                args.Handled(true);
+                return;
+            }
 
             if (point.Properties().IsLeftButtonPressed())
             {
@@ -929,6 +973,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
+            if (_TrySendMouseEvent(point, true))
+            {
+                args.Handled(true);
+                return;
+            }
+
             if (point.Properties().IsLeftButtonPressed())
             {
                 _clickDrag = true;
@@ -1015,6 +1065,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
+            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+            // macro directly with a VirtualKeyModifiers
+            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+            if (_TrySendMouseEvent(point, true))
+            {
+                args.Handled(true);
+                return;
+            }
+
             // Only a left click release when copy on select is active should perform a copy.
             // Right clicks and middle clicks should not need to do anything when released.
             if (_terminal->IsCopyOnSelectActive() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)

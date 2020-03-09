@@ -211,6 +211,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point, bool goingDown);
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
