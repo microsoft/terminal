@@ -115,7 +115,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             for (auto item: _environment)
             {
                 environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());
-                //item.Key().c_str() // to wstring
             }
 
             auto wslEnv = environment[L"WSLENV"]; // We always want to load something, even if it's blank.
