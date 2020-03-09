@@ -430,30 +430,52 @@ class SizeTests
             VERIFY_ARE_EQUAL(10, val.cy);
         }
 
-        Log::Comment(L"1.) Overflow on width.");
+        Log::Comment(L"1.) Fit max width into SIZE (may overflow).");
         {
             constexpr ptrdiff_t width = std::numeric_limits<ptrdiff_t>().max();
             const ptrdiff_t height = 10;
             const til::size sz{ width, height };
 
-            auto fn = [&]() {
-                SIZE val = sz;
-            };
+            // On some platforms, ptrdiff_t will fit inside cx/cy
+            const bool overflowExpected = width > std::numeric_limits<decltype(SIZE::cx)>().max();
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            if (overflowExpected)
+            {
+                auto fn = [&]() {
+                    SIZE val = sz;
+                };
+
+                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            }
+            else
+            {
+                SIZE val = sz;
+                VERIFY_ARE_EQUAL(width, val.cx);
+            }
         }
 
-        Log::Comment(L"2.) Overflow on height.");
+        Log::Comment(L"2.) Fit max height into SIZE (may overflow).");
         {
             constexpr ptrdiff_t height = std::numeric_limits<ptrdiff_t>().max();
             const ptrdiff_t width = 10;
             const til::size sz{ width, height };
 
-            auto fn = [&]() {
-                SIZE val = sz;
-            };
+            // On some platforms, ptrdiff_t will fit inside cx/cy
+            const bool overflowExpected = height > std::numeric_limits<decltype(SIZE::cy)>().max();
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            if (overflowExpected)
+            {
+                auto fn = [&]() {
+                    SIZE val = sz;
+                };
+
+                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            }
+            else
+            {
+                SIZE val = sz;
+                VERIFY_ARE_EQUAL(height, val.cy);
+            }
         }
     }
 
