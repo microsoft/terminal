@@ -332,8 +332,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // default frame.
     const auto originalTop = params->rgrc[0].top;
 
-    const auto originalSize = params->rgrc[0];
-
     // apply the default frame
     auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
     if (ret != 0)
@@ -349,8 +347,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     }
 
     auto newTop = originalTop;
-    auto newSize = params->rgrc[0];
-    newSize.top = newTop;
 
     // WM_NCCALCSIZE is called before WM_SIZE
     _UpdateMaximizedState();
@@ -363,69 +359,11 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // then the window is clipped to the monitor so that the resize handle
         // do not appear because you don't need them (because you can't resize
         // a window when it's maximized unless you restore it).
-        newSize.top += _GetResizeHandleHeight();
-        // newTop += _GetResizeHandleHeight();
+        newTop += _GetResizeHandleHeight();
     }
 
-    // // only modify the top of the frame to remove the title bar
-    // params->rgrc[0].top = newTop;
-
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONULL);
-    if (hMon && (_isMaximized || _fullscreen))
-    {
-        MONITORINFO monInfo{ 0 };
-        monInfo.cbSize = sizeof(MONITORINFO);
-        auto res = GetMonitorInfo(hMon, &monInfo);
-        res;
-
-        // SHAppBarMessage(ABM_GETTASKBARPOS, &data);
-
-        APPBARDATA autohide{ 0 };
-        autohide.cbSize = sizeof(autohide);
-        UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
-
-        if (WI_IsFlagSet(state, ABS_AUTOHIDE))
-        {
-            auto hasAutohideTaksbar = [&monInfo](const UINT edge) -> bool {
-                APPBARDATA data{ 0 };
-                data.cbSize = sizeof(data);
-                data.uEdge = edge;
-                data.rc = monInfo.rcMonitor;
-                HWND hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
-                return hTaskbar != nullptr;
-            };
-            const bool onTop = hasAutohideTaksbar(ABE_TOP);
-            const bool onBottom = hasAutohideTaksbar(ABE_BOTTOM);
-            const bool onLeft = hasAutohideTaksbar(ABE_LEFT);
-            const bool onRight = hasAutohideTaksbar(ABE_RIGHT);
-
-            if (onTop)
-            {
-                newSize.top += 2;
-                // newBottom -= 2;
-            }
-            if (onBottom)
-            {
-                newSize.bottom -= 2;
-            }
-            if (onLeft)
-            {
-                newSize.left += 2;
-            }
-            if (onRight)
-            {
-                newSize.right -= 2;
-            }
-        }
-    }
-
-    auto a = 0;
-    a++;
-    a;
-    newSize;
-    newTop;
-    params->rgrc[0] = newSize;
-    // params->rgrc[0].top = newTop;
+    // only modify the top of the frame to remove the title bar
+    params->rgrc[0].top = newTop;
 
     return 0;
 }
