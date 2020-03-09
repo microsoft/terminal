@@ -12,6 +12,13 @@ namespace Microsoft.Terminal.Settings
         Hidden
     };
 
+    enum TextAntialiasingMode
+    {
+        Grayscale = 0,
+        Cleartype,
+        Aliased
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -19,6 +26,8 @@ namespace Microsoft.Terminal.Settings
     //      for specifically the control.
     interface IControlSettings requires Microsoft.Terminal.Settings.ICoreSettings
     {
+        String ProfileName;
+
         Boolean UseAcrylic;
         Double TintOpacity;
         ScrollbarState ScrollState;
@@ -41,5 +50,7 @@ namespace Microsoft.Terminal.Settings
 
         UInt32 SelectionBackground;
         Boolean RetroTerminalEffect;
+
+        TextAntialiasingMode AntialiasingMode;
     };
 }

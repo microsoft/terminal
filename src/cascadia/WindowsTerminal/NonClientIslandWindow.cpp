@@ -7,7 +7,7 @@
 #include "NonClientIslandWindow.h"
 #include "../types/inc/ThemeUtils.h"
 #include "../types/inc/utils.hpp"
-#include <winrt/Windows.UI.Popups.h>
+#include "TerminalThemeHelpers.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -480,12 +480,20 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     switch (message)
     {
+    case WM_DISPLAYCHANGE:
+        // GH#4166: When the DPI of the monitor changes out from underneath us,
+        // resize our drag bar, to reflect its newly scaled size.
+        _UpdateIslandRegion();
+        return 0;
     case WM_NCCALCSIZE:
         return _OnNcCalcSize(wParam, lParam);
     case WM_NCHITTEST:
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
+    case WM_ACTIVATE:
+        // If we do this every time we're activated, it should be close enough to correct.
+        TerminalTrySetDarkTheme(_window.get());
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);

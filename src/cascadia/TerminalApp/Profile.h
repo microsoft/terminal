@@ -123,6 +123,9 @@ private:
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
+    static winrt::Microsoft::Terminal::Settings::TextAntialiasingMode ParseTextAntialiasingMode(const std::wstring& antialiasingMode);
+    static std::wstring_view SerializeTextAntialiasingMode(const winrt::Microsoft::Terminal::Settings::TextAntialiasingMode antialiasingMode);
+
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 
     static bool _ConvertJsonToBool(const Json::Value& json);
@@ -165,6 +168,8 @@ private:
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;
+
+    winrt::Microsoft::Terminal::Settings::TextAntialiasingMode _antialiasingMode;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
