@@ -398,16 +398,19 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
+            //
+            // Note to future code archeologists:
+            // This doesn't seem to work for fullscreen on the primary display.
+            // However, testing a bunch of other apps with fullscreen modes
+            // and an auto-hiding taskbar has shown that _none_ of them
+            // reveal the taskbar from fullscreen mode. This includes Edge,
+            // Firefox, Chrom, Sublime Text, Powerpoint - none seemed to
+            // support this.
+            //
+            // This does however work fine for maximized.
             if (onTop)
             {
-                // Peculiarly, when we're fullscreen, this doesn't seem to work.
-                // However, testing a bunch of other apps with fullscreen modes
-                // and a top auto-hiding taskbar has shown that _none_ of them
-                // reveal the taskbar from fullscreen mode. This includes Edge,
-                // Firefox, Chrom, Sublime Text, Powerpoint - none seemed to
-                // support this.
-                //
-                // This does however work fine for maximized.
+                // Peculiarly, when we're fullscreen,
                 newSize.top += AutohideTaskbarSize;
             }
             if (onBottom)
