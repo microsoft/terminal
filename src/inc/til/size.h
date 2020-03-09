@@ -17,6 +17,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // On 64-bit processors, int and ptrdiff_t are different fundamental types.
+        // On 32-bit processors, they're the same which makes this a double-definition
+        // with the `ptrdiff_t` one below.
 #if defined(_M_AMD64) || defined(_M_ARM64)
         constexpr size(int width, int height) noexcept :
             size(static_cast<ptrdiff_t>(width), static_cast<ptrdiff_t>(height))
