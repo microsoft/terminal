@@ -304,8 +304,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
                 incomingText);
 
-            // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
-            // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
+            // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
+            // will be sent straight through to the terminal.
             if (!_inComposition)
             {
                 _SendAndClearText();
@@ -313,7 +313,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else
             {
                 Canvas().Visibility(Visibility::Visible);
-                const auto text = _inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1);
+                const auto text = _inputBuffer.substr(_activeTextStart);
                 TextBlock().Text(text);
             }
 
@@ -338,7 +338,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_SendAndClearText()
     {
-        const auto text = _inputBuffer.substr(_activeTextStart, _inputBuffer.length() - _activeTextStart);
+        const auto text = _inputBuffer.substr(_activeTextStart);
 
         _compositionCompletedHandlers(text);
 
