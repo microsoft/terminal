@@ -1097,6 +1097,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             CATCH_LOG();
         }
+        else
+        {
+            _settings.UseAcrylic(true);
+            _InitializeBackgroundBrush();
+        }
     }
 
     // Method Description:
