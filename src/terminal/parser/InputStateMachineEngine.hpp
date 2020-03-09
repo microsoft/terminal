@@ -168,8 +168,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
 
+        void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
+
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
+        std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
 
@@ -180,7 +183,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
-        DWORD _GetSGRModifier(const size_t parameter) noexcept;
 
         bool _UpdateSGRMouseButtonState(const wchar_t wch,
                                         const std::basic_string_view<size_t> parameters,

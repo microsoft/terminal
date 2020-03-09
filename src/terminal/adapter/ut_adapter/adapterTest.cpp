@@ -214,6 +214,11 @@ public:
         return _setConsoleTextAttributeResult;
     }
 
+    bool PrivateIsVtInputEnabled() const override
+    {
+        return true;
+    }
+
     bool PrivateSetLegacyAttributes(const WORD attr, const bool foreground, const bool background, const bool meta) override
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
