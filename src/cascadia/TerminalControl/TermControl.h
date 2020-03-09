@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
+        bool CopySelectionToClipboard(bool collapseText);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -80,6 +80,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget SwapChainChanged();
 
         void CreateSearchBoxControl();
+
+        bool OnF7Pressed();
 
         ~TermControl();
 

@@ -464,9 +464,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            auto lock = _terminal->LockForWriting();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -479,10 +482,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            _terminal->LockConsole();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockConsole();
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -654,6 +659,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.Handled(handled);
     }
 
+    // Method Description:
+    // - Manually generate an F7 event into the key bindings or terminal.
+    //   This is required as part of GH#638.
+    // Return value:
+    // - Whether F7 was handled.
+    bool TermControl::OnF7Pressed()
+    {
+        bool handled{ false };
+        auto bindings{ _settings.KeyBindings() };
+
+        const auto modifiers{ _GetPressedModifierKeys() };
+
+        if (bindings)
+        {
+            handled = bindings.TryKeyChord({
+                modifiers.IsCtrlPressed(),
+                modifiers.IsAltPressed(),
+                modifiers.IsShiftPressed(),
+                VK_F7,
+            });
+        }
+
+        if (!handled)
+        {
+            // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
+            (void)_TrySendKeyEvent(VK_F7, 0, modifiers);
+            handled = true;
+        }
+
+        return handled;
+    }
+
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
@@ -739,6 +776,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 return true;
             }
+        }
+
+        if (vkey == VK_ESCAPE ||
+            vkey == VK_RETURN)
+        {
+            TSFInputControl().ClearBuffer();
         }
 
         // If the terminal translated the key, mark the event as handled.
@@ -860,7 +903,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -985,7 +1028,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // If the terminal was unfocused AND a click-drag selection happened, copy to clipboard.
                 if (!_unfocusedClickPos || (_unfocusedClickPos && _isClickDragSelection))
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -1618,9 +1661,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - trimTrailingWhitespace: enable removing any whitespace from copied selection
-    //    and get text to appear on separate lines.
-    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    // - collapseText: collapse all of the text to one line
+    bool TermControl::CopySelectionToClipboard(bool collapseText)
     {
         // no selection --> nothing to copy
         if (_terminal == nullptr || !_terminal->IsSelectionActive())
@@ -1628,7 +1670,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
 
         // convert text: vector<string> --> string
         std::wstring textData;
@@ -2032,6 +2074,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
+        // If we haven't initialized yet, just quick return.
+        if (!_terminal)
+        {
+            return;
+        }
         const COORD cursorPos = _terminal->GetCursorPosition();
         Windows::Foundation::Point p = { gsl::narrow_cast<float>(cursorPos.X), gsl::narrow_cast<float>(cursorPos.Y) };
         eventArgs.CurrentPosition(p);
