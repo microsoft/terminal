@@ -236,12 +236,12 @@ namespace WEX::TestExecution
     class VerifyCompareTraits<::til::size, ::til::size>
     {
     public:
-        static bool AreEqual(const ::til::size& expected, const ::til::size& actual)
+        static bool AreEqual(const ::til::size& expected, const ::til::size& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::size& expected, const ::til::size& actual)
+        static bool AreSame(const ::til::size& expected, const ::til::size& actual) noexcept
         {
             return &expected == &actual;
         }
@@ -250,7 +250,7 @@ namespace WEX::TestExecution
 
         static bool IsGreaterThan(const ::til::size& expectedGreater, const ::til::size& expectedLess) = delete;
 
-        static bool IsNull(const ::til::size& object)
+        static bool IsNull(const ::til::size& object) noexcept
         {
             return object == til::size{};
         }
