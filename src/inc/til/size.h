@@ -115,7 +115,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ptrdiff_t adjHeight = 0;
 
             // Check for width remainder, anything not 0.
-            if (_width % other._width)
+            // If we multiply the floored number with the other, it will equal
+            // the old width if there was no remainder.
+            if (other._width * floor._width != _width)
             {
                 // If there was any remainder,
                 // Grow the magnitude by 1 in the
@@ -131,7 +133,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             // Check for height remainder, anything not 0.
-            if (_height % other._height)
+            // If we multiply the floored number with the other, it will equal
+            // the old width if there was no remainder.
+            if (other._height * floor._height != _height)
             {
                 // If there was any remainder,
                 // Grow the magnitude by 1 in the
