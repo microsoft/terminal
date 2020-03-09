@@ -19,6 +19,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+static constexpr int AutohideTaskbarSize = 2;
+
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
     _backgroundBrushColor{ RGB(0, 0, 0) },
@@ -331,9 +333,8 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // Store the original top before the default window proc applies the
     // default frame.
     const auto originalTop = params->rgrc[0].top;
-    const auto originalBottom = params->rgrc[0].bottom;
-    const auto originalLeft = params->rgrc[0].left;
-    const auto originalRight = params->rgrc[0].right;
+
+    const auto originalSize = params->rgrc[0];
 
     // apply the default frame
     auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
@@ -342,22 +343,17 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return ret;
     }
 
-    auto newTop = originalTop;
-    auto newBottom = originalBottom;
-    auto newLeft = originalLeft;
-    auto newRight = originalRight;
-
-    // When we're fullscreen, we have the WS_POPUP size so we don't have to
-    // worry about borders so the default frame will be fine.
-    if (_fullscreen)
-    {
-        return 0;
-    }
+    auto newSize = params->rgrc[0];
+    // Re-apply the original top from before the size of the default frame was applied.
+    newSize.top = originalTop;
 
     // WM_NCCALCSIZE is called before WM_SIZE
     _UpdateMaximizedState();
 
-    if (_isMaximized)
+    // We don't need this correction when we're fullscreen. We will have the
+    // WS_POPUP size, so we don't have to worry about borders, and the default
+    // frame will be fine.
+    if (_isMaximized && !_fullscreen)
     {
         // When a window is maximized, its size is actually a little bit more
         // than the monitor's work area. The window is positioned and sized in
@@ -365,25 +361,27 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // then the window is clipped to the monitor so that the resize handle
         // do not appear because you don't need them (because you can't resize
         // a window when it's maximized unless you restore it).
-        newTop += _GetResizeHandleHeight();
+        newSize.top += _GetResizeHandleHeight();
     }
 
+    // GH#1438 - Attempt to detect if there's an autohide taskbar, and if there
+    // is, reduce our size a bit on the side with the taskbar, so the user can
+    // still mouse-over the taskbar to reveal it.
     HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONULL);
-    if (hMon)
+    if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };
         monInfo.cbSize = sizeof(MONITORINFO);
-        auto res = GetMonitorInfo(hMon, &monInfo);
-        res;
+        GetMonitorInfo(hMon, &monInfo);
 
-        // SHAppBarMessage(ABM_GETTASKBARPOS, &data);
-
+        // First, check if we have an auto-hide taskbar at all:
         APPBARDATA autohide{ 0 };
         autohide.cbSize = sizeof(autohide);
         UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
-
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
+            // This helper can be used to determine if there's a auto-hide
+            // taskbar on the given edge of the monitor we're currently on.
             auto hasAutohideTaksbar = [&monInfo](const UINT edge) -> bool {
                 APPBARDATA data{ 0 };
                 data.cbSize = sizeof(data);
@@ -392,36 +390,42 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
                 HWND hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
                 return hTaskbar != nullptr;
             };
+
             const bool onTop = hasAutohideTaksbar(ABE_TOP);
             const bool onBottom = hasAutohideTaksbar(ABE_BOTTOM);
             const bool onLeft = hasAutohideTaksbar(ABE_LEFT);
             const bool onRight = hasAutohideTaksbar(ABE_RIGHT);
 
-            if (onTop && (_isMaximized || _fullscreen))
+            // If there's a taskbar on any side of the monitor, reduce our size
+            // a little bit on that edge.
+            if (onTop)
             {
-                newTop += 2;
-                // newBottom -= 2;
+                // Peculiarly, when we're fullscreen, this doesn't seem to work.
+                // However, testing a bunch of other apps with fullscreen modes
+                // and a top auto-hiding taskbar has shown that _none_ of them
+                // reveal the taskbar from fullscreen mode. This includes Edge,
+                // Firefox, Chrom, Sublime Text, Powerpoint - none seemed to
+                // support this.
+                //
+                // This does however work fine for maximized.
+                newSize.top += AutohideTaskbarSize;
             }
             if (onBottom)
             {
-                newBottom -= 2;
+                newSize.bottom -= AutohideTaskbarSize;
             }
             if (onLeft)
             {
-                newLeft += 2;
+                newSize.left += AutohideTaskbarSize;
             }
             if (onRight)
             {
-                newRight -= 2;
+                newSize.right -= AutohideTaskbarSize;
             }
         }
     }
 
-    // only modify the top of the frame to remove the title bar
-    params->rgrc[0].top = newTop;
-    params->rgrc[0].bottom = newBottom;
-    params->rgrc[0].left = newLeft;
-    params->rgrc[0].right = newRight;
+    params->rgrc[0] = newSize;
 
     return 0;
 }
