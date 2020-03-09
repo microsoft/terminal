@@ -850,7 +850,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
     {
         try
         {
-            return _sizeTarget * _scale;
+            // TODO: fix scale
+            /*return _sizeTarget * _scale;*/
+            return _sizeTarget; 
         }
         CATCH_LOG();
 
@@ -1689,7 +1691,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<SMALL_RECT> DxEngine::GetDirtyArea()
+[[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
     return { til::rectangle{} };
 }

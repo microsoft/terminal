@@ -16,7 +16,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - The character dimensions of the current dirty area of the frame.
 //      This is an Inclusive rect.
-std::vector<SMALL_RECT> GdiEngine::GetDirtyArea()
+std::vector<til::rectangle> GdiEngine::GetDirtyArea()
 {
     RECT rc = _psInvalidData.rcPaint;
 

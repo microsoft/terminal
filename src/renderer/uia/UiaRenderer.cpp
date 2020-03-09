@@ -403,7 +403,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<SMALL_RECT> UiaEngine::GetDirtyArea() noexcept
+[[nodiscard]] std::vector<til::rectangle> UiaEngine::GetDirtyArea() noexcept
 {
     return { Viewport::Empty().ToInclusive() };
 }
