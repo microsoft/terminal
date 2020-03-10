@@ -21,6 +21,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -824,6 +825,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
 
+        InputPane::GetForCurrentView().TryShow();
+
         if (!_focused)
         {
             Focus(FocusState::Pointer);
@@ -1305,6 +1308,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _focused = true;
+
+        InputPane::GetForCurrentView().TryShow();
 
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
