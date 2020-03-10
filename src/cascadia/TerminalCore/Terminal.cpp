@@ -173,6 +173,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         return S_FALSE;
     }
+    const auto dx = viewportSize.X - oldDimensions.X;
+    const auto dy = viewportSize.Y - oldDimensions.Y;
+    dx;
+    dy;
 
     const auto oldTop = _mutableViewport.Top();
 
@@ -247,6 +251,15 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     short proposedTop = std::max(proposedTopFromLastLine,
                                  proposedTopFromScrollback);
+
+    if (dx < 0)
+    {
+        proposedTop = proposedTopFromLastLine;
+    }
+    else if (dx > 0)
+    {
+        proposedTop = proposedTopFromScrollback;
+    }
 
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
