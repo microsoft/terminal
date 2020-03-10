@@ -891,3 +891,16 @@ bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
                                               destinationOrigin,
                                               standardFillAttrs));
 }
+
+// Routine Description:
+// - Checks if the InputBuffer is willing to accept VT Input directly
+//   PrivateIsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - <none>
+// Return value:
+// - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
+bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
+{
+    return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
+}
