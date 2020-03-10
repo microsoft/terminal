@@ -243,6 +243,10 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _needToDisableCursor = true;
             hr = _CursorHome();
         }
+        else if (_resized && _resizeQuirk)
+        {
+            hr = _CursorPosition(coord);
+        }
         else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, at the start of the line.

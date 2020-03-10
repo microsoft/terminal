@@ -1909,18 +1909,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
     {
-        // If we found the old row that the caller was interested in, set the
-        // out value of that parameter to the cursor's current Y position (the
-        // new location of that row in the buffer).
-        if (oldViewportTop && !foundOldRow)
-        {
-            if (iOldRow >= *oldViewportTop)
-            {
-                *oldViewportTop = newCursor.GetPosition().Y;
-                foundOldRow = true;
-            }
-        }
-
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const CharRow& charRow = row.GetCharRow();
@@ -1976,6 +1964,19 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
             CATCH_RETURN();
         }
+
+        // If we found the old row that the caller was interested in, set the
+        // out value of that parameter to the cursor's current Y position (the
+        // new location of that row in the buffer).
+        if (oldViewportTop && !foundOldRow)
+        {
+            if (iOldRow >= *oldViewportTop)
+            {
+                *oldViewportTop = newCursor.GetPosition().Y;
+                foundOldRow = true;
+            }
+        }
+
         if (SUCCEEDED(hr))
         {
             // If we didn't have a full row to copy, insert a new
