@@ -464,9 +464,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            auto lock = _terminal->LockForWriting();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -479,10 +482,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            _terminal->LockConsole();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockConsole();
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -898,7 +903,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -1023,7 +1028,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // If the terminal was unfocused AND a click-drag selection happened, copy to clipboard.
                 if (!_unfocusedClickPos || (_unfocusedClickPos && _isClickDragSelection))
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -1656,9 +1661,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - trimTrailingWhitespace: enable removing any whitespace from copied selection
-    //    and get text to appear on separate lines.
-    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    // - collapseText: collapse all of the text to one line
+    bool TermControl::CopySelectionToClipboard(bool collapseText)
     {
         // no selection --> nothing to copy
         if (_terminal == nullptr || !_terminal->IsSelectionActive())
@@ -1666,7 +1670,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
 
         // convert text: vector<string> --> string
         std::wstring textData;
@@ -2070,6 +2074,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
+        // If we haven't initialized yet, just quick return.
+        if (!_terminal)
+        {
+            return;
+        }
         const COORD cursorPos = _terminal->GetCursorPosition();
         Windows::Foundation::Point p = { gsl::narrow_cast<float>(cursorPos.X), gsl::narrow_cast<float>(cursorPos.Y) };
         eventArgs.CurrentPosition(p);

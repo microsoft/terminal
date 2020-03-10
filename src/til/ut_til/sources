@@ -14,6 +14,7 @@ DLLDEF                  =
 
 SOURCES = \
     $(SOURCES) \
+    ColorTests.cpp \
     SomeTests.cpp \
     DefaultResource.rc \
 

@@ -52,7 +52,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Title { get; };
 
-        Boolean CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+        Boolean CopySelectionToClipboard(Boolean collapseText);
         void PasteTextFromClipboard();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
