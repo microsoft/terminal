@@ -18,7 +18,6 @@
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
-//using namespace winrt::Windows::Foundation::Collections;
 
 // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
