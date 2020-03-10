@@ -300,9 +300,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
 // - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
 {
-    const COORD bufferPos = _ConvertToBufferCell(viewportPos);
-
-    return _terminalInput->HandleMouse(bufferPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
 }
 
 bool Terminal::SendCharEvent(const wchar_t ch)

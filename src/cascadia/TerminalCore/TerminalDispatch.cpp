@@ -221,10 +221,6 @@ CATCH_LOG_RETURN_FALSE()
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.SetKeypadMode(fApplicationMode);
     return false;
 }
@@ -236,10 +232,6 @@ bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.SetCursorKeysMode(applicationMode);
     return false;
 }
@@ -252,10 +244,6 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.EnableVT200MouseMode(enabled);
     return false;
 }
@@ -269,10 +257,6 @@ bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.EnableUTF8ExtendedMouseMode(enabled);
     return false;
 }
@@ -286,10 +270,6 @@ bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.EnableSGRExtendedMouseMode(enabled);
     return false;
 }
@@ -302,10 +282,6 @@ bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.EnableButtonEventMouseMode(enabled);
     return false;
 }
@@ -319,10 +295,6 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.EnableAnyEventMouseMode(enabled);
     return false;
 }
@@ -336,10 +308,6 @@ bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Replace with proper _pConApi
-    //   call below when ConPty has been properly updated.
     _terminalApi.EnableAlternateScrollMode(enabled);
     return false;
 }

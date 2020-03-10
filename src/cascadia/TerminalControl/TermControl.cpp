@@ -22,6 +22,7 @@ using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::ViewManagement;
+using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -818,34 +819,55 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
     // - goingDown: true, if the button was pressed. False, if it was released.
+    //              Mouse moved events must only be encoded as the button being pressed, not released.
     bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point, bool goingDown)
     {
+        // If the user is holding down Shift, suppress mouse events
+        // TODO GH#4875: disable/customize this functionality
+        const auto modifiers = _GetPressedModifierKeys();
+        if (modifiers.IsShiftPressed())
+        {
+            return false;
+        }
+
         const auto props = point.Properties();
 
         // Get the terminal position relative to the viewport
         const auto terminalPosition = _GetTerminalPosition(point.Position());
 
-        // Which mouse buttons were pressed
+        // Which mouse button changed state (and how)
         unsigned int uiButton{};
-
-        if (props.IsLeftButtonPressed())
+        switch (props.PointerUpdateKind())
         {
-            uiButton = goingDown ? WM_LBUTTONDOWN : WM_LBUTTONUP;
+        case PointerUpdateKind::LeftButtonPressed:
+            uiButton = WM_LBUTTONDOWN;
+            break;
+        case PointerUpdateKind::LeftButtonReleased:
+            uiButton = WM_LBUTTONUP;
+            break;
+        case PointerUpdateKind::MiddleButtonPressed:
+            uiButton = WM_MBUTTONDOWN;
+            break;
+        case PointerUpdateKind::MiddleButtonReleased:
+            uiButton = WM_MBUTTONUP;
+            break;
+        case PointerUpdateKind::RightButtonPressed:
+            uiButton = WM_RBUTTONDOWN;
+            break;
+        case PointerUpdateKind::RightButtonReleased:
+            uiButton = WM_RBUTTONUP;
+            break;
+        default:
+            uiButton = WM_MOUSEMOVE;
         }
-        else if (props.IsMiddleButtonPressed())
-        {
-            uiButton = goingDown ? WM_MBUTTONDOWN : WM_MBUTTONUP;
-        }
-        else if (props.IsRightButtonPressed())
-        {
-            uiButton = goingDown ? WM_RBUTTONDOWN : WM_RBUTTONUP;
-        }
-
-        // Which modifier keys are pressed
-        const auto modifiers = _GetPressedModifierKeys();
 
         // Mouse wheel data
         const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
+        if (sWheelDelta != 0 && !props.IsHorizontalMouseWheel())
+        {
+            // if we have a mouse wheel delta and it wasn't a horizontal wheel motion
+            uiButton = WM_MOUSEWHEEL;
+        }
 
         return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
     }
@@ -1070,7 +1092,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            if (_TrySendMouseEvent(point, true))
+            if (_TrySendMouseEvent(point, false))
             {
                 args.Handled(true);
                 return;
@@ -1125,6 +1147,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
         const auto ctrlPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
         const auto shiftPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+        if (_TrySendMouseEvent(point, true))
+        {
+            args.Handled(true);
+            return;
+        }
 
         if (ctrlPressed && shiftPressed)
         {

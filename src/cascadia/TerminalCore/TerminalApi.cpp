@@ -565,5 +565,7 @@ bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
 
 bool Terminal::IsVtInputEnabled() const noexcept
 {
+    // We should never be getting this call in Terminal.
+    FAIL_FAST();
     return true;
 }
