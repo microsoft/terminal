@@ -8,7 +8,6 @@
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
-//#include <winrt/Windows.Foundation.Collections.h>
 
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
@@ -625,10 +624,14 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
+            wchar_t guidWString[40] = { 0 };
+            StringFromGUID2(profileGuid, guidWString, 40);
+
             StringMap envMap{};
             envMap.Insert(L"WT_DEFAULTS", _settings->GetDefaultSettingsPath());
             envMap.Insert(L"WT_PROFILES", _settings->GetSettingsPath());
-            envMap.Insert(L"WSLENV", L"WT_DEFAULTS/p:WT_PROFILES/p");
+            envMap.Insert(L"WT_PROFILE_ID", guidWString);
+            envMap.Insert(L"WSLENV", L"WT_DEFAULTS/p:WT_PROFILES/p:WT_PROFILE_ID");
 
             auto conhostConn = TerminalConnection::ConptyConnection(
                 settings.Commandline(),

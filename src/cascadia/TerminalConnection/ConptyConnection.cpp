@@ -10,7 +10,6 @@
 #include "ConptyConnection.h"
 
 #include <windows.h>
-//#include <winrt/Windows.Foundation.Collections.h>
 
 #include "ConptyConnection.g.cpp"
 
@@ -114,6 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (_environment)
             {
+                // add additional WT env vars like WT_PROFILES, WT_DEFAULTS and WT_PROFILE_ID
                 for (auto item : _environment)
                 {
                     environment.insert_or_assign(item.Key().c_str(), item.Value().c_str());

@@ -9,9 +9,6 @@
 
 #include <conpty-static.h>
 
-//using namespace winrt;
-//using namespace winrt::Windows::Foundation::Collections;
-
 namespace wil
 {
     // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
