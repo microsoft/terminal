@@ -21,6 +21,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -824,6 +825,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
 
+        // We also TryShow in GotFocusHandler, but this call is specifically
+        // for the case where the Terminal is in focus but the user closed the
+        // on-screen keyboard. This lets the user simply tap on the terminal
+        // again to bring it up.
+        InputPane::GetForCurrentView().TryShow();
+
         if (!_focused)
         {
             Focus(FocusState::Pointer);
@@ -1299,6 +1306,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _focused = true;
+
+        InputPane::GetForCurrentView().TryShow();
 
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the

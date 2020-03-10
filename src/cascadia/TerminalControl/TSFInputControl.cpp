@@ -27,9 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
-        // sets the Input Pane display policy to Manual for now so that it can manually show the
-        // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // TODO GitHub #3639: Should Input Pane display policy be Automatic
+        // InputPane is manually shown inside of TermControl.
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
