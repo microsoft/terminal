@@ -43,11 +43,11 @@ class BitmapTests
         VERIFY_ARE_EQUAL(bar.X, s.width());
         VERIFY_ARE_EQUAL(bar.Y, s.height());
 
-        SIZE mapSize{ 10,10 };
+        SIZE mapSize{ 10, 10 };
         til::bitmap x(mapSize);
         x.set({ 4, 4 });
 
-        til::rectangle area(til::point{ 5,5 }, til::size{ 2,2 });
+        til::rectangle area(til::point{ 5, 5 }, til::size{ 2, 2 });
         x.set(area);
 
         Log::Comment(L"Row 4!");
@@ -104,5 +104,26 @@ class BitmapTests
         VERIFY_ARE_EQUAL(bgrc.bottom, bgrectangle.bottom());
         VERIFY_ARE_EQUAL(bgrc.left, bgrectangle.left());
         VERIFY_ARE_EQUAL(bgrc.right, bgrectangle.right());
+    }
+
+    TEST_METHOD(Runerator)
+    {
+        til::bitmap foo{ til::size{ 4, 8 } };
+        foo.reset_all();
+        foo.set(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 2 } });
+
+        std::deque<til::rectangle> expectedRects;
+        expectedRects.push_back(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 1 } });
+        expectedRects.push_back(til::rectangle{ til::point{ 1, 2 }, til::size{ 2, 1 } });
+
+        for (auto it = foo.begin_runs(); it < foo.end_runs(); ++it)
+        {
+            const auto actual = *it;
+            const auto expected = expectedRects.front();
+
+            VERIFY_ARE_EQUAL(expected, actual);
+
+            expectedRects.pop_front();
+        }
     }
 };

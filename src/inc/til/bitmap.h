@@ -6,6 +6,10 @@
 #include <vector>
 #include "size.h"
 
+#ifdef UNIT_TESTING
+class BitmapTests;
+#endif
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     class const_bitterator // Bit Iterator. Bitterator.
@@ -99,6 +103,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         const_runerator& operator++()
         {
             _pos = _nextPos;
+            _calculateArea();
             return (*this);
         }
 
@@ -154,7 +159,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 // pos is now at the first on bit.
                 const auto runStart = _indexToPoint(_nextPos);
-                const size_t rowEndIndex = (size_t)(runStart.y() * _size.width() + 1);
+                const size_t rowEndIndex = (size_t)((runStart.y() + 1) * _size.width());
 
                 ptrdiff_t runLength = 0;
 
@@ -168,6 +173,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             else
             {
+                _pos = _nextPos;
                 _run = til::rectangle{};
             }
         }
@@ -212,6 +218,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         const_iterator end_row(size_t row) const
         {
             return const_bitterator(_bits, (row + 1) * _size.width());
+        }
+
+        const_runerator begin_runs() const
+        {
+            return const_runerator(_bits, _size, 0);
+        }
+
+        const_runerator end_runs() const
+        {
+            return const_runerator(_bits, _size, _size.area());
         }
 
         void set(til::point pt)
@@ -301,7 +317,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
 #ifdef UNIT_TESTING
-        friend class BitmapTests;
+        friend class ::BitmapTests;
 #endif
 
     private:
