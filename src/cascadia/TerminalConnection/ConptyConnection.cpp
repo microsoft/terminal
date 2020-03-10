@@ -359,6 +359,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConptyConnection::_OutputThread()
     {
+        // Keep us alive until the output thread terminates; the destructor
+        // won't wait for us, and the known exit points _do_.
+        auto strongThis{ get_strong() };
+
         // process the data of the output pipe in a loop
         while (true)
         {
