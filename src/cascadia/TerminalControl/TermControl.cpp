@@ -1094,10 +1094,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
                 acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                if (acrylicBrush.TintOpacity() == 1.0)
+                {
+                    _settings.UseAcrylic(false);
+                    _InitializeBackgroundBrush();
+                    uint32_t bg = _settings.DefaultBackground();
+                    _BackgroundColorChanged(bg);
+                }
             }
             CATCH_LOG();
         }
-        else
+        else if (mouseDelta < 0)
         {
             _settings.UseAcrylic(true);
 
