@@ -693,7 +693,11 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _InvalidOr(*psrRegion);
+    SMALL_RECT inclusive = *psrRegion;
+    inclusive.Right--;
+    inclusive.Bottom--;
+
+    _InvalidOr(inclusive);
     return S_OK;
 }
 
@@ -707,7 +711,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    const SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
+    const SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToExclusive();
     return Invalidate(&sr);
 }
 
@@ -931,7 +935,10 @@ void DxEngine::_InvalidOffset(POINT delta)
 // - <none>
 void DxEngine::_InvalidOr(SMALL_RECT sr) noexcept
 {
-    _invalidMap.set(sr);
+    if (_invalidMap)
+    {
+        _invalidMap.set(sr);
+    }
 
     //RECT region;
     //region.left = sr.Left;
@@ -990,24 +997,7 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::StartPaint() noexcept
 {
-    FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
-
-//#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
-//    TraceLoggingWrite(g_hDxRenderProvider,
-//                      "Invalid",
-//                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
-//                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
-//                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
-//                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
-//                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
-//                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
-//                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
-//                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
-//                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
-//                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
-//                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
-//                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
 
     if (_isEnabled)
     {
@@ -1045,6 +1035,26 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
 
             _d2dRenderTarget->BeginDraw();
             _isPainting = true;
+
+            // Walk the map for dirty rectangles and store them up.
+            // We're going to have to go over them multiple times, so don't spend all the iteration
+            // work multiple times.
+            for (auto it = _invalidMap.begin_runs(); it < _invalidMap.end_runs(); ++it)
+            {
+                auto rect = *it;
+
+                #pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
+    TraceLoggingWrite(g_hDxRenderProvider,
+                      "Invalid",
+                      TraceLoggingInt32((LONG)rect.height(), "InvalidHeightChars"),
+                      TraceLoggingInt32((LONG)rect.width(), "InvalidWidthChars"),
+                      TraceLoggingInt32((LONG)rect.left(), "InvalidXChars"),
+                      TraceLoggingInt32((LONG)rect.top(), "InvalidYChars"),
+                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidthChars"),
+                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeightChars"));
+
+                _dirtyRects.push_back(rect);
+            }
         }
         CATCH_RETURN();
     }
@@ -1223,9 +1233,11 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
     const D2D1_COLOR_F nothing = { 0 }; // 0 alpha and color is black.
     for (const D2D1_RECT_F rect : _dirtyRects)
     {
+        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
         _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->Clear(nothing);
         _d2dRenderTarget->PopAxisAlignedClip();
+        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
     }
 
     return S_OK;
@@ -1370,12 +1382,15 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintSelection(SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
 
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
+
+    rect.Bottom--;
+    rect.Right--;
 
     /* rect is SMALL_RECT */
     const D2D1_RECT_F draw = til::rectangle{ rect } * _glyphCell;
@@ -1691,9 +1706,10 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
+// TODO: maybe this should be returning a ref... not a copy...
 [[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
-    return { til::rectangle{} };
+    return _dirtyRects;
 }
 
 // Routine Description:

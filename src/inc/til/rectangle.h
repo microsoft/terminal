@@ -122,6 +122,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _bottomRight = til::point{ right, bottom };
         }
 
+#ifdef _WINCONTYPES_
+        rectangle(SMALL_RECT sr)
+        {
+            _topLeft = til::point{ static_cast<ptrdiff_t>(sr.Left), static_cast<ptrdiff_t>(sr.Top) };
+
+            _bottomRight = til::point{ static_cast<ptrdiff_t>(sr.Right), static_cast<ptrdiff_t>(sr.Bottom) } + til::point{ 1, 1 };
+        }
+#endif
+
         template<typename TOther>
         constexpr rectangle(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().Top)> && std::is_integral_v<decltype(std::declval<TOther>().Left)> && std::is_integral_v<decltype(std::declval<TOther>().Bottom)> && std::is_integral_v<decltype(std::declval<TOther>().Right)>, int> /*sentinel*/ = 0) :
             rectangle(til::point{static_cast<ptrdiff_t>(other.Left), static_cast<ptrdiff_t>(other.Top)}, til::point{static_cast<ptrdiff_t>(other.Right), static_cast<ptrdiff_t>(other.Bottom)})

@@ -288,6 +288,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _size;
         }
 
+        operator bool() const noexcept
+        {
+            return !_bits.empty();
+        }
+
         bitmap operator+(const point& pt) const
         {
             auto temp = *this;
