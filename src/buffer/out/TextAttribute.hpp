@@ -163,6 +163,14 @@ public:
         return _foreground.IsRgb() || _background.IsRgb();
     }
 
+    // In certain scenarios, we don't care about specifically the foreground color.
+    constexpr bool EqualsExceptForeground(const TextAttribute& other) const noexcept
+    {
+        return (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
+               _background == other._background &&
+               _extendedAttrs == other._extendedAttrs;
+    }
+
 private:
     COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
