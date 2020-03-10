@@ -7,6 +7,9 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
+#ifdef BUILD_ONECORE_INTERACTIVITY
+#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#endif
 static const int s_MaxDefaultCoordinate = 94;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
@@ -93,6 +96,7 @@ static constexpr bool _isButtonDown(const unsigned int button) noexcept
 // - a button corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
 unsigned int TerminalInput::s_GetPressedButton() noexcept
 {
+    // TODO GH#4869: Have the caller pass the mouse button state into HandleMouse
     unsigned int button = WM_LBUTTONUP; // Will be treated as a release, or no button pressed.
     if (WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed))
     {
