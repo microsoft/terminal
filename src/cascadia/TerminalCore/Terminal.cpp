@@ -252,14 +252,14 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     short proposedTop = std::max(proposedTopFromLastLine,
                                  proposedTopFromScrollback);
 
-    if (dx < 0)
-    {
-        proposedTop = proposedTopFromLastLine;
-    }
-    else if (dx > 0)
+    if (dx != 0)
     {
         proposedTop = proposedTopFromScrollback;
     }
+    // else if (dx > 0)
+    // {
+    //     proposedTop = proposedTopFromScrollback;
+    // }
 
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
