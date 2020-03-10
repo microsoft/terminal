@@ -17,6 +17,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _intermediates{},
     _parameters{},
     _oscString{},
+    _cachedSequence{ std::nullopt },
     _processingIndividually(false)
 {
     _ActionClear();
@@ -533,6 +534,7 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 void StateMachine::_EnterGround() noexcept
 {
     _state = VTStates::Ground;
+    _cachedSequence.reset(); // entering ground means we've completed the pending sequence
     _trace.TraceStateChange(L"Ground");
 }
 
@@ -1230,7 +1232,13 @@ bool StateMachine::FlushToTerminal()
     //      that pwchCurr was processed.
     // However, if we're here, then the processing of pwchChar triggered the
     //      engine to request the entire sequence get passed through, including pwchCurr.
-    return _engine->ActionPassThroughString(_run);
+    bool succeeded = true;
+    if (succeeded && _cachedSequence.has_value())
+    {
+        succeeded = _engine->ActionPassThroughString(*_cachedSequence);
+        _cachedSequence.reset();
+    }
+    return succeeded && _engine->ActionPassThroughString(_run);
 }
 
 // Routine Description:
@@ -1364,6 +1372,13 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // microsoft/terminal#2746: Make sure to return to the ground state
             // after dispatching the characters
             _EnterGround();
+        }
+        else
+        {
+            // If the engine doesn't require flushing at the end of the string, we
+            // want to cache the partial sequence in case we have to flush the whole
+            // thing to the terminal later.
+            _cachedSequence = _cachedSequence.value_or(std::wstring{}) + std::wstring{ _run };
         }
     }
 }
