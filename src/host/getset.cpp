@@ -1616,7 +1616,7 @@ void DoSrvPrivateTabClear(const bool fClearAll)
 void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableDefaultTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableDefaultTracking(fEnable);
 }
 
 // Routine Description:
@@ -1628,7 +1628,7 @@ void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
 void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().SetUtf8ExtendedMode(fEnable);
 }
 
 // Routine Description:
@@ -1640,7 +1640,7 @@ void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
 void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.SetSGRExtendedMode(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().SetSGRExtendedMode(fEnable);
 }
 
 // Routine Description:
@@ -1652,7 +1652,7 @@ void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
 void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableButtonEventTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableButtonEventTracking(fEnable);
 }
 
 // Routine Description:
@@ -1664,7 +1664,7 @@ void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
 void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableAnyEventTracking(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAnyEventTracking(fEnable);
 }
 
 // Routine Description:
@@ -1676,7 +1676,7 @@ void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.terminalMouseInput.EnableAlternateScroll(fEnable);
+    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAlternateScroll(fEnable);
 }
 
 // Routine Description:

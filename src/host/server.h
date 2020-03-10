@@ -107,8 +107,6 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    Microsoft::Console::VirtualTerminal::TerminalInput terminalMouseInput;
-
     void LockConsole();
     bool TryLockConsole();
     void UnlockConsole();
