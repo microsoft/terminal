@@ -82,6 +82,6 @@
     </Type>
   
     <Type Name="til::color">
-      <DisplayString>{{RGB: {(int)r,d}, {(int)g,d}, {(int)b,d}; Alpha: {(int)a,d}}}</DisplayString>
+      <DisplayString>{{RGB: {(int)r,d}, {(int)g,d}, {(int)b,d}; α: {(int)a,d}}}</DisplayString>
     </Type>
 </AutoVisualizer>
