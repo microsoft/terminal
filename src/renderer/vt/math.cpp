@@ -19,12 +19,7 @@ using namespace Microsoft::Console::Types;
 //      This is an Inclusive rect.
 std::vector<til::rectangle> VtEngine::GetDirtyArea()
 {
-    SMALL_RECT dirty = _invalidRect.ToInclusive();
-    if (dirty.Top < _virtualTop)
-    {
-        dirty.Top = _virtualTop;
-    }
-    return { dirty };
+    return _invalidRects;
 }
 
 // Routine Description:

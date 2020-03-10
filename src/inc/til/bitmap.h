@@ -196,7 +196,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         bitmap(til::size sz) :
             _size(sz),
-            _bits(sz.area(), true)
+            _bits(sz.area(), true),
+            _empty(false)
         {
         }
 
@@ -233,6 +234,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void set(til::point pt)
         {
             _bits[pt.y() * _size.width() + pt.x()] = true;
+            _empty = false;
         }
 
         void reset(til::point pt)
@@ -269,6 +271,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
             // .assign(_size(), false) throws an assert (unsupported operation)
             reset(til::rectangle{ til::point{0, 0}, _size });
+            _empty = true;
         }
 
         void resize(til::size size)
@@ -281,6 +284,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void resize(size_t width, size_t height)
         {
             resize(til::size{ width, height });
+        }
+
+        constexpr bool empty() const
+        {
+            return _empty;
         }
 
         const til::size& size() const
@@ -326,6 +334,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
     private:
+        bool _empty;
         til::size _size;
         std::vector<bool> _bits;
     };

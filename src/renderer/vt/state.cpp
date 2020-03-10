@@ -36,6 +36,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _lastWasBold(false),
     _lastViewport(initialViewport),
     _invalidRect(Viewport::Empty()),
+    _invalidMap(initialViewport.Dimensions()),
+    _invalidRects(),
     _fInvalidRectUsed(false),
     _lastRealCursor({ 0 }),
     _lastText({ 0 }),
@@ -259,6 +261,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     const Viewport newView = Viewport::FromInclusive(srNewViewport);
 
     _lastViewport = newView;
+    _invalidMap.resize(_lastViewport.Dimensions());
 
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {

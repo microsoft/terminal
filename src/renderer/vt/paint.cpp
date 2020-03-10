@@ -27,12 +27,21 @@ using namespace Microsoft::Console::Types;
 
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||
+                         !_invalidMap.empty() || 
                          (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
                          _cursorMoved ||
                          _titleChanged;
 
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn, _fInvalidRectUsed, _invalidRect, _lastViewport, _scrollDelta, _cursorMoved);
+
+    if (somethingToDo)
+    {
+        for (auto it = _invalidMap.begin_runs(); it < _invalidMap.end_runs(); ++it)
+        {
+            _invalidRects.push_back(*it);
+        }
+    }
 
     return _quickReturn ? S_FALSE : S_OK;
 }
@@ -50,6 +59,8 @@ using namespace Microsoft::Console::Types;
 {
     _trace.TraceEndPaint();
 
+    _invalidMap.reset_all();
+    _invalidRects.clear();
     _invalidRect = Viewport::Empty();
     _fInvalidRectUsed = false;
     _scrollDelta = { 0 };

@@ -24,6 +24,8 @@ Author(s):
 #include <string>
 #include <functional>
 
+#include "til/bitmap.h"
+
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
 namespace TerminalCoreUnitTests
@@ -116,6 +118,8 @@ namespace Microsoft::Console::Render
         COLORREF _LastBG;
         bool _lastWasBold;
 
+        til::bitmap _invalidMap;
+        std::vector<til::rectangle> _invalidRects;
         Microsoft::Console::Types::Viewport _lastViewport;
         Microsoft::Console::Types::Viewport _invalidRect;
 

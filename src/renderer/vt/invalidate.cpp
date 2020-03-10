@@ -144,6 +144,11 @@ using namespace Microsoft::Console::Render;
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_InvalidCombine(const Viewport invalid) noexcept
 {
+    if (_invalidMap)
+    {
+        _invalidMap.set(invalid.ToInclusive());
+    }
+
     if (!_fInvalidRectUsed)
     {
         _invalidRect = invalid;
