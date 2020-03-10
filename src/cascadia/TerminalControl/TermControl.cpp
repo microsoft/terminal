@@ -1100,6 +1100,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         else
         {
             _settings.UseAcrylic(true);
+
+            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+            _settings.TintOpacity(1.0);
             _InitializeBackgroundBrush();
         }
     }
