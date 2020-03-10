@@ -13,6 +13,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::ViewManagement;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -75,6 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusEnter();
+            InputPane::GetForCurrentView().TryShow();
         }
     }
 
