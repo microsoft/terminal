@@ -257,10 +257,6 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    // TODO GH#XXXX:
-    //   This is a temporary replacement to enable passhthrough
-    //   mode for Windows Terminal. Remove IsVtInputEnabled() logic
-    //   when ConPty learns to handle mouse input properly
     if (_pDispatch->IsVtInputEnabled())
     {
         // Synthesize string into key events that we'll write to the buffer

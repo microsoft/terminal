@@ -216,7 +216,7 @@ public:
 
     bool PrivateIsVtInputEnabled() const override
     {
-        return true;
+        return false;
     }
 
     bool PrivateSetLegacyAttributes(const WORD attr, const bool foreground, const bool background, const bool meta) override
