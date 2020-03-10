@@ -382,7 +382,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         {
             // This helper can be used to determine if there's a auto-hide
             // taskbar on the given edge of the monitor we're currently on.
-            auto hasAutohideTaksbar = [&monInfo](const UINT edge) -> bool {
+            auto hasAutohideTaskbar = [&monInfo](const UINT edge) -> bool {
                 APPBARDATA data{ 0 };
                 data.cbSize = sizeof(data);
                 data.uEdge = edge;
@@ -391,10 +391,10 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
                 return hTaskbar != nullptr;
             };
 
-            const bool onTop = hasAutohideTaksbar(ABE_TOP);
-            const bool onBottom = hasAutohideTaksbar(ABE_BOTTOM);
-            const bool onLeft = hasAutohideTaksbar(ABE_LEFT);
-            const bool onRight = hasAutohideTaksbar(ABE_RIGHT);
+            const bool onTop = hasAutohideTaskbar(ABE_TOP);
+            const bool onBottom = hasAutohideTaskbar(ABE_BOTTOM);
+            const bool onLeft = hasAutohideTaskbar(ABE_LEFT);
+            const bool onRight = hasAutohideTaskbar(ABE_RIGHT);
 
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
