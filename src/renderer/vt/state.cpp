@@ -187,35 +187,66 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - Helper for calling _Write with a string for formatting a sequence. Used
 //      extensively by VtSequences.cpp
 // Arguments:
-// - pFormat: the pointer to the string to write to the pipe.
+// - pFormat: pointer to format string to write to the pipe
 // - ...: a va_list of args to format the string with.
 // Return Value:
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) noexcept
+try
 {
+    va_list args;
+    va_start(args, pFormat);
+
+    // NOTE: pFormat is a pointer because varargs refuses to operate with a ref in that position
+    // NOTE: We're not using string_view because it doesn't guarantee null (which will be needed
+    //       later in the formatting method).
+
     HRESULT hr = E_FAIL;
-    va_list argList;
-    va_start(argList, pFormat);
 
-    int cchNeeded = _scprintf(pFormat->c_str(), argList);
-    // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
-    if (cchNeeded > -1)
+    // We're going to hold onto our format string space across calls because
+    // the VT renderer will be formatting a LOT of strings and alloc/freeing them
+    // over and over is going to be way worse for perf than just holding some extra
+    // memory for formatting purposes.
+    // See _formatBuffer for its location.
+
+    // First, plow ahead using our pre-reserved string space.
+    LPSTR destEnd = nullptr;
+    size_t destRemaining = 0;
+    if (SUCCEEDED(StringCchVPrintfExA(_formatBuffer.data(),
+                                      _formatBuffer.size(),
+                                      &destEnd,
+                                      &destRemaining,
+                                      STRSAFE_NO_TRUNCATION,
+                                      pFormat->c_str(),
+                                      args)))
     {
-        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-        RETURN_IF_NULL_ALLOC(psz);
+        return _Write({ _formatBuffer.data(), _formatBuffer.size() - destRemaining });
+    }
 
-        int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pFormat->c_str(), argList);
-        hr = _Write({ psz.get(), gsl::narrow<size_t>(cchWritten) });
+    // If we didn't succeed at filling/using the existing space, then
+    // we're going to take the long way by counting the space required and resizing up to that
+    // space and formatting.
+
+    const auto needed = _scprintf(pFormat->c_str(), args);
+    // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
+    if (needed > -1)
+    {
+        _formatBuffer.resize(static_cast<size_t>(needed) + 1);
+
+        const auto written = _vsnprintf_s(_formatBuffer.data(), _formatBuffer.size(), needed, pFormat->c_str(), args);
+        hr = _Write({ _formatBuffer.data(), gsl::narrow<size_t>(written) });
     }
     else
     {
         hr = E_INVALIDARG;
     }
 
-    va_end(argList);
+    va_end(args);
+
     return hr;
 }
+CATCH_RETURN();
 
 // Method Description:
 // - This method will update the active font on the current device context
