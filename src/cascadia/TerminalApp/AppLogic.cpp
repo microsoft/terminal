@@ -115,6 +115,27 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     return textRun;
 }
 
+// Method Description:
+// - Returns whether the user is either a member of the Administrators group or
+//   is currently elevated.
+// Return Value:
+// - true if the user is an administrator
+static bool _isUserAdmin() noexcept
+try
+{
+    SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
+    wil::unique_sid adminGroupSid{};
+    THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
+    BOOL b;
+    THROW_IF_WIN32_BOOL_FALSE(CheckTokenMembership(NULL, adminGroupSid.get(), &b));
+    return !!b;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     AppLogic::AppLogic() :
@@ -131,6 +152,7 @@ namespace winrt::TerminalApp::implementation
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
+        _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
     }
 
@@ -143,6 +165,17 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::IsUwp() const noexcept
     {
         return _isUwp;
+    }
+
+    // Method Description:
+    // - Called around the codebase to discover if Terminal is running elevated
+    // Arguments:
+    // - <none> - reports internal state
+    // Return Value:
+    // - True if elevated, false otherwise.
+    bool AppLogic::IsElevated() const noexcept
+    {
+        return _isElevated;
     }
 
     // Method Description:
