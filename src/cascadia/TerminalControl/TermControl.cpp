@@ -820,7 +820,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
     // - goingDown: true, if the button was pressed. False, if it was released.
     //              Mouse moved events must only be encoded as the button being pressed, not released.
-    bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point, bool goingDown)
+    bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point)
     {
         // If the user is holding down Shift, suppress mouse events
         // TODO GH#4875: disable/customize this functionality
@@ -907,7 +907,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            if (_TrySendMouseEvent(point, true))
+            if (_TrySendMouseEvent(point))
             {
                 args.Handled(true);
                 return;
@@ -995,7 +995,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_TrySendMouseEvent(point, true))
+            if (_TrySendMouseEvent(point))
             {
                 args.Handled(true);
                 return;
@@ -1092,7 +1092,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            if (_TrySendMouseEvent(point, false))
+            if (_TrySendMouseEvent(point))
             {
                 args.Handled(true);
                 return;
@@ -1148,7 +1148,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ctrlPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
         const auto shiftPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-        if (_TrySendMouseEvent(point, true))
+        if (_TrySendMouseEvent(point))
         {
             args.Handled(true);
             return;
