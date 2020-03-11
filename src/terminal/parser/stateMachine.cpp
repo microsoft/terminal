@@ -1228,17 +1228,27 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
 // - true if the engine successfully handled the string.
 bool StateMachine::FlushToTerminal()
 {
-    // _pwchCurr is incremented after a call to ProcessCharacter to indicate
-    //      that pwchCurr was processed.
-    // However, if we're here, then the processing of pwchChar triggered the
-    //      engine to request the entire sequence get passed through, including pwchCurr.
-    bool succeeded = true;
-    if (succeeded && _cachedSequence.has_value())
+    bool success{ true };
+
+    if (success && _cachedSequence.has_value())
     {
-        succeeded = _engine->ActionPassThroughString(*_cachedSequence);
+        // Flush the partial sequence to the terminal before we flush the rest of it.
+        // We always want to clear the sequence, even if we failed, so we don't accumulate bad state
+        // and dump it out elsewhere later.
+        success = _engine->ActionPassThroughString(*_cachedSequence);
         _cachedSequence.reset();
     }
-    return succeeded && _engine->ActionPassThroughString(_run);
+
+    if (success)
+    {
+        // _pwchCurr is incremented after a call to ProcessCharacter to indicate
+        //      that pwchCurr was processed.
+        // However, if we're here, then the processing of pwchChar triggered the
+        //      engine to request the entire sequence get passed through, including pwchCurr.
+        success = _engine->ActionPassThroughString(_run);
+    }
+
+    return success;
 }
 
 // Routine Description:
