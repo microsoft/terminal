@@ -174,9 +174,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         return S_FALSE;
     }
     const auto dx = viewportSize.X - oldDimensions.X;
-    const auto dy = viewportSize.Y - oldDimensions.Y;
-    dx;
-    dy;
 
     const auto oldTop = _mutableViewport.Top();
 
@@ -233,13 +230,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     //   calculate another proposed top location).
 
     const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();
-
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
     COORD newLastChar = newCursorPos;
     try
     {
-        newLastChar = newTextBuffer->GetLastNonSpaceCharacter(_mutableViewport);
+        newLastChar = newTextBuffer->GetLastNonSpaceCharacter();
     }
     CATCH_LOG();
 #pragma warning(pop)
@@ -252,29 +248,52 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     short proposedTop = std::max(proposedTopFromLastLine,
                                  proposedTopFromScrollback);
 
-    if (dy < 0)
+    // If we're using the new location of the old top line to place the
+    // viewport, we might need to make an adjustment to it.
+    //
+    // We're using the last cell of the line to calculate where the top line is
+    // in the new buffer. If that line wrapped, then all the lines below it
+    // shifted down in the buffer. If there's space for all those lines in the
+    // conpty buffer, then the originally unwrapped top line will _still_ be in
+    // the buffer. In that case, don't stick to the _end_ of the old top line,
+    // instead stick to the _start_, which is one line up.
+    //
+    // We can know if there's space in the conpty buffer by checking if the
+    // maxRow (the highest row we've written text to) is above the viewport from
+    // this proposed top position.
+    if (proposedTop == proposedTopFromScrollback)
     {
-        proposedTop = proposedTopFromLastLine;
+        const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, viewportSize);
+        if (maxRow < proposedViewFromTop.BottomInclusive())
+        {
+            if (dx < 0 && proposedTop > 0)
+            {
+                auto row = newTextBuffer->GetRowByOffset(proposedTop - 1);
+                if (row.GetCharRow().WasWrapForced())
+                {
+                    proposedTop--;
+                }
+            }
+        }
     }
-    else if (dx != 0 || dy > 0)
-    {
-        proposedTop = proposedTopFromScrollback;
-    }
-    /*else if (dy < 0)
-    {
-        proposedTop = proposedTopFromLastLine;
-    }*/
-    // else if (dx < 0)
-    // {
-    //     proposedTop = proposedTopFromLastLine;
-    // }
 
+    // If the new bottom would be higher than the last row of text, then we
+    // definitely want to use the last row of text to determine where the
+    // viewport should be.
+    const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, viewportSize);
+    if (maxRow > proposedViewFromTop.BottomInclusive())
+    {
+        proposedTop = proposedTopFromLastLine;
+    }
+
+    // Make sure the proposed viewport is within the bounds of the buffer.
+    // First make sure the top is >=0
     proposedTop = std::max(static_cast<short>(0), proposedTop);
 
-    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    const auto proposedBottom = newView.BottomExclusive();
     // If the new bottom would be below the bottom of the buffer, then slide the
     // top up so that we'll still fit within the buffer.
+    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    const auto proposedBottom = newView.BottomExclusive();
     if (proposedBottom > bufferSize.Y)
     {
         proposedTop = ::base::saturated_cast<short>(proposedTop - (proposedBottom - bufferSize.Y));

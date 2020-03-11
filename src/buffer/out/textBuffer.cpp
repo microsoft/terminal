@@ -1876,8 +1876,8 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 //   nonspace character is in a particular Viewport, the caller can provide this
 //   parameter as an optimization, as opposed to searching the entire buffer.
 // - oldViewportTop - Optional. The caller can provide a row in this parameter
-//   and we'll calculate that row's position in the new buffer. The row's new
-//   value is placed back into this pointer.
+//   and we'll calculate the position of the _end_ of that row in the new
+//   buffer. The row's new value is placed back into this pointer.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
@@ -1967,7 +1967,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
-        // new location of that row in the buffer).
+        // new location of the _end_ of that row in the buffer).
         if (oldViewportTop && !foundOldRow)
         {
             if (iOldRow >= *oldViewportTop)
