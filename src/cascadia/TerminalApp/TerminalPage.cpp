@@ -624,8 +624,7 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            wchar_t guidWString[40] = { 0 };
-            StringFromGUID2(profileGuid, guidWString, 40);
+            std::wstring guidWString = Utils::GuidToString(profileGuid);
 
             StringMap envMap{};
             envMap.Insert(L"WT_DEFAULTS", _settings->GetDefaultSettingsPath());
