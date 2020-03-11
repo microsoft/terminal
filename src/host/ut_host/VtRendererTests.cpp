@@ -113,6 +113,10 @@ class Microsoft::Console::Render::VtRendererTest
     TEST_METHOD(WinTelnetTestColors);
     TEST_METHOD(WinTelnetTestCursor);
 
+    TEST_METHOD(FormatNoLength);
+    TEST_METHOD(FormatWithLength);
+    TEST_METHOD(FormatLengthTooBig);
+
     TEST_METHOD(TestWrapping);
 
     TEST_METHOD(TestResize);
@@ -1471,4 +1475,67 @@ void VtRendererTest::TestCursorVisibility()
     VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
     VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
+}
+
+void VtRendererTest::FormatNoLength()
+{
+    // This test works with a static cache variable that
+    // can be affected by other tests
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES();
+
+    static const std::string format("\x1b[%dm");
+    const auto value = 12;
+    qExpectedInput.push_back("\x1b[12m");
+
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&format, value));
+}
+
+void VtRendererTest::FormatWithLength()
+{
+    // This test works with a static cache variable that
+    // can be affected by other tests
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES();
+
+    static const std::string format("\x1b[%dm");
+    const auto value = 12;
+    qExpectedInput.push_back("\x1b[12m");
+
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    VERIFY_SUCCEEDED(engine->_WriteFormattedString(5, &format, value));
+}
+
+void VtRendererTest::FormatLengthTooBig()
+{
+    // This test works with a static cache variable that
+    // can be affected by other tests
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES();
+
+    static const std::string format("\x1b[%dm");
+    const auto value = 12;
+    qExpectedInput.push_back("\x1b[12m");
+
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    VERIFY_SUCCEEDED(engine->_WriteFormattedString(1, &format, value));
 }
