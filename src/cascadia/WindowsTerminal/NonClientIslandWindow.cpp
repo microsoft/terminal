@@ -492,6 +492,8 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 
     islandFrame.top = -topBorderVisibleHeight;
 
+    // If we have a titlebar, this is being called after we've initialized, and
+    // we can just ask that titlebar how big it wants to be.
     const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
 
     return {
