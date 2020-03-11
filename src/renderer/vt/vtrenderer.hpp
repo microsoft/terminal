@@ -110,6 +110,8 @@ namespace Microsoft::Console::Render
         wil::unique_hfile _hFile;
         std::string _buffer;
 
+        std::string _formatBuffer;
+
         const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
         COLORREF _LastFG;

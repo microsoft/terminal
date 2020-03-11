@@ -261,24 +261,24 @@ try
     // the VT renderer will be formatting a LOT of strings and alloc/freeing them
     // over and over is going to be way worse for perf than just holding some extra
     // memory for formatting purposes.
-    static std::string formatString;
+    // See _formatBuffer for its location.
 
     // If we were given an estimated size, attempt to plow ahead using our pre-reserved string space.
     if (estimatedSize != 0)
     {
-        formatString.resize(estimatedSize + 1);
+        _formatBuffer.resize(estimatedSize + 1);
 
         LPSTR destEnd = nullptr;
         size_t destRemaining = 0;
-        if (SUCCEEDED(StringCchVPrintfExA(formatString.data(),
-                                          formatString.size(),
+        if (SUCCEEDED(StringCchVPrintfExA(_formatBuffer.data(),
+                                          _formatBuffer.size(),
                                           &destEnd,
                                           &destRemaining,
                                           STRSAFE_NO_TRUNCATION,
                                           pFormat->c_str(),
                                           args)))
         {
-            return _Write({ formatString.data(), formatString.size() - destRemaining });
+            return _Write({ _formatBuffer.data(), _formatBuffer.size() - destRemaining });
         }
     }
 
@@ -290,10 +290,10 @@ try
     // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
     if (needed > -1)
     {
-        formatString.resize(needed + 1);
+        _formatBuffer.resize(needed + 1);
 
-        const auto written = _vsnprintf_s(formatString.data(), formatString.size(), needed, pFormat->c_str(), args);
-        hr = _Write({ formatString.data(), gsl::narrow<size_t>(written) });
+        const auto written = _vsnprintf_s(_formatBuffer.data(), _formatBuffer.size(), needed, pFormat->c_str(), args);
+        hr = _Write({ _formatBuffer.data(), gsl::narrow<size_t>(written) });
     }
     else
     {
