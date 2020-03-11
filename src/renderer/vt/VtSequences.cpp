@@ -83,7 +83,9 @@ using namespace Microsoft::Console::Render;
 {
     static const std::string format = "\x1b[%dX";
 
-    return _WriteFormattedString(&format, chars);
+    // Estimated length = 3 for ESC[ and X
+    // +5 for 5 digits max for positive value of short chars.
+    return _WriteFormattedString(3 + 5, &format, chars);
 }
 
 // Method Description:
@@ -96,7 +98,9 @@ using namespace Microsoft::Console::Render;
 {
     static const std::string format = "\x1b[%dC";
 
-    return _WriteFormattedString(&format, chars);
+    // Estimated length = 3 for ESC[ and C
+    // +5 for 5 digits max for positive value of short chars.
+    return _WriteFormattedString(3 + 5, &format, chars);
 }
 
 // Method Description:
@@ -131,7 +135,9 @@ using namespace Microsoft::Console::Render;
     }
     const std::string format = fInsertLine ? "\x1b[%dL" : "\x1b[%dM";
 
-    return _WriteFormattedString(&format, sLines);
+    // Estimated length = 3 for ESC[ and L/M
+    // +5 for 5 digits max for positive value of short.
+    return _WriteFormattedString(3 + 5, &format, sLines);
 }
 
 // Method Description:
@@ -175,7 +181,10 @@ using namespace Microsoft::Console::Render;
     coordVt.X++;
     coordVt.Y++;
 
-    return _WriteFormattedString(&cursorFormat, coordVt.Y, coordVt.X);
+    // Estimated length = 4 for ESC[ and H and ;
+    // +5 for 5 digits max for positive value of short.
+    // +5 for 5 digits max for positive value of short.
+    return _WriteFormattedString(4 + 5 + 5, &cursorFormat, coordVt.Y, coordVt.X);
 }
 
 // Method Description:
@@ -243,7 +252,9 @@ using namespace Microsoft::Console::Render;
                         (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
                         (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
-    return _WriteFormattedString(&fmt, vtIndex);
+    // Estimated length = 3 for ESC[ and m
+    // + 3 digits for an SGR from 0-999
+    return _WriteFormattedString(3 + 3, &fmt, vtIndex);
 }
 
 // Method Description:
@@ -265,7 +276,14 @@ using namespace Microsoft::Console::Render;
     DWORD const g = GetGValue(color);
     DWORD const b = GetBValue(color);
 
-    return _WriteFormattedString(&fmt, r, g, b);
+    // Estimated length = 3 for ESC[ and m
+    // + 4 semicolons
+    // + 2 for 38/48
+    // + 1 for 2
+    // + 3 digits for R
+    // + 3 digits for G
+    // + 3 digits for B
+    return _WriteFormattedString(3 + 4 + 2 + 1 + 3 + 3 + 3, &fmt, r, g, b);
 }
 
 // Method Description:
@@ -297,7 +315,12 @@ using namespace Microsoft::Console::Render;
         return E_INVALIDARG;
     }
 
-    return _WriteFormattedString(&resizeFormat, sHeight, sWidth);
+    // Estimated length = 3 for ESC[ and t
+    // + 2 semicolons
+    // + 1 for 8
+    // + 5 digits for width (max positive short)
+    // + 5 digits for height (max positive short)
+    return _WriteFormattedString(3 + 2 + 1 + 5 + 5, &resizeFormat, sHeight, sWidth);
 }
 
 // Method Description:
