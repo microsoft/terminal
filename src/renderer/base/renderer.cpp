@@ -793,6 +793,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         Viewport view = _pData->GetViewport();
         view.ConvertToOrigin(&coordCursor);
 
+        // if (view.IsInBounds(coordCursor))
+        // {
         COLORREF cursorColor = _pData->GetCursorColor();
         bool useColor = cursorColor != INVALID_COLOR;
 
@@ -805,10 +807,12 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         options.cursorType = _pData->GetCursorStyle();
         options.fUseColor = useColor;
         options.cursorColor = cursorColor;
-        options.isOn = _pData->IsCursorOn();
+        options.isOn = _pData->IsCursorOn() && view.IsInBounds(_pData->GetCursorPosition());
+        // options.isOn = _pData->IsCursorOn();//  && view.IsInBounds(_pData->GetCursorPosition());
 
         // Draw it within the viewport
         LOG_IF_FAILED(pEngine->PaintCursor(options));
+        // }
     }
 }
 
