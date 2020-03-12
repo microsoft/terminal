@@ -119,6 +119,7 @@ public:
     int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
+    bool IsTrackingMouseInput() const;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)

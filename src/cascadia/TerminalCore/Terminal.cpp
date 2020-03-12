@@ -222,6 +222,17 @@ void Terminal::TrySnapOnInput()
     }
 }
 
+// Routine Description:
+// - Relays if we are tracking mouse input
+// Parameters:
+// - <none>
+// Return value:
+// - true, if we are tracking mouse input. False, otherwise
+bool Terminal::IsTrackingMouseInput() const
+{
+    return _terminalInput->IsTrackingMouseInput();
+}
+
 // Method Description:
 // - Send this particular key event to the terminal. The terminal will translate
 //   the key and the modifiers pressed into the appropriate VT sequence for that

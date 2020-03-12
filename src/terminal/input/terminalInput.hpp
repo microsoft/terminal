@@ -44,6 +44,8 @@ namespace Microsoft::Console::VirtualTerminal
                          const unsigned int button,
                          const short modifierKeyState,
                          const short delta);
+
+        bool IsTrackingMouseInput() const;
 #pragma endregion
 
 #pragma region MouseInputState Management

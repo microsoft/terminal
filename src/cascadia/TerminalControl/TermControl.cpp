@@ -820,14 +820,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
     bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point)
     {
-        // If the user is holding down Shift, suppress mouse events
-        // TODO GH#4875: disable/customize this functionality
-        const auto modifiers = _GetPressedModifierKeys();
-        if (modifiers.IsShiftPressed())
-        {
-            return false;
-        }
-
         const auto props = point.Properties();
 
         // Get the terminal position relative to the viewport
@@ -867,7 +859,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             uiButton = WM_MOUSEWHEEL;
         }
 
+        const auto modifiers = _GetPressedModifierKeys();
         return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
+    }
+
+    // Method Description:
+    // - Checks if we can send vt mouse input.
+    // Arguments:
+    // - point: the PointerPoint object representing a mouse event from our XAML input handler
+    bool TermControl::_CanSendVTMouseInput()
+    {
+        // If the user is holding down Shift, suppress mouse events
+        // TODO GH#4875: disable/customize this functionality
+        const auto modifiers = _GetPressedModifierKeys();
+        if (modifiers.IsShiftPressed())
+        {
+            return false;
+        }
+        return _terminal->IsTrackingMouseInput();
     }
 
     // Method Description:
@@ -905,8 +914,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            if (_TrySendMouseEvent(point))
+            if (_CanSendVTMouseInput())
             {
+                _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
@@ -999,8 +1009,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_TrySendMouseEvent(point))
+            if (_CanSendVTMouseInput())
             {
+                _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
@@ -1091,8 +1102,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            if (_TrySendMouseEvent(point))
+            if (_CanSendVTMouseInput())
             {
+                _TrySendMouseEvent(point);
                 args.Handled(true);
                 return;
             }
@@ -1138,6 +1150,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto point = args.GetCurrentPoint(*this);
+
+        if (_CanSendVTMouseInput())
+        {
+            _TrySendMouseEvent(point);
+            args.Handled(true);
+            return;
+        }
+
         const auto delta = point.Properties().MouseWheelDelta();
 
         // Get the state of the Ctrl & Shift keys
@@ -1146,12 +1166,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
         const auto ctrlPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
         const auto shiftPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-
-        if (_TrySendMouseEvent(point))
-        {
-            args.Handled(true);
-            return;
-        }
 
         if (ctrlPressed && shiftPressed)
         {
