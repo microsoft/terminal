@@ -155,6 +155,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(PassthroughClearScrollback);
 
+    TEST_METHOD(PassthroughCursorShapeImmediately);
+
     TEST_METHOD(TestWrappingALongString);
     TEST_METHOD(TestAdvancedWrapping);
     TEST_METHOD(TestExactWrappingWithoutSpaces);
@@ -671,6 +673,35 @@ void ConptyRoundtripTests::MoveCursorAtEOL()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData1(termTb);
+}
+
+void ConptyRoundtripTests::PassthroughCursorShapeImmediately()
+{
+    // This is a test for GH#4106, and more indirectly, GH #2011.
+
+    Log::Comment(NoThrowString().Format(
+        L"Change the cursor shape with VT. This should immediately be flushed to the Terminal."));
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    _logConpty = true;
+
+    VERIFY_ARE_NOT_EQUAL(CursorType::VerticalBar, hostTb.GetCursor().GetType());
+    VERIFY_ARE_NOT_EQUAL(CursorType::VerticalBar, termTb.GetCursor().GetType());
+
+    expectedOutput.push_back("\x1b[5 q");
+    hostSm.ProcessString(L"\x1b[5 q");
+
+    VERIFY_ARE_EQUAL(CursorType::VerticalBar, hostTb.GetCursor().GetType());
+    VERIFY_ARE_EQUAL(CursorType::VerticalBar, termTb.GetCursor().GetType());
 }
 
 void ConptyRoundtripTests::PassthroughClearScrollback()
