@@ -164,10 +164,16 @@ public:
     }
 
     // In certain scenarios, we don't care about specifically the foreground color.
-    constexpr bool EqualsExceptForeground(const TextAttribute& other) const noexcept
+    constexpr bool EqualsExceptForeground(const TextAttribute& other, const bool inverted = false) const noexcept
     {
+        // sneaky-sneaky: I'm using xor here
+        // inverted is whether there's a global invert; Reverse is a local one.
+        // global ^ local == true : the background attribute is actually the visible foreground, so we care about the foregrounds being identical
+        // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
+        const auto checkForeground = (inverted != _IsReverseVideo());
         return (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
-               _background == other._background &&
+               ((checkForeground && _foreground == other._foreground) ||
+                (!checkForeground && _background == other._background)) &&
                _extendedAttrs == other._extendedAttrs;
     }
 
@@ -176,7 +182,12 @@ private:
                                COLORREF defaultColor) const noexcept;
     COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
-    bool _IsReverseVideo() const noexcept;
+
+    constexpr bool _IsReverseVideo() const noexcept
+    {
+        return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
+    }
+
     void _SetBoldness(const bool isBold) noexcept;
 
     WORD _wAttrLegacy;

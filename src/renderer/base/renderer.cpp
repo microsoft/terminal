@@ -626,6 +626,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         const COORD target,
                                         const bool lineWrapped)
 {
+    auto globalInvert{ _pData->IsScreenReversed() };
+
     // If we have valid data, let's figure out how to draw it.
     if (it)
     {
@@ -675,7 +677,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.EqualsExceptForeground(color))
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.EqualsExceptForeground(color, globalInvert))
                     {
                         color = newAttr;
                         break; // vend this run

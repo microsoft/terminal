@@ -445,4 +445,16 @@ void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coo
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }
+
+// Method Description:
+// - Returns true if the screen is globally inverted
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the screen is globally inverted
+bool RenderData::IsScreenReversed() const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsScreenReversed();
+}
 #pragma endregion
