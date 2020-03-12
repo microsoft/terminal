@@ -4,6 +4,7 @@
 #pragma once
 
 #include "til/at.h"
+#include "til/color.h"
 #include "til/some.h"
 #include "til/point.h"
 #include "til/size.h"

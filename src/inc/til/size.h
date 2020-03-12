@@ -15,14 +15,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr size() noexcept :
             size(0, 0)
         {
-
         }
 
+        // On 64-bit processors, int and ptrdiff_t are different fundamental types.
+        // On 32-bit processors, they're the same which makes this a double-definition
+        // with the `ptrdiff_t` one below.
+#if defined(_M_AMD64) || defined(_M_ARM64)
         constexpr size(int width, int height) noexcept :
             size(static_cast<ptrdiff_t>(width), static_cast<ptrdiff_t>(height))
         {
-
         }
+#endif
 
         size(size_t width, size_t height)
         {
@@ -34,27 +37,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _width(width),
             _height(height)
         {
-
         }
 
+        // This template will convert to size from anything that has an X and a Y field that appear convertable to an integer value
         template<typename TOther>
         constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             size(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
         {
-
         }
 
+        // This template will convert to size from anything that has a cx and a cy field that appear convertable to an integer value
         template<typename TOther>
         constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().cx)> && std::is_integral_v<decltype(std::declval<TOther>().cy)>, int> /*sentinel*/ = 0) :
             size(static_cast<ptrdiff_t>(other.cx), static_cast<ptrdiff_t>(other.cy))
         {
-
         }
 
         constexpr bool operator==(const size& other) const noexcept
         {
             return _width == other._width &&
-                _height == other._height;
+                   _height == other._height;
         }
 
         constexpr bool operator!=(const size& other) const noexcept
@@ -108,7 +110,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ptrdiff_t height;
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_height, other._height).AssignIfValid(&height));
 
-            return size{ width, height};
+            return size{ width, height };
         }
 
         size divide_ceil(const size& other) const
@@ -120,9 +122,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ptrdiff_t adjHeight = 0;
 
             // Check for width remainder, anything not 0.
-            if (_width % other._width)
+            // If we multiply the floored number with the other, it will equal
+            // the old width if there was no remainder.
+            if (other._width * floor._width != _width)
             {
-                // If there was any remainder, 
+                // If there was any remainder,
                 // Grow the magnitude by 1 in the
                 // direction of the sign.
                 if (floor.width() >= 0)
@@ -136,9 +140,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             // Check for height remainder, anything not 0.
-            if (_height % other._height)
+            // If we multiply the floored number with the other, it will equal
+            // the old width if there was no remainder.
+            if (other._height * floor._height != _height)
             {
-                // If there was any remainder, 
+                // If there was any remainder,
                 // Grow the magnitude by 1 in the
                 // direction of the sign.
                 if (_height >= 0)
@@ -180,7 +186,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        ptrdiff_t area() const 
+        ptrdiff_t area() const
         {
             ptrdiff_t result;
             THROW_HR_IF(E_ABORT, !base::CheckMul(_width, _height).AssignIfValid(&result));
@@ -241,12 +247,12 @@ namespace WEX::TestExecution
     class VerifyCompareTraits<::til::size, ::til::size>
     {
     public:
-        static bool AreEqual(const ::til::size& expected, const ::til::size& actual)
+        static bool AreEqual(const ::til::size& expected, const ::til::size& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::size& expected, const ::til::size& actual)
+        static bool AreSame(const ::til::size& expected, const ::til::size& actual) noexcept
         {
             return &expected == &actual;
         }
@@ -255,7 +261,7 @@ namespace WEX::TestExecution
 
         static bool IsGreaterThan(const ::til::size& expectedGreater, const ::til::size& expectedLess) = delete;
 
-        static bool IsNull(const ::til::size& object)
+        static bool IsNull(const ::til::size& object) noexcept
         {
             return object == til::size{};
         }

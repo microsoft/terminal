@@ -115,6 +115,27 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     return textRun;
 }
 
+// Method Description:
+// - Returns whether the user is either a member of the Administrators group or
+//   is currently elevated.
+// Return Value:
+// - true if the user is an administrator
+static bool _isUserAdmin() noexcept
+try
+{
+    SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
+    wil::unique_sid adminGroupSid{};
+    THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
+    BOOL b;
+    THROW_IF_WIN32_BOOL_FALSE(CheckTokenMembership(NULL, adminGroupSid.get(), &b));
+    return !!b;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     AppLogic::AppLogic() :
@@ -131,6 +152,7 @@ namespace winrt::TerminalApp::implementation
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
+        _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
     }
 
@@ -143,6 +165,17 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::IsUwp() const noexcept
     {
         return _isUwp;
+    }
+
+    // Method Description:
+    // - Called around the codebase to discover if Terminal is running elevated
+    // Arguments:
+    // - <none> - reports internal state
+    // Return Value:
+    // - True if elevated, false otherwise.
+    bool AppLogic::IsElevated() const noexcept
+    {
+        return _isElevated;
     }
 
     // Method Description:
@@ -367,11 +400,44 @@ namespace winrt::TerminalApp::implementation
         // Use the default profile to determine how big of a window we need.
         const auto [_, settings] = _settings->BuildSettings(nullptr);
 
-        // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
+        auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
+
+        const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+
+        // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            // If we're showing the tabs in the titlebar, we need to use a
+            // TitlebarContol here to calculate how much space to reserve.
+            //
+            // We'll create a fake TitlebarControl, and we'll propose an
+            // available size to it with Measure(). After Measure() is called,
+            // the TitlebarControl's DesiredSize will contain the _unscaled_
+            // size that the titlebar would like to use. We'll use that as part
+            // of the height calculation here.
+            auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
+            titlebar.Measure({ SHRT_MAX, SHRT_MAX });
+            proposedSize.Y += (titlebar.DesiredSize().Height) * scale;
+        }
+        else if (_settings->GlobalSettings().GetAlwaysShowTabs())
+        {
+            // Otherwise, let's use a TabRowControl to calculate how much extra
+            // space we'll need.
+            //
+            // Similarly to above, we'll measure it with an arbitrarily large
+            // available space, to make sure we get all the space it wants.
+            auto tabControl = TabRowControl();
+            tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-        return TermControl::GetProposedDimensions(settings, dpi);
+            // For whatever reason, there's about 6px of unaccounted-for space
+            // in the application. I couldn't tell you where these 6px are
+            // coming from, but they need to be included in this math.
+            proposedSize.Y += (tabControl.DesiredSize().Height + 6) * scale;
+        }
+
+        return proposedSize;
     }
 
     // Method Description:

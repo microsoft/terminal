@@ -41,17 +41,13 @@ same window.
 
 #### `split-pane`
 
-`split-pane [--target,-t target-pane] [-H]|[-V] [terminal_parameters]`
+`split-pane [-H]|[-V] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
 
 **Parameters**:
 
-* `--target,-t target-pane`: Creates a new split in the given `target-pane`.
-  Each pane has a unique index (per-tab) which can be used to identify them.
-  These indicies are assigned in the order the panes were created. If omitted,
-  defaults to the index of the currently focused pane.
 * `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
   "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
   omitted, defaults to "auto", which splits the current pane in whatever the

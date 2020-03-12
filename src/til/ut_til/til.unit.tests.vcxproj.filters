@@ -8,6 +8,7 @@
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="..\precomp.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
+    <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
