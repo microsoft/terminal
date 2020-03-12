@@ -21,7 +21,6 @@ Revision History:
 #include "settings.hpp"
 
 #include "conimeinfo.h"
-#include "..\terminal\adapter\MouseInput.hpp"
 #include "VtIo.hpp"
 #include "CursorBlinker.hpp"
 
@@ -107,8 +106,6 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
-
     void LockConsole();
     bool TryLockConsole();
     void UnlockConsole();
@@ -116,8 +113,6 @@ public:
     ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
-
-    static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;

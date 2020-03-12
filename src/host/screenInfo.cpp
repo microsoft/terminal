@@ -1890,7 +1890,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
 
         // Tell the VT MouseInput handler that we're in the Alt buffer now
-        gci.terminalMouseInput.UseAlternateScreenBuffer();
+        gci.GetActiveInputBuffer()->GetTerminalInput().UseAlternateScreenBuffer();
     }
     return Status;
 }
@@ -1924,7 +1924,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         // deleting the alt buffer will give the GetSet back to its main
 
         // Tell the VT MouseInput handler that we're in the main buffer now
-        gci.terminalMouseInput.UseMainScreenBuffer();
+        gci.GetActiveInputBuffer()->GetTerminalInput().UseMainScreenBuffer();
     }
 }
 
