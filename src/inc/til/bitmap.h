@@ -276,9 +276,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void resize(til::size size)
         {
-            _size = size;
-            // .resize(_size(), true) throws an assert (unsupported operation)
-            _bits = std::vector<bool>(_size.area(), true);
+            // Don't resize if it's not different as we mark the whole thing dirty on resize.
+            // TODO: marking it dirty might not be necessary or we should be smart about it
+            // (mark none of it dirty on resize down, mark just the edges on up?)
+            if (_size != size)
+            {
+                _size = size;
+                // .resize(_size(), true) throws an assert (unsupported operation)
+                _bits = std::vector<bool>(_size.area(), true);
+            }
         }
 
         void resize(size_t width, size_t height)

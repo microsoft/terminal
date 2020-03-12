@@ -292,10 +292,11 @@ CATCH_RETURN();
     const Viewport newView = Viewport::FromInclusive(srNewViewport);
 
     _lastViewport = newView;
-    _invalidMap.resize(_lastViewport.Dimensions());
 
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {
+        _invalidMap.resize(_lastViewport.Dimensions());
+
         // Don't emit a resize event if we've requested it be suppressed
         if (!_suppressResizeRepaint)
         {
