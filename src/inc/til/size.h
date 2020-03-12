@@ -64,7 +64,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        operator bool() const noexcept
+        constexpr operator bool() const noexcept
         {
             return _width != 0 || _height != 0;
         }

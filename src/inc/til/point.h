@@ -15,7 +15,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr point() noexcept :
             point(0, 0)
         {
-
         }
 
         // On 64-bit processors, int and ptrdiff_t are different fundamental types.
@@ -38,7 +37,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _x(x),
             _y(y)
         {
-
         }
 
         // This template will convert to size from anything that has an X and a Y field that appear convertable to an integer value
@@ -46,7 +44,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             point(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
         {
-
         }
 
         // This template will convert to size from anything that has a x and a y field that appear convertable to an integer value
@@ -54,7 +51,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().x)> && std::is_integral_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
             point(static_cast<ptrdiff_t>(other.x), static_cast<ptrdiff_t>(other.y))
         {
-
         }
 
         constexpr bool operator==(const point& other) const noexcept
@@ -68,7 +64,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        operator bool() const noexcept
+        constexpr operator bool() const noexcept
         {
             return _x != 0 || _y != 0;
         }
@@ -250,4 +246,3 @@ namespace WEX::TestExecution
     };
 };
 #endif
-

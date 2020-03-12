@@ -95,7 +95,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckAdd(t, height).AssignIfValid(&t));
         }
 
-        return rectangle{ til::point{l, t}, til::point{r, b} };
+        return rectangle{ til::point{ l, t }, til::point{ r, b } };
     }
 
     _TIL_INLINEPREFIX rectangle& operator+=(rectangle& lhs, const size& rhs)
@@ -154,36 +154,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         if (height > 0)
         {
-           // Subtracting the positive makes the rectangle "shrink"
-           // because bottom pulls inward (to the up).
-           //
-           // Example with subtracting height 2...
-           // |-- x = origin
-           // V
-           // x---------|    x---------|
-           // |         |    |---------|
-           // |         |
-           // |---------|
-           // BEFORE         AFTER
+            // Subtracting the positive makes the rectangle "shrink"
+            // because bottom pulls inward (to the up).
+            //
+            // Example with subtracting height 2...
+            // |-- x = origin
+            // V
+            // x---------|    x---------|
+            // |         |    |---------|
+            // |         |
+            // |---------|
+            // BEFORE         AFTER
             THROW_HR_IF(E_ABORT, !base::CheckSub(b, height).AssignIfValid(&b));
         }
         else
         {
-           // Subtracting the positive makes the rectangle "shrink"
-           // because top pulls inward (to the down).
-           //
-           // Example with subtracting height -2...
-           // |-- x = origin
-           // V
-           // x---------|    x
-           // |         |
-           // |         |    |---------|
-           // |---------|    |---------|
-           // BEFORE         AFTER
+            // Subtracting the positive makes the rectangle "shrink"
+            // because top pulls inward (to the down).
+            //
+            // Example with subtracting height -2...
+            // |-- x = origin
+            // V
+            // x---------|    x
+            // |         |
+            // |         |    |---------|
+            // |---------|    |---------|
+            // BEFORE         AFTER
             THROW_HR_IF(E_ABORT, !base::CheckSub(t, height).AssignIfValid(&t));
         }
 
-        return rectangle{ til::point{l, t}, til::point{r, b} };
+        return rectangle{ til::point{ l, t }, til::point{ r, b } };
     }
 
     _TIL_INLINEPREFIX rectangle& operator-=(rectangle& lhs, const size& rhs)
@@ -195,9 +195,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // MUL will scale the entire rectangle by the size L/R * WIDTH and T/B * HEIGHT.
     _TIL_INLINEPREFIX rectangle operator*(const rectangle& lhs, const size& rhs)
     {
-        return lhs * til::rectangle{ rhs.width(), rhs.height(), rhs.width(), rhs.height() };
+        ptrdiff_t l;
+        THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(lhs.left()) * rhs.width()).AssignIfValid(&l));
+
+        ptrdiff_t t;
+        THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(lhs.top()) * rhs.height()).AssignIfValid(&t));
+
+        ptrdiff_t r;
+        THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(lhs.right()) * rhs.width()).AssignIfValid(&r));
+
+        ptrdiff_t b;
+        THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(lhs.bottom()) * rhs.height()).AssignIfValid(&b));
+
+        return til::rectangle{ l, t, r, b };
     }
-    
+
     // POINT VS SIZE
     // This is a convenience and will take X vs WIDTH and Y vs HEIGHT.
     _TIL_INLINEPREFIX point operator+(const point& lhs, const size& rhs)

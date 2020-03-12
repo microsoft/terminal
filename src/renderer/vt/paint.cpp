@@ -27,7 +27,7 @@ using namespace Microsoft::Console::Types;
 
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||
-                         !_invalidMap.empty() || 
+                         !_invalidMap.empty() ||
                          (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
                          _cursorMoved ||
                          _titleChanged;

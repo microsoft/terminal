@@ -12,6 +12,4 @@ using namespace WEX::TestExecution;
 class RectangleTests
 {
     TEST_CLASS(RectangleTests);
-
-    
 };

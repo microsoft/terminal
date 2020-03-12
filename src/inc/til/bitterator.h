@@ -9,5 +9,4 @@ class BitteratorTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    
 };

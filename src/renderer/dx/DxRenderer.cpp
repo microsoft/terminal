@@ -856,7 +856,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
         {
             // TODO: fix scale
             /*return _sizeTarget * _scale;*/
-            return _sizeTarget; 
+            return _sizeTarget;
         }
         CATCH_LOG();
 
@@ -892,7 +892,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - Origin-placed rectangle representing the pixel size of the surface
 [[nodiscard]] til::rectangle DxEngine::_GetDisplayRect() const noexcept
 {
-    return til::rectangle{ til::point{0, 0}, _displaySizePixels };
+    return til::rectangle{ til::point{ 0, 0 }, _displaySizePixels };
 }
 
 // Routine Description:
@@ -1043,15 +1043,15 @@ void DxEngine::_InvalidOr(RECT /*rc*/) noexcept
             {
                 auto rect = *it;
 
-                #pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
-    TraceLoggingWrite(g_hDxRenderProvider,
-                      "Invalid",
-                      TraceLoggingInt32((LONG)rect.height(), "InvalidHeightChars"),
-                      TraceLoggingInt32((LONG)rect.width(), "InvalidWidthChars"),
-                      TraceLoggingInt32((LONG)rect.left(), "InvalidXChars"),
-                      TraceLoggingInt32((LONG)rect.top(), "InvalidYChars"),
-                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidthChars"),
-                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeightChars"));
+#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
+                TraceLoggingWrite(g_hDxRenderProvider,
+                                  "Invalid",
+                                  TraceLoggingInt32((LONG)rect.height(), "InvalidHeightChars"),
+                                  TraceLoggingInt32((LONG)rect.width(), "InvalidWidthChars"),
+                                  TraceLoggingInt32((LONG)rect.left(), "InvalidXChars"),
+                                  TraceLoggingInt32((LONG)rect.top(), "InvalidYChars"),
+                                  TraceLoggingInt32(_invalidScroll.cx, "ScrollWidthChars"),
+                                  TraceLoggingInt32(_invalidScroll.cy, "ScrollHeightChars"));
 
                 _dirtyRects.push_back(rect);
             }
@@ -1421,7 +1421,7 @@ enum class CursorPaintType
         return S_FALSE;
     }
     // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = til::rectangle{ options.coordCursor } * _glyphCell;
+    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } } * _glyphCell;
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)

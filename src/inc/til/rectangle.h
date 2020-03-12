@@ -23,16 +23,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr rectangle() noexcept :
             rectangle(til::point{ 0, 0 }, til::point{ 0, 0 })
         {
-
         }
 
-        constexpr rectangle(ptrdiff_t left, ptrdiff_t top, ptrdiff_t right, ptrdiff_t bottom) noexcept:
+        // On 64-bit processors, int and ptrdiff_t are different fundamental types.
+        // On 32-bit processors, they're the same which makes this a double-definition
+        // with the `ptrdiff_t` one below.
+#if defined(_M_AMD64) || defined(_M_ARM64)
+        constexpr rectangle(int left, int top, int right, int bottom) noexcept :
             rectangle(til::point{ left, top }, til::point{ right, bottom })
         {
+        }
+#endif
 
+        rectangle(size_t left, size_t top, size_t right, size_t bottom) :
+            rectangle(til::point{ left, top }, til::point{ right, bottom })
+        {
         }
 
-        rectangle(til::point topLeft):
+        constexpr rectangle(ptrdiff_t left, ptrdiff_t top, ptrdiff_t right, ptrdiff_t bottom) noexcept :
+            rectangle(til::point{ left, top }, til::point{ right, bottom })
+        {
+        }
+
+        rectangle(til::point topLeft) :
             _topLeft(topLeft)
         {
             _bottomRight = _topLeft + til::point{ 1, 1 };
@@ -42,22 +55,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _topLeft(topLeft),
             _bottomRight(bottomRight)
         {
+        }
 
+        constexpr rectangle(til::size size) noexcept :
+            _topLeft(til::point{ 0, 0 }),
+            _bottomRight(til::point{ size.width(), size.height() })
+        {
         }
 
         rectangle(til::point topLeft, til::size size) :
-            _topLeft(topLeft)
+            _topLeft(topLeft),
+            _bottomRight(topLeft + til::point{ size.width(), size.height() })
         {
-            ptrdiff_t right;
-            ptrdiff_t bottom;
-
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(topLeft.x()) + size.width()).AssignIfValid(&right));
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(topLeft.y()) + size.height()).AssignIfValid(&bottom));
-
-            _bottomRight = til::point{ right, bottom };
         }
 
 #ifdef _WINCONTYPES_
+        // This extra specialization exists for SMALL_RECT because it's the only rectangle in the world that we know of
+        // with the bottom and right fields INCLUSIVE to the rectangle itself.
+        // It will perform math on the way in to ensure that it is represented as EXCLUSIVE.
         rectangle(SMALL_RECT sr)
         {
             _topLeft = til::point{ static_cast<ptrdiff_t>(sr.Left), static_cast<ptrdiff_t>(sr.Top) };
@@ -66,108 +81,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        // This template will convert to size from anything that has a Left, Top, Right, and Bottom field that appear convertable to an integer value
         template<typename TOther>
         constexpr rectangle(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().Top)> && std::is_integral_v<decltype(std::declval<TOther>().Left)> && std::is_integral_v<decltype(std::declval<TOther>().Bottom)> && std::is_integral_v<decltype(std::declval<TOther>().Right)>, int> /*sentinel*/ = 0) :
-            rectangle(til::point{static_cast<ptrdiff_t>(other.Left), static_cast<ptrdiff_t>(other.Top)}, til::point{static_cast<ptrdiff_t>(other.Right), static_cast<ptrdiff_t>(other.Bottom)})
+            rectangle(til::point{ static_cast<ptrdiff_t>(other.Left), static_cast<ptrdiff_t>(other.Top) }, til::point{ static_cast<ptrdiff_t>(other.Right), static_cast<ptrdiff_t>(other.Bottom) })
         {
-
         }
 
+        // This template will convert to size from anything that has a left, top, right, and bottom field that appear convertable to an integer value
         template<typename TOther>
-        constexpr rectangle(const TOther& other, std::enable_if_t < std::is_integral_v<decltype(std::declval<TOther>().top)> && std::is_integral_v<decltype(std::declval<TOther>().left)> && std::is_integral_v<decltype(std::declval<TOther>().bottom)> && std::is_integral_v<decltype(std::declval<TOther>().right)>, int> /*sentinel*/ = 0) :
-            rectangle(til::point{ static_cast<ptrdiff_t>(other.left), static_cast<ptrdiff_t>(other.top) }, til::point{ static_cast<ptrdiff_t>(other.right), static_cast<ptrdiff_t>(other.bottom)})
+        constexpr rectangle(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().top)> && std::is_integral_v<decltype(std::declval<TOther>().left)> && std::is_integral_v<decltype(std::declval<TOther>().bottom)> && std::is_integral_v<decltype(std::declval<TOther>().right)>, int> /*sentinel*/ = 0) :
+            rectangle(til::point{ static_cast<ptrdiff_t>(other.left), static_cast<ptrdiff_t>(other.top) }, til::point{ static_cast<ptrdiff_t>(other.right), static_cast<ptrdiff_t>(other.bottom) })
         {
-
-        }
-
-        const_iterator begin() const
-        {
-            return recterator(_topLeft, size());
-        }
-
-        const_iterator end() const
-        {
-            return recterator(_topLeft, size(), { _topLeft.x(), _topLeft.y() + height() });
-        }
-
-        constexpr ptrdiff_t top() const noexcept
-        {
-            return _topLeft.y();
-        }
-
-        constexpr ptrdiff_t bottom() const noexcept
-        {
-            return _bottomRight.y();
-        }
-
-        ptrdiff_t bottom_inclusive() const
-        {
-            ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - 1).AssignIfValid(&ret));
-            return ret;
-        }
-
-        constexpr ptrdiff_t left() const noexcept
-        {
-            return _topLeft.x();
-        }
-
-        constexpr ptrdiff_t right() const noexcept
-        {
-            return _bottomRight.x();
-        }
-
-        ptrdiff_t right_inclusive() const
-        {
-            ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - 1).AssignIfValid(&ret));
-            return ret;
-        }
-
-        ptrdiff_t width() const
-        {
-            ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - left()).AssignIfValid(&ret));
-            return ret;
-        }
-
-        template<typename T>
-        T width() const
-        {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width()).AssignIfValid(&ret));
-            return ret;
-        }
-
-        ptrdiff_t height() const 
-        {
-            ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - top()).AssignIfValid(&ret));
-            return ret;
-        }
-
-        template<typename T>
-        T height() const
-        {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret));
-            return ret;
-        }
-        
-        constexpr point origin() const noexcept
-        {
-            return _topLeft;
-        }
-
-        constexpr bool empty() const noexcept
-        {
-            return _topLeft.x() >= _bottomRight.x() ||
-                _topLeft.y() >= _bottomRight.y();
-        }
-
-        size size() const 
-        {
-            return til::size{ width(), height() };
         }
 
         constexpr rectangle& operator=(const rectangle other) noexcept
@@ -180,7 +105,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool operator==(const rectangle& other) const noexcept
         {
             return _topLeft == other._topLeft &&
-                _bottomRight == other._bottomRight;
+                   _bottomRight == other._bottomRight;
         }
 
         constexpr bool operator!=(const rectangle& other) const noexcept
@@ -188,14 +113,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        rectangle operator+(const rectangle& other) const
+        constexpr operator bool() const noexcept
         {
-            return rectangle{ _topLeft + other._topLeft, _bottomRight + other._bottomRight };
+            return _topLeft.x() < _bottomRight.x() &&
+                   _topLeft.y() < _bottomRight.y();
         }
 
-        rectangle operator*(const rectangle& other) const
+        const_iterator begin() const
         {
-            return rectangle{ _topLeft * other._topLeft, _bottomRight * other._bottomRight };
+            return recterator(_topLeft, size());
+        }
+
+        const_iterator end() const
+        {
+            return recterator(_topLeft, size(), { _topLeft.x(), _topLeft.y() + height() });
         }
 
         // OR = union
@@ -357,7 +288,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // We generate these rectangles by the original and intersect points, but some of them might be empty when the intersect
                 // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
                 // We will filter those out below when adding them to the result.
-                const auto t = rectangle({ left(), top(), right(), intersect.top()});
+                const auto t = rectangle({ left(), top(), right(), intersect.top() });
                 const auto b = rectangle({ left(), intersect.bottom(), right(), bottom() });
                 const auto l = rectangle({ left(), intersect.top(), intersect.left(), intersect.bottom() });
                 const auto r = rectangle({ intersect.right(), intersect.top(), right(), intersect.bottom() });
@@ -386,14 +317,113 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
+        constexpr ptrdiff_t top() const noexcept
+        {
+            return _topLeft.y();
+        }
+
+        template<typename T>
+        T top() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        constexpr ptrdiff_t bottom() const noexcept
+        {
+            return _bottomRight.y();
+        }
+
+        template<typename T>
+        T bottom() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(bottom()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        constexpr ptrdiff_t left() const noexcept
+        {
+            return _topLeft.x();
+        }
+
+        template<typename T>
+        T left() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        constexpr ptrdiff_t right() const noexcept
+        {
+            return _bottomRight.x();
+        }
+
+        template<typename T>
+        T right() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(right()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        ptrdiff_t width() const
+        {
+            ptrdiff_t ret;
+            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - left()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        template<typename T>
+        T width() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        ptrdiff_t height() const
+        {
+            ptrdiff_t ret;
+            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - top()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        template<typename T>
+        T height() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret));
+            return ret;
+        }
+
+        constexpr point origin() const noexcept
+        {
+            return _topLeft;
+        }
+
+        size size() const
+        {
+            return til::size{ width(), height() };
+        }
+
+        constexpr bool empty() const noexcept
+        {
+            return !operator bool();
+        }
+
 #ifdef _WINCONTYPES_
+        // NOTE: This will convert back to INCLUSIVE on the way out because
+        // that is generally how SMALL_RECTs are handled in console code and via the APIs.
         operator SMALL_RECT() const
         {
             SMALL_RECT ret;
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.Left));
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.Top));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(right_inclusive()).AssignIfValid(&ret.Right));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(bottom_inclusive()).AssignIfValid(&ret.Bottom));
+            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(right()) - 1).AssignIfValid(&ret.Right));
+            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(bottom()) - 1).AssignIfValid(&ret.Bottom));
             return ret;
         }
 #endif

@@ -20,7 +20,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _size(size),
             _current(topLeft)
         {
-
         }
 
         recterator(point topLeft, size size, point start) :
@@ -28,7 +27,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _size(size),
             _current(start)
         {
-
         }
 
         recterator& operator++()
@@ -48,8 +46,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         bool operator==(const recterator& other) const
         {
             return _current == other._current &&
-                _topLeft == other._topLeft &&
-                _size == other._size;
+                   _topLeft == other._topLeft &&
+                   _size == other._size;
         }
 
         bool operator!=(const recterator& other) const
@@ -90,9 +88,9 @@ namespace WEX::TestExecution
     class VerifyOutputTraits<::til::recterator>
     {
     public:
-        static WEX::Common::NoThrowString ToString(const ::til::recterator& rect)
+        static WEX::Common::NoThrowString ToString(const ::til::recterator& /*rect*/)
         {
-            return WEX::Common::NoThrowString().Format(L"(L:%td, T:%td, R:%td, B:%td) [W:%td, H:%td]", rect.left(), rect.top(), rect.right(), rect.bottom(), rect.width(), rect.height());
+            return WEX::Common::NoThrowString().Format(L"Yep that's a recterator.");
         }
     };
 

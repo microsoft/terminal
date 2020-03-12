@@ -83,7 +83,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _map[_pos];
         }
-               
+
     private:
         size_t _pos;
         const std::vector<bool>& _map;
@@ -169,7 +169,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     ++runLength;
                 } while (_nextPos < end && _nextPos < rowEndIndex && _values.at(_nextPos));
 
-                _run = til::rectangle{ runStart, til::size{runLength, static_cast<ptrdiff_t>(1)} };
+                _run = til::rectangle{ runStart, til::size{ runLength, static_cast<ptrdiff_t>(1) } };
             }
             else
             {
@@ -263,14 +263,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
             // .assign(_size(), true) throws an assert (unsupported operation)
 
-            set(til::rectangle{ til::point{0, 0}, _size });
+            set(til::rectangle{ til::point{ 0, 0 }, _size });
         }
 
         void reset_all()
         {
             // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
             // .assign(_size(), false) throws an assert (unsupported operation)
-            reset(til::rectangle{ til::point{0, 0}, _size });
+            reset(til::rectangle{ til::point{ 0, 0 }, _size });
             _empty = true;
         }
 
@@ -326,7 +326,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (pt.x() >= _size.width() || pt.y() >= _size.height())
             {
                 reset_all();
-                return(*this);
+                return (*this);
             }
 
             // TODO: any way to reconcile this with walk directions from scrolling apis?

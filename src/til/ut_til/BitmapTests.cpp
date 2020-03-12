@@ -112,8 +112,8 @@ class BitmapTests
         foo.reset_all();
         foo.set(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 2 } });
 
-        foo.set(til::rectangle{ til::point{3, 5} });
-        foo.set(til::rectangle{ til::point{0, 6} });
+        foo.set(til::rectangle{ til::point{ 3, 5 } });
+        foo.set(til::rectangle{ til::point{ 0, 6 } });
 
         std::deque<til::rectangle> expectedRects;
         expectedRects.push_back(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 1 } });
