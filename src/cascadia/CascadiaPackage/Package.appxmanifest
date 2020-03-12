@@ -6,6 +6,7 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:uap7="http://schemas.microsoft.com/appx/manifest/uap/windows10/7"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
@@ -60,8 +61,14 @@
             <desktop:ExecutionAlias Alias="wt.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask
+            TaskId="StartTerminalOnLoginTask"
+            Enabled="false"
+            DisplayName="Launch Windows Terminal on startup" />
+        </uap5:Extension>
       </Extensions>
-
+      
     </Application>
   </Applications>
 
@@ -75,6 +82,6 @@
       <uap7:SharedFonts>
         <uap4:Font File="Cascadia.ttf" />
       </uap7:SharedFonts>
-    </uap7:Extension>
-  </Extensions>
+    </uap7:Extension>    
+  </Extensions>  
 </Package>
