@@ -677,7 +677,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.EqualsExceptForeground(color, globalInvert))
+                    if (!_IsAllSpaces(it->Chars()) || newAttr.IsAnyGridLineEnabled() || !newAttr.EqualsExceptForeground(color, globalInvert))
                     {
                         color = newAttr;
                         break; // vend this run

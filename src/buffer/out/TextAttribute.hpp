@@ -177,6 +177,11 @@ public:
                _extendedAttrs == other._extendedAttrs;
     }
 
+    constexpr bool IsAnyGridLineEnabled() const noexcept
+    {
+        return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
+    }
+
 private:
     COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                COLORREF defaultColor) const noexcept;
