@@ -184,7 +184,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const short sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
 
     // This will be used to determine where the viewport should be in the new buffer.
-    short oldViewportTop = _mutableViewport.Top();
+    const short oldViewportTop = _mutableViewport.Top();
+    short newViewportTop = oldViewportTop;
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
@@ -195,10 +196,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
+        std::optional<short> oldViewStart{ oldViewportTop };
         RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
                                             *newTextBuffer.get(),
                                             _mutableViewport,
-                                            &oldViewportTop));
+                                            oldViewStart));
+        newViewportTop = oldViewStart.value();
     }
     CATCH_RETURN();
 
@@ -243,7 +246,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
     const short proposedTopFromLastLine = ::base::saturated_cast<short>(maxRow - viewportSize.Y + 1);
-    const short proposedTopFromScrollback = oldViewportTop;
+    const short proposedTopFromScrollback = newViewportTop;
 
     short proposedTop = std::max(proposedTopFromLastLine,
                                  proposedTopFromScrollback);

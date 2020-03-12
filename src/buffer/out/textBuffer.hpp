@@ -103,8 +103,7 @@ public:
     // Scroll needs access to this to quickly rotate around the buffer.
     bool IncrementCircularBuffer(const bool inVtMode = false);
 
-    COORD GetLastNonSpaceCharacter() const;
-    COORD GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const;
+    COORD GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
 
     Cursor& GetCursor() noexcept;
     const Cursor& GetCursor() const noexcept;
@@ -164,8 +163,8 @@ public:
 
     static HRESULT Reflow(TextBuffer& oldBuffer,
                           TextBuffer& newBuffer,
-                          const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport = std::nullopt,
-                          short* const lastScrollbackRow = nullptr);
+                          const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
+                          std::optional<short>& oldViewportTop);
 
 private:
     std::deque<ROW> _storage;
