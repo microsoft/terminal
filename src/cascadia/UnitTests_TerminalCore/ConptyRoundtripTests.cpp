@@ -684,7 +684,6 @@ void ConptyRoundtripTests::PassthroughCursorShapeImmediately()
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
-    // auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
