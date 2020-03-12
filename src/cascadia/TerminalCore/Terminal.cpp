@@ -268,11 +268,15 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         {
             if (dx < 0 && proposedTop > 0)
             {
-                auto row = newTextBuffer->GetRowByOffset(proposedTop - 1);
-                if (row.GetCharRow().WasWrapForced())
+                try
                 {
-                    proposedTop--;
+                    auto row = newTextBuffer->GetRowByOffset(::base::saturated_cast<short>(proposedTop - 1));
+                    if (row.GetCharRow().WasWrapForced())
+                    {
+                        proposedTop--;
+                    }
                 }
+                CATCH_LOG();
             }
         }
     }

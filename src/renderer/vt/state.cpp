@@ -298,6 +298,7 @@ CATCH_RETURN();
         {
             hr = _ResizeWindow(newView.Width(), newView.Height());
         }
+        _resized = true;
     }
 
     // See MSFT:19408543
@@ -353,7 +354,6 @@ CATCH_RETURN();
         }
     }
 
-    _resized = true;
     return hr;
 }
 

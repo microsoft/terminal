@@ -507,21 +507,15 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     hostSm.ProcessString(L"\n");
     hostSm.ProcessString(L"1234567890");
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const bool isTerminal) {
+    auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
         VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
         VERIFY_ARE_EQUAL(10, cursor.GetPosition().X);
 
-        // TODO: GH#780 - In the Terminal, neither line should be wrapped.
-        // Unfortunately, until WriteCharsLegacy2ElectricBoogaloo is complete,
-        // the Terminal will still treat the first line as wrapped. When #780 is
-        // implemented, these tests will fail, and should again expect the first
-        // line to not be wrapped.
-
         // Verify that we marked the 0th row as _not wrapped_
         const auto& row0 = tb.GetRowByOffset(0);
-        VERIFY_ARE_EQUAL(isTerminal, row0.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
 
         const auto& row1 = tb.GetRowByOffset(1);
         VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
@@ -530,7 +524,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
         TestUtils::VerifyExpectedString(tb, L"1234567890", { 0, 1 });
     };
 
-    verifyBuffer(hostTb, false);
+    verifyBuffer(hostTb);
 
     // First write the first 80 characters from the string
     expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
@@ -543,7 +537,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    verifyBuffer(termTb, true);
+    verifyBuffer(termTb);
 }
 
 void ConptyRoundtripTests::TestExactWrappingWithSpaces()
@@ -577,21 +571,15 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     hostSm.ProcessString(L"          ");
     hostSm.ProcessString(L"1234567890");
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const bool isTerminal) {
+    auto verifyBuffer = [&](const TextBuffer& tb) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor wrapped to the second line
         VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
         VERIFY_ARE_EQUAL(20, cursor.GetPosition().X);
 
-        // TODO: GH#780 - In the Terminal, neither line should be wrapped.
-        // Unfortunately, until WriteCharsLegacy2ElectricBoogaloo is complete,
-        // the Terminal will still treat the first line as wrapped. When #780 is
-        // implemented, these tests will fail, and should again expect the first
-        // line to not be wrapped.
-
         // Verify that we marked the 0th row as _not wrapped_
         const auto& row0 = tb.GetRowByOffset(0);
-        VERIFY_ARE_EQUAL(isTerminal, row0.GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(row0.GetCharRow().WasWrapForced());
 
         const auto& row1 = tb.GetRowByOffset(1);
         VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
@@ -600,7 +588,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
         TestUtils::VerifyExpectedString(tb, L"          1234567890", { 0, 1 });
     };
 
-    verifyBuffer(hostTb, false);
+    verifyBuffer(hostTb);
 
     // First write the first 80 characters from the string
     expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
@@ -613,7 +601,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    verifyBuffer(termTb, true);
+    verifyBuffer(termTb);
 }
 
 void ConptyRoundtripTests::MoveCursorAtEOL()
