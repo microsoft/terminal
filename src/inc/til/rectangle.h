@@ -100,7 +100,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         rectangle(til::point topLeft):
             _topLeft(topLeft)
         {
-            _bottomRight = _topLeft + 1;
+            _bottomRight = _topLeft + til::point{ 1, 1 };
         }
 
         constexpr rectangle(til::point topLeft, til::point bottomRight) noexcept :

@@ -18,6 +18,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
+        // On 64-bit processors, int and ptrdiff_t are different fundamental types.
+        // On 32-bit processors, they're the same which makes this a double-definition
+        // with the `ptrdiff_t` one below.
+#if defined(_M_AMD64) || defined(_M_ARM64)
+        constexpr point(int x, int y) noexcept :
+            point(static_cast<ptrdiff_t>(x), static_cast<ptrdiff_t>(y))
+        {
+        }
+#endif
+
+        point(size_t x, size_t y)
+        {
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x).AssignIfValid(&_x));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y).AssignIfValid(&_y));
+        }
+
         constexpr point(ptrdiff_t x, ptrdiff_t y) noexcept :
             _x(x),
             _y(y)
@@ -25,6 +41,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
+        // This template will convert to size from anything that has an X and a Y field that appear convertable to an integer value
         template<typename TOther>
         constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             point(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
@@ -32,6 +49,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         }
 
+        // This template will convert to size from anything that has a x and a y field that appear convertable to an integer value
         template<typename TOther>
         constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().x)> && std::is_integral_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
             point(static_cast<ptrdiff_t>(other.x), static_cast<ptrdiff_t>(other.y))
@@ -42,12 +60,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool operator==(const point& other) const noexcept
         {
             return _x == other._x &&
-                _y == other._y;
+                   _y == other._y;
         }
 
         constexpr bool operator!=(const point& other) const noexcept
         {
             return !(*this == other);
+        }
+
+        operator bool() const noexcept
+        {
+            return _x != 0 || _y != 0;
         }
 
         constexpr bool operator<(const point& other) const noexcept
@@ -80,26 +103,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 return _x > other._x;
             }
-        }
-
-        point operator+(const ptrdiff_t other) const
-        {
-            return *this + point{ other, other };
-        }
-
-        point operator-(const ptrdiff_t other) const
-        {
-            return *this - point{ other, other };
-        }
-
-        point operator*(const ptrdiff_t other) const
-        {
-            return *this * point{ other, other };
-        }
-
-        point operator/(const ptrdiff_t other) const
-        {
-            return *this / point{ other, other };
         }
 
         point operator+(const point& other) const
@@ -151,9 +154,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _x;
         }
 
+        template<typename T>
+        T x() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x()).AssignIfValid(&ret));
+            return ret;
+        }
+
         constexpr ptrdiff_t y() const noexcept
         {
             return _y;
+        }
+
+        template<typename T>
+        T y() const
+        {
+            T ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y()).AssignIfValid(&ret));
+            return ret;
         }
 
 #ifdef _WINCONTYPES_
@@ -183,13 +202,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-#ifdef UNIT_TESTING
-        friend class ::PointTests;
-#endif
-
     protected:
         ptrdiff_t _x;
         ptrdiff_t _y;
+
+#ifdef UNIT_TESTING
+        friend class ::PointTests;
+#endif
     };
 }
 
@@ -210,12 +229,12 @@ namespace WEX::TestExecution
     class VerifyCompareTraits<::til::point, ::til::point>
     {
     public:
-        static bool AreEqual(const ::til::point& expected, const ::til::point& actual)
+        static bool AreEqual(const ::til::point& expected, const ::til::point& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::point& expected, const ::til::point& actual)
+        static bool AreSame(const ::til::point& expected, const ::til::point& actual) noexcept
         {
             return &expected == &actual;
         }
@@ -224,7 +243,7 @@ namespace WEX::TestExecution
 
         static bool IsGreaterThan(const ::til::point& expectedGreater, const ::til::point& expectedLess) = delete;
 
-        static bool IsNull(const ::til::point& object)
+        static bool IsNull(const ::til::point& object) noexcept
         {
             return object == til::point{};
         }
