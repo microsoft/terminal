@@ -1847,13 +1847,6 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
-    {
-        return false;
-    }
-
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
 
@@ -1892,6 +1885,15 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     if (success)
     {
         success = _pConApi->PrivateAllowCursorBlinking(fEnableBlinking);
+    }
+
+    // If we're a conpty, always return false, so that this cursor state will be
+    // sent to the connected terminal
+    bool isPty = false;
+    _pConApi->IsConsolePty(isPty);
+    if (isPty)
+    {
+        return false;
     }
 
     return success;
