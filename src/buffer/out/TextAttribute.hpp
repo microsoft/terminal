@@ -163,15 +163,20 @@ public:
         return _foreground.IsRgb() || _background.IsRgb();
     }
 
-    // In certain scenarios, we don't care about specifically the foreground color.
-    constexpr bool EqualsExceptForeground(const TextAttribute& other, const bool inverted = false) const noexcept
+    // This returns whether this attribute, if printed directly next to another attribute, for the space
+    // character, would look identical to the other one.
+    constexpr bool HasIdenticalVisualRepresentationForBlankSpace(const TextAttribute& other, const bool inverted = false) const noexcept
     {
         // sneaky-sneaky: I'm using xor here
         // inverted is whether there's a global invert; Reverse is a local one.
         // global ^ local == true : the background attribute is actually the visible foreground, so we care about the foregrounds being identical
         // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
         const auto checkForeground = (inverted != _IsReverseVideo());
-        return (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
+        return !IsAnyGridLineEnabled() && // grid lines have a visual representation
+               // crossed out, doubly and singly underlined have a visual representation
+               WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // all other attributes do not have a visual representation
+               (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||
                 (!checkForeground && _background == other._background)) &&
                _extendedAttrs == other._extendedAttrs;
