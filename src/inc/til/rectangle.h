@@ -45,24 +45,31 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        // Creates a 1x1 rectangle with the given top-left corner.
         rectangle(til::point topLeft) :
             _topLeft(topLeft)
         {
             _bottomRight = _topLeft + til::point{ 1, 1 };
         }
 
+        // Creates a rectangle where you specify the top-left corner (included)
+        // and the bottom-right corner (excluded)
         constexpr rectangle(til::point topLeft, til::point bottomRight) noexcept :
             _topLeft(topLeft),
             _bottomRight(bottomRight)
         {
         }
 
+        // Creates a rectangle with the given size where the top-left corner
+        // is set to 0,0.
         constexpr rectangle(til::size size) noexcept :
             _topLeft(til::point{ 0, 0 }),
             _bottomRight(til::point{ size.width(), size.height() })
         {
         }
 
+        // Creates a rectangle at the given top-left corner point X,Y that extends
+        // down (+Y direction) and right (+X direction) for the given size.
         rectangle(til::point topLeft, til::size size) :
             _topLeft(topLeft),
             _bottomRight(topLeft + til::point{ size.width(), size.height() })
