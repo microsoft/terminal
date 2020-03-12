@@ -222,7 +222,7 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 {
     _terminalApi.SetKeypadMode(fApplicationMode);
-    return false;
+    return true;
 }
 
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
@@ -233,7 +233,7 @@ bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 {
     _terminalApi.SetCursorKeysMode(applicationMode);
-    return false;
+    return true;
 }
 
 //Routine Description:
@@ -245,7 +245,7 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
 {
     _terminalApi.EnableVT200MouseMode(enabled);
-    return false;
+    return true;
 }
 
 //Routine Description:
@@ -258,7 +258,7 @@ bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
 bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 {
     _terminalApi.EnableUTF8ExtendedMouseMode(enabled);
-    return false;
+    return true;
 }
 
 //Routine Description:
@@ -271,7 +271,7 @@ bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 {
     _terminalApi.EnableSGRExtendedMouseMode(enabled);
-    return false;
+    return true;
 }
 
 //Routine Description:
@@ -283,7 +283,7 @@ bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
 {
     _terminalApi.EnableButtonEventMouseMode(enabled);
-    return false;
+    return true;
 }
 
 //Routine Description:
@@ -296,7 +296,7 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
 bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
 {
     _terminalApi.EnableAnyEventMouseMode(enabled);
-    return false;
+    return true;
 }
 
 //Routine Description:
@@ -309,7 +309,7 @@ bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
 bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
 {
     _terminalApi.EnableAlternateScrollMode(enabled);
-    return false;
+    return true;
 }
 
 bool TerminalDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
