@@ -7,6 +7,7 @@
 #include "til/color.h"
 #include "til/some.h"
 #include "til/size.h"
+#include "til/point.h"
 #include "til/u8u16convert.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
