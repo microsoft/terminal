@@ -42,7 +42,7 @@ try
     stream << " _end: { " << end.X << ", " << end.Y << " }";
     stream << " _degenerate: " << utr.IsDegenerate();
     stream << " _wordDelimiters: " << utr._wordDelimiters;
-    //stream << " content: " << utr._getTextValue();
+    stream << " content: " << utr._getTextValue();
     return stream.str();
 }
 catch (...)
