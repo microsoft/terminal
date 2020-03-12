@@ -7,79 +7,14 @@
 #include "size.h"
 #include "some.h"
 
+#include "recterator.h"
+
 #ifdef UNIT_TESTING
 class RectangleTests;
 #endif
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class recterator
-    {
-    public:
-        recterator(til::point topLeft, til::size size) :
-            _topLeft(topLeft),
-            _size(size),
-            _current(topLeft)
-        {
-
-        }
-
-        recterator(til::point topLeft, til::size size, til::point start) :
-            _topLeft(topLeft),
-            _size(size),
-            _current(start)
-        {
-
-        }
-
-        recterator& operator++()
-        {
-            if (_current.x() + 1 >= _topLeft.x() + _size.width())
-            {
-                _current = { _topLeft.x(), _current.y() + 1 };
-            }
-            else
-            {
-                _current = { _current.x() + 1, _current.y() };
-            }
-
-            return (*this);
-        }
-
-        bool operator==(const recterator& other) const
-        {
-            return _current == other._current &&
-                _topLeft == other._topLeft &&
-                _size == other._size;
-        }
-
-        bool operator!=(const recterator& other) const
-        {
-            return !(*this == other);
-        }
-
-        bool operator<(const recterator& other) const
-        {
-            return _current < other._current;
-        }
-
-        bool operator>(const recterator& other) const
-        {
-            return _current > other._current;
-        }
-
-        til::point operator*() const
-        {
-            return _current;
-        }
-
-    protected:
-
-        til::point _current;
-        const til::point _topLeft;
-        const til::size _size;
-    };
-
     class rectangle
     {
     public:
@@ -482,12 +417,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-#ifdef UNIT_TESTING
-        friend class ::RectangleTests;
-#endif
     protected:
         til::point _topLeft;
         til::point _bottomRight;
+
+#ifdef UNIT_TESTING
+        friend class ::RectangleTests;
+#endif
     };
 }
 
@@ -508,12 +444,12 @@ namespace WEX::TestExecution
     class VerifyCompareTraits<::til::rectangle, ::til::rectangle>
     {
     public:
-        static bool AreEqual(const ::til::rectangle& expected, const ::til::rectangle& actual)
+        static bool AreEqual(const ::til::rectangle& expected, const ::til::rectangle& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::rectangle& expected, const ::til::rectangle& actual)
+        static bool AreSame(const ::til::rectangle& expected, const ::til::rectangle& actual) noexcept
         {
             return &expected == &actual;
         }
@@ -522,7 +458,7 @@ namespace WEX::TestExecution
 
         static bool IsGreaterThan(const ::til::rectangle& expectedGreater, const ::til::rectangle& expectedLess) = delete;
 
-        static bool IsNull(const ::til::rectangle& object)
+        static bool IsNull(const ::til::rectangle& object) noexcept
         {
             return object == til::rectangle{};
         }
