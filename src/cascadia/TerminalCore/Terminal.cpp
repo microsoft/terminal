@@ -210,7 +210,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         //   buffer (as seen below).
         // * the new value of visibleViewportTop will be used to calculate the
         //   new scrollOffsett in the new buffer, so that the visible lines on
-        //   the sceren remain roughly the same.
+        //   the screen remain roughly the same.
         TextBuffer::PositionInformation oldRows{ 0 };
         oldRows.mutableViewportTop = oldViewportTop;
         oldRows.visibleViewportTop = newVisibleTop;
