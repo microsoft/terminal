@@ -47,6 +47,11 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::CursorVisibility(const bool isVisible) noexcept
+{
+    return _terminalApi.SetCursorVisibility(isVisible);
+}
+
 bool TerminalDispatch::CursorForward(const size_t distance) noexcept
 try
 {
@@ -377,6 +382,9 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
         break;
     case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+        success = CursorVisibility(enable);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.

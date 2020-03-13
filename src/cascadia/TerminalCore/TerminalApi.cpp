@@ -573,3 +573,9 @@ bool Terminal::IsVtInputEnabled() const noexcept
     // We should never be getting this call in Terminal.
     FAIL_FAST();
 }
+
+bool Terminal::SetCursorVisibility(const bool visible) noexcept
+{
+    _buffer->GetCursor().SetIsVisible(visible);
+    return true;
+}
