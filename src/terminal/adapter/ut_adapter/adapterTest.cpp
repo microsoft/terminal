@@ -610,14 +610,10 @@ public:
         return _getConsoleOutputCPResult;
     }
 
-    bool IsConsolePty(bool& isPty) const override
+    bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
-        if (_isConsolePtyResult)
-        {
-            isPty = _isPty;
-        }
-        return _isConsolePtyResult;
+        return _isPty;
     }
 
     bool DeleteLines(const size_t /*count*/) override
@@ -2270,7 +2266,6 @@ public:
 
         // Test in pty mode - we should fail, but PrivateSetColorTableEntry should still be called
         _testGetSet->_isPty = true;
-        _testGetSet->_isConsolePtyResult = true;
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
         VERIFY_IS_FALSE(_pDispatch.get()->SetColorTableEntry(15, testColor));
