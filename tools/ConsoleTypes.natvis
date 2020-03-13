@@ -77,12 +77,16 @@
     </Type>
 
     <Type Name="KeyEvent">
-        <DisplayString Condition="_keyDown">{{↓  wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+        <DisplayString Condition="_keyDown">{{↓ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
         <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
     </Type>
 
     <Type Name="til::size">
         <DisplayString>{{W: {_width,d} x H: {_height,d} -> A: {_width * _height, d}}}</DisplayString>
+    </Type>
+
+    <Type Name="til::point">
+        <DisplayString>{{X: {_x,d}, Y: {_y,d}}}</DisplayString>
     </Type>
 
     <Type Name="til::color">
