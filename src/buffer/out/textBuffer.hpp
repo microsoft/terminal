@@ -161,7 +161,7 @@ public:
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);
 
-    struct LinesToReflow
+    struct PositionInformation
     {
         short mutableViewportTop{ 0 };
         short visibleViewportTop{ 0 };
@@ -170,7 +170,7 @@ public:
     static HRESULT Reflow(TextBuffer& oldBuffer,
                           TextBuffer& newBuffer,
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
-                          std::optional<std::reference_wrapper<LinesToReflow>> oldRows);
+                          std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
     std::deque<ROW> _storage;

@@ -1869,15 +1869,15 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - lastCharacterViewport - Optional. If the caller knows that the last
 //   nonspace character is in a particular Viewport, the caller can provide this
 //   parameter as an optimization, as opposed to searching the entire buffer.
-// - oldRows - Optional. The caller can provide a pair of rows in this parameter
-//   and we'll calculate the position of the _end_ of those rows in the new
-//   buffer. The rows's new value is placed back into this parameter.
+// - positionInfo - Optional. The caller can provide a pair of rows in this
+//   parameter and we'll calculate the position of the _end_ of those rows in
+//   the new buffer. The rows's new value is placed back into this parameter.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            TextBuffer& newBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
-                           std::optional<std::reference_wrapper<LinesToReflow>> oldRows)
+                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1961,22 +1961,22 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
         // new location of the _end_ of that row in the buffer).
-        if (oldRows.has_value())
+        if (positionInfo.has_value())
         {
             if (!foundOldMutable)
             {
-                if (iOldRow >= oldRows.value().get().mutableViewportTop)
+                if (iOldRow >= positionInfo.value().get().mutableViewportTop)
                 {
-                    oldRows.value().get().mutableViewportTop = newCursor.GetPosition().Y;
+                    positionInfo.value().get().mutableViewportTop = newCursor.GetPosition().Y;
                     foundOldMutable = true;
                 }
             }
 
             if (!foundOldVisible)
             {
-                if (iOldRow >= oldRows.value().get().visibleViewportTop)
+                if (iOldRow >= positionInfo.value().get().visibleViewportTop)
                 {
-                    oldRows.value().get().visibleViewportTop = newCursor.GetPosition().Y;
+                    positionInfo.value().get().visibleViewportTop = newCursor.GetPosition().Y;
                     foundOldVisible = true;
                 }
             }

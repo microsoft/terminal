@@ -201,8 +201,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
-        // Build a LinesToReflow to track the position of both the top of the
-        // mutable viewport and the top of the visible viewport in the new
+        // Build a PositionInformation to track the position of both the top of
+        // the mutable viewport and the top of the visible viewport in the new
         // buffer.
         // * the new value of mutableViewportTop will be used to figure out
         //   where we should place the mutable viewport in the new buffer. This
@@ -211,11 +211,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         // * then new value of visibleViewportTop will be used to calculate the
         //   new scrollOffsett in the new buffer, so that the visible lines on
         //   the sceren remain roughly the same.
-        TextBuffer::LinesToReflow oldRows{ 0 };
+        TextBuffer::PositionInformation oldRows{ 0 };
         oldRows.mutableViewportTop = oldViewportTop;
         oldRows.visibleViewportTop = newVisibleTop;
 
-        std::optional<short> oldViewStart{ oldViewportTop };
+        const std::optional<short> oldViewStart{ oldViewportTop };
         RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
                                             *newTextBuffer.get(),
                                             _mutableViewport,
