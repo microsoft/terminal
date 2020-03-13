@@ -19,6 +19,7 @@ public:
                         const size_t column) noexcept override; // CUP
 
     bool CursorVisibility(const bool isVisible) noexcept override; // DECTCEM
+    bool EnableCursorBlinking(const bool enable) noexcept override; // ATT610
 
     bool CursorForward(const size_t distance) noexcept override;
     bool CursorBackward(const size_t distance) noexcept override;

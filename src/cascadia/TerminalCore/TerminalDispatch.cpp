@@ -52,6 +52,11 @@ bool TerminalDispatch::CursorVisibility(const bool isVisible) noexcept
     return _terminalApi.SetCursorVisibility(isVisible);
 }
 
+bool TerminalDispatch::EnableCursorBlinking(const bool enable) noexcept
+{
+    return _terminalApi.EnableCursorBlinking(enable);
+}
+
 bool TerminalDispatch::CursorForward(const size_t distance) noexcept
 try
 {
@@ -385,6 +390,9 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
         break;
     case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
         success = CursorVisibility(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+        success = EnableCursorBlinking(enable);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
