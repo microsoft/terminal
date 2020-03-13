@@ -40,6 +40,7 @@ static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
+static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
@@ -59,7 +60,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _tabWidthMode{ TabViewWidthMode::Equal },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
-    _launchMode{ LaunchMode::DefaultMode }
+    _launchMode{ LaunchMode::DefaultMode },
+    _StartOnUserLogin{ false }
 {
 }
 
@@ -237,6 +239,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
     jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
     jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
+    jsonObject[JsonKey(EnableStartupTaskKey)] = _StartOnUserLogin;
 
     return jsonObject;
 }
@@ -344,6 +347,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto snapToGridOnResize{ json[JsonKey(SnapToGridOnResizeKey)] })
     {
         _SnapToGridOnResize = snapToGridOnResize.asBool();
+    }
+
+    if (auto startupTaskEnabled{ json[JsonKey(EnableStartupTaskKey)] })
+    {
+        _StartOnUserLogin = startupTaskEnabled.asBool();
     }
 }
 

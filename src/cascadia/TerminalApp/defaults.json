@@ -11,7 +11,7 @@
     "snapToGridOnResize": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
     "confirmCloseAllTabs": true,
-
+    "startOnUserLogin":  false,
     "profiles":
     [
         {
