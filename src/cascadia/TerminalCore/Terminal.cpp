@@ -208,7 +208,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         //   where we should place the mutable viewport in the new buffer. This
         //   requires a bit of trickiness to remain consistent with conpty's
         //   buffer (as seen below).
-        // * then new value of visibleViewportTop will be used to calculate the
+        // * the new value of visibleViewportTop will be used to calculate the
         //   new scrollOffsett in the new buffer, so that the visible lines on
         //   the sceren remain roughly the same.
         TextBuffer::PositionInformation oldRows{ 0 };
