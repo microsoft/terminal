@@ -228,7 +228,7 @@ void Terminal::TrySnapOnInput()
 // - <none>
 // Return value:
 // - true, if we are tracking mouse input. False, otherwise
-bool Terminal::IsTrackingMouseInput() const
+bool Terminal::IsTrackingMouseInput() const noexcept
 {
     return _terminalInput->IsTrackingMouseInput();
 }

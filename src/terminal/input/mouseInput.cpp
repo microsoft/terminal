@@ -270,7 +270,7 @@ static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) no
 // - <none>
 // Return value:
 // - true, if we are tracking mouse input. False, otherwise
-bool TerminalInput::IsTrackingMouseInput() const
+bool TerminalInput::IsTrackingMouseInput() const noexcept
 {
     return (_mouseInputState.trackingMode != TrackingMode::None);
 }

@@ -105,7 +105,7 @@ public:
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
 
-    bool IsVtInputEnabled() const noexcept;
+    bool IsVtInputEnabled() const noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -119,7 +119,7 @@ public:
     int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
-    bool IsTrackingMouseInput() const;
+    bool IsTrackingMouseInput() const noexcept;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
