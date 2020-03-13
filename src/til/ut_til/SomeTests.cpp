@@ -28,6 +28,38 @@ class SomeTests
         VERIFY_THROWS(f(), std::invalid_argument);
     }
 
+    TEST_METHOD(Equality)
+    {
+        til::some<int, 2> a{ 1, 2 };
+        til::some<int, 2> b{ 1, 2 };
+        VERIFY_IS_TRUE(a == b);
+
+        til::some<int, 2> c{ 3, 2 };
+        VERIFY_IS_FALSE(a == c);
+
+        til::some<int, 2> d{ 2, 3 };
+        VERIFY_IS_FALSE(a == d);
+
+        til::some<int, 2> e{ 1 };
+        VERIFY_IS_FALSE(a == e);
+    }
+
+    TEST_METHOD(Inequality)
+    {
+        til::some<int, 2> a{ 1, 2 };
+        til::some<int, 2> b{ 1, 2 };
+        VERIFY_IS_FALSE(a != b);
+
+        til::some<int, 2> c{ 3, 2 };
+        VERIFY_IS_TRUE(a != c);
+
+        til::some<int, 2> d{ 2, 3 };
+        VERIFY_IS_TRUE(a != d);
+
+        til::some<int, 2> e{ 1 };
+        VERIFY_IS_TRUE(a != e);
+    }
+
     TEST_METHOD(Fill)
     {
         til::some<int, 4> s;

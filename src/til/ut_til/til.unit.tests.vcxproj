@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
