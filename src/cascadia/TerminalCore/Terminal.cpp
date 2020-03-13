@@ -186,7 +186,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
     short newViewportTop = oldViewportTop;
-
+    short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+    const bool originalOffsetWasZero = _scrollOffset == 0;
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -196,12 +197,18 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
+        TextBuffer::LinesToReflow oldRows{ 0 };
+        oldRows.mutableViewportTop = oldViewportTop;
+        oldRows.visibleViewportTop = newVisibleTop;
+
         std::optional<short> oldViewStart{ oldViewportTop };
         RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
                                             *newTextBuffer.get(),
                                             _mutableViewport,
-                                            oldViewStart));
-        newViewportTop = oldViewStart.value();
+                                            { oldRows }));
+
+        newViewportTop = oldRows.mutableViewportTop;
+        newVisibleTop = oldRows.visibleViewportTop;
     }
     CATCH_RETURN();
 
@@ -310,7 +317,13 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _buffer.swap(newTextBuffer);
 
-    _scrollOffset = 0;
+    // GH#3494: Maintain scrollbar position during resize
+    // Make sure that we don't scroll past the mutableViewport at the bottom of the buffer
+    newVisibleTop = std::min(newVisibleTop, _mutableViewport.Top());
+    // Make sure we don't scroll past the top of the scrollback
+    newVisibleTop = std::max<short>(newVisibleTop, 0);
+
+    _scrollOffset = originalOffsetWasZero ? 0 : _mutableViewport.Top() - newVisibleTop;
     _NotifyScrollEvent();
 
     return S_OK;

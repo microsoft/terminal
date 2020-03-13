@@ -1877,7 +1877,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            TextBuffer& newBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
-                           std::optional<short>& oldViewportTop)
+                           std::optional<std::reference_wrapper<LinesToReflow>> oldRows)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1896,7 +1896,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
-    bool foundOldRow = false;
+    bool foundOldMutable = false;
+    bool foundOldVisible = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
@@ -1960,12 +1961,24 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
         // new location of the _end_ of that row in the buffer).
-        if (oldViewportTop.has_value() && !foundOldRow)
+        if (oldRows.has_value())
         {
-            if (iOldRow >= oldViewportTop.value())
+            if (!foundOldMutable)
             {
-                oldViewportTop = newCursor.GetPosition().Y;
-                foundOldRow = true;
+                if (iOldRow >= oldRows.value().get().mutableViewportTop)
+                {
+                    oldRows.value().get().mutableViewportTop = newCursor.GetPosition().Y;
+                    foundOldMutable = true;
+                }
+            }
+
+            if (!foundOldVisible)
+            {
+                if (iOldRow >= oldRows.value().get().visibleViewportTop)
+                {
+                    oldRows.value().get().visibleViewportTop = newCursor.GetPosition().Y;
+                    foundOldVisible = true;
+                }
             }
         }
 
