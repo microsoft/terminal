@@ -265,6 +265,17 @@ static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) no
 }
 
 // Routine Description:
+// - Relays if we are tracking mouse input
+// Parameters:
+// - <none>
+// Return value:
+// - true, if we are tracking mouse input. False, otherwise
+bool TerminalInput::IsTrackingMouseInput() const noexcept
+{
+    return (_mouseInputState.trackingMode != TrackingMode::None);
+}
+
+// Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
 //     If the event should be transmitted in the selected mouse mode, then we'll try and
 //     encode the event according to the rules of the selected ExtendedMode, and insert those characters into the input buffer.
