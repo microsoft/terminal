@@ -696,35 +696,34 @@ namespace winrt::TerminalApp::implementation
         StartupTaskState state;
         bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
         StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
-        
+
         state = task.State();
         switch (state)
         {
-            case StartupTaskState::Disabled:
+        case StartupTaskState::Disabled:
+        {
+            if (tryEnableStartupTask)
             {
-                if (tryEnableStartupTask)
-                {
-                    co_await task.RequestEnableAsync();
-                }
-                break;
+                co_await task.RequestEnableAsync();
             }
-            case StartupTaskState::DisabledByUser:
+            break;
+        }
+        case StartupTaskState::DisabledByUser:
+        {
+            // TODO: how should we handle this?
+            break;
+        }
+        case StartupTaskState::Enabled:
+        {
+            if (!tryEnableStartupTask)
             {
-                // TODO: how should we handle this?
-                break;
+                task.Disable();
             }
-            case StartupTaskState::Enabled:
-            {
-                if (!tryEnableStartupTask)
-                {
-                    task.Disable();
-                }
-                break;
-            }
-            default:
-            {
-
-            }
+            break;
+        }
+        default:
+        {
+        }
         }
     }
     // Method Description:

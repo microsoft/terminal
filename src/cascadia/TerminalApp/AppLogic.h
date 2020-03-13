@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
         bool OnF7Pressed();
 
         void WindowCloseButtonClicked();
-        
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
 
