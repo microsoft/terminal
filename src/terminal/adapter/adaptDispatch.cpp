@@ -1461,6 +1461,9 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
+    bool isPty = false;
+    _pConApi->IsConsolePty(isPty);
+
     bool success = CursorVisibility(true); // Cursor enabled.
     if (success)
     {
@@ -1474,11 +1477,15 @@ bool AdaptDispatch::SoftReset()
     {
         success = SetCursorKeysMode(false); // Normal characters.
     }
-    if (success)
+    // SetCursorKeysMode will return false if we're in conpty mode, as to
+    // trigger a passthrough. If that's the case, just power through here.
+    if (success || isPty)
     {
         success = SetKeypadMode(false); // Numeric characters.
     }
-    if (success)
+    // SetKeypadMode will return false if we're in conpty mode, as to trigger a
+    // passthrough. If that's the case, just power through here.
+    if (success || isPty)
     {
         // Top margin = 1; bottom margin = page length.
         success = _DoSetTopBottomScrollingMargins(0, 0);
