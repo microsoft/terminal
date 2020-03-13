@@ -740,7 +740,7 @@ try
 CATCH_LOG()
 
 // Method Description:
-// - Sets the cursor to be currently on. On/Off is tracked independantly of
+// - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor
 //   blinker. Visibility is usually controlled by the client application. If the
 //   cursor is hidden, then the cursor will remain hidden. If the cursor is

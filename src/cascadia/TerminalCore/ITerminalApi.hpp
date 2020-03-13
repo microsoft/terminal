@@ -30,7 +30,7 @@ namespace Microsoft::Terminal::Core
         virtual COORD GetCursorPosition() noexcept = 0;
         virtual bool SetCursorVisibility(const bool visible) noexcept = 0;
         virtual bool CursorLineFeed(const bool withReturn) noexcept = 0;
-        virtual bool EnableCursorBlinking(const bool enable) = 0;
+        virtual bool EnableCursorBlinking(const bool enable) noexcept = 0;
 
         virtual bool DeleteCharacter(const size_t count) noexcept = 0;
         virtual bool InsertCharacter(const size_t count) noexcept = 0;
