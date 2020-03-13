@@ -8,6 +8,7 @@
 
 #include <LibraryResources.h>
 
+using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -23,6 +24,7 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
+static const winrt::hstring StartupTaskName = L"StartTerminalOnLoginTask";
 // clang-format off
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
@@ -686,6 +688,43 @@ namespace winrt::TerminalApp::implementation
         _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
     }
 
+    fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
+    {
+        co_await winrt::resume_foreground(_root->Dispatcher());
+
+        StartupTaskState state;
+        bool tryEnableStartupTask = _settings->GlobalSettings().StartOnUserLogin();
+        StartupTask task = co_await StartupTask::GetAsync(StartupTaskName);
+        
+        state = task.State();
+        switch (state)
+        {
+            case StartupTaskState::Disabled:
+            {
+                if (tryEnableStartupTask)
+                {
+                    co_await task.RequestEnableAsync();
+                }
+                break;
+            }
+            case StartupTaskState::DisabledByUser:
+            {
+                break;
+            }
+            case StartupTaskState::Enabled:
+            {
+                if (!tryEnableStartupTask)
+                {
+                    task.Disable();
+                }
+                break;
+            }
+            default:
+            {
+
+            }
+        }
+    }
     // Method Description:
     // - Reloads the settings from the profile.json.
     void AppLogic::_ReloadSettings()
@@ -714,6 +753,7 @@ namespace winrt::TerminalApp::implementation
         _root->SetSettings(_settings, true);
 
         _RefreshThemeRoutine();
+        _ApplyStartupTaskStateChange();
     }
 
     // Method Description:
