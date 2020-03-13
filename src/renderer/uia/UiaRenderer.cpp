@@ -18,6 +18,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _isPainting{ false },
     _selectionChanged{ false },
     _textBufferChanged{ false },
+    _cursorChanged{ false },
     _isEnabled{ true },
     _prevSelection{},
     RenderEngineBase()
@@ -70,6 +71,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
 {
+    _cursorChanged = true;
     return S_FALSE;
 }
 
@@ -195,7 +197,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    const bool somethingToDo = _selectionChanged || _textBufferChanged;
+    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged;
 
     // If there's nothing to do, quick return
     RETURN_HR_IF(S_FALSE, !somethingToDo);
@@ -232,9 +234,18 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         }
         CATCH_LOG();
     }
+    if (_textBufferChanged)
+    {
+        try
+        {
+            _dispatcher->SignalCursorChanged();
+        }
+        CATCH_LOG();
+    }
 
     _selectionChanged = false;
     _textBufferChanged = false;
+    _cursorChanged = false;
     _prevSelection.clear();
     _isPainting = false;
 
