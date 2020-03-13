@@ -73,18 +73,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         {
             dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
         }
-
-        // This is expecting the dirty view to be the union of all dirty regions as one big
-        // rectangle descrbing them all.
-        if (!_resized && dirtyView == _lastViewport)
-        {
-            // TODO: MSFT:21096414 - This is never actually hit. We set
-            // _resized=true on every frame (see VtEngine::UpdateViewport).
-            // Unfortunately, not always setting _resized is not a good enough
-            // solution, see that work item for a description why.
-            RETURN_IF_FAILED(_ClearScreen());
-            _clearedAllThisFrame = true;
-        }
     }
 
     if (!_quickReturn)
@@ -253,6 +241,10 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         {
             _needToDisableCursor = true;
             hr = _CursorHome();
+        }
+        else if (_resized && _resizeQuirk)
+        {
+            hr = _CursorPosition(coord);
         }
         else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {

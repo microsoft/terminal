@@ -262,7 +262,6 @@ void VtRendererTest::Xterm256TestInvalidate()
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
-    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
     });
@@ -730,7 +729,6 @@ void VtRendererTest::XtermTestInvalidate()
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
-    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
     });

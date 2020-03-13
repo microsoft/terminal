@@ -759,15 +759,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
         //      will only return the buffer size, so we can't use that to clip the arg here.
         // So only clip the requested size if we're not headless
+        if (g.getConsoleInformation().IsInVtIoMode())
+        {
+            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
+            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
+        }
         if (!g.IsHeadless())
         {
             COORD const coordMax = context.GetMaxWindowSizeInCharacters();
             RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
-        }
-        else if (g.getConsoleInformation().IsInVtIoMode())
-        {
-            // SetViewportRect doesn't cause the buffer to resize. Manually resize the buffer.
-            RETURN_IF_NTSTATUS_FAILED(context.ResizeScreenBuffer(Viewport::FromInclusive(Window).Dimensions(), false));
         }
 
         // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
@@ -776,7 +776,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
             context.PostUpdateWindowSize();
-            WriteToScreen(context, context.GetViewport());
+
+            // Use WriteToScreen to invalidate the viewport with the renderer.
+            // GH#3490 - If we're in conpty mode, don't invalidate the entire
+            // viewport. In conpty mode, the VtEngine will later decide what
+            // part of the buffer actually needs to be re-sent to the terminal.
+            if (!(g.getConsoleInformation().IsInVtIoMode() && g.getConsoleInformation().GetVtIo()->IsResizeQuirkEnabled()))
+            {
+                WriteToScreen(context, context.GetViewport());
+            }
         }
         return S_OK;
     }

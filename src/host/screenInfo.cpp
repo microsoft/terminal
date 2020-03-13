@@ -1414,7 +1414,9 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
+    // Reflow requires a optional<short>& , which can't just be done inline with the call.
+    std::optional<short> unused{ std::nullopt };
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, unused);
 
     if (SUCCEEDED(hr))
     {
@@ -2176,8 +2178,13 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
         commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
     }
 
-    // force repaint of entire viewport
-    GetRenderTarget().TriggerRedrawAll();
+    // Force repaint of entire viewport, unless we're in conpty mode. In that
+    // case, we don't really need to force a redraw of the entire screen just
+    // because the text attributes changed.
+    if (!(gci.IsInVtIoMode()))
+    {
+        GetRenderTarget().TriggerRedrawAll();
+    }
 
     gci.ConsoleIme.RefreshAreaAttributes();
 

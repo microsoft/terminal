@@ -573,27 +573,21 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 }
 
 //Routine Description:
-// - Retrieves the position of the last non-space character on the final line of the text buffer.
-// - By default, we search the entire buffer to find the last non-space character
-//Arguments:
-// - <none>
-//Return Value:
-// - Coordinate position in screen coordinates (offset coordinates, not array index coordinates).
-COORD TextBuffer::GetLastNonSpaceCharacter() const
-{
-    return GetLastNonSpaceCharacter(GetSize());
-}
-
-//Routine Description:
-// - Retrieves the position of the last non-space character in the given viewport
-// - This is basically an optimized version of GetLastNonSpaceCharacter(), and can be called when
-// - we know the last character is within the given viewport (so we don't need to check the entire buffer)
+// - Retrieves the position of the last non-space character in the given
+//   viewport
+// - By default, we search the entire buffer to find the last non-space
+//   character.
+// - If we know the last character is within the given viewport (so we don't
+//   need to check the entire buffer), we can provide a value in viewOptional
+//   that we'll use to search for the last character in.
 //Arguments:
 // - The viewport
 //Return value:
 // - Coordinate position (relative to the text buffer)
-COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const
+COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional) const
 {
+    const auto viewport = viewOptional.has_value() ? viewOptional.value() : GetSize();
+
     COORD coordEndOfText = { 0 };
     // Search the given viewport by starting at the bottom.
     coordEndOfText.Y = viewport.BottomInclusive();
@@ -1872,9 +1866,18 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // Arguments:
 // - oldBuffer - the text buffer to copy the contents FROM
 // - newBuffer - the text buffer to copy the contents TO
+// - lastCharacterViewport - Optional. If the caller knows that the last
+//   nonspace character is in a particular Viewport, the caller can provide this
+//   parameter as an optimization, as opposed to searching the entire buffer.
+// - oldViewportTop - Optional. The caller can provide a row in this parameter
+//   and we'll calculate the position of the _end_ of that row in the new
+//   buffer. The row's new value is placed back into this parameter.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
-HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
+HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
+                           TextBuffer& newBuffer,
+                           const std::optional<Viewport> lastCharacterViewport,
+                           std::optional<short>& oldViewportTop)
 {
     Cursor& oldCursor = oldBuffer.GetCursor();
     Cursor& newCursor = newBuffer.GetCursor();
@@ -1886,14 +1889,14 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
     // place the new cursor back on the equivalent character in
     // the new buffer.
     const COORD cOldCursorPos = oldCursor.GetPosition();
-    const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter();
+    const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport);
 
-    short const cOldRowsTotal = cOldLastChar.Y + 1;
-    short const cOldColsTotal = oldBuffer.GetSize().Width();
+    const short cOldRowsTotal = cOldLastChar.Y + 1;
+    const short cOldColsTotal = oldBuffer.GetSize().Width();
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
-
+    bool foundOldRow = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
@@ -1953,6 +1956,19 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer)
             }
             CATCH_RETURN();
         }
+
+        // If we found the old row that the caller was interested in, set the
+        // out value of that parameter to the cursor's current Y position (the
+        // new location of the _end_ of that row in the buffer).
+        if (oldViewportTop.has_value() && !foundOldRow)
+        {
+            if (iOldRow >= oldViewportTop.value())
+            {
+                oldViewportTop = newCursor.GetPosition().Y;
+                foundOldRow = true;
+            }
+        }
+
         if (SUCCEEDED(hr))
         {
             // If we didn't have a full row to copy, insert a new

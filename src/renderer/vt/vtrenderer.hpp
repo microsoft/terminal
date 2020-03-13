@@ -106,6 +106,8 @@ namespace Microsoft::Console::Render
         void BeginResizeRequest();
         void EndResizeRequest();
 
+        void SetResizeQuirk(const bool resizeQuirk);
+
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
@@ -150,6 +152,8 @@ namespace Microsoft::Console::Render
         std::optional<short> _wrappedRow{ std::nullopt };
 
         bool _delayedEolWrap{ false };
+
+        bool _resizeQuirk{ false };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
