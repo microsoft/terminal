@@ -63,7 +63,7 @@
           <uap5:StartupTask
             TaskId="StartTerminalOnLoginTask"
             Enabled="false"
-            DisplayName="Launch Windows Terminal on startup" />
+            DisplayName="ms-resource:AppNameDev" />
         </uap5:Extension>
       </Extensions>
 
