@@ -1,6 +1,7 @@
 # Profiles.json Documentation
 
 ## Globals
+
 Properties listed below affect the entire window, regardless of the profile settings.
 
 | Property | Necessity | Type | Default | Description |
@@ -20,8 +21,10 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `tabWidthMode` | Optional | String | `equal` | Sets the width of the tabs. Possible values: `"equal"`, `"titleLength"` |
 | `wordDelimiters` | Optional | String | <code>&nbsp;&#x2f;&#x5c;&#x28;&#x29;&#x22;&#x27;&#x2d;&#x3a;&#x2c;&#x2e;&#x3b;&#x3c;&#x3e;&#x7e;&#x21;&#x40;&#x23;&#x24;&#x25;&#x5e;&#x26;&#x2a;&#x7c;&#x2b;&#x3d;&#x5b;&#x5d;&#x7b;&#x7d;&#x7e;&#x3f;│</code><br>_(`│` is `U+2502 BOX DRAWINGS LIGHT VERTICAL`)_ | Determines the delimiters used in a double click selection. |
 | `confirmCloseAllTabs` | Optional | Boolean | `true` | When set to `true` closing a window with multiple tabs open WILL require confirmation.  When set to `false` closing a window with multiple tabs open WILL NOT require confirmation. |
+| `startOnUserLogin` | Optional | Boolean | `false` | When set to `true` enables the launch of Windows Terminal at startup. Setting to `false` will disable the startup task entry. Note: if the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect. |
 
 ## Profiles
+
 Properties listed below are specific to each unique profile.
 
 | Property | Necessity | Type | Default | Description |
@@ -60,6 +63,7 @@ Properties listed below are specific to each unique profile.
 | `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
 
 ## Schemes
+
 Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
 
 | Property | Necessity | Type | Description |
@@ -86,6 +90,7 @@ Properties listed below are specific to each color scheme. [ColorTool](https://g
 | `yellow` | _Required_ | String | Sets the color used as ANSI yellow. |
 
 ## Keybindings
+
 Properties listed below are specific to each custom key binding.
 
 | Property | Necessity | Type | Description |
@@ -139,9 +144,11 @@ For commands with arguments:
 ### Accepted Modifiers and Keys
 
 #### Modifiers
+
 `Ctrl+`, `Shift+`, `Alt+`
 
 #### Keys
+
 | Type | Keys |
 | ---- | ---- |
 | Function and Alphanumeric Keys | `f1-f24`, `a-z`, `0-9` |
@@ -151,6 +158,7 @@ For commands with arguments:
 | Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
 
 ## Background Images and Icons
+
 Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
 
 The most useful URI schemes to remember when customizing background images and icons are:
@@ -163,6 +171,7 @@ The most useful URI schemes to remember when customizing background images and i
 > ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
 
 ### Icons
+
 Terminal displays icons for each of your profiles which Terminal generates for any built-in shells - PowerShell Core, PowerShell, and any installed Linux/WSL distros. Each profile refers to a stock icon via the `ms-appx` URI Scheme.
 
 > ⚠ Note: Do not rely on the files referenced by the `ms-appx` URI Scheme - they are considered an internal implementation detail and may change name/location or may be omitted in the future.
@@ -176,6 +185,7 @@ You can refer to you own icons if you wish, e.g.:
 > 👉 Tip: Icons should be sized to 32x32px in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO) to avoid having to scale your icons during runtime (causing a noticeable delay and loss of quality.)
 
 ### Custom Background Images
+
 You can apply a background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish.
 
 To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image fill the available space using `backgroundImageStretchMode`.
