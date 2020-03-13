@@ -217,10 +217,10 @@ class RectangleTests
     TEST_METHOD(SmallRectConstruct)
     {
         SMALL_RECT sr;
-        sr.Top = 5;
-        sr.Left = 10;
-        sr.Bottom = 14;
-        sr.Right = 19;
+        sr.Left = 5;
+        sr.Top = 10;
+        sr.Right = 14;
+        sr.Bottom = 19;
 
         const til::rectangle rc{ sr };
         VERIFY_ARE_EQUAL(5, rc._topLeft.x());
@@ -425,21 +425,168 @@ class RectangleTests
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"right", right));
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"bottom", bottom));
 
-        const bool expected = (left || top || right || bottom);
+        const bool expected = left < right && top < bottom;
         const til::rectangle actual{ left, top, right, bottom };
-        VERIFY_ARE_EQUAL(expected, actual);
+        VERIFY_ARE_EQUAL(expected, (bool)actual);
     }
 
     TEST_METHOD(OrUnion)
     {
+        const til::rectangle one{ 4, 6, 10, 14 };
+        const til::rectangle two{ 5, 2, 13, 10 };
+
+        const til::rectangle expected{ 4, 2, 13, 14 };
+        const auto actual = one | two;
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(AndIntersect)
     {
+        const til::rectangle one{ 4, 6, 10, 14 };
+        const til::rectangle two{ 5, 2, 13, 10 };
+
+        const til::rectangle expected{ 5, 6, 10, 10 };
+        const auto actual = one & two;
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
-    TEST_METHOD(MinusSubtract)
+    TEST_METHOD(MinusSubtractSame)
     {
+        const til::rectangle original{ 0, 0, 10, 10 };
+        const auto removal = original;
+
+        // Since it's the same rectangle, nothing's left. We should get no results.
+        const til::some<til::rectangle, 4> expected;
+        const auto actual = original - removal;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(MinusSubtractNoOverlap)
+    {
+        const til::rectangle original{ 0, 0, 10, 10 };
+        const til::rectangle removal{ 12, 12, 15, 15 };
+
+        // Since they don't overlap, we expect the original to be given back.
+        const til::some<til::rectangle, 4> expected{ original };
+        const auto actual = original - removal;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(MinusSubtractOne)
+    {
+        //                +--------+
+        //                | result |
+        //                |        |
+        //   +-------------------------------------+
+        //   |            |        |               |
+        //   |            |        |               |
+        //   |            |original|               |
+        //   |            |        |               |
+        //   |            |        |               |
+        //   |            +--------+               |
+        //   |                                     |
+        //   |                                     |
+        //   |        removal                      |
+        //   |                                     |
+        //   +-------------------------------------+
+
+        const til::rectangle original{ 0, 0, 10, 10 };
+        const til::rectangle removal{ -12, 3, 15, 15 };
+
+        const til::some<til::rectangle, 4> expected
+        {
+            til::rectangle{original.left(), original.top(), original.right(), removal.top()}
+        };
+        const auto actual = original - removal;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(MinusSubtractTwo)
+    {
+        //    +--------+
+        //    |result0 |
+        //    |        |
+        //    |~~~~+-----------------+
+        //    |res1|   |             |
+        //    |    |   |             |
+        //    |original|             |
+        //    |    |   |             |
+        //    |    |   |             |
+        //    +--------+             |
+        //         |                 |
+        //         |                 |
+        //         |   removal       |
+        //         +-----------------+
+
+        const til::rectangle original{ 0, 0, 10, 10 };
+        const til::rectangle removal{ 3, 3, 15, 15 };
+
+        const til::some<til::rectangle, 4> expected
+        {
+            til::rectangle{original.left(), original.top(), original.right(), removal.top()},
+            til::rectangle{original.left(), removal.top(), removal.left(), original.bottom()}
+        };
+        const auto actual = original - removal;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(MinusSubtractThree)
+    {
+        //    +--------+
+        //    |result0 |
+        //    |        |
+        //    |~~~~+---------------------------+
+        //    |res2|   |     removal           |
+        //    |original|                       |
+        //    |~~~~+---------------------------+
+        //    |result1 |
+        //    |        |
+        //    +--------+
+
+        const til::rectangle original{ 0, 0, 10, 10 };
+        const til::rectangle removal{3, 3, 15, 6};
+
+        const til::some<til::rectangle, 4> expected
+        {
+            til::rectangle{original.left(), original.top(), original.right(), removal.top()},
+            til::rectangle{original.left(), removal.bottom(), original.right(), original.bottom()},
+            til::rectangle{original.left(), removal.top(), removal.left(), removal.bottom()}
+        };
+        const auto actual = original - removal;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(MinusSubtractFour)
+    {
+        //     (original)---+
+        //                  |
+        //                  v
+        //    + --------------------------+
+        //    |         result0           |
+        //    |   o         r         i   |
+        //    |                           |
+        //    |~~~~~~~+-----------+~~~~~~~|
+        //    | res2  |           | res3  |
+        //    |   g   |  removal  |   i   |
+        //    |       |           |       |
+        //    |~~~~~~~+-----------+~~~~~~~|
+        //    |          result1          |
+        //    |   n         a         l   |
+        //    |                           |
+        //    +---------------------------+
+
+        const til::rectangle original{0, 0, 10, 10};
+        const til::rectangle removal{3, 3, 6, 6};
+
+        const til::some<til::rectangle, 4> expected
+        {
+            til::rectangle{original.left(), original.top(), original.right(), removal.top()},
+            til::rectangle{original.left(), removal.bottom(), original.right(), original.bottom()},
+            til::rectangle{original.left(), removal.top(), removal.left(), removal.bottom()},
+            til::rectangle{removal.right(), removal.top(), original.right(), removal.bottom()}
+        };
+        const auto actual = original - removal;
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(Top)
@@ -569,17 +716,17 @@ class RectangleTests
             TEST_METHOD_PROPERTY(L"Data:top", L"{0,10}")
             TEST_METHOD_PROPERTY(L"Data:right", L"{0,10}")
             TEST_METHOD_PROPERTY(L"Data:bottom", L"{0,10}")
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            ptrdiff_t left, top, right, bottom;
+        ptrdiff_t left, top, right, bottom;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"left", left));
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"top", top));
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"right", right));
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"bottom", bottom));
 
-        const bool expected = !(left || top || right || bottom);
+        const bool expected = !(left < right && top < bottom);
         const til::rectangle actual{ left, top, right, bottom };
-        VERIFY_ARE_EQUAL(expected, actual);
+        VERIFY_ARE_EQUAL(expected, actual.empty());
     }
 
     TEST_METHOD(CastToSmallRect)
@@ -590,8 +737,8 @@ class RectangleTests
             SMALL_RECT val = rc;
             VERIFY_ARE_EQUAL(5, val.Left);
             VERIFY_ARE_EQUAL(10, val.Top);
-            VERIFY_ARE_EQUAL(15, val.Right);
-            VERIFY_ARE_EQUAL(20, val.Bottom);
+            VERIFY_ARE_EQUAL(14, val.Right);
+            VERIFY_ARE_EQUAL(19, val.Bottom);
         }
 
         Log::Comment(L"1.) Overflow on left.");
@@ -639,7 +786,7 @@ class RectangleTests
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
         }
 
-        Log::Comment(L"4.) Fit max bottom into RECT (may overflow).");
+        Log::Comment(L"4.) Overflow on bottom.");
         {
             const ptrdiff_t l = 5;
             const ptrdiff_t t = 10;

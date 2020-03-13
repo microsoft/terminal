@@ -181,7 +181,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             const auto t = std::max(top(), other.top());
-            const auto b = std::max(bottom(), other.bottom());
+            const auto b = std::min(bottom(), other.bottom());
 
             // If the height dimension would be empty, give back empty rectangle.
             if (t >= b)
