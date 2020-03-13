@@ -187,7 +187,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const short oldViewportTop = _mutableViewport.Top();
     short newViewportTop = oldViewportTop;
     short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+
+    // If the original buffer had _no_ scroll offset, then we should be at the
+    // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
+
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
@@ -197,6 +201,16 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
+        // Build a LinesToReflow to track the position of both the top of the
+        // mutable viewport and the top of the visible viewport in the new
+        // buffer.
+        // * the new value of mutableViewportTop will be used to figure out
+        //   where we should place the mutable viewport in the new buffer. This
+        //   requires a bit of trickiness to remain consistent with conpty's
+        //   buffer (as seen below).
+        // * then new value of visibleViewportTop will be used to calculate the
+        //   new scrollOffsett in the new buffer, so that the visible lines on
+        //   the sceren remain roughly the same.
         TextBuffer::LinesToReflow oldRows{ 0 };
         oldRows.mutableViewportTop = oldViewportTop;
         oldRows.visibleViewportTop = newVisibleTop;
@@ -323,6 +337,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // Make sure we don't scroll past the top of the scrollback
     newVisibleTop = std::max<short>(newVisibleTop, 0);
 
+    // If the old scrolloffset was 0, then we weren't scrolled back at all
+    // before, and shouldn't be now either.
     _scrollOffset = originalOffsetWasZero ? 0 : _mutableViewport.Top() - newVisibleTop;
     _NotifyScrollEvent();
 

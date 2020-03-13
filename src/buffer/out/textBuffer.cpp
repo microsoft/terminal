@@ -1869,9 +1869,9 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
 // - lastCharacterViewport - Optional. If the caller knows that the last
 //   nonspace character is in a particular Viewport, the caller can provide this
 //   parameter as an optimization, as opposed to searching the entire buffer.
-// - oldViewportTop - Optional. The caller can provide a row in this parameter
-//   and we'll calculate the position of the _end_ of that row in the new
-//   buffer. The row's new value is placed back into this parameter.
+// - oldRows - Optional. The caller can provide a pair of rows in this parameter
+//   and we'll calculate the position of the _end_ of those rows in the new
+//   buffer. The rows's new value is placed back into this parameter.
 // Return Value:
 // - S_OK if we successfully copied the contents to the new buffer, otherwise an appropriate HRESULT.
 HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
