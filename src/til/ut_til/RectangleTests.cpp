@@ -55,7 +55,7 @@ class RectangleTests
             const size_t b = 20;
 
             auto fn = [&]() {
-                const til::rectangle rc{ l, t, r, b};
+                const til::rectangle rc{ l, t, r, b };
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -122,7 +122,7 @@ class RectangleTests
     {
         Log::Comment(L"0.) Normal Case");
         {
-            const til::rectangle rc{ til::point{4, 8} };
+            const til::rectangle rc{ til::point{ 4, 8 } };
             VERIFY_ARE_EQUAL(4, rc._topLeft.x());
             VERIFY_ARE_EQUAL(8, rc._topLeft.y());
             VERIFY_ARE_EQUAL(5, rc._bottomRight.x());
@@ -134,7 +134,7 @@ class RectangleTests
             auto fn = [&]() {
                 constexpr ptrdiff_t x = std::numeric_limits<ptrdiff_t>().max();
                 const ptrdiff_t y = 0;
-                const til::rectangle rc{ til::point{x, y} };
+                const til::rectangle rc{ til::point{ x, y } };
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -145,7 +145,7 @@ class RectangleTests
             auto fn = [&]() {
                 const ptrdiff_t x = 0;
                 constexpr ptrdiff_t y = std::numeric_limits<ptrdiff_t>().max();
-                const til::rectangle rc{ til::point{x, y} };
+                const til::rectangle rc{ til::point{ x, y } };
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -159,7 +159,7 @@ class RectangleTests
         const ptrdiff_t r = 15;
         const ptrdiff_t b = 20;
 
-        const til::rectangle rc{ til::point{l, t}, til::point{r, b} };
+        const til::rectangle rc{ til::point{ l, t }, til::point{ r, b } };
         VERIFY_ARE_EQUAL(5, rc._topLeft.x());
         VERIFY_ARE_EQUAL(10, rc._topLeft.y());
         VERIFY_ARE_EQUAL(15, rc._bottomRight.x());
@@ -174,7 +174,7 @@ class RectangleTests
         const til::rectangle rc{ sz };
         VERIFY_ARE_EQUAL(0, rc._topLeft.x());
         VERIFY_ARE_EQUAL(0, rc._topLeft.y());
-        VERIFY_ARE_EQUAL(sz.width(), rc._bottomRight.x()); 
+        VERIFY_ARE_EQUAL(sz.width(), rc._bottomRight.x());
         VERIFY_ARE_EQUAL(sz.height(), rc._bottomRight.y());
     }
 
@@ -184,7 +184,7 @@ class RectangleTests
 
         Log::Comment(L"0.) Normal Case");
         {
-            const til::rectangle rc{pt, til::size{2, 10} };
+            const til::rectangle rc{ pt, til::size{ 2, 10 } };
             VERIFY_ARE_EQUAL(4, rc._topLeft.x());
             VERIFY_ARE_EQUAL(8, rc._topLeft.y());
             VERIFY_ARE_EQUAL(6, rc._bottomRight.x());
@@ -196,7 +196,7 @@ class RectangleTests
             auto fn = [&]() {
                 constexpr ptrdiff_t x = std::numeric_limits<ptrdiff_t>().max();
                 const ptrdiff_t y = 0;
-                const til::rectangle rc{ pt, til::size{x, y} };
+                const til::rectangle rc{ pt, til::size{ x, y } };
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -207,7 +207,7 @@ class RectangleTests
             auto fn = [&]() {
                 const ptrdiff_t x = 0;
                 constexpr ptrdiff_t y = std::numeric_limits<ptrdiff_t>().max();
-                const til::rectangle rc{ pt, til::size{x, y} };
+                const til::rectangle rc{ pt, til::size{ x, y } };
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
@@ -412,23 +412,34 @@ class RectangleTests
 
     TEST_METHOD(Boolean)
     {
-        const til::rectangle empty;
-        VERIFY_IS_FALSE(empty);
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:left", L"{0,10}")
+            TEST_METHOD_PROPERTY(L"Data:top", L"{0,10}")
+            TEST_METHOD_PROPERTY(L"Data:right", L"{0,10}")
+            TEST_METHOD_PROPERTY(L"Data:bottom", L"{0,10}")
+        END_TEST_METHOD_PROPERTIES()
+
+        ptrdiff_t left, top, right, bottom;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"left", left));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"top", top));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"right", right));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"bottom", bottom));
+
+        const bool expected = (left || top || right || bottom);
+        const til::rectangle actual{ left, top, right, bottom };
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(OrUnion)
     {
-
     }
 
     TEST_METHOD(AndIntersect)
     {
-
     }
 
     TEST_METHOD(MinusSubtract)
     {
-
     }
 
     TEST_METHOD(Top)
@@ -481,51 +492,298 @@ class RectangleTests
 
     TEST_METHOD(Width)
     {
+        Log::Comment(L"0.) Width that should be in bounds.");
+        {
+            const til::rectangle rc{ 5, 10, 15, 20 };
+            VERIFY_ARE_EQUAL(15 - 5, rc.width());
+        }
 
+        Log::Comment(L"1.) Width that should go out of bounds on subtraction.");
+        {
+            constexpr ptrdiff_t bigVal = std::numeric_limits<ptrdiff_t>().min();
+            const ptrdiff_t normalVal = 5;
+            const til::rectangle rc{ normalVal, normalVal, bigVal, normalVal };
+
+            auto fn = [&]() {
+                rc.width();
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
     }
 
     TEST_METHOD(WidthCast)
     {
-
+        const SHORT expected = 15 - 5;
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        VERIFY_ARE_EQUAL(expected, rc.width<SHORT>());
     }
 
     TEST_METHOD(Height)
     {
+        Log::Comment(L"0.) Height that should be in bounds.");
+        {
+            const til::rectangle rc{ 5, 10, 15, 20 };
+            VERIFY_ARE_EQUAL(20 - 10, rc.height());
+        }
 
+        Log::Comment(L"1.) Height that should go out of bounds on subtraction.");
+        {
+            constexpr ptrdiff_t bigVal = std::numeric_limits<ptrdiff_t>().min();
+            const ptrdiff_t normalVal = 5;
+            const til::rectangle rc{ normalVal, normalVal, normalVal, bigVal };
+
+            auto fn = [&]() {
+                rc.height();
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
     }
 
     TEST_METHOD(HeightCast)
     {
-
+        const SHORT expected = 20 - 10;
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        VERIFY_ARE_EQUAL(expected, rc.height<SHORT>());
     }
 
     TEST_METHOD(Origin)
     {
-
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point expected{ rc._topLeft };
+        VERIFY_ARE_EQUAL(expected, rc.origin());
     }
 
     TEST_METHOD(Size)
     {
-
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point expected{ 10, 10 };
+        VERIFY_ARE_EQUAL(expected, rc.size());
     }
 
     TEST_METHOD(Empty)
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:left", L"{0,10}")
+            TEST_METHOD_PROPERTY(L"Data:top", L"{0,10}")
+            TEST_METHOD_PROPERTY(L"Data:right", L"{0,10}")
+            TEST_METHOD_PROPERTY(L"Data:bottom", L"{0,10}")
+            END_TEST_METHOD_PROPERTIES()
 
+            ptrdiff_t left, top, right, bottom;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"left", left));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"top", top));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"right", right));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"bottom", bottom));
+
+        const bool expected = !(left || top || right || bottom);
+        const til::rectangle actual{ left, top, right, bottom };
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(CastToSmallRect)
     {
+        Log::Comment(L"0.) Typical situation.");
+        {
+            const til::rectangle rc{ 5, 10, 15, 20 };
+            SMALL_RECT val = rc;
+            VERIFY_ARE_EQUAL(5, val.Left);
+            VERIFY_ARE_EQUAL(10, val.Top);
+            VERIFY_ARE_EQUAL(15, val.Right);
+            VERIFY_ARE_EQUAL(20, val.Bottom);
+        }
 
+        Log::Comment(L"1.) Overflow on left.");
+        {
+            constexpr ptrdiff_t l = std::numeric_limits<ptrdiff_t>().max();
+            const ptrdiff_t t = 10;
+            const ptrdiff_t r = 15;
+            const ptrdiff_t b = 20;
+            const til::rectangle rc{ l, t, r, b };
+
+            auto fn = [&]() {
+                SMALL_RECT val = rc;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"2.) Overflow on top.");
+        {
+            const ptrdiff_t l = 5;
+            constexpr ptrdiff_t t = std::numeric_limits<ptrdiff_t>().max();
+            const ptrdiff_t r = 15;
+            const ptrdiff_t b = 20;
+            const til::rectangle rc{ l, t, r, b };
+
+            auto fn = [&]() {
+                SMALL_RECT val = rc;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"3.) Overflow on right.");
+        {
+            const ptrdiff_t l = 5;
+            const ptrdiff_t t = 10;
+            constexpr ptrdiff_t r = std::numeric_limits<ptrdiff_t>().max();
+            const ptrdiff_t b = 20;
+            const til::rectangle rc{ l, t, r, b };
+
+            auto fn = [&]() {
+                SMALL_RECT val = rc;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+
+        Log::Comment(L"4.) Fit max bottom into RECT (may overflow).");
+        {
+            const ptrdiff_t l = 5;
+            const ptrdiff_t t = 10;
+            const ptrdiff_t r = 15;
+            constexpr ptrdiff_t b = std::numeric_limits<ptrdiff_t>().max();
+            const til::rectangle rc{ l, t, r, b };
+
+            auto fn = [&]() {
+                SMALL_RECT val = rc;
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
     }
 
     TEST_METHOD(CastToRect)
     {
+        Log::Comment(L"0.) Typical situation.");
+        {
+            const til::rectangle rc{ 5, 10, 15, 20 };
+            RECT val = rc;
+            VERIFY_ARE_EQUAL(5, val.left);
+            VERIFY_ARE_EQUAL(10, val.top);
+            VERIFY_ARE_EQUAL(15, val.right);
+            VERIFY_ARE_EQUAL(20, val.bottom);
+        }
 
+        Log::Comment(L"1.) Fit max left into RECT (may overflow).");
+        {
+            constexpr ptrdiff_t l = std::numeric_limits<ptrdiff_t>().max();
+            const ptrdiff_t t = 10;
+            const ptrdiff_t r = 15;
+            const ptrdiff_t b = 20;
+            const til::rectangle rc{ l, t, r, b };
+
+            // On some platforms, ptrdiff_t will fit inside l/t/r/b
+            const bool overflowExpected = l > std::numeric_limits<decltype(RECT::left)>().max();
+
+            if (overflowExpected)
+            {
+                auto fn = [&]() {
+                    RECT val = rc;
+                };
+
+                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            }
+            else
+            {
+                RECT val = rc;
+                VERIFY_ARE_EQUAL(l, val.left);
+            }
+        }
+
+        Log::Comment(L"2.) Fit max top into RECT (may overflow).");
+        {
+            const ptrdiff_t l = 5;
+            constexpr ptrdiff_t t = std::numeric_limits<ptrdiff_t>().max();
+            const ptrdiff_t r = 15;
+            const ptrdiff_t b = 20;
+            const til::rectangle rc{ l, t, r, b };
+
+            // On some platforms, ptrdiff_t will fit inside l/t/r/b
+            const bool overflowExpected = t > std::numeric_limits<decltype(RECT::top)>().max();
+
+            if (overflowExpected)
+            {
+                auto fn = [&]() {
+                    RECT val = rc;
+                };
+
+                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            }
+            else
+            {
+                RECT val = rc;
+                VERIFY_ARE_EQUAL(t, val.top);
+            }
+        }
+
+        Log::Comment(L"3.) Fit max right into RECT (may overflow).");
+        {
+            const ptrdiff_t l = 5;
+            const ptrdiff_t t = 10;
+            constexpr ptrdiff_t r = std::numeric_limits<ptrdiff_t>().max();
+            const ptrdiff_t b = 20;
+            const til::rectangle rc{ l, t, r, b };
+
+            // On some platforms, ptrdiff_t will fit inside l/t/r/b
+            const bool overflowExpected = r > std::numeric_limits<decltype(RECT::right)>().max();
+
+            if (overflowExpected)
+            {
+                auto fn = [&]() {
+                    RECT val = rc;
+                };
+
+                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            }
+            else
+            {
+                RECT val = rc;
+                VERIFY_ARE_EQUAL(r, val.right);
+            }
+        }
+
+        Log::Comment(L"4.) Fit max bottom into RECT (may overflow).");
+        {
+            const ptrdiff_t l = 5;
+            const ptrdiff_t t = 10;
+            const ptrdiff_t r = 15;
+            constexpr ptrdiff_t b = std::numeric_limits<ptrdiff_t>().max();
+            const til::rectangle rc{ l, t, r, b };
+
+            // On some platforms, ptrdiff_t will fit inside l/t/r/b
+            const bool overflowExpected = b > std::numeric_limits<decltype(RECT::bottom)>().max();
+
+            if (overflowExpected)
+            {
+                auto fn = [&]() {
+                    RECT val = rc;
+                };
+
+                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            }
+            else
+            {
+                RECT val = rc;
+                VERIFY_ARE_EQUAL(b, val.bottom);
+            }
+        }
     }
 
     TEST_METHOD(CastToD2D1RectF)
     {
+        Log::Comment(L"0.) Typical situation.");
+        {
+            const til::rectangle rc{ 5, 10, 15, 20 };
+            D2D1_RECT_F val = rc;
+            VERIFY_ARE_EQUAL(5, val.left);
+            VERIFY_ARE_EQUAL(10, val.top);
+            VERIFY_ARE_EQUAL(15, val.right);
+            VERIFY_ARE_EQUAL(20, val.bottom);
+        }
 
+        // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
 };
