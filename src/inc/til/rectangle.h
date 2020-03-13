@@ -358,7 +358,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         ptrdiff_t width() const
         {
             ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - left()).AssignIfValid(&ret));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(right(), left()).AssignIfValid(&ret));
             return ret;
         }
 
@@ -373,7 +373,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         ptrdiff_t height() const
         {
             ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - top()).AssignIfValid(&ret));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(bottom(), top()).AssignIfValid(&ret));
             return ret;
         }
 
@@ -408,8 +408,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             SMALL_RECT ret;
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.Left));
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.Top));
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(right()) - 1).AssignIfValid(&ret.Right));
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(bottom()) - 1).AssignIfValid(&ret.Bottom));
+            THROW_HR_IF(E_ABORT, !base::CheckSub(right(), 1).AssignIfValid(&ret.Right));
+            THROW_HR_IF(E_ABORT, !base::CheckSub(bottom(), 1).AssignIfValid(&ret.Bottom));
             return ret;
         }
 #endif
