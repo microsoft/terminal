@@ -221,6 +221,7 @@ namespace winrt::TerminalApp::implementation
         _root->Create();
 
         _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+        _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -709,6 +710,7 @@ namespace winrt::TerminalApp::implementation
             }
             case StartupTaskState::DisabledByUser:
             {
+                // TODO: how should we handle this?
                 break;
             }
             case StartupTaskState::Enabled:
