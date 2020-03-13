@@ -615,11 +615,19 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     }
 }
 
+static bool _IsAllSpaces(const std::wstring_view v)
+{
+    // first non-space char is not found (is npos)
+    return v.find_first_not_of(L" ") == decltype(v)::npos;
+}
+
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
                                         const COORD target,
                                         const bool lineWrapped)
 {
+    auto globalInvert{ _pData->IsScreenReversed() };
+
     // If we have valid data, let's figure out how to draw it.
     if (it)
     {
@@ -666,8 +674,14 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             {
                 if (color != it->TextAttr())
                 {
-                    color = it->TextAttr();
-                    break;
+                    auto newAttr{ it->TextAttr() };
+                    // foreground doesn't matter for runs of spaces (!)
+                    // if we trick it . . . we call Paint far fewer times for cmatrix
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    {
+                        color = newAttr;
+                        break; // vend this run
+                    }
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
