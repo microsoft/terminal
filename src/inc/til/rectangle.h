@@ -98,13 +98,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        constexpr rectangle& operator=(const rectangle other) noexcept
-        {
-            _topLeft = other._topLeft;
-            _bottomRight = other._bottomRight;
-            return (*this);
-        }
-
         constexpr bool operator==(const rectangle& other) const noexcept
         {
             return _topLeft == other._topLeft &&
@@ -281,10 +274,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // We generate these rectangles by the original and intersect points, but some of them might be empty when the intersect
                 // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
                 // We will filter those out below when adding them to the result.
-                const auto t = rectangle({ left(), top(), right(), intersect.top() });
-                const auto b = rectangle({ left(), intersect.bottom(), right(), bottom() });
-                const auto l = rectangle({ left(), intersect.top(), intersect.left(), intersect.bottom() });
-                const auto r = rectangle({ intersect.right(), intersect.top(), right(), intersect.bottom() });
+                const til::rectangle t{ left(), top(), right(), intersect.top() };
+                const til::rectangle b{ left(), intersect.bottom(), right(), bottom() };
+                const til::rectangle l{ left(), intersect.top(), intersect.left(), intersect.bottom() };
+                const til::rectangle r{ intersect.right(), intersect.top(), right(), intersect.bottom() };
 
                 if (!t.empty())
                 {
