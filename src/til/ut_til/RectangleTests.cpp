@@ -493,9 +493,8 @@ class RectangleTests
         const til::rectangle original{ 0, 0, 10, 10 };
         const til::rectangle removal{ -12, 3, 15, 15 };
 
-        const til::some<til::rectangle, 4> expected
-        {
-            til::rectangle{original.left(), original.top(), original.right(), removal.top()}
+        const til::some<til::rectangle, 4> expected{
+            til::rectangle{ original.left(), original.top(), original.right(), removal.top() }
         };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
@@ -521,10 +520,9 @@ class RectangleTests
         const til::rectangle original{ 0, 0, 10, 10 };
         const til::rectangle removal{ 3, 3, 15, 15 };
 
-        const til::some<til::rectangle, 4> expected
-        {
-            til::rectangle{original.left(), original.top(), original.right(), removal.top()},
-            til::rectangle{original.left(), removal.top(), removal.left(), original.bottom()}
+        const til::some<til::rectangle, 4> expected{
+            til::rectangle{ original.left(), original.top(), original.right(), removal.top() },
+            til::rectangle{ original.left(), removal.top(), removal.left(), original.bottom() }
         };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
@@ -544,13 +542,12 @@ class RectangleTests
         //    +--------+
 
         const til::rectangle original{ 0, 0, 10, 10 };
-        const til::rectangle removal{3, 3, 15, 6};
+        const til::rectangle removal{ 3, 3, 15, 6 };
 
-        const til::some<til::rectangle, 4> expected
-        {
-            til::rectangle{original.left(), original.top(), original.right(), removal.top()},
-            til::rectangle{original.left(), removal.bottom(), original.right(), original.bottom()},
-            til::rectangle{original.left(), removal.top(), removal.left(), removal.bottom()}
+        const til::some<til::rectangle, 4> expected{
+            til::rectangle{ original.left(), original.top(), original.right(), removal.top() },
+            til::rectangle{ original.left(), removal.bottom(), original.right(), original.bottom() },
+            til::rectangle{ original.left(), removal.top(), removal.left(), removal.bottom() }
         };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
@@ -575,15 +572,14 @@ class RectangleTests
         //    |                           |
         //    +---------------------------+
 
-        const til::rectangle original{0, 0, 10, 10};
-        const til::rectangle removal{3, 3, 6, 6};
+        const til::rectangle original{ 0, 0, 10, 10 };
+        const til::rectangle removal{ 3, 3, 6, 6 };
 
-        const til::some<til::rectangle, 4> expected
-        {
-            til::rectangle{original.left(), original.top(), original.right(), removal.top()},
-            til::rectangle{original.left(), removal.bottom(), original.right(), original.bottom()},
-            til::rectangle{original.left(), removal.top(), removal.left(), removal.bottom()},
-            til::rectangle{removal.right(), removal.top(), original.right(), removal.bottom()}
+        const til::some<til::rectangle, 4> expected{
+            til::rectangle{ original.left(), original.top(), original.right(), removal.top() },
+            til::rectangle{ original.left(), removal.bottom(), original.right(), original.bottom() },
+            til::rectangle{ original.left(), removal.top(), removal.left(), removal.bottom() },
+            til::rectangle{ removal.right(), removal.top(), original.right(), removal.bottom() }
         };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
