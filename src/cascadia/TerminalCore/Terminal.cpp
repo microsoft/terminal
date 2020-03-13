@@ -740,13 +740,16 @@ try
 CATCH_LOG()
 
 // Method Description:
-// - Sets the visibility of the text cursor.
+// - Sets the cursor to be currently on. On/Off is tracked independently of
+//   cursor visibility (hidden/visible). On/off is controlled by the cursor
+//   blinker. Visibility is usually controlled by the client application. If the
+//   cursor is hidden, then the cursor will remain hidden. If the cursor is
+//   Visible, then it will immediately become visible.
 // Arguments:
 // - isVisible: whether the cursor should be visible
-void Terminal::SetCursorVisible(const bool isVisible) noexcept
+void Terminal::SetCursorOn(const bool isOn) noexcept
 {
-    auto& cursor = _buffer->GetCursor();
-    cursor.SetIsVisible(isVisible);
+    _buffer->GetCursor().SetIsOn(isOn);
 }
 
 bool Terminal::IsCursorBlinkingAllowed() const noexcept

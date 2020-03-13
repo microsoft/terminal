@@ -573,3 +573,23 @@ bool Terminal::IsVtInputEnabled() const noexcept
     // We should never be getting this call in Terminal.
     FAIL_FAST();
 }
+
+bool Terminal::SetCursorVisibility(const bool visible) noexcept
+{
+    _buffer->GetCursor().SetIsVisible(visible);
+    return true;
+}
+
+bool Terminal::EnableCursorBlinking(const bool enable) noexcept
+{
+    _buffer->GetCursor().SetBlinkingAllowed(enable);
+
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    _buffer->GetCursor().SetIsOn(true);
+    return true;
+}

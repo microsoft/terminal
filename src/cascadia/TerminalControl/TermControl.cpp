@@ -795,7 +795,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _terminal->SetCursorVisible(true);
+            _terminal->SetCursorOn(true);
             _cursorTimer.value().Start();
         }
 
@@ -1447,7 +1447,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             // When the terminal focuses, show the cursor immediately
-            _terminal->SetCursorVisible(true);
+            _terminal->SetCursorOn(true);
             _cursorTimer.value().Start();
         }
         _rowsToScroll = _settings.RowsToScroll();
@@ -1479,7 +1479,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
-            _terminal->SetCursorVisible(false);
+            _terminal->SetCursorOn(false);
         }
     }
 
@@ -1619,7 +1619,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
+        _terminal->SetCursorOn(!_terminal->IsCursorOn());
     }
 
     // Method Description:

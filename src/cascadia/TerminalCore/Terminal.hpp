@@ -33,6 +33,7 @@ namespace Microsoft::Terminal::Core
 namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
+    class TerminalApiTest;
     class ConptyRoundtripTests;
 };
 #endif
@@ -84,6 +85,8 @@ public:
     bool ReverseText(bool reversed) noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
+    bool SetCursorVisibility(const bool visible) noexcept override;
+    bool EnableCursorBlinking(const bool enable) noexcept override;
     bool CursorLineFeed(const bool withReturn) noexcept override;
     bool DeleteCharacter(const size_t count) noexcept override;
     bool InsertCharacter(const size_t count) noexcept override;
@@ -166,7 +169,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
-    void SetCursorVisible(const bool isVisible) noexcept;
+    void SetCursorOn(const bool isOn) noexcept;
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection
@@ -276,6 +279,7 @@ private:
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
+    friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

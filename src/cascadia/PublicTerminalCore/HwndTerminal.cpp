@@ -527,13 +527,13 @@ void _stdcall TerminalBlinkCursor(void* terminal)
         return;
     }
 
-    publicTerminal->_terminal->SetCursorVisible(!publicTerminal->_terminal->IsCursorVisible());
+    publicTerminal->_terminal->SetCursorOn(!publicTerminal->_terminal->IsCursorOn());
 }
 
 void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    publicTerminal->_terminal->SetCursorVisible(visible);
+    publicTerminal->_terminal->SetCursorOn(visible);
 }
 
 // Routine Description:
