@@ -947,7 +947,6 @@ public:
     bool _setCursorColorResult = false;
     COLORREF _expectedCursorColor = 0;
     bool _getConsoleOutputCPResult = false;
-    bool _isConsolePtyResult = false;
     bool _privateSetDefaultAttributesResult = false;
     bool _moveToBottomResult = false;
 
