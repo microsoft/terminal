@@ -27,9 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
-        // sets the Input Pane display policy to Manual for now so that it can manually show the
-        // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // TODO GitHub #3639: Should Input Pane display policy be Automatic
+        // InputPane is manually shown inside of TermControl.
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -304,8 +302,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
                 incomingText);
 
-            // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
-            // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
+            // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
+            // will be sent straight through to the terminal.
             if (!_inComposition)
             {
                 _SendAndClearText();
@@ -313,7 +311,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else
             {
                 Canvas().Visibility(Visibility::Visible);
-                const auto text = _inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition + 1);
+                const auto text = _inputBuffer.substr(_activeTextStart);
                 TextBlock().Text(text);
             }
 
@@ -338,7 +336,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_SendAndClearText()
     {
-        const auto text = _inputBuffer.substr(_activeTextStart, _inputBuffer.length() - _activeTextStart);
+        const auto text = _inputBuffer.substr(_activeTextStart);
 
         _compositionCompletedHandlers(text);
 

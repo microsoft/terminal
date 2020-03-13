@@ -153,11 +153,12 @@ namespace Microsoft::Console::Types
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
         // GetText() cannot be used as it's not const
-        std::wstring _getTextValue(int maxLength = -1) const noexcept;
+        std::wstring _getTextValue(std::optional<unsigned int> maxLength = std::nullopt) const noexcept;
 
         RECT _getTerminalRect() const;
 
         virtual const COORD _getScreenFontSize() const;
+
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
         const Viewport _getBufferSize() const noexcept;
 
@@ -166,25 +167,25 @@ namespace Microsoft::Console::Types
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
-                                     _Out_ gsl::not_null<int*> const pAmountMoved,
+                                     gsl::not_null<int*> const pAmountMoved,
                                      _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _Out_ gsl::not_null<int*> const pAmountMoved,
+                                gsl::not_null<int*> const pAmountMoved,
                                 _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _Out_ gsl::not_null<int*> const pAmountMoved,
+                                gsl::not_null<int*> const pAmountMoved,
                                 _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
-                                    _Out_ gsl::not_null<int*> const pAmountMoved,
+                                    gsl::not_null<int*> const pAmountMoved,
                                     _In_ const bool preventBufferEnd = false) noexcept;
 
 #ifdef UNIT_TESTING

@@ -1686,7 +1686,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
+[[nodiscard]] std::vector<SMALL_RECT> DxEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
@@ -1698,7 +1698,7 @@ float DxEngine::GetScaling() const noexcept
     r.Bottom--;
     r.Right--;
 
-    return r;
+    return { r };
 }
 
 // Routine Description:

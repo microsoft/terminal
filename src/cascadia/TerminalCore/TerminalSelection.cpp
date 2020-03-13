@@ -16,15 +16,15 @@ using namespace Microsoft::Terminal::Core;
  *                  |-position where we double-clicked
  *                 _|_
  *               |word|
- *                |--| 
+ *                |--|
  *  start & pivot-|  |-end
  *
  *     2. Drag your mouse down a line
  *
- *                    
- *  start & pivot-|__________ 
+ *
+ *  start & pivot-|__________
  *             __|word_______|
- *            |______| 
+ *            |______|
  *                  |
  *                  |-end & mouse position
  *
@@ -33,7 +33,7 @@ using namespace Microsoft::Terminal::Core;
  *                  |-start & mouse position
  *                  |________
  *             ____|   ______|
- *            |___w|ord           
+ *            |___w|ord
  *                |-end & pivot
  *
  *    The pivot never moves until a new selection is created. It ensures that that cell will always be selected.
@@ -250,20 +250,21 @@ void Terminal::ClearSelection()
 // Method Description:
 // - get wstring text from highlighted portion of text buffer
 // Arguments:
-// - trimTrailingWhitespace: enable removing any whitespace from copied selection
-//    and get text to appear on separate lines.
+// - collapseText: collapse all of the text to one line
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool collapseText) const
 {
+    const auto selectionRects = _GetSelectionRects();
+
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    return _buffer->GetTextForClipboard(!_blockSelection,
-                                        trimTrailingWhitespace,
-                                        _GetSelectionRects(),
-                                        GetForegroundColor,
-                                        GetBackgroundColor);
+    return _buffer->GetText(!collapseText,
+                            !collapseText,
+                            selectionRects,
+                            GetForegroundColor,
+                            GetBackgroundColor);
 }
 
 // Method Description:

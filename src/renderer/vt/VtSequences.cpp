@@ -82,7 +82,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dX";
-
     return _WriteFormattedString(&format, chars);
 }
 
@@ -95,7 +94,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
 {
     static const std::string format = "\x1b[%dC";
-
     return _WriteFormattedString(&format, chars);
 }
 

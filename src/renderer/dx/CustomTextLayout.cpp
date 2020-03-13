@@ -639,8 +639,12 @@ try
                                                    _glyphAdvances.cbegin() + clusterGlyphBegin + clusterGlyphLength,
                                                    0.0f);
 
+        // With certain font faces at certain sizes, the advances seem to be slightly more than
+        // the pixel grid; Cascadia Code at 13pt (though, 200% scale) had an advance of 10.000001.
+        // We don't want anything sub one hundredth of a cell to make us break up runs, because
+        // doing so results in suboptimal rendering.
         // If what we expect is bigger than what we have... pad it out.
-        if (advanceExpected > advanceActual)
+        if ((advanceExpected - advanceActual) > 0.001f)
         {
             // Get the amount of space we have leftover.
             const auto diff = advanceExpected - advanceActual;
@@ -657,7 +661,7 @@ try
             _glyphAdvances.at(static_cast<size_t>(clusterGlyphBegin) + clusterGlyphLength - 1) += diff;
         }
         // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
-        else if (advanceExpected < advanceActual)
+        else if ((advanceExpected - advanceActual) < -0.001f)
         {
             const auto scaleProposed = advanceExpected / advanceActual;
 

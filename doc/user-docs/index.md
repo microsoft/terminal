@@ -85,6 +85,6 @@ For an introduction to the various settings, see [Using Json Settings](UsingJson
     (ref [https://twitter.com/r_keith_hill/status/1142871145852440576](https://twitter.com/r_keith_hill/status/1142871145852440576))
 
 2. Terminal zoom can be changed by holding <kbd>Ctrl</kbd> and scrolling with mouse.
-3. If `useAcrylic` is enabled in profiles.json, background opacity can be changed by holding <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and scrolling with mouse. Note that acrylic transparency is limited by the OS only to focused windows.
+3. Background opacity can be changed by holding <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and scrolling with mouse. Note that acrylic transparency is limited by the OS only to focused windows.
 4. Open Windows Terminal in current directory by typing `wt -d .` in the address bar.
 5. Please add more Tips and Tricks.
