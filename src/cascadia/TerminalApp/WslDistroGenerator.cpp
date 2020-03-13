@@ -63,7 +63,7 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
                                              nullptr,
                                              &si,
                                              &pi));
-    switch (WaitForSingleObject(pi.hProcess, 15000))
+    switch (WaitForSingleObject(pi.hProcess, 10000))
     {
     case WAIT_OBJECT_0:
         break;
