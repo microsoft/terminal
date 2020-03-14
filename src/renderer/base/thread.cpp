@@ -15,10 +15,10 @@ RenderThread::RenderThread() :
     _hEvent(nullptr),
     _hPaintCompletedEvent(nullptr),
     _fKeepRunning(true),
-    _hPaintEnabledEvent(nullptr)
+    _hPaintEnabledEvent(nullptr),
+    _fNextFrameRequested(false),
+    _fWaiting(false)
 {
-    _fNextFrameRequested.clear();
-    _fPainting.clear();
 }
 
 RenderThread::~RenderThread()
@@ -161,19 +161,44 @@ DWORD WINAPI RenderThread::_ThreadProc()
     {
         WaitForSingleObject(_hPaintEnabledEvent, INFINITE);
 
-        // Skip waiting if next frame is requested.
-        if (_fNextFrameRequested.test_and_set(std::memory_order_relaxed))
+        if (!_fNextFrameRequested.exchange(false))
         {
-            _fNextFrameRequested.clear(std::memory_order_relaxed);
-        }
-        else
-        {
-            WaitForSingleObject(_hEvent, INFINITE);
+            // <--
+            // If `NotifyPaint` is called at this point, then it will not
+            // set the event because `_fWaiting` is not `true` yet so we have
+            // to check again below.
+
+            _fWaiting.store(true);
+
+            // check again now (see comment above)
+            if (!_fNextFrameRequested.exchange(false))
+            {
+                // Wait until a next frame is requested.
+                WaitForSingleObject(_hEvent, INFINITE);
+            }
+
+            // <--
+            // If `NotifyPaint` is called at this point, then it _will_ set
+            // the event because `_fWaiting` is `true`, but we're not waiting
+            // anymore!
+            // This can probably happen quite often: imagine a scenario where
+            // we are waiting, and the terminal calls `NotifyPaint` twice
+            // very quickly.
+            // In that case, both calls might end up calling `SetEvent`. The
+            // first one will resume this thread and the second one will
+            // `SetEvent` the event. So the next time we wait, the event will
+            // already be set and we won't actually wait.
+            // Because it can happen often, and because rendering is an
+            // expensive operation, we should reset the event to not render
+            // again if nothing changed.
+
+            _fWaiting.store(false);
+
+            // see comment above
+            ResetEvent(_hEvent);
         }
 
         ResetEvent(_hPaintCompletedEvent);
-
-        _fPainting.test_and_set(std::memory_order_acquire);
 
         LOG_IF_FAILED(_pRenderer->PaintFrame());
 
@@ -184,8 +209,6 @@ DWORD WINAPI RenderThread::_ThreadProc()
         {
             Sleep(s_FrameLimitMilliseconds);
         }
-
-        _fPainting.clear(std::memory_order_release);
     }
 
     return S_OK;
@@ -193,15 +216,14 @@ DWORD WINAPI RenderThread::_ThreadProc()
 
 void RenderThread::NotifyPaint()
 {
-    // If we are currently painting a frame, set _fNextFrameRequested flag
-    // to indicate we want to paint next frame immediately.
-    if (_fPainting.test_and_set(std::memory_order_acquire))
+    if (_fWaiting.load())
     {
-        _fNextFrameRequested.test_and_set(std::memory_order_relaxed);
-        return;
+        SetEvent(_hEvent);
     }
-
-    SetEvent(_hEvent);
+    else
+    {
+        _fNextFrameRequested.store(true);
+    }
 }
 
 void RenderThread::EnablePainting()

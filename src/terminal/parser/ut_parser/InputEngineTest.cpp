@@ -310,6 +310,8 @@ public:
     virtual bool MoveCursor(const size_t row,
                             const size_t col) override;
 
+    virtual bool IsVtInputEnabled() const override;
+
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
     TestState* _testState; // non-ownership pointer
@@ -373,6 +375,11 @@ bool TestInteractDispatch::MoveCursor(const size_t row, const size_t col)
     VERIFY_IS_TRUE(_testState->_expectCursorPosition);
     COORD received = { static_cast<short>(col), static_cast<short>(row) };
     VERIFY_ARE_EQUAL(_testState->_expectedCursor, received);
+    return true;
+}
+
+bool TestInteractDispatch::IsVtInputEnabled() const
+{
     return true;
 }
 

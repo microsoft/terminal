@@ -173,8 +173,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetEndSelectionPosition(realCoordEnd);
-    _buffer->GetRenderTarget().TriggerSelection();
+    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept
@@ -204,4 +203,14 @@ void Terminal::LockConsole() noexcept
 void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock_shared();
+}
+
+// Method Description:
+// - Returns whether the screen is inverted;
+//   This state is not currently known to Terminal.
+// Return Value:
+// - false.
+bool Terminal::IsScreenReversed() const noexcept
+{
+    return false;
 }

@@ -10,6 +10,8 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\mouseInput.cpp" />
+    <ClCompile Include="..\mouseInputState.cpp" />
     <ClCompile Include="..\terminalInput.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

@@ -63,6 +63,14 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
+        // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
+        // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
+        // but that process is running at a different IL than us.
+        // For now, we're disabling elevated drag.
+        const auto isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+        _tabView.CanReorderTabs(!isElevated);
+        _tabView.CanDragTabs(!isElevated);
+
         _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
@@ -372,6 +380,7 @@ namespace winrt::TerminalApp::implementation
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
                 profileMenuItem.Icon(iconElement);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
             if (profile.GetGuid() == defaultProfileGuid)
@@ -510,7 +519,6 @@ namespace winrt::TerminalApp::implementation
 
         // Create a connection based on the values in our settings object.
         const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
-
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
@@ -602,8 +610,10 @@ namespace winrt::TerminalApp::implementation
             profile->GetConnectionType() == AzureConnectionType &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
-                                                             settings.InitialCols());
+            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
+            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
+            connection = TerminalConnection::ConptyConnection(azBridgePath.wstring(), L".", L"Azure", settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }
 
         else if (profile->HasConnectionType() &&
@@ -1042,10 +1052,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
     //   new pane should be split from its parent.
+    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(const TerminalApp::SplitState splitType,
+                                  const TerminalApp::SplitType splitMode,
                                   const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
@@ -1064,7 +1076,24 @@ namespace winrt::TerminalApp::implementation
 
         auto focusedTab = _GetStrongTabImpl(*indexOpt);
 
-        const auto [realGuid, controlSettings] = _settings->BuildSettings(newTerminalArgs);
+        winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
+        GUID realGuid;
+        bool profileFound = false;
+
+        if (splitMode == TerminalApp::SplitType::Duplicate)
+        {
+            std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
+            if (current_guid)
+            {
+                profileFound = true;
+                controlSettings = _settings->BuildSettings(current_guid.value());
+                realGuid = current_guid.value();
+            }
+        }
+        if (!profileFound)
+        {
+            std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
+        }
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
@@ -1323,7 +1352,7 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::_CopyText(const bool trimTrailingWhitespace)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(trimTrailingWhitespace);
+        return control.CopySelectionToClipboard(!trimTrailingWhitespace);
     }
 
     // Method Description:

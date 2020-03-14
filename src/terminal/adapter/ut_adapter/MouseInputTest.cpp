@@ -5,7 +5,7 @@
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
-#include "MouseInput.hpp"
+#include "..\terminal\input\terminalInput.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -280,7 +280,7 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<MouseInput> mouseInput = std::make_unique<MouseInput>(s_MouseInputTestCallback);
+        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
@@ -359,7 +359,7 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<MouseInput> mouseInput = std::make_unique<MouseInput>(s_MouseInputTestCallback);
+        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
@@ -442,7 +442,7 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<MouseInput> mouseInput = std::make_unique<MouseInput>(s_MouseInputTestCallback);
+        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
         short sModifierKeystate = (SHORT)uiModifierKeystate;
@@ -520,7 +520,7 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<MouseInput> mouseInput = std::make_unique<MouseInput>(s_MouseInputTestCallback);
+        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
         short sModifierKeystate = (SHORT)uiModifierKeystate;

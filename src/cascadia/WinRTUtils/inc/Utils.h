@@ -28,10 +28,10 @@ inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
 // - Rect scaled by scale
 inline winrt::Windows::Foundation::Rect ScaleRect(winrt::Windows::Foundation::Rect rect, double scale)
 {
-    const float scaleLocal = gsl::narrow_cast<float>(scale);
-    rect.X *= scaleLocal;
-    rect.Y *= scaleLocal;
-    rect.Width *= scaleLocal;
-    rect.Height *= scaleLocal;
+    const auto scaleLocal = base::ClampedNumeric<float>(scale);
+    rect.X = base::ClampMul(rect.X, scaleLocal);
+    rect.Y = base::ClampMul(rect.Y, scaleLocal);
+    rect.Width = base::ClampMul(rect.Width, scaleLocal);
+    rect.Height = base::ClampMul(rect.Height, scaleLocal);
     return rect;
 }

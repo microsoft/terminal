@@ -116,6 +116,7 @@ private:
     void _RemoveHiddenProfiles();
     void _ValidateAllSchemesExist();
     void _ValidateMediaResources();
+    void _ValidateKeybindings();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

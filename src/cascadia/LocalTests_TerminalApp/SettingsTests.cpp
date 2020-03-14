@@ -72,6 +72,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestLayerProfileOnColorScheme);
 
+        TEST_METHOD(ValidateKeybindingsWarnings);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2159,5 +2161,48 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3.CursorColor()); // from profile (not set in color scheme)
         VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4.CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5.CursorColor()); // default
+    }
+
+    void SettingsTests::ValidateKeybindingsWarnings()
+    {
+        const std::string badSettings{ R"(
+        {
+            "globals": {
+                "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+            },
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "keybindings": [
+                { "command": { "action": "splitPane", "split":"auto" }, "keys": [ "ctrl+alt+t", "ctrl+a" ] },
+                { "command": { "action": "moveFocus" }, "keys": [ "ctrl+a" ] },
+                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] }
+            ]
+        })" };
+
+        const auto settingsObject = VerifyParseSucceeded(badSettings);
+        auto settings = CascadiaSettings::FromJson(settingsObject);
+
+        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+
+        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_globals._keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+
+        settings->_ValidateKeybindings();
+
+        VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
     }
 }

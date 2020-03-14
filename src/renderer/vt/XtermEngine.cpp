@@ -19,7 +19,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _previousLineWrapped(false),
     _usingUnderLine(false),
     _needToDisableCursor(false),
     _lastCursorIsVisible(false),
@@ -64,16 +63,15 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirtyRect = GetDirtyRectInChars();
-        const auto dirtyView = Viewport::FromInclusive(dirtyRect);
-        if (!_resized && dirtyView == _lastViewport)
+        const auto dirty = GetDirtyArea();
+
+        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+
+        // If there's more than 1, union them all up with the 1 we already have.
+        for (size_t i = 1; i < dirty.size(); ++i)
         {
-            // TODO: MSFT:21096414 - This is never actually hit. We set
-            // _resized=true on every frame (see VtEngine::UpdateViewport).
-            // Unfortunately, not always setting _resized is not a good enough
-            // solution, see that work item for a description why.
-            RETURN_IF_FAILED(_ClearScreen());
-            _clearedAllThisFrame = true;
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
         }
     }
 
@@ -235,6 +233,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
 
+    _trace.TraceMoveCursor(_lastText, coord);
+
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -242,14 +242,25 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _needToDisableCursor = true;
             hr = _CursorHome();
         }
+        else if (_resized && _resizeQuirk)
+        {
+            hr = _CursorPosition(coord);
+        }
         else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, at the start of the line.
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            if (_previousLineWrapped)
+            bool previousLineWrapped = false;
+            if (_wrappedRow.has_value())
             {
+                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
+            }
+
+            if (previousLineWrapped)
+            {
+                _trace.TraceWrapped();
                 hr = S_OK;
             }
             else
@@ -312,7 +323,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         _newBottomLine = false;
     }
     _deferredCursorPos = INVALID_COORDS;
+
+    _wrappedRow = std::nullopt;
+
     _delayedEolWrap = false;
+
     return hr;
 }
 
@@ -430,15 +445,19 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
+// - lineWrapped: true if this run we're painting is the end of a line that
+//   wrapped. If we're not painting the last column of a wrapped line, then this
+//   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                    const COORD coord,
-                                                   const bool /*trimLeft*/) noexcept
+                                                   const bool /*trimLeft*/,
+                                                   const bool lineWrapped) noexcept
 {
     return _fUseAsciiOnly ?
                VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-               VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintUtf8BufferLine(clusters, coord, lineWrapped);
 }
 
 // Method Description:
@@ -450,9 +469,21 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
 {
-    return _fUseAsciiOnly ?
-               VtEngine::_WriteTerminalAscii(wstr) :
-               VtEngine::_WriteTerminalUtf8(wstr);
+    RETURN_IF_FAILED(_fUseAsciiOnly ?
+                         VtEngine::_WriteTerminalAscii(wstr) :
+                         VtEngine::_WriteTerminalUtf8(wstr));
+    // GH#4106, GH#2011 - WriteTerminalW is only ever called by the
+    // StateMachine, when we've encountered a string we don't understand. When
+    // this happens, we usually don't actually trigger another frame, but we
+    // _do_ want this string to immediately be sent to the terminal. Since we
+    // only flush our buffer on actual frames, this means that strings we've
+    // decided to pass through would have gotten buffered here until the next
+    // actual frame is triggered.
+    //
+    // To fix this, flush here, so this string is sent to the connected terminal
+    // application.
+
+    return _Flush();
 }
 
 // Method Description:

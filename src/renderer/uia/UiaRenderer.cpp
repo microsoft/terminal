@@ -276,7 +276,8 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
-                                                 const bool /*trimLeft*/) noexcept
+                                                 const bool /*trimLeft*/,
+                                                 const bool /*lineWrapped*/) noexcept
 {
     return S_FALSE;
 }
@@ -402,9 +403,9 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT UiaEngine::GetDirtyRectInChars() noexcept
+[[nodiscard]] std::vector<SMALL_RECT> UiaEngine::GetDirtyArea()
 {
-    return Viewport::Empty().ToInclusive();
+    return { Viewport::Empty().ToInclusive() };
 }
 
 // Routine Description:

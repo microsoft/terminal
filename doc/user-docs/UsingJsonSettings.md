@@ -54,8 +54,8 @@ object under a root property `"globals"`.
 This is an array of key chords and shortcuts to invoke various commands.
 Each command can have more than one key binding.
 
-NOTE: Key bindings is a subfield of the global settings and
-key bindings apply to all profiles in the same manner.
+> 👉 **Note**: Key bindings is a subfield of the global settings and
+> key bindings apply to all profiles in the same manner.
 
 For example, here's a sample of the default keybindings:
 
@@ -69,8 +69,25 @@ For example, here's a sample of the default keybindings:
         // etc.
     ]
 }
-
 ```
+
+You can also use a single key chord string as the value of `"keys"`.
+It will be treated as a chord of length one.
+This will allow you to simplify the above snippet as follows:
+
+```json
+{
+    "keybindings":
+    [
+        { "command": "closePane", "keys": "ctrl+shift+w" },
+        { "command": "copy", "keys": "ctrl+shift+c" },
+        { "command": "newTab", "keys": "ctrl+shift+t" },
+        // etc.
+    ]
+}
+```
+
+
 
 ### Unbinding keys
 
@@ -270,7 +287,7 @@ properties for all your profiles, like so:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -282,8 +299,8 @@ properties for all your profiles, like so:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 Note that the `profiles` property has changed in this example from a _list_ of
@@ -311,7 +328,7 @@ could achieve that with the following:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -324,8 +341,8 @@ could achieve that with the following:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the

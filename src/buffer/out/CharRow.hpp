@@ -27,6 +27,13 @@ Revision History:
 
 class ROW;
 
+enum class DelimiterClass
+{
+    ControlChar,
+    DelimiterChar,
+    RegularChar
+};
+
 // the characters of one row of screen buffer
 // we keep the following values so that we don't write
 // more pixels to the screen than we have to:
@@ -63,6 +70,8 @@ public:
     DbcsAttribute& DbcsAttrAt(const size_t column);
     void ClearGlyph(const size_t column);
     std::wstring GetText() const;
+
+    const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
 
     // working with glyphs
     const reference GlyphAt(const size_t column) const;
