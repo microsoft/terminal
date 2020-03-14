@@ -80,11 +80,11 @@ More data reading and calculation will be included in Terminal Launch process, w
 
 ## Potential Issues
 
-We need to consider multi-monitor scenario. If the user has multiple monitors, we must guarantee that the Terminal could be iniitalized as expected. We can keep an eye on the feedbacks of this feature from the community.
+We need to consider multi-monitor scenario. If the user has multiple monitors, we must guarantee that the Terminal could be initialized as expected. We can keep an eye on the feedbacks of this feature from the community.
 
 ## Future considerations
 
-For now, this feature only allows the user to set initial positon and choose whether to maximize the window when launch. In the future, we may consider follow-up features like:
+For now, this feature only allows the user to set initial position and choose whether to maximize the window when launch. In the future, we may consider follow-up features like:
 
 1. Save the position of the Terminal on exit, and restore the position on the next launch. This could be a true/false feature that users could choose to set.
 

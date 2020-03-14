@@ -8,9 +8,9 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
-#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
+#include "AppCommandlineArgs.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -39,6 +39,9 @@ namespace winrt::TerminalApp::implementation
 
         void CloseWindow();
 
+        int32_t SetStartupCommandline(winrt::array_view<const hstring> args);
+        winrt::hstring EarlyExitMessage();
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
@@ -60,7 +63,9 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
-        std::vector<std::shared_ptr<Tab>> _tabs;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
+        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
 
         bool _isFullscreen{ false };
 
@@ -69,6 +74,10 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo;
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
+
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        int _ParseArgs(winrt::array_view<const hstring>& args);
+        fire_and_forget _ProcessNextStartupAction();
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -87,23 +96,23 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
         void _RegisterActionCallbacks();
 
-        void _UpdateTitle(std::shared_ptr<Tab> tab);
-        void _UpdateTabIcon(std::shared_ptr<Tab> tab);
+        void _UpdateTitle(const Tab& tab);
+        void _UpdateTabIcon(Tab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, Tab& hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
-        bool _SelectTab(const int tabIndex);
+        bool _SelectTab(const uint32_t tabIndex);
         void _MoveFocus(const Direction& direction);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
-        int _GetFocusedTabIndex() const;
-        winrt::fire_and_forget _SetFocusedTabIndex(int tabIndex);
+        std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
+        winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();
@@ -113,7 +122,7 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
+        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const winrt::TerminalApp::SplitType splitMode = winrt::TerminalApp::SplitType::Manual, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);

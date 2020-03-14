@@ -93,14 +93,19 @@ public:
     bool PrivateSetCursorKeysMode(const bool applicationMode) override;
     bool PrivateSetKeypadMode(const bool applicationMode) override;
 
+    bool PrivateSetScreenMode(const bool reverseMode) override;
+    bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
+
     bool PrivateShowCursor(const bool show) noexcept override;
     bool PrivateAllowCursorBlinking(const bool enable) override;
 
     bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) override;
 
-    bool PrivateReverseLineFeed() override;
+    bool PrivateWarningBell() override;
 
-    bool MoveCursorVertically(const ptrdiff_t lines) override;
+    bool PrivateGetLineFeedMode() const override;
+    bool PrivateLineFeed(const bool withReturn) override;
+    bool PrivateReverseLineFeed() override;
 
     bool SetConsoleTitleW(const std::wstring_view title) override;
 
@@ -138,7 +143,7 @@ public:
 
     bool GetConsoleOutputCP(unsigned int& codepage) override;
 
-    bool IsConsolePty(bool& isPty) const override;
+    bool IsConsolePty() const override;
 
     bool DeleteLines(const size_t count) override;
     bool InsertLines(const size_t count) override;
@@ -160,6 +165,8 @@ public:
                              const std::optional<SMALL_RECT> clipRect,
                              const COORD destinationOrigin,
                              const bool standardFillAttrs) noexcept override;
+
+    bool PrivateIsVtInputEnabled() const override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

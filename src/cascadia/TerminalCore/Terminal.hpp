@@ -28,6 +28,16 @@ namespace Microsoft::Terminal::Core
     class Terminal;
 }
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class TerminalBufferTests;
+    class TerminalApiTest;
+    class ConptyRoundtripTests;
+};
+#endif
+
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
@@ -75,6 +85,9 @@ public:
     bool ReverseText(bool reversed) noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
+    bool SetCursorVisibility(const bool visible) noexcept override;
+    bool EnableCursorBlinking(const bool enable) noexcept override;
+    bool CursorLineFeed(const bool withReturn) noexcept override;
     bool DeleteCharacter(const size_t count) noexcept override;
     bool InsertCharacter(const size_t count) noexcept override;
     bool EraseCharacters(const size_t numChars) noexcept override;
@@ -85,11 +98,23 @@ public:
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
+
+    bool SetCursorKeysMode(const bool applicationMode) noexcept override;
+    bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool EnableVT200MouseMode(const bool enabled) noexcept override;
+    bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
+    bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
+    bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
+    bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
+    bool EnableAlternateScrollMode(const bool enabled) noexcept override;
+
+    bool IsVtInputEnabled() const noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
+    bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) override;
     bool SendCharEvent(const wchar_t ch) override;
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
@@ -97,6 +122,7 @@ public:
     int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
+    bool IsTrackingMouseInput() const noexcept;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -122,6 +148,7 @@ public:
     CursorType GetCursorStyle() const noexcept override;
     COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const noexcept override;
+    bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
 #pragma endregion
@@ -131,7 +158,8 @@ public:
     const bool IsSelectionActive() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const override;
+    const COORD GetSelectionAnchor() const noexcept override;
+    const COORD GetSelectionEnd() const noexcept override;
     const std::wstring GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
@@ -141,17 +169,22 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
-    void SetCursorVisible(const bool isVisible) noexcept;
+    void SetCursorOn(const bool isOn) noexcept;
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    enum class SelectionExpansionMode
+    {
+        Cell,
+        Word,
+        Line
+    };
     const bool IsCopyOnSelectActive() const noexcept;
-    void DoubleClickSelection(const COORD position);
-    void TripleClickSelection(const COORD position);
+    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetEndSelectionPosition(const COORD position);
-    void SetBoxSelection(const bool isEnabled) noexcept;
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetBlockSelection(const bool isEnabled) noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
@@ -176,19 +209,20 @@ private:
     bool _suppressApplicationTitle;
 
 #pragma region Text Selection
-    enum class SelectionExpansionMode
+    // a selection is represented as a range between two COORDs (start and end)
+    // the pivot is the COORD that remains selected when you extend a selection in any direction
+    //   this is particularly useful when a word selection is extended over its starting point
+    //   see TerminalSelection.cpp for more information
+    struct SelectionAnchors
     {
-        Cell,
-        Word,
-        Line
+        COORD start;
+        COORD end;
+        COORD pivot;
     };
-    COORD _selectionAnchor;
-    COORD _endSelectionPosition;
-    bool _boxSelection;
-    bool _selectionActive;
+    std::optional<SelectionAnchors> _selection;
+    bool _blockSelection;
     bool _allowSingleCharSelection;
     bool _copyOnSelect;
-    SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -215,7 +249,7 @@ private:
     //      _visibleTop as well.
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
-    //      Either way, we sohould make this behavior controlled by a setting.
+    //      Either way, we should make this behavior controlled by a setting.
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
@@ -230,19 +264,22 @@ private:
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
+    void _AdjustCursorPosition(const COORD proposedPosition);
+
     void _NotifyScrollEvent() noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
-    SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
-    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
-    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
+    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
+    std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
-    std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
-    SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
-    void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 #pragma endregion
+
+#ifdef UNIT_TESTING
+    friend class TerminalCoreUnitTests::TerminalBufferTests;
+    friend class TerminalCoreUnitTests::TerminalApiTest;
+    friend class TerminalCoreUnitTests::ConptyRoundtripTests;
+#endif
 };

@@ -49,6 +49,8 @@ public:
     COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const noexcept override;
 
+    bool IsScreenReversed() const noexcept override;
+
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
@@ -60,7 +62,8 @@ public:
     const bool IsSelectionActive() const override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const;
+    const COORD GetSelectionAnchor() const noexcept;
+    const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
 #pragma endregion
 };

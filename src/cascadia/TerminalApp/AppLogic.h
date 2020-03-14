@@ -10,15 +10,6 @@
 #include "TerminalPage.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
-
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
-
 namespace winrt::TerminalApp::implementation
 {
     struct AppLogic : AppLogicT<AppLogic>
@@ -30,8 +21,12 @@ namespace winrt::TerminalApp::implementation
         void Create();
         bool IsUwp() const noexcept;
         void RunAsUwp();
+        bool IsElevated() const noexcept;
         void LoadSettings();
         [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
+
+        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
+        winrt::hstring EarlyExitMessage();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
@@ -44,6 +39,7 @@ namespace winrt::TerminalApp::implementation
 
         hstring Title();
         void TitlebarClicked();
+        bool OnF7Pressed();
 
         void WindowCloseButtonClicked();
 
@@ -52,12 +48,13 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _isUwp{ false };
+        bool _isElevated{ false };
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the AppLogic.
         // ALSO: If you add any UIElements as roots here, make sure they're
-        // updated in _AppLogiclyTheme. The root currently is _root.
+        // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };

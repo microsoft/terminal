@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef __INSIDE_WINDOWS
+const char screenVertexShaderString[] = "";
+#else
 const char screenVertexShaderString[] = R"(
 struct VS_OUTPUT
 {
@@ -14,3 +17,4 @@ VS_OUTPUT main(float4 pos : POSITION, float2 tex : TEXCOORD)
     return output;
 }
 )";
+#endif

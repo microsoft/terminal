@@ -24,6 +24,14 @@ Author(s):
 #include <string>
 #include <functional>
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
+
 namespace Microsoft::Console::Render
 {
     class VtEngine : public RenderEngineBase, public Microsoft::Console::ITerminalOutputConnection
@@ -57,7 +65,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                                       const COORD coord,
-                                                      const bool trimLeft) noexcept override;
+                                                      const bool trimLeft,
+                                                      const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
                                                    const COLORREF color,
                                                    const size_t cchLine,
@@ -80,7 +89,7 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        SMALL_RECT GetDirtyRectInChars() override;
+        std::vector<SMALL_RECT> GetDirtyArea() override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -97,9 +106,13 @@ namespace Microsoft::Console::Render
         void BeginResizeRequest();
         void EndResizeRequest();
 
+        void SetResizeQuirk(const bool resizeQuirk);
+
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
+
+        std::string _formatBuffer;
 
         const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
@@ -135,6 +148,12 @@ namespace Microsoft::Console::Render
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         bool _inResizeRequest{ false };
+
+        std::optional<short> _wrappedRow{ std::nullopt };
+
+        bool _delayedEolWrap{ false };
+
+        bool _resizeQuirk{ false };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
@@ -204,7 +223,8 @@ namespace Microsoft::Console::Render
         bool _WillWriteSingleChar() const;
 
         [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
-                                                   const COORD coord) noexcept;
+                                                   const COORD coord,
+                                                   const bool lineWrapped) noexcept;
 
         [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
                                                     const COORD coord) noexcept;
@@ -220,6 +240,8 @@ namespace Microsoft::Console::Render
         bool _usingTestCallback;
 
         friend class VtRendererTest;
+        friend class ConptyOutputTests;
+        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 
         void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);

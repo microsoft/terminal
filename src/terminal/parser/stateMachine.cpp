@@ -17,6 +17,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _intermediates{},
     _parameters{},
     _oscString{},
+    _cachedSequence{ std::nullopt },
     _processingIndividually(false)
 {
     _ActionClear();
@@ -211,7 +212,7 @@ static constexpr bool _isOscIndicator(const wchar_t wch) noexcept
 // Routine Description:
 // - Determines if a character is a delimiter between two parameters in a "operating system control sequence"
 //   This occurs in the middle of a control sequence after escape and OscIndicator have been recognized,
-//   after the paramater indicating which OSC action to take.
+//   after the parameter indicating which OSC action to take.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -299,7 +300,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 // Routine Description:
 // - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character, with the added
-//      information that we're executing it from the Escsape state.
+//      information that we're executing it from the Escape state.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
@@ -533,6 +534,7 @@ void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 void StateMachine::_EnterGround() noexcept
 {
     _state = VTStates::Ground;
+    _cachedSequence.reset(); // entering ground means we've completed the pending sequence
     _trace.TraceStateChange(L"Ground");
 }
 
@@ -1226,11 +1228,27 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
 // - true if the engine successfully handled the string.
 bool StateMachine::FlushToTerminal()
 {
-    // _pwchCurr is incremented after a call to ProcessCharacter to indicate
-    //      that pwchCurr was processed.
-    // However, if we're here, then the processing of pwchChar triggered the
-    //      engine to request the entire sequence get passed through, including pwchCurr.
-    return _engine->ActionPassThroughString(_run);
+    bool success{ true };
+
+    if (success && _cachedSequence.has_value())
+    {
+        // Flush the partial sequence to the terminal before we flush the rest of it.
+        // We always want to clear the sequence, even if we failed, so we don't accumulate bad state
+        // and dump it out elsewhere later.
+        success = _engine->ActionPassThroughString(*_cachedSequence);
+        _cachedSequence.reset();
+    }
+
+    if (success)
+    {
+        // _pwchCurr is incremented after a call to ProcessCharacter to indicate
+        //      that pwchCurr was processed.
+        // However, if we're here, then the processing of pwchChar triggered the
+        //      engine to request the entire sequence get passed through, including pwchCurr.
+        success = _engine->ActionPassThroughString(_run);
+    }
+
+    return success;
 }
 
 // Routine Description:
@@ -1269,13 +1287,17 @@ void StateMachine::ProcessString(const std::wstring_view string)
         {
             if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                // Because the _run above is composed INCLUDING current, we must
-                // trim it off here since we just determined it's actionable
-                // and only pass through everything before it.
-                const auto allLeadingUpTo = _run.substr(0, _run.size() - 1);
+                if (!_run.empty())
+                {
+                    // Because the _run above is composed INCLUDING current, we must
+                    // trim it off here since we just determined it's actionable
+                    // and only pass through everything before it.
+                    const auto allLeadingUpTo = _run.substr(0, _run.size() - 1);
 
-                _engine->ActionPrintString(allLeadingUpTo); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(allLeadingUpTo);
+                    _engine->ActionPrintString(allLeadingUpTo); // ... print all the chars leading up to it as part of the run...
+                    _trace.DispatchPrintRunTrace(allLeadingUpTo);
+                }
+
                 _processingIndividually = true; // begin processing future characters individually...
                 start = current;
                 continue;
@@ -1290,9 +1312,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     // When we leave the loop, current has been advanced to the length of the string itself
     // (or one past the array index to the final char) so this `substr` operation doesn't +1
     // to include the final character (unlike the one inside the top of the loop above.)
-    // NOTE: std::basic_string_view will auto-trim excessively large sizes down to the valid length
-    //       so passing something too large in the second parameter WILL NOT FAIL.
-    _run = string.substr(start, current - start);
+    _run = start < string.size() ? string.substr(start) : std::wstring_view{};
 
     // If we're at the end of the string and have remaining un-printed characters,
     if (!_processingIndividually && !_run.empty())
@@ -1362,6 +1382,13 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // microsoft/terminal#2746: Make sure to return to the ground state
             // after dispatching the characters
             _EnterGround();
+        }
+        else
+        {
+            // If the engine doesn't require flushing at the end of the string, we
+            // want to cache the partial sequence in case we have to flush the whole
+            // thing to the terminal later.
+            _cachedSequence = _cachedSequence.value_or(std::wstring{}) + std::wstring{ _run };
         }
     }
 }

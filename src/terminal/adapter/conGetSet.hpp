@@ -27,12 +27,15 @@ namespace Microsoft::Console::VirtualTerminal
     class ConGetSet
     {
     public:
+        virtual ~ConGetSet() = default;
         virtual bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const = 0;
         virtual bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual bool SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;
         virtual bool SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo) = 0;
         virtual bool SetConsoleCursorPosition(const COORD position) = 0;
         virtual bool SetConsoleTextAttribute(const WORD attr) = 0;
+
+        virtual bool PrivateIsVtInputEnabled() const = 0;
 
         virtual bool PrivateSetLegacyAttributes(const WORD attr,
                                                 const bool foreground,
@@ -57,10 +60,16 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateSetCursorKeysMode(const bool applicationMode) = 0;
         virtual bool PrivateSetKeypadMode(const bool applicationMode) = 0;
 
+        virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
+        virtual bool PrivateSetAutoWrapMode(const bool wrapAtEOL) = 0;
+
         virtual bool PrivateShowCursor(const bool show) = 0;
         virtual bool PrivateAllowCursorBlinking(const bool enable) = 0;
 
         virtual bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) = 0;
+        virtual bool PrivateWarningBell() = 0;
+        virtual bool PrivateGetLineFeedMode() const = 0;
+        virtual bool PrivateLineFeed(const bool withReturn) = 0;
         virtual bool PrivateReverseLineFeed() = 0;
         virtual bool SetConsoleTitleW(const std::wstring_view title) = 0;
         virtual bool PrivateUseAlternateScreenBuffer() = 0;
@@ -89,9 +98,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool GetConsoleOutputCP(unsigned int& codepage) = 0;
 
         virtual bool PrivateSuppressResizeRepaint() = 0;
-        virtual bool IsConsolePty(bool& isPty) const = 0;
-
-        virtual bool MoveCursorVertically(const ptrdiff_t lines) = 0;
+        virtual bool IsConsolePty() const = 0;
 
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;

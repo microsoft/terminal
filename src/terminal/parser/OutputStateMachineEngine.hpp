@@ -102,10 +102,14 @@ namespace Microsoft::Console::VirtualTerminal
             DA_DeviceAttributes = L'c',
             DECSCPP_SetColumnsPerPage = L'|',
             IL_InsertLine = L'L',
-            DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceeded by a CSI, and DL is.
+            DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceded by a CSI, and DL is.
             HPA_HorizontalPositionAbsolute = L'`',
             VPA_VerticalLinePositionAbsolute = L'd',
+            HPR_HorizontalPositionRelative = L'a',
+            VPR_VerticalPositionRelative = L'e',
             DECSTBM_SetScrollingRegion = L'r',
+            NEL_NextLine = L'E', // Not a CSI, so doesn't overlap with CNL
+            IND_Index = L'D', // Not a CSI, so doesn't overlap with CUB
             RI_ReverseLineFeed = L'M',
             HTS_HorizontalTabSet = L'H', // Not a CSI, so doesn't overlap with CUP
             CHT_CursorForwardTab = L'I',
