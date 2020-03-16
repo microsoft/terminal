@@ -168,6 +168,30 @@ class SizeTests
         }
     }
 
+    TEST_METHOD(Boolean)
+    {
+        const til::size empty;
+        VERIFY_IS_TRUE(!!empty);
+
+        const til::size yOnly{ 0, 10 };
+        VERIFY_IS_TRUE(!!yOnly);
+
+        const til::size xOnly{ 10, 0 };
+        VERIFY_IS_TRUE(!!xOnly);
+
+        const til::size both{ 10, 10 };
+        VERIFY_IS_TRUE(!!both);
+
+        const til::size yNegative{ 10, -10 };
+        VERIFY_IS_TRUE(!!yNegative);
+
+        const til::size xNegative{ -10, 10 };
+        VERIFY_IS_TRUE(!!xNegative);
+
+        const til::size bothNegative{ -10, -10 };
+        VERIFY_IS_TRUE(!!bothNegative);
+    }
+
     TEST_METHOD(Addition)
     {
         Log::Comment(L"0.) Addition of two things that should be in bounds.");
