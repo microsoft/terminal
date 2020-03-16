@@ -1983,7 +1983,10 @@ float DxEngine::GetScaling() const noexcept
         DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
         std::wstring localeName = _GetLocaleName();
 
-        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, localeName);
+        // _ResolveFontFaceWithFallback overrides the last argument with the locale name of the font,
+        // but we should use the system's locale to render the text.
+        std::wstring fontLocaleName = localeName;
+        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, fontLocaleName);
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
