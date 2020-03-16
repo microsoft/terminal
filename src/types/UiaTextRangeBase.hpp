@@ -85,7 +85,7 @@ namespace Microsoft::Console::Types
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
-        const til::point GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
+        const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
         bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
 
@@ -170,7 +170,7 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
                                      gsl::not_null<int*> const pAmountMoved,
-                                     _In_ const bool preventBufferEnd = false);
+                                     _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
@@ -182,13 +182,13 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
                                 gsl::not_null<int*> const pAmountMoved,
-                                _In_ const bool preventBufferEnd = false);
+                                _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
                                     gsl::not_null<int*> const pAmountMoved,
-                                    _In_ const bool preventBufferEnd = false);
+                                    _In_ const bool preventBufferEnd = false) noexcept;
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;

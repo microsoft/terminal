@@ -83,15 +83,15 @@ class UiaTextRangeTests
     struct ExpectedResult
     {
         int moveAmt;
-        til::point start;
-        til::point end;
+        COORD start;
+        COORD end;
     };
 
     struct MoveTest
     {
         std::wstring comment;
-        til::point start;
-        til::point end;
+        COORD start;
+        COORD end;
         int moveAmt;
         ExpectedResult expected;
     };
@@ -99,8 +99,8 @@ class UiaTextRangeTests
     struct MoveEndpointTest
     {
         std::wstring comment;
-        til::point start;
-        til::point end;
+        COORD start;
+        COORD end;
         int moveAmt;
         TextPatternRangeEndpoint endpoint;
         ExpectedResult expected;
@@ -326,8 +326,8 @@ class UiaTextRangeTests
 
         struct TextUnitBoundaries
         {
-            til::point start;
-            til::point end;
+            COORD start;
+            COORD end;
         };
 
         const std::map<TextUnit, TextUnitBoundaries> textUnitBoundaries = {
@@ -375,7 +375,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 2", toString(textUnit)));
-                const til::point end = { boundaries.start.x() + 1, boundaries.start.y() };
+                const COORD end = { boundaries.start.X + 1, boundaries.start.Y };
                 verifyExpansion(textUnit, boundaries.start, end);
             }
 
@@ -387,7 +387,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 4", toString(textUnit)));
-                const til::point end = { boundaries.end.x() + 1, boundaries.end.y() };
+                const COORD end = { boundaries.end.X + 1, boundaries.end.Y };
                 verifyExpansion(textUnit, boundaries.start, end);
             }
 
@@ -395,7 +395,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 5", toString(textUnit)));
-                const til::point start = { boundaries.start.x() + 1, boundaries.start.y() };
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
                 verifyExpansion(textUnit, start, start);
             }
 
@@ -403,8 +403,8 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 6", toString(textUnit)));
-                const til::point start = { boundaries.start.x() + 1, boundaries.start.y() };
-                const til::point end = { start.x() + 1, start.y() };
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                const COORD end = { start.X + 1, start.Y };
                 verifyExpansion(textUnit, start, end);
             }
 
@@ -412,7 +412,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 7", toString(textUnit)));
-                const til::point start = { boundaries.start.x() + 1, boundaries.start.y() };
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
                 verifyExpansion(textUnit, start, boundaries.end);
             }
 
@@ -420,8 +420,8 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 8", toString(textUnit)));
-                const til::point start = { boundaries.start.x() + 1, boundaries.start.y() };
-                const til::point end = { boundaries.end.x() + 1, boundaries.end.y() };
+                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                const COORD end = { boundaries.end.X + 1, boundaries.end.Y };
                 verifyExpansion(textUnit, start, end);
             }
         }
@@ -429,8 +429,8 @@ class UiaTextRangeTests
 
     TEST_METHOD(MoveEndpointByRange)
     {
-        const til::point start{ 0, 1 };
-        const til::point end{ 1, 2 };
+        const COORD start{ 0, 1 };
+        const COORD end{ 1, 2 };
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr,
                                                                         _pUiaData,
@@ -439,7 +439,7 @@ class UiaTextRangeTests
                                                                         end));
 
         const auto bufferSize = _pTextBuffer->GetSize();
-        const til::point origin = bufferSize.Origin();
+        const auto origin = bufferSize.Origin();
         Microsoft::WRL::ComPtr<UiaTextRange> target;
 
         auto resetTargetUTR = [&]() {
