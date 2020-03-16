@@ -583,8 +583,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // make the state machine propogate this ED sequence to the connected
         // terminal application. While we're in conpty mode, we don't really
         // have a scrollback, but the attached terminal might.
-        bool isPty = false;
-        _pConApi->IsConsolePty(isPty);
+        const bool isPty = _pConApi->IsConsolePty();
         return eraseScrollbackResult && (!isPty);
     }
     else if (eraseType == DispatchTypes::EraseType::All)
@@ -1042,10 +1041,11 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
     bool success = true;
     success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1063,10 +1063,11 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
     bool success = true;
     success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1461,6 +1462,8 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
+    const bool isPty = _pConApi->IsConsolePty();
+
     bool success = CursorVisibility(true); // Cursor enabled.
     if (success)
     {
@@ -1474,11 +1477,15 @@ bool AdaptDispatch::SoftReset()
     {
         success = SetCursorKeysMode(false); // Normal characters.
     }
-    if (success)
+    // SetCursorKeysMode will return false if we're in conpty mode, as to
+    // trigger a passthrough. If that's the case, just power through here.
+    if (success || isPty)
     {
         success = SetKeypadMode(false); // Numeric characters.
     }
-    if (success)
+    // SetKeypadMode will return false if we're in conpty mode, as to trigger a
+    // passthrough. If that's the case, just power through here.
+    if (success || isPty)
     {
         // Top margin = 1; bottom margin = page length.
         success = _DoSetTopBottomScrollingMargins(0, 0);
@@ -1558,9 +1565,7 @@ bool AdaptDispatch::HardReset()
     // make the state machine propogate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
     // might need to do more.
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1713,10 +1718,11 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableVT200MouseMode(enabled);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1736,10 +1742,11 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1759,10 +1766,11 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1781,10 +1789,11 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1804,10 +1813,11 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1827,10 +1837,11 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     bool success = true;
     success = _pConApi->PrivateEnableAlternateScroll(enabled);
 
-    // If we're a conpty, always return false
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always return false
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input. Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911
+    if (_pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled())
     {
         return false;
     }
@@ -1847,13 +1858,6 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
-    {
-        return false;
-    }
-
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
 
@@ -1894,6 +1898,13 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         success = _pConApi->PrivateAllowCursorBlinking(fEnableBlinking);
     }
 
+    // If we're a conpty, always return false, so that this cursor state will be
+    // sent to the connected terminal
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
     return success;
 }
 
@@ -1906,9 +1917,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1936,9 +1945,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
     //      value to the terminal. Still handle the sequence so apps that use
     //      the API or VT to query the values of the color table still read the
     //      correct color.
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1961,9 +1968,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
     //      value to the terminal. Still handle the sequence so apps that use
     //      the API or VT to query the values of the color table still read the
     //      correct color.
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }
@@ -1986,9 +1991,7 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
     //      value to the terminal. Still handle the sequence so apps that use
     //      the API or VT to query the values of the color table still read the
     //      correct color.
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
-    if (isPty)
+    if (_pConApi->IsConsolePty())
     {
         return false;
     }

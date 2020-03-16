@@ -88,14 +88,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-        // This template will convert to size from anything that has a Left, Top, Right, and Bottom field that appear convertable to an integer value
+        // This template will convert to rectangle from anything that has a Left, Top, Right, and Bottom field that appear convertible to an integer value
         template<typename TOther>
         constexpr rectangle(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().Top)> && std::is_integral_v<decltype(std::declval<TOther>().Left)> && std::is_integral_v<decltype(std::declval<TOther>().Bottom)> && std::is_integral_v<decltype(std::declval<TOther>().Right)>, int> /*sentinel*/ = 0) :
             rectangle(til::point{ static_cast<ptrdiff_t>(other.Left), static_cast<ptrdiff_t>(other.Top) }, til::point{ static_cast<ptrdiff_t>(other.Right), static_cast<ptrdiff_t>(other.Bottom) })
         {
         }
 
-        // This template will convert to size from anything that has a left, top, right, and bottom field that appear convertable to an integer value
+        // This template will convert to rectangle from anything that has a left, top, right, and bottom field that appear convertible to an integer value
         template<typename TOther>
         constexpr rectangle(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().top)> && std::is_integral_v<decltype(std::declval<TOther>().left)> && std::is_integral_v<decltype(std::declval<TOther>().bottom)> && std::is_integral_v<decltype(std::declval<TOther>().right)>, int> /*sentinel*/ = 0) :
             rectangle(til::point{ static_cast<ptrdiff_t>(other.left), static_cast<ptrdiff_t>(other.top) }, til::point{ static_cast<ptrdiff_t>(other.right), static_cast<ptrdiff_t>(other.bottom) })
@@ -295,10 +295,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // We generate these rectangles by the original and intersect points, but some of them might be empty when the intersect
                 // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
                 // We will filter those out below when adding them to the result.
-                const auto t = rectangle({ left(), top(), right(), intersect.top() });
-                const auto b = rectangle({ left(), intersect.bottom(), right(), bottom() });
-                const auto l = rectangle({ left(), intersect.top(), intersect.left(), intersect.bottom() });
-                const auto r = rectangle({ intersect.right(), intersect.top(), right(), intersect.bottom() });
+                const til::rectangle t{ left(), top(), right(), intersect.top() };
+                const til::rectangle b{ left(), intersect.bottom(), right(), bottom() };
+                const til::rectangle l{ left(), intersect.top(), intersect.left(), intersect.bottom() };
+                const til::rectangle r{ intersect.right(), intersect.top(), right(), intersect.bottom() };
 
                 if (!t.empty())
                 {
@@ -379,7 +379,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         ptrdiff_t width() const
         {
             ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(right()) - left()).AssignIfValid(&ret));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(right(), left()).AssignIfValid(&ret));
             return ret;
         }
 
@@ -394,7 +394,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         ptrdiff_t height() const
         {
             ptrdiff_t ret;
-            THROW_HR_IF(E_ABORT, !(::base::MakeCheckedNum(bottom()) - top()).AssignIfValid(&ret));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(bottom(), top()).AssignIfValid(&ret));
             return ret;
         }
 
@@ -429,8 +429,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             SMALL_RECT ret;
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(left()).AssignIfValid(&ret.Left));
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(top()).AssignIfValid(&ret.Top));
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(right()) - 1).AssignIfValid(&ret.Right));
-            THROW_HR_IF(E_ABORT, !(base::MakeCheckedNum(bottom()) - 1).AssignIfValid(&ret.Bottom));
+            THROW_HR_IF(E_ABORT, !base::CheckSub(right(), 1).AssignIfValid(&ret.Right));
+            THROW_HR_IF(E_ABORT, !base::CheckSub(bottom(), 1).AssignIfValid(&ret.Bottom));
             return ret;
         }
 #endif

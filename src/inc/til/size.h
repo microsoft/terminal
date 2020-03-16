@@ -39,14 +39,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        // This template will convert to size from anything that has an X and a Y field that appear convertable to an integer value
+        // This template will convert to size from anything that has an X and a Y field that appear convertible to an integer value
         template<typename TOther>
         constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
             size(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
         {
         }
 
-        // This template will convert to size from anything that has a cx and a cy field that appear convertable to an integer value
+        // This template will convert to size from anything that has a cx and a cy field that appear convertible to an integer value
         template<typename TOther>
         constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().cx)> && std::is_integral_v<decltype(std::declval<TOther>().cy)>, int> /*sentinel*/ = 0) :
             size(static_cast<ptrdiff_t>(other.cx), static_cast<ptrdiff_t>(other.cy))
