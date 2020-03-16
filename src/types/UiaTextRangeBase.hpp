@@ -170,7 +170,7 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
                                      gsl::not_null<int*> const pAmountMoved,
-                                     _In_ const bool preventBufferEnd = false) noexcept;
+                                     _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
@@ -182,13 +182,13 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
                                 gsl::not_null<int*> const pAmountMoved,
-                                _In_ const bool preventBufferEnd = false) noexcept;
+                                _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
                                     gsl::not_null<int*> const pAmountMoved,
-                                    _In_ const bool preventBufferEnd = false) noexcept;
+                                    _In_ const bool preventBufferEnd = false);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;

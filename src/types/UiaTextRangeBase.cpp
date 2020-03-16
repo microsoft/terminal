@@ -158,6 +158,8 @@ const til::point UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint
 // - true if range is degenerate, false otherwise.
 bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept
 {
+#pragma warning(push)
+#pragma warning(disable : 26447)
     const auto bufferSize = _getBufferSize();
     switch (endpoint)
     {
@@ -184,6 +186,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     }
     return IsDegenerate();
 }
+#pragma warning(pop)
 
 // Routine Description:
 // - returns true if the range is currently degenerate (empty range).
@@ -896,7 +899,7 @@ void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ s
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
                                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                    _In_ const bool preventBufferEnd) noexcept
+                                                    _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
 
@@ -1042,7 +1045,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
 void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
                                                _Out_ gsl::not_null<int*> const pAmountMoved,
-                                               _In_ const bool preventBufferEnd) noexcept
+                                               _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
 
@@ -1126,7 +1129,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
                                                    _In_ const TextPatternRangeEndpoint endpoint,
                                                    _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                   _In_ const bool preventBufferEnd) noexcept
+                                                   _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
 

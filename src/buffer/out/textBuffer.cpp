@@ -1314,7 +1314,7 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) con
 
     // try to move. If we can't, we're done.
     const auto bufferSize = GetSize();
-    bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+    const bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
     if (success && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
@@ -1338,7 +1338,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive)
 
     // try to move. If we can't, we're done.
     const auto bufferSize = GetSize();
-    bool success = bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    const bool success = bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
     if (success && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
