@@ -684,4 +684,32 @@ void InputTest::DifferentModifiersTest()
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_ALT_PRESSED;
     TestKey(pInput, uiKeystate, vkey, L'/');
+
+    // C-? -> DEL -> 0x7f
+    Log::Comment(NoThrowString().Format(L"Checking C-?"));
+    // Use SHIFT_PRESSED to force us into differentiating between '/' and '?'
+    vkey = LOBYTE(VkKeyScan(L'?'));
+    s_pwszInputExpected = L"\x7f";
+    TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED, vkey, L'?');
+    TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED, vkey, L'?');
+
+    // C-M-/ -> M-/ -> 0x1b/
+    Log::Comment(NoThrowString().Format(L"Checking C-M-/"));
+    uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
+    vkey = LOBYTE(VkKeyScan(L'/'));
+    s_pwszInputExpected = L"\x1b/";
+    TestKey(pInput, LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
+    TestKey(pInput, RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
+    // LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED is skipped because that's AltGr
+    TestKey(pInput, RIGHT_CTRL_PRESSED | RIGHT_ALT_PRESSED, vkey, L'/');
+
+    // C-M-? -> M-? -> 0x1b?
+    Log::Comment(NoThrowString().Format(L"Checking C-M-?"));
+    uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
+    vkey = LOBYTE(VkKeyScan(L'?'));
+    s_pwszInputExpected = L"\x1b?";
+    TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
+    TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
+    // LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED is skipped because that's AltGr
+    TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED | RIGHT_ALT_PRESSED, vkey, L'?');
 }
