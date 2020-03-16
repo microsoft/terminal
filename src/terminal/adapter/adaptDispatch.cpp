@@ -1462,8 +1462,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    bool isPty = false;
-    _pConApi->IsConsolePty(isPty);
+    const bool isPty = _pConApi->IsConsolePty();
 
     bool success = CursorVisibility(true); // Cursor enabled.
     if (success)
