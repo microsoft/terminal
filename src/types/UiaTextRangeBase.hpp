@@ -85,7 +85,7 @@ namespace Microsoft::Console::Types
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
-        const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
+        const til::point GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
         bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
         const bool IsDegenerate() const noexcept;
 
