@@ -110,31 +110,31 @@ For commands with arguments:
 
 | Command | Command Description | Action (*=required) | Action Arguments | Argument Descriptions |
 | ------- | ------------------- | ------ | ---------------- | ----------------- |
-| closePane | Close the active pane. | | | |
-| closeTab | Close the current tab. | | | |
-| closeWindow | Close the current window and all tabs within it. | | | |
-| copy | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
-| decreaseFontSize | Make the text smaller by one delta. | `delta` | integer | Amount of size decrease per command invocation. |
-| duplicateTab | Make a copy and open the current tab. | | | |
-| find | Open the search dialog box. | | | |
-| increaseFontSize | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
-| moveFocus | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
-| newTab | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
-| nextTab | Open the tab to the right of the current one. | | | |
-| openNewTabDropdown | Open the dropdown menu. | | | |
-| openSettings | Open the settings file. | | | |
-| paste | Insert the content that was copied onto the clipboard. | | | |
-| prevTab | Open the tab to the left of the current one. | | | |
-| resetFontSize | Reset the text size to the default value. | | | |
-| resizePane | Change the size of the active pane. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the pane will be resized. |
-| scrollDown | Move the screen down. | | | |
-| scrollUp | Move the screen up. | | | |
-| scrollUpPage | Move the screen up a whole page. | | | |
-| scrollDownPage | Move the screen down a whole page. | | | |
-| splitPane | Halve the size of the active pane and open another. Without any arguments, this will open the default profile in the new pane. | 1. `split`*<br>2. `commandLine`<br>3. `startingDirectory`<br>4. `tabTitle`<br>5. `index`<br>6. `profile` | 1. `vertical`, `horizontal`, `auto`<br>2. string<br>3. string<br>4. string<br>5. integer<br>6. string | 1. How the pane will split. `auto` will split in the direction that provides the most surface area.<br>2. Executable run within the pane.<br>3. Directory in which the pane will open.<br>4. Title of the tab when the new pane is focused.<br>5. Profile that will open based on its position in the dropdown (starting at 0).<br>6. Profile that will open based on its GUID or name. |
-| switchToTab | Open a specific tab depending on index. | `index`* | integer | Tab that will open based on its position in the tab bar (starting at 0). |
-| toggleFullscreen | Switch between fullscreen and default window sizes. | | | |
-| unbound | Unbind the associated keys from any command. | | | |
+| `closePane` | Close the active pane. | | | |
+| `closeTab` | Close the current tab. | | | |
+| `closeWindow` | Close the current window and all tabs within it. | | | |
+| `copy` | Copy the selected terminal content to your Windows Clipboard. | `trimWhitespace` | boolean | When `true`, newlines persist from the selected text. When `false`, copied content will paste on one line. |
+| `decreaseFontSize` | Make the text smaller by one delta. | `delta` | integer | Amount of size decrease per command invocation. |
+| `duplicateTab` | Make a copy and open the current tab. | | | |
+| `find` | Open the search dialog box. | | | |
+| `increaseFontSize` | Make the text larger by one delta. | `delta` | integer | Amount of size increase per command invocation. |
+| `moveFocus` | Focus on a different pane depending on direction. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the focus will move. |
+| `newTab` | Create a new tab. Without any arguments, this will open the default profile in a new tab. | 1. `commandLine`<br>2. `startingDirectory`<br>3. `tabTitle`<br>4. `index`<br>5. `profile` | 1. string<br>2. string<br>3. string<br>4. integer<br>5. string | 1. Executable run within the tab.<br>2. Directory in which the tab will open.<br>3. Title of the new tab.<br>4. Profile that will open based on its position in the dropdown (starting at 0).<br>5. Profile that will open based on its GUID or name. |
+| `nextTab` | Open the tab to the right of the current one. | | | |
+| `openNewTabDropdown` | Open the dropdown menu. | | | |
+| `openSettings` | Open the settings file. | | | |
+| `paste` | Insert the content that was copied onto the clipboard. | | | |
+| `prevTab` | Open the tab to the left of the current one. | | | |
+| `resetFontSize` | Reset the text size to the default value. | | | |
+| `resizePane` | Change the size of the active pane. | `direction`* | `left`, `right`, `up`, `down` | Direction in which the pane will be resized. |
+| `scrollDown` | Move the screen down. | | | |
+| `scrollUp` | Move the screen up. | | | |
+| `scrollUpPage` | Move the screen up a whole page. | | | |
+| `scrollDownPage` | Move the screen down a whole page. | | | |
+| `splitPane` | Halve the size of the active pane and open another. Without any arguments, this will open the default profile in the new pane. | 1. `split`*<br>2. `commandLine`<br>3. `startingDirectory`<br>4. `tabTitle`<br>5. `index`<br>6. `profile` | 1. `vertical`, `horizontal`, `auto`<br>2. string<br>3. string<br>4. string<br>5. integer<br>6. string | 1. How the pane will split. `auto` will split in the direction that provides the most surface area.<br>2. Executable run within the pane.<br>3. Directory in which the pane will open.<br>4. Title of the tab when the new pane is focused.<br>5. Profile that will open based on its position in the dropdown (starting at 0).<br>6. Profile that will open based on its GUID or name. |
+| `switchToTab` | Open a specific tab depending on index. | `index`* | integer | Tab that will open based on its position in the tab bar (starting at 0). |
+| `toggleFullscreen` | Switch between fullscreen and default window sizes. | | | |
+| `unbound` | Unbind the associated keys from any command. | | | |
 
 ### Accepted Modifiers and Keys
 
