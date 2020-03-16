@@ -45,6 +45,7 @@ public:
     TEST_METHOD(TerminalInputModifierKeyTests);
     TEST_METHOD(TerminalInputNullKeyTests);
     TEST_METHOD(DifferentModifiersTest);
+    TEST_METHOD(CtrlNumTest);
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
@@ -684,4 +685,50 @@ void InputTest::DifferentModifiersTest()
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_ALT_PRESSED;
     TestKey(pInput, uiKeystate, vkey, L'/');
+}
+
+void InputTest::CtrlNumTest()
+{
+    Log::Comment(L"Starting test...");
+
+    const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+
+    Log::Comment(L"Sending the various Ctrl+Num keys.");
+
+    unsigned int uiKeystate = LEFT_CTRL_PRESSED;
+    BYTE vkey = static_cast<WORD>('1');
+    s_pwszInputExpected = L"1";
+    TestKey(pInput, uiKeystate, vkey);
+
+    Log::Comment(NoThrowString().Format(
+        L"Skipping Ctrl+2, since that's supposed to send NUL, and doesn't play "
+        L"nicely with this test. Ctrl+2 is covered by other tests in this class."));
+
+    vkey = static_cast<WORD>('3');
+    s_pwszInputExpected = L"\x1b";
+    TestKey(pInput, uiKeystate, vkey);
+
+    vkey = static_cast<WORD>('4');
+    s_pwszInputExpected = L"\x1c";
+    TestKey(pInput, uiKeystate, vkey);
+
+    vkey = static_cast<WORD>('5');
+    s_pwszInputExpected = L"\x1d";
+    TestKey(pInput, uiKeystate, vkey);
+
+    vkey = static_cast<WORD>('6');
+    s_pwszInputExpected = L"\x1e";
+    TestKey(pInput, uiKeystate, vkey);
+
+    vkey = static_cast<WORD>('7');
+    s_pwszInputExpected = L"\x1f";
+    TestKey(pInput, uiKeystate, vkey);
+
+    vkey = static_cast<WORD>('8');
+    s_pwszInputExpected = L"\x7f";
+    TestKey(pInput, uiKeystate, vkey);
+
+    vkey = static_cast<WORD>('9');
+    s_pwszInputExpected = L"9";
+    TestKey(pInput, uiKeystate, vkey);
 }
