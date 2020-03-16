@@ -407,7 +407,8 @@ bool TerminalDispatch::SoftReset() noexcept
     // TODO:GH#1883 much of this method is not yet implemented in the Terminal,
     // because the Terminal _doesn't need to_ yet. The terminal is only ever
     // connected to conpty, so it doesn't implement most of these things that
-    // Hard/Soft Reset would reset. As those things ar implemented, they should
+    // Hard/Soft Reset would reset. As those things are implemented, they should
+
     // also get cleared here.
     //
     // This code is left here (from its original form in conhost) as a reminder

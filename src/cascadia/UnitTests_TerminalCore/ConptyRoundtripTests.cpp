@@ -1032,7 +1032,8 @@ void ConptyRoundtripTests::PassthroughHardReset()
         else
         {
             // After we hit the bottom of the viewport, the newlines come in
-            // seperated for whatever reason.
+            // separated for whatever reason.
+
             expectedOutput.push_back("\r");
             expectedOutput.push_back("\n");
             expectedOutput.push_back("");
