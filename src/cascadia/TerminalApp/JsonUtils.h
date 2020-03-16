@@ -66,4 +66,20 @@ namespace TerminalApp::JsonUtils
             }
         }
     }
+
+    void GetInt(const Json::Value& json,
+                std::string_view key,
+                int& target);
+
+    void GetUInt(const Json::Value& json,
+                 std::string_view key,
+                 uint32_t& target);
+
+    void GetDouble(const Json::Value& json,
+                   std::string_view key,
+                   double& target);
+
+    void GetBool(const Json::Value& json,
+                 std::string_view key,
+                 bool& target);
 };

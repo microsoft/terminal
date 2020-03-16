@@ -630,11 +630,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
 
-    if (json.isMember(JsonKey(HiddenKey)))
-    {
-        auto hidden{ json[JsonKey(HiddenKey)] };
-        _hidden = hidden.asBool();
-    }
+    JsonUtils::GetBool(json, HiddenKey, _hidden);
 
     // Core Settings
     JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
@@ -664,28 +660,20 @@ void Profile::LayerJson(const Json::Value& json)
             i++;
         }
     }
-    if (json.isMember(JsonKey(HistorySizeKey)))
-    {
-        auto historySize{ json[JsonKey(HistorySizeKey)] };
-        // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-        _historySize = historySize.asInt();
-    }
-    if (json.isMember(JsonKey(SnapOnInputKey)))
-    {
-        auto snapOnInput{ json[JsonKey(SnapOnInputKey)] };
-        _snapOnInput = snapOnInput.asBool();
-    }
+
+    JsonUtils::GetInt(json, HistorySizeKey, _historySize);
+
+    JsonUtils::GetBool(json, SnapOnInputKey, _snapOnInput);
+
     if (json.isMember(JsonKey(CursorColorKey)))
     {
         auto cursorColor{ json[JsonKey(CursorColorKey)] };
         const auto color = Utils::ColorFromHexString(cursorColor.asString());
         _cursorColor = color;
     }
-    if (json.isMember(JsonKey(CursorHeightKey)))
-    {
-        auto cursorHeight{ json[JsonKey(CursorHeightKey)] };
-        _cursorHeight = cursorHeight.asUInt();
-    }
+
+    JsonUtils::GetUInt(json, CursorHeightKey, _cursorHeight);
+
     if (json.isMember(JsonKey(CursorShapeKey)))
     {
         auto cursorShape{ json[JsonKey(CursorShapeKey)] };
@@ -706,26 +694,15 @@ void Profile::LayerJson(const Json::Value& json)
         auto fontFace{ json[JsonKey(FontFaceKey)] };
         _fontFace = GetWstringFromJson(fontFace);
     }
-    if (json.isMember(JsonKey(FontSizeKey)))
-    {
-        auto fontSize{ json[JsonKey(FontSizeKey)] };
-        _fontSize = fontSize.asInt();
-    }
-    if (json.isMember(JsonKey(AcrylicTransparencyKey)))
-    {
-        auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] };
-        _acrylicTransparency = acrylicTransparency.asFloat();
-    }
-    if (json.isMember(JsonKey(UseAcrylicKey)))
-    {
-        auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
-        _useAcrylic = useAcrylic.asBool();
-    }
-    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
-    {
-        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
-        _suppressApplicationTitle = suppressApplicationTitle.asBool();
-    }
+
+    JsonUtils::GetInt(json, FontSizeKey, _fontSize);
+
+    JsonUtils::GetDouble(json, AcrylicTransparencyKey, _acrylicTransparency);
+
+    JsonUtils::GetBool(json, UseAcrylicKey, _useAcrylic);
+
+    JsonUtils::GetBool(json, SuppressApplicationTitleKey, _suppressApplicationTitle);
+
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };

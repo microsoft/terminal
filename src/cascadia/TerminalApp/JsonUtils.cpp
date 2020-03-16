@@ -57,3 +57,67 @@ void TerminalApp::JsonUtils::GetOptionalDouble(const Json::Value& json,
                      target,
                      conversionFn);
 }
+
+void TerminalApp::JsonUtils::GetInt(const Json::Value& json,
+                                    std::string_view key,
+                                    int& target)
+{
+    if (json.isMember(JsonKey(key)))
+    {
+        if (auto jsonVal{ json[JsonKey(key)] })
+        {
+            if (jsonVal.isInt())
+            {
+                target = jsonVal.asInt();
+            }
+        }
+    }
+}
+
+void TerminalApp::JsonUtils::GetUInt(const Json::Value& json,
+                                     std::string_view key,
+                                     uint32_t& target)
+{
+    if (json.isMember(JsonKey(key)))
+    {
+        if (auto jsonVal{ json[JsonKey(key)] })
+        {
+            if (jsonVal.isUInt())
+            {
+                target = jsonVal.asUInt();
+            }
+        }
+    }
+}
+
+void TerminalApp::JsonUtils::GetDouble(const Json::Value& json,
+                                       std::string_view key,
+                                       double& target)
+{
+    if (json.isMember(JsonKey(key)))
+    {
+        if (auto jsonVal{ json[JsonKey(key)] })
+        {
+            if (jsonVal.isNumeric())
+            {
+                target = jsonVal.asFloat();
+            }
+        }
+    }
+}
+
+void TerminalApp::JsonUtils::GetBool(const Json::Value& json,
+                                     std::string_view key,
+                                     bool& target)
+{
+    if (json.isMember(JsonKey(key)))
+    {
+        if (auto jsonVal{ json[JsonKey(key)] })
+        {
+            if (jsonVal.isBool())
+            {
+                target = jsonVal.asBool();
+            }
+        }
+    }
+}
