@@ -186,6 +186,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
     short newViewportTop = oldViewportTop;
+    short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+
+    // If the original buffer had _no_ scroll offset, then we should be at the
+    // bottom in the new buffer as well. Track that case now.
+    const bool originalOffsetWasZero = _scrollOffset == 0;
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
@@ -196,12 +201,28 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
-        std::optional<short> oldViewStart{ oldViewportTop };
+        // Build a PositionInformation to track the position of both the top of
+        // the mutable viewport and the top of the visible viewport in the new
+        // buffer.
+        // * the new value of mutableViewportTop will be used to figure out
+        //   where we should place the mutable viewport in the new buffer. This
+        //   requires a bit of trickiness to remain consistent with conpty's
+        //   buffer (as seen below).
+        // * the new value of visibleViewportTop will be used to calculate the
+        //   new scrollOffsett in the new buffer, so that the visible lines on
+        //   the screen remain roughly the same.
+        TextBuffer::PositionInformation oldRows{ 0 };
+        oldRows.mutableViewportTop = oldViewportTop;
+        oldRows.visibleViewportTop = newVisibleTop;
+
+        const std::optional<short> oldViewStart{ oldViewportTop };
         RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
                                             *newTextBuffer.get(),
                                             _mutableViewport,
-                                            oldViewStart));
-        newViewportTop = oldViewStart.value();
+                                            { oldRows }));
+
+        newViewportTop = oldRows.mutableViewportTop;
+        newVisibleTop = oldRows.visibleViewportTop;
     }
     CATCH_RETURN();
 
@@ -310,7 +331,15 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _buffer.swap(newTextBuffer);
 
-    _scrollOffset = 0;
+    // GH#3494: Maintain scrollbar position during resize
+    // Make sure that we don't scroll past the mutableViewport at the bottom of the buffer
+    newVisibleTop = std::min(newVisibleTop, _mutableViewport.Top());
+    // Make sure we don't scroll past the top of the scrollback
+    newVisibleTop = std::max<short>(newVisibleTop, 0);
+
+    // If the old scrolloffset was 0, then we weren't scrolled back at all
+    // before, and shouldn't be now either.
+    _scrollOffset = originalOffsetWasZero ? 0 : _mutableViewport.Top() - newVisibleTop;
     _NotifyScrollEvent();
 
     return S_OK;
