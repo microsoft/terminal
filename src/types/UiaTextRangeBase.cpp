@@ -323,7 +323,7 @@ try
     const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
 
     auto searchDirection = Search::Direction::Forward;
-    COORD searchAnchor = _start;
+    auto searchAnchor = _start;
     if (searchBackward)
     {
         searchDirection = Search::Direction::Backward;
@@ -405,7 +405,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         const auto viewportEnd = viewport.EndExclusive();
 
         // startAnchor: the earliest COORD we will get a bounding rect for
-        COORD startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
+        auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
         if (bufferSize.CompareInBounds(startAnchor, viewportOrigin, true) < 0)
         {
             // earliest we can be is the origin
@@ -413,7 +413,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
 
         // endAnchor: the latest COORD we will get a bounding rect for
-        COORD endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
+        auto endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
         if (bufferSize.CompareInBounds(endAnchor, viewportEnd, true) > 0)
         {
             // latest we can be is the viewport end
@@ -526,7 +526,7 @@ try
         const auto bufferSize = buffer.GetSize();
 
         // convert _end to be inclusive
-        COORD inclusiveEnd = _end;
+        auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange);
@@ -687,7 +687,7 @@ try
     }
     else
     {
-        COORD inclusiveEnd = _end;
+        auto inclusiveEnd = _end;
         _pData->GetTextBuffer().GetSize().DecrementInBounds(inclusiveEnd);
         _pData->SelectNewRegion(_start, inclusiveEnd);
     }
@@ -967,11 +967,11 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const auto& buffer = _pData->GetTextBuffer();
     const auto bufferSize = _getBufferSize();
     const auto bufferOrigin = bufferSize.Origin();
-    const til::point bufferEnd = bufferSize.EndExclusive();
+    const auto bufferEnd = bufferSize.EndExclusive();
     const auto lastCharPos = buffer.GetLastNonSpaceCharacter(bufferSize);
 
     auto resultPos = GetEndpoint(endpoint);
-    COORD nextPos = resultPos;
+    auto nextPos = resultPos;
 
     bool success = true;
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
@@ -1060,7 +1060,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
     auto resultPos = GetEndpoint(endpoint);
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
-        COORD nextPos = resultPos;
+        auto nextPos = resultPos;
         switch (moveDirection)
         {
         case MovementDirection::Forward:
@@ -1144,7 +1144,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     {
     case MovementDirection::Forward:
     {
-        const til::point documentEnd = bufferSize.EndExclusive();
+        const auto documentEnd = bufferSize.EndExclusive();
         if (preventBufferEnd || target == documentEnd)
         {
             return;
@@ -1158,7 +1158,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     }
     case MovementDirection::Backward:
     {
-        const til::point documentBegin = bufferSize.Origin();
+        const auto documentBegin = bufferSize.Origin();
         if (target == documentBegin)
         {
             return;

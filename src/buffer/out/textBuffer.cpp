@@ -1266,7 +1266,7 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 // - pos - a COORD on the word you are currently on
 // Return Value:
 // - pos - The COORD for the first cell of the current glyph (inclusive)
-const til::point TextBuffer::GetGlyphStart(til::point pos) const
+const til::point TextBuffer::GetGlyphStart(const til::point pos) const
 {
     COORD resultPos = pos;
 
@@ -1285,7 +1285,7 @@ const til::point TextBuffer::GetGlyphStart(til::point pos) const
 // - pos - a COORD on the word you are currently on
 // Return Value:
 // - pos - The COORD for the last cell of the current glyph (exclusive)
-const til::point TextBuffer::GetGlyphEnd(til::point pos) const
+const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
 {
     COORD resultPos = pos;
 
