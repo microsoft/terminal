@@ -174,10 +174,10 @@ class SizeTests
         VERIFY_IS_FALSE(!!empty);
 
         const til::size yOnly{ 0, 10 };
-        VERIFY_IS_TRUE(!!yOnly);
+        VERIFY_IS_FALSE(!!yOnly);
 
         const til::size xOnly{ 10, 0 };
-        VERIFY_IS_TRUE(!!xOnly);
+        VERIFY_IS_FALSE(!!xOnly);
 
         const til::size both{ 10, 10 };
         VERIFY_IS_TRUE(!!both);
