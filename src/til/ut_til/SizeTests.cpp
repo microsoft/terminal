@@ -171,7 +171,7 @@ class SizeTests
     TEST_METHOD(Boolean)
     {
         const til::size empty;
-        VERIFY_IS_TRUE(!!empty);
+        VERIFY_IS_FALSE(!!empty);
 
         const til::size yOnly{ 0, 10 };
         VERIFY_IS_TRUE(!!yOnly);
@@ -183,13 +183,13 @@ class SizeTests
         VERIFY_IS_TRUE(!!both);
 
         const til::size yNegative{ 10, -10 };
-        VERIFY_IS_TRUE(!!yNegative);
+        VERIFY_IS_FALSE(!!yNegative);
 
         const til::size xNegative{ -10, 10 };
-        VERIFY_IS_TRUE(!!xNegative);
+        VERIFY_IS_FALSE(!!xNegative);
 
         const til::size bothNegative{ -10, -10 };
-        VERIFY_IS_TRUE(!!bothNegative);
+        VERIFY_IS_FALSE(!!bothNegative);
     }
 
     TEST_METHOD(Addition)
