@@ -622,11 +622,7 @@ bool Profile::_ConvertJsonToBool(const Json::Value& json)
 void Profile::LayerJson(const Json::Value& json)
 {
     // Profile-specific Settings
-    if (json.isMember(JsonKey(NameKey)))
-    {
-        auto name{ json[JsonKey(NameKey)] };
-        _name = GetWstringFromJson(name);
-    }
+    JsonUtils::GetWstring(json, NameKey, _name);
 
     JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
 
@@ -684,16 +680,9 @@ void Profile::LayerJson(const Json::Value& json)
     // Control Settings
     JsonUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
 
-    if (json.isMember(JsonKey(CommandlineKey)))
-    {
-        auto commandline{ json[JsonKey(CommandlineKey)] };
-        _commandline = GetWstringFromJson(commandline);
-    }
-    if (json.isMember(JsonKey(FontFaceKey)))
-    {
-        auto fontFace{ json[JsonKey(FontFaceKey)] };
-        _fontFace = GetWstringFromJson(fontFace);
-    }
+    JsonUtils::GetWstring(json, CommandlineKey, _commandline);
+
+    JsonUtils::GetWstring(json, FontFaceKey, _fontFace);
 
     JsonUtils::GetInt(json, FontSizeKey, _fontSize);
 
@@ -708,11 +697,8 @@ void Profile::LayerJson(const Json::Value& json)
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
         _closeOnExitMode = ParseCloseOnExitMode(closeOnExit);
     }
-    if (json.isMember(JsonKey(PaddingKey)))
-    {
-        auto padding{ json[JsonKey(PaddingKey)] };
-        _padding = GetWstringFromJson(padding);
-    }
+
+    JsonUtils::GetWstring(json, PaddingKey, _padding);
 
     JsonUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
 

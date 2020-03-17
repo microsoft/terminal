@@ -67,6 +67,25 @@ namespace TerminalApp::JsonUtils
         }
     }
 
+    template<typename T, typename F>
+    void GetValue(const Json::Value& json,
+                  std::string_view key,
+                  T& target,
+                  const std::function<bool(const Json::Value&)>& validation,
+                  F&& conversion)
+    {
+        if (json.isMember(JsonKey(key)))
+        {
+            if (auto jsonVal{ json[JsonKey(key)] })
+            {
+                if (validation && validation(jsonVal))
+                {
+                    target = conversion(jsonVal);
+                }
+            }
+        }
+    }
+
     void GetInt(const Json::Value& json,
                 std::string_view key,
                 int& target);
@@ -82,4 +101,8 @@ namespace TerminalApp::JsonUtils
     void GetBool(const Json::Value& json,
                  std::string_view key,
                  bool& target);
+
+    void GetWstring(const Json::Value& json,
+                    std::string_view key,
+                    std::wstring& target);
 };

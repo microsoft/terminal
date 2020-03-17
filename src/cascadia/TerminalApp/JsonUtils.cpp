@@ -62,62 +62,60 @@ void TerminalApp::JsonUtils::GetInt(const Json::Value& json,
                                     std::string_view key,
                                     int& target)
 {
-    if (json.isMember(JsonKey(key)))
-    {
-        if (auto jsonVal{ json[JsonKey(key)] })
-        {
-            if (jsonVal.isInt())
-            {
-                target = jsonVal.asInt();
-            }
-        }
-    }
+    const auto conversionFn = [](const Json::Value& value) -> int {
+        return value.asInt();
+    };
+    const auto validationFn = [](const Json::Value& value) -> bool {
+        return value.isInt();
+    };
+    GetValue(json, key, target, validationFn, conversionFn);
 }
 
 void TerminalApp::JsonUtils::GetUInt(const Json::Value& json,
                                      std::string_view key,
                                      uint32_t& target)
 {
-    if (json.isMember(JsonKey(key)))
-    {
-        if (auto jsonVal{ json[JsonKey(key)] })
-        {
-            if (jsonVal.isUInt())
-            {
-                target = jsonVal.asUInt();
-            }
-        }
-    }
+    const auto conversionFn = [](const Json::Value& value) -> uint32_t {
+        return value.asUInt();
+    };
+    const auto validationFn = [](const Json::Value& value) -> bool {
+        return value.isUInt();
+    };
+    GetValue(json, key, target, validationFn, conversionFn);
 }
 
 void TerminalApp::JsonUtils::GetDouble(const Json::Value& json,
                                        std::string_view key,
                                        double& target)
 {
-    if (json.isMember(JsonKey(key)))
-    {
-        if (auto jsonVal{ json[JsonKey(key)] })
-        {
-            if (jsonVal.isNumeric())
-            {
-                target = jsonVal.asFloat();
-            }
-        }
-    }
+    const auto conversionFn = [](const Json::Value& value) -> double {
+        return value.asFloat();
+    };
+    const auto validationFn = [](const Json::Value& value) -> bool {
+        return value.isNumeric();
+    };
+    GetValue(json, key, target, validationFn, conversionFn);
 }
 
 void TerminalApp::JsonUtils::GetBool(const Json::Value& json,
                                      std::string_view key,
                                      bool& target)
 {
-    if (json.isMember(JsonKey(key)))
-    {
-        if (auto jsonVal{ json[JsonKey(key)] })
-        {
-            if (jsonVal.isBool())
-            {
-                target = jsonVal.asBool();
-            }
-        }
-    }
+    const auto conversionFn = [](const Json::Value& value) -> bool {
+        return value.asBool();
+    };
+    const auto validationFn = [](const Json::Value& value) -> bool {
+        return value.isBool();
+    };
+    GetValue(json, key, target, validationFn, conversionFn);
+}
+
+void TerminalApp::JsonUtils::GetWstring(const Json::Value& json,
+                                        std::string_view key,
+                                        std::wstring& target)
+{
+    const auto conversionFn = [](const Json::Value& value) -> std::wstring {
+        return GetWstringFromJson(value);
+    };
+    GetValue(json, key, target, nullptr, conversionFn);
 }
