@@ -28,27 +28,27 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return (*this);
         }
 
-        bool operator==(const _bitmap_const_iterator& other) const
+        constexpr bool operator==(const _bitmap_const_iterator& other) const noexcept
         {
             return _pos == other._pos && _values == other._values;
         }
 
-        bool operator!=(const _bitmap_const_iterator& other) const
+        constexpr bool operator!=(const _bitmap_const_iterator& other) const noexcept
         {
             return !(*this == other);
         }
 
-        bool operator<(const _bitmap_const_iterator& other) const
+        constexpr bool operator<(const _bitmap_const_iterator& other) const noexcept
         {
             return _pos < other._pos;
         }
 
-        bool operator>(const _bitmap_const_iterator& other) const
+        constexpr bool operator>(const _bitmap_const_iterator& other) const noexcept
         {
             return _pos > other._pos;
         }
 
-        til::rectangle operator*() const
+        constexpr til::rectangle operator*() const noexcept
         {
             return _run;
         }
@@ -110,8 +110,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     public:
         using const_iterator = _bitmap_const_iterator;
 
-        bitmap() :
-            bitmap(til::size{ 0, 0 })
+        bitmap() noexcept :
+            _sz{},
+            _rc{},
+            _bits{},
+            _empty{ true }
         {
         }
 
@@ -133,36 +136,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _bitmap_const_iterator(_bits, _sz, _sz.area());
         }
 
-        void set(til::point pt)
+        void set(const til::point pt)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
 
-            _bits[_rc.index_of(pt)] = true;
+            til::at(_bits, _rc.index_of(pt)) = true;
             _empty = false;
         }
 
-        void reset(til::point pt)
+        void reset(const til::point pt)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
 
-            _bits[_rc.index_of(pt)] = false;
+            til::at(_bits, _rc.index_of(pt)) = false;
         }
 
-        void set(til::rectangle rc)
+        void set(const til::rectangle rc)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
 
-            for (auto pt : rc)
+            for (const auto pt : rc)
             {
                 set(pt);
             }
         }
 
-        void reset(til::rectangle rc)
+        void reset(const til::rectangle rc)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
 
-            for (auto pt : rc)
+            for (const auto pt : rc)
             {
                 reset(pt);
             }
