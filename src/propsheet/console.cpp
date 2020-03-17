@@ -94,7 +94,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             gpStateInfo->FaceName[0] = TEXT('\0');
         }
 
-        if (gpStateInfo->LinkTitle != NULL)
+        if (gpStateInfo->LinkTitle != nullptr)
         {
             SetGlobalRegistryValues();
             if (!NT_SUCCESS(ShortcutSerialization::s_SetLinkValues(gpStateInfo,
@@ -175,16 +175,16 @@ void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, con
 {
     HWND hwndTooltip = CreateWindowEx(0 /*dwExtStyle*/,
                                       TOOLTIPS_CLASS,
-                                      NULL /*lpWindowName*/,
+                                      nullptr /*lpWindowName*/,
                                       TTS_ALWAYSTIP,
                                       CW_USEDEFAULT,
                                       CW_USEDEFAULT,
                                       CW_USEDEFAULT,
                                       CW_USEDEFAULT,
                                       hDlg,
-                                      NULL /*hMenu*/,
+                                      nullptr /*hMenu*/,
                                       ghInstance,
-                                      NULL /*lpParam*/);
+                                      nullptr /*lpParam*/);
 
     if (hwndTooltip)
     {
@@ -615,7 +615,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     // Get the current page number
     //
 
-    gnCurrentPage = GetRegistryValues(NULL);
+    gnCurrentPage = GetRegistryValues(nullptr);
 
     //
     // Initialize the property sheet structures
@@ -648,7 +648,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     psh.nPages = g_fForceV2 ? NUMBER_OF_PAGES : V1_NUMBER_OF_PAGES;
     psh.nStartPage = std::min<UINT>(gnCurrentPage, ARRAYSIZE(psp));
     psh.ppsp = psp;
-    psh.pfnCallback = NULL;
+    psh.pfnCallback = nullptr;
 
     //
     // Create the property sheet
@@ -665,7 +665,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
 
     if (!gpStateInfo->Defaults)
     {
-        if (gpStateInfo->OriginalTitle != NULL)
+        if (gpStateInfo->OriginalTitle != nullptr)
         {
             HeapFree(GetProcessHeap(), 0, gpStateInfo->OriginalTitle);
         }
@@ -685,9 +685,9 @@ void RegisterClasses(HINSTANCE hModule)
     wc.lpszClassName = TEXT("SimpleColor");
     wc.hInstance = hModule;
     wc.lpfnWndProc = SimpleColorControlProc;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon = NULL;
-    wc.lpszMenuName = NULL;
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hIcon = nullptr;
+    wc.lpszMenuName = nullptr;
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.cbClsExtra = 0;
@@ -697,9 +697,9 @@ void RegisterClasses(HINSTANCE hModule)
     wc.lpszClassName = TEXT("ColorTableColor");
     wc.hInstance = hModule;
     wc.lpfnWndProc = ColorTableControlProc;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon = NULL;
-    wc.lpszMenuName = NULL;
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hIcon = nullptr;
+    wc.lpszMenuName = nullptr;
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.cbClsExtra = 0;

@@ -10,7 +10,7 @@
 // structure when a keydown message is translated. Then when we receive a
 // wm_[sys][dead]char message, we retrieve it and clear out the record.
 
-#define CONSOLE_FREE_KEY_INFO 0
+#define CONSOLE_FREE_KEY_INFO nullptr
 #define CONSOLE_MAX_KEY_INFO 32
 
 typedef struct _CONSOLE_KEY_INFO

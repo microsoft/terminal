@@ -689,7 +689,7 @@ void ConsoleArgumentsTests::IsVtHandleValidTests()
     // We use both 0 and INVALID_HANDLE_VALUE as invalid handles since we're not sure
     // exactly what will get passed in on the STDIN/STDOUT handles as it can vary wildly
     // depending on who is passing it.
-    VERIFY_IS_FALSE(IsValidHandle(0), L"Zero handle invalid.");
+    VERIFY_IS_FALSE(IsValidHandle(nullptr), L"Zero handle invalid.");
     VERIFY_IS_FALSE(IsValidHandle(INVALID_HANDLE_VALUE), L"Invalid handle invalid.");
     VERIFY_IS_TRUE(IsValidHandle(UlongToHandle(0x4)), L"0x4 is valid.");
 }

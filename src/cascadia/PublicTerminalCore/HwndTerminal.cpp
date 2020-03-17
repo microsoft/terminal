@@ -289,7 +289,7 @@ HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void**
         parentHwnd,
         nullptr,
         nullptr,
-        0);
+        nullptr);
     auto _terminal = std::make_unique<HwndTerminal>(_hostWindow);
     RETURN_IF_FAILED(_terminal->Initialize());
 

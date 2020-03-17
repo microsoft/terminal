@@ -124,7 +124,7 @@ BOOL IsDisableBoldTTFont(
     LPTTFONTLIST pTTFontList;
 
     pTTFontList = SearchTTFont(ptszFace, FALSE, 0);
-    if (pTTFontList != NULL)
+    if (pTTFontList != nullptr)
     {
         return pTTFontList->fDisableBold;
     }
@@ -141,7 +141,7 @@ GetAltFaceName(
     LPTTFONTLIST pTTFontList;
 
     pTTFontList = SearchTTFont(ptszFace, FALSE, 0);
-    if (pTTFontList != NULL)
+    if (pTTFontList != nullptr)
     {
         if (wcscmp(ptszFace, pTTFontList->FaceName1) == 0)
         {
@@ -154,7 +154,7 @@ GetAltFaceName(
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 [[nodiscard]] NTSTATUS
