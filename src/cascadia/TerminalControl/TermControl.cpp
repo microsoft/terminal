@@ -724,6 +724,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
 
+        if (modifiers.IsAltPressed() && (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
+        {
+            e.Handled(true);
+            return;
+        }
+
         // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.
         if (!modifiers.IsAltGrPressed())
