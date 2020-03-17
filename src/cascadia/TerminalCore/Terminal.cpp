@@ -173,11 +173,12 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         return S_FALSE;
     }
-    const auto dx = viewportSize.X - oldDimensions.X;
+
+    const auto dx = ::base::saturated_cast<short>(viewportSize.X - oldDimensions.X);
 
     const auto oldTop = _mutableViewport.Top();
 
-    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
+    const short newBufferHeight = ::base::saturated_cast<short>(viewportSize.Y + _scrollbackLines);
     COORD bufferSize{ viewportSize.X, newBufferHeight };
 
     // Save cursor's relative height versus the viewport
