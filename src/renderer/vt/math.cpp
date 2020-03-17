@@ -17,7 +17,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - The character dimensions of the current dirty area of the frame.
 //      This is an Inclusive rect.
-std::vector<SMALL_RECT> VtEngine::GetDirtyArea()
+std::vector<til::rectangle> VtEngine::GetDirtyArea()
 {
     SMALL_RECT dirty = _invalidRect.ToInclusive();
     if (dirty.Top < _virtualTop)

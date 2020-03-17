@@ -862,7 +862,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv = Viewport::FromInclusive(srCaView);
 
-        for (auto srDirty : engine.GetDirtyArea())
+        for (SMALL_RECT srDirty : engine.GetDirtyArea())
         {
             // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
             srDirty.Bottom++;
