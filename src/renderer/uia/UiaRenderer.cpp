@@ -234,7 +234,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
         }
         CATCH_LOG();
     }
-    if (_textBufferChanged)
+    if (_cursorChanged)
     {
         try
         {
