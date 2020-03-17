@@ -134,7 +134,7 @@ private:                                                                        
 #define BASIC_FACTORY(typeName)                                       \
     struct typeName : typeName##T<typeName, implementation::typeName> \
     {                                                                 \
-    };
+    }
 
 // This is a helper method for deserializing a SAFEARRAY of
 // COM objects and converting it to a vector that
