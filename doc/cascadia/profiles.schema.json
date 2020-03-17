@@ -554,8 +554,7 @@
         },
         "cursorColor": {
           "$ref": "#/definitions/Color",
-          "default": "#FFFFFF",
-          "description": "Sets the cursor color for the profile. Uses hex color format: \"#rrggbb\"."
+          "description": "Sets the cursor color of the profile. Overrides cursor color set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
@@ -745,6 +744,11 @@
           "brightYellow": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI bright yellow."
+          },
+          "cursorColor": {
+            "$ref": "#/definitions/Color",
+            "default": "#FFFFFF",
+            "description": "Sets the cursor color of the color scheme."
           },
           "cyan": {
             "$ref": "#/definitions/Color",
