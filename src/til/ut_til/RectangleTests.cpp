@@ -929,4 +929,83 @@ class RectangleTests
 
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
+
+#pragma region iterator
+    TEST_METHOD(Begin)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point expected{ rc.left(), rc.top() };
+        const auto it = rc.begin();
+
+        VERIFY_ARE_EQUAL(expected, *it);
+    }
+
+    TEST_METHOD(End)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point expected{ rc.left(), rc.bottom() };
+        const auto it = rc.end();
+
+        VERIFY_ARE_EQUAL(expected, *it);
+    }
+
+    TEST_METHOD(ConstIteratorIncrement)
+    {
+        const til::rectangle rc{ til::size{2, 2} };
+
+        auto it = rc.begin();
+        auto expected = til::point{ 0, 0 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 1, 0 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 0, 1 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 1, 1 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 0, 2 };
+        VERIFY_ARE_EQUAL(expected, *it);
+        VERIFY_ARE_EQUAL(expected, *rc.end());
+    }
+
+    TEST_METHOD(ConstIteratorEquality)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        
+        VERIFY_IS_TRUE(rc.begin() == rc.begin());
+        VERIFY_IS_FALSE(rc.begin() == rc.end());
+    }
+
+    TEST_METHOD(ConstIteratorInequality)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_FALSE(rc.begin() != rc.begin());
+        VERIFY_IS_TRUE(rc.begin() != rc.end());
+    }
+
+    TEST_METHOD(ConstIteratorLessThan)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_TRUE(rc.begin() < rc.end());
+        VERIFY_IS_FALSE(rc.end() < rc.begin());
+    }
+
+    TEST_METHOD(ConstIteratorGreaterThan)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_TRUE(rc.end() > rc.begin());
+        VERIFY_IS_FALSE(rc.begin() > rc.end());
+    }
+
+#pragma endregion
 };

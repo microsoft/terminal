@@ -13,9 +13,84 @@ class RectangleTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    class recterator
+    {
+    public:
+        constexpr recterator(point topLeft, point bottomRight) :
+            _topLeft(topLeft),
+            _bottomRight(bottomRight),
+            _current(topLeft)
+        {
+        }
+
+        constexpr recterator(point topLeft, point bottomRight, point start) :
+            _topLeft(topLeft),
+            _bottomRight(bottomRight),
+            _current(start)
+        {
+        }
+
+        recterator& operator++()
+        {
+            ptrdiff_t nextX;
+            THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.x(), 1).AssignIfValid(&nextX));
+
+            if (nextX >= _bottomRight.x())
+            {
+                ptrdiff_t nextY;
+                THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.y(), 1).AssignIfValid(&nextY));
+                _current = { _topLeft.x(), nextY };
+            }
+            else
+            {
+                _current = { nextX, _current.y() };
+            }
+
+            return (*this);
+        }
+
+        constexpr bool operator==(const recterator& other) const
+        {
+            return _current == other._current &&
+                   _topLeft == other._topLeft &&
+                   _bottomRight == other._bottomRight;
+        }
+
+        constexpr bool operator!=(const recterator& other) const
+        {
+            return !(*this == other);
+        }
+
+        constexpr bool operator<(const recterator& other) const
+        {
+            return _current < other._current;
+        }
+
+        constexpr bool operator>(const recterator& other) const
+        {
+            return _current > other._current;
+        }
+
+        constexpr point operator*() const
+        {
+            return _current;
+        }
+
+    protected:
+        point _current;
+        const point _topLeft;
+        const point _bottomRight;
+
+#ifdef UNIT_TESTING
+        friend class ::RectangleTests;
+#endif
+    };
+
     class rectangle
     {
     public:
+        using const_iterator = recterator;
+
         constexpr rectangle() noexcept :
             rectangle(til::point{ 0, 0 }, til::point{ 0, 0 })
         {
@@ -113,6 +188,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _topLeft.x() < _bottomRight.x() &&
                    _topLeft.y() < _bottomRight.y();
+        }
+
+        constexpr const_iterator begin() const
+        {
+            return recterator(_topLeft, _bottomRight);
+        }
+
+        constexpr const_iterator end() const
+        {
+            return recterator(_topLeft, _bottomRight, { _topLeft.x(), _bottomRight.y() });
         }
 
         // OR = union
