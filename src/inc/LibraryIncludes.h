@@ -38,7 +38,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iterator>
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <fstream>
 #include <iomanip>
