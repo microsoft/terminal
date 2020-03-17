@@ -835,7 +835,7 @@ class RectangleTests
         {
             const ptrdiff_t index = 72;
             const til::point expected{ 7, 17 };
-            
+
             VERIFY_ARE_EQUAL(expected, rc.point_at(index));
         }
 
@@ -1086,7 +1086,7 @@ class RectangleTests
 
     TEST_METHOD(ConstIteratorIncrement)
     {
-        const til::rectangle rc{ til::size{2, 2} };
+        const til::rectangle rc{ til::size{ 2, 2 } };
 
         auto it = rc.begin();
         auto expected = til::point{ 0, 0 };
@@ -1113,7 +1113,7 @@ class RectangleTests
     TEST_METHOD(ConstIteratorEquality)
     {
         const til::rectangle rc{ 5, 10, 15, 20 };
-        
+
         VERIFY_IS_TRUE(rc.begin() == rc.begin());
         VERIFY_IS_FALSE(rc.begin() == rc.end());
     }

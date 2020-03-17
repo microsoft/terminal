@@ -57,7 +57,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
-
         const std::vector<bool>& _values;
         const til::rectangle _rc;
         ptrdiff_t _pos;

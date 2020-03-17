@@ -157,7 +157,7 @@ class BitmapTests
 
     TEST_METHOD(SetResetExceptions)
     {
-        til::bitmap map{ til::size{4, 4} };
+        til::bitmap map{ til::size{ 4, 4 } };
         Log::Comment(L"1.) SetPoint out of bounds.");
         {
             auto fn = [&]() {
@@ -170,7 +170,11 @@ class BitmapTests
         Log::Comment(L"2.) SetRectangle out of bounds.");
         {
             auto fn = [&]() {
-                map.set(til::rectangle{ til::point{2, 2,}, til::size{10, 10} });
+                map.set(til::rectangle{ til::point{
+                                            2,
+                                            2,
+                                        },
+                                        til::size{ 10, 10 } });
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
@@ -188,7 +192,11 @@ class BitmapTests
         Log::Comment(L"4.) ResetRectangle out of bounds.");
         {
             auto fn = [&]() {
-                map.reset(til::rectangle{ til::point{2, 2,}, til::size{10, 10} });
+                map.reset(til::rectangle{ til::point{
+                                              2,
+                                              2,
+                                          },
+                                          til::size{ 10, 10 } });
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
@@ -317,6 +325,5 @@ class BitmapTests
 
         Log::Comment(L"Verify they're empty.");
         VERIFY_ARE_EQUAL(expected, actual);
-
     }
 };

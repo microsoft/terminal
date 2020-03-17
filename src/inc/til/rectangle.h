@@ -76,7 +76,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _current;
         }
 
-     protected:
+    protected:
         point _current;
         const point _topLeft;
         const point _bottomRight;
@@ -488,7 +488,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool contains(til::point pt) const
         {
             return pt.x() >= _topLeft.x() && pt.x() < _bottomRight.x() &&
-                pt.y() >= _topLeft.y() && pt.y() < _bottomRight.y();
+                   pt.y() >= _topLeft.y() && pt.y() < _bottomRight.y();
         }
 
         bool contains(ptrdiff_t index) const
