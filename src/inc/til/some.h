@@ -127,6 +127,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !_used;
         }
 
+        constexpr void clear() noexcept
+        {
+            _used = 0;
+        }
+
         constexpr const_reference at(size_type pos) const
         {
             if (_used <= pos)

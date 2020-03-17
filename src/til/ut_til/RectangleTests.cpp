@@ -725,6 +725,127 @@ class RectangleTests
         VERIFY_ARE_EQUAL(expected, actual.empty());
     }
 
+    TEST_METHOD(ContainsPoint)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:x", L"{-1000,0,4,5,6,14,15,16,1000}")
+            TEST_METHOD_PROPERTY(L"Data:y", L"{-1000,0,9,10,11,19,20,21,1000}")
+        END_TEST_METHOD_PROPERTIES()
+
+        ptrdiff_t x, y;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"x", x));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"y", y));
+
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point pt{ x, y };
+
+        const bool xInBounds = x >= 5 && x < 15;
+        const bool yInBounds = y >= 10 && y < 20;
+        const bool expected = xInBounds && yInBounds;
+        if (expected)
+        {
+            Log::Comment(L"Expected in bounds.");
+        }
+        else
+        {
+            Log::Comment(L"Expected OUT of bounds.");
+        }
+
+        VERIFY_ARE_EQUAL(expected, rc.contains(pt));
+    }
+
+    TEST_METHOD(ContainsIndex)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:idx", L"{-1000,-1,0, 1,50,99,100,101, 1000}")
+        END_TEST_METHOD_PROPERTIES()
+
+        ptrdiff_t idx;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"idx", idx));
+
+        const til::rectangle rc{ 5, 10, 15, 20 }; // 10x10 rectangle.
+        const ptrdiff_t area = (15 - 5) * (20 - 10);
+        const bool expected = idx >= 0 && idx < area;
+        if (expected)
+        {
+            Log::Comment(L"Expected in bounds.");
+        }
+        else
+        {
+            Log::Comment(L"Expected OUT of bounds.");
+        }
+
+        VERIFY_ARE_EQUAL(expected, rc.contains(idx));
+    }
+
+    TEST_METHOD(IndexOfPoint)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        Log::Comment(L"0.) Normal in bounds.");
+        {
+            const til::point pt{ 7, 17 };
+            const ptrdiff_t expected = 72;
+            VERIFY_ARE_EQUAL(expected, rc.index_of(pt));
+        }
+
+        Log::Comment(L"1.) Out of bounds.");
+        {
+            auto fn = [&]() {
+                const til::point pt{ 1, 1 };
+                rc.index_of(pt);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"2.) Overflow.");
+        {
+            auto fn = [&]() {
+                constexpr const ptrdiff_t min = static_cast<ptrdiff_t>(0);
+                constexpr const ptrdiff_t max = std::numeric_limits<ptrdiff_t>().max();
+                const til::rectangle bigRc{ min, min, max, max };
+                const til::point pt{ max - 1, max - 1 };
+                bigRc.index_of(pt);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(PointAtIndex)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        Log::Comment(L"0.) Normal in bounds.");
+        {
+            const ptrdiff_t index = 72;
+            const til::point expected{ 7, 17 };
+            
+            VERIFY_ARE_EQUAL(expected, rc.point_at(index));
+        }
+
+        Log::Comment(L"1.) Out of bounds too low.");
+        {
+            auto fn = [&]() {
+                const ptrdiff_t index = -1;
+                rc.point_at(index);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"2.) Out of bounds too high.");
+        {
+            auto fn = [&]() {
+                const ptrdiff_t index = 1000;
+                rc.point_at(index);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+    }
+
     TEST_METHOD(CastToSmallRect)
     {
         Log::Comment(L"0.) Typical situation.");

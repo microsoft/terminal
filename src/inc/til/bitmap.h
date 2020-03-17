@@ -12,40 +12,41 @@ class BitmapTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class const_runerator // Run Iterator. Runerator.
+    class _bitmap_const_iterator
     {
     public:
-        const_runerator(const std::vector<bool>& values, til::size sz, size_t pos) :
+        _bitmap_const_iterator(const std::vector<bool>& values, til::rectangle rc, ptrdiff_t pos) :
             _values(values),
-            _size(sz),
-            _pos(pos)
+            _rc(rc),
+            _pos(pos),
+            _end(rc.size().area())
         {
             _calculateArea();
         }
 
-        const_runerator& operator++()
+        _bitmap_const_iterator& operator++()
         {
             _pos = _nextPos;
             _calculateArea();
             return (*this);
         }
 
-        bool operator==(const const_runerator& other) const
+        bool operator==(const _bitmap_const_iterator& other) const
         {
             return _pos == other._pos && _values == other._values;
         }
 
-        bool operator!=(const const_runerator& other) const
+        bool operator!=(const _bitmap_const_iterator& other) const
         {
             return !(*this == other);
         }
 
-        bool operator<(const const_runerator& other) const
+        bool operator<(const _bitmap_const_iterator& other) const
         {
             return _pos < other._pos;
         }
 
-        bool operator>(const const_runerator& other) const
+        bool operator>(const _bitmap_const_iterator& other) const
         {
             return _pos > other._pos;
         }
@@ -56,56 +57,52 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
+
         const std::vector<bool>& _values;
-        const til::size _size;
+        const til::rectangle _rc;
         ptrdiff_t _pos;
         ptrdiff_t _nextPos;
+        const ptrdiff_t _end;
         til::rectangle _run;
-
-        // why? why isn't this just walking with a bitterator?
-        til::point _indexToPoint(ptrdiff_t index)
-        {
-            const auto width = _size.width();
-            const auto row = base::CheckDiv(index, width);
-            const auto indexesConsumed = row * width;
-            const auto col = base::CheckSub(index, indexesConsumed);
-
-            ptrdiff_t x, y;
-            THROW_HR_IF(E_ABORT, !row.AssignIfValid(&y));
-            THROW_HR_IF(E_ABORT, !col.AssignIfValid(&x));
-
-            return til::point{ x, y };
-        }
 
         void _calculateArea()
         {
-            const ptrdiff_t end = _size.area();
-
+            // Backup the position as the next one.
             _nextPos = _pos;
 
-            while (_nextPos < end && !_values.at(_nextPos))
+            // Seek forward until we find an on bit.
+            while (_nextPos < _end && !_values.at(_nextPos))
             {
                 ++_nextPos;
             }
 
-            if (_nextPos < end)
+            // If we haven't reached the end yet...
+            if (_nextPos < _end)
             {
                 // pos is now at the first on bit.
-                const auto runStart = _indexToPoint(_nextPos);
-                const ptrdiff_t rowEndIndex = ((runStart.y() + 1) * _size.width());
+                const auto runStart = _rc.point_at(_nextPos);
 
+                // We'll only count up until the end of this row.
+                // a run can be a max of one row tall.
+                const ptrdiff_t rowEndIndex = _rc.index_of(til::point(_rc.right() - 1, runStart.y())) + 1;
+
+                // Find the length for the rectangle.
                 ptrdiff_t runLength = 0;
 
+                // We have at least 1 so start with a do/while.
                 do
                 {
                     ++_nextPos;
                     ++runLength;
-                } while (_nextPos < end && _nextPos < rowEndIndex && _values.at(_nextPos));
+                } while (_nextPos < _end && _nextPos < rowEndIndex && _values.at(_nextPos));
+                // Keep going until we reach end of row, end of the buffer, or the next bit is off.
 
+                // Assemble and store that run.
                 _run = til::rectangle{ runStart, til::size{ runLength, static_cast<ptrdiff_t>(1) } };
             }
             else
             {
+                // If we reached the end, set the pos because the run is empty.
                 _pos = _nextPos;
                 _run = til::rectangle{};
             }
@@ -115,42 +112,40 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     class bitmap
     {
     public:
-        bitmap() :
-            bitmap(0, 0)
-        {
-        }
+        using const_iterator = _bitmap_const_iterator;
 
-        bitmap(size_t width, size_t height) :
-            bitmap(til::size{ width, height })
+        bitmap() :
+            bitmap(til::size{ 0, 0 })
         {
         }
 
         bitmap(til::size sz) :
-            _size(sz),
-            _bits(sz.area(), true),
-            _empty(false)
+            _sz(sz),
+            _rc(sz),
+            _bits(sz.area(), false),
+            _empty(true)
         {
         }
 
-        const_runerator begin_runs() const
+        const_iterator begin() const
         {
-            return const_runerator(_bits, _size, 0);
+            return _bitmap_const_iterator(_bits, _sz, 0);
         }
 
-        const_runerator end_runs() const
+        const_iterator end() const
         {
-            return const_runerator(_bits, _size, _size.area());
+            return _bitmap_const_iterator(_bits, _sz, _sz.area());
         }
 
         void set(til::point pt)
         {
-            _bits[pt.y() * _size.width() + pt.x()] = true;
+            _bits[_rc.index_of(pt)] = true;
             _empty = false;
         }
 
         void reset(til::point pt)
         {
-            _bits[pt.y() * _size.width() + pt.x()] = false;
+            _bits[_rc.index_of(pt)] = false;
         }
 
         void set(til::rectangle rc)
@@ -174,33 +169,34 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
             // .assign(_size(), true) throws an assert (unsupported operation)
 
-            set(til::rectangle{ til::point{ 0, 0 }, _size });
+            set(_rc);
         }
 
         void reset_all()
         {
             // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
             // .assign(_size(), false) throws an assert (unsupported operation)
-            reset(til::rectangle{ til::point{ 0, 0 }, _size });
+            reset(_rc);
             _empty = true;
         }
 
-        void resize(til::size size)
+        // True if we resized. False if it was the same size as before.
+        bool resize(til::size size)
         {
             // Don't resize if it's not different as we mark the whole thing dirty on resize.
-            // TODO: marking it dirty might not be necessary or we should be smart about it
-            // (mark none of it dirty on resize down, mark just the edges on up?)
-            if (_size != size)
+            if (_sz != size)
             {
-                _size = size;
-                // .resize(_size(), true) throws an assert (unsupported operation)
-                _bits = std::vector<bool>(_size.area(), true);
+                _sz = size;
+                _rc = til::rectangle{ size };
+                // .resize(_size(), true/false) throws an assert (unsupported operation)
+                _bits = std::vector<bool>(_sz.area(), false);
+                _empty = true;
+                return true;
             }
-        }
-
-        void resize(size_t width, size_t height)
-        {
-            resize(til::size{ width, height });
+            else
+            {
+                return false;
+            }
         }
 
         constexpr bool empty() const
@@ -208,19 +204,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _empty;
         }
 
-        const til::size& size() const
-        {
-            return _size;
-        }
-
-        operator bool() const noexcept
-        {
-            return !_bits.empty();
-        }
-
     private:
         bool _empty;
-        til::size _size;
+        til::size _sz;
+        til::rectangle _rc;
         std::vector<bool> _bits;
 
 #ifdef UNIT_TESTING

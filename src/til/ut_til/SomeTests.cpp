@@ -166,6 +166,18 @@ class SomeTests
         VERIFY_IS_TRUE(s.empty());
     }
 
+    TEST_METHOD(Clear)
+    {
+        til::some<int, 2> s;
+        VERIFY_IS_TRUE(s.empty());
+        s.push_back(12);
+        VERIFY_IS_FALSE(s.empty());
+        VERIFY_ARE_EQUAL(1, s.size());
+        s.clear();
+        VERIFY_IS_TRUE(s.empty());
+        VERIFY_ARE_EQUAL(0, s.size());
+    }
+
     TEST_METHOD(Data)
     {
         til::some<int, 2> s;
