@@ -897,7 +897,7 @@ void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ s
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
                                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                    _In_ const bool preventBufferEnd) noexcept
+                                                    _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
 
