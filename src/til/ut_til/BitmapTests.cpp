@@ -20,7 +20,7 @@ class BitmapTests
         const til::rectangle expectedRect{ 0, 0, 0, 0 };
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
-        VERIFY_ARE_EQUAL(0, bitmap._bits.size());
+        VERIFY_ARE_EQUAL(0u, bitmap._bits.size());
         VERIFY_ARE_EQUAL(true, bitmap._empty);
     }
 
@@ -31,7 +31,7 @@ class BitmapTests
         const til::bitmap bitmap{ expectedSize };
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
-        VERIFY_ARE_EQUAL(50, bitmap._bits.size());
+        VERIFY_ARE_EQUAL(50u, bitmap._bits.size());
         VERIFY_ARE_EQUAL(true, bitmap._empty);
     }
 

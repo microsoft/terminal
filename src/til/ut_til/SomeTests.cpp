@@ -172,10 +172,10 @@ class SomeTests
         VERIFY_IS_TRUE(s.empty());
         s.push_back(12);
         VERIFY_IS_FALSE(s.empty());
-        VERIFY_ARE_EQUAL(1, s.size());
+        VERIFY_ARE_EQUAL(1u, s.size());
         s.clear();
         VERIFY_IS_TRUE(s.empty());
-        VERIFY_ARE_EQUAL(0, s.size());
+        VERIFY_ARE_EQUAL(0u, s.size());
     }
 
     TEST_METHOD(Data)

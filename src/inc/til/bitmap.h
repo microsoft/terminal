@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <vector>
-#include "size.h"
-
 #ifdef UNIT_TESTING
 class BitmapTests;
 #endif

@@ -13,24 +13,24 @@ class RectangleTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class _Rectangle_const_iterator
+    class _rectangle_const_iterator
     {
     public:
-        constexpr _Rectangle_const_iterator(point topLeft, point bottomRight) :
+        constexpr _rectangle_const_iterator(point topLeft, point bottomRight) :
             _topLeft(topLeft),
             _bottomRight(bottomRight),
             _current(topLeft)
         {
         }
 
-        constexpr _Rectangle_const_iterator(point topLeft, point bottomRight, point start) :
+        constexpr _rectangle_const_iterator(point topLeft, point bottomRight, point start) :
             _topLeft(topLeft),
             _bottomRight(bottomRight),
             _current(start)
         {
         }
 
-        _Rectangle_const_iterator& operator++()
+        _rectangle_const_iterator& operator++()
         {
             ptrdiff_t nextX;
             THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.x(), 1).AssignIfValid(&nextX));
@@ -49,24 +49,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return (*this);
         }
 
-        constexpr bool operator==(const _Rectangle_const_iterator& other) const
+        constexpr bool operator==(const _rectangle_const_iterator& other) const
         {
             return _current == other._current &&
                    _topLeft == other._topLeft &&
                    _bottomRight == other._bottomRight;
         }
 
-        constexpr bool operator!=(const _Rectangle_const_iterator& other) const
+        constexpr bool operator!=(const _rectangle_const_iterator& other) const
         {
             return !(*this == other);
         }
 
-        constexpr bool operator<(const _Rectangle_const_iterator& other) const
+        constexpr bool operator<(const _rectangle_const_iterator& other) const
         {
             return _current < other._current;
         }
 
-        constexpr bool operator>(const _Rectangle_const_iterator& other) const
+        constexpr bool operator>(const _rectangle_const_iterator& other) const
         {
             return _current > other._current;
         }
@@ -89,7 +89,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     class rectangle
     {
     public:
-        using const_iterator = _Rectangle_const_iterator;
+        using const_iterator = _rectangle_const_iterator;
 
         constexpr rectangle() noexcept :
             rectangle(til::point{ 0, 0 }, til::point{ 0, 0 })
