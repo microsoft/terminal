@@ -155,6 +155,46 @@ class BitmapTests
         }
     }
 
+    TEST_METHOD(SetResetExceptions)
+    {
+        til::bitmap map{ til::size{4, 4} };
+        Log::Comment(L"1.) SetPoint out of bounds.");
+        {
+            auto fn = [&]() {
+                map.set(til::point{ 10, 10 });
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"2.) SetRectangle out of bounds.");
+        {
+            auto fn = [&]() {
+                map.set(til::rectangle{ til::point{2, 2,}, til::size{10, 10} });
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"3.) ResetPoint out of bounds.");
+        {
+            auto fn = [&]() {
+                map.reset(til::point{ 10, 10 });
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"4.) ResetRectangle out of bounds.");
+        {
+            auto fn = [&]() {
+                map.reset(til::rectangle{ til::point{2, 2,}, til::size{10, 10} });
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+    }
+
     TEST_METHOD(Resize)
     {
         Log::Comment(L"Set up a bitmap with every location flagged.");

@@ -139,17 +139,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void set(til::point pt)
         {
+            THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
+
             _bits[_rc.index_of(pt)] = true;
             _empty = false;
         }
 
         void reset(til::point pt)
         {
+            THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
+
             _bits[_rc.index_of(pt)] = false;
         }
 
         void set(til::rectangle rc)
         {
+            THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
+
             for (auto pt : rc)
             {
                 set(pt);
@@ -158,6 +164,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void reset(til::rectangle rc)
         {
+            THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
+
             for (auto pt : rc)
             {
                 reset(pt);

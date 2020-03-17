@@ -496,6 +496,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return index >= 0 && index < size().area();
         }
 
+        constexpr bool contains(til::rectangle rc) const
+        {
+            // Union the other rectangle and ourselves.
+            // If the result of that didn't grow at all, then we already
+            // fully contained the rectangle we were given.
+            return (*this | rc) == *this;
+        }
+
         ptrdiff_t index_of(til::point pt) const
         {
             THROW_HR_IF(E_INVALIDARG, !contains(pt));
