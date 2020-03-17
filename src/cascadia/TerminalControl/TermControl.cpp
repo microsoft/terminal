@@ -726,7 +726,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Alt-Numpad# input will send us a character once the user releases Alt, so we should be ignoring the individual keydowns.
         // The character will be sent through the TSFInputControl.
+        // See GH#1401 for more details
         if (modifiers.IsAltPressed() && (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
+
         {
             e.Handled(true);
             return;
