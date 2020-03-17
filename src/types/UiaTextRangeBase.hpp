@@ -162,7 +162,7 @@ namespace Microsoft::Console::Types
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
         const Viewport _getBufferSize() const noexcept;
 
-        void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
+        void _getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const;
 
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,

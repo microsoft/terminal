@@ -429,25 +429,12 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
         else
         {
-            for (auto row = startAnchor.Y; row <= endAnchor.Y; ++row)
+            // TODO CARLOS: when we have block selection ranges, pass in var instead of false
+            const auto textRects = _pData->GetTextBuffer().GetTextRects(startAnchor, endAnchor, false);
+
+            for (const auto &rect : textRects)
             {
-                // assume that we are going to draw the entire row
-                COORD startCoord = { 0, row };
-                COORD endCoord = { viewport.RightInclusive(), row };
-
-                if (row == startAnchor.Y)
-                {
-                    // first row --> reduce left side
-                    startCoord.X = startAnchor.X;
-                }
-
-                if (row == endAnchor.Y)
-                {
-                    // last row --> reduce right side
-                    endCoord.X = endAnchor.X;
-                }
-
-                _getBoundingRect(startCoord, endCoord, coords);
+                _getBoundingRect(rect, coords);
             }
         }
 
@@ -860,33 +847,20 @@ const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
 // - coords - vector to add the calculated coords to
 // Return Value:
 // - <none>
-void UiaTextRangeBase::_getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const
+void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const
 {
-    FAIL_FAST_IF(startAnchor.Y != endAnchor.Y);
-    FAIL_FAST_IF(startAnchor.X > endAnchor.X);
-
-    const auto viewport = _pData->GetViewport();
-    const auto currentFontSize = _getScreenFontSize();
+    const til::size currentFontSize = _getScreenFontSize();
 
     POINT topLeft{ 0 };
     POINT bottomRight{ 0 };
 
-    // startAnchor is converted to the viewport coordinate space
-#pragma warning(suppress : 26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
-    auto startCoord = startAnchor;
-    viewport.ConvertToOrigin(&startCoord);
-
     // we want to clamp to a long (output type), not a short (input type)
     // so we need to explicitly say <long,long>
-    topLeft.x = base::ClampMul<long, long>(startCoord.X, currentFontSize.X);
-    topLeft.y = base::ClampMul<long, long>(startCoord.Y, currentFontSize.Y);
+    topLeft.x = base::ClampMul(textRect.left(), currentFontSize.width());
+    topLeft.y = base::ClampMul(textRect.top(), currentFontSize.height());
 
-    // endAnchor is converted to the viewport coordinate space
-#pragma warning(suppress : 26496) // analysis can't see this, TODO GH: 4015 to improve Viewport to be less bad because it'd go away if ConvertToOrigin returned instead of inout'd.
-    auto endCoord = endAnchor;
-    viewport.ConvertToOrigin(&endCoord);
-    bottomRight.x = base::ClampMul<long, long>(base::ClampAdd(endCoord.X, 1), currentFontSize.X);
-    bottomRight.y = base::ClampMul<long, long>(base::ClampAdd(endCoord.Y, 1), currentFontSize.Y);
+    bottomRight.x = base::ClampMul(textRect.right(), currentFontSize.width());
+    bottomRight.y = base::ClampMul(textRect.bottom(), currentFontSize.height());
 
     // convert the coords to be relative to the screen instead of
     // the client window
