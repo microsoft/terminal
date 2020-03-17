@@ -34,6 +34,7 @@ namespace TerminalAppLocalTests
 namespace TerminalAppUnitTests
 {
     class DynamicProfileTests;
+    class JsonTests;
 };
 
 namespace TerminalApp
@@ -124,4 +125,5 @@ private:
     friend class TerminalAppLocalTests::KeyBindingsTests;
     friend class TerminalAppLocalTests::TabTests;
     friend class TerminalAppUnitTests::DynamicProfileTests;
+    friend class TerminalAppUnitTests::JsonTests;
 };

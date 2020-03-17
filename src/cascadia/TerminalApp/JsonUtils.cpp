@@ -52,10 +52,14 @@ void TerminalApp::JsonUtils::GetOptionalDouble(const Json::Value& json,
     const auto conversionFn = [](const Json::Value& value) -> double {
         return value.asFloat();
     };
+    const auto validationFn = [](const Json::Value& value) -> bool {
+        return value.isNumeric();
+    };
     GetOptionalValue(json,
                      key,
                      target,
-                     conversionFn);
+                     conversionFn,
+                     validationFn);
 }
 
 void TerminalApp::JsonUtils::GetInt(const Json::Value& json,
@@ -68,7 +72,7 @@ void TerminalApp::JsonUtils::GetInt(const Json::Value& json,
     const auto validationFn = [](const Json::Value& value) -> bool {
         return value.isInt();
     };
-    GetValue(json, key, target, validationFn, conversionFn);
+    GetValue(json, key, target, conversionFn, validationFn);
 }
 
 void TerminalApp::JsonUtils::GetUInt(const Json::Value& json,
@@ -81,7 +85,7 @@ void TerminalApp::JsonUtils::GetUInt(const Json::Value& json,
     const auto validationFn = [](const Json::Value& value) -> bool {
         return value.isUInt();
     };
-    GetValue(json, key, target, validationFn, conversionFn);
+    GetValue(json, key, target, conversionFn, validationFn);
 }
 
 void TerminalApp::JsonUtils::GetDouble(const Json::Value& json,
@@ -94,7 +98,7 @@ void TerminalApp::JsonUtils::GetDouble(const Json::Value& json,
     const auto validationFn = [](const Json::Value& value) -> bool {
         return value.isNumeric();
     };
-    GetValue(json, key, target, validationFn, conversionFn);
+    GetValue(json, key, target, conversionFn, validationFn);
 }
 
 void TerminalApp::JsonUtils::GetBool(const Json::Value& json,
@@ -107,7 +111,7 @@ void TerminalApp::JsonUtils::GetBool(const Json::Value& json,
     const auto validationFn = [](const Json::Value& value) -> bool {
         return value.isBool();
     };
-    GetValue(json, key, target, validationFn, conversionFn);
+    GetValue(json, key, target, conversionFn, validationFn);
 }
 
 void TerminalApp::JsonUtils::GetWstring(const Json::Value& json,
@@ -117,5 +121,5 @@ void TerminalApp::JsonUtils::GetWstring(const Json::Value& json,
     const auto conversionFn = [](const Json::Value& value) -> std::wstring {
         return GetWstringFromJson(value);
     };
-    GetValue(json, key, target, nullptr, conversionFn);
+    GetValue(json, key, target, conversionFn, nullptr);
 }

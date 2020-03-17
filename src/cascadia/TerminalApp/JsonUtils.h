@@ -52,13 +52,17 @@ namespace TerminalApp::JsonUtils
     void GetOptionalValue(const Json::Value& json,
                           std::string_view key,
                           std::optional<T>& target,
-                          F&& conversion)
+                          F&& conversion,
+                          const std::function<bool(const Json::Value&)>& validation = nullptr)
     {
         if (json.isMember(JsonKey(key)))
         {
             if (auto jsonVal{ json[JsonKey(key)] })
             {
-                target = conversion(jsonVal);
+                if (validation == nullptr || validation(jsonVal))
+                {
+                    target = conversion(jsonVal);
+                }
             }
             else
             {
@@ -71,14 +75,14 @@ namespace TerminalApp::JsonUtils
     void GetValue(const Json::Value& json,
                   std::string_view key,
                   T& target,
-                  const std::function<bool(const Json::Value&)>& validation,
-                  F&& conversion)
+                  F&& conversion,
+                  const std::function<bool(const Json::Value&)>& validation = nullptr)
     {
         if (json.isMember(JsonKey(key)))
         {
             if (auto jsonVal{ json[JsonKey(key)] })
             {
-                if (validation && validation(jsonVal))
+                if (validation == nullptr || validation(jsonVal))
                 {
                     target = conversion(jsonVal);
                 }
