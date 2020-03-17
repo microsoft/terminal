@@ -172,7 +172,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
             // .assign(_size(), true) throws an assert (unsupported operation)
-
             set(_rc);
         }
 
@@ -187,7 +186,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // True if we resized. False if it was the same size as before.
         bool resize(til::size size)
         {
-            // Don't resize if it's not different as we mark the whole thing dirty on resize.
+            // Don't resize if it's not different
             if (_sz != size)
             {
                 _sz = size;
