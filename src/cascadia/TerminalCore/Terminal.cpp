@@ -173,15 +173,17 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     {
         return S_FALSE;
     }
-    const auto dx = viewportSize.X - oldDimensions.X;
+
+    const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
 
     const auto oldTop = _mutableViewport.Top();
 
-    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
+    const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
+
     COORD bufferSize{ viewportSize.X, newBufferHeight };
 
     // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = _buffer->GetCursor().GetPosition().Y - _mutableViewport.Top();
+    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -266,7 +268,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
-    const short proposedTopFromLastLine = ::base::saturated_cast<short>(maxRow - viewportSize.Y + 1);
+    const short proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.Y), 1);
     const short proposedTopFromScrollback = newViewportTop;
 
     short proposedTop = std::max(proposedTopFromLastLine,
@@ -294,7 +296,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
             {
                 try
                 {
-                    auto row = newTextBuffer->GetRowByOffset(::base::saturated_cast<short>(proposedTop - 1));
+                    auto row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
                     if (row.GetCharRow().WasWrapForced())
                     {
                         proposedTop--;
@@ -324,7 +326,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     const auto proposedBottom = newView.BottomExclusive();
     if (proposedBottom > bufferSize.Y)
     {
-        proposedTop = ::base::saturated_cast<short>(proposedTop - (proposedBottom - bufferSize.Y));
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.Y));
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
@@ -339,7 +341,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
-    _scrollOffset = originalOffsetWasZero ? 0 : _mutableViewport.Top() - newVisibleTop;
+    _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
     _NotifyScrollEvent();
 
     return S_OK;
