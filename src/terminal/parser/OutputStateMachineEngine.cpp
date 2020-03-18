@@ -274,6 +274,13 @@ bool OutputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
         }
     }
 
+    // If we were unable to process the string, and there's a TTY attached to us,
+    //      trigger the state machine to flush the string to the terminal.
+    if (_pfnFlushToTerminal != nullptr && !success)
+    {
+        success = _pfnFlushToTerminal();
+    }
+
     _ClearLastChar();
 
     return success;

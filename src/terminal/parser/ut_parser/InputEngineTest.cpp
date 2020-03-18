@@ -259,6 +259,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(SGRMouseTest_Modifiers);
     TEST_METHOD(SGRMouseTest_Movement);
     TEST_METHOD(SGRMouseTest_Scroll);
+    TEST_METHOD(CtrlAltZCtrlAltXTest);
 
     friend class TestInteractDispatch;
 };
@@ -1140,4 +1141,69 @@ void InputEngineTest::SGRMouseTest_Scroll()
     };
     // clang-format on
     VerifySGRMouseData(testData);
+}
+
+void InputEngineTest::CtrlAltZCtrlAltXTest()
+{
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    // This is a test for GH#4201. See that issue for more details.
+    Log::Comment(L"Test Ctrl+Alt+Z and Ctrl+Alt+X, which execute from anywhere "
+                 L"in the output engine, but should be Escape-Executed in the "
+                 L"input engine.");
+
+    DisableVerifyExceptions disable;
+
+    {
+        auto inputSeq = L"\x1b\x1a"; // ^[^Z
+
+        wchar_t expectedWch = L'Z';
+        short keyscan = VkKeyScanW(expectedWch);
+        short vkey = keyscan & 0xff;
+        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+
+        INPUT_RECORD inputRec;
+
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = expectedWch - 0x40;
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        _stateMachine->ProcessString(inputSeq);
+    }
+    {
+        auto inputSeq = L"\x1b\x18"; // ^[^X
+
+        wchar_t expectedWch = L'X';
+        short keyscan = VkKeyScanW(expectedWch);
+        short vkey = keyscan & 0xff;
+        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+
+        INPUT_RECORD inputRec;
+
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = expectedWch - 0x40;
+
+        testState.vExpectedInput.push_back(inputRec);
+
+        _stateMachine->ProcessString(inputSeq);
+    }
+
+    VerifyExpectedInputDrained();
 }

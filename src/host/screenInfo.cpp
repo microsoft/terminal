@@ -1414,7 +1414,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
     if (SUCCEEDED(hr))
     {
@@ -1890,7 +1890,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
 
         // Tell the VT MouseInput handler that we're in the Alt buffer now
-        gci.terminalMouseInput.UseAlternateScreenBuffer();
+        gci.GetActiveInputBuffer()->GetTerminalInput().UseAlternateScreenBuffer();
     }
     return Status;
 }
@@ -1924,7 +1924,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         // deleting the alt buffer will give the GetSet back to its main
 
         // Tell the VT MouseInput handler that we're in the main buffer now
-        gci.terminalMouseInput.UseMainScreenBuffer();
+        gci.GetActiveInputBuffer()->GetTerminalInput().UseMainScreenBuffer();
     }
 }
 
@@ -2176,8 +2176,13 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
         commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
     }
 
-    // force repaint of entire viewport
-    GetRenderTarget().TriggerRedrawAll();
+    // Force repaint of entire viewport, unless we're in conpty mode. In that
+    // case, we don't really need to force a redraw of the entire screen just
+    // because the text attributes changed.
+    if (!(gci.IsInVtIoMode()))
+    {
+        GetRenderTarget().TriggerRedrawAll();
+    }
 
     gci.ConsoleIme.RefreshAreaAttributes();
 

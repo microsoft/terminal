@@ -298,6 +298,7 @@ CATCH_RETURN();
         {
             hr = _ResizeWindow(newView.Width(), newView.Height());
         }
+        _resized = true;
     }
 
     // See MSFT:19408543
@@ -309,39 +310,50 @@ CATCH_RETURN();
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
 
-    if (SUCCEEDED(hr))
+    if (_resizeQuirk)
     {
-        // Viewport is smaller now - just update it all.
-        if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
+        // GH#3490 - When the viewport width changed, don't do anything extra here.
+        // If the buffer had areas that were invalid due to the resize, then the
+        // buffer will have triggered it's own invalidations for what it knows is
+        // invalid. Previously, we'd invalidate everything if the width changed,
+        // because we couldn't be sure if lines were reflowed.
+    }
+    else
+    {
+        if (SUCCEEDED(hr))
         {
-            hr = InvalidateAll();
-        }
-        else
-        {
-            // At least one of the directions grew.
-            // First try and add everything to the right of the old viewport,
-            //      then everything below where the old viewport ended.
-            if (oldView.Width() < newView.Width())
+            // Viewport is smaller now - just update it all.
+            if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
             {
-                short left = oldView.RightExclusive();
-                short top = 0;
-                short right = newView.RightInclusive();
-                short bottom = oldView.BottomInclusive();
-                Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                hr = _InvalidCombine(rightOfOldViewport);
+                hr = InvalidateAll();
             }
-            if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
+            else
             {
-                short left = 0;
-                short top = oldView.BottomExclusive();
-                short right = newView.RightInclusive();
-                short bottom = newView.BottomInclusive();
-                Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                hr = _InvalidCombine(belowOldViewport);
+                // At least one of the directions grew.
+                // First try and add everything to the right of the old viewport,
+                //      then everything below where the old viewport ended.
+                if (oldView.Width() < newView.Width())
+                {
+                    short left = oldView.RightExclusive();
+                    short top = 0;
+                    short right = newView.RightInclusive();
+                    short bottom = oldView.BottomInclusive();
+                    Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
+                    hr = _InvalidCombine(rightOfOldViewport);
+                }
+                if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
+                {
+                    short left = 0;
+                    short top = oldView.BottomExclusive();
+                    short right = newView.RightInclusive();
+                    short bottom = newView.BottomInclusive();
+                    Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
+                    hr = _InvalidCombine(belowOldViewport);
+                }
             }
         }
     }
-    _resized = true;
+
     return hr;
 }
 
@@ -486,4 +498,20 @@ void VtEngine::BeginResizeRequest()
 void VtEngine::EndResizeRequest()
 {
     _inResizeRequest = false;
+}
+
+// Method Description:
+// - Configure the renderer for the resize quirk. This changes the behavior of
+//   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
+//   This is used by the Windows Terminal, because it is prepared to be
+//   connected to a conpty, and handles it's own buffer specifically for a
+//   conpty scenario.
+// - See also: GH#3490, #4354, #4741
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we were started with the `--resizeQuirk` flag enabled.
+void VtEngine::SetResizeQuirk(const bool resizeQuirk)
+{
+    _resizeQuirk = resizeQuirk;
 }
