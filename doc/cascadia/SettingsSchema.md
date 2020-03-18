@@ -39,7 +39,7 @@ Properties listed below are specific to each unique profile.
 | `colorScheme` | Optional | String | `Campbell` | Name of the terminal color scheme to use. Color schemes are defined under `schemes`. |
 | `colorTable` | Optional | Array[String] | | Array of colors used in the profile if `colorscheme` is not set. Array follows the format defined in `schemes`. |
 | `commandline` | Optional | String | | Executable used in the profile. |
-| `cursorColor` | Optional | String | `#FFFFFF` | Sets the cursor color for the profile. Uses hex color format: `"#rrggbb"`. |
+| `cursorColor` | Optional | String | | Sets the cursor color of the profile. Overrides `cursorColor` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `cursorShape` | Optional | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
 | `fontFace` | Optional | String | `Consolas` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
@@ -68,6 +68,7 @@ Properties listed below are specific to each color scheme. [ColorTool](https://g
 | `foreground` | _Required_ | String | Sets the foreground color of the color scheme. |
 | `background` | _Required_ | String | Sets the background color of the color scheme. |
 | `selectionBackground` | Optional | String | Sets the selection background color of the color scheme. |
+| `cursorColor` | Optional | String | Sets the cursor color of the color scheme. |
 | `black` | _Required_ | String | Sets the color used as ANSI black. |
 | `blue` | _Required_ | String | Sets the color used as ANSI blue. |
 | `brightBlack` | _Required_ | String | Sets the color used as ANSI bright black. |
