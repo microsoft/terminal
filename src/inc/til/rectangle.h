@@ -13,83 +13,89 @@ class RectangleTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class _rectangle_const_iterator
+    namespace details
     {
-    public:
-        constexpr _rectangle_const_iterator(point topLeft, point bottomRight) :
-            _topLeft(topLeft),
-            _bottomRight(bottomRight),
-            _current(topLeft)
+        class _rectangle_const_iterator
         {
-        }
-
-        constexpr _rectangle_const_iterator(point topLeft, point bottomRight, point start) :
-            _topLeft(topLeft),
-            _bottomRight(bottomRight),
-            _current(start)
-        {
-        }
-
-        _rectangle_const_iterator& operator++()
-        {
-            ptrdiff_t nextX;
-            THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.x(), 1).AssignIfValid(&nextX));
-
-            if (nextX >= _bottomRight.x())
+        public:
+            constexpr _rectangle_const_iterator(point topLeft, point bottomRight) :
+                _topLeft(topLeft),
+                _bottomRight(bottomRight),
+                _current(topLeft)
             {
-                ptrdiff_t nextY;
-                THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.y(), 1).AssignIfValid(&nextY));
-                _current = { _topLeft.x(), nextY };
-            }
-            else
-            {
-                _current = { nextX, _current.y() };
             }
 
-            return (*this);
-        }
+            constexpr _rectangle_const_iterator(point topLeft, point bottomRight, point start) :
+                _topLeft(topLeft),
+                _bottomRight(bottomRight),
+                _current(start)
+            {
+            }
 
-        constexpr bool operator==(const _rectangle_const_iterator& other) const
-        {
-            return _current == other._current &&
-                   _topLeft == other._topLeft &&
-                   _bottomRight == other._bottomRight;
-        }
+            _rectangle_const_iterator& operator++()
+            {
+                ptrdiff_t nextX;
+                THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.x(), 1).AssignIfValid(&nextX));
 
-        constexpr bool operator!=(const _rectangle_const_iterator& other) const
-        {
-            return !(*this == other);
-        }
+                if (nextX >= _bottomRight.x())
+                {
+                    ptrdiff_t nextY;
+                    THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.y(), 1).AssignIfValid(&nextY));
+                    // Note for the standard Left-to-Right, Top-to-Bottom walk,
+                    // the end position is one cell below the bottom left.
+                    // (or more accurately, on the exclusive bottom line in the inclusive left column.)
+                    _current = { _topLeft.x(), nextY };
+                }
+                else
+                {
+                    _current = { nextX, _current.y() };
+                }
 
-        constexpr bool operator<(const _rectangle_const_iterator& other) const
-        {
-            return _current < other._current;
-        }
+                return (*this);
+            }
 
-        constexpr bool operator>(const _rectangle_const_iterator& other) const
-        {
-            return _current > other._current;
-        }
+            constexpr bool operator==(const _rectangle_const_iterator& other) const
+            {
+                return _current == other._current &&
+                       _topLeft == other._topLeft &&
+                       _bottomRight == other._bottomRight;
+            }
 
-        constexpr point operator*() const
-        {
-            return _current;
-        }
+            constexpr bool operator!=(const _rectangle_const_iterator& other) const
+            {
+                return !(*this == other);
+            }
 
-    protected:
-        point _current;
-        const point _topLeft;
-        const point _bottomRight;
+            constexpr bool operator<(const _rectangle_const_iterator& other) const
+            {
+                return _current < other._current;
+            }
+
+            constexpr bool operator>(const _rectangle_const_iterator& other) const
+            {
+                return _current > other._current;
+            }
+
+            constexpr point operator*() const
+            {
+                return _current;
+            }
+
+        protected:
+            point _current;
+            const point _topLeft;
+            const point _bottomRight;
 
 #ifdef UNIT_TESTING
-        friend class ::RectangleTests;
+            friend class ::RectangleTests;
 #endif
-    };
+        };
+    }
 
     class rectangle
     {
     public:
-        using const_iterator = _rectangle_const_iterator;
+        using const_iterator = details::_rectangle_const_iterator;
 
         constexpr rectangle() noexcept :
             rectangle(til::point{ 0, 0 }, til::point{ 0, 0 })
@@ -197,6 +203,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr const_iterator end() const
         {
+            // For the standard walk: Left-To-Right then Top-To-Bottom
+            // the end box is one cell below the left most column.
+            // |----|  5x2 square. Remember bottom & right are exclusive
+            // |    |  while top & left are inclusive.
+            // X-----  X is the end position.
+
             return const_iterator(_topLeft, _bottomRight, { _topLeft.x(), _bottomRight.y() });
         }
 
@@ -230,6 +242,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             const auto r = std::max(right(), other.right());
             const auto b = std::max(bottom(), other.bottom());
             return rectangle{ l, t, r, b };
+        }
+
+        constexpr rectangle& operator|=(const rectangle& other) noexcept
+        {
+            *this = *this | other;
+            return *this;
         }
 
         // AND = intersect

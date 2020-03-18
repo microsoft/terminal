@@ -178,6 +178,28 @@ class SomeTests
         VERIFY_ARE_EQUAL(0u, s.size());
     }
 
+    TEST_METHOD(ClearFreesMembers)
+    {
+        til::some<std::shared_ptr<int>, 2> s;
+
+        auto a = std::make_shared<int>(4);
+        auto weakA = std::weak_ptr<int>(a);
+
+        auto b = std::make_shared<int>(6);
+        auto weakB = std::weak_ptr<int>(b);
+
+        s.push_back(std::move(a));
+        s.push_back(std::move(b));
+
+        VERIFY_IS_FALSE(weakA.expired());
+        VERIFY_IS_FALSE(weakB.expired());
+
+        s.clear();
+
+        VERIFY_IS_TRUE(weakA.expired());
+        VERIFY_IS_TRUE(weakB.expired());
+    }
+
     TEST_METHOD(Data)
     {
         til::some<int, 2> s;

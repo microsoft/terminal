@@ -104,12 +104,12 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _defaultForeground{},
     _defaultBackground{},
     _selectionBackground{},
+    _cursorColor{},
     _colorTable{},
     _tabTitle{},
     _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
-    _cursorColor{ DEFAULT_CURSOR_COLOR },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
@@ -178,7 +178,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     }
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
-    terminalSettings.CursorColor(_cursorColor);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
 
@@ -227,6 +226,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::w
     if (_selectionBackground)
     {
         terminalSettings.SelectionBackground(_selectionBackground.value());
+    }
+    if (_cursorColor)
+    {
+        terminalSettings.CursorColor(_cursorColor.value());
     }
 
     if (_scrollbarState)
@@ -296,6 +299,10 @@ Json::Value Profile::ToJson() const
     {
         root[JsonKey(SelectionBackgroundKey)] = Utils::ColorToHexString(_selectionBackground.value());
     }
+    if (_cursorColor)
+    {
+        root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor.value());
+    }
     if (_schemeName)
     {
         const auto scheme = winrt::to_string(_schemeName.value());
@@ -312,7 +319,6 @@ Json::Value Profile::ToJson() const
     }
     root[JsonKey(HistorySizeKey)] = _historySize;
     root[JsonKey(SnapOnInputKey)] = _snapOnInput;
-    root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor);
     // Only add the cursor height property if we're a legacy-style cursor.
     if (_cursorShape == CursorStyle::Vintage)
     {
@@ -643,6 +649,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetOptionalColor(json, SelectionBackgroundKey, _selectionBackground);
 
+    JsonUtils::GetOptionalColor(json, CursorColorKey, _cursorColor);
+
     JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
     // TODO:GH#1069 deprecate old settings key
     JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
@@ -674,12 +682,6 @@ void Profile::LayerJson(const Json::Value& json)
     {
         auto snapOnInput{ json[JsonKey(SnapOnInputKey)] };
         _snapOnInput = snapOnInput.asBool();
-    }
-    if (json.isMember(JsonKey(CursorColorKey)))
-    {
-        auto cursorColor{ json[JsonKey(CursorColorKey)] };
-        const auto color = Utils::ColorFromHexString(cursorColor.asString());
-        _cursorColor = color;
     }
     if (json.isMember(JsonKey(CursorHeightKey)))
     {
