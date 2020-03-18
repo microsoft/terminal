@@ -437,7 +437,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         {
             const auto textRects = _pData->GetTextBuffer().GetTextRects(startAnchor, endAnchor, _blockRange);
 
-            for (const auto &rect : textRects)
+            for (const auto& rect : textRects)
             {
                 _getBoundingRect(rect, coords);
             }
@@ -529,7 +529,7 @@ try
         auto inclusiveEnd{ _end };
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd);
+        const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange);
         const auto bufferData = buffer.GetText(true,
                                                false,
                                                textRects);
