@@ -327,7 +327,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         else
         {
             // One last check:
-            // * C-/ is supposed to be ^_ (the C0 charater US)
+            // * C-/ is supposed to be ^_ (the C0 character US)
             // * C-? is supposed to be DEL
             // * C-M-/ is supposed to be ^[^_
             // * C-M-? is supposed to be ^[^?
