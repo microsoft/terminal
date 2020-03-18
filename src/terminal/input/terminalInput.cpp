@@ -198,6 +198,9 @@ static constexpr std::array<TermKeyMap, 6> s_simpleModifiedKeyMapping{
 };
 
 const wchar_t* const CTRL_SLASH_SEQUENCE = L"\x1f";
+const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
+const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
+const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
 void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
 {
@@ -323,13 +326,73 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         }
         else
         {
-            // One last check: C-/ is supposed to be C-_
-            // But '/' is not the same VKEY on all keyboards. So we have to
-            //      figure out the vkey at runtime.
-            const BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
-            if (keyEvent.GetVirtualKeyCode() == slashVkey && keyEvent.IsCtrlPressed())
+            // One last check:
+            // * C-/ is supposed to be ^_ (the C0 character US)
+            // * C-? is supposed to be DEL
+            // * C-M-/ is supposed to be ^[^_
+            // * C-M-? is supposed to be ^[^?
+            //
+            // But this whole scenario is tricky. '/' is not the same VKEY on
+            // all keyboards. On USASCII keyboards, '/' and '?' share the _same_
+            // key. So we have to figure out the vkey at runtime, and we have to
+            // determine if the key that was pressed was '?' with some
+            // modifiers, or '/' with some modifiers.
+            //
+            // These translations are not in s_simpleModifiedKeyMapping, because
+            // the aformentioned fact that they aren't the same VKEY on all
+            // keyboards.
+            //
+            // See GH#3079 for details.
+            // Also see https://github.com/microsoft/terminal/pull/4947#issuecomment-600382856
+
+            // VkKeyScan will give us both the Vkey of the key needed for this
+            // character, and the modifiers the user might need to press to get
+            // this character.
+            const auto slashKeyScan = VkKeyScan(L'/'); // On USASCII: 0x00bf
+            const auto questionMarkKeyScan = VkKeyScan(L'?'); //On USASCII: 0x01bf
+
+            const auto slashVkey = LOBYTE(slashKeyScan);
+            const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
+
+            const auto ctrl = keyEvent.IsCtrlPressed();
+            const auto alt = keyEvent.IsAltPressed();
+            const bool shift = keyEvent.IsShiftPressed();
+
+            // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
+            const auto vkey = keyEvent.GetVirtualKeyCode();
+            const short keyScanFromEvent = vkey |
+                                           (shift ? 0x100 : 0) |
+                                           (ctrl ? 0x200 : 0) |
+                                           (alt ? 0x400 : 0);
+
+            // Make sure the VKEY is an _exact_ match, and that the modifier
+            // bits also match. This handles the hypothetical case we get a
+            // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
+            // has bits that are a superset of the bits set for question mark.
+            const bool wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+            const bool wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+
+            // If the key pressed was exactly the ? key, then try to send the
+            // appropriate sequence for a modified '?'. Otherwise, check if this
+            // was a modified '/' keypress. These mappings don't need to be
+            // changed at all.
+            if ((ctrl && alt) && wasQuestionMark)
             {
-                // This mapping doesn't need to be changed at all.
+                sender(CTRL_ALT_QUESTIONMARK_SEQUENCE);
+                success = true;
+            }
+            else if (ctrl && wasQuestionMark)
+            {
+                sender(CTRL_QUESTIONMARK_SEQUENCE);
+                success = true;
+            }
+            else if ((ctrl && alt) && wasSlash)
+            {
+                sender(CTRL_ALT_SLASH_SEQUENCE);
+                success = true;
+            }
+            else if (ctrl && wasSlash)
+            {
                 sender(CTRL_SLASH_SEQUENCE);
                 success = true;
             }
