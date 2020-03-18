@@ -239,17 +239,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _dirty.size() == til::size{ 1, 1 };
         }
 
-        bool any() const
+        constexpr bool any() const noexcept
         {
             return !none();
         }
 
-        bool none() const
+        constexpr bool none() const noexcept
         {
             return _dirty.empty();
         }
 
-        bool all() const
+        constexpr bool all() const noexcept
         {
             return _dirty == _rc;
         }
