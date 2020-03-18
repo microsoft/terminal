@@ -1108,6 +1108,12 @@ class RectangleTests
         expected = til::point{ 0, 2 };
         VERIFY_ARE_EQUAL(expected, *it);
         VERIFY_ARE_EQUAL(expected, *rc.end());
+
+        // We wouldn't normally walk one past, but validate it keeps going
+        // like any STL iterator would.
+        ++it;
+        expected = til::point{ 1, 2 };
+        VERIFY_ARE_EQUAL(expected, *it);
     }
 
     TEST_METHOD(ConstIteratorEquality)
