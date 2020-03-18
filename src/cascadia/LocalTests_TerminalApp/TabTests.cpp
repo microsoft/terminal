@@ -169,10 +169,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
-        // Create a tab with a profile with GUID 1
-        // Reload the settings so that GUID 1 is no longer in the list of profiles
-        // Try calling _DuplicateTabViewItem on tab 1
-        // No new tab should be created (and more importantly, the app should not crash)
+        // * Create a tab with a profile with GUID 1
+        // * Reload the settings so that GUID 1 is no longer in the list of profiles
+        // * Try calling _DuplicateTabViewItem on tab 1
+        // * No new tab should be created (and more importantly, the app should not crash)
         //
         // Created to test GH#2455
 
@@ -262,14 +262,14 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
 
         result = RunOnUIThread([&page]() {
-            VERIFY_ARE_EQUAL(1u, page->_tabs.size());
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first tab"));
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
-            VERIFY_ARE_EQUAL(2u, page->_tabs.size());
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
 
@@ -284,7 +284,7 @@ namespace TerminalAppLocalTests
         Log::Comment(NoThrowString().Format(L"Duplicate the tab, and don't crash"));
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
-            VERIFY_ARE_EQUAL(2u, page->_tabs.size(), L"We should gracefully do nothing here - the profile no longer exists.");
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
     }
