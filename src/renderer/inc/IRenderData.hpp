@@ -60,6 +60,8 @@ namespace Microsoft::Console::Render
         virtual COLORREF GetCursorColor() const noexcept = 0;
         virtual bool IsCursorDoubleWidth() const noexcept = 0;
 
+        virtual bool IsScreenReversed() const noexcept = 0;
+
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;

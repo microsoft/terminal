@@ -22,6 +22,7 @@ pass, and gives some examples of how to use the `wt` commandline.
 ### Options
 
 #### `--help,-h,-?,/?,`
+
 Display the help message.
 
 ## Subcommands
@@ -35,21 +36,18 @@ opens a new window. Subsequent `new-tab` commands will all open new tabs in the
 same window.
 
 **Parameters**:
-* `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
+* `[terminal_parameters]`: See [[terminal_parameters]](#terminal_parameters).
 
 #### `split-pane`
 
-`split-pane [--target,-t target-pane] [-H]|[-V] [terminal_parameters]`
+`split-pane [-H]|[-V] [terminal_parameters]`
 
 Creates a new pane in the currently focused tab by splitting the given pane
 vertically or horizontally.
 
 **Parameters**:
-* `--target,-t target-pane`: Creates a new split in the given `target-pane`.
-  Each pane has a unique index (per-tab) which can be used to identify them.
-  These indicies are assigned in the order the panes were created. If omitted,
-  defaults to the index of the currently focused pane.
+
 * `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
   "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
   omitted, defaults to "auto", which splits the current pane in whatever the
@@ -72,7 +70,6 @@ Moves focus to a given tab.
 * `-p,--previous`: Move focus to the previous tab. Will display an error if
   combined with either of `--next` or `--target`.
 
-
 #### `[terminal_parameters]`
 
 Some of the preceding commands are used to create a new terminal instance.
@@ -92,12 +89,11 @@ following:
   selected profile. If the user wants to use a `;` in this commandline, it
   should be escaped as `\;`.
 
-
 ## Examples
 
 ### Open Windows Terminal in the current directory
 
-```
+```powershell
 wt -d .
 ```
 
@@ -114,11 +110,12 @@ the `split-pane` command to create new panes.
 
 Consider the following commandline:
 
-```
+```powershell
 wt ; split-pane -p "Windows PowerShell" ; split-pane -H wsl.exe
 ```
 
 This creates a new Windows Terminal window with one tab, and 3 panes:
+
 * `wt`: Creates the new tab with the default profile
 * `split-pane -p "Windows PowerShell"`: This will create a new pane, split from
   the parent with the default profile. This pane will open with the "Windows

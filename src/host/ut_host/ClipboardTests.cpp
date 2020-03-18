@@ -84,10 +84,8 @@ class ClipboardTests
         selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
         selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
 
-        return Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
-                                                            fLineSelection,
-                                                            selection)
-            .text;
+        const auto& buffer = screenInfo.GetTextBuffer();
+        return buffer.GetText(true, fLineSelection, selection).text;
     }
 
 #pragma prefast(push)

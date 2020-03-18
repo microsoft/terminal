@@ -161,7 +161,7 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
 //      Scrolling mode, this will return our Y dimension as only extending up to
 //      the _virtualBottom. The height of the returned viewport would then be
 //      (number of lines in scrollback) + (number of lines in viewport).
-//   If we're not in teminal scrolling mode, this will return our normal buffer
+//   If we're not in terminal scrolling mode, this will return our normal buffer
 //      size.
 // Arguments:
 // - <none>
@@ -1414,7 +1414,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
 
-    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
+    HRESULT hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
 
     if (SUCCEEDED(hr))
     {
@@ -1802,9 +1802,9 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 //     machine with the main buffer it belongs to.
 // TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
-// - ppsiNewScreenBuffer - a pointer to recieve the newly created buffer.
+// - ppsiNewScreenBuffer - a pointer to receive the newly created buffer.
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer)
 {
     // Create new screen buffer.
@@ -1853,7 +1853,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 // Parameters:
 // - None
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1890,7 +1890,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
 
         // Tell the VT MouseInput handler that we're in the Alt buffer now
-        gci.terminalMouseInput.UseAlternateScreenBuffer();
+        gci.GetActiveInputBuffer()->GetTerminalInput().UseAlternateScreenBuffer();
     }
     return Status;
 }
@@ -1900,7 +1900,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 // Parameters:
 // - None
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
 void SCREEN_INFORMATION::UseMainScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1924,7 +1924,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         // deleting the alt buffer will give the GetSet back to its main
 
         // Tell the VT MouseInput handler that we're in the main buffer now
-        gci.terminalMouseInput.UseMainScreenBuffer();
+        gci.GetActiveInputBuffer()->GetTerminalInput().UseMainScreenBuffer();
     }
 }
 
@@ -2176,8 +2176,13 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
         commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
     }
 
-    // force repaint of entire viewport
-    GetRenderTarget().TriggerRedrawAll();
+    // Force repaint of entire viewport, unless we're in conpty mode. In that
+    // case, we don't really need to force a redraw of the entire screen just
+    // because the text attributes changed.
+    if (!(gci.IsInVtIoMode()))
+    {
+        GetRenderTarget().TriggerRedrawAll();
+    }
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
@@ -2306,7 +2311,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
 //      understand will be written to the pTtyConnection passed in here.
 // Arguments:
-// - pTtyConnection: This is a TerminaOutputConnection that we can write the
+// - pTtyConnection: This is a TerminalOutputConnection that we can write the
 //      sequence we didn't understand to.
 // Return Value:
 // - <none>
@@ -2699,7 +2704,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 // Method Description:
 // - Gets the desired font of the screen buffer. If we try loading this font and
 //      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
-//      We store this seperately, so that if we need to reload the font, we can
+//      We store this separately, so that if we need to reload the font, we can
 //      try again with our prefered font info (in the desired font info) instead
 //      of re-using the looked up value from before.
 // Arguments:

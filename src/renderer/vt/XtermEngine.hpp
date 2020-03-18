@@ -48,7 +48,8 @@ namespace Microsoft::Console::Render
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                               const COORD coord,
-                                              const bool trimLeft) noexcept override;
+                                              const bool trimLeft,
+                                              const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
@@ -59,7 +60,6 @@ namespace Microsoft::Console::Render
         const COLORREF* const _ColorTable;
         const WORD _cColorTable;
         const bool _fUseAsciiOnly;
-        bool _previousLineWrapped;
         bool _usingUnderLine;
         bool _needToDisableCursor;
         bool _lastCursorIsVisible;

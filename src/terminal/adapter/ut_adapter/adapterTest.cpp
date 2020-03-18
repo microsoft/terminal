@@ -169,6 +169,13 @@ public:
         return true;
     }
 
+    bool PrivateSetAutoWrapMode(const bool /*wrapAtEOL*/) override
+    {
+        Log::Comment(L"PrivateSetAutoWrapMode MOCK called...");
+
+        return false;
+    }
+
     bool PrivateShowCursor(const bool show) override
     {
         Log::Comment(L"PrivateShowCursor MOCK called...");
@@ -205,6 +212,11 @@ public:
         }
 
         return _setConsoleTextAttributeResult;
+    }
+
+    bool PrivateIsVtInputEnabled() const override
+    {
+        return false;
     }
 
     bool PrivateSetLegacyAttributes(const WORD attr, const bool foreground, const bool background, const bool meta) override
@@ -598,14 +610,10 @@ public:
         return _getConsoleOutputCPResult;
     }
 
-    bool IsConsolePty(bool& isPty) const override
+    bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
-        if (_isConsolePtyResult)
-        {
-            isPty = _isPty;
-        }
-        return _isConsolePtyResult;
+        return _isPty;
     }
 
     bool DeleteLines(const size_t /*count*/) override
@@ -752,7 +760,7 @@ public:
         _viewport.Left = 30;
         _viewport.Right = 59;
 
-        // Call cursor positions seperately
+        // Call cursor positions separately
         PrepCursor(xact, yact);
 
         _cursorSize = 33;
@@ -939,7 +947,6 @@ public:
     bool _setCursorColorResult = false;
     COLORREF _expectedCursorColor = 0;
     bool _getConsoleOutputCPResult = false;
-    bool _isConsolePtyResult = false;
     bool _privateSetDefaultAttributesResult = false;
     bool _moveToBottomResult = false;
 
@@ -2258,7 +2265,6 @@ public:
 
         // Test in pty mode - we should fail, but PrivateSetColorTableEntry should still be called
         _testGetSet->_isPty = true;
-        _testGetSet->_isConsolePtyResult = true;
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
         VERIFY_IS_FALSE(_pDispatch.get()->SetColorTableEntry(15, testColor));

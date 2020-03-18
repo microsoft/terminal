@@ -94,6 +94,7 @@ public:
     bool PrivateSetKeypadMode(const bool applicationMode) override;
 
     bool PrivateSetScreenMode(const bool reverseMode) override;
+    bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 
     bool PrivateShowCursor(const bool show) noexcept override;
     bool PrivateAllowCursorBlinking(const bool enable) override;
@@ -142,7 +143,7 @@ public:
 
     bool GetConsoleOutputCP(unsigned int& codepage) override;
 
-    bool IsConsolePty(bool& isPty) const override;
+    bool IsConsolePty() const override;
 
     bool DeleteLines(const size_t count) override;
     bool InsertLines(const size_t count) override;
@@ -164,6 +165,8 @@ public:
                              const std::optional<SMALL_RECT> clipRect,
                              const COORD destinationOrigin,
                              const bool standardFillAttrs) noexcept override;
+
+    bool PrivateIsVtInputEnabled() const override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

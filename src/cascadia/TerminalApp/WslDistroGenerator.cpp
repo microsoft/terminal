@@ -63,13 +63,13 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
                                              nullptr,
                                              &si,
                                              &pi));
-    switch (WaitForSingleObject(pi.hProcess, INFINITE))
+    switch (WaitForSingleObject(pi.hProcess, 2000))
     {
     case WAIT_OBJECT_0:
         break;
     case WAIT_ABANDONED:
     case WAIT_TIMEOUT:
-        THROW_HR(ERROR_CHILD_NOT_COMPLETE);
+        return profiles;
     case WAIT_FAILED:
         THROW_LAST_ERROR();
     default:

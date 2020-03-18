@@ -440,7 +440,7 @@ developed, to make the initialization of many commands as seamless as possible.
 As this is a very complex feature, there will need to be a number of steps taken
 in the codebase to enable this functionality in a way that users are expecting.
 The following is a suggestion of the individual changelists that could be made
-to iteratively work towards fulling implementing this funcionality.
+to iteratively work towards fulling implementing this functionality.
 
 * [x] Refactor `ShortcutAction` dispatching into its own class
   - Right now, the `AppKeyBindings` is responsible for triggering all
@@ -507,7 +507,7 @@ runtimeclass TerminalParameters {
 * [ ] Add a `ShortcutAction` for `FocusPane`, which accepts a single parameter
   `index`.
   - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
-    quicky switch to the i'th `Pane`.
+    quickly switch to the i'th `Pane`.
   - This is in order to support the `-t,--target` parameter of `split-pane`.
 
 ## Capabilities
@@ -537,7 +537,7 @@ This change should not regress any existing behaviors.
 
 ### Performance, Power, and Efficiency
 
-This change should not particularily impact startup time or any of these other categories.
+This change should not particularly impact startup time or any of these other categories.
 
 ## Potential Issues
 
@@ -549,7 +549,7 @@ itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
 we've been caught in before, so extensive testing will be necessary to make sure
 this works as expected.
 
-Painfully, powershell uses `;` as a seperator between commands as well. So, if
+Painfully, powershell uses `;` as a separator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
 the user would need to also escape those semicolons for powershell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab

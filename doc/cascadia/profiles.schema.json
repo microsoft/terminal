@@ -3,6 +3,10 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema'",
   "definitions": {
+    "KeyChordSegment": {
+      "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
+      "type": "string"
+    },
     "Color": {
       "default": "#",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
@@ -244,12 +248,18 @@
         },
         "keys": {
           "description": "Defines the key combinations used to call the command.",
-          "items": {
-            "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
-            "type": "string"
-          },
-          "minItems": 1,
-          "type": "array"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/KeyChordSegment"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/KeyChordSegment"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          ]
         }
       },
       "required": [
@@ -378,9 +388,20 @@
           "minimum": 0,
           "type": "number"
         },
+        "antialiasingMode": {
+          "default": "grayscale",
+          "description": "Controls how text is antialiased in the renderer. Possible values are \"grayscale\", \"cleartype\" and \"aliased\". Note that changing this setting will require starting a new terminal instance.",
+          "enum": [
+            "grayscale",
+            "cleartype",
+            "aliased"
+          ],
+          "type": "string"
+        },
         "background": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black).",
+          "default": "#0c0c0c",
+          "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "backgroundImage": {
@@ -533,8 +554,7 @@
         },
         "cursorColor": {
           "$ref": "#/definitions/Color",
-          "default": "#FFFFFF",
-          "description": "Sets the cursor color for the profile. Uses hex color format: \"#rrggbb\"."
+          "description": "Sets the cursor color of the profile. Overrides cursor color set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\"."
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
@@ -571,7 +591,8 @@
         },
         "foreground": {
           "$ref": "#/definitions/Color",
-          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white).",
+          "default": "#cccccc",
+          "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\".",
           "type": ["string", "null"]
         },
         "guid": {
@@ -580,7 +601,7 @@
         },
         "hidden": {
           "default": false,
-          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file.",
+          "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.",
           "type": "boolean"
         },
         "historySize": {
@@ -723,6 +744,11 @@
           "brightYellow": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI bright yellow."
+          },
+          "cursorColor": {
+            "$ref": "#/definitions/Color",
+            "default": "#FFFFFF",
+            "description": "Sets the cursor color of the color scheme."
           },
           "cyan": {
             "$ref": "#/definitions/Color",

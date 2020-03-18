@@ -86,7 +86,7 @@ namespace Microsoft::Console::Render
 
         void _NotifyPaintFrame();
 
-        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
+        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
 
         bool _CheckViewportAndScroll();
 
@@ -96,7 +96,8 @@ namespace Microsoft::Console::Render
 
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                       TextBufferCellIterator it,
-                                      const COORD target);
+                                      const COORD target,
+                                      const bool lineWrapped);
 
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 
