@@ -78,6 +78,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         UiaTracing::Signal::CursorChanged();
         Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
             // The event that is raised when the text was changed in an edit control.
+            // Do NOT fire a TextEditTextChanged. Generally, an app on the other side
+            //    will expect more information. Though you can dispatch that event
+            //    on its own, it may result in a nullptr exception on the other side
+            //    because no additional information was provided. Crashing the screen
+            //    reader.
             RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
         });
     }
