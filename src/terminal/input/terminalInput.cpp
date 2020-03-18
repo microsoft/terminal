@@ -185,13 +185,31 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 6> s_simpleModifiedKeyMapping{
+static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
     TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
     TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
     TermKeyMap{ VK_TAB, CTRL_PRESSED, L"\t" },
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
+
+    // GH#3507 - We should also be encoding Ctrl+# according to the following table:
+    // https://vt100.net/docs/vt220-rm/table3-5.html
+    // * 1 and 9 do not send any special characters, but they _should_ send
+    //   through the character unmodified.
+    // * 0 doesn't seem to send even an unmodified '0' through.
+    // * Ctrl+2 is already special-cased below in `HandleKey`, so it's not
+    //   included here.
+    TermKeyMap{ static_cast<WORD>('1'), CTRL_PRESSED, L"1" },
+    // TermKeyMap{ static_cast<WORD>('2'), CTRL_PRESSED, L"\x00" },
+    TermKeyMap{ static_cast<WORD>('3'), CTRL_PRESSED, L"\x1B" },
+    TermKeyMap{ static_cast<WORD>('4'), CTRL_PRESSED, L"\x1C" },
+    TermKeyMap{ static_cast<WORD>('5'), CTRL_PRESSED, L"\x1D" },
+    TermKeyMap{ static_cast<WORD>('6'), CTRL_PRESSED, L"\x1E" },
+    TermKeyMap{ static_cast<WORD>('7'), CTRL_PRESSED, L"\x1F" },
+    TermKeyMap{ static_cast<WORD>('8'), CTRL_PRESSED, L"\x7F" },
+    TermKeyMap{ static_cast<WORD>('9'), CTRL_PRESSED, L"9" },
+
     // These two are not implemented here, because they are system keys.
     // TermKeyMap{ VK_TAB, ALT_PRESSED, L""}, This is the Windows system shortcut for switching windows.
     // TermKeyMap{ VK_ESCAPE, ALT_PRESSED, L""}, This is another Windows system shortcut for switching windows.
