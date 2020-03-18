@@ -39,6 +39,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 ptrdiff_t nextY;
                 THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.y(), 1).AssignIfValid(&nextY));
+                // Note for the standard Left-to-Right, Top-to-Bottom walk,
+                // the end position is one cell below the bottom left.
+                // (or more accurately, on the exclusive bottom line in the inclusive left column.)
                 _current = { _topLeft.x(), nextY };
             }
             else
@@ -197,6 +200,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr const_iterator end() const
         {
+            // For the standard walk: Left-To-Right then Top-To-Bottom
+            // the end box is one cell below the left most column.
+            // |----|  5x2 square. Remember bottom & right are exclusive
+            // |    |  while top & left are inclusive.
+            // X-----  X is the end position.
+
             return const_iterator(_topLeft, _bottomRight, { _topLeft.x(), _bottomRight.y() });
         }
 
@@ -230,6 +239,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             const auto r = std::max(right(), other.right());
             const auto b = std::max(bottom(), other.bottom());
             return rectangle{ l, t, r, b };
+        }
+
+        constexpr rectangle& operator|=(const rectangle& other) noexcept
+        {
+            *this = *this | other;
+            return *this;
         }
 
         // AND = intersect
