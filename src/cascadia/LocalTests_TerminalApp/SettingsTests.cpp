@@ -70,6 +70,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestTerminalArgsForBinding);
 
+        TEST_METHOD(TestLayerProfileOnColorScheme);
+
         TEST_METHOD(ValidateKeybindingsWarnings);
 
         TEST_CLASS_SETUP(ClassSetup)
@@ -2092,6 +2094,75 @@ namespace TerminalAppLocalTests
         }
     }
 
+    void SettingsTests::TestLayerProfileOnColorScheme()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Ensure that setting (or not) a property in the profile that should override a property of the color scheme works correctly."));
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeWithCursorColor"
+                },
+                {
+                    "name" : "profile1",
+                    "colorScheme": "schemeWithoutCursorColor"
+                },
+                {
+                    "name" : "profile2",
+                    "colorScheme": "schemeWithCursorColor",
+                    "cursorColor": "#234567"
+                },
+                {
+                    "name" : "profile3",
+                    "colorScheme": "schemeWithoutCursorColor",
+                    "cursorColor": "#345678"
+                },
+                {
+                    "name" : "profile4",
+                    "cursorColor": "#456789"
+                },
+                {
+                    "name" : "profile5"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeWithCursorColor",
+                    "cursorColor": "#123456"
+                },
+                {
+                    "name": "schemeWithoutCursorColor"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings;
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(6u, settings._profiles.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+
+        auto terminalSettings0 = settings._profiles[0].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings1 = settings._profiles[1].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings2 = settings._profiles[2].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings3 = settings._profiles[3].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings4 = settings._profiles[4].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings5 = settings._profiles[5].CreateTerminalSettings(settings._globals._colorSchemes);
+
+        VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0.CursorColor()); // from color scheme
+        VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1.CursorColor()); // default
+        VERIFY_ARE_EQUAL(ARGB(0, 0x23, 0x45, 0x67), terminalSettings2.CursorColor()); // from profile (trumps color scheme)
+        VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3.CursorColor()); // from profile (not set in color scheme)
+        VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4.CursorColor()); // from profile (no color scheme)
+        VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5.CursorColor()); // default
+    }
+
     void SettingsTests::ValidateKeybindingsWarnings()
     {
         const std::string badSettings{ R"(
@@ -2134,5 +2205,4 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
     }
-
 }

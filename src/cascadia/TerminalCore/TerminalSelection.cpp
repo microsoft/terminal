@@ -106,6 +106,11 @@ const bool Terminal::IsSelectionActive() const noexcept
     return _selection.has_value();
 }
 
+const bool Terminal::IsBlockSelection() const noexcept
+{
+    return _blockSelection;
+}
+
 // Method Description:
 // - Checks if the CopyOnSelect setting is active
 // Return Value:

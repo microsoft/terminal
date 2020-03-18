@@ -79,6 +79,7 @@ namespace TerminalAppUnitTests
                                           "\"brightRed\" : \"#E74856\","
                                           "\"brightWhite\" : \"#F2F2F2\","
                                           "\"brightYellow\" : \"#F9F1A5\","
+                                          "\"cursorColor\" : \"#FFFFFF\","
                                           "\"cyan\" : \"#3A96DD\","
                                           "\"foreground\" : \"#F2F2F2\","
                                           "\"green\" : \"#13A10E\","
@@ -96,6 +97,7 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(ARGB(0, 0xf2, 0xf2, 0xf2), scheme.GetForeground());
         VERIFY_ARE_EQUAL(ARGB(0, 0x0c, 0x0c, 0x0c), scheme.GetBackground());
         VERIFY_ARE_EQUAL(ARGB(0, 0x13, 0x13, 0x13), scheme.GetSelectionBackground());
+        VERIFY_ARE_EQUAL(ARGB(0, 0xFF, 0xFF, 0xFF), scheme.GetCursorColor());
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
