@@ -122,10 +122,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         bitmap(til::size sz) :
+            bitmap(sz, false)
+        {
+        }
+
+        bitmap(til::size sz, bool fill) :
             _sz(sz),
             _rc(sz),
-            _bits(sz.area(), false),
-            _dirty()
+            _bits(sz.area(), fill),
+            _dirty(fill ? sz : til::rectangle{})
         {
         }
 
@@ -177,15 +182,50 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // True if we resized. False if it was the same size as before.
-        bool resize(til::size size)
+        // Set fill if you want the new region (on growing) to be marked dirty.
+        bool resize(til::size size, bool fill = false)
         {
+            // FYI .resize(_size(), true/false) throws an assert (unsupported operation)
+
             // Don't resize if it's not different
             if (_sz != size)
             {
-                _sz = size;
-                _rc = til::rectangle{ size };
-                // .resize(_size(), true/false) throws an assert (unsupported operation)
-                reset_all();
+                // Make a new bitmap for the other side, empty initially.
+                auto newMap = bitmap(size, false);
+
+                // Copy any regions that overlap from this map to the new one.
+                // Just iterate our runs...
+                for (const auto run : *this)
+                {
+                    // intersect them with the new map
+                    // so we don't attempt to set bits that fit outside
+                    // the new one.
+                    const auto intersect = run & newMap._rc;
+
+                    // and if there is still anything left, set them.
+                    if (!intersect.empty())
+                    {
+                        newMap.set(intersect);
+                    }
+                }
+
+                // Then, if we were requested to fill the new space on growing,
+                // find the space in the new rectangle that wasn't in the old
+                // and fill it up.
+                if (fill)
+                {
+                    // A subtraction will yield anything in the new that isn't
+                    // a part of the old.
+                    const auto newAreas = newMap._rc - _rc;
+                    for (const auto& area : newAreas)
+                    {
+                        newMap.set(area);
+                    }
+                }
+
+                // Swap and return.
+                std::swap(newMap, *this);
+
                 return true;
             }
             else

@@ -57,8 +57,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             constexpr bool operator==(const _rectangle_const_iterator& other) const
             {
                 return _current == other._current &&
-                    _topLeft == other._topLeft &&
-                    _bottomRight == other._bottomRight;
+                       _topLeft == other._topLeft &&
+                       _bottomRight == other._bottomRight;
             }
 
             constexpr bool operator!=(const _rectangle_const_iterator& other) const
