@@ -827,11 +827,19 @@ namespace winrt::TerminalApp::implementation
             {
                 auto focusedTab = _GetStrongTabImpl(*index);
                 const auto& profileGuid = focusedTab->GetFocusedProfile();
-                if (profileGuid.has_value())
+                auto activeControl = focusedTab->GetActiveTerminalControl();
+                auto iControlSettings = activeControl.Settings();
+                if (profileGuid.has_value() && iControlSettings)
                 {
-                    const auto settings = _settings->BuildSettings(profileGuid.value());
-                    _CreateNewTabFromSettings(profileGuid.value(), settings);
+                    if (auto settings{ iControlSettings.as<TerminalSettings>() })
+                    {
+                        _CreateNewTabFromSettings(profileGuid.value(), settings);
+                    }
                 }
+                // if (profileGuid.has_value())
+                // {
+                //     const auto settings = _settings->BuildSettings(profileGuid.value());
+                // }
             }
             CATCH_LOG();
             // TODO: Should we display a dialog when we do nothing because we
