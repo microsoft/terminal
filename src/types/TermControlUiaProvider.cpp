@@ -128,9 +128,8 @@ HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple
     auto end = _pData->GetSelectionEnd();
     _pData->GetTextBuffer().GetSize().IncrementInBounds(end, true);
 
-    // TODO GH #4509: Box Selection is misrepresented here as a line selection.
     TermControlUiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, start, end, _pData->IsBlockSelection(), wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }
@@ -167,7 +166,7 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
     TermControlUiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<TermControlUiaTextRange>(&result, _pData, pProvider, start, end, false, wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }

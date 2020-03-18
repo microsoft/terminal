@@ -23,6 +23,7 @@ try
     _pData = pData;
     _start = pData->GetViewport().Origin();
     _end = pData->GetViewport().Origin();
+    _blockRange = false;
     _wordDelimiters = wordDelimiters;
 
     _id = id;
@@ -55,6 +56,7 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ IRawElementProviderSimple* const pProvider,
                                                  _In_ const COORD start,
                                                  _In_ const COORD end,
+                                                 _In_ bool blockRange,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
@@ -72,6 +74,10 @@ try
         _start = end;
         _end = start;
     }
+
+    // This should be the only way to set if we are a blockRange
+    // This is used for blockSelection
+    _blockRange = blockRange;
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
@@ -429,8 +435,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
         else
         {
-            // TODO CARLOS: when we have block selection ranges, pass in var instead of false
-            const auto textRects = _pData->GetTextBuffer().GetTextRects(startAnchor, endAnchor, false);
+            const auto textRects = _pData->GetTextBuffer().GetTextRects(startAnchor, endAnchor, _blockRange);
 
             for (const auto &rect : textRects)
             {
