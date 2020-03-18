@@ -169,10 +169,11 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
-        // Create a tab with a profile with GUID 1
-        // Reload the settings so that GUID 1 is no longer in the list of profiles
-        // Try calling _DuplicateTabViewItem on tab 1
-        // No new tab should be created (and more importantly, the app should not crash)
+        // * Create a tab with a profile with GUID 1
+        // * Reload the settings so that GUID 1 is no longer in the list of profiles
+        // * Try calling _DuplicateTabViewItem on tab 1
+        // * The tab that's created should use the old historySize value from the
+        //   duplicated tab. More importantly, the app should not crash.
         //
         // Created to test GH#2455
 
@@ -249,7 +250,9 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
+
             page->Create();
+            Log::Comment(NoThrowString().Format(L"Create()'d"));
 
             // I think in the tests, we don't always set the focused tab on
             // creation. Doesn't seem to be a problem in the real app, but
@@ -258,18 +261,19 @@ namespace TerminalAppLocalTests
             // Manually set it here, so that later, the _GetFocusedTabIndex call
             // in _DuplicateTabViewItem will have a sensible value.
             page->_SetFocusedTabIndex(0);
+            Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()'d"));
         });
         VERIFY_SUCCEEDED(result);
 
         result = RunOnUIThread([&page]() {
-            VERIFY_ARE_EQUAL(1u, page->_tabs.size());
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first tab"));
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
-            VERIFY_ARE_EQUAL(2u, page->_tabs.size());
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
 
@@ -284,7 +288,14 @@ namespace TerminalAppLocalTests
         Log::Comment(NoThrowString().Format(L"Duplicate the tab, and don't crash"));
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
-            VERIFY_ARE_EQUAL(2u, page->_tabs.size(), L"We should gracefully do nothing here - the profile no longer exists.");
+            VERIFY_ARE_EQUAL(3u,
+                             page->_tabs.Size(),
+                             L"We should duplicate the settings of the second "
+                             L"tab here, despite the profile no longer existing");
+
+            auto control = page->_GetStrongTabImpl(2)->GetActiveTerminalControl();
+            VERIFY_IS_NOT_NULL(control);
+            VERIFY_ARE_EQUAL(1, control.Settings().HistorySize());
         });
         VERIFY_SUCCEEDED(result);
     }
