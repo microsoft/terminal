@@ -1167,8 +1167,13 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     _trace.TraceCharInput(wch);
 
     // Process "from anywhere" events first.
-    if (wch == AsciiChars::CAN ||
-        wch == AsciiChars::SUB)
+    const bool isFromAnywhereChar = (wch == AsciiChars::CAN || wch == AsciiChars::SUB);
+
+    // GH#4201 - If this sequence was ^[^X or ^[^Z, then we should
+    // _ActionExecuteFromEscape, as to send a Ctrl+Alt+key key. We should only
+    // do this for the InputStateMachineEngine - the OutputEngine should execute
+    // these from any state.
+    if (isFromAnywhereChar && !(_state == VTStates::Escape && _engine->DispatchControlCharsFromEscape()))
     {
         _ActionExecute(wch);
         _EnterGround();
