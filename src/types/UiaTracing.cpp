@@ -616,9 +616,9 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
 
 void UiaTracing::Signal::SelectionChanged() noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "Signal::SelectionChanged",
@@ -628,9 +628,9 @@ void UiaTracing::Signal::SelectionChanged() noexcept
 
 void UiaTracing::Signal::TextChanged() noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "Signal::TextChanged",
@@ -640,9 +640,9 @@ void UiaTracing::Signal::TextChanged() noexcept
 
 void UiaTracing::Signal::CursorChanged() noexcept
 {
+    EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        EnsureRegistration();
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
             "Signal::CursorChanged",
