@@ -193,7 +193,7 @@ static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
 
-    // GH#3507 - We should also be encoding Ctrl+# according to the follwoing table:
+    // GH#3507 - We should also be encoding Ctrl+# according to the following table:
     // https://vt100.net/docs/vt220-rm/table3-5.html
     // * 1 and 9 do not send any special characters, but they _should_ send
     //   through the character unmodified.

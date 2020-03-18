@@ -512,6 +512,13 @@ void InputTest::TerminalInputModifierKeyTests()
                 s_pwsInputBuffer[1] = wchShifted;
                 fExpectedKeyHandled = true;
             }
+            else if (ControlPressed(uiKeystate) && (vkey >= '1' && vkey <= '9'))
+            {
+                // The C-# keys get translated into very specific control
+                // characters that don't play nicely with this test. These keys
+                // are tested in the CtrlNumTest Test instead.
+                continue;
+            }
             else
             {
                 fExpectedKeyHandled = false;
