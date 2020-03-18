@@ -268,7 +268,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
-    const short proposedTopFromLastLine = ::base::ClampSub(maxRow, ::base::ClampAdd(viewportSize.Y, 1));
+    const short proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.Y), 1);
     const short proposedTopFromScrollback = newViewportTop;
 
     short proposedTop = std::max(proposedTopFromLastLine,
