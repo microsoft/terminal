@@ -174,8 +174,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().MaxWidth(Canvas().ActualWidth() - clientCursorPos.X);
 
         // Set the text block bounds
-        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight() - fontHeight);
-        Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y + yOffset, 0, fontHeight);
+        const auto yOffset = ::base::ClampSub(::base::ClampedNumeric<float>(TextBlock().ActualHeight()), fontHeight);
+        const auto textBottom = ::base::ClampAdd(::base::ClampedNumeric<float>(screenCursorPos.Y), yOffset);
+        Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
         // Set the control bounds of the whole control
