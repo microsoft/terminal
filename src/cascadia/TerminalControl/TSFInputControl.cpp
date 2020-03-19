@@ -171,7 +171,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
         TextBlock().FontSize(fontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
-        TextBlock().MaxWidth(Canvas().ActualWidth() - clientCursorPos.X);
+
+        const auto widthToTerminalEnd = ::base::ClampSub(Canvas().ActualWidth(), ::base::ClampedNumeric<double>(clientCursorPos.X));
+        TextBlock().MaxWidth(widthToTerminalEnd);
 
         // Set the text block bounds
         const auto yOffset = ::base::ClampSub(::base::ClampedNumeric<float>(TextBlock().ActualHeight()), fontHeight);
