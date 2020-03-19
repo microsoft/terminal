@@ -420,5 +420,10 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    int Tab::_GetLeafPaneCount() const noexcept
+    {
+        return _rootPane->GetLeafPaneCount();
+    }
+
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
 }

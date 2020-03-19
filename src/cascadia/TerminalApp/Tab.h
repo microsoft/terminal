@@ -5,6 +5,12 @@
 #include "Pane.h"
 #include "Tab.g.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
+
 namespace winrt::TerminalApp::implementation
 {
     struct Tab : public TabT<Tab>
@@ -64,5 +70,9 @@ namespace winrt::TerminalApp::implementation
 
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
+
+        int _GetLeafPaneCount() const noexcept;
+
+        friend class ::TerminalAppLocalTests::TabTests;
     };
 }

@@ -13,6 +13,7 @@
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
+using namespace winrt::TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -55,6 +56,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CreateTerminalMuxXamlType);
 
         TEST_METHOD(TryDuplicateBadTab);
+        TEST_METHOD(TryDuplicateBadPane);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -285,6 +287,144 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::TryDuplicateBadPane()
+    {
+        // * Create a tab with a profile with GUID 1
+        // * Reload the settings so that GUID 1 is no longer in the list of profiles
+        // * Try calling _SplitPane(Duplicate) on tab 1
+        // * No new pane should be created (and more importantly, the app should not crash)
+        //
+        // Created to test GH#2455
+
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+
+        const std::string settingsJson1{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson0);
+        auto settings0 = std::make_shared<CascadiaSettings>(false);
+        VERIFY_IS_NOT_NULL(settings0);
+        settings0->_ParseJsonString(settingsJson0, false);
+        settings0->LayerJson(settings0->_userSettings);
+        settings0->_ValidateSettings();
+
+        VerifyParseSucceeded(settingsJson1);
+        auto settings1 = std::make_shared<CascadiaSettings>(false);
+        VERIFY_IS_NOT_NULL(settings1);
+        settings1->_ParseJsonString(settingsJson1, false);
+        settings1->LayerJson(settings1->_userSettings);
+        settings1->_ValidateSettings();
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+
+        Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
+        auto result = RunOnUIThread([&projectedPage, &page, settings0]() {
+            projectedPage = winrt::TerminalApp::TerminalPage();
+            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
+            page->_settings = settings0;
+        });
+        VERIFY_SUCCEEDED(result);
+
+        VERIFY_IS_NOT_NULL(page);
+        VERIFY_IS_NOT_NULL(page->_settings);
+
+        Log::Comment(NoThrowString().Format(L"Create() the TerminalPage"));
+        result = RunOnUIThread([&page]() {
+            VERIFY_IS_NOT_NULL(page);
+            VERIFY_IS_NOT_NULL(page->_settings);
+            page->Create();
+
+            // I think in the tests, we don't always set the focused tab on
+            // creation. Doesn't seem to be a problem in the real app, but
+            // probably indicative of a problem.
+            //
+            // Manually set it here, so that later, the _GetFocusedTabIndex call
+            // in _DuplicateTabViewItem will have a sensible value.
+            page->_SetFocusedTabIndex(0);
+        });
+        VERIFY_SUCCEEDED(result);
+
+        result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(1, tab->_GetLeafPaneCount());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
+        result = RunOnUIThread([&page]() {
+            // Oh no I didn't actually duplicate the pane, what did I do
+            DebugBreak();
+            // The problem here is that the pane doesn't actually have a real
+            // size yet. It thinks it's 0x0, which it is. We either need to
+            // - 1. trick the test into thinking the pane has a real size
+            // - 2. allow panes to be split regardless of their minimum size
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, tab->_GetLeafPaneCount());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(NoThrowString().Format(
+            L"Change the settings of the TerminalPage so the first profile is "
+            L"no longer in the list of profiles"));
+        result = RunOnUIThread([&page, settings1]() {
+            page->_settings = settings1;
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
+        result = RunOnUIThread([&page]() {
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2,
+                             tab->_GetLeafPaneCount(),
+                             L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
     }

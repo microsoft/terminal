@@ -1522,4 +1522,9 @@ void Pane::_SetupResources()
     }
 }
 
+int Pane::GetLeafPaneCount() const noexcept
+{
+    return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
