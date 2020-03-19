@@ -14,6 +14,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         class _bitmap_const_iterator
         {
         public:
+            using iterator_category = typename std::input_iterator_tag;
+            using value_type = typename const til::rectangle;
+            using difference_type = typename ptrdiff_t;
+            using pointer = typename const til::rectangle*;
+            using reference = typename const til::rectangle&;
+
             _bitmap_const_iterator(const std::vector<bool>& values, til::rectangle rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
@@ -28,6 +34,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _pos = _nextPos;
                 _calculateArea();
                 return (*this);
+            }
+
+            _bitmap_const_iterator operator++(int)
+            {
+                const auto prev = *this;
+                ++*this;
+                return prev;
             }
 
             constexpr bool operator==(const _bitmap_const_iterator& other) const noexcept
@@ -50,9 +63,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return _pos > other._pos;
             }
 
-            constexpr til::rectangle operator*() const noexcept
+            constexpr reference operator*() const noexcept
             {
                 return _run;
+            }
+
+            constexpr pointer operator->() const noexcept
+            {
+                return &_run;
             }
 
         private:
@@ -117,7 +135,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz{},
             _rc{},
             _bits{},
-            _dirty{}
+            _dirty{},
+            _runs{}
         {
         }
 
@@ -130,7 +149,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz(sz),
             _rc(sz),
             _bits(sz.area(), fill),
-            _dirty(fill ? sz : til::rectangle{})
+            _dirty(fill ? sz : til::rectangle{}),
+            _runs{}
         {
         }
 
@@ -144,9 +164,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return const_iterator(_bits, _sz, _sz.area());
         }
 
+        std::vector<til::rectangle>& runs()
+        {
+            // If we don't have cached runs, rebuild.
+            if (!_runs.has_value())
+            {
+                _runs.emplace(begin(), end());
+            }
+
+            // Return a reference to the runs.
+            return _runs.value();
+        }
+
         void set(const til::point pt)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
+            _runs.reset(); // reset cached runs on any non-const method
 
             til::at(_bits, _rc.index_of(pt)) = true;
             _dirty |= til::rectangle{ pt };
@@ -155,6 +188,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void set(const til::rectangle rc)
         {
             THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
+            _runs.reset(); // reset cached runs on any non-const method
 
             for (const auto pt : rc)
             {
@@ -166,6 +200,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void set_all()
         {
+            _runs.reset(); // reset cached runs on any non-const method
+
             // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
             // .assign(_size(), true) throws an assert (unsupported operation)
             _bits = std::vector<bool>(_sz.area(), true);
@@ -174,6 +210,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void reset_all()
         {
+            _runs.reset(); // reset cached runs on any non-const method
+
             // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
             // .assign(_size(), false) throws an assert (unsupported operation)
 
@@ -185,6 +223,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Set fill if you want the new region (on growing) to be marked dirty.
         bool resize(til::size size, bool fill = false)
         {
+            _runs.reset(); // reset cached runs on any non-const method
+
             // FYI .resize(_size(), true/false) throws an assert (unsupported operation)
 
             // Don't resize if it's not different
@@ -259,6 +299,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         til::size _sz;
         til::rectangle _rc;
         std::vector<bool> _bits;
+
+        std::optional<std::vector<til::rectangle>> _runs;
 
 #ifdef UNIT_TESTING
         friend class ::BitmapTests;

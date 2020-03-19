@@ -361,7 +361,7 @@ class BitmapTests
         VERIFY_IS_FALSE(bitmap.all());
     }
 
-    TEST_METHOD(Iterate)
+    TEST_METHOD(Runs)
     {
         // This map --> Those runs
         // 1 1 0 1      A A _ B
@@ -369,8 +369,6 @@ class BitmapTests
         // 0 0 1 0      _ _ E _
         // 0 1 1 0      _ F F _
         Log::Comment(L"Set up a bitmap with some runs.");
-
-        // Note: we'll test setting/resetting some overlapping rects and points.
 
         til::bitmap map{ til::size{ 4, 4 } };
 
@@ -421,7 +419,7 @@ class BitmapTests
 
         Log::Comment(L"Run the iterator and collect the runs.");
         til::some<til::rectangle, 6> actual;
-        for (auto run : map)
+        for (auto run : map.runs())
         {
             actual.push_back(run);
         }
@@ -434,12 +432,67 @@ class BitmapTests
 
         expected.clear();
         actual.clear();
-        for (auto run : map)
+        for (auto run : map.runs())
         {
             actual.push_back(run);
         }
 
         Log::Comment(L"Verify they're empty.");
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set point and validate runs updated.");
+        const til::point setPoint{ 2, 2 };
+        expected.push_back(til::rectangle{ setPoint });
+        map.set(setPoint);
+
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set rectangle and validate runs updated.");
+        const til::rectangle setRect{ setPoint, til::size{2, 2} };
+        expected.clear();
+        expected.push_back(til::rectangle{ til::point{2, 2}, til::size{2, 1} });
+        expected.push_back(til::rectangle{ til::point{2, 3}, til::size{2, 1} });
+        map.set(setRect);
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set all and validate runs updated.");
+        expected.clear();
+        expected.push_back(til::rectangle{ til::point{0, 0}, til::size{4, 1} });
+        expected.push_back(til::rectangle{ til::point{0, 1}, til::size{4, 1} });
+        expected.push_back(til::rectangle{ til::point{0, 2}, til::size{4, 1} });
+        expected.push_back(til::rectangle{ til::point{0, 3}, til::size{4, 1} });
+        map.set_all();
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Resize and validate runs updated.");
+        const til::size newSize{ 3, 3 };
+        expected.clear();
+        expected.push_back(til::rectangle{ til::point{0, 0}, til::size{3, 1} });
+        expected.push_back(til::rectangle{ til::point{0, 1}, til::size{3, 1} });
+        expected.push_back(til::rectangle{ til::point{0, 2}, til::size{3, 1} });
+        map.resize(newSize);
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
         VERIFY_ARE_EQUAL(expected, actual);
     }
 };
