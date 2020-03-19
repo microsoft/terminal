@@ -190,7 +190,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        constexpr operator bool() const noexcept
+        explicit constexpr operator bool() const noexcept
         {
             return _topLeft.x() < _bottomRight.x() &&
                    _topLeft.y() < _bottomRight.y();

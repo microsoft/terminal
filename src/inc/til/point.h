@@ -64,11 +64,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        operator bool() const noexcept
-        {
-            return _x != 0 || _y != 0;
-        }
-
         constexpr bool operator<(const point& other) const noexcept
         {
             if (_y < other._y)
