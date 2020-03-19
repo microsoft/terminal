@@ -269,8 +269,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
     {
-        auto [first, second] = _activePane->Split(splitType, profile, control);
-        _activePane = first;
+        // Use the _rootPane to determine who to split. When we're initializing multiple panes on startup, this is
+        auto [first, second] = _rootPane->Split(splitType, profile, control);
         _AttachEventHandlersToControl(control);
 
         // Add a event handlers to the new panes' GotFocus event. When the pane

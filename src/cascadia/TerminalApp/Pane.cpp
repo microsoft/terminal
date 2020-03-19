@@ -959,11 +959,21 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
     {
         if (_firstChild->_HasFocusedChild())
         {
-            return _firstChild->Split(splitType, profile, control);
+            auto pretranslatedSplitType = splitType;
+            if (_firstChild->_IsLeaf() && _isSizeZero())
+            {
+                pretranslatedSplitType = _preTranslateAutoSplitType(splitType);
+            }
+            return _firstChild->Split(pretranslatedSplitType, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            return _secondChild->Split(splitType, profile, control);
+            auto pretranslatedSplitType = splitType;
+            if (_secondChild->_IsLeaf() && _isSizeZero())
+            {
+                pretranslatedSplitType = _preTranslateAutoSplitType(splitType);
+            }
+            return _secondChild->Split(pretranslatedSplitType, profile, control);
         }
 
         return { nullptr, nullptr };
@@ -995,6 +1005,20 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
     return splitType;
+}
+
+SplitState Pane::_preTranslateAutoSplitType(const SplitState& splitType) const
+{
+    if (splitType == SplitState::Automatic && _isSizeZero())
+    {
+        return _splitState == SplitState::Horizontal ? SplitState::Vertical : SplitState::Horizontal;
+    }
+    return splitType;
+}
+
+bool Pane::_isSizeZero() const
+{
+    return _root.ActualWidth() == 0 && _root.ActualHeight() == 0;
 }
 
 // Method Description:
