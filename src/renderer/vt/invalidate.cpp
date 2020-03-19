@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 try
 {
-    const til::rectangle rect{ *psrRegion };
+    const til::rectangle rect{ Viewport::FromExclusive(*psrRegion).ToInclusive() };
     _trace.TraceInvalidate(rect);
     _invalidMap.set(rect);
     return S_OK;
