@@ -72,6 +72,7 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
         int _GetLeafPaneCount() const noexcept;
+        void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

@@ -277,6 +277,12 @@ namespace winrt::TerminalApp::implementation
         // gains focus, we'll mark it as the new active pane.
         _AttachEventHandlersToPane(first);
         _AttachEventHandlersToPane(second);
+
+        // Immediately update our tracker of the focused pane now. If we're
+        // splitting panes during startup (from a commandline), then it's
+        // possible that the focus events won't propogate immediately. Updating
+        // the focus here will give the same effect though.
+        _UpdateActivePane(second);
     }
 
     // Method Description:
@@ -387,6 +393,20 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void Tab::_UpdateActivePane(std::shared_ptr<Pane> pane)
+    {
+        // Clear the active state of the entire tree, and mark only the pane as active.
+        _rootPane->ClearActive();
+        _activePane = pane;
+        _activePane->SetActive();
+
+        // Update our own title text to match the newly-active pane.
+        SetTabText(GetActiveTitle());
+
+        // Raise our own ActivePaneChanged event.
+        _ActivePaneChangedHandlers();
+    }
+
     // Method Description:
     // - Add an event handler to this pane's GotFocus event. When that pane gains
     //   focus, we'll mark it as the new active pane. We'll also query the title of
@@ -406,16 +426,7 @@ namespace winrt::TerminalApp::implementation
 
             if (tab && sender != tab->_activePane)
             {
-                // Clear the active state of the entire tree, and mark only the sender as active.
-                tab->_rootPane->ClearActive();
-                tab->_activePane = sender;
-                tab->_activePane->SetActive();
-
-                // Update our own title text to match the newly-active pane.
-                tab->SetTabText(tab->GetActiveTitle());
-
-                // Raise our own ActivePaneChanged event.
-                tab->_ActivePaneChangedHandlers();
+                tab->_UpdateActivePane(sender);
             }
         });
     }
