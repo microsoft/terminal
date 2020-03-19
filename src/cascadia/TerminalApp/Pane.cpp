@@ -793,7 +793,7 @@ void Pane::_SetupChildCloseHandlers()
 // - rootSize: The dimensions in pixels that this pane (and its children should consume.)
 // Return Value:
 // - <none>
-void Pane::_CreateRowColDefinitions(const Size& rootSize)
+void Pane::_CreateRowColDefinitions(const Size& /*rootSize*/)
 {
     auto first = _desiredSplitPosition * 100.0f;
     auto second = 100.0f - first;
@@ -802,7 +802,7 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         _root.ColumnDefinitions().Clear();
 
         // Create two columns in this grid: one for each pane
-        const auto paneSizes = _CalcChildrenSizes(rootSize.Width);
+        // const auto paneSizes = _CalcChildrenSizes(rootSize.Width);
 
         auto firstColDef = Controls::ColumnDefinition();
         // firstColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
@@ -820,7 +820,7 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         _root.RowDefinitions().Clear();
 
         // Create two rows in this grid: one for each pane
-        const auto paneSizes = _CalcChildrenSizes(rootSize.Height);
+        // const auto paneSizes = _CalcChildrenSizes(rootSize.Height);
 
         auto firstRowDef = Controls::RowDefinition();
         firstRowDef.Height(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
@@ -1558,6 +1558,37 @@ void Pane::_SetupResources()
 int Pane::GetLeafPaneCount() const noexcept
 {
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
+}
+
+std::optional<winrt::TerminalApp::SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                                          const winrt::Windows::Foundation::Size parentSize) const
+{
+    if (_IsLeaf())
+    {
+        if (target.get() == this)
+        {
+            return parentSize.Width > parentSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    else
+    {
+        // auto [firstWidth, secondWidth] = _CalcChildrenSizes(parentSize.Width);
+        // auto [firstHeight, secondHeight] = _CalcChildrenSizes(parentSize.Height);
+        float firstWidth = _splitState == SplitState::Vertical ? (parentSize.Width * _desiredSplitPosition) : parentSize.Width;
+        float secondWidth = _splitState == SplitState::Vertical ? (parentSize.Width - firstWidth) : parentSize.Width;
+
+        float firstHeight = _splitState == SplitState::Horizontal ? (parentSize.Height * _desiredSplitPosition) : parentSize.Height;
+        float secondHeight = _splitState == SplitState::Horizontal ? (parentSize.Height - firstHeight) : parentSize.Height;
+
+        auto firstResult = _firstChild->PreCalculateAutoSplit(target, { firstWidth, firstHeight });
+        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateAutoSplit(target, { secondWidth, secondHeight });
+    }
+
+    return std::nullopt;
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

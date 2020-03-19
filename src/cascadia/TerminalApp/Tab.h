@@ -26,6 +26,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::UIElement GetRootElement();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
+        // std::weak_ptr<Pane> GetActivePane() const noexcept;
 
         bool IsFocused() const noexcept;
         void SetFocused(const bool focused);
@@ -38,6 +39,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::TerminalApp::Direction& direction);

@@ -63,6 +63,7 @@ public:
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+    std::optional<winrt::TerminalApp::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     void Shutdown();
     void Close();
@@ -138,6 +139,7 @@ private:
 
     winrt::TerminalApp::SplitState _preTranslateAutoSplitType(const winrt::TerminalApp::SplitState& splitType) const;
     bool _isSizeZero() const;
+    std::optional<winrt::TerminalApp::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

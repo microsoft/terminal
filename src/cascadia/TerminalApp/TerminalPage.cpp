@@ -1194,12 +1194,20 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
+            auto realSplitType = splitType;
+            if (realSplitType == SplitState::Automatic && _startupState < StartupState::Initialized)
+            {
+                float contentWidth = gsl::narrow_cast<float>(_tabContent.ActualWidth());
+                float contentHeight = gsl::narrow_cast<float>(_tabContent.ActualHeight());
+                realSplitType = focusedTab->PreCalculateAutoSplit({ contentWidth, contentHeight });
+            }
+
             TermControl newControl{ controlSettings, controlConnection };
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);
 
-            focusedTab->SplitPane(splitType, realGuid, newControl);
+            focusedTab->SplitPane(realSplitType, realGuid, newControl);
         }
         CATCH_LOG();
         // TODO: Should we display a dialog when we do nothing because we

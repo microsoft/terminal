@@ -269,8 +269,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
     {
-        // Use the _rootPane to determine who to split. When we're initializing multiple panes on startup, this is
-        auto [first, second] = _rootPane->Split(splitType, profile, control);
+        auto [first, second] = _activePane->Split(splitType, profile, control);
+        _activePane = first;
         _AttachEventHandlersToControl(control);
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
@@ -434,6 +434,17 @@ namespace winrt::TerminalApp::implementation
     int Tab::_GetLeafPaneCount() const noexcept
     {
         return _rootPane->GetLeafPaneCount();
+    }
+
+    // std::weak_ptr<Pane> Tab::GetActivePane() const noexcept
+    // {
+    //     return _activePane;
+    // }
+
+    SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const
+    {
+        auto result = _rootPane->PreCalculateAutoSplit(_activePane, rootSize);
+        return result.has_value() ? result.value() : SplitState::Vertical;
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
