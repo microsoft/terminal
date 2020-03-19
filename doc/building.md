@@ -59,8 +59,8 @@ Openconsole has three configuration types:
 AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
 
 ## Updating Nuget package references
-Updating Nuget package references must be done using the snippet listed below because of the way packages are consumed by the projects.
-> Note that to run this snippet, you need to use WSL as the command uses SED. 
+Certain Nuget package references in this project, like `Microsoft.UI.Xaml`, must be updated outside of the Visual Studio NuGet package manager. This can be done using the snippet below.
+> Note that to run this snippet, you need to use WSL as the command uses `sed`.
 To update the version of a given package, use the following snippet
 
 `git grep -z -l $PackageName | xargs -0 sed -i -e 's/$OldVersionNumber/$NewVersionNumber/g'`
