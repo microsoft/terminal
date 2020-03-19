@@ -19,7 +19,7 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
         {
             LONG lIndex = 0;
             if (FAILED(SizeTToLong(i, &lIndex)) ||
-                       FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i)))))
+                FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i)))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
