@@ -160,9 +160,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _Flush() noexcept;
 
         void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const;
-        [[nodiscard]] HRESULT _InvalidCombine(const Microsoft::Console::Types::Viewport invalid) noexcept;
-        [[nodiscard]] HRESULT _InvalidOffset(const COORD* const ppt) noexcept;
-        [[nodiscard]] HRESULT _InvalidRestrict() noexcept;
         bool _AllIsInvalid() const;
 
         [[nodiscard]] HRESULT _StopCursorBlinking() noexcept;

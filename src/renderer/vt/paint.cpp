@@ -32,7 +32,7 @@ using namespace Microsoft::Console::Types;
                          _titleChanged;
 
     _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn, _invalidMap, _lastViewport, _scrollDelta, _cursorMoved);
+    _trace.TraceStartPaint(_quickReturn, _invalidMap, _lastViewport.ToInclusive(), _scrollDelta, _cursorMoved);
 
     return _quickReturn ? S_FALSE : S_OK;
 }

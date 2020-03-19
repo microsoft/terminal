@@ -154,6 +154,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
+        constexpr bool operator==(const bitmap& other) const noexcept
+        {
+            return _sz == other._sz &&
+                _rc == other._rc &&
+                _bits == other._bits &&
+                _dirty == other._dirty;
+            // _runs excluded because it's a cache of generated state.
+        }
+
+        constexpr bool operator!=(const bitmap& other) const noexcept
+        {
+            return !(*this == other);
+        }
+
         const_iterator begin() const
         {
             return const_iterator(_bits, _sz, 0);
@@ -164,12 +178,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return const_iterator(_bits, _sz, _sz.area());
         }
 
-        std::vector<til::rectangle>& runs()
+        const std::vector<til::rectangle>& runs() const
         {
             // If we don't have cached runs, rebuild.
             if (!_runs.has_value())
             {
-                _runs.emplace(begin(), end());
+                // If there's only one square dirty, quick save it off and be done.
+                if (one())
+                {
+                    // We're const for the sake of actually manipulating the dirty state.
+                    // But we remove const for updating the cache.
+                    const_cast<til::bitmap*>(this)->_runs.emplace(_dirty);
+                }
+                else
+                {
+                    // We're const for the sake of actually manipulating the dirty state.
+                    // But we remove const for updating the cache.
+                    const_cast<til::bitmap*>(this)->_runs.emplace(begin(), end());
+                }
             }
 
             // Return a reference to the runs.
@@ -294,6 +320,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _dirty == _rc;
         }
 
+        std::wstring to_string() const
+        {
+            std::wstringstream wss;
+            wss << std::endl << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
+            wss << L"Runs:" << std::endl;
+
+            for (auto& item : *this)
+            {
+                wss << L"\t- " << item.to_string() << std::endl;
+            }
+
+            return wss.str();
+        }
+
     private:
         til::rectangle _dirty;
         til::size _sz;
@@ -307,3 +347,43 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
     };
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<>
+    class VerifyOutputTraits<::til::bitmap>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::bitmap& rect)
+        {
+            return WEX::Common::NoThrowString(rect.to_string().c_str());
+        }
+    };
+
+    template<>
+    class VerifyCompareTraits<::til::bitmap, ::til::bitmap>
+    {
+    public:
+        static bool AreEqual(const ::til::bitmap& expected, const ::til::bitmap& actual) noexcept
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const ::til::bitmap& expected, const ::til::bitmap& actual) noexcept
+        {
+            return &expected == &actual;
+        }
+
+        static bool IsLessThan(const ::til::bitmap& expectedLess, const ::til::bitmap& expectedGreater) = delete;
+
+        static bool IsGreaterThan(const ::til::bitmap& expectedGreater, const ::til::bitmap& expectedLess) = delete;
+
+        static bool IsNull(const ::til::bitmap& object) noexcept
+        {
+            return object == til::bitmap{};
+        }
+    };
+
+};
+#endif

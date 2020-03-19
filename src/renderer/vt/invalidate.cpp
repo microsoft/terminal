@@ -47,12 +47,14 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+try
 {
-    Viewport newInvalid = Viewport::FromExclusive(*psrRegion);
-    _trace.TraceInvalidate(newInvalid);
-
-    return this->_InvalidCombine(newInvalid);
+    const til::rectangle rect{ *psrRegion };
+    _trace.TraceInvalidate(rect);
+    _invalidMap.set(rect);
+    return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Notifies us that the console has changed the position of the cursor.
@@ -87,10 +89,13 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::InvalidateAll() noexcept
+try
 {
-    _trace.TraceInvalidateAll(_lastViewport.ToOrigin());
-    return this->_InvalidCombine(_lastViewport.ToOrigin());
+    _trace.TraceInvalidateAll(_lastViewport.ToOrigin().ToInclusive());
+    _invalidMap.set_all();
+    return S_OK;
 }
+CATCH_RETURN();
 
 // Method Description:
 // - Notifies us that we're about to circle the buffer, giving us a chance to
@@ -134,33 +139,6 @@ using namespace Microsoft::Console::Render;
 }
 
 // Routine Description:
-// - Helper to combine the given rectangle into the invalid region to be
-//      updated on the next paint
-// Expects EXCLUSIVE rectangles.
-// Arguments:
-// - invalid - A viewport containing the character region that should be
-//      repainted on the next frame
-// Return Value:
-// - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_InvalidCombine(const Viewport invalid) noexcept
-{
-    if (!_fInvalidRectUsed)
-    {
-        _invalidRect = invalid;
-        _fInvalidRectUsed = true;
-    }
-    else
-    {
-        _invalidRect = Viewport::Union(_invalidRect, invalid);
-    }
-
-    // Ensure invalid areas remain within bounds of window.
-    RETURN_IF_FAILED(_InvalidRestrict());
-
-    return S_OK;
-}
-
-// Routine Description:
 // - Helper to adjust the invalid region by the given offset such as when a
 //      scroll operation occurs.
 // Arguments:
@@ -184,23 +162,6 @@ using namespace Microsoft::Console::Render;
         }
         CATCH_RETURN();
     }
-
-    return S_OK;
-}
-
-// Routine Description:
-// - Helper to ensure the invalid region remains within the bounds of the viewport.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
-[[nodiscard]] HRESULT VtEngine::_InvalidRestrict() noexcept
-{
-    SMALL_RECT oldInvalid = _invalidRect.ToExclusive();
-
-    _lastViewport.ToOrigin().TrimToViewport(&oldInvalid);
-
-    _invalidRect = Viewport::FromExclusive(oldInvalid);
 
     return S_OK;
 }

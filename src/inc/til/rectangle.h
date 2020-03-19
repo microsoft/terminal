@@ -587,6 +587,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        std::wstring to_string() const
+        {
+            return wil::str_printf<std::wstring>(L"(L:%td, T:%td, R:%td, B:%td) [W:%td, H:%td]", left(), top(), right(), bottom(), width(), height());
+        }
+
     protected:
         til::point _topLeft;
         til::point _bottomRight;
@@ -606,7 +611,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const ::til::rectangle& rect)
         {
-            return WEX::Common::NoThrowString().Format(L"(L:%td, T:%td, R:%td, B:%td) [W:%td, H:%td]", rect.left(), rect.top(), rect.right(), rect.bottom(), rect.width(), rect.height());
+            return WEX::Common::NoThrowString(rect.to_string().c_str());
         }
     };
 
