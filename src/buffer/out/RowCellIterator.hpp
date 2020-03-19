@@ -31,7 +31,7 @@ public:
     RowCellIterator(const ROW& row, const size_t start, const size_t length);
     ~RowCellIterator() = default;
 
-    RowCellIterator& operator=(const RowCellIterator& it) = default;
+    RowCellIterator& operator=(const RowCellIterator& it) = delete;
 
     operator bool() const noexcept;
 
