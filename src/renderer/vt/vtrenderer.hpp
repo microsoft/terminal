@@ -121,7 +121,7 @@ namespace Microsoft::Console::Render
         bool _lastWasBold;
 
         Microsoft::Console::Types::Viewport _lastViewport;
-        
+
         til::bitmap _invalidMap;
 
         COORD _lastRealCursor;

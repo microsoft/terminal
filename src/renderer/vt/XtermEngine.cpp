@@ -410,7 +410,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     {
         // Scroll the current offset and invalidate the revealed area
         _invalidMap.translate(til::point(*pcoordDelta), true);
-        
+
+        // TODO: MIGRIE DO WE NEED THIS IF THE TRANSLATION ABOVE FILLS THE VACATED AREA?
         // Add the top/bottom of the window to the invalid area
         SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
 

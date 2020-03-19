@@ -212,7 +212,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         std::wstring to_string() const
         {
             std::wstringstream wss;
-            wss << std::endl << L"Some contains " << size() << " of max size " << max_size() << ":" << std::endl;
+            wss << std::endl
+                << L"Some contains " << size() << " of max size " << max_size() << ":" << std::endl;
             wss << L"Elements:" << std::endl;
 
             for (auto& item : *this)

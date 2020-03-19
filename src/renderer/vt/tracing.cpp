@@ -136,8 +136,6 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        
-
         const auto invalidatedStr = invalidMap.to_string();
         const auto invalidated = invalidatedStr.c_str();
         const auto lastViewStr = lastViewport.to_string();
