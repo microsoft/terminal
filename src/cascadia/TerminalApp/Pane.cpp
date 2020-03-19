@@ -1560,31 +1560,63 @@ int Pane::GetLeafPaneCount() const noexcept
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
 }
 
+// Method Description:
+// - This is a helper to determine which direction an "Automatic" split should
+//   happen in for a given pane, but without using the ActualWidth() and
+//   ActualHeight() methods. This is used during the initialization of the
+//   Terminal, when we could be processing many "split-pane" commands _before_
+//   we've ever laid out the Terminal for the first time. When this happens, the
+//   Pane's don't have an actual size yet. However, we'd still like to figure
+//   out how to do an "auto" split when these Panes are all laid out.
+// - This method assumes that the Pane we're attempting to split is `target`,
+//   and this method should be called on the root of a tree of Panes.
+// - We'll walk down the tree attempting to find `target`. As we traverse the
+//   tree, we'll reduce the size passed to each subsequent recursive call. The
+//   size passed to this method represents how much space this Pane _will_ have
+//   to use.
+//   * If this pane is a leaf, and it's the pane we're looking for, use the
+//     available space to calculate which direction to split in.
+//   * If this pane is _any other leaf_, then just return nullopt, to indicate
+//     that the `target` Pane is not down this branch.
+//   * If this pane is a parent, calculate how much space our children will be
+//     able to use, and recurse into them.
+// Arguments:
+// - target: The Pane we're attempting to split.
+// - availableSpace: The theoretical space that's available for this pane to be able to split.
+// Return Value:
+// - nullopt if `target` is not this pane or a child of this pane, otherwise the
+//   SplitState that `target` would use for an `Automatic` split given
+//   `availableSpace`
 std::optional<winrt::TerminalApp::SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                                          const winrt::Windows::Foundation::Size parentSize) const
+                                                                          const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (_IsLeaf())
     {
         if (target.get() == this)
         {
-            return parentSize.Width > parentSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+            //If this pane is a leaf, and it's the pane we're looking for, use
+            //the available space to calculate which direction to split in.
+            return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
         }
         else
         {
+            // If this pane is _any other leaf_, then just return nullopt, to
+            // indicate that the `target` Pane is not down this branch.
             return std::nullopt;
         }
     }
     else
     {
-        // auto [firstWidth, secondWidth] = _CalcChildrenSizes(parentSize.Width);
-        // auto [firstHeight, secondHeight] = _CalcChildrenSizes(parentSize.Height);
-        float firstWidth = _splitState == SplitState::Vertical ? (parentSize.Width * _desiredSplitPosition) : parentSize.Width;
-        float secondWidth = _splitState == SplitState::Vertical ? (parentSize.Width - firstWidth) : parentSize.Width;
+        // If this pane is a parent, calculate how much space our children will
+        // be able to use, and recurse into them.
 
-        float firstHeight = _splitState == SplitState::Horizontal ? (parentSize.Height * _desiredSplitPosition) : parentSize.Height;
-        float secondHeight = _splitState == SplitState::Horizontal ? (parentSize.Height - firstHeight) : parentSize.Height;
+        const bool isVerticalSplit = _splitState == SplitState::Vertical;
+        const float firstWidth = isVerticalSplit ? (availableSpace.Width * _desiredSplitPosition) : availableSpace.Width;
+        const float secondWidth = isVerticalSplit ? (availableSpace.Width - firstWidth) : availableSpace.Width;
+        const float firstHeight = !isVerticalSplit ? (availableSpace.Height * _desiredSplitPosition) : availableSpace.Height;
+        const float secondHeight = !isVerticalSplit ? (availableSpace.Height - firstHeight) : availableSpace.Height;
 
-        auto firstResult = _firstChild->PreCalculateAutoSplit(target, { firstWidth, firstHeight });
+        const auto firstResult = _firstChild->PreCalculateAutoSplit(target, { firstWidth, firstHeight });
         return firstResult.has_value() ? firstResult : _secondChild->PreCalculateAutoSplit(target, { secondWidth, secondHeight });
     }
 

@@ -167,43 +167,100 @@ namespace winrt::TerminalApp::implementation
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         // _layoutUpdatedRevoker = this->LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-        _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            Windows::Foundation::Size actualSize{ gsl::narrow_cast<float>(_tabContent.ActualWidth()),
-                                                  gsl::narrow_cast<float>(_tabContent.ActualHeight()) };
-            Windows::Foundation::Size desiredSize = _tabContent.DesiredSize();
-            actualSize;
-            desiredSize;
+        // _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+        //     Windows::Foundation::Size actualSize{ gsl::narrow_cast<float>(_tabContent.ActualWidth()),
+        //                                           gsl::narrow_cast<float>(_tabContent.ActualHeight()) };
+        //     Windows::Foundation::Size desiredSize = _tabContent.DesiredSize();
+        //     actualSize;
+        //     desiredSize;
 
-            // Only let this succeed once.
-            this->_layoutUpdatedRevoker.revoke();
+        //     // Only let this succeed once.
+        //     this->_layoutUpdatedRevoker.revoke();
 
-            // This event fires every time the layout changes, but it is always the last one to fire
-            // in any layout change chain. That gives us great flexibility in finding the right point
-            // at which to initialize our renderer (and our terminal).
-            // Any earlier than the last layout update and we may not know the terminal's starting size.
-            if (_startupState == StartupState::NotInitialized)
-            {
-                _startupState = StartupState::InStartup;
-                if (_appArgs.GetStartupActions().size() == 0)
-                {
-                    _OpenNewTab(nullptr);
-                    _startupState = StartupState::Initialized;
-                }
-                else
-                {
-                    Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
-                        for (const auto& action : _appArgs.GetStartupActions())
-                        {
-                            // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
-                            _actionDispatch->DoAction(action);
-                            // });
-                        }
-                        _startupState = StartupState::Initialized;
-                    });
-                }
-            }
-        });
+        //     // This event fires every time the layout changes, but it is always the last one to fire
+        //     // in any layout change chain. That gives us great flexibility in finding the right point
+        //     // at which to initialize our renderer (and our terminal).
+        //     // Any earlier than the last layout update and we may not know the terminal's starting size.
+        //     if (_startupState == StartupState::NotInitialized)
+        //     {
+        //         _startupState = StartupState::InStartup;
+        //         if (_appArgs.GetStartupActions().size() == 0)
+        //         {
+        //             _OpenNewTab(nullptr);
+        //             _startupState = StartupState::Initialized;
+        //         }
+        //         else
+        //         {
+        //             Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
+        //                 for (const auto& action : _appArgs.GetStartupActions())
+        //                 {
+        //                     // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
+        //                     _actionDispatch->DoAction(action);
+        //                     // });
+        //                 }
+        //                 _startupState = StartupState::Initialized;
+        //             });
+        //         }
+        //     }
+        // });
+        _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
+
         ////////////////////////////////////////////////////////////////////////
+    }
+
+    void TerminalPage::_OnFirstLayout(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    {
+        // Only let this succeed once.
+        _layoutUpdatedRevoker.revoke();
+
+        // This event fires every time the layout changes, but it is always the last one to fire
+        // in any layout change chain. That gives us great flexibility in finding the right point
+        // at which to initialize our renderer (and our terminal).
+        // Any earlier than the last layout update and we may not know the terminal's starting size.
+        if (_startupState == StartupState::NotInitialized)
+        {
+            _startupState = StartupState::InStartup;
+            if (_appArgs.GetStartupActions().size() == 0)
+            {
+                _OpenNewTab(nullptr);
+                _startupState = StartupState::Initialized;
+            }
+            else
+            {
+                _ProcessStartupActions();
+                // Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
+                //     for (const auto& action : _appArgs.GetStartupActions())
+                //     {
+                //         // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
+                //         _actionDispatch->DoAction(action);
+                //         // });
+                //     }
+                //     _startupState = StartupState::Initialized;
+                // });
+            }
+        }
+    }
+    fire_and_forget TerminalPage::_ProcessStartupActions()
+    {
+        // If there are no actions left, do nothing.
+        if (_appArgs.GetStartupActions().empty())
+        {
+            return;
+        }
+        auto weakThis{ get_weak() };
+
+        // Handle it on the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        if (auto page{ weakThis.get() })
+        {
+            for (const auto& action : page->_appArgs.GetStartupActions())
+            {
+                // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
+                page->_actionDispatch->DoAction(action);
+                // });
+            }
+            _startupState = StartupState::Initialized;
+        }
     }
 
     // Method Description:

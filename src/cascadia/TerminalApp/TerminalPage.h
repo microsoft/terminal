@@ -88,6 +88,7 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
         fire_and_forget _ProcessNextStartupAction();
+        fire_and_forget _ProcessStartupActions();
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -151,6 +152,7 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
+        void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
 
         void _Find();
 

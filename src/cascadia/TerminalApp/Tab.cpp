@@ -436,14 +436,19 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->GetLeafPaneCount();
     }
 
-    // std::weak_ptr<Pane> Tab::GetActivePane() const noexcept
-    // {
-    //     return _activePane;
-    // }
-
-    SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const
+    // Method Description:
+    // - This is a helper to determine which direction an "Automatic" split should
+    //   happen in for the active pane of this tab, but without using the ActualWidth() and
+    //   ActualHeight() methods.
+    // - See Pane::PreCalculateAutoSplit
+    // Arguments:
+    // - availableSpace: The theoretical space that's available for this Tab's content
+    // Return Value:
+    // - The SplitState that we should use for an `Automatic` split given
+    //   `availableSpace`
+    SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
-        auto result = _rootPane->PreCalculateAutoSplit(_activePane, rootSize);
+        const auto result = _rootPane->PreCalculateAutoSplit(_activePane, availableSpace);
         return result.has_value() ? result.value() : SplitState::Vertical;
     }
 
