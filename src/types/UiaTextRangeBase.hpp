@@ -78,10 +78,10 @@ namespace Microsoft::Console::Types
 
         virtual HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
-        UiaTextRangeBase(const UiaTextRangeBase&) = default;
-        UiaTextRangeBase(UiaTextRangeBase&&) = default;
-        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
-        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
+        UiaTextRangeBase(const UiaTextRangeBase&) = delete;
+        UiaTextRangeBase(UiaTextRangeBase&&) = delete;
+        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = delete;
+        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = delete;
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;

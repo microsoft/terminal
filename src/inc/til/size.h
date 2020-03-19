@@ -64,6 +64,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
+        constexpr explicit operator bool() const noexcept
+        {
+            return _width > 0 && _height > 0;
+        }
+
         size operator+(const size& other) const
         {
             ptrdiff_t width;
