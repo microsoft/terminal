@@ -172,12 +172,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().FontSize(fontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        const auto widthToTerminalEnd = ::base::ClampSub(Canvas().ActualWidth(), ::base::ClampedNumeric<double>(clientCursorPos.X));
+        const auto widthToTerminalEnd = Canvas().ActualWidth() - ::base::ClampedNumeric<double>(clientCursorPos.X);
         TextBlock().MaxWidth(widthToTerminalEnd);
 
         // Set the text block bounds
-        const auto yOffset = ::base::ClampSub(::base::ClampedNumeric<float>(TextBlock().ActualHeight()), fontHeight);
-        const auto textBottom = ::base::ClampAdd(::base::ClampedNumeric<float>(screenCursorPos.Y), yOffset);
+        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
+        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
         Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
