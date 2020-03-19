@@ -146,20 +146,64 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        // Actually start the terminal.
-        if (_appArgs.GetStartupActions().empty())
-        {
-            _OpenNewTab(nullptr);
-        }
-        else
-        {
-            _appArgs.ValidateStartupCommands();
+        // ////////////////////////////////////////////////////////////////////////
+        // // Actually start the terminal.
+        // if (_appArgs.GetStartupActions().empty())
+        // {
+        //     _OpenNewTab(nullptr);
+        // }
+        // else
+        // {
+        //     _appArgs.ValidateStartupCommands();
 
-            // This will kick off a chain of events to perform each startup
-            // action. As each startup action is completed, the next will be
-            // fired.
-            _ProcessNextStartupAction();
-        }
+        //     // This will kick off a chain of events to perform each startup
+        //     // action. As each startup action is completed, the next will be
+        //     // fired.
+        //     _ProcessNextStartupAction();
+        // }
+        // ////////////////////////////////////////////////////////////////////////
+
+        ////////////////////////////////////////////////////////////////////////
+        // Initialize the terminal only once the swapchainpanel is loaded - that
+        //      way, we'll be able to query the real pixel size it got on layout
+        // _layoutUpdatedRevoker = this->LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+        _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            Windows::Foundation::Size actualSize{ gsl::narrow_cast<float>(_tabContent.ActualWidth()),
+                                                  gsl::narrow_cast<float>(_tabContent.ActualHeight()) };
+            Windows::Foundation::Size desiredSize = _tabContent.DesiredSize();
+            actualSize;
+            desiredSize;
+
+            // Only let this succeed once.
+            this->_layoutUpdatedRevoker.revoke();
+
+            // This event fires every time the layout changes, but it is always the last one to fire
+            // in any layout change chain. That gives us great flexibility in finding the right point
+            // at which to initialize our renderer (and our terminal).
+            // Any earlier than the last layout update and we may not know the terminal's starting size.
+            if (_startupState == StartupState::NotInitialized)
+            {
+                _startupState = StartupState::InStartup;
+                if (_appArgs.GetStartupActions().size() == 0)
+                {
+                    _OpenNewTab(nullptr);
+                    _startupState = StartupState::Initialized;
+                }
+                else
+                {
+                    Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
+                        for (const auto& action : _appArgs.GetStartupActions())
+                        {
+                            // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
+                            _actionDispatch->DoAction(action);
+                            // });
+                        }
+                        _startupState = StartupState::Initialized;
+                    });
+                }
+            }
+        });
+        ////////////////////////////////////////////////////////////////////////
     }
 
     // Method Description:
@@ -600,7 +644,17 @@ namespace winrt::TerminalApp::implementation
         if (isFirstTab)
         {
             _tabContent.Children().Clear();
-            _tabContent.Children().Append(newTabImpl->GetRootElement());
+            const Windows::Foundation::Size actualSize{ gsl::narrow_cast<float>(_tabContent.ActualWidth()),
+                                                        gsl::narrow_cast<float>(_tabContent.ActualHeight()) };
+            auto tabRootElem = newTabImpl->GetRootElement();
+            _tabContent.Children().Append(tabRootElem);
+            tabRootElem.Measure(actualSize);
+            Windows::Foundation::Size desiredSize = tabRootElem.DesiredSize();
+            desiredSize;
+            ;
+            auto a = 0;
+            a += 1;
+            a;
         }
         else
         {
@@ -1135,7 +1189,7 @@ namespace winrt::TerminalApp::implementation
 
             const auto canSplit = focusedTab->CanSplitPane(splitType);
 
-            if (!canSplit)
+            if (!canSplit && _startupState == StartupState::Initialized)
             {
                 return;
             }

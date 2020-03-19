@@ -795,6 +795,8 @@ void Pane::_SetupChildCloseHandlers()
 // - <none>
 void Pane::_CreateRowColDefinitions(const Size& rootSize)
 {
+    auto first = _desiredSplitPosition * 100.0f;
+    auto second = 100.0f - first;
     if (_splitState == SplitState::Vertical)
     {
         _root.ColumnDefinitions().Clear();
@@ -803,10 +805,12 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         const auto paneSizes = _CalcChildrenSizes(rootSize.Width);
 
         auto firstColDef = Controls::ColumnDefinition();
-        firstColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
+        // firstColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
+        firstColDef.Width(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
 
         auto secondColDef = Controls::ColumnDefinition();
-        secondColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
+        // secondColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
+        secondColDef.Width(GridLengthHelper::FromValueAndType(second, GridUnitType::Star));
 
         _root.ColumnDefinitions().Append(firstColDef);
         _root.ColumnDefinitions().Append(secondColDef);
@@ -819,10 +823,12 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         const auto paneSizes = _CalcChildrenSizes(rootSize.Height);
 
         auto firstRowDef = Controls::RowDefinition();
-        firstRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
+        firstRowDef.Height(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
+        // firstRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
 
         auto secondRowDef = Controls::RowDefinition();
-        secondRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
+        secondRowDef.Height(GridLengthHelper::FromValueAndType(second, GridUnitType::Star));
+        // secondRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
 
         _root.RowDefinitions().Append(firstRowDef);
         _root.RowDefinitions().Append(secondRowDef);
@@ -1001,6 +1007,9 @@ bool Pane::_CanSplit(SplitState splitType)
 {
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
+
+    const Size desiredSize = _root.DesiredSize();
+    desiredSize;
 
     const Size minSize = _GetMinSize();
 

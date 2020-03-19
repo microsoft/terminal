@@ -20,6 +20,13 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    enum StartupState : int
+    {
+        NotInitialized = 0,
+        InStartup = 1,
+        Initialized = 2
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -74,6 +81,9 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo;
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
+
+        winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        StartupState _startupState{ StartupState::NotInitialized };
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);

@@ -92,11 +92,16 @@ void AppHost::_HandleCommandlineArgs()
         int argc = 0;
 
         // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
+        // std::vector<std::wstring> argv{ L"wt.exe", L";", L"split-pane" };
+        std::vector<std::wstring> argv{ L"wt.exe", L";", L"split-pane", L";", L"split-pane", L"-p", L"cmd", L";", L"split-pane", L"-p", L"mode" };
+        argc;
+        // wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+        // if (argv)
+        if (argv.size() > 0)
         {
             std::vector<winrt::hstring> args;
-            for (auto& elem : wil::make_range(argv.get(), argc))
+            // for (auto& elem : wil::make_range(argv.get(), argc))
+            for (auto& elem : argv)
             {
                 args.emplace_back(elem);
             }
