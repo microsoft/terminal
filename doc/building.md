@@ -80,4 +80,4 @@ If you want to use .nupkg files instead of the downloaded Nuget package, you can
 1. Open the Nuget.config file and uncomment line 8 ("Static Package Dependencies")
 2. Create the folder /dep/packages
 3. Put your .nupkg files in /dep/packages
-4. If you are using different versions thanthose already being used, you need to update the references as well. How to do that is explained under "Updating Nuget package references".
+4. If you are using different versions than those already being used, you need to update the references as well. How to do that is explained under "Updating Nuget package references".
