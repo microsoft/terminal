@@ -45,4 +45,5 @@ SOURCES = \
     TrueTypeFontList.cpp \
 
 INCLUDES = \
+    $(INCLUDES); \
     ..\inc; \

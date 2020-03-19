@@ -1,3 +1,2 @@
 DIRS= \
      lib \
-     ut_dx \
