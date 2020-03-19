@@ -418,16 +418,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // ADD will translate (offset) the rectangle by the point.
         rectangle operator+(const point& point) const
         {
-            // Fetch the pieces of the rectangle.
-            auto l = left();
-            auto r = right();
-            auto t = top();
-            auto b = bottom();
+            ptrdiff_t l, t, r, b;
 
-            l += point.x();
-            r += point.x();
-            t += point.y();
-            b += point.y();
+            THROW_HR_IF(E_ABORT, !::base::CheckAdd(left(), point.x()).AssignIfValid(&l));
+            THROW_HR_IF(E_ABORT, !::base::CheckAdd(top(), point.y()).AssignIfValid(&t));
+            THROW_HR_IF(E_ABORT, !::base::CheckAdd(right(), point.x()).AssignIfValid(&r));
+            THROW_HR_IF(E_ABORT, !::base::CheckAdd(bottom(), point.y()).AssignIfValid(&b));
 
             return til::rectangle{ til::point{ l, t }, til::point{ r, b } };
         }
@@ -441,16 +437,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // SUB will translate (offset) the rectangle by the point.
         rectangle operator-(const point& point) const
         {
-            // Fetch the pieces of the rectangle.
-            auto l = left();
-            auto r = right();
-            auto t = top();
-            auto b = bottom();
+            ptrdiff_t l, t, r, b;
 
-            l -= point.x();
-            r -= point.x();
-            t -= point.y();
-            b -= point.y();
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(left(), point.x()).AssignIfValid(&l));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(top(), point.y()).AssignIfValid(&t));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(right(), point.x()).AssignIfValid(&r));
+            THROW_HR_IF(E_ABORT, !::base::CheckSub(bottom(), point.y()).AssignIfValid(&b));
 
             return til::rectangle{ til::point{ l, t }, til::point{ r, b } };
         }
