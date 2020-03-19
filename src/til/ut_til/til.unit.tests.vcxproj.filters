@@ -11,6 +11,7 @@
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="PointTests.cpp" />
     <ClCompile Include="RectangleTests.cpp" />
+    <ClCompile Include="BitmapTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />

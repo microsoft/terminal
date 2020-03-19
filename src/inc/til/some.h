@@ -127,6 +127,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !_used;
         }
 
+        constexpr void clear() noexcept
+        {
+            _used = 0;
+            _array = {}; // should free members, if necessary.
+        }
+
         constexpr const_reference at(size_type pos) const
         {
             if (_used <= pos)
@@ -165,6 +171,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             til::at(_array, _used) = val;
+
+            ++_used;
+        }
+
+        void push_back(T&& val)
+        {
+            if (_used >= N)
+            {
+                _outOfRange();
+            }
+
+            til::at(_array, _used) = std::move(val);
 
             ++_used;
         }

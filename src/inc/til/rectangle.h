@@ -13,9 +13,90 @@ class RectangleTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    namespace details
+    {
+        class _rectangle_const_iterator
+        {
+        public:
+            constexpr _rectangle_const_iterator(point topLeft, point bottomRight) :
+                _topLeft(topLeft),
+                _bottomRight(bottomRight),
+                _current(topLeft)
+            {
+            }
+
+            constexpr _rectangle_const_iterator(point topLeft, point bottomRight, point start) :
+                _topLeft(topLeft),
+                _bottomRight(bottomRight),
+                _current(start)
+            {
+            }
+
+            _rectangle_const_iterator& operator++()
+            {
+                ptrdiff_t nextX;
+                THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.x(), 1).AssignIfValid(&nextX));
+
+                if (nextX >= _bottomRight.x())
+                {
+                    ptrdiff_t nextY;
+                    THROW_HR_IF(E_ABORT, !::base::CheckAdd(_current.y(), 1).AssignIfValid(&nextY));
+                    // Note for the standard Left-to-Right, Top-to-Bottom walk,
+                    // the end position is one cell below the bottom left.
+                    // (or more accurately, on the exclusive bottom line in the inclusive left column.)
+                    _current = { _topLeft.x(), nextY };
+                }
+                else
+                {
+                    _current = { nextX, _current.y() };
+                }
+
+                return (*this);
+            }
+
+            constexpr bool operator==(const _rectangle_const_iterator& other) const
+            {
+                return _current == other._current &&
+                       _topLeft == other._topLeft &&
+                       _bottomRight == other._bottomRight;
+            }
+
+            constexpr bool operator!=(const _rectangle_const_iterator& other) const
+            {
+                return !(*this == other);
+            }
+
+            constexpr bool operator<(const _rectangle_const_iterator& other) const
+            {
+                return _current < other._current;
+            }
+
+            constexpr bool operator>(const _rectangle_const_iterator& other) const
+            {
+                return _current > other._current;
+            }
+
+            constexpr point operator*() const
+            {
+                return _current;
+            }
+
+        protected:
+            point _current;
+            const point _topLeft;
+            const point _bottomRight;
+
+#ifdef UNIT_TESTING
+            friend class ::RectangleTests;
+#endif
+        };
+    }
+
     class rectangle
     {
     public:
+        using const_iterator = details::_rectangle_const_iterator;
+
         constexpr rectangle() noexcept :
             rectangle(til::point{ 0, 0 }, til::point{ 0, 0 })
         {
@@ -115,6 +196,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                    _topLeft.y() < _bottomRight.y();
         }
 
+        constexpr const_iterator begin() const
+        {
+            return const_iterator(_topLeft, _bottomRight);
+        }
+
+        constexpr const_iterator end() const
+        {
+            // For the standard walk: Left-To-Right then Top-To-Bottom
+            // the end box is one cell below the left most column.
+            // |----|  5x2 square. Remember bottom & right are exclusive
+            // |    |  while top & left are inclusive.
+            // X-----  X is the end position.
+
+            return const_iterator(_topLeft, _bottomRight, { _topLeft.x(), _bottomRight.y() });
+        }
+
         // OR = union
         constexpr rectangle operator|(const rectangle& other) const noexcept
         {
@@ -145,6 +242,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             const auto r = std::max(right(), other.right());
             const auto b = std::max(bottom(), other.bottom());
             return rectangle{ l, t, r, b };
+        }
+
+        constexpr rectangle& operator|=(const rectangle& other) noexcept
+        {
+            *this = *this | other;
+            return *this;
         }
 
         // AND = intersect
@@ -398,6 +501,57 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool empty() const noexcept
         {
             return !operator bool();
+        }
+
+        constexpr bool contains(til::point pt) const
+        {
+            return pt.x() >= _topLeft.x() && pt.x() < _bottomRight.x() &&
+                   pt.y() >= _topLeft.y() && pt.y() < _bottomRight.y();
+        }
+
+        bool contains(ptrdiff_t index) const
+        {
+            return index >= 0 && index < size().area();
+        }
+
+        constexpr bool contains(til::rectangle rc) const
+        {
+            // Union the other rectangle and ourselves.
+            // If the result of that didn't grow at all, then we already
+            // fully contained the rectangle we were given.
+            return (*this | rc) == *this;
+        }
+
+        ptrdiff_t index_of(til::point pt) const
+        {
+            THROW_HR_IF(E_INVALIDARG, !contains(pt));
+
+            // Take Y away from the top to find how many rows down
+            auto check = base::CheckSub(pt.y(), top());
+
+            // Multiply by the width because we've passed that many
+            // widths-worth of indices.
+            check *= width();
+
+            // Then add in the last few indices in the x position this row
+            // and subtract left to find the offset from left edge.
+            check = check + pt.x() - left();
+
+            ptrdiff_t result;
+            THROW_HR_IF(E_ABORT, !check.AssignIfValid(&result));
+            return result;
+        }
+
+        til::point point_at(ptrdiff_t index) const
+        {
+            THROW_HR_IF(E_INVALIDARG, !contains(index));
+
+            const auto div = std::div(index, width());
+
+            // Not checking math on these because we're presuming
+            // that the point can't be in bounds of a rectangle where
+            // this would overflow on addition after the division.
+            return til::point{ div.rem + left(), div.quot + top() };
         }
 
 #ifdef _WINCONTYPES_
