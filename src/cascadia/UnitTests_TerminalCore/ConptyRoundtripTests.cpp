@@ -455,14 +455,10 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
     expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
     // Without line breaking, write the remaining 20 chars
     expectedOutput.push_back(R"(qrstuvwxyz{|}~!"#$%&)");
-    // Clear the rest of row 1
-    expectedOutput.push_back("\x1b[K");
     // This is the hard line break
     expectedOutput.push_back("\r\n");
     // Now write row 2 of the buffer
     expectedOutput.push_back("          1234567890");
-    // and clear everything after the text, because the buffer is empty.
-    expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb);
