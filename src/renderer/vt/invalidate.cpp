@@ -137,31 +137,3 @@ CATCH_RETURN();
     *pForcePaint = true;
     return S_OK;
 }
-
-// Routine Description:
-// - Helper to adjust the invalid region by the given offset such as when a
-//      scroll operation occurs.
-// Arguments:
-// - ppt - Distances by which we should move the invalid region in response to a scroll
-// Return Value:
-// - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_InvalidOffset(const COORD* const pCoord) noexcept
-{
-    if (_fInvalidRectUsed)
-    {
-        try
-        {
-            Viewport newInvalid = Viewport::Offset(_invalidRect, *pCoord);
-
-            // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
-            // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-            _invalidRect = Viewport::Union(_invalidRect, newInvalid);
-
-            // Ensure invalid areas remain within bounds of window.
-            RETURN_IF_FAILED(_InvalidRestrict());
-        }
-        CATCH_RETURN();
-    }
-
-    return S_OK;
-}

@@ -9,6 +9,7 @@
 #include "til/size.h"
 #include "til/point.h"
 #include "til/rectangle.h"
+#include "til/operators.h"
 #include "til/bitmap.h"
 #include "til/u8u16convert.h"
 

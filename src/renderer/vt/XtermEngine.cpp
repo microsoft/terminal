@@ -408,9 +408,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
     if (dx != 0 || dy != 0)
     {
-        // Scroll the current offset
-        RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
-
+        // Scroll the current offset and invalidate the revealed area
+        _invalidMap.translate(til::point(*pcoordDelta), true);
+        
         // Add the top/bottom of the window to the invalid area
         SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
 
@@ -422,7 +422,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         {
             invalid.Top = invalid.Bottom + dy;
         }
-        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
+        _invalidMap.set(til::rectangle(Viewport::FromExclusive(invalid).ToInclusive()));
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));

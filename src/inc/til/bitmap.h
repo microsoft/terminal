@@ -149,17 +149,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz(sz),
             _rc(sz),
             _bits(sz.area(), fill),
-            _dirty(fill ? sz : til::rectangle{}),
+            _dirty(),
             _runs{}
         {
+            if (fill)
+            {
+                _dirty = til::rectangle{ sz };
+            }
         }
 
         constexpr bool operator==(const bitmap& other) const noexcept
         {
             return _sz == other._sz &&
-                _rc == other._rc &&
-                _bits == other._bits &&
-                _dirty == other._dirty;
+                   _rc == other._rc &&
+                   _dirty == other._dirty && // dirty is before bits because it's a rough estimate of bits and a faster comparison.
+                   _bits == other._bits;
             // _runs excluded because it's a cache of generated state.
         }
 
@@ -188,18 +192,84 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 {
                     // We're const for the sake of actually manipulating the dirty state.
                     // But we remove const for updating the cache.
-                    const_cast<til::bitmap*>(this)->_runs.emplace(_dirty);
+                    _runs.emplace({ _dirty.value() });
                 }
                 else
                 {
                     // We're const for the sake of actually manipulating the dirty state.
                     // But we remove const for updating the cache.
-                    const_cast<til::bitmap*>(this)->_runs.emplace(begin(), end());
+                    _runs.emplace(begin(), end());
                 }
             }
 
             // Return a reference to the runs.
             return _runs.value();
+        }
+
+        // optional fill the uncovered area with bits.
+        void translate(const til::point delta, bool fill = false)
+        {
+            // FUTURE: PERF: GH #4015: This could use in-place walk semantics instead of a temporary.
+            til::bitmap other{ _sz };
+
+            for (auto run : *this)
+            {
+                // Offset by the delta
+                run += delta;
+
+                // Intersect with the bounds of our bitmap area
+                // as part of it could have slid out of bounds.
+                run &= _rc;
+
+                // Set it into the new bitmap.
+                other.set(run);
+            }
+
+            // If we were asked to fill... find the uncovered region.
+            if (fill)
+            {
+                // Original Rect of As.
+                //
+                // X <-- origin
+                // A A A A
+                // A A A A
+                // A A A A
+                // A A A A
+                const auto originalRect = _rc;
+
+                // If Delta = (2, 2)
+                // Translated Rect of Bs.
+                //
+                // X <-- origin
+                //
+                //
+                //     B B B B
+                //     B B B B
+                //     B B B B
+                //     B B B B
+                const auto translatedRect = _rc + delta;
+
+                // Subtract the B from the A one to see what wasn't filled by the move.
+                // C is the overlap of A and B:
+                //
+                // X <-- origin
+                // A A A A                     1 1 1 1
+                // A A A A                     1 1 1 1
+                // A A C C B B     subtract    2 2
+                // A A C C B B    --------->   2 2
+                //     B B B B      A - B
+                //     B B B B
+                //
+                // 1 and 2 are the spaces to fill that are "uncovered".
+                const auto fillRects = originalRect - translatedRect;
+                for (const auto& f : fillRects)
+                {
+                    other.set(f);
+                }
+            }
+
+            // Swap us with the temporary one.
+            std::swap(other, *this);
         }
 
         void set(const til::point pt)
@@ -208,7 +278,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _runs.reset(); // reset cached runs on any non-const method
 
             til::at(_bits, _rc.index_of(pt)) = true;
-            _dirty |= til::rectangle{ pt };
+
+            if (_dirty.has_value())
+            {
+                _dirty.value() |= til::rectangle{ pt };
+            }
+            else
+            {
+                _dirty = til::rectangle{ pt };
+            }
         }
 
         void set(const til::rectangle rc)
@@ -221,7 +299,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 til::at(_bits, _rc.index_of(pt)) = true;
             }
 
-            _dirty |= rc;
+            if (_dirty.has_value())
+            {
+                _dirty.value() |= rc;
+            }
+            else
+            {
+                _dirty = rc;
+            }
         }
 
         void set_all()
@@ -302,7 +387,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         bool one() const
         {
-            return _dirty.size() == til::size{ 1, 1 };
+            return _dirty.has_value() && _dirty.value().size() == til::size{ 1, 1 };
         }
 
         constexpr bool any() const noexcept
@@ -312,18 +397,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool none() const noexcept
         {
-            return _dirty.empty();
+            return !_dirty.has_value();
         }
 
         constexpr bool all() const noexcept
         {
-            return _dirty == _rc;
+            return _dirty.has_value() && _dirty.value() == _rc;
         }
 
         std::wstring to_string() const
         {
             std::wstringstream wss;
-            wss << std::endl << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
+            wss << std::endl
+                << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
             wss << L"Runs:" << std::endl;
 
             for (auto& item : *this)
@@ -335,12 +421,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
-        til::rectangle _dirty;
+        std::optional<til::rectangle> _dirty;
         til::size _sz;
         til::rectangle _rc;
         std::vector<bool> _bits;
 
-        std::optional<std::vector<til::rectangle>> _runs;
+        mutable std::optional<std::vector<til::rectangle>> _runs;
 
 #ifdef UNIT_TESTING
         friend class ::BitmapTests;

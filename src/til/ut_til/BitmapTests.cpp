@@ -25,14 +25,21 @@ class BitmapTests
         Log::Comment(L"Check dirty rectangles.");
 
         // Union up all the dirty rectangles into one big one.
-        auto dirtyExpected = bitsOn.front();
-        for (auto it = bitsOn.cbegin() + 1; it < bitsOn.cend(); ++it)
+        if (bitsOn.empty())
         {
-            dirtyExpected |= *it;
+            VERIFY_ARE_EQUAL(std::nullopt, map._dirty);
         }
+        else
+        {
+            auto dirtyExpected = bitsOn.front();
+            for (auto it = bitsOn.cbegin() + 1; it < bitsOn.cend(); ++it)
+            {
+                dirtyExpected |= *it;
+            }
 
-        // Check if it matches.
-        VERIFY_ARE_EQUAL(dirtyExpected, map._dirty);
+            // Check if it matches.
+            VERIFY_ARE_EQUAL(dirtyExpected, map._dirty);
+        }
 
         Log::Comment(L"Check all bits in map.");
         // For every point in the map...
@@ -64,7 +71,7 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(0u, bitmap._bits.size());
-        VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
+        VERIFY_ARE_EQUAL(std::nullopt, bitmap._dirty);
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
@@ -79,7 +86,7 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(50u, bitmap._bits.size());
-        VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
+        VERIFY_ARE_EQUAL(std::nullopt, bitmap._dirty);
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
@@ -107,7 +114,7 @@ class BitmapTests
             // The find will go from begin to end in the bits looking for a "true".
             // It should miss so the result should be "cend" and turn out true here.
             VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), true));
-            VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
+            VERIFY_ARE_EQUAL(std::nullopt, bitmap._dirty);
         }
         else
         {
@@ -115,6 +122,486 @@ class BitmapTests
             // It should miss so the result should be "cend" and turn out true here.
             VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), false));
             VERIFY_ARE_EQUAL(expectedRect, bitmap._dirty);
+        }
+    }
+
+    TEST_METHOD(Equality)
+    {
+        Log::Comment(L"0.) Defaults are equal");
+        {
+            const til::bitmap one;
+            const til::bitmap two;
+            VERIFY_IS_TRUE(one == two);
+        }
+
+        Log::Comment(L"1.) Different sizes are unequal");
+        {
+            const til::bitmap one{ til::size{ 2, 2 } };
+            const til::bitmap two{ til::size{ 3, 3 } };
+            VERIFY_IS_FALSE(one == two);
+        }
+
+        Log::Comment(L"2.) Same bits set are equal");
+        {
+            til::bitmap one{ til::size{ 2, 2 } };
+            til::bitmap two{ til::size{ 2, 2 } };
+            one.set(til::point{ 0, 1 });
+            one.set(til::point{ 1, 0 });
+            two.set(til::point{ 0, 1 });
+            two.set(til::point{ 1, 0 });
+            VERIFY_IS_TRUE(one == two);
+        }
+
+        Log::Comment(L"3.) Different bits set are not equal");
+        {
+            til::bitmap one{ til::size{ 2, 2 } };
+            til::bitmap two{ til::size{ 2, 2 } };
+            one.set(til::point{ 0, 1 });
+            two.set(til::point{ 1, 0 });
+            VERIFY_IS_FALSE(one == two);
+        }
+    }
+
+    TEST_METHOD(Inequality)
+    {
+        Log::Comment(L"0.) Defaults are equal");
+        {
+            const til::bitmap one;
+            const til::bitmap two;
+            VERIFY_IS_FALSE(one != two);
+        }
+
+        Log::Comment(L"1.) Different sizes are unequal");
+        {
+            const til::bitmap one{ til::size{ 2, 2 } };
+            const til::bitmap two{ til::size{ 3, 3 } };
+            VERIFY_IS_TRUE(one != two);
+        }
+
+        Log::Comment(L"2.) Same bits set are equal");
+        {
+            til::bitmap one{ til::size{ 2, 2 } };
+            til::bitmap two{ til::size{ 2, 2 } };
+            one.set(til::point{ 0, 1 });
+            one.set(til::point{ 1, 0 });
+            two.set(til::point{ 0, 1 });
+            two.set(til::point{ 1, 0 });
+            VERIFY_IS_FALSE(one != two);
+        }
+
+        Log::Comment(L"3.) Different bits set are not equal");
+        {
+            til::bitmap one{ til::size{ 2, 2 } };
+            til::bitmap two{ til::size{ 2, 2 } };
+            one.set(til::point{ 0, 1 });
+            two.set(til::point{ 1, 0 });
+            VERIFY_IS_TRUE(one != two);
+        }
+    }
+
+    TEST_METHOD(Translate)
+    {
+        const til::size mapSize{ 4, 4 };
+        til::bitmap map{ mapSize };
+
+        // set the middle four bits of the map.
+        // 0 0 0 0
+        // 0 1 1 0
+        // 0 1 1 0
+        // 0 0 0 0
+        map.set(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 2 } });
+
+        Log::Comment(L"1.) Move down and right");
+        {
+            auto actual = map;
+            // Move all contents
+            // |
+            // v
+            // |
+            // v --> -->
+            const til::point delta{ 2, 2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0         0 0 0 0          0 0 0 0
+            // 0 1 1 0         0 0 0 0          0 0 0 0
+            // 0 1 1 0 v  -->  0 0 0 0   -->    0 0 0 0
+            // 0 0 0 0 v       0 1 1 0          0 0 0 1
+            //                     ->->
+            expected.set(til::point{ 3, 3 });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Move down");
+        {
+            auto actual = map;
+            // Move all contents
+            // |
+            // v
+            // |
+            // v
+            const til::point delta{ 0, 2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0         0 0 0 0
+            // 0 1 1 0         0 0 0 0
+            // 0 1 1 0 v  -->  0 0 0 0
+            // 0 0 0 0 v       0 1 1 0
+            expected.set(til::rectangle{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Move down and left");
+        {
+            auto actual = map;
+            // Move all contents
+            // |
+            // v
+            // |
+            // v <-- <--
+            const til::point delta{ -2, 2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0         0 0 0 0          0 0 0 0
+            // 0 1 1 0         0 0 0 0          0 0 0 0
+            // 0 1 1 0 v  -->  0 0 0 0   -->    0 0 0 0
+            // 0 0 0 0 v       0 1 1 0          1 0 0 0
+            //                 <-<-
+            expected.set(til::point{ 0, 3 });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Move left");
+        {
+            auto actual = map;
+            // Move all contents
+            // <-- <--
+            const til::point delta{ -2, 0 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0         0 0 0 0
+            // 0 1 1 0         1 0 0 0
+            // 0 1 1 0    -->  1 0 0 0
+            // 0 0 0 0         0 0 0 0
+            // <--<--
+            expected.set(til::rectangle{ til::point{ 0, 1 }, til::size{ 1, 2 } });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"5.) Move up and left");
+        {
+            auto actual = map;
+            // Move all contents
+            // ^
+            // |
+            // ^
+            // | <-- <--
+            const til::point delta{ -2, -2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0 ^       0 1 1 0          1 0 0 0
+            // 0 1 1 0 ^       0 0 0 0          0 0 0 0
+            // 0 1 1 0    -->  0 0 0 0   -->    0 0 0 0
+            // 0 0 0 0         0 0 0 0          0 0 0 0
+            //                 <-<-
+            expected.set(til::point{ 0, 0 });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"6.) Move up");
+        {
+            auto actual = map;
+            // Move all contents
+            // ^
+            // |
+            // ^
+            // |
+            const til::point delta{ 0, -2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0 ^       0 1 1 0
+            // 0 1 1 0 ^       0 0 0 0
+            // 0 1 1 0    -->  0 0 0 0
+            // 0 0 0 0         0 0 0 0
+            expected.set(til::rectangle{ til::point{ 1, 0 }, til::size{ 2, 1 } });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"7.) Move up and right");
+        {
+            auto actual = map;
+            // Move all contents
+            // ^
+            // |
+            // ^
+            // | --> -->
+            const til::point delta{ 2, -2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0 ^       0 1 1 0          0 0 0 1
+            // 0 1 1 0 ^       0 0 0 0          0 0 0 0
+            // 0 1 1 0    -->  0 0 0 0   -->    0 0 0 0
+            // 0 0 0 0         0 0 0 0          0 0 0 0
+            //                     ->->
+            expected.set(til::point{ 3, 0 });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"8.) Move right");
+        {
+            auto actual = map;
+            // Move all contents
+            // --> -->
+            const til::point delta{ 2, 0 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:
+            // 0 0 0 0         0 0 0 0
+            // 0 1 1 0         0 0 0 1
+            // 0 1 1 0    -->  0 0 0 1
+            // 0 0 0 0         0 0 0 0
+            //     ->->
+            expected.set(til::rectangle{ til::point{ 3, 1 }, til::size{ 1, 2 } });
+
+            actual.translate(delta);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(TranslateWithFill)
+    {
+        const til::size mapSize{ 4, 4 };
+        til::bitmap map{ mapSize };
+
+        // set the middle four bits of the map.
+        // 0 0 0 0
+        // 0 1 1 0
+        // 0 1 1 0
+        // 0 0 0 0
+        map.set(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 2 } });
+
+        Log::Comment(L"1.) Move down and right");
+        {
+            auto actual = map;
+            // Move all contents
+            // |
+            // v
+            // |
+            // v --> -->
+            const til::point delta{ 2, 2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0         F F F F          F F F F
+            // 0 1 1 0         F F F F          F F F F
+            // 0 1 1 0 v  -->  0 0 0 0   -->    F F 0 0
+            // 0 0 0 0 v       0 1 1 0          F F 0 1
+            //                     ->->
+            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 2 } });
+            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 2, 2 } });
+            expected.set(til::point{ 3, 3 });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Move down");
+        {
+            auto actual = map;
+            // Move all contents
+            // |
+            // v
+            // |
+            // v
+            const til::point delta{ 0, 2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0         F F F F
+            // 0 1 1 0         F F F F
+            // 0 1 1 0 v  -->  0 0 0 0
+            // 0 0 0 0 v       0 1 1 0
+            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 2 } });
+            expected.set(til::rectangle{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Move down and left");
+        {
+            auto actual = map;
+            // Move all contents
+            // |
+            // v
+            // |
+            // v <-- <--
+            const til::point delta{ -2, 2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0         F F F F          F F F F
+            // 0 1 1 0         F F F F          F F F F
+            // 0 1 1 0 v  -->  0 0 0 0   -->    0 0 F F
+            // 0 0 0 0 v       0 1 1 0          1 0 F F
+            //                 <-<-
+            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 2 } });
+            expected.set(til::rectangle{ til::point{ 2, 2 }, til::size{ 2, 2 } });
+            expected.set(til::point{ 0, 3 });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Move left");
+        {
+            auto actual = map;
+            // Move all contents
+            // <-- <--
+            const til::point delta{ -2, 0 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0         0 0 F F
+            // 0 1 1 0         1 0 F F
+            // 0 1 1 0    -->  1 0 F F
+            // 0 0 0 0         0 0 F F
+            // <--<--
+            expected.set(til::rectangle{ til::point{ 2, 0 }, til::size{ 2, 4 } });
+            expected.set(til::rectangle{ til::point{ 0, 1 }, til::size{ 1, 2 } });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"5.) Move up and left");
+        {
+            auto actual = map;
+            // Move all contents
+            // ^
+            // |
+            // ^
+            // | <-- <--
+            const til::point delta{ -2, -2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0 ^       0 1 1 0          1 0 F F
+            // 0 1 1 0 ^       0 0 0 0          0 0 F F
+            // 0 1 1 0    -->  F F F F   -->    F F F F
+            // 0 0 0 0         F F F F          F F F F
+            //                 <-<-
+            expected.set(til::rectangle{ til::point{ 2, 0 }, til::size{ 2, 2 } });
+            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 2 } });
+            expected.set(til::point{ 0, 0 });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"6.) Move up");
+        {
+            auto actual = map;
+            // Move all contents
+            // ^
+            // |
+            // ^
+            // |
+            const til::point delta{ 0, -2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0 ^       0 1 1 0
+            // 0 1 1 0 ^       0 0 0 0
+            // 0 1 1 0    -->  F F F F
+            // 0 0 0 0         F F F F
+            expected.set(til::rectangle{ til::point{ 1, 0 }, til::size{ 2, 1 } });
+            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 2 } });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"7.) Move up and right");
+        {
+            auto actual = map;
+            // Move all contents
+            // ^
+            // |
+            // ^
+            // | --> -->
+            const til::point delta{ 2, -2 };
+
+            til::bitmap expected{ mapSize };
+            // Expected: (F is filling uncovered value)
+            // 0 0 0 0 ^       0 1 1 0          F F 0 1
+            // 0 1 1 0 ^       0 0 0 0          F F 0 0
+            // 0 1 1 0    -->  F F F F   -->    F F F F
+            // 0 0 0 0         F F F F          F F F F
+            //                     ->->
+            expected.set(til::point{ 3, 0 });
+            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 2 } });
+            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 2 } });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"8.) Move right");
+        {
+            auto actual = map;
+            // Move all contents
+            // --> -->
+            const til::point delta{ 2, 0 };
+
+            til::bitmap expected{ mapSize };
+            // Expected:  (F is filling uncovered value)
+            // 0 0 0 0         F F 0 0
+            // 0 1 1 0         F F 0 1
+            // 0 1 1 0    -->  F F 0 1
+            // 0 0 0 0         F F 0 0
+            //     ->->
+            expected.set(til::rectangle{ til::point{ 3, 1 }, til::size{ 1, 2 } });
+            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 4 } });
+
+            actual.translate(delta, true);
+
+            VERIFY_ARE_EQUAL(expected, actual);
         }
     }
 
@@ -133,7 +620,8 @@ class BitmapTests
         const til::point point{ 2, 2 };
         bitmap.set(point);
 
-        til::rectangle expectedSet{ point };
+        std::vector<til::rectangle> expectedSet;
+        expectedSet.emplace_back(til::rectangle{ point });
 
         // Run through every bit. Only the one we set should be true.
         Log::Comment(L"Only the bit we set should be true.");
@@ -142,13 +630,14 @@ class BitmapTests
         Log::Comment(L"Setting all should mean they're all true.");
         bitmap.set_all();
 
-        expectedSet = til::rectangle{ bitmap._rc };
+        expectedSet.clear();
+        expectedSet.emplace_back(til::rectangle{ bitmap._rc });
         _checkBits(expectedSet, bitmap);
 
         Log::Comment(L"Now reset them all.");
         bitmap.reset_all();
 
-        expectedSet = {};
+        expectedSet.clear();
         _checkBits(expectedSet, bitmap);
 
         til::rectangle totalZone{ sz };
@@ -160,13 +649,14 @@ class BitmapTests
         til::rectangle setZone{ til::point{ 0, 0 }, til::size{ 2, 3 } };
         bitmap.set(setZone);
 
-        expectedSet = setZone;
+        expectedSet.clear();
+        expectedSet.emplace_back(setZone);
         _checkBits(expectedSet, bitmap);
 
         Log::Comment(L"Reset all.");
         bitmap.reset_all();
 
-        expectedSet = {};
+        expectedSet.clear();
         _checkBits(expectedSet, bitmap);
     }
 
@@ -452,10 +942,10 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         Log::Comment(L"Set rectangle and validate runs updated.");
-        const til::rectangle setRect{ setPoint, til::size{2, 2} };
+        const til::rectangle setRect{ setPoint, til::size{ 2, 2 } };
         expected.clear();
-        expected.push_back(til::rectangle{ til::point{2, 2}, til::size{2, 1} });
-        expected.push_back(til::rectangle{ til::point{2, 3}, til::size{2, 1} });
+        expected.push_back(til::rectangle{ til::point{ 2, 2 }, til::size{ 2, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 2, 3 }, til::size{ 2, 1 } });
         map.set(setRect);
 
         actual.clear();
@@ -467,10 +957,10 @@ class BitmapTests
 
         Log::Comment(L"Set all and validate runs updated.");
         expected.clear();
-        expected.push_back(til::rectangle{ til::point{0, 0}, til::size{4, 1} });
-        expected.push_back(til::rectangle{ til::point{0, 1}, til::size{4, 1} });
-        expected.push_back(til::rectangle{ til::point{0, 2}, til::size{4, 1} });
-        expected.push_back(til::rectangle{ til::point{0, 3}, til::size{4, 1} });
+        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 4, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 3 }, til::size{ 4, 1 } });
         map.set_all();
 
         actual.clear();
@@ -483,9 +973,9 @@ class BitmapTests
         Log::Comment(L"Resize and validate runs updated.");
         const til::size newSize{ 3, 3 };
         expected.clear();
-        expected.push_back(til::rectangle{ til::point{0, 0}, til::size{3, 1} });
-        expected.push_back(til::rectangle{ til::point{0, 1}, til::size{3, 1} });
-        expected.push_back(til::rectangle{ til::point{0, 2}, til::size{3, 1} });
+        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 3, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 3, 1 } });
+        expected.push_back(til::rectangle{ til::point{ 0, 2 }, til::size{ 3, 1 } });
         map.resize(newSize);
 
         actual.clear();
