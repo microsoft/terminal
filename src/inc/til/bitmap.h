@@ -149,7 +149,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz(sz),
             _rc(sz),
             _bits(sz.area(), fill),
-            _dirty(fill ? sz : til::rectangle{ sz }),
+            _dirty(fill ? sz : til::rectangle{}),
             _runs{}
         {
         }

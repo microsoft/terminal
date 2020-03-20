@@ -27,7 +27,7 @@ class BitmapTests
         // Union up all the dirty rectangles into one big one.
         if (bitsOn.empty())
         {
-            VERIFY_ARE_EQUAL(std::nullopt, map._dirty);
+            VERIFY_ARE_EQUAL(til::rectangle{}, map._dirty);
         }
         else
         {
@@ -71,7 +71,7 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(0u, bitmap._bits.size());
-        VERIFY_ARE_EQUAL(std::nullopt, bitmap._dirty);
+        VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
@@ -86,7 +86,7 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(50u, bitmap._bits.size());
-        VERIFY_ARE_EQUAL(std::nullopt, bitmap._dirty);
+        VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
@@ -114,7 +114,7 @@ class BitmapTests
             // The find will go from begin to end in the bits looking for a "true".
             // It should miss so the result should be "cend" and turn out true here.
             VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), true));
-            VERIFY_ARE_EQUAL(std::nullopt, bitmap._dirty);
+            VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
         }
         else
         {
