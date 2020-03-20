@@ -55,6 +55,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CreateSimpleTerminalXamlType);
         TEST_METHOD(CreateTerminalMuxXamlType);
 
+        TEST_METHOD(CreateTerminalPage);
+
         TEST_METHOD(TryDuplicateBadTab);
         TEST_METHOD(TryDuplicateBadPane);
 
@@ -169,6 +171,18 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
+    void TabTests::CreateTerminalPage()
+    {
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+
+        auto result = RunOnUIThread([&page]() {
+            DebugBreak();
+            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>();
+            VERIFY_IS_NOT_NULL(page);
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
     void TabTests::TryDuplicateBadTab()
     {
         // * Create a tab with a profile with GUID 1
@@ -238,6 +252,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
         auto result = RunOnUIThread([&projectedPage, &page, settings0]() {
+            // DebugBreak();
             projectedPage = winrt::TerminalApp::TerminalPage();
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = settings0;
@@ -252,7 +267,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
             page->Create();
+            Log::Comment(NoThrowString().Format(L"Create()'d"));
 
+            auto app = ::winrt::Windows::UI::Xaml::Application::Current();
+            auto f = app.as<winrt::Windows::UI::Xaml::Controls::Frame>();
+            //f.Navigate(page.)
+            // f.Content(page->Root());
+            f.Content(*page);
+            Log::Comment(NoThrowString().Format(L"Content()'d"));
+        });
+        VERIFY_SUCCEEDED(result);
+
+        result = RunOnUIThread([&page]() {
+            Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
             // I think in the tests, we don't always set the focused tab on
             // creation. Doesn't seem to be a problem in the real app, but
             // probably indicative of a problem.
@@ -260,9 +287,9 @@ namespace TerminalAppLocalTests
             // Manually set it here, so that later, the _GetFocusedTabIndex call
             // in _DuplicateTabViewItem will have a sensible value.
             page->_SetFocusedTabIndex(0);
+            Log::Comment(NoThrowString().Format(L"... Done"));
         });
         VERIFY_SUCCEEDED(result);
-
         result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
@@ -395,7 +422,7 @@ namespace TerminalAppLocalTests
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
             // Oh no I didn't actually duplicate the pane, what did I do
-            DebugBreak();
+            // DebugBreak();
             // The problem here is that the pane doesn't actually have a real
             // size yet. It thinks it's 0x0, which it is. We either need to
             // - 1. trick the test into thinking the pane has a real size
