@@ -344,7 +344,11 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
 
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+    try
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+    }
+    CATCH_LOG();
     _NotifyScrollEvent();
 
     return S_OK;
