@@ -176,7 +176,6 @@ namespace TerminalAppLocalTests
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
         auto result = RunOnUIThread([&page]() {
-            DebugBreak();
             page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>();
             VERIFY_IS_NOT_NULL(page);
         });
@@ -252,7 +251,6 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
         auto result = RunOnUIThread([&projectedPage, &page, settings0]() {
-            // DebugBreak();
             projectedPage = winrt::TerminalApp::TerminalPage();
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = settings0;
@@ -262,8 +260,14 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(page);
         VERIFY_IS_NOT_NULL(page->_settings);
 
+        winrt::Windows::UI::Xaml::UIElement originalContent{ nullptr };
+
         Log::Comment(NoThrowString().Format(L"Create() the TerminalPage"));
-        result = RunOnUIThread([&page]() {
+        result = RunOnUIThread([&page, &originalContent]() {
+            originalContent = winrt::Windows::UI::Xaml::Window::Current().Content();
+
+            // VERIFY_IS_NOT_NULL(originalContent);
+
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
             page->Create();
@@ -286,6 +290,20 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(L"Activate()'d"));
         });
         VERIFY_SUCCEEDED(result);
+
+        // VERIFY_IS_NOT_NULL(originalContent);
+
+        auto cleanup = wil::scope_exit([originalContent] {
+            auto result = RunOnUIThread([originalContent]() {
+                Sleep(1000);
+                Log::Comment(NoThrowString().Format(L"Cleaning up application content..."));
+                winrt::Windows::UI::Xaml::Window::Current().Content(originalContent);
+                Log::Comment(NoThrowString().Format(L"Content()'d"));
+                winrt::Windows::UI::Xaml::Window::Current().Activate();
+                Log::Comment(NoThrowString().Format(L"Activate()'d"));
+            });
+            VERIFY_SUCCEEDED(result);
+        });
 
         result = RunOnUIThread([&page]() {
             Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
@@ -410,7 +428,28 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
             page->Create();
+            Log::Comment(NoThrowString().Format(L"Create()'d"));
 
+            auto app = ::winrt::Windows::UI::Xaml::Application::Current();
+            Log::Comment(NoThrowString().Format(L"got app"));
+
+            // auto f = app.as<winrt::Windows::UI::Xaml::Controls::Frame>();
+            // Log::Comment(NoThrowString().Format(L"got frame"));
+            // // f.Content(*page);
+            // //f.Navigate(page.)
+            // f.Content(page->Root());
+            // Log::Comment(NoThrowString().Format(L"Content()'d"));
+
+            winrt::TerminalApp::TerminalPage pp = *page;
+            winrt::Windows::UI::Xaml::Window::Current().Content(pp);
+            Log::Comment(NoThrowString().Format(L"Content()'d"));
+            winrt::Windows::UI::Xaml::Window::Current().Activate();
+            Log::Comment(NoThrowString().Format(L"Activate()'d"));
+        });
+        VERIFY_SUCCEEDED(result);
+
+        result = RunOnUIThread([&page]() {
+            Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
             // I think in the tests, we don't always set the focused tab on
             // creation. Doesn't seem to be a problem in the real app, but
             // probably indicative of a problem.
@@ -418,6 +457,11 @@ namespace TerminalAppLocalTests
             // Manually set it here, so that later, the _GetFocusedTabIndex call
             // in _DuplicateTabViewItem will have a sensible value.
             page->_SetFocusedTabIndex(0);
+            Log::Comment(NoThrowString().Format(L"... Done"));
+        });
+        VERIFY_SUCCEEDED(result);
+        result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
 
