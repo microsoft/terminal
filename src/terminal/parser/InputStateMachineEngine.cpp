@@ -400,8 +400,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     case CsiActionCodes::CSI_F1:
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
-        modifierState = _GetCursorKeysModifierState(parameters);
         success = _GetCursorKeysVkey(wch, vkey);
+        modifierState = _GetCursorKeysModifierState(parameters, static_cast<CsiActionCodes>(wch));
         break;
     case CsiActionCodes::CursorBackTab:
         modifierState = SHIFT_PRESSED;
@@ -745,9 +745,10 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 //      sequence. This is for Arrow keys, Home, End, etc.
 // Arguments:
 // - parameters - the set of parameters to get the modifier state from.
+// - actionCode - the actionCode for the sequence we're operating on.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept
 {
     DWORD modifiers = 0;
     if (_IsModified(parameters.size()) && parameters.size() >= 2)
@@ -759,8 +760,14 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_stri
     //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
     //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
     //   of the keypad; and the divide (/) and ENTER keys in the keypad.
-    // This snippet detects the direction keys
-    return WI_SetFlag(modifiers, ENHANCED_KEY);
+    // This snippet detects the direction keys + HOME + END
+    // actionCode should be one of the above, so just make sure it's not a CSI_F# code
+    if (actionCode < CsiActionCodes::CSI_F1 || actionCode > CsiActionCodes::CSI_F4)
+    {
+        WI_SetFlag(modifiers, ENHANCED_KEY);
+    }
+
+    return modifiers;
 }
 
 // Method Description:
