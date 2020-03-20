@@ -87,7 +87,6 @@ namespace winrt::TerminalApp::implementation
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
-        fire_and_forget _ProcessNextStartupAction();
         fire_and_forget _ProcessStartupActions();
 
         void _ShowAboutDialog();

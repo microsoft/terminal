@@ -146,66 +146,12 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        // ////////////////////////////////////////////////////////////////////////
-        // // Actually start the terminal.
-        // if (_appArgs.GetStartupActions().empty())
-        // {
-        //     _OpenNewTab(nullptr);
-        // }
-        // else
-        // {
-        //     _appArgs.ValidateStartupCommands();
-
-        //     // This will kick off a chain of events to perform each startup
-        //     // action. As each startup action is completed, the next will be
-        //     // fired.
-        //     _ProcessNextStartupAction();
-        // }
-        // ////////////////////////////////////////////////////////////////////////
-
-        ////////////////////////////////////////////////////////////////////////
-        // Initialize the terminal only once the swapchainpanel is loaded - that
-        //      way, we'll be able to query the real pixel size it got on layout
-        // _layoutUpdatedRevoker = this->LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-        // _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-        //     Windows::Foundation::Size actualSize{ gsl::narrow_cast<float>(_tabContent.ActualWidth()),
-        //                                           gsl::narrow_cast<float>(_tabContent.ActualHeight()) };
-        //     Windows::Foundation::Size desiredSize = _tabContent.DesiredSize();
-        //     actualSize;
-        //     desiredSize;
-
-        //     // Only let this succeed once.
-        //     this->_layoutUpdatedRevoker.revoke();
-
-        //     // This event fires every time the layout changes, but it is always the last one to fire
-        //     // in any layout change chain. That gives us great flexibility in finding the right point
-        //     // at which to initialize our renderer (and our terminal).
-        //     // Any earlier than the last layout update and we may not know the terminal's starting size.
-        //     if (_startupState == StartupState::NotInitialized)
-        //     {
-        //         _startupState = StartupState::InStartup;
-        //         if (_appArgs.GetStartupActions().size() == 0)
-        //         {
-        //             _OpenNewTab(nullptr);
-        //             _startupState = StartupState::Initialized;
-        //         }
-        //         else
-        //         {
-        //             Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
-        //                 for (const auto& action : _appArgs.GetStartupActions())
-        //                 {
-        //                     // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
-        //                     _actionDispatch->DoAction(action);
-        //                     // });
-        //                 }
-        //                 _startupState = StartupState::Initialized;
-        //             });
-        //         }
-        //     }
-        // });
+        // Once the page is actually laid out on the screen, trigger all aout
+        // startup actions. Things like Panes need to know at least how big the
+        // window will be, so they can subdivide that space.
+        //
+        // _OnFirstLayout will remove this handler so it doesn't get called more than once.
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
-
-        ////////////////////////////////////////////////////////////////////////
     }
 
     void TerminalPage::_OnFirstLayout(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
@@ -228,18 +174,17 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 _ProcessStartupActions();
-                // Dispatcher().RunAsync(CoreDispatcherPriority::Low, [this]() {
-                //     for (const auto& action : _appArgs.GetStartupActions())
-                //     {
-                //         // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
-                //         _actionDispatch->DoAction(action);
-                //         // });
-                //     }
-                //     _startupState = StartupState::Initialized;
-                // });
             }
         }
     }
+
+    // Method Description:
+    // - Process all the startup actions in our list of startup actions. We'll
+    //   do this all at once here.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     fire_and_forget TerminalPage::_ProcessStartupActions()
     {
         // If there are no actions left, do nothing.
@@ -255,43 +200,9 @@ namespace winrt::TerminalApp::implementation
         {
             for (const auto& action : page->_appArgs.GetStartupActions())
             {
-                // Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, action]() {
                 page->_actionDispatch->DoAction(action);
-                // });
             }
             _startupState = StartupState::Initialized;
-        }
-    }
-
-    // Method Description:
-    // - Process the next startup action in our list of startup actions. When
-    //   that action is complete, fire the next (if there are any more).
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    fire_and_forget TerminalPage::_ProcessNextStartupAction()
-    {
-        // If there are no actions left, do nothing.
-        if (_appArgs.GetStartupActions().empty())
-        {
-            return;
-        }
-
-        // Get the next action to be processed
-        auto nextAction = _appArgs.GetStartupActions().front();
-        _appArgs.GetStartupActions().pop_front();
-
-        auto weakThis{ get_weak() };
-
-        // Handle it on the UI thread.
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
-        if (auto page{ weakThis.get() })
-        {
-            page->_actionDispatch->DoAction(nextAction);
-
-            // Kick off the next action to be handled (if necessary)
-            page->_ProcessNextStartupAction();
         }
     }
 
