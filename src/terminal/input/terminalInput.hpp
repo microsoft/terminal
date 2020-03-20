@@ -60,10 +60,13 @@ namespace Microsoft::Console::VirtualTerminal
         void EnableAlternateScroll(const bool enable) noexcept;
         void UseAlternateScreenBuffer() noexcept;
         void UseMainScreenBuffer() noexcept;
+
+        void SetMouseModeChangedCallback(std::function<void()> mouseModeChangedCallback);
 #pragma endregion
 
     private:
         std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
+        std::function<void()> _mouseModeChangedCallback;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;

@@ -19,6 +19,7 @@
     Tapped="_TappedHandler"
     PointerWheelChanged="_MouseWheelHandler"
     PreviewKeyDown="_KeyDownHandler"
+    KeyUp="_KeyUpHandler"
     CharacterReceived="_CharacterHandler"
     GotFocus="_GotFocusHandler"
     LostFocus="_LostFocusHandler">
@@ -43,7 +44,9 @@
                                 CompositionScaleChanged="_SwapChainScaleChanged"
                                 PointerPressed="_PointerPressedHandler"
                                 PointerMoved="_PointerMovedHandler"
-                                PointerReleased="_PointerReleasedHandler" />
+                                PointerReleased="_PointerReleasedHandler"
+                                PointerEntered="_PointerEnteredHandler"
+                                PointerExited="_PointerExitedHandler" />
 
                 <!-- Putting this in a grid w/ the SwapChainPanel
                 ensures that it's always aligned w/ the scrollbar -->

@@ -71,7 +71,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClickPos{},
         _searchBox{ nullptr },
         _focusRaisedClickPos{ std::nullopt },
-        _clickDrag{ false }
+        _clickDrag{ false },
+        _textCursor{ Windows::UI::Core::CoreCursorType::IBeam, 0 },
+        _pointerCursor{ Windows::UI::Core::CoreCursorType::Arrow, 0 }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -589,6 +591,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
+        _terminal->SetMouseModeChangedCallback([weakThis = get_weak()]() {
+            if (auto strongThis{ weakThis.get() })
+            {
+                strongThis->_TerminalMouseModeChanged();
+            }
+        });
 
         _SwapChainRoutine();
 
@@ -715,6 +723,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             e.OriginalKey() == VirtualKey::RightWindows)
 
         {
+            if (!_closing && e.OriginalKey() == VirtualKey::Shift)
+            {
+                // If the user presses or releases shift, check whether we're in mouse mode and the cursor needs updating
+                _TerminalMouseModeChanged();
+            }
             e.Handled(true);
             return;
         }
@@ -764,6 +777,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         e.Handled(handled);
+    }
+
+    void TermControl::_KeyUpHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                    Input::KeyRoutedEventArgs const& e)
+    {
+        // If the current focused element is a child element of searchbox,
+        // we do not send this event up to terminal
+        if (_searchBox && _searchBox->ContainsFocus())
+        {
+            return;
+        }
+
+        if (!_closing && e.OriginalKey() == VirtualKey::Shift)
+        {
+            // If the user presses or releases shift, check whether we're in mouse mode and the cursor needs updating
+            _TerminalMouseModeChanged();
+        }
     }
 
     // Method Description:
@@ -887,6 +917,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
         return _terminal->IsTrackingMouseInput();
+    }
+
+    // Method Description:
+    // - Handles changes in mouse mode state
+    winrt::fire_and_forget TermControl::_TerminalMouseModeChanged()
+    {
+        co_await Dispatcher();
+        if (_oldCursor) // if we have an active cursor transition
+        {
+            auto coreWindow = Window::Current().CoreWindow();
+            coreWindow.PointerCursor(_CanSendVTMouseInput() ? _pointerCursor : _textCursor);
+        }
     }
 
     // Method Description:
@@ -1148,6 +1190,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _TryStopAutoScroll(ptr.PointerId());
 
         args.Handled(true);
+    }
+
+    // Method Description:
+    // - Event handler for the PointerEntered event. We use this for cursor manipulation.
+    // Arguments:
+    // - sender: the XAML element responding to the pointer input
+    // - args: event data
+    void TermControl::_PointerEnteredHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                             Input::PointerRoutedEventArgs const& /*args*/)
+    {
+        if (_closing)
+        {
+            return;
+        }
+
+        auto coreWindow = Window::Current().CoreWindow();
+        _oldCursor = coreWindow.PointerCursor();
+
+        if (_terminal->IsTrackingMouseInput())
+        {
+            return;
+        }
+
+        coreWindow.PointerCursor(_textCursor);
+    }
+
+    // Method Description:
+    // - Event handler for the PointerExited event. We use this for cursor manipulation.
+    // Arguments:
+    // - sender: the XAML element responding to the pointer input
+    // - args: event data
+    void TermControl::_PointerExitedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                            Input::PointerRoutedEventArgs const& /*args*/)
+    {
+        if (auto oldCursor{ std::exchange(_oldCursor, std::nullopt) })
+        {
+            auto coreWindow = Window::Current().CoreWindow();
+            coreWindow.PointerCursor(*oldCursor);
+        }
     }
 
     // Method Description:
