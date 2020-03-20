@@ -196,7 +196,7 @@ catch (...)
 static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>& out)
 {
     wil::unique_cotaskmem_string localAppDataFolder;
-    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, 0, &localAppDataFolder)))
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder)))
     {
         return;
     }

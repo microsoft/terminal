@@ -102,7 +102,7 @@
 
         // Call first time to find size
         SIZE_T AttributeListSize;
-        InitializeProcThreadAttributeList(NULL,
+        InitializeProcThreadAttributeList(nullptr,
                                           2,
                                           0,
                                           &AttributeListSize);

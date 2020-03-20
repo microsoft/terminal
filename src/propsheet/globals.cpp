@@ -40,11 +40,11 @@ BYTE DefaultFontFamily;
 ULONG DefaultFontIndex = 0;
 ULONG g_currentFontIndex = 0;
 
-PFONT_INFO FontInfo = NULL;
+PFONT_INFO FontInfo = nullptr;
 ULONG NumberOfFonts;
 ULONG FontInfoLength;
 BOOL gbEnumerateFaces = FALSE;
-PFACENODE gpFaceNames = NULL;
+PFACENODE gpFaceNames = nullptr;
 
 BOOL g_fSettingsDlgInitialized = FALSE;
 

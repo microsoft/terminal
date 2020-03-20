@@ -35,7 +35,7 @@ Notes:
 
 STDAPI CEditSessionObject::QueryInterface(REFIID riid, void** ppvObj)
 {
-    *ppvObj = NULL;
+    *ppvObj = nullptr;
 
     if (IsEqualIID(riid, IID_ITfEditSession))
     {
@@ -154,7 +154,7 @@ CEditSessionObject::Release()
     //
     // Clear the text in Cicero TOM
     //
-    return SetTextInRange(ec, range, NULL, 0);
+    return SetTextInRange(ec, range, nullptr, 0);
 }
 
 //+---------------------------------------------------------------------------
@@ -165,8 +165,8 @@ CEditSessionObject::Release()
 
 [[nodiscard]] HRESULT CEditSessionObject::_GetCursorPosition(TfEditCookie ec, CCompCursorPos& CompCursorPos)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL)
+    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    if (pic == nullptr)
     {
         return E_FAIL;
     }
@@ -175,7 +175,7 @@ CEditSessionObject::Release()
     ULONG cFetched;
 
     TF_SELECTION sel;
-    sel.range = NULL;
+    sel.range = nullptr;
 
     if (SUCCEEDED(hr = pic->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &sel, &cFetched)))
     {
@@ -235,8 +235,8 @@ CEditSessionObject::Release()
 {
     HRESULT hr;
 
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL)
+    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    if (pic == nullptr)
     {
         return E_FAIL;
     }
@@ -276,7 +276,7 @@ CEditSessionObject::Release()
     }
 
     wil::com_ptr_nothrow<ITfRange> range;
-    while (enumComp->Next(1, &range, NULL) == S_OK)
+    while (enumComp->Next(1, &range, nullptr) == S_OK)
     {
         VARIANT var;
         BOOL fCompExist = FALSE;
@@ -289,7 +289,7 @@ CEditSessionObject::Release()
             {
                 TF_PROPERTYVAL tfPropertyVal;
 
-                while (EnumPropVal->Next(1, &tfPropertyVal, NULL) == S_OK)
+                while (EnumPropVal->Next(1, &tfPropertyVal, nullptr) == S_OK)
                 {
                     for (int i = 0; i < guid_size; i++)
                     {
@@ -339,7 +339,7 @@ CEditSessionObject::Release()
         }
 
         wil::com_ptr_nothrow<ITfRange> pPropRange;
-        while (enumProp->Next(1, &pPropRange, NULL) == S_OK)
+        while (enumProp->Next(1, &pPropRange, nullptr) == S_OK)
         {
             // pick up the gap up to the next property
             gap_range->ShiftEndToRange(ec, pPropRange.get(), TF_ANCHOR_START);
@@ -592,15 +592,15 @@ CEditSessionObject::Release()
                                                                       const int guid_size,
                                                                       ITfRange* no_display_attribute_range)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL)
+    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    if (pic == nullptr)
     {
         return E_FAIL;
     }
 
     wil::com_ptr_nothrow<ITfReadOnlyProperty> propComp;
     HRESULT hr = pic->TrackProperties(guids, guid_size, // system property
-                                      NULL,
+                                      nullptr,
                                       0, // application property
                                       &propComp);
     if (FAILED(hr))
@@ -617,7 +617,7 @@ CEditSessionObject::Release()
 
     wil::com_ptr_nothrow<ITfRange> pRange;
 
-    while (enumComp->Next(1, &pRange, NULL) == S_OK)
+    while (enumComp->Next(1, &pRange, nullptr) == S_OK)
     {
         VARIANT var;
         BOOL fCompExist = FALSE;
@@ -630,7 +630,7 @@ CEditSessionObject::Release()
             {
                 TF_PROPERTYVAL tfPropertyVal;
 
-                while (EnumPropVal->Next(1, &tfPropertyVal, NULL) == S_OK)
+                while (EnumPropVal->Next(1, &tfPropertyVal, nullptr) == S_OK)
                 {
                     for (int i = 0; i < guid_size; i++)
                     {
@@ -674,7 +674,7 @@ CEditSessionObject::Release()
 
 [[nodiscard]] HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
+    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     RETURN_HR_IF_NULL(E_FAIL, pic);
 
     // Get the whole text, finalize it, and set empty string in TOM
@@ -749,7 +749,7 @@ CEditSessionObject::Release()
 
     HRESULT hr = E_FAIL;
     ITfContext* pic = g_pConsoleTSF->GetInputContext();
-    if (pic != NULL)
+    if (pic != nullptr)
     {
         // Cleanup (empty the context range) after the last composition.
 
@@ -765,7 +765,7 @@ CEditSessionObject::Release()
                 // Clean up only the completed part (which start is expected to coincide with the start of the full range).
                 if (cchCompleted < cch)
                 {
-                    spRange->ShiftEnd(ec, (cchCompleted - cch), &cch, NULL);
+                    spRange->ShiftEnd(ec, (cchCompleted - cch), &cch, nullptr);
                 }
                 hr = ClearTextInRange(ec, spRange.get());
                 g_pConsoleTSF->SetCompletedRangeLength(0); // cleaned up all completed text
@@ -786,8 +786,8 @@ CEditSessionObject::Release()
 {
     HRESULT hr;
 
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL)
+    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    if (pic == nullptr)
     {
         return E_FAIL;
     }
@@ -821,8 +821,8 @@ CEditSessionObject::Release()
         return hr;
     }
 
-    CicCategoryMgr* pCicCat = NULL;
-    CicDisplayAttributeMgr* pDispAttr = NULL;
+    CicCategoryMgr* pCicCat = nullptr;
+    CicDisplayAttributeMgr* pDispAttr = nullptr;
 
     //
     // Create Cicero Category Manager and Display Attribute Manager
@@ -868,8 +868,8 @@ CEditSessionObject::Release()
                                                                                ITfRange** pInterimRange,
                                                                                BOOL* pfInterim)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : NULL;
-    if (pic == NULL)
+    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    if (pic == nullptr)
     {
         return E_FAIL;
     }
@@ -877,7 +877,7 @@ CEditSessionObject::Release()
     ULONG cFetched;
 
     TF_SELECTION sel;
-    sel.range = NULL;
+    sel.range = nullptr;
 
     *pfInterim = FALSE;
     if (pic->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &sel, &cFetched) != S_OK)
@@ -952,7 +952,7 @@ CEditSessionObject::Release()
     try
     {
         // Get conversion area service.
-        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
+        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : nullptr;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
         if (!ResultStr.empty() && !fIgnorePreviousCompositionResult)
@@ -1072,7 +1072,7 @@ CEditSessionObject::Release()
     try
     {
         // Get conversion area service.
-        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
+        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : nullptr;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
         if (!CompStr.empty())
@@ -1121,8 +1121,8 @@ CEditSessionObject::Release()
 {
     HRESULT hr = E_OUTOFMEMORY;
 
-    CicCategoryMgr* pTmpCat = NULL;
-    CicDisplayAttributeMgr* pTmpDispAttr = NULL;
+    CicCategoryMgr* pTmpCat = nullptr;
+    CicDisplayAttributeMgr* pTmpDispAttr = nullptr;
 
     //
     // Create Cicero Category Manager

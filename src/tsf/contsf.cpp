@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-CConsoleTSF* g_pConsoleTSF = NULL;
+CConsoleTSF* g_pConsoleTSF = nullptr;
 
 extern "C" BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pfnPosition)
 {

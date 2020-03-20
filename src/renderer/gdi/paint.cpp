@@ -667,7 +667,7 @@ void GdiEngine::_CreateDebugWindow()
                                        0,
                                        0,
                                        0,
-                                       0,
+                                       nullptr,
                                        nullptr,
                                        nullptr,
                                        nullptr);
