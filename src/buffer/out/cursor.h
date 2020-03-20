@@ -37,7 +37,7 @@ public:
     Cursor& operator=(const Cursor&) & = delete;
 
     Cursor(Cursor&&) = default;
-    Cursor& operator=(Cursor&&) & = default;
+    Cursor& operator=(Cursor&&) & = delete;
 
     bool HasMoved() const noexcept;
     bool IsVisible() const noexcept;

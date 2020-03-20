@@ -1,4 +1,4 @@
-!include ..\..\project.unittest.inc
+!include ..\..\..\project.unittest.inc
 
 # -------------------------------------
 # Program Information
@@ -23,6 +23,8 @@ INCLUDES = \
 
 TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\dx\lib\$(O)\ConRenderDx.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
     $(TARGETLIBS) \
 
 # -------------------------------------
