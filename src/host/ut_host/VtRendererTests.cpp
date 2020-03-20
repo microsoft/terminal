@@ -424,7 +424,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         // 0000
         // 0000
         // 1111
-        const til::rectangle expected{ til::point{view.Left(), view.BottomInclusive()}, til::size{view.Width(), 1} };
+        const til::rectangle expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
         VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -944,7 +944,7 @@ void VtRendererTest::XtermTestInvalidate()
         // 0000
         // 0000
         // 1111
-        const til::rectangle expected{ til::point{view.Left(), view.BottomInclusive()}, til::size{view.Width(), 1} };
+        const til::rectangle expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
         VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
