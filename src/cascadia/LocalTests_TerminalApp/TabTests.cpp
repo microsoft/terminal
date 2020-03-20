@@ -270,11 +270,20 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(L"Create()'d"));
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
-            auto f = app.as<winrt::Windows::UI::Xaml::Controls::Frame>();
-            //f.Navigate(page.)
+            Log::Comment(NoThrowString().Format(L"got app"));
+
+            // auto f = app.as<winrt::Windows::UI::Xaml::Controls::Frame>();
+            // Log::Comment(NoThrowString().Format(L"got frame"));
+            // // f.Content(*page);
+            // //f.Navigate(page.)
             // f.Content(page->Root());
-            f.Content(*page);
+            // Log::Comment(NoThrowString().Format(L"Content()'d"));
+
+            winrt::TerminalApp::TerminalPage pp = *page;
+            winrt::Windows::UI::Xaml::Window::Current().Content(pp);
             Log::Comment(NoThrowString().Format(L"Content()'d"));
+            winrt::Windows::UI::Xaml::Window::Current().Activate();
+            Log::Comment(NoThrowString().Format(L"Activate()'d"));
         });
         VERIFY_SUCCEEDED(result);
 
