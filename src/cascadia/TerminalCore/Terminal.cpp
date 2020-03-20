@@ -342,6 +342,13 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
     _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
+
+    // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
+    try
+    {
+        _buffer->GetRenderTarget().TriggerRedrawAll();
+    }
+    CATCH_LOG();
     _NotifyScrollEvent();
 
     return S_OK;
