@@ -146,7 +146,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        // Once the page is actually laid out on the screen, trigger all aout
+        // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
         // window will be, so they can subdivide that space.
         //
@@ -166,7 +166,8 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_appArgs.GetStartupActions().size() == 0)
+            _appArgs.ValidateStartupCommands();
+            if (_appArgs.GetStartupActions().empty())
             {
                 _OpenNewTab(nullptr);
                 _startupState = StartupState::Initialized;
