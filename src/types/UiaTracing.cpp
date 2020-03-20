@@ -613,4 +613,41 @@ void UiaTracing::TextProvider::get_SupportedTextSelection(const ScreenInfoUiaPro
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 }
+
+void UiaTracing::Signal::SelectionChanged() noexcept
+{
+    EnsureRegistration();
+    if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        TraceLoggingWrite(
+            g_UiaProviderTraceProvider,
+            "Signal::SelectionChanged",
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+}
+
+void UiaTracing::Signal::TextChanged() noexcept
+{
+    EnsureRegistration();
+    if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        TraceLoggingWrite(
+            g_UiaProviderTraceProvider,
+            "Signal::TextChanged",
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+}
+
+void UiaTracing::Signal::CursorChanged() noexcept
+{
+    EnsureRegistration();
+    if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        TraceLoggingWrite(
+            g_UiaProviderTraceProvider,
+            "Signal::CursorChanged",
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
+}
+
 #pragma warning(pop)

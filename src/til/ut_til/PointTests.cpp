@@ -168,21 +168,6 @@ class PointTests
         }
     }
 
-    TEST_METHOD(Boolean)
-    {
-        const til::point empty;
-        VERIFY_IS_FALSE(empty);
-
-        const til::point yOnly{ 0, 10 };
-        VERIFY_IS_TRUE(yOnly);
-
-        const til::point xOnly{ 10, 0 };
-        VERIFY_IS_TRUE(xOnly);
-
-        const til::point both{ 10, 10 };
-        VERIFY_IS_TRUE(both);
-    }
-
     TEST_METHOD(Addition)
     {
         Log::Comment(L"0.) Addition of two things that should be in bounds.");

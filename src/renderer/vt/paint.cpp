@@ -529,7 +529,7 @@ using namespace Microsoft::Console::Types;
         //   before we need to print new text.
         _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
 
-        if (_deferredCursorPos.X < _lastViewport.RightInclusive())
+        if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
         }

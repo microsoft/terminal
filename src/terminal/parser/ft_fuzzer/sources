@@ -61,7 +61,8 @@ SOURCES = \
     VTCommandFuzzer.cpp \
 
 INCLUDES = \
-    ..\..\..\inc \
+    ..\..\..\inc; \
+    $(WINCORE_OBJ_PATH)\console\dep\$(O)\vpack; \
     $(INCLUDES) \
 
 TARGETLIBS = \

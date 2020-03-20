@@ -359,6 +359,11 @@ const bool RenderData::IsSelectionActive() const
     return Selection::Instance().IsAreaSelected();
 }
 
+const bool RenderData::IsBlockSelection() const noexcept
+{
+    return !Selection::Instance().IsLineSelection();
+}
+
 // Routine Description:
 // - If a selection exists, clears it and restores the state.
 //   Will also unblock a blocked write if one exists.

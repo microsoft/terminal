@@ -27,9 +27,10 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const COORD start,
                                                         const COORD end,
+                                                        bool blockRange,
                                                         const std::wstring_view wordDelimiters) noexcept
 {
-    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, wordDelimiters);
+    return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, start, end, blockRange, wordDelimiters);
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
