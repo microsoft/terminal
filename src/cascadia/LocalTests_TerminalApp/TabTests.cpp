@@ -260,50 +260,20 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(page);
         VERIFY_IS_NOT_NULL(page->_settings);
 
-        winrt::Windows::UI::Xaml::UIElement originalContent{ nullptr };
-
         Log::Comment(NoThrowString().Format(L"Create() the TerminalPage"));
         result = RunOnUIThread([&page, &originalContent]() {
-            originalContent = winrt::Windows::UI::Xaml::Window::Current().Content();
-
-            // VERIFY_IS_NOT_NULL(originalContent);
-
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
             page->Create();
-            Log::Comment(NoThrowString().Format(L"Create()'d"));
+            Log::Comment(NoThrowString().Format(L"Create()'d the page successfully"));
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
-            Log::Comment(NoThrowString().Format(L"got app"));
-
-            // auto f = app.as<winrt::Windows::UI::Xaml::Controls::Frame>();
-            // Log::Comment(NoThrowString().Format(L"got frame"));
-            // // f.Content(*page);
-            // //f.Navigate(page.)
-            // f.Content(page->Root());
-            // Log::Comment(NoThrowString().Format(L"Content()'d"));
 
             winrt::TerminalApp::TerminalPage pp = *page;
             winrt::Windows::UI::Xaml::Window::Current().Content(pp);
-            Log::Comment(NoThrowString().Format(L"Content()'d"));
             winrt::Windows::UI::Xaml::Window::Current().Activate();
-            Log::Comment(NoThrowString().Format(L"Activate()'d"));
         });
         VERIFY_SUCCEEDED(result);
-
-        // VERIFY_IS_NOT_NULL(originalContent);
-
-        auto cleanup = wil::scope_exit([originalContent] {
-            auto result = RunOnUIThread([originalContent]() {
-                Sleep(1000);
-                Log::Comment(NoThrowString().Format(L"Cleaning up application content..."));
-                winrt::Windows::UI::Xaml::Window::Current().Content(originalContent);
-                Log::Comment(NoThrowString().Format(L"Content()'d"));
-                winrt::Windows::UI::Xaml::Window::Current().Activate();
-                Log::Comment(NoThrowString().Format(L"Activate()'d"));
-            });
-            VERIFY_SUCCEEDED(result);
-        });
 
         result = RunOnUIThread([&page]() {
             Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
@@ -343,6 +313,18 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
+
+        auto cleanup = wil::scope_exit([] {
+            auto result = RunOnUIThread([]() {
+                // There's something causing us to crash north of
+                // TSFInputControl::NotifyEnter, or LayoutRequested. It's very
+                // unclear what that issue is. Since these tests don't run in
+                // CI, simply log a message so that the dev running these tests
+                // knows it's expected.
+                Log::Comment(L"This test often crashes on cleanup, even when it succeeds. If it succeeded, then crashes, that's okay.");
+            });
+            VERIFY_SUCCEEDED(result);
+        });
     }
 
     void TabTests::TryDuplicateBadPane()
@@ -433,13 +415,6 @@ namespace TerminalAppLocalTests
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
             Log::Comment(NoThrowString().Format(L"got app"));
 
-            // auto f = app.as<winrt::Windows::UI::Xaml::Controls::Frame>();
-            // Log::Comment(NoThrowString().Format(L"got frame"));
-            // // f.Content(*page);
-            // //f.Navigate(page.)
-            // f.Content(page->Root());
-            // Log::Comment(NoThrowString().Format(L"Content()'d"));
-
             winrt::TerminalApp::TerminalPage pp = *page;
             winrt::Windows::UI::Xaml::Window::Current().Content(pp);
             Log::Comment(NoThrowString().Format(L"Content()'d"));
@@ -474,12 +449,6 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            // Oh no I didn't actually duplicate the pane, what did I do
-            // DebugBreak();
-            // The problem here is that the pane doesn't actually have a real
-            // size yet. It thinks it's 0x0, which it is. We either need to
-            // - 1. trick the test into thinking the pane has a real size
-            // - 2. allow panes to be split regardless of their minimum size
             page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
@@ -507,6 +476,18 @@ namespace TerminalAppLocalTests
                              L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
+
+        auto cleanup = wil::scope_exit([] {
+            auto result = RunOnUIThread([]() {
+                // There's something causing us to crash north of
+                // TSFInputControl::NotifyEnter, or LayoutRequested. It's very
+                // unclear what that issue is. Since these tests don't run in
+                // CI, simply log a message so that the dev running these tests
+                // knows it's expected.
+                Log::Comment(L"This test often crashes on cleanup, even when it succeeds. If it succeeded, then crashes, that's okay.");
+            });
+            VERIFY_SUCCEEDED(result);
+        });
     }
 
 }
