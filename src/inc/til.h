@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define _TIL_INLINEPREFIX __declspec(noinline) inline
+
 #include "til/at.h"
 #include "til/color.h"
 #include "til/some.h"

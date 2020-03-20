@@ -530,8 +530,6 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     expectedOutput.push_back("\r\n");
     // Now write row 2 of the buffer
     expectedOutput.push_back("1234567890");
-    // and clear everything after the text, because the buffer is empty.
-    expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb);
@@ -594,8 +592,6 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     expectedOutput.push_back("\r\n");
     // Now write row 2 of the buffer
     expectedOutput.push_back("          1234567890");
-    // and clear everything after the text, because the buffer is empty.
-    expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb);

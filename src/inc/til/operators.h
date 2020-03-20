@@ -7,8 +7,6 @@
 #include "size.h"
 #include "bitmap.h"
 
-#define _TIL_INLINEPREFIX __declspec(noinline) inline
-
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     // Operators go here when they involve two headers that can't/don't include each other.

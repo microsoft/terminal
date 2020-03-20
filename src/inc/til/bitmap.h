@@ -149,13 +149,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _sz(sz),
             _rc(sz),
             _bits(sz.area(), fill),
-            _dirty(),
+            _dirty(fill ? sz : til::rectangle{ sz }),
             _runs{}
         {
-            if (fill)
-            {
-                _dirty = til::rectangle{ sz };
-            }
         }
 
         constexpr bool operator==(const bitmap& other) const noexcept
@@ -190,14 +186,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // If there's only one square dirty, quick save it off and be done.
                 if (one())
                 {
-                    // We're const for the sake of actually manipulating the dirty state.
-                    // But we remove const for updating the cache.
-                    _runs.emplace({ _dirty.value() });
+                    _runs.emplace({ _dirty });
                 }
                 else
                 {
-                    // We're const for the sake of actually manipulating the dirty state.
-                    // But we remove const for updating the cache.
                     _runs.emplace(begin(), end());
                 }
             }
@@ -279,14 +271,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             til::at(_bits, _rc.index_of(pt)) = true;
 
-            if (_dirty.has_value())
-            {
-                _dirty.value() |= til::rectangle{ pt };
-            }
-            else
-            {
-                _dirty = til::rectangle{ pt };
-            }
+            _dirty |= til::rectangle{ pt };
         }
 
         void set(const til::rectangle rc)
@@ -299,14 +284,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 til::at(_bits, _rc.index_of(pt)) = true;
             }
 
-            if (_dirty.has_value())
-            {
-                _dirty.value() |= rc;
-            }
-            else
-            {
-                _dirty = rc;
-            }
+            _dirty |= rc;
         }
 
         void set_all()
@@ -387,7 +365,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         bool one() const
         {
-            return _dirty.has_value() && _dirty.value().size() == til::size{ 1, 1 };
+            return _dirty.size() == til::size{ 1, 1 };
         }
 
         constexpr bool any() const noexcept
@@ -397,12 +375,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool none() const noexcept
         {
-            return !_dirty.has_value();
+            return _dirty.empty();
         }
 
         constexpr bool all() const noexcept
         {
-            return _dirty.has_value() && _dirty.value() == _rc;
+            return _dirty == _rc;
         }
 
         std::wstring to_string() const
@@ -421,7 +399,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
-        std::optional<til::rectangle> _dirty;
+        til::rectangle _dirty;
         til::size _sz;
         til::rectangle _rc;
         std::vector<bool> _bits;

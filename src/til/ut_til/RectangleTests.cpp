@@ -797,26 +797,6 @@ class RectangleTests
         }
     }
 
-    TEST_METHOD(MultiplicationSize)
-    {
-        const til::rectangle start{ 10, 20, 30, 40 };
-        const til::size size{ 3, 7 };
-        const til::rectangle expected{ 10 * 3, 20 * 7, 30 * 3, 40 * 7 };
-        const auto actual = start * size;
-
-        VERIFY_ARE_EQUAL(expected, actual);
-    }
-
-    TEST_METHOD(MultiplicationSizeInplace)
-    {
-        til::rectangle start{ 10, 20, 30, 40 };
-        const til::size size{ 3, 7 };
-        const til::rectangle expected{ 10 * 3, 20 * 7, 30 * 3, 40 * 7 };
-        start *= size;
-
-        VERIFY_ARE_EQUAL(expected, start);
-    }
-
     TEST_METHOD(Top)
     {
         const til::rectangle rc{ 5, 10, 15, 20 };

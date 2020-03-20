@@ -636,29 +636,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return *this;
         }
 
-        // MUL will scale the entire rectangle by the size L/R * WIDTH and T/B * HEIGHT.
-        rectangle operator*(const size& size) const
-        {
-            ptrdiff_t l;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(left(), size.width()).AssignIfValid(&l));
-
-            ptrdiff_t t;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(top(), size.height()).AssignIfValid(&t));
-
-            ptrdiff_t r;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(right(), size.width()).AssignIfValid(&r));
-
-            ptrdiff_t b;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(bottom(), size.height()).AssignIfValid(&b));
-
-            return til::rectangle{ l, t, r, b };
-        }
-
-        rectangle& operator*=(const size& size)
-        {
-            *this = *this * size;
-            return *this;
-        }
 #pragma endregion
 
         constexpr ptrdiff_t top() const noexcept

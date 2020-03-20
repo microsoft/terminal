@@ -411,20 +411,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // Scroll the current offset and invalidate the revealed area
         _invalidMap.translate(til::point(*pcoordDelta), true);
 
-        // TODO: MIGRIE DO WE NEED THIS IF THE TRANSLATION ABOVE FILLS THE VACATED AREA?
-        // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
-
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = invalid.Bottom + dy;
-        }
-        _invalidMap.set(til::rectangle(Viewport::FromExclusive(invalid).ToInclusive()));
-
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
