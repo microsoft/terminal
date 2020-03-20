@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{88b6ee17-0fc8-4fa5-8243-92479ee5c446}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Chop</RootNamespace>
+    <ProjectName>Chop.EXE</ProjectName>
+    <TargetName>chop</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="..\common.build.pre.props" />
+  <ItemGroup>
+    <ClInclude Include="precomp.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ClCompile Include="exemain.cpp" />
+    <ClCompile Include="../server/DeviceHandle.cpp" />
+    <ClCompile Include="../server/WinNTControl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <EmbedManifest>
+    </EmbedManifest>
+    <GenerateManifest>true</GenerateManifest>
+  </PropertyGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="..\common.build.post.props" />
+</Project>
