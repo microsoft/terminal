@@ -61,7 +61,7 @@ namespace Microsoft::Console::VirtualTerminal
         void UseAlternateScreenBuffer() noexcept;
         void UseMainScreenBuffer() noexcept;
 
-        void SetMouseModeChangedCallback(std::function<void()> mouseModeChangedCallback);
+        void SetMouseModeChangedCallback(std::function<void()> mouseModeChangedCallback) noexcept;
 #pragma endregion
 
     private:

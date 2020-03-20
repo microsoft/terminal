@@ -50,7 +50,11 @@ void TerminalInput::EnableDefaultTracking(const bool enable) noexcept
 
     if (_mouseModeChangedCallback)
     {
-        _mouseModeChangedCallback();
+        try
+        {
+            _mouseModeChangedCallback();
+        }
+        CATCH_LOG();
     }
 }
 
@@ -71,7 +75,11 @@ void TerminalInput::EnableButtonEventTracking(const bool enable) noexcept
 
     if (_mouseModeChangedCallback)
     {
-        _mouseModeChangedCallback();
+        try
+        {
+            _mouseModeChangedCallback();
+        }
+        CATCH_LOG();
     }
 }
 
@@ -92,7 +100,11 @@ void TerminalInput::EnableAnyEventTracking(const bool enable) noexcept
 
     if (_mouseModeChangedCallback)
     {
-        _mouseModeChangedCallback();
+        try
+        {
+            _mouseModeChangedCallback();
+        }
+        CATCH_LOG();
     }
 }
 
@@ -133,7 +145,7 @@ void TerminalInput::UseMainScreenBuffer() noexcept
 // - Sets up the callback for mouse input mode changes
 // Parameters:
 // - mouseModeChangedCallback: the callback
-void TerminalInput::SetMouseModeChangedCallback(std::function<void()> mouseModeChangedCallback)
+void TerminalInput::SetMouseModeChangedCallback(std::function<void()> mouseModeChangedCallback) noexcept
 {
     _mouseModeChangedCallback = std::move(mouseModeChangedCallback);
 }
