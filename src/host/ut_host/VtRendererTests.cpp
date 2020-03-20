@@ -268,11 +268,11 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 1, 1 };
+    SMALL_RECT invalid = { 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
@@ -287,7 +287,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, runs.front());
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
 
@@ -313,7 +313,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -329,7 +329,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, runs.front());
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -354,7 +354,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -384,7 +384,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -412,8 +412,20 @@ void VtRendererTest::Xterm256TestInvalidate()
             invalidRect |= runs[i];
         }
 
-        // verify the rect matches the entire view
-        VERIFY_ARE_EQUAL(til::rectangle{ view.ToInclusive() }, invalidRect);
+        // only the bottom line should be dirty.
+        // When we scrolled down, the bitmap looked like this:
+        // 1111
+        // 0000
+        // 0000
+        // 0000
+        // And then we scrolled up and the top line fell off and a bottom
+        // line was filled in like this:
+        // 0000
+        // 0000
+        // 0000
+        // 1111
+        const til::rectangle expected{ til::point{view.Left(), view.BottomInclusive()}, til::size{view.Width(), 1} };
+        VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
@@ -777,11 +789,11 @@ void VtRendererTest::XtermTestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 1, 1 };
+    SMALL_RECT invalid = { 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
@@ -796,7 +808,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, runs.front());
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
@@ -821,7 +833,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -837,7 +849,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, runs.front());
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -862,7 +874,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -892,7 +904,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -920,8 +932,20 @@ void VtRendererTest::XtermTestInvalidate()
             invalidRect |= runs[i];
         }
 
-        // verify the rect matches the entire view
-        VERIFY_ARE_EQUAL(til::rectangle{ view.ToInclusive() }, invalidRect);
+        // only the bottom line should be dirty.
+        // When we scrolled down, the bitmap looked like this:
+        // 1111
+        // 0000
+        // 0000
+        // 0000
+        // And then we scrolled up and the top line fell off and a bottom
+        // line was filled in like this:
+        // 0000
+        // 0000
+        // 0000
+        // 1111
+        const til::rectangle expected{ til::point{view.Left(), view.BottomInclusive()}, til::size{view.Width(), 1} };
+        VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
@@ -1140,10 +1164,10 @@ void VtRendererTest::WinTelnetTestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 1, 1 };
+    SMALL_RECT invalid = { 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
-        VERIFY_ARE_EQUAL(til::rectangle{ invalid }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
