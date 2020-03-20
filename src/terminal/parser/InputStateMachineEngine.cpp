@@ -749,14 +749,18 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept
 {
-    // Both Cursor keys and generic keys keep their modifiers in the same index.
+    DWORD modifiers = 0;
+    if (_IsModified(parameters.size()) && parameters.size() >= 2)
+    {
+        modifiers = _GetModifier(parameters.at(1));
+    }
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
     //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
     //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
     //   of the keypad; and the divide (/) and ENTER keys in the keypad.
-    // We need to make sure we set the ENHANCED_KEY flag here.
-    return ENHANCED_KEY | _GetGenericKeysModifierState(parameters);
+    // This snippet detects the direction keys
+    return WI_SetFlag(modifiers, ENHANCED_KEY);
 }
 
 // Method Description:
@@ -773,6 +777,18 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
     {
         modifiers = _GetModifier(parameters.at(1));
     }
+
+    // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
+    //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
+    //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
+    //   of the keypad; and the divide (/) and ENTER keys in the keypad.
+    // This snippet detects the non-direction keys
+    const auto identifier = (GenericKeyIdentifiers)til::at(parameters, 0);
+    if (identifier <= GenericKeyIdentifiers::Next)
+    {
+        modifiers = WI_SetFlag(modifiers, ENHANCED_KEY);
+    }
+
     return modifiers;
 }
 
