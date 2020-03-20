@@ -958,7 +958,9 @@ namespace winrt::TerminalApp::implementation
             // Wraparound math. By adding tabCount and then calculating modulo tabCount,
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
-            _SetFocusedTabIndex(((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount));
+            const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            // _SetFocusedTabIndex(newTabIndex);
+            _SelectTab(newTabIndex);
         }
     }
 
@@ -971,7 +973,17 @@ namespace winrt::TerminalApp::implementation
     {
         if (tabIndex >= 0 && tabIndex < _tabs.Size())
         {
-            _SetFocusedTabIndex(tabIndex);
+            if (_startupState == StartupState::InStartup)
+            {
+                auto tab{ _GetStrongTabImpl(tabIndex) };
+                _tabView.SelectedItem(tab->GetTabViewItem());
+                _UpdatedSelectedTab(tabIndex);
+            }
+            else
+            {
+                _SetFocusedTabIndex(tabIndex);
+            }
+
             return true;
         }
         return false;
@@ -1036,6 +1048,12 @@ namespace winrt::TerminalApp::implementation
         {
             auto tab{ _GetStrongTabImpl(tabIndex) };
             _tabView.SelectedItem(tab->GetTabViewItem());
+
+            // If we're in startup, we're not going to come back through the dispatcher to handle
+            // if (page->_startupState == StartupState::InStartup)
+            // {
+            //     page->_UpdatedSelectedTab(tabIndex);
+            // }
         }
     }
 
@@ -1499,6 +1517,31 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_UpdatedSelectedTab(const int32_t index)
+    {
+        // Unfocus all the tabs.
+        for (auto tab : _tabs)
+        {
+            auto tabImpl{ _GetStrongTabImpl(tab) };
+            tabImpl->SetFocused(false);
+        }
+
+        if (index >= 0)
+        {
+            try
+            {
+                auto tab{ _GetStrongTabImpl(index) };
+
+                _tabContent.Children().Clear();
+                _tabContent.Children().Append(tab->GetRootElement());
+
+                tab->SetFocused(true);
+                _titleChangeHandlers(*this, Title());
+            }
+            CATCH_LOG();
+        }
+    }
+
     // Method Description:
     // - Responds to the TabView control's Selection Changed event (to move a
     //      new terminal control into focus) when not in in the middle of a tab rearrangement.
@@ -1511,28 +1554,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-
-            // Unfocus all the tabs.
-            for (auto tab : _tabs)
-            {
-                auto tabImpl{ _GetStrongTabImpl(tab) };
-                tabImpl->SetFocused(false);
-            }
-
-            if (selectedIndex >= 0)
-            {
-                try
-                {
-                    auto tab{ _GetStrongTabImpl(selectedIndex) };
-
-                    _tabContent.Children().Clear();
-                    _tabContent.Children().Append(tab->GetRootElement());
-
-                    tab->SetFocused(true);
-                    _titleChangeHandlers(*this, Title());
-                }
-                CATCH_LOG();
-            }
+            _UpdatedSelectedTab(selectedIndex);
         }
     }
 
