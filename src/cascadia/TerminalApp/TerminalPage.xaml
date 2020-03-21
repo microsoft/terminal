@@ -19,5 +19,48 @@ the MIT License. See LICENSE in the project root for license information. -->
         <local:TabRowControl x:Name="TabRow" Grid.Row="0" />
 
         <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="AboutDialog"
+            x:Uid="AboutDialog"
+            DefaultButton="Close">
+            <TextBlock IsTextSelectionEnabled="True">
+                <Run Text="{x:Bind ApplicationDisplayName}" />
+                <LineBreak />
+
+                <Run x:Uid="AboutDialogVersion" />
+                <Run Text="{x:Bind ApplicationVersion}" />
+                <LineBreak />
+
+                <Hyperlink x:Uid="AboutGettingStartedLink">
+                    <Run x:Uid="AboutGettingStartedText" />
+                </Hyperlink>
+                <LineBreak />
+
+                <Hyperlink x:Uid="AboutDocumentationLink">
+                    <Run x:Uid="AboutDocumentationText" />
+                </Hyperlink>
+                <LineBreak />
+
+                <Hyperlink x:Uid="AboutReleaseNotesLink">
+                    <Run x:Uid="AboutReleaseNotesText" />
+                </Hyperlink>
+                <LineBreak />
+
+                <Hyperlink x:Uid="AboutPrivacyPolicyLink">
+                    <Run x:Uid="AboutPrivacyPolicyText" />
+                </Hyperlink>
+                <LineBreak />
+            </TextBlock>
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="CloseAllDialog"
+            x:Uid="CloseAllDialog"
+            DefaultButton="Primary"
+            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
+        </ContentDialog>
     </Grid>
 </Page>

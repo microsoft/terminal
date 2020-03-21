@@ -13,6 +13,10 @@ namespace TerminalApp
         Int32 SetStartupCommandline(String[] commands);
         String EarlyExitMessage { get; };
 
+        // Xaml bindables
+        String ApplicationDisplayName { get; };
+        String ApplicationVersion { get; };
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;

@@ -162,40 +162,6 @@ Temporarily using the Windows Terminal default settings.
   <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to reload settings</value>
   </data>
-  <data name="AboutTitleText" xml:space="preserve">
-    <value>About</value>
-  </data>
-  <data name="VersionLabelText" xml:space="preserve">
-    <value>Version:</value>
-  </data>
-  <data name="DocumentationLabelText" xml:space="preserve">
-    <value>Documentation
-</value>
-  </data>
-  <data name="GettingStartedLabelText" xml:space="preserve">
-    <value>Getting Started
-</value>
-  </data>
-  <data name="ReleaseNotesLabelText" xml:space="preserve">
-    <value>Release Notes
-</value>
-  </data>
-  <data name="PrivacyPolicyLabelText" xml:space="preserve">
-    <value>Privacy Policy
-</value>
-  </data>
-  <data name="DocumentationUriValue" xml:space="preserve">
-    <value>https://aka.ms/terminal-documentation</value>
-  </data>
-  <data name="GettingStartedUriValue" xml:space="preserve">
-    <value>https://aka.ms/terminal-getting-started</value>
-  </data>
-  <data name="ReleaseNotesUriValue" xml:space="preserve">
-    <value>https://aka.ms/terminal-release-notes</value>
-  </data>
-  <data name="PrivacyPolicyUriValue" xml:space="preserve">
-    <value>https://aka.ms/terminal-privacy-policy</value>
-  </data>
   <data name="FeedbackUriValue" xml:space="preserve">
     <value>https://aka.ms/terminal-feedback</value>
   </data>
@@ -207,15 +173,6 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Settings</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="CloseAll" xml:space="preserve">
-    <value>Close all</value>
-  </data>
-  <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Do you want to close all tabs?</value>
   </data>
   <data name="InvalidBackgroundImage" xml:space="preserve">
     <value>Found a profile with an invalid "backgroundImage". Defaulting that profile to have no background image. Make sure that when setting a "backgroundImage", the value is a valid file path to an image.</value>
@@ -282,5 +239,60 @@ Temporarily using the Windows Terminal default settings.
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Minimize</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="AboutDialogVersion.Text" xml:space="preserve">
+    <value>Version:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutGettingStartedText.Text" xml:space="preserve">
+    <value>Getting Started</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutGettingStartedLink.NavigateUri" xml:space="preserve">
+    <value>https://aka.ms/terminal-getting-started</value>
+  </data>
+  <data name="AboutDocumentationText.Text" xml:space="preserve">
+    <value>Documentation</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDocumentationLink.NavigateUri" xml:space="preserve">
+    <value>https://aka.ms/terminal-documentation</value>
+  </data>
+  <data name="AboutReleaseNotesText.Text" xml:space="preserve">
+    <value>Release Notes</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutReleaseNotesLink.NavigateUri" xml:space="preserve">
+    <value>https://aka.ms/terminal-release-notes</value>
+  </data>
+  <data name="AboutPrivacyPolicyText.Text" xml:space="preserve">
+    <value>Privacy Policy</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutPrivacyPolicyLink.NavigateUri" xml:space="preserve">
+    <value>https://aka.ms/terminal-privacy-policy</value>
+  </data>
+  <data name="AboutDialogDisplayNameUnpackaged" xml:space="preserve">
+    <value>Windows Terminal (Unpackaged)</value>
+    <comment>This display name is used when the application's name cannot be determined</comment>
+  </data>
+  <data name="AboutDialogVersionUnknown" xml:space="preserve">
+    <value>Unknown</value>
+    <comment>This is displayed when the version of the application cannot be determined</comment>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>Do you want to close all tabs?</value>
   </data>
 </root>
