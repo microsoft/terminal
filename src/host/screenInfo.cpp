@@ -166,7 +166,7 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
 // Arguments:
 // - <none>
 // Return Value:
-// - a viewport whos height is the height of the "terminal" portion of the
+// - a viewport whose height is the height of the "terminal" portion of the
 //      buffer in terminal scrolling mode, and is the height of the full buffer
 //      in normal scrolling mode.
 Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
