@@ -172,7 +172,7 @@ void AppCommandlineArgs::_buildNewTabParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _newTabCommand.subcommand->callback([&, this]() {
-        // Buld the NewTab action from the values we've parsed on the commandline.
+        // Build the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
         newTabAction->Action(ShortcutAction::NewTab);
         auto args = winrt::make_self<implementation::NewTabArgs>();
@@ -207,7 +207,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _newPaneCommand.subcommand->callback([&, this]() {
-        // Buld the SplitPane action from the values we've parsed on the commandline.
+        // Build the SplitPane action from the values we've parsed on the commandline.
         auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
         splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
         auto args = winrt::make_self<implementation::SplitPaneArgs>();
@@ -259,7 +259,7 @@ void AppCommandlineArgs::_buildFocusTabParser()
     // that `this` will still be safe - this function just lets us know this
     // command was parsed.
     _focusTabCommand->callback([&, this]() {
-        // Buld the action from the values we've parsed on the commandline.
+        // Build the action from the values we've parsed on the commandline.
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
 
         if (_focusTabIndex >= 0)
