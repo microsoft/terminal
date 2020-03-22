@@ -765,7 +765,7 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // If we're in terminal scrolling mode, and we're rying to set the viewport
+    // If we're in terminal scrolling mode, and we're trying to set the viewport
     //      below the logical viewport, without updating our virtual bottom
     //      (the logical viewport's position), dont.
     //  Instead move us to the bottom of the logical viewport.
