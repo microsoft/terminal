@@ -38,15 +38,16 @@ namespace Microsoft::Console::Types
         public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
-        HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
 
-        ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
-        ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
-        ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = default;
-        ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = default;
+        ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = delete;
+        ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = delete;
+        ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = delete;
+        ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = delete;
         ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
+        virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept override;
@@ -78,7 +79,7 @@ namespace Microsoft::Console::Types
     protected:
         ScreenInfoUiaProviderBase() = default;
 
-        virtual HRESULT GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _Out_ std::deque<WRL::ComPtr<UiaTextRangeBase>>& selectionRanges) = 0;
+        virtual HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // degenerate range
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
@@ -103,9 +104,9 @@ namespace Microsoft::Console::Types
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
         // weak reference to IUiaData
-        IUiaData* _pData;
+        IUiaData* _pData{ nullptr };
 
-        std::wstring _wordDelimiters;
+        std::wstring _wordDelimiters{};
 
     private:
         // this is used to prevent the object from
@@ -119,7 +120,7 @@ namespace Microsoft::Console::Types
         // eventually overflowing the stack.
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
-        std::map<EVENTID, bool> _signalFiringMapping;
+        std::map<EVENTID, bool> _signalFiringMapping{};
 
         const COORD _getScreenBufferCoords() const;
         const TextBuffer& _getTextBuffer() const noexcept;
@@ -127,49 +128,4 @@ namespace Microsoft::Console::Types
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
     };
-
-    namespace ScreenInfoUiaProviderTracing
-    {
-        enum class ApiCall
-        {
-            Constructor,
-            Signal,
-            GetProviderOptions,
-            GetPatternProvider,
-            GetPropertyValue,
-            GetHostRawElementProvider,
-            Navigate,
-            GetRuntimeId,
-            GetBoundingRectangle,
-            GetEmbeddedFragmentRoots,
-            SetFocus,
-            GetFragmentRoot,
-            GetSelection,
-            GetVisibleRanges,
-            RangeFromChild,
-            RangeFromPoint,
-            GetDocumentRange,
-            GetSupportedTextSelection
-        };
-
-        struct IApiMsg
-        {
-        };
-
-        struct ApiMsgSignal : public IApiMsg
-        {
-            EVENTID Signal;
-        };
-
-        struct ApiMsgNavigate : public IApiMsg
-        {
-            NavigateDirection Direction;
-        };
-
-        struct ApiMsgGetSelection : public IApiMsg
-        {
-            bool AreaSelected;
-            unsigned int SelectionRowCount;
-        };
-    }
 }

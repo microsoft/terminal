@@ -50,6 +50,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _used = init.size();
         }
 
+        constexpr bool operator==(const til::some<T, N>& other) const noexcept
+        {
+            return std::equal(cbegin(), cend(), other.cbegin(), other.cend());
+        }
+
+        constexpr bool operator!=(const til::some<T, N>& other) const noexcept
+        {
+            return !(*this == other);
+        }
+
         void fill(const T& _Value)
         {
             _array.fill(_Value);
@@ -117,6 +127,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !_used;
         }
 
+        constexpr void clear() noexcept
+        {
+            _used = 0;
+            _array = {}; // should free members, if necessary.
+        }
+
         constexpr const_reference at(size_type pos) const
         {
             if (_used <= pos)
@@ -159,6 +175,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ++_used;
         }
 
+        void push_back(T&& val)
+        {
+            if (_used >= N)
+            {
+                _outOfRange();
+            }
+
+            til::at(_array, _used) = std::move(val);
+
+            ++_used;
+        }
+
         void pop_back()
         {
             if (_used <= 0)
@@ -182,3 +210,51 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 }
+
+#ifdef __WEX_COMMON_H__
+namespace WEX::TestExecution
+{
+    template<class T, size_t N>
+    class VerifyOutputTraits<::til::some<T, N>>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const ::til::some<T, N>& some)
+        {
+            auto str = WEX::Common::NoThrowString().Format(L"\r\nSome contains %d of max size %d:\r\nElements:\r\n", some.size(), some.max_size());
+
+            for (auto& item : some)
+            {
+                const auto itemStr = WEX::TestExecution::VerifyOutputTraits<T>::ToString(item);
+                str.AppendFormat(L"\t- %ws\r\n", (const wchar_t*)itemStr);
+            }
+
+            return str;
+        }
+    };
+
+    template<class T, size_t N>
+    class VerifyCompareTraits<::til::some<T, N>, ::til::some<T, N>>
+    {
+    public:
+        static bool AreEqual(const ::til::some<T, N>& expected, const ::til::some<T, N>& actual) noexcept
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const ::til::some<T, N>& expected, const ::til::some<T, N>& actual) noexcept
+        {
+            return &expected == &actual;
+        }
+
+        static bool IsLessThan(const ::til::some<T, N>& expectedLess, const ::til::some<T, N>& expectedGreater) = delete;
+
+        static bool IsGreaterThan(const ::til::some<T, N>& expectedGreater, const ::til::some<T, N>& expectedLess) = delete;
+
+        static bool IsNull(const ::til::some<T, N>& object) noexcept
+        {
+            return object == til::some<T, N>{};
+        }
+    };
+
+};
+#endif

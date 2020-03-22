@@ -22,6 +22,7 @@
       When we do this, the XBF ends up in resources.pri.
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -187,6 +188,7 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
+    <Midl Include="../IF7Listener.idl" />
     <Midl Include="../App.idl">
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
@@ -214,7 +216,7 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <PRIResource Include="../Resources/en-US/Resources.resw" />
+    <PRIResource Include="../Resources/Resources.language-en.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -272,7 +274,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>

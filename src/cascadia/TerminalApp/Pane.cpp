@@ -803,10 +803,10 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         const auto paneSizes = _CalcChildrenSizes(rootSize.Width);
 
         auto firstColDef = Controls::ColumnDefinition();
-        firstColDef.Width(GridLengthHelper::FromPixels(paneSizes.first));
+        firstColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
 
         auto secondColDef = Controls::ColumnDefinition();
-        secondColDef.Width(GridLengthHelper::FromPixels(paneSizes.second));
+        secondColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
 
         _root.ColumnDefinitions().Append(firstColDef);
         _root.ColumnDefinitions().Append(secondColDef);
@@ -819,10 +819,10 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         const auto paneSizes = _CalcChildrenSizes(rootSize.Height);
 
         auto firstRowDef = Controls::RowDefinition();
-        firstRowDef.Height(GridLengthHelper::FromPixels(paneSizes.first));
+        firstRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
 
         auto secondRowDef = Controls::RowDefinition();
-        secondRowDef.Height(GridLengthHelper::FromPixels(paneSizes.second));
+        secondRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
 
         _root.RowDefinitions().Append(firstRowDef);
         _root.RowDefinitions().Append(secondRowDef);

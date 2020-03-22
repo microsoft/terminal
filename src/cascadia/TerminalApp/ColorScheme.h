@@ -35,7 +35,7 @@ class TerminalApp::ColorScheme
 {
 public:
     ColorScheme();
-    ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg);
+    ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
     ~ColorScheme();
 
     void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
@@ -50,6 +50,7 @@ public:
     COLORREF GetForeground() const noexcept;
     COLORREF GetBackground() const noexcept;
     COLORREF GetSelectionBackground() const noexcept;
+    COLORREF GetCursorColor() const noexcept;
 
     static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
@@ -59,6 +60,7 @@ private:
     COLORREF _defaultForeground;
     COLORREF _defaultBackground;
     COLORREF _selectionBackground;
+    COLORREF _cursorColor;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;

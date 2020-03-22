@@ -113,6 +113,8 @@ class Microsoft::Console::Render::VtRendererTest
     TEST_METHOD(WinTelnetTestColors);
     TEST_METHOD(WinTelnetTestCursor);
 
+    TEST_METHOD(FormattedString);
+
     TEST_METHOD(TestWrapping);
 
     TEST_METHOD(TestResize);
@@ -260,7 +262,6 @@ void VtRendererTest::Xterm256TestInvalidate()
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
-    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
     });
@@ -604,7 +605,7 @@ void VtRendererTest::Xterm256TestCursor()
             clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
         }
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -728,7 +729,6 @@ void VtRendererTest::XtermTestInvalidate()
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
-    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
     });
@@ -1020,7 +1020,7 @@ void VtRendererTest::XtermTestCursor()
             clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
         }
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1250,7 +1250,7 @@ void VtRendererTest::WinTelnetTestCursor()
             clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
         }
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 10, 1 }));
@@ -1315,8 +1315,8 @@ void VtRendererTest::TestWrapping()
             clusters2.emplace_back(std::wstring_view{ &line2[i], 1 }, static_cast<size_t>(rgWidths[i]));
         }
 
-        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters1.data(), clusters1.size() }, { 0, 0 }, false));
-        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters2.data(), clusters2.size() }, { 0, 1 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters1.data(), clusters1.size() }, { 0, 0 }, false, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters2.data(), clusters2.size() }, { 0, 1 }, false, false));
     });
 }
 
@@ -1471,4 +1471,36 @@ void VtRendererTest::TestCursorVisibility()
     VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
     VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
+}
+
+void VtRendererTest::FormattedString()
+{
+    // This test works with a static cache variable that
+    // can be affected by other tests
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES();
+
+    static const std::string format("\x1b[%dm");
+    const auto value = 12;
+
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    Log::Comment(L"1.) Write it once. It should resize itself.");
+    qExpectedInput.push_back("\x1b[12m");
+    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&format, value));
+
+    Log::Comment(L"2.) Write the same thing again, should be fine.");
+    qExpectedInput.push_back("\x1b[12m");
+    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&format, value));
+
+    Log::Comment(L"3.) Now write something huge. Should resize itself and still be fine.");
+    static const std::string bigFormat("\x1b[28;3;%d;%d;%dm");
+    const auto bigValue = 500;
+    qExpectedInput.push_back("\x1b[28;3;500;500;500m");
+    VERIFY_SUCCEEDED(engine->_WriteFormattedString(&bigFormat, bigValue, bigValue, bigValue));
 }

@@ -111,5 +111,17 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]] HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring_view wstr) noexcept
 {
-    return VtEngine::_WriteTerminalAscii(wstr);
+    RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
+    // GH#4106, GH#2011 - WriteTerminalW is only ever called by the
+    // StateMachine, when we've encountered a string we don't understand. When
+    // this happens, we usually don't actually trigger another frame, but we
+    // _do_ want this string to immediately be sent to the terminal. Since we
+    // only flush our buffer on actual frames, this means that strings we've
+    // decided to pass through would have gotten buffered here until the next
+    // actual frame is triggered.
+    //
+    // To fix this, flush here, so this string is sent to the connected terminal
+    // application.
+
+    return _Flush();
 }

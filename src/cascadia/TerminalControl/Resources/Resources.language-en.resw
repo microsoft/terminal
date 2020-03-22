@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,22 +117,51 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AppDescription" xml:space="preserve">
-    <value>The New Windows Terminal</value>
+  <data name="SearchBox_CaseSensitivity.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Match Case</value>
+    <comment>The tooltip text for the case sensitivity button on the search box control.</comment>
   </data>
-  <data name="AppName" xml:space="preserve">
-    <value>Windows Terminal (Preview)</value>
+  <data name="SearchBox_Close.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+    <comment>The tooltip text for the close button on the search box control.</comment>
   </data>
-  <data name="AppDescriptionDev" xml:space="preserve">
-    <value>The Windows Terminal, but Unofficial</value>
+  <data name="SearchBox_SearchBackwards.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Find Up</value>
+    <comment>The tooltip text for the search backward button.</comment>
   </data>
-  <data name="AppNameDev" xml:space="preserve">
-    <value>Windows Terminal (Dev Build)</value>
+  <data name="SearchBox_SearchForwards.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Find Down</value>
+    <comment>The tooltip text for the search forward button.</comment>
   </data>
-  <data name="AppShortName" xml:space="preserve">
-    <value>Terminal</value>
+  <data name="SearchBox_TextBox.PlaceholderText" xml:space="preserve">
+    <value>Find...</value>
+    <comment>The placeholder text in the search box control.</comment>
   </data>
-  <data name="AppShortNameDev" xml:space="preserve">
-    <value>Terminal (Dev)</value>
+  <data name="DragFileCaption" xml:space="preserve">
+    <value>Copy path to file</value>
+    <comment>The displayed caption for dragging a file onto a terminal.</comment>
+  </data>
+  <data name="SearchBox_CaseSensitivity.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Case Sensitivity</value>
+    <comment>The name of the case sensitivity button on the search box control for accessibility.</comment>
+  </data>
+  <data name="SearchBox_SearchForwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search Forward</value>
+    <comment>The name of the search forward button for accessibility.</comment>
+  </data>
+  <data name="SearchBox_SearchBackwards.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search Backward</value>
+    <comment>The name of the search backward button for accessibility.</comment>
+  </data>
+  <data name="SearchBox_TextBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search Text</value>
+    <comment>The name of the text box on the search box control for accessibility.</comment>
+  </data>
+  <data name="TerminalControl_ControlType" xml:space="preserve">
+    <value>terminal</value>
+    <comment>The type of control that the terminal ahderes to. Used to identify how a user can interact with this kind of control.</comment>
+  </data>
+  <data name="SearchBox_Close.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Close Search Box</value>
   </data>
 </root>

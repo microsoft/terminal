@@ -27,14 +27,14 @@ public:
     bool CursorUp(const size_t /*distance*/) noexcept override { return false; } // CUU
     bool CursorDown(const size_t /*distance*/) noexcept override { return false; } // CUD
     bool CursorForward(const size_t /*distance*/) noexcept override { return false; } // CUF
-    bool CursorBackward(const size_t /*distance*/) noexcept override { return false; } // CUB
+    bool CursorBackward(const size_t /*distance*/) noexcept override { return false; } // CUB, BS
     bool CursorNextLine(const size_t /*distance*/) noexcept override { return false; } // CNL
     bool CursorPrevLine(const size_t /*distance*/) noexcept override { return false; } // CPL
-    bool CursorHorizontalPositionAbsolute(const size_t /*column*/) noexcept override { return false; } // CHA
+    bool CursorHorizontalPositionAbsolute(const size_t /*column*/) noexcept override { return false; } // HPA, CHA
     bool VerticalLinePositionAbsolute(const size_t /*line*/) noexcept override { return false; } // VPA
     bool HorizontalPositionRelative(const size_t /*distance*/) noexcept override { return false; } // HPR
     bool VerticalPositionRelative(const size_t /*distance*/) noexcept override { return false; } // VPR
-    bool CursorPosition(const size_t /*line*/, const size_t /*column*/) noexcept override { return false; } // CUP
+    bool CursorPosition(const size_t /*line*/, const size_t /*column*/) noexcept override { return false; } // CUP, HVP
     bool CursorSaveState() noexcept override { return false; } // DECSC
     bool CursorRestoreState() noexcept override { return false; } // DECRC
     bool CursorVisibility(const bool /*isVisible*/) noexcept override { return false; } // DECTCEM
@@ -44,23 +44,23 @@ public:
     bool ScrollDown(const size_t /*distance*/) noexcept override { return false; } // SD
     bool InsertLine(const size_t /*distance*/) noexcept override { return false; } // IL
     bool DeleteLine(const size_t /*distance*/) noexcept override { return false; } // DL
-    bool SetColumns(const size_t /*columns*/) noexcept override { return false; } // DECSCPP, DECCOLM
+    bool SetColumns(const size_t /*columns*/) noexcept override { return false; } // DECCOLM
     bool SetCursorKeysMode(const bool /*applicationMode*/) noexcept override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) noexcept override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*enable*/) noexcept override { return false; } // ATT610
-    bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } //DECSCNM
+    bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } // DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
     bool SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept override { return false; }; // DECAWM
     bool SetTopBottomScrollingMargins(const size_t /*topMargin*/, const size_t /*bottomMargin*/) noexcept override { return false; } // DECSTBM
     bool WarningBell() noexcept override { return false; } // BEL
     bool CarriageReturn() noexcept override { return false; } // CR
-    bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) noexcept override { return false; } // IND, NEL
+    bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) noexcept override { return false; } // IND, NEL, LF, FF, VT
     bool ReverseLineFeed() noexcept override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) noexcept override { return false; } // OscWindowTitle
     bool UseAlternateScreenBuffer() noexcept override { return false; } // ASBSET
     bool UseMainScreenBuffer() noexcept override { return false; } // ASBRST
     bool HorizontalTabSet() noexcept override { return false; } // HTS
-    bool ForwardTab(const size_t /*numTabs*/) noexcept override { return false; } // CHT
+    bool ForwardTab(const size_t /*numTabs*/) noexcept override { return false; } // CHT, HT
     bool BackwardsTab(const size_t /*numTabs*/) noexcept override { return false; } // CBT
     bool TabClear(const size_t /*clearType*/) noexcept override { return false; } // TBC
     bool EnableDECCOLMSupport(const bool /*enabled*/) noexcept override { return false; } // ?40
@@ -84,10 +84,10 @@ public:
 
     bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
 
-    bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR
-    bool DeviceAttributes() noexcept override { return false; } // DA
+    bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-CPR
+    bool DeviceAttributes() noexcept override { return false; } // DA1
 
-    bool DesignateCharset(const wchar_t /*wchCharset*/) noexcept override { return false; } // DesignateCharset
+    bool DesignateCharset(const wchar_t /*wchCharset*/) noexcept override { return false; } // SCS
 
     bool SoftReset() noexcept override { return false; } // DECSTR
     bool HardReset() noexcept override { return false; } // RIS
