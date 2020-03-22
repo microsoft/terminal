@@ -323,7 +323,7 @@ vertically or horizontally.
 **Parameters**:
 * `--target,-t target-pane`: Creates a new split in the given `target-pane`.
   Each pane has a unique index (per-tab) which can be used to identify them.
-  These indicies are assigned in the order the panes were created. If omitted,
+  These indices are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane.
 * `-H`, `-V`: Used to indicate which direction to split the pane. `-V` is
   "vertically" (think `[|]`), and `-H` is "horizontally" (think `[-]`). If
@@ -355,7 +355,7 @@ Moves focus within the currently focused tab to a given pane.
 
 * `--target,-t target-pane`: moves focus to the given `target-pane`. Each pane
   has a unique index (per-tab) which can be used to identify them. These
-  indicies are assigned in the order the panes were created. If omitted,
+  indices are assigned in the order the panes were created. If omitted,
   defaults to the index of the currently focused pane (which is effectively a
   no-op).
 
