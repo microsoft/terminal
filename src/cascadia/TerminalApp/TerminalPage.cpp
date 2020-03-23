@@ -673,8 +673,9 @@ namespace winrt::TerminalApp::implementation
                                               const RoutedEventArgs&)
     {
         const auto feedbackUriValue = RS_(L"FeedbackUriValue");
+        winrt::Windows::Foundation::Uri feedbackUri{ feedbackUriValue };
 
-        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
+        winrt::Windows::System::Launcher::LaunchUriAsync(feedbackUri);
     }
 
     // Method Description:
