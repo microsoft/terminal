@@ -85,6 +85,12 @@
 // WRL
 #include <wrl.h>
 
+// WEX/TAEF testing
+// Include before TIL if we're unit testing so it can light up WEX/TAEF template extensions
+#ifdef UNIT_TESTING
+#include <WexTestClass.h>
+#endif
+
 // TIL - Terminal Implementation Library
 #ifndef BLOCK_TIL // Certain projects may want to include TIL manually to gain superpowers
 #include "til.h"

@@ -35,8 +35,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _LastBG(INVALID_COLOR),
     _lastWasBold(false),
     _lastViewport(initialViewport),
-    _invalidRect(Viewport::Empty()),
-    _fInvalidRectUsed(false),
+    _invalidMap(initialViewport.Dimensions()),
     _lastRealCursor({ 0 }),
     _lastText({ 0 }),
     _scrollDelta({ 0 }),
@@ -317,39 +316,18 @@ CATCH_RETURN();
         // buffer will have triggered it's own invalidations for what it knows is
         // invalid. Previously, we'd invalidate everything if the width changed,
         // because we couldn't be sure if lines were reflowed.
+        _invalidMap.resize(newView.Dimensions());
     }
     else
     {
         if (SUCCEEDED(hr))
         {
+            _invalidMap.resize(newView.Dimensions(), true); // resize while filling in new space with repaint requests.
+
             // Viewport is smaller now - just update it all.
             if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
             {
                 hr = InvalidateAll();
-            }
-            else
-            {
-                // At least one of the directions grew.
-                // First try and add everything to the right of the old viewport,
-                //      then everything below where the old viewport ended.
-                if (oldView.Width() < newView.Width())
-                {
-                    short left = oldView.RightExclusive();
-                    short top = 0;
-                    short right = newView.RightInclusive();
-                    short bottom = oldView.BottomInclusive();
-                    Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                    hr = _InvalidCombine(rightOfOldViewport);
-                }
-                if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
-                {
-                    short left = 0;
-                    short top = oldView.BottomExclusive();
-                    short right = newView.RightInclusive();
-                    short bottom = newView.BottomInclusive();
-                    Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
-                    hr = _InvalidCombine(belowOldViewport);
-                }
             }
         }
     }
@@ -416,7 +394,7 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 // - true if the entire viewport has been invalidated
 bool VtEngine::_AllIsInvalid() const
 {
-    return _lastViewport == _invalidRect;
+    return _invalidMap.all();
 }
 
 // Method Description:

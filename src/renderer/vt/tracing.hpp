@@ -27,18 +27,17 @@ namespace Microsoft::Console::VirtualTerminal
         RenderTracing();
         ~RenderTracing();
         void TraceString(const std::string_view& str) const;
-        void TraceInvalidate(const Microsoft::Console::Types::Viewport view) const;
-        void TraceLastText(const COORD lastText) const;
-        void TraceMoveCursor(const COORD lastText, const COORD cursor) const;
+        void TraceInvalidate(const til::rectangle view) const;
+        void TraceLastText(const til::point lastText) const;
+        void TraceMoveCursor(const til::point lastText, const til::point cursor) const;
         void TraceWrapped() const;
-        void TracePaintCursor(const COORD coordCursor) const;
-        void TraceInvalidateAll(const Microsoft::Console::Types::Viewport view) const;
+        void TracePaintCursor(const til::point coordCursor) const;
+        void TraceInvalidateAll(const til::rectangle view) const;
         void TraceTriggerCircling(const bool newFrame) const;
         void TraceStartPaint(const bool quickReturn,
-                             const bool invalidRectUsed,
-                             const Microsoft::Console::Types::Viewport invalidRect,
-                             const Microsoft::Console::Types::Viewport lastViewport,
-                             const COORD scrollDelta,
+                             const til::bitmap invalidMap,
+                             const til::rectangle lastViewport,
+                             const til::point scrollDelta,
                              const bool cursorMoved) const;
         void TraceEndPaint() const;
     };

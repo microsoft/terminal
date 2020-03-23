@@ -186,9 +186,9 @@ bool Common::TestBufferSetup()
 
     _hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
                                           0 /*dwShareMode*/,
-                                          NULL /*lpSecurityAttributes*/,
+                                          nullptr /*lpSecurityAttributes*/,
                                           CONSOLE_TEXTMODE_BUFFER,
-                                          NULL /*lpReserved*/);
+                                          nullptr /*lpReserved*/);
 
     VERIFY_ARE_NOT_EQUAL(_hConsole, INVALID_HANDLE_VALUE, L"Creating our test screen buffer.");
 

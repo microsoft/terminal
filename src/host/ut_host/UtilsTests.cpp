@@ -32,7 +32,7 @@ class UtilsTests
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
-        UINT const seed = (UINT)time(NULL);
+        UINT const seed = (UINT)time(nullptr);
         Log::Comment(String().Format(L"Setting random seed to : %d", seed));
         srand(seed);
 

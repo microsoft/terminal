@@ -704,7 +704,7 @@ ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schem
 bool CascadiaSettings::_IsPackaged()
 {
     UINT32 length = 0;
-    LONG rc = GetCurrentPackageFullName(&length, NULL);
+    LONG rc = GetCurrentPackageFullName(&length, nullptr);
     return rc != APPMODEL_ERROR_NO_PACKAGE;
 }
 
@@ -724,15 +724,15 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
     wil::unique_hfile hOut{ CreateFileW(pathToSettingsFile.c_str(),
                                         GENERIC_WRITE,
                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                        NULL,
+                                        nullptr,
                                         CREATE_ALWAYS,
                                         FILE_ATTRIBUTE_NORMAL,
-                                        NULL) };
+                                        nullptr) };
     if (!hOut)
     {
         THROW_LAST_ERROR();
     }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), 0, 0));
+    THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
 }
 
 // Method Description:
@@ -853,7 +853,7 @@ std::wstring CascadiaSettings::GetSettingsPath(const bool useRoamingPath)
     // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
     // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
     const auto knowFolderId = useRoamingPath ? FOLDERID_RoamingAppData : FOLDERID_LocalAppData;
-    if (FAILED(SHGetKnownFolderPath(knowFolderId, KF_FLAG_FORCE_APP_DATA_REDIRECTION, 0, &localAppDataFolder)))
+    if (FAILED(SHGetKnownFolderPath(knowFolderId, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder)))
     {
         THROW_LAST_ERROR();
     }

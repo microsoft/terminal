@@ -81,52 +81,16 @@ void RenderTracing::TraceString(const std::string_view& instr) const
 #endif UNIT_TESTING
 }
 
-std::string _ViewportToString(const Viewport& view)
-{
-    std::stringstream ss;
-    ss << "{LT:(";
-    ss << view.Left();
-    ss << ",";
-    ss << view.Top();
-    ss << ") RB:(";
-    ss << view.RightInclusive();
-    ss << ",";
-    ss << view.BottomInclusive();
-    ss << ") [";
-    ss << view.Width();
-    ss << "x";
-    ss << view.Height();
-    ss << "]}";
-    std::string myString = "";
-    const auto s = ss.str();
-    myString += s;
-    return myString;
-}
-
-std::string _CoordToString(const COORD& c)
-{
-    std::stringstream ss;
-    ss << "{";
-    ss << c.X;
-    ss << ",";
-    ss << c.Y;
-    ss << "}";
-    const auto s = ss.str();
-    // Make sure you actually place this value in a local after calling, don't
-    // just inline it to _CoordToString().c_str()
-    return s;
-}
-
-void RenderTracing::TraceInvalidate(const Viewport invalidRect) const
+void RenderTracing::TraceInvalidate(const til::rectangle invalidRect) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        const auto invalidatedStr = _ViewportToString(invalidRect);
+        const auto invalidatedStr = invalidRect.to_string();
         const auto invalidated = invalidatedStr.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceInvalidate",
-                          TraceLoggingString(invalidated),
+                          TraceLoggingWideString(invalidated),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
@@ -134,16 +98,16 @@ void RenderTracing::TraceInvalidate(const Viewport invalidRect) const
 #endif UNIT_TESTING
 }
 
-void RenderTracing::TraceInvalidateAll(const Viewport viewport) const
+void RenderTracing::TraceInvalidateAll(const til::rectangle viewport) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        const auto invalidatedStr = _ViewportToString(viewport);
+        const auto invalidatedStr = viewport.to_string();
         const auto invalidatedAll = invalidatedStr.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceInvalidateAll",
-                          TraceLoggingString(invalidatedAll),
+                          TraceLoggingWideString(invalidatedAll),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
@@ -164,35 +128,32 @@ void RenderTracing::TraceTriggerCircling(const bool newFrame) const
 }
 
 void RenderTracing::TraceStartPaint(const bool quickReturn,
-                                    const bool invalidRectUsed,
-                                    const Microsoft::Console::Types::Viewport invalidRect,
-                                    const Microsoft::Console::Types::Viewport lastViewport,
-                                    const COORD scrollDelt,
+                                    const til::bitmap invalidMap,
+                                    const til::rectangle lastViewport,
+                                    const til::point scrollDelt,
                                     const bool cursorMoved) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        const auto invalidatedStr = _ViewportToString(invalidRect);
+        const auto invalidatedStr = invalidMap.to_string();
         const auto invalidated = invalidatedStr.c_str();
-        const auto lastViewStr = _ViewportToString(lastViewport);
+        const auto lastViewStr = lastViewport.to_string();
         const auto lastView = lastViewStr.c_str();
-        const auto scrollDeltaStr = _CoordToString(scrollDelt);
+        const auto scrollDeltaStr = scrollDelt.to_string();
         const auto scrollDelta = scrollDeltaStr.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceStartPaint",
                           TraceLoggingBool(quickReturn),
-                          TraceLoggingBool(invalidRectUsed),
-                          TraceLoggingString(invalidated),
-                          TraceLoggingString(lastView),
-                          TraceLoggingString(scrollDelta),
+                          TraceLoggingWideString(invalidated),
+                          TraceLoggingWideString(lastView),
+                          TraceLoggingWideString(scrollDelta),
                           TraceLoggingBool(cursorMoved),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
     UNREFERENCED_PARAMETER(quickReturn);
-    UNREFERENCED_PARAMETER(invalidRectUsed);
-    UNREFERENCED_PARAMETER(invalidRect);
+    UNREFERENCED_PARAMETER(invalidMap);
     UNREFERENCED_PARAMETER(lastViewport);
     UNREFERENCED_PARAMETER(scrollDelt);
     UNREFERENCED_PARAMETER(cursorMoved);
@@ -209,37 +170,37 @@ void RenderTracing::TraceEndPaint() const
 #endif UNIT_TESTING
 }
 
-void RenderTracing::TraceLastText(const COORD lastTextPos) const
+void RenderTracing::TraceLastText(const til::point lastTextPos) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        const auto lastTextStr = _CoordToString(lastTextPos);
+        const auto lastTextStr = lastTextPos.to_string();
         const auto lastText = lastTextStr.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceLastText",
-                          TraceLoggingString(lastText),
+                          TraceLoggingWideString(lastText),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
     UNREFERENCED_PARAMETER(lastTextPos);
 #endif UNIT_TESTING
 }
-void RenderTracing::TraceMoveCursor(const COORD lastTextPos, const COORD cursor) const
+void RenderTracing::TraceMoveCursor(const til::point lastTextPos, const til::point cursor) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        const auto lastTextStr = _CoordToString(lastTextPos);
+        const auto lastTextStr = lastTextPos.to_string();
         const auto lastText = lastTextStr.c_str();
 
-        const auto cursorStr = _CoordToString(cursor);
+        const auto cursorStr = cursor.to_string();
         const auto cursorPos = cursorStr.c_str();
 
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceMoveCursor",
-                          TraceLoggingString(lastText),
-                          TraceLoggingString(cursorPos),
+                          TraceLoggingWideString(lastText),
+                          TraceLoggingWideString(cursorPos),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else
@@ -263,16 +224,16 @@ void RenderTracing::TraceWrapped() const
 #endif UNIT_TESTING
 }
 
-void RenderTracing::TracePaintCursor(const COORD coordCursor) const
+void RenderTracing::TracePaintCursor(const til::point coordCursor) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
     {
-        const auto cursorPosString = _CoordToString(coordCursor);
+        const auto cursorPosString = coordCursor.to_string();
         const auto cursorPos = cursorPosString.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TracePaintCursor",
-                          TraceLoggingString(cursorPos),
+                          TraceLoggingWideString(cursorPos),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 #else

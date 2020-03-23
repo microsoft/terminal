@@ -1624,7 +1624,7 @@ CATCH_RETURN()
         _ComputePixelShaderSettings();
         try
         {
-            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
         }
         CATCH_RETURN();
     }
@@ -1686,7 +1686,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<SMALL_RECT> DxEngine::GetDirtyArea()
+[[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
