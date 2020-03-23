@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SomeTests.cpp" />
+    <ClCompile Include="..\precomp.cpp" />
+    <ClCompile Include="u8u16convertTests.cpp" />
+    <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="ColorTests.cpp" />
+    <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="RectangleTests.cpp" />
+    <ClCompile Include="BitmapTests.cpp" />
+    <ClCompile Include="OperatorTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\precomp.h" />
+  </ItemGroup>
+</Project>

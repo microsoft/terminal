@@ -34,6 +34,7 @@ namespace Microsoft::Console::Types
 
     public:
         virtual const bool IsSelectionActive() const = 0;
+        virtual const bool IsBlockSelection() const = 0;
         virtual void ClearSelection() = 0;
         virtual void SelectNewRegion(const COORD coordStart, const COORD coordEnd) = 0;
         virtual const COORD GetSelectionAnchor() const noexcept = 0;

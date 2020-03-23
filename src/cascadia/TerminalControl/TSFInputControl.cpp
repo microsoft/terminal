@@ -27,9 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
-        // sets the Input Pane display policy to Manual for now so that it can manually show the
-        // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // TODO GitHub #3639: Should Input Pane display policy be Automatic
+        // InputPane is manually shown inside of TermControl.
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -165,24 +163,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
-        // Set the selection layout bounds
-        Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
+        // position textblock to cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
+        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
+
+        // calculate FontSize in pixels from DIPs
+        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
+        TextBlock().FontSize(fontSizePx);
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        const auto widthToTerminalEnd = Canvas().ActualWidth() - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        TextBlock().MaxWidth(widthToTerminalEnd);
+
+        // Set the text block bounds
+        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
+        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
+        Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
         // Set the control bounds of the whole control
         Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
-
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
-
-        TextBlock().Height(fontHeight);
-        // calculate FontSize in pixels from DIPs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
-
-        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
     }
 
     // Method Description:

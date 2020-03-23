@@ -26,6 +26,7 @@
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Automation.Peers.h>
 #include <winrt/Windows.UI.Text.Core.h>

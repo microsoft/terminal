@@ -359,6 +359,11 @@ const bool RenderData::IsSelectionActive() const
     return Selection::Instance().IsAreaSelected();
 }
 
+const bool RenderData::IsBlockSelection() const noexcept
+{
+    return !Selection::Instance().IsLineSelection();
+}
+
 // Routine Description:
 // - If a selection exists, clears it and restores the state.
 //   Will also unblock a blocked write if one exists.
@@ -444,5 +449,17 @@ const COORD RenderData::GetSelectionEnd() const noexcept
 void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
+}
+
+// Method Description:
+// - Returns true if the screen is globally inverted
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the screen is globally inverted
+bool RenderData::IsScreenReversed() const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsScreenReversed();
 }
 #pragma endregion

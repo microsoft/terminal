@@ -47,6 +47,16 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::CursorVisibility(const bool isVisible) noexcept
+{
+    return _terminalApi.SetCursorVisibility(isVisible);
+}
+
+bool TerminalDispatch::EnableCursorBlinking(const bool enable) noexcept
+{
+    return _terminalApi.EnableCursorBlinking(enable);
+}
+
 bool TerminalDispatch::CursorForward(const size_t distance) noexcept
 try
 {
@@ -213,3 +223,279 @@ try
     return _terminalApi.EraseInDisplay(eraseType);
 }
 CATCH_LOG_RETURN_FALSE()
+
+// - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
+// Arguments:
+// - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
+{
+    _terminalApi.SetKeypadMode(fApplicationMode);
+    return true;
+}
+
+// - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
+// Arguments:
+// - applicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
+{
+    _terminalApi.SetCursorKeysMode(applicationMode);
+    return true;
+}
+
+//Routine Description:
+// Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableVT200MouseMode(enabled);
+    return true;
+}
+
+//Routine Description:
+// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableUTF8ExtendedMouseMode(enabled);
+    return true;
+}
+
+//Routine Description:
+// Enable SGR Extended Encoding - this changes the encoding scheme for sequences
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableSGRExtendedMouseMode(enabled);
+    return true;
+}
+
+//Routine Description:
+// Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableButtonEventMouseMode(enabled);
+    return true;
+}
+
+//Routine Description:
+// Enable Any Event mode - send all mouse events to the input.
+
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableAnyEventMouseMode(enabled);
+    return true;
+}
+
+//Routine Description:
+// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
+//      scroll up/down events instead of the usual sequences
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
+{
+    _terminalApi.EnableAlternateScrollMode(enabled);
+    return true;
+}
+
+bool TerminalDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+{
+    return _SetResetPrivateModes(params, true);
+}
+
+bool TerminalDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+{
+    return _SetResetPrivateModes(params, false);
+}
+
+// Routine Description:
+// - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
+//     All params in the rgParams will attempt to be executed, even if one
+//     fails, to allow us to successfully re/set params that are chained with
+//     params we don't yet support.
+// Arguments:
+// - params - array of params to set/reset
+// - enable - True for set, false for unset.
+// Return Value:
+// - True if ALL params were handled successfully. False otherwise.
+bool TerminalDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable) noexcept
+{
+    // because the user might chain together params we don't support with params we DO support, execute all
+    // params in the sequence, and only return failure if we failed at least one of them
+    size_t failures = 0;
+    for (const auto& p : params)
+    {
+        failures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
+    }
+    return failures == 0;
+}
+
+// Routine Description:
+// - Support routine for routing private mode parameters to be set/reset as flags
+// Arguments:
+// - params - array of params to set/reset
+// - enable - True for set, false for unset.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable) noexcept
+{
+    bool success = false;
+    switch (param)
+    {
+    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+        // set - Enable Application Mode, reset - Normal mode
+        success = SetCursorKeysMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
+        success = EnableVT200MouseMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
+        success = EnableButtonEventMouseMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+        success = EnableAnyEventMouseMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
+        success = EnableUTF8ExtendedMouseMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
+        success = EnableSGRExtendedMouseMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
+        success = EnableAlternateScroll(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+        success = CursorVisibility(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+        success = EnableCursorBlinking(enable);
+        break;
+    default:
+        // If no functions to call, overall dispatch was a failure.
+        success = false;
+        break;
+    }
+    return success;
+}
+
+bool TerminalDispatch::SoftReset() noexcept
+{
+    // TODO:GH#1883 much of this method is not yet implemented in the Terminal,
+    // because the Terminal _doesn't need to_ yet. The terminal is only ever
+    // connected to conpty, so it doesn't implement most of these things that
+    // Hard/Soft Reset would reset. As those things are implemented, they should
+
+    // also get cleared here.
+    //
+    // This code is left here (from its original form in conhost) as a reminder
+    // of what needs to be done.
+
+    bool success = CursorVisibility(true); // Cursor enabled.
+    // if (success)
+    // {
+    //     success = SetOriginMode(false); // Absolute cursor addressing.
+    // }
+    // if (success)
+    // {
+    //     success = SetAutoWrapMode(true); // Wrap at end of line.
+    // }
+    if (success)
+    {
+        success = SetCursorKeysMode(false); // Normal characters.
+    }
+    if (success)
+    {
+        success = SetKeypadMode(false); // Numeric characters.
+    }
+    // if (success)
+    // {
+    //     // Top margin = 1; bottom margin = page length.
+    //     success = _DoSetTopBottomScrollingMargins(0, 0);
+    // }
+    // if (success)
+    // {
+    //     success = DesignateCharset(DispatchTypes::VTCharacterSets::USASCII); // Default Charset
+    // }
+    if (success)
+    {
+        const auto opt = DispatchTypes::GraphicsOptions::Off;
+        success = SetGraphicsRendition({ &opt, 1 }); // Normal rendition.
+    }
+    // if (success)
+    // {
+    //     // Reset the saved cursor state.
+    //     // Note that XTerm only resets the main buffer state, but that
+    //     // seems likely to be a bug. Most other terminals reset both.
+    //     _savedCursorState.at(0) = {}; // Main buffer
+    //     _savedCursorState.at(1) = {}; // Alt buffer
+    // }
+
+    return success;
+}
+
+bool TerminalDispatch::HardReset() noexcept
+{
+    // TODO:GH#1883 much of this method is not yet implemented in the Terminal,
+    // because the Terminal _doesn't need to_ yet. The terminal is only ever
+    // connected to conpty, so it doesn't implement most of these things that
+    // Hard/Soft Reset would reset. As those things ar implemented, they should
+    // also get cleared here.
+    //
+    // This code is left here (from its original form in conhost) as a reminder
+    // of what needs to be done.
+
+    // Sets the SGR state to normal - this must be done before EraseInDisplay
+    //      to ensure that it clears with the default background color.
+    bool success = SoftReset();
+
+    // Clears the screen - Needs to be done in two operations.
+    if (success)
+    {
+        success = EraseInDisplay(DispatchTypes::EraseType::All);
+    }
+    if (success)
+    {
+        success = EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    }
+
+    // // Set the DECSCNM screen mode back to normal.
+    // if (success)
+    // {
+    //     success = SetScreenMode(false);
+    // }
+
+    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
+    if (success)
+    {
+        success = CursorPosition(1, 1);
+    }
+
+    // // delete all current tab stops and reapply
+    // _pConApi->PrivateSetDefaultTabStops();
+
+    return success;
+}

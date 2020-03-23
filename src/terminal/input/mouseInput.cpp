@@ -3,13 +3,14 @@
 
 #include "precomp.h"
 #include <windows.h>
-#include "MouseInput.hpp"
+#include "terminalInput.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
+static const int s_MaxDefaultCoordinate = 94;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
@@ -18,13 +19,8 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 // Alternate scroll sequences
 static constexpr std::wstring_view CursorUpSequence{ L"\x1b[A" };
 static constexpr std::wstring_view CursorDownSequence{ L"\x1b[B" };
-
-MouseInput::MouseInput(const WriteInputEvents pfnWriteEvents) noexcept :
-    _pfnWriteEvents(pfnWriteEvents),
-    _lastPos{ -1, -1 },
-    _lastButton{ 0 }
-{
-}
+static constexpr std::wstring_view ApplicationUpSequence{ L"\x1bOA" };
+static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
 
 // Routine Description:
 // - Determines if the input windows message code describes a button event
@@ -91,6 +87,32 @@ static constexpr bool _isButtonDown(const unsigned int button) noexcept
         break;
     }
     return isButtonDown;
+}
+
+// Routine Description:
+// - Retrieves which mouse button is currently pressed. This is needed because
+//      MOUSEMOVE events do not also tell us if any mouse buttons are pressed during the move.
+// Parameters:
+// <none>
+// Return value:
+// - a button corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
+unsigned int TerminalInput::s_GetPressedButton() noexcept
+{
+    // TODO GH#4869: Have the caller pass the mouse button state into HandleMouse
+    unsigned int button = WM_LBUTTONUP; // Will be treated as a release, or no button pressed.
+    if (WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed))
+    {
+        button = WM_LBUTTONDOWN;
+    }
+    else if (WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed))
+    {
+        button = WM_MBUTTONDOWN;
+    }
+    else if (WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed))
+    {
+        button = WM_RBUTTONDOWN;
+    }
+    return button;
 }
 
 // Routine Description:
@@ -245,6 +267,17 @@ static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) no
 }
 
 // Routine Description:
+// - Relays if we are tracking mouse input
+// Parameters:
+// - <none>
+// Return value:
+// - true, if we are tracking mouse input. False, otherwise
+bool TerminalInput::IsTrackingMouseInput() const noexcept
+{
+    return (_mouseInputState.trackingMode != TrackingMode::None);
+}
+
+// Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
 //     If the event should be transmitted in the selected mouse mode, then we'll try and
 //     encode the event according to the rules of the selected ExtendedMode, and insert those characters into the input buffer.
@@ -255,10 +288,10 @@ static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) no
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // Return value:
 // - true if the event was handled and we should stop event propagation to the default window handler.
-bool MouseInput::HandleMouse(const COORD position,
-                             const unsigned int button,
-                             const short modifierKeyState,
-                             const short delta)
+bool TerminalInput::HandleMouse(const COORD position,
+                                const unsigned int button,
+                                const short modifierKeyState,
+                                const short delta)
 {
     bool success = false;
     if (_ShouldSendAlternateScroll(button, delta))
@@ -267,20 +300,20 @@ bool MouseInput::HandleMouse(const COORD position,
     }
     else
     {
-        success = (_trackingMode != TrackingMode::None);
+        success = (_mouseInputState.trackingMode != TrackingMode::None);
         if (success)
         {
             // isHover is only true for WM_MOUSEMOVE events
             const bool isHover = _isHoverMsg(button);
             const bool isButton = _isButtonMsg(button);
 
-            const bool sameCoord = (position.X == _lastPos.X) &&
-                                   (position.Y == _lastPos.Y) &&
-                                   (_lastButton == button);
+            const bool sameCoord = (position.X == _mouseInputState.lastPos.X) &&
+                                   (position.Y == _mouseInputState.lastPos.Y) &&
+                                   (_mouseInputState.lastButton == button);
 
             // If we have a WM_MOUSEMOVE, we need to know if any of the mouse
             //      buttons are actually pressed. If they are,
-            //      s_GetPressedButton will return the first pressed mouse button.
+            //      _GetPressedButton will return the first pressed mouse button.
             // If it returns WM_LBUTTONUP, then we can assume that the mouse
             //      moved without a button being pressed.
             const unsigned int realButton = isHover ? s_GetPressedButton() : button;
@@ -291,13 +324,14 @@ bool MouseInput::HandleMouse(const COORD position,
             // In AnyEvent, all coord change hovers are sent
             const bool physicalButtonPressed = realButton != WM_LBUTTONUP;
 
-            success = (isButton && _trackingMode != TrackingMode::None) ||
-                      (isHover && _trackingMode == TrackingMode::ButtonEvent && ((!sameCoord) && (physicalButtonPressed))) ||
-                      (isHover && _trackingMode == TrackingMode::AnyEvent && !sameCoord);
+            success = (isButton && _mouseInputState.trackingMode != TrackingMode::None) ||
+                      (isHover && _mouseInputState.trackingMode == TrackingMode::ButtonEvent && ((!sameCoord) && (physicalButtonPressed))) ||
+                      (isHover && _mouseInputState.trackingMode == TrackingMode::AnyEvent && !sameCoord);
+
             if (success)
             {
                 std::wstring sequence;
-                switch (_extendedMode)
+                switch (_mouseInputState.extendedMode)
                 {
                 case ExtendedMode::None:
                     sequence = _GenerateDefaultSequence(position,
@@ -338,11 +372,11 @@ bool MouseInput::HandleMouse(const COORD position,
                     _SendInputSequence(sequence);
                     success = true;
                 }
-                if (_trackingMode == TrackingMode::ButtonEvent || _trackingMode == TrackingMode::AnyEvent)
+                if (_mouseInputState.trackingMode == TrackingMode::ButtonEvent || _mouseInputState.trackingMode == TrackingMode::AnyEvent)
                 {
-                    _lastPos.X = position.X;
-                    _lastPos.Y = position.Y;
-                    _lastButton = button;
+                    _mouseInputState.lastPos.X = position.X;
+                    _mouseInputState.lastPos.Y = position.Y;
+                    _mouseInputState.lastButton = button;
                 }
             }
         }
@@ -361,17 +395,17 @@ bool MouseInput::HandleMouse(const COORD position,
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
-std::wstring MouseInput::_GenerateDefaultSequence(const COORD position,
-                                                  const unsigned int button,
-                                                  const bool isHover,
-                                                  const short modifierKeyState,
-                                                  const short delta)
+std::wstring TerminalInput::_GenerateDefaultSequence(const COORD position,
+                                                     const unsigned int button,
+                                                     const bool isHover,
+                                                     const short modifierKeyState,
+                                                     const short delta)
 {
     // In the default, non-extended encoding scheme, coordinates above 94 shouldn't be supported,
     //   because (95+32+1)=128, which is not an ASCII character.
     // There are more details in _GenerateUtf8Sequence, but basically, we can't put anything above x80 into the input
     //   stream without bash.exe trying to convert it into utf8, and generating extra bytes in the process.
-    if (position.X <= MouseInput::s_MaxDefaultCoordinate && position.Y <= MouseInput::s_MaxDefaultCoordinate)
+    if (position.X <= s_MaxDefaultCoordinate && position.Y <= s_MaxDefaultCoordinate)
     {
         const COORD vtCoords = _winToVTCoord(position);
         const short encodedX = _encodeDefaultCoordinate(vtCoords.X);
@@ -398,11 +432,11 @@ std::wstring MouseInput::_GenerateDefaultSequence(const COORD position,
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
-std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
-                                               const unsigned int button,
-                                               const bool isHover,
-                                               const short modifierKeyState,
-                                               const short delta)
+std::wstring TerminalInput::_GenerateUtf8Sequence(const COORD position,
+                                                  const unsigned int button,
+                                                  const bool isHover,
+                                                  const short modifierKeyState,
+                                                  const short delta)
 {
     // So we have some complications here.
     // The windows input stream is typically encoded as UTF16.
@@ -449,12 +483,12 @@ std::wstring MouseInput::_GenerateUtf8Sequence(const COORD position,
 // Return value:
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
-std::wstring MouseInput::_GenerateSGRSequence(const COORD position,
-                                              const unsigned int button,
-                                              const bool isDown,
-                                              const bool isHover,
-                                              const short modifierKeyState,
-                                              const short delta)
+std::wstring TerminalInput::_GenerateSGRSequence(const COORD position,
+                                                 const unsigned int button,
+                                                 const bool isDown,
+                                                 const bool isHover,
+                                                 const short modifierKeyState,
+                                                 const short delta)
 {
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
@@ -466,166 +500,6 @@ std::wstring MouseInput::_GenerateSGRSequence(const COORD position,
 }
 
 // Routine Description:
-// - Either enables or disables UTF-8 extended mode encoding. This *should* cause
-//      the coordinates of a mouse event to be encoded as a UTF-8 byte stream, however, because windows' input is
-//      typically UTF-16 encoded, it emits a UTF-16 stream.
-//   Does NOT enable or disable mouse mode by itself. This matches the behavior I found in Ubuntu terminals.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void MouseInput::SetUtf8ExtendedMode(const bool enable) noexcept
-{
-    _extendedMode = enable ? ExtendedMode::Utf8 : ExtendedMode::None;
-}
-
-// Routine Description:
-// - Either enables or disables SGR extended mode encoding. This causes the
-//      coordinates of a mouse event to be emitted in a human readable format,
-//      eg, x,y=203,504 -> "^[[<B;203;504M". This way, applications don't need to worry about character encoding.
-//   Does NOT enable or disable mouse mode by itself. This matches the behavior I found in Ubuntu terminals.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void MouseInput::SetSGRExtendedMode(const bool enable) noexcept
-{
-    _extendedMode = enable ? ExtendedMode::Sgr : ExtendedMode::None;
-}
-
-// Routine Description:
-// - Either enables or disables mouse mode handling. Leaves the extended mode alone,
-//      so if we disable then re-enable mouse mode without toggling an extended mode, the mode will persist.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void MouseInput::EnableDefaultTracking(const bool enable) noexcept
-{
-    _trackingMode = enable ? TrackingMode::Default : TrackingMode::None;
-    _lastPos = { -1, -1 }; // Clear out the last saved mouse position & button.
-    _lastButton = 0;
-}
-
-// Routine Description:
-// - Either enables or disables ButtonEvent mouse handling. Button Event mode
-//      sends additional sequences when a button is pressed and the mouse changes character cells.
-//   Leaves the extended mode alone, so if we disable then re-enable mouse mode
-//      without toggling an extended mode, the mode will persist.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void MouseInput::EnableButtonEventTracking(const bool enable) noexcept
-{
-    _trackingMode = enable ? TrackingMode::ButtonEvent : TrackingMode::None;
-    _lastPos = { -1, -1 }; // Clear out the last saved mouse position & button.
-    _lastButton = 0;
-}
-
-// Routine Description:
-// - Either enables or disables AnyEvent mouse handling. Any Event mode sends sequences
-//      for any and every mouse event, regardless if a button is pressed or not.
-//   Leaves the extended mode alone, so if we disable then re-enable mouse mode
-//      without toggling an extended mode, the mode will persist.
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void MouseInput::EnableAnyEventTracking(const bool enable) noexcept
-{
-    _trackingMode = enable ? TrackingMode::AnyEvent : TrackingMode::None;
-    _lastPos = { -1, -1 }; // Clear out the last saved mouse position & button.
-    _lastButton = 0;
-}
-
-// Routine Description:
-// - Sends the given sequence into the input callback specified by _pfnWriteEvents.
-//      Typically, this inserts the characters into the input buffer as KeyDown KEY_EVENTs.
-// Parameters:
-// - sequence - sequence to send to _pfnWriteEvents
-// Return value:
-// <none>
-void MouseInput::_SendInputSequence(const std::wstring_view sequence) const noexcept
-{
-    if (!sequence.empty())
-    {
-        std::deque<std::unique_ptr<IInputEvent>> events;
-        try
-        {
-            for (const auto& wch : sequence)
-            {
-                events.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-            }
-
-            _pfnWriteEvents(events);
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-        }
-    }
-}
-
-// Routine Description:
-// - Retrieves which mouse button is currently pressed. This is needed because
-//      MOUSEMOVE events do not also tell us if any mouse buttons are pressed during the move.
-// Parameters:
-// <none>
-// Return value:
-// - a button corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
-unsigned int MouseInput::s_GetPressedButton() noexcept
-{
-    unsigned int button = WM_LBUTTONUP; // Will be treated as a release, or no button pressed.
-    if (WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed))
-    {
-        button = WM_LBUTTONDOWN;
-    }
-    else if (WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed))
-    {
-        button = WM_MBUTTONDOWN;
-    }
-    else if (WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed))
-    {
-        button = WM_RBUTTONDOWN;
-    }
-    return button;
-}
-
-// Routine Description:
-// - Enables alternate scroll mode. This sends Cursor Up/down sequences when in the alternate buffer
-// Parameters:
-// - enable - either enable or disable.
-// Return value:
-// <none>
-void MouseInput::EnableAlternateScroll(const bool enable) noexcept
-{
-    _alternateScroll = enable;
-}
-
-// Routine Description:
-// - Notify the MouseInput handler that the screen buffer has been swapped to the alternate buffer
-// Parameters:
-// <none>
-// Return value:
-// <none>
-void MouseInput::UseAlternateScreenBuffer() noexcept
-{
-    _inAlternateBuffer = true;
-}
-
-// Routine Description:
-// - Notify the MouseInput handler that the screen buffer has been swapped to the alternate buffer
-// Parameters:
-// <none>
-// Return value:
-// <none>
-void MouseInput::UseMainScreenBuffer() noexcept
-{
-    _inAlternateBuffer = false;
-}
-
-// Routine Description:
 // - Returns true if we should translate the input event (button, sScrollDelta)
 //      into an alternate scroll event instead of the default scroll event,
 //      depending on if alternate scroll mode is enabled and we're in the alternate buffer.
@@ -634,10 +508,10 @@ void MouseInput::UseMainScreenBuffer() noexcept
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
-bool MouseInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
+bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
-    return _inAlternateBuffer &&
-           _alternateScroll &&
+    return _mouseInputState.inAlternateBuffer &&
+           _mouseInputState.alternateScroll &&
            (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0;
 }
 
@@ -647,15 +521,15 @@ bool MouseInput::_ShouldSendAlternateScroll(const unsigned int button, const sho
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
-bool MouseInput::_SendAlternateScroll(const short delta) const noexcept
+bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
 {
     if (delta > 0)
     {
-        _SendInputSequence(CursorUpSequence);
+        _SendInputSequence(_cursorApplicationMode ? ApplicationUpSequence : CursorUpSequence);
     }
     else
     {
-        _SendInputSequence(CursorDownSequence);
+        _SendInputSequence(_cursorApplicationMode ? ApplicationDownSequence : CursorDownSequence);
     }
     return true;
 }

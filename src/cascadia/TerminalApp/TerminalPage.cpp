@@ -63,6 +63,14 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
+        // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
+        // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
+        // but that process is running at a different IL than us.
+        // For now, we're disabling elevated drag.
+        const auto isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+        _tabView.CanReorderTabs(!isElevated);
+        _tabView.CanDragTabs(!isElevated);
+
         _tabView.TabDragStarting([weakThis{ get_weak() }](auto&& /*o*/, auto&& /*a*/) {
             if (auto page{ weakThis.get() })
             {
@@ -511,7 +519,6 @@ namespace winrt::TerminalApp::implementation
 
         // Create a connection based on the values in our settings object.
         const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
-
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
@@ -666,8 +673,9 @@ namespace winrt::TerminalApp::implementation
                                               const RoutedEventArgs&)
     {
         const auto feedbackUriValue = RS_(L"FeedbackUriValue");
+        winrt::Windows::Foundation::Uri feedbackUri{ feedbackUriValue };
 
-        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
+        winrt::Windows::System::Launcher::LaunchUriAsync(feedbackUri);
     }
 
     // Method Description:

@@ -63,16 +63,15 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirtyRect = GetDirtyRectInChars();
-        const auto dirtyView = Viewport::FromInclusive(dirtyRect);
-        if (!_resized && dirtyView == _lastViewport)
+        const auto dirty = GetDirtyArea();
+
+        // If we have 0 or 1 dirty pieces in the area, set as appropriate.
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+
+        // If there's more than 1, union them all up with the 1 we already have.
+        for (size_t i = 1; i < dirty.size(); ++i)
         {
-            // TODO: MSFT:21096414 - This is never actually hit. We set
-            // _resized=true on every frame (see VtEngine::UpdateViewport).
-            // Unfortunately, not always setting _resized is not a good enough
-            // solution, see that work item for a description why.
-            RETURN_IF_FAILED(_ClearScreen());
-            _clearedAllThisFrame = true;
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
         }
     }
 
@@ -243,6 +242,10 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             _needToDisableCursor = true;
             hr = _CursorHome();
         }
+        else if (_resized && _resizeQuirk)
+        {
+            hr = _CursorPosition(coord);
+        }
         else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, at the start of the line.
@@ -405,21 +408,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
     if (dx != 0 || dy != 0)
     {
-        // Scroll the current offset
-        RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
-
-        // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
-
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = invalid.Bottom + dy;
-        }
-        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
+        // Scroll the current offset and invalidate the revealed area
+        _invalidMap.translate(til::point(*pcoordDelta), true);
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
@@ -466,9 +456,21 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring_view wstr) noexcept
 {
-    return _fUseAsciiOnly ?
-               VtEngine::_WriteTerminalAscii(wstr) :
-               VtEngine::_WriteTerminalUtf8(wstr);
+    RETURN_IF_FAILED(_fUseAsciiOnly ?
+                         VtEngine::_WriteTerminalAscii(wstr) :
+                         VtEngine::_WriteTerminalUtf8(wstr));
+    // GH#4106, GH#2011 - WriteTerminalW is only ever called by the
+    // StateMachine, when we've encountered a string we don't understand. When
+    // this happens, we usually don't actually trigger another frame, but we
+    // _do_ want this string to immediately be sent to the terminal. Since we
+    // only flush our buffer on actual frames, this means that strings we've
+    // decided to pass through would have gotten buffered here until the next
+    // actual frame is triggered.
+    //
+    // To fix this, flush here, so this string is sent to the connected terminal
+    // application.
+
+    return _Flush();
 }
 
 // Method Description:

@@ -19,6 +19,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+static constexpr int AutohideTaskbarSize = 2;
+
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
     _backgroundBrushColor{ RGB(0, 0, 0) },
@@ -332,6 +334,8 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // default frame.
     const auto originalTop = params->rgrc[0].top;
 
+    const auto originalSize = params->rgrc[0];
+
     // apply the default frame
     auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
     if (ret != 0)
@@ -339,19 +343,17 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return ret;
     }
 
-    // When we're fullscreen, we have the WS_POPUP size so we don't have to
-    // worry about borders so the default frame will be fine.
-    if (_fullscreen)
-    {
-        return 0;
-    }
-
-    auto newTop = originalTop;
+    auto newSize = params->rgrc[0];
+    // Re-apply the original top from before the size of the default frame was applied.
+    newSize.top = originalTop;
 
     // WM_NCCALCSIZE is called before WM_SIZE
     _UpdateMaximizedState();
 
-    if (_isMaximized)
+    // We don't need this correction when we're fullscreen. We will have the
+    // WS_POPUP size, so we don't have to worry about borders, and the default
+    // frame will be fine.
+    if (_isMaximized && !_fullscreen)
     {
         // When a window is maximized, its size is actually a little bit more
         // than the monitor's work area. The window is positioned and sized in
@@ -359,11 +361,74 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // then the window is clipped to the monitor so that the resize handle
         // do not appear because you don't need them (because you can't resize
         // a window when it's maximized unless you restore it).
-        newTop += _GetResizeHandleHeight();
+        newSize.top += _GetResizeHandleHeight();
     }
 
-    // only modify the top of the frame to remove the title bar
-    params->rgrc[0].top = newTop;
+    // GH#1438 - Attempt to detect if there's an autohide taskbar, and if there
+    // is, reduce our size a bit on the side with the taskbar, so the user can
+    // still mouse-over the taskbar to reveal it.
+    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONULL);
+    if (hMon && (_isMaximized || _fullscreen))
+    {
+        MONITORINFO monInfo{ 0 };
+        monInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hMon, &monInfo);
+
+        // First, check if we have an auto-hide taskbar at all:
+        APPBARDATA autohide{ 0 };
+        autohide.cbSize = sizeof(autohide);
+        UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
+        if (WI_IsFlagSet(state, ABS_AUTOHIDE))
+        {
+            // This helper can be used to determine if there's a auto-hide
+            // taskbar on the given edge of the monitor we're currently on.
+            auto hasAutohideTaskbar = [&monInfo](const UINT edge) -> bool {
+                APPBARDATA data{ 0 };
+                data.cbSize = sizeof(data);
+                data.uEdge = edge;
+                data.rc = monInfo.rcMonitor;
+                HWND hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
+                return hTaskbar != nullptr;
+            };
+
+            const bool onTop = hasAutohideTaskbar(ABE_TOP);
+            const bool onBottom = hasAutohideTaskbar(ABE_BOTTOM);
+            const bool onLeft = hasAutohideTaskbar(ABE_LEFT);
+            const bool onRight = hasAutohideTaskbar(ABE_RIGHT);
+
+            // If there's a taskbar on any side of the monitor, reduce our size
+            // a little bit on that edge.
+            //
+            // Note to future code archeologists:
+            // This doesn't seem to work for fullscreen on the primary display.
+            // However, testing a bunch of other apps with fullscreen modes
+            // and an auto-hiding taskbar has shown that _none_ of them
+            // reveal the taskbar from fullscreen mode. This includes Edge,
+            // Firefox, Chrome, Sublime Text, Powerpoint - none seemed to
+            // support this.
+            //
+            // This does however work fine for maximized.
+            if (onTop)
+            {
+                // Peculiarly, when we're fullscreen,
+                newSize.top += AutohideTaskbarSize;
+            }
+            if (onBottom)
+            {
+                newSize.bottom -= AutohideTaskbarSize;
+            }
+            if (onLeft)
+            {
+                newSize.left += AutohideTaskbarSize;
+            }
+            if (onRight)
+            {
+                newSize.right -= AutohideTaskbarSize;
+            }
+        }
+    }
+
+    params->rgrc[0] = newSize;
 
     return 0;
 }
@@ -427,6 +492,8 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 
     islandFrame.top = -topBorderVisibleHeight;
 
+    // If we have a titlebar, this is being called after we've initialized, and
+    // we can just ask that titlebar how big it wants to be.
     const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
 
     return {
@@ -572,7 +639,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         }
 
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
-        ::BufferedPaintSetAlpha(buf, NULL, 255);
+        ::BufferedPaintSetAlpha(buf, nullptr, 255);
         ::EndBufferedPaint(buf, TRUE);
     }
 
@@ -651,6 +718,11 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
     _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+    // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
+    // always get another window message to trigger us to remove the drag bar.
+    // So, make sure to update the size of the drag region here, so that it
+    // _definitely_ goes away.
+    _UpdateIslandRegion();
 }
 
 // Method Description:

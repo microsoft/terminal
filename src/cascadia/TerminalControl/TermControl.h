@@ -155,11 +155,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // imported from WinUser
         // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
         Timestamp _multiClickTimer;
-        Timestamp _lastMouseClick;
+        Timestamp _lastMouseClickTimestamp;
         unsigned int _multiClickCounter;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        std::optional<winrt::Windows::Foundation::Point> _unfocusedClickPos;
-        bool _isClickDragSelection;
+
+        std::optional<winrt::Windows::Foundation::Point> _focusRaisedClickPos;
+        bool _clickDrag;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
@@ -210,6 +211,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
+        bool _CanSendVTMouseInput();
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

@@ -28,7 +28,7 @@ IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 Globals ServiceLocator::s_globals;
 
 bool ServiceLocator::s_pseudoWindowInitialized = false;
-wil::unique_hwnd ServiceLocator::s_pseudoWindow = 0;
+wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 #pragma endregion
 
