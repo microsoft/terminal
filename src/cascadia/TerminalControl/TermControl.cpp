@@ -1975,8 +1975,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         double height = rows * fFontHeight;
         auto thickness = _ParseThicknessFromPadding(settings.Padding());
-        width += thickness.Left + thickness.Right;
-        height += thickness.Top + thickness.Bottom;
+        // GH#2061 - make sure to account for the size the padding _will be_ scaled to
+        width += scale * (thickness.Left + thickness.Right);
+        height += scale * (thickness.Top + thickness.Bottom);
 
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
