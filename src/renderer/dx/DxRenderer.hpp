@@ -144,7 +144,7 @@ namespace Microsoft::Console::Render
         til::point _invalidScroll;
 
         bool _presentReady;
-        RECT _presentDirty;
+        std::vector<RECT> _presentDirty;
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;

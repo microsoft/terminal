@@ -369,7 +369,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 // You can find out how to install it here:
 // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
                               // clang-format on
-                              // D3D11_CREATE_DEVICE_DEBUG |
+                              D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     const std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels{ D3D_FEATURE_LEVEL_11_1,
@@ -918,6 +918,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 // Return Value:
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::EndPaint() noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
@@ -931,27 +932,39 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 
         if (SUCCEEDED(hr))
         {
-            /*if (_invalidScroll != til::point{ 0, 0 })
+            if (_invalidScroll != til::point{ 0, 0 })
             {
-                _presentDirty = _invalidRect;
+                // Copy `til::rectangles` into RECT map.
+                _presentDirty.assign(_invalidMap.begin(), _invalidMap.end());
 
-                const RECT display = _GetDisplayRect();
-                SubtractRect(&_presentScroll, &display, &_presentDirty);
-                _presentOffset.x = _invalidScroll.cx;
-                _presentOffset.y = _invalidScroll.cy;
+                // The scroll rect is the entire screen minus the revealed areas.
+                // Get the entire screen into a rectangle.
+                til::rectangle scrollArea{ _displaySizePixels };
 
-                _presentParams.DirtyRectsCount = 1;
-                _presentParams.pDirtyRects = &_presentDirty;
+                // Reduce the size of the rectangle by the scroll.
+                scrollArea -= til::size{} - _invalidScroll;
+
+                // Assign the area to the present storage
+                _presentScroll = scrollArea;
+
+                // Pass the offset.
+                _presentOffset = _invalidScroll;
+
+                // Now fill up the parameters structure from the member variables.
+                _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_presentDirty.size());
+                _presentParams.pDirtyRects = _presentDirty.data();
 
                 _presentParams.pScrollOffset = &_presentOffset;
                 _presentParams.pScrollRect = &_presentScroll;
 
+                // The scroll rect will be empty if we scrolled >= 1 full screen size.
+                // Present1 doesn't like that. So clear it out. Everything will be dirty anyway.
                 if (IsRectEmpty(&_presentScroll))
                 {
                     _presentParams.pScrollRect = nullptr;
                     _presentParams.pScrollOffset = nullptr;
                 }
-            }*/
+            }
 
             _presentReady = true;
         }
@@ -968,6 +981,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 
     return hr;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Copies the front surface of the swap chain (the one being displayed)
@@ -1019,8 +1033,8 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
         {
             HRESULT hr = S_OK;
 
-            hr = _dxgiSwapChain->Present(1, 0);
-            /*hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);*/
+            /*hr = _dxgiSwapChain->Present(1, 0);*/
+            hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
             if (FAILED(hr))
             {
@@ -1039,7 +1053,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
             RETURN_IF_FAILED(_CopyFrontToBack());
             _presentReady = false;
 
-            _presentDirty = { 0 };
+            _presentDirty.clear();
             _presentOffset = { 0 };
             _presentScroll = { 0 };
             _presentParams = { 0 };

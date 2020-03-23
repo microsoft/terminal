@@ -281,7 +281,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             for (const auto pt : rc)
             {
-                til::at(_bits, _rc.index_of(pt)) = true;
+                auto idx = _rc.index_of(pt);
+                til::at(_bits, idx) = true;
             }
 
             _dirty |= rc;
