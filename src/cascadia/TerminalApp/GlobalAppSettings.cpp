@@ -328,10 +328,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
-    if (auto startupTaskEnabled{ json[JsonKey(EnableStartupTaskKey)] })
-    {
-        _StartOnUserLogin = startupTaskEnabled.asBool();
-    }
+    JsonUtils::GetBool(json, EnableStartupTaskKey, _StartOnUserLogin);
 }
 
 // Method Description:
