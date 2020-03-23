@@ -262,12 +262,27 @@ namespace TerminalAppLocalTests
 
         // DebugBreak();
 
+        ::details::Event waitForLayoutEvent;
+        if (!waitForLayoutEvent.IsValid())
+        {
+            VERIFY_SUCCEEDED(HRESULT_FROM_WIN32(::GetLastError()));
+        }
+        // winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker layoutUpdatedRevoker;
+
         Log::Comment(L"Create() the TerminalPage");
-        result = RunOnUIThread([&page]() {
+        // result = RunOnUIThread([&page, &waitForLayoutEvent, &layoutUpdatedRevoker]() {
+        result = RunOnUIThread([&page, &waitForLayoutEvent]() {
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
             page->Create();
             Log::Comment(L"Create()'d the page successfully");
+
+            // layoutUpdatedRevoker = page->_tabContent.LayoutUpdated(winrt::auto_revoke, [&waitForLayoutEvent, &layoutUpdatedRevoker](auto&&, auto&&) {
+            page->Initialized([&waitForLayoutEvent](auto&&, auto&&) {
+                // layoutUpdatedRevoker.revoke();
+                // Sleep(1000);
+                waitForLayoutEvent.Set();
+            });
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
 
@@ -277,18 +292,19 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        auto cleanupPage = wil::scope_exit([page] {
-            auto result = RunOnUIThread([page]() {
-                Log::Comment(NoThrowString().Format(L"Closing all tabs..."));
-                page->_CloseAllTabs();
-                Log::Comment(L"_CloseAllTabs()'d successfully");
-            });
-            VERIFY_SUCCEEDED(result);
-        });
+        // auto cleanupPage = wil::scope_exit([page] {
+        //     auto result = RunOnUIThread([page]() {
+        //         Log::Comment(NoThrowString().Format(L"Closing all tabs..."));
+        //         page->_CloseAllTabs();
+        //         Log::Comment(L"_CloseAllTabs()'d successfully");
+        //     });
+        //     VERIFY_SUCCEEDED(result);
+        // });
 
-        Log::Comment(L"Before Sleep");
-        Sleep(1000);
-        Log::Comment(L"After Sleep");
+        // Log::Comment(L"Before Sleep");
+        // Sleep(1000);
+        // Log::Comment(L"After Sleep");
+        VERIFY_SUCCEEDED(waitForLayoutEvent.Wait());
 
         result = RunOnUIThread([&page]() {
             // Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
@@ -334,18 +350,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
         });
         VERIFY_SUCCEEDED(result);
-
-        auto cleanup = wil::scope_exit([] {
-            auto result = RunOnUIThread([]() {
-                // There's something causing us to crash north of
-                // TSFInputControl::NotifyEnter, or LayoutRequested. It's very
-                // unclear what that issue is. Since these tests don't run in
-                // CI, simply log a message so that the dev running these tests
-                // knows it's expected.
-                Log::Comment(L"This test often crashes on cleanup, even when it succeeds. If it succeeded, then crashes, that's okay.");
-            });
-            VERIFY_SUCCEEDED(result);
-        });
     }
 
     void TabTests::TryDuplicateBadPane()

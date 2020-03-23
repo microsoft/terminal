@@ -171,6 +171,7 @@ namespace winrt::TerminalApp::implementation
             {
                 _OpenNewTab(nullptr);
                 _startupState = StartupState::Initialized;
+                _InitializedHandlers(*this, nullptr);
             }
             else
             {
@@ -204,6 +205,7 @@ namespace winrt::TerminalApp::implementation
                 page->_actionDispatch->DoAction(action);
             }
             _startupState = StartupState::Initialized;
+            _InitializedHandlers(*this, nullptr);
         }
     }
 
