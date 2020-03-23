@@ -77,4 +77,17 @@ Assuming that you've installed Git Bash into `C:/Program Files/Git`:
 }
 ````
 
+## MSYS2
+
+Assuming that you've installed MSYS2 into `C:/msys64`:
+
+```json
+{
+    "name" : "MSYS2",
+    "commandline" : "C:/msys64/msys2_shell.cmd -defterm -no-start -mingw64",
+    "icon": "C:/msys64/msys2.ico",
+    "startingDirectory" : "C:/msys64/home/user"
+}
+````
+
 <!-- Adding a tool here? Make sure to add it in alphabetical order! -->
