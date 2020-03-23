@@ -260,12 +260,14 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(page);
         VERIFY_IS_NOT_NULL(page->_settings);
 
-        Log::Comment(NoThrowString().Format(L"Create() the TerminalPage"));
-        result = RunOnUIThread([&page, &originalContent]() {
+        // DebugBreak();
+
+        Log::Comment(L"Create() the TerminalPage");
+        result = RunOnUIThread([&page]() {
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
             page->Create();
-            Log::Comment(NoThrowString().Format(L"Create()'d the page successfully"));
+            Log::Comment(L"Create()'d the page successfully");
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
 
@@ -275,18 +277,37 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
+        auto cleanupPage = wil::scope_exit([page] {
+            auto result = RunOnUIThread([page]() {
+                Log::Comment(NoThrowString().Format(L"Closing all tabs..."));
+                page->_CloseAllTabs();
+                Log::Comment(L"_CloseAllTabs()'d successfully");
+            });
+            VERIFY_SUCCEEDED(result);
+        });
+
+        Log::Comment(L"Before Sleep");
+        Sleep(1000);
+        Log::Comment(L"After Sleep");
+
         result = RunOnUIThread([&page]() {
-            Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
-            // I think in the tests, we don't always set the focused tab on
-            // creation. Doesn't seem to be a problem in the real app, but
-            // probably indicative of a problem.
-            //
-            // Manually set it here, so that later, the _GetFocusedTabIndex call
-            // in _DuplicateTabViewItem will have a sensible value.
-            page->_SetFocusedTabIndex(0);
-            Log::Comment(NoThrowString().Format(L"... Done"));
+            // Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
+            // // I think in the tests, we don't always set the focused tab on
+            // // creation. Doesn't seem to be a problem in the real app, but
+            // // probably indicative of a problem.
+            // //
+            // // Manually set it here, so that later, the _GetFocusedTabIndex call
+            // // in _DuplicateTabViewItem will have a sensible value.
+            // page->_SetFocusedTabIndex(0);
+            // Log::Comment(NoThrowString().Format(L"... Done"));
+            ////////////////////////////////////////////////////////////////////
+
+            auto tab{ page->_GetStrongTabImpl(0) };
+            page->_tabView.SelectedItem(tab->GetTabViewItem());
+            page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
+
         result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });

@@ -879,6 +879,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - point: the PointerPoint object representing a mouse event from our XAML input handler
     bool TermControl::_CanSendVTMouseInput()
     {
+        if (!_terminal)
+        {
+            return false;
+        }
         // If the user is holding down Shift, suppress mouse events
         // TODO GH#4875: disable/customize this functionality
         const auto modifiers = _GetPressedModifierKeys();
@@ -2207,6 +2211,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If we haven't initialized yet, just quick return.
         if (!_terminal)
         {
+            // fake it
+            eventArgs.CurrentPosition({ 0, 0 });
             return;
         }
         const COORD cursorPos = _terminal->GetCursorPosition();
