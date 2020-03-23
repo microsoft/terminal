@@ -311,8 +311,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _runs.reset(); // reset cached runs on any non-const method
 
-            // FYI .resize(_size(), true/false) throws an assert (unsupported operation)
-
             // Don't resize if it's not different
             if (_sz != size)
             {
