@@ -134,7 +134,7 @@ GdiEngine::~GdiEngine()
     }
 
 #if DBG
-    if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != 0)
+    if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != nullptr)
     {
         RECT rc = { 0 };
         THROW_IF_WIN32_BOOL_FALSE(GetWindowRect(_hwndTargetWindow, &rc));

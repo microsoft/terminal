@@ -639,7 +639,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         }
 
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
-        ::BufferedPaintSetAlpha(buf, NULL, 255);
+        ::BufferedPaintSetAlpha(buf, nullptr, 255);
         ::EndBufferedPaint(buf, TRUE);
     }
 
