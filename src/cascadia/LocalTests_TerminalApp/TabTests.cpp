@@ -65,6 +65,11 @@ namespace TerminalAppLocalTests
             InitializeJsonReader();
             return true;
         }
+
+    private:
+        void _initializeTerminalPage(winrt::TerminalApp::TerminalPage& projectedPage,
+                                     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
+                                     std::shared_ptr<CascadiaSettings> initialSettings);
     };
 
     void TabTests::EnsureTestsActivate()
@@ -182,6 +187,95 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
+    // Method Description:
+    // - This is a helper to set up a TerminalPage for a unittest. This method
+    //   does a couple things:
+    //   * Create()'s a TerminalPage with the given settings. Constructing a
+    //     TerminalPage so that we can get at its implementation is wacky, so
+    //     this helper will do it correctly for you, even if this doesn't make a
+    //     ton of sense on the surface. This is also why you need to pass both a
+    //     projection and a com_ptr to this method.
+    //   * It will use the provided settings object to initialize the TerminalPage
+    //   * It will add the TerminalPage to the test Application, so that we can
+    //     get actual layout events. Much of the Terminal assumes there's a
+    //     non-zero ActualSize to the Terminal window, and adding the Page to
+    //     the Application will make it behave as expected.
+    //   * It will wait for the TerminalPage to finish initialization before
+    //     returning control to the caler. It does this by creating an event and
+    //     only setting the event when the TerminalPage raises its Initialized
+    //     event, to signal that startup is complete. At this point, there will
+    //     be one tab with the default profile in the page.
+    //   * It will also ensure that the first tab is focused, since that happens
+    //     asynchronously in the application typically.
+    // Arguments:
+    // - projectedPage: a TerminalPage projected type that will recieve the new TerminalPage instance
+    // - page: a TerminalPage implementation ptr that will recieve the new TerminalPage instance
+    // - initialSettings: a CascadiaSettings to initialize the TerminalPage with.
+    // Return Value:
+    // - <none>
+    void TabTests::_initializeTerminalPage(winrt::TerminalApp::TerminalPage& projectedPage,
+                                           winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
+                                           std::shared_ptr<CascadiaSettings> initialSettings)
+    {
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
+        auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
+            projectedPage = winrt::TerminalApp::TerminalPage();
+            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
+            page->_settings = initialSettings;
+        });
+        VERIFY_SUCCEEDED(result);
+
+        VERIFY_IS_NOT_NULL(page);
+        VERIFY_IS_NOT_NULL(page->_settings);
+
+        ::details::Event waitForInitEvent;
+        if (!waitForInitEvent.IsValid())
+        {
+            VERIFY_SUCCEEDED(HRESULT_FROM_WIN32(::GetLastError()));
+        }
+        page->Initialized([&waitForInitEvent](auto&&, auto&&) {
+            waitForInitEvent.Set();
+        });
+
+        Log::Comment(L"Create() the TerminalPage");
+
+        result = RunOnUIThread([&page]() {
+            VERIFY_IS_NOT_NULL(page);
+            VERIFY_IS_NOT_NULL(page->_settings);
+            page->Create();
+            Log::Comment(L"Create()'d the page successfully");
+
+            auto app = ::winrt::Windows::UI::Xaml::Application::Current();
+
+            winrt::TerminalApp::TerminalPage pp = *page;
+            winrt::Windows::UI::Xaml::Window::Current().Content(pp);
+            winrt::Windows::UI::Xaml::Window::Current().Activate();
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Wait for the page to finish initializing...");
+        VERIFY_SUCCEEDED(waitForInitEvent.Wait());
+        Log::Comment(L"...Done");
+
+        result = RunOnUIThread([&page]() {
+            // In the real app, this isn't a problem, but doesn't happen
+            // reliably in the unit tests.
+            Log::Comment(L"Ensure we set the first tab as the selected one.");
+            auto tab{ page->_GetStrongTabImpl(0) };
+            page->_tabView.SelectedItem(tab->GetTabViewItem());
+            page->_UpdatedSelectedTab(0);
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
     void TabTests::TryDuplicateBadTab()
     {
         // * Create a tab with a profile with GUID 1
@@ -249,87 +343,14 @@ namespace TerminalAppLocalTests
         winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
-        Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
-        auto result = RunOnUIThread([&projectedPage, &page, settings0]() {
-            projectedPage = winrt::TerminalApp::TerminalPage();
-            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = settings0;
-        });
-        VERIFY_SUCCEEDED(result);
+        _initializeTerminalPage(projectedPage, page, settings0);
 
-        VERIFY_IS_NOT_NULL(page);
-        VERIFY_IS_NOT_NULL(page->_settings);
-
-        // DebugBreak();
-
-        ::details::Event waitForLayoutEvent;
-        if (!waitForLayoutEvent.IsValid())
-        {
-            VERIFY_SUCCEEDED(HRESULT_FROM_WIN32(::GetLastError()));
-        }
-        // winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker layoutUpdatedRevoker;
-
-        Log::Comment(L"Create() the TerminalPage");
-        // result = RunOnUIThread([&page, &waitForLayoutEvent, &layoutUpdatedRevoker]() {
-        result = RunOnUIThread([&page, &waitForLayoutEvent]() {
-            VERIFY_IS_NOT_NULL(page);
-            VERIFY_IS_NOT_NULL(page->_settings);
-            page->Create();
-            Log::Comment(L"Create()'d the page successfully");
-
-            // layoutUpdatedRevoker = page->_tabContent.LayoutUpdated(winrt::auto_revoke, [&waitForLayoutEvent, &layoutUpdatedRevoker](auto&&, auto&&) {
-            page->Initialized([&waitForLayoutEvent](auto&&, auto&&) {
-                // layoutUpdatedRevoker.revoke();
-                // Sleep(1000);
-                waitForLayoutEvent.Set();
-            });
-
-            auto app = ::winrt::Windows::UI::Xaml::Application::Current();
-
-            winrt::TerminalApp::TerminalPage pp = *page;
-            winrt::Windows::UI::Xaml::Window::Current().Content(pp);
-            winrt::Windows::UI::Xaml::Window::Current().Activate();
-        });
-        VERIFY_SUCCEEDED(result);
-
-        // auto cleanupPage = wil::scope_exit([page] {
-        //     auto result = RunOnUIThread([page]() {
-        //         Log::Comment(NoThrowString().Format(L"Closing all tabs..."));
-        //         page->_CloseAllTabs();
-        //         Log::Comment(L"_CloseAllTabs()'d successfully");
-        //     });
-        //     VERIFY_SUCCEEDED(result);
-        // });
-
-        // Log::Comment(L"Before Sleep");
-        // Sleep(1000);
-        // Log::Comment(L"After Sleep");
-        VERIFY_SUCCEEDED(waitForLayoutEvent.Wait());
-
-        result = RunOnUIThread([&page]() {
-            // Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
-            // // I think in the tests, we don't always set the focused tab on
-            // // creation. Doesn't seem to be a problem in the real app, but
-            // // probably indicative of a problem.
-            // //
-            // // Manually set it here, so that later, the _GetFocusedTabIndex call
-            // // in _DuplicateTabViewItem will have a sensible value.
-            // page->_SetFocusedTabIndex(0);
-            // Log::Comment(NoThrowString().Format(L"... Done"));
-            ////////////////////////////////////////////////////////////////////
-
-            auto tab{ page->_GetStrongTabImpl(0) };
-            page->_tabView.SelectedItem(tab->GetTabViewItem());
-            page->_UpdatedSelectedTab(0);
-        });
-        VERIFY_SUCCEEDED(result);
-
-        result = RunOnUIThread([&page]() {
+        auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
 
-        Log::Comment(NoThrowString().Format(L"Duplicate the first tab"));
+        Log::Comment(L"Duplicate the first tab");
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
@@ -344,7 +365,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        Log::Comment(NoThrowString().Format(L"Duplicate the tab, and don't crash"));
+        Log::Comment(L"Duplicate the tab, and don't crash");
         result = RunOnUIThread([&page]() {
             page->_DuplicateTabViewItem();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
@@ -419,48 +440,9 @@ namespace TerminalAppLocalTests
         winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
-        Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
-        auto result = RunOnUIThread([&projectedPage, &page, settings0]() {
-            projectedPage = winrt::TerminalApp::TerminalPage();
-            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = settings0;
-        });
-        VERIFY_SUCCEEDED(result);
+        _initializeTerminalPage(projectedPage, page, settings0);
 
-        VERIFY_IS_NOT_NULL(page);
-        VERIFY_IS_NOT_NULL(page->_settings);
-
-        Log::Comment(NoThrowString().Format(L"Create() the TerminalPage"));
-        result = RunOnUIThread([&page]() {
-            VERIFY_IS_NOT_NULL(page);
-            VERIFY_IS_NOT_NULL(page->_settings);
-            page->Create();
-            Log::Comment(NoThrowString().Format(L"Create()'d"));
-
-            auto app = ::winrt::Windows::UI::Xaml::Application::Current();
-            Log::Comment(NoThrowString().Format(L"got app"));
-
-            winrt::TerminalApp::TerminalPage pp = *page;
-            winrt::Windows::UI::Xaml::Window::Current().Content(pp);
-            Log::Comment(NoThrowString().Format(L"Content()'d"));
-            winrt::Windows::UI::Xaml::Window::Current().Activate();
-            Log::Comment(NoThrowString().Format(L"Activate()'d"));
-        });
-        VERIFY_SUCCEEDED(result);
-
-        result = RunOnUIThread([&page]() {
-            Log::Comment(NoThrowString().Format(L"_SetFocusedTabIndex()..."));
-            // I think in the tests, we don't always set the focused tab on
-            // creation. Doesn't seem to be a problem in the real app, but
-            // probably indicative of a problem.
-            //
-            // Manually set it here, so that later, the _GetFocusedTabIndex call
-            // in _DuplicateTabViewItem will have a sensible value.
-            page->_SetFocusedTabIndex(0);
-            Log::Comment(NoThrowString().Format(L"... Done"));
-        });
-        VERIFY_SUCCEEDED(result);
-        result = RunOnUIThread([&page]() {
+        auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
