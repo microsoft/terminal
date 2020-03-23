@@ -154,15 +154,28 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
     }
 
+    // Method Description:
+    // - This method is caled once on startup, on the first LayoutUpdated event.
+    //   We'll use this event to know that we have an ActualWidth and
+    //   ActualHeight, so we can now attempt to process our list of startup
+    //   actions.
+    // - We'll remove this event handler when the event is first handled.
+    // - If there are no startup actions, we'll open a single tab with the
+    //   default profile.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
     void TerminalPage::_OnFirstLayout(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
     {
         // Only let this succeed once.
         _layoutUpdatedRevoker.revoke();
 
-        // This event fires every time the layout changes, but it is always the last one to fire
-        // in any layout change chain. That gives us great flexibility in finding the right point
-        // at which to initialize our renderer (and our terminal).
-        // Any earlier than the last layout update and we may not know the terminal's starting size.
+        // This event fires every time the layout changes, but it is always the
+        // last one to fire in any layout change chain. That gives us great
+        // flexibility in finding the right point at which to initialize our
+        // renderer (and our terminal). Any earlier than the last layout update
+        // and we may not know the terminal's starting size.
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
@@ -615,17 +628,8 @@ namespace winrt::TerminalApp::implementation
         if (isFirstTab)
         {
             _tabContent.Children().Clear();
-            const Windows::Foundation::Size actualSize{ gsl::narrow_cast<float>(_tabContent.ActualWidth()),
-                                                        gsl::narrow_cast<float>(_tabContent.ActualHeight()) };
             auto tabRootElem = newTabImpl->GetRootElement();
             _tabContent.Children().Append(tabRootElem);
-            tabRootElem.Measure(actualSize);
-            Windows::Foundation::Size desiredSize = tabRootElem.DesiredSize();
-            desiredSize;
-            ;
-            auto a = 0;
-            a += 1;
-            a;
         }
         else
         {
@@ -961,7 +965,6 @@ namespace winrt::TerminalApp::implementation
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
             const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            // _SetFocusedTabIndex(newTabIndex);
             _SelectTab(newTabIndex);
         }
     }
@@ -969,6 +972,11 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Sets focus to the desired tab. Returns false if the provided tabIndex
     //   is greater than the number of tabs we have.
+    // - During startup, we'll immediately set the selected tab as focused.
+    // - After startup, we'll dispatch an async method to set the the selected
+    //   item of the TabView, which will then also trigger a
+    //   TabView::SelectionChanged, handled in
+    //   TerminalPage::_OnTabSelectionChanged
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
     bool TerminalPage::_SelectTab(const uint32_t tabIndex)
@@ -1038,6 +1046,16 @@ namespace winrt::TerminalApp::implementation
         return std::nullopt;
     }
 
+    // Method Description:
+    // - An async method for changing the focused tab on the UI thread. This
+    //   method will _only_ set the selected item of the TabView, which will
+    //   then also trigger a TabView::SelectionChanged event, which we'll handle
+    //   in TerminalPage::_OnTabSelectionChanged, where we'll mark the new tab
+    //   as focused.
+    // Arguments:
+    // - tabIndex: the index in the list of tabs to focus.
+    // Return Value:
+    // - <none>
     winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t tabIndex)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
@@ -1050,12 +1068,6 @@ namespace winrt::TerminalApp::implementation
         {
             auto tab{ _GetStrongTabImpl(tabIndex) };
             _tabView.SelectedItem(tab->GetTabViewItem());
-
-            // If we're in startup, we're not going to come back through the dispatcher to handle
-            // if (page->_startupState == StartupState::InStartup)
-            // {
-            //     page->_UpdatedSelectedTab(tabIndex);
-            // }
         }
     }
 
