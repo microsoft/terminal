@@ -1271,7 +1271,7 @@ const til::point TextBuffer::GetGlyphStart(const til::point pos) const
     COORD resultPos = pos;
 
     const auto bufferSize = GetSize();
-    if (resultPos == bufferSize.EndExclusive() || GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
@@ -1290,7 +1290,7 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
     COORD resultPos = pos;
 
     const auto bufferSize = GetSize();
-    if (resultPos == bufferSize.EndExclusive() || GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
