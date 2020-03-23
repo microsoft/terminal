@@ -208,6 +208,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             throw std::out_of_range("invalid some<T, N> subscript");
         }
+
+        std::wstring to_string() const
+        {
+            std::wstringstream wss;
+            wss << std::endl
+                << L"Some contains " << size() << " of max size " << max_size() << ":" << std::endl;
+            wss << L"Elements:" << std::endl;
+
+            for (auto& item : *this)
+            {
+                wss << L"\t- " << item.to_string() << std::endl;
+            }
+
+            return wss.str();
+        }
     };
 }
 
@@ -220,15 +235,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const ::til::some<T, N>& some)
         {
-            auto str = WEX::Common::NoThrowString().Format(L"\r\nSome contains %d of max size %d:\r\nElements:\r\n", some.size(), some.max_size());
-
-            for (auto& item : some)
-            {
-                const auto itemStr = WEX::TestExecution::VerifyOutputTraits<T>::ToString(item);
-                str.AppendFormat(L"\t- %ws\r\n", (const wchar_t*)itemStr);
-            }
-
-            return str;
+            return WEX::Common::NoThrowString(some.to_string().c_str());
         }
     };
 
