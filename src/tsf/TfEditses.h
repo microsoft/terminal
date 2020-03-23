@@ -79,7 +79,7 @@ public:
                                                  ITfContext* ic,
                                                  ITfRange** range,
                                                  LONG* lpTextLength,
-                                                 TF_HALTCOND* lpHaltCond = NULL);
+                                                 TF_HALTCOND* lpHaltCond = nullptr);
 
 protected:
     [[nodiscard]] HRESULT SetTextInRange(TfEditCookie ec,

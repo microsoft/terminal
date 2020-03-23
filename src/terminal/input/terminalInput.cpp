@@ -185,19 +185,40 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 6> s_simpleModifiedKeyMapping{
+static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
     TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
     TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
     TermKeyMap{ VK_TAB, CTRL_PRESSED, L"\t" },
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
+
+    // GH#3507 - We should also be encoding Ctrl+# according to the following table:
+    // https://vt100.net/docs/vt220-rm/table3-5.html
+    // * 1 and 9 do not send any special characters, but they _should_ send
+    //   through the character unmodified.
+    // * 0 doesn't seem to send even an unmodified '0' through.
+    // * Ctrl+2 is already special-cased below in `HandleKey`, so it's not
+    //   included here.
+    TermKeyMap{ static_cast<WORD>('1'), CTRL_PRESSED, L"1" },
+    // TermKeyMap{ static_cast<WORD>('2'), CTRL_PRESSED, L"\x00" },
+    TermKeyMap{ static_cast<WORD>('3'), CTRL_PRESSED, L"\x1B" },
+    TermKeyMap{ static_cast<WORD>('4'), CTRL_PRESSED, L"\x1C" },
+    TermKeyMap{ static_cast<WORD>('5'), CTRL_PRESSED, L"\x1D" },
+    TermKeyMap{ static_cast<WORD>('6'), CTRL_PRESSED, L"\x1E" },
+    TermKeyMap{ static_cast<WORD>('7'), CTRL_PRESSED, L"\x1F" },
+    TermKeyMap{ static_cast<WORD>('8'), CTRL_PRESSED, L"\x7F" },
+    TermKeyMap{ static_cast<WORD>('9'), CTRL_PRESSED, L"9" },
+
     // These two are not implemented here, because they are system keys.
     // TermKeyMap{ VK_TAB, ALT_PRESSED, L""}, This is the Windows system shortcut for switching windows.
     // TermKeyMap{ VK_ESCAPE, ALT_PRESSED, L""}, This is another Windows system shortcut for switching windows.
 };
 
 const wchar_t* const CTRL_SLASH_SEQUENCE = L"\x1f";
+const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
+const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
+const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
 void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
 {
@@ -323,13 +344,73 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         }
         else
         {
-            // One last check: C-/ is supposed to be C-_
-            // But '/' is not the same VKEY on all keyboards. So we have to
-            //      figure out the vkey at runtime.
-            const BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
-            if (keyEvent.GetVirtualKeyCode() == slashVkey && keyEvent.IsCtrlPressed())
+            // One last check:
+            // * C-/ is supposed to be ^_ (the C0 character US)
+            // * C-? is supposed to be DEL
+            // * C-M-/ is supposed to be ^[^_
+            // * C-M-? is supposed to be ^[^?
+            //
+            // But this whole scenario is tricky. '/' is not the same VKEY on
+            // all keyboards. On USASCII keyboards, '/' and '?' share the _same_
+            // key. So we have to figure out the vkey at runtime, and we have to
+            // determine if the key that was pressed was '?' with some
+            // modifiers, or '/' with some modifiers.
+            //
+            // These translations are not in s_simpleModifiedKeyMapping, because
+            // the aformentioned fact that they aren't the same VKEY on all
+            // keyboards.
+            //
+            // See GH#3079 for details.
+            // Also see https://github.com/microsoft/terminal/pull/4947#issuecomment-600382856
+
+            // VkKeyScan will give us both the Vkey of the key needed for this
+            // character, and the modifiers the user might need to press to get
+            // this character.
+            const auto slashKeyScan = VkKeyScan(L'/'); // On USASCII: 0x00bf
+            const auto questionMarkKeyScan = VkKeyScan(L'?'); //On USASCII: 0x01bf
+
+            const auto slashVkey = LOBYTE(slashKeyScan);
+            const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
+
+            const auto ctrl = keyEvent.IsCtrlPressed();
+            const auto alt = keyEvent.IsAltPressed();
+            const bool shift = keyEvent.IsShiftPressed();
+
+            // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
+            const auto vkey = keyEvent.GetVirtualKeyCode();
+            const short keyScanFromEvent = vkey |
+                                           (shift ? 0x100 : 0) |
+                                           (ctrl ? 0x200 : 0) |
+                                           (alt ? 0x400 : 0);
+
+            // Make sure the VKEY is an _exact_ match, and that the modifier
+            // bits also match. This handles the hypothetical case we get a
+            // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
+            // has bits that are a superset of the bits set for question mark.
+            const bool wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+            const bool wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+
+            // If the key pressed was exactly the ? key, then try to send the
+            // appropriate sequence for a modified '?'. Otherwise, check if this
+            // was a modified '/' keypress. These mappings don't need to be
+            // changed at all.
+            if ((ctrl && alt) && wasQuestionMark)
             {
-                // This mapping doesn't need to be changed at all.
+                sender(CTRL_ALT_QUESTIONMARK_SEQUENCE);
+                success = true;
+            }
+            else if (ctrl && wasQuestionMark)
+            {
+                sender(CTRL_QUESTIONMARK_SEQUENCE);
+                success = true;
+            }
+            else if ((ctrl && alt) && wasSlash)
+            {
+                sender(CTRL_ALT_SLASH_SEQUENCE);
+                success = true;
+            }
+            else if (ctrl && wasSlash)
+            {
                 sender(CTRL_SLASH_SEQUENCE);
                 success = true;
             }
@@ -367,7 +448,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() == InputEventType::KeyEvent)
     {
-        const auto senderFunc = [this](const std::wstring_view seq) { _SendInputSequence(seq); };
+        const auto senderFunc = [this](const std::wstring_view seq) noexcept { _SendInputSequence(seq); };
 
         auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
@@ -543,7 +624,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
     }
 }
 
-void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const
+void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const noexcept
 {
     if (!sequence.empty())
     {

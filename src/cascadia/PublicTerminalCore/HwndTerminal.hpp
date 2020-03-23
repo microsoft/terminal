@@ -6,6 +6,9 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
+#include <UIAutomationCore.h>
+#include "../../types/IControlAccessibilityInfo.h"
+#include "../../types/TermControlUiaProvider.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -25,8 +28,6 @@ __declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(void* terminal, dou
 __declspec(dllexport) HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-__declspec(dllexport) HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-__declspec(dllexport) HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition);
 __declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
 __declspec(dllexport) const wchar_t* _stdcall TerminalGetSelection(void* terminal);
 __declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
@@ -39,20 +40,35 @@ __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 };
 
-struct HwndTerminal
+struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
 {
 public:
     HwndTerminal(HWND hwnd);
+
+    HwndTerminal(const HwndTerminal&) = default;
+    HwndTerminal(HwndTerminal&&) = default;
+    HwndTerminal& operator=(const HwndTerminal&) = default;
+    HwndTerminal& operator=(HwndTerminal&&) = default;
+    ~HwndTerminal() = default;
+
     HRESULT Initialize();
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
+    ::Microsoft::Console::Types::IUiaData* GetUiaData() const noexcept;
+    HWND GetHwnd() const noexcept;
+
+    static LRESULT CALLBACK HwndTerminalWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
 private:
     wil::unique_hwnd _hwnd;
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
+    int _currentDpi;
+    bool _uiaProviderInitialized;
+    std::function<void(wchar_t*)> _pfnWriteCallback;
+    ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
@@ -63,8 +79,6 @@ private:
     friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-    friend HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-    friend HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition);
     friend void _stdcall TerminalClearSelection(void* terminal);
     friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
@@ -73,5 +87,23 @@ private:
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     friend void _stdcall TerminalBlinkCursor(void* terminal);
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
+
     void _UpdateFont(int newDpi);
+    void _WriteTextToConnection(const std::wstring& text) noexcept;
+    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting);
+    HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
+    void _PasteTextFromClipboard() noexcept;
+    void _StringPaste(const wchar_t* const pData) noexcept;
+
+    HRESULT _StartSelection(LPARAM lParam) noexcept;
+    HRESULT _MoveSelection(LPARAM lParam) noexcept;
+    IRawElementProviderSimple* _GetUiaProvider() noexcept;
+
+    // Inherited via IControlAccessibilityInfo
+    COORD GetFontSize() const override;
+    RECT GetBounds() const noexcept override;
+    double GetScaleFactor() const noexcept override;
+    void ChangeViewport(const SMALL_RECT NewWindow) override;
+    HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept override;
+    RECT GetPadding() const noexcept override;
 };

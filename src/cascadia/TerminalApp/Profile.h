@@ -123,6 +123,9 @@ private:
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
+    static winrt::Microsoft::Terminal::Settings::TextAntialiasingMode ParseTextAntialiasingMode(const std::wstring& antialiasingMode);
+    static std::wstring_view SerializeTextAntialiasingMode(const winrt::Microsoft::Terminal::Settings::TextAntialiasingMode antialiasingMode);
+
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 
     static bool _ConvertJsonToBool(const Json::Value& json);
@@ -139,12 +142,12 @@ private:
     std::optional<uint32_t> _defaultForeground;
     std::optional<uint32_t> _defaultBackground;
     std::optional<uint32_t> _selectionBackground;
+    std::optional<uint32_t> _cursorColor;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     std::optional<std::wstring> _tabTitle;
     bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
-    uint32_t _cursorColor;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
 
@@ -165,6 +168,8 @@ private:
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;
+
+    winrt::Microsoft::Terminal::Settings::TextAntialiasingMode _antialiasingMode;
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

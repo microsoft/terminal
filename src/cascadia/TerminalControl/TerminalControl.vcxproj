@@ -26,6 +26,7 @@
       the default OutDir up one level, so the wapproj will be able to find it.
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -36,17 +37,15 @@
     <ClInclude Include="SearchBoxControl.h">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="TermControl.h">
-      <DependentUpon>TermControl.idl</DependentUpon>
+      <DependentUpon>TermControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TSFInputControl.h">
-      <DependentUpon>TSFInputControl.idl</DependentUpon>
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="UiaTextRange.hpp" />
     <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
   <ItemGroup>
@@ -57,34 +56,36 @@
     <ClCompile Include="SearchBoxControl.cpp">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="TermControl.cpp">
-      <DependentUpon>TermControl.idl</DependentUpon>
+      <DependentUpon>TermControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="TSFInputControl.cpp">
-      <DependentUpon>TSFInputControl.idl</DependentUpon>
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="TermControlAutomationPeer.cpp">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="SearchBoxControl.idl">
       <DependentUpon>SearchBoxControl.xaml</DependentUpon>
     </Midl>
-    <Midl Include="TermControl.idl" />
+    <Midl Include="TermControl.idl">
+      <DependentUpon>TermControl.xaml</DependentUpon>
+    </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
-    <Midl Include="TSFInputControl.idl" />
+    <Midl Include="TSFInputControl.idl">
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="TerminalControl.def" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources/en-US/Resources.resw" />
+    <PRIResource Include="Resources/Resources.language-en.resw" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -111,6 +112,12 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="SearchBoxControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TermControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TSFInputControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

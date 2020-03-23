@@ -32,6 +32,8 @@ namespace Microsoft::Console::VirtualTerminal
                                 const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
         bool MoveCursor(const size_t row, const size_t col) override;
 
+        bool IsVtInputEnabled() const override;
+
     private:
         std::unique_ptr<ConGetSet> _pConApi;
     };

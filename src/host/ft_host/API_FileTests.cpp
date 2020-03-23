@@ -61,7 +61,7 @@ class FileTests
     END_TEST_METHOD();*/
 };
 
-static HANDLE _cancellationEvent = 0;
+static HANDLE _cancellationEvent = nullptr;
 
 bool FileTests::ClassSetup()
 {

@@ -17,14 +17,9 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - The character dimensions of the current dirty area of the frame.
 //      This is an Inclusive rect.
-SMALL_RECT VtEngine::GetDirtyRectInChars()
+std::vector<til::rectangle> VtEngine::GetDirtyArea()
 {
-    SMALL_RECT dirty = _invalidRect.ToInclusive();
-    if (dirty.Top < _virtualTop)
-    {
-        dirty.Top = _virtualTop;
-    }
-    return dirty;
+    return _invalidMap.runs();
 }
 
 // Routine Description:
@@ -68,17 +63,26 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT
 // - true iff only the next character is invalid
 bool VtEngine::_WillWriteSingleChar() const
 {
-    COORD currentCursor = _lastText;
-    SMALL_RECT _srcInvalid = _invalidRect.ToExclusive();
-    bool noScrollDelta = (_scrollDelta.X == 0 && _scrollDelta.Y == 0);
+    // If there is scroll delta, return false.
+    if (til::point{ 0, 0 } != til::point{ _scrollDelta })
+    {
+        return false;
+    }
 
-    bool invalidIsOneChar = (_invalidRect.Width() == 1) &&
-                            (_invalidRect.Height() == 1);
+    // If there is more than one invalid char, return false.
+    if (!_invalidMap.one())
+    {
+        return false;
+    }
+
+    // Get the single point at which things are invalid.
+    const auto invalidPoint = _invalidMap.runs().front().origin();
+
     // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
-    bool invalidIsNext = (_srcInvalid.Top == _lastText.Y) && (_srcInvalid.Left == _lastText.X);
-    bool invalidIsLast = (_srcInvalid.Top == _lastText.Y) && (_srcInvalid.Left == (_lastText.X - 1));
+    bool invalidIsNext = invalidPoint == til::point{ _lastText };
+    bool invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
 
-    return noScrollDelta && invalidIsOneChar && (invalidIsNext || invalidIsLast);
+    return invalidIsNext || invalidIsLast;
 }
