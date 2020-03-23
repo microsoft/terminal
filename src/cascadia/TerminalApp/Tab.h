@@ -26,7 +26,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::UIElement GetRootElement();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
-        // std::weak_ptr<Pane> GetActivePane() const noexcept;
 
         bool IsFocused() const noexcept;
         void SetFocused(const bool focused);

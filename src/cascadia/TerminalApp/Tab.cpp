@@ -393,6 +393,14 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    // Method Description:
+    // - Mark the given pane as the active pane in this tab. All other panes
+    //   will be marked as inactive. We'll also update our own UI state to
+    //   reflect this newly active pane.
+    // Arguments:
+    // - pane: a Pane to mark as active.
+    // Return Value:
+    // - <none>
     void Tab::_UpdateActivePane(std::shared_ptr<Pane> pane)
     {
         // Clear the active state of the entire tree, and mark only the pane as active.
@@ -431,6 +439,13 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    // Method Description:
+    // - Get the total number of leaf panes in this tab. This will be the number
+    //   of actual controls hosted by this tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The total number of leaf panes hosted by this tab.
     int Tab::_GetLeafPaneCount() const noexcept
     {
         return _rootPane->GetLeafPaneCount();

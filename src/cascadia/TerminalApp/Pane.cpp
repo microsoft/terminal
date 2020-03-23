@@ -70,7 +70,7 @@ void Pane::ResizeContent(const Size& newSize)
     const auto width = newSize.Width;
     const auto height = newSize.Height;
 
-    _CreateRowColDefinitions(newSize);
+    _CreateRowColDefinitions();
 
     if (_splitState == SplitState::Vertical)
     {
@@ -790,26 +790,23 @@ void Pane::_SetupChildCloseHandlers()
 //   which is stored in _desiredSplitPosition
 // - Does nothing if our split state is currently set to SplitState::None
 // Arguments:
-// - rootSize: The dimensions in pixels that this pane (and its children should consume.)
+// - <none>
 // Return Value:
 // - <none>
-void Pane::_CreateRowColDefinitions(const Size& /*rootSize*/)
+void Pane::_CreateRowColDefinitions()
 {
-    auto first = _desiredSplitPosition * 100.0f;
-    auto second = 100.0f - first;
+    const auto first = _desiredSplitPosition * 100.0f;
+    const auto second = 100.0f - first;
     if (_splitState == SplitState::Vertical)
     {
         _root.ColumnDefinitions().Clear();
 
         // Create two columns in this grid: one for each pane
-        // const auto paneSizes = _CalcChildrenSizes(rootSize.Width);
 
         auto firstColDef = Controls::ColumnDefinition();
-        // firstColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
         firstColDef.Width(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
 
         auto secondColDef = Controls::ColumnDefinition();
-        // secondColDef.Width(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
         secondColDef.Width(GridLengthHelper::FromValueAndType(second, GridUnitType::Star));
 
         _root.ColumnDefinitions().Append(firstColDef);
@@ -820,15 +817,12 @@ void Pane::_CreateRowColDefinitions(const Size& /*rootSize*/)
         _root.RowDefinitions().Clear();
 
         // Create two rows in this grid: one for each pane
-        // const auto paneSizes = _CalcChildrenSizes(rootSize.Height);
 
         auto firstRowDef = Controls::RowDefinition();
         firstRowDef.Height(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
-        // firstRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.first, GridUnitType::Star));
 
         auto secondRowDef = Controls::RowDefinition();
         secondRowDef.Height(GridLengthHelper::FromValueAndType(second, GridUnitType::Star));
-        // secondRowDef.Height(GridLengthHelper::FromValueAndType(paneSizes.second, GridUnitType::Star));
 
         _root.RowDefinitions().Append(firstRowDef);
         _root.RowDefinitions().Append(secondRowDef);
@@ -845,10 +839,7 @@ void Pane::_CreateRowColDefinitions(const Size& /*rootSize*/)
 // - <none>
 void Pane::_CreateSplitContent()
 {
-    Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                     gsl::narrow_cast<float>(_root.ActualHeight()) };
-
-    _CreateRowColDefinitions(actualSize);
+    _CreateRowColDefinitions();
 }
 
 // Method Description:
@@ -959,21 +950,11 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
     {
         if (_firstChild->_HasFocusedChild())
         {
-            auto pretranslatedSplitType = splitType;
-            if (_firstChild->_IsLeaf() && _isSizeZero())
-            {
-                pretranslatedSplitType = _preTranslateAutoSplitType(splitType);
-            }
-            return _firstChild->Split(pretranslatedSplitType, profile, control);
+            return _firstChild->Split(splitType, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            auto pretranslatedSplitType = splitType;
-            if (_secondChild->_IsLeaf() && _isSizeZero())
-            {
-                pretranslatedSplitType = _preTranslateAutoSplitType(splitType);
-            }
-            return _secondChild->Split(pretranslatedSplitType, profile, control);
+            return _secondChild->Split(splitType, profile, control);
         }
 
         return { nullptr, nullptr };
@@ -1005,20 +986,6 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
     return splitType;
-}
-
-SplitState Pane::_preTranslateAutoSplitType(const SplitState& splitType) const
-{
-    if (splitType == SplitState::Automatic && _isSizeZero())
-    {
-        return _splitState == SplitState::Horizontal ? SplitState::Vertical : SplitState::Horizontal;
-    }
-    return splitType;
-}
-
-bool Pane::_isSizeZero() const
-{
-    return _root.ActualWidth() == 0 && _root.ActualHeight() == 0;
 }
 
 // Method Description:

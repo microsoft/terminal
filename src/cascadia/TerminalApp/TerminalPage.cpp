@@ -547,11 +547,6 @@ namespace winrt::TerminalApp::implementation
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
         CATCH_LOG();
-        // TODO: Should we display a dialog when we do nothing because we
-        // couldn't find the associated profile? This can only really happen in
-        // the duplicate tab scenario currently, but maybe in the future of
-        // keybindings with args, someone could manually open a tab/pane with
-        // specific a GUID.
     }
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
@@ -867,6 +862,19 @@ namespace winrt::TerminalApp::implementation
             try
             {
                 auto focusedTab = _GetStrongTabImpl(*index);
+                // TODO: GH#5047 - In the future, we should get the Profile of
+                // the focused pane, and use that to build a new instance of the
+                // settings so we can duplicate this tab/pane.
+                //
+                // Currently, if the profile doesn't exist anymore in our
+                // settings, we'll silently do nothing.
+                //
+                // In the future, it will be preferable to just duplicate the
+                // current control's settings, but we can't do that currently,
+                // because we won't be able to create a new instance of the
+                // connection without keeing an instance of the original Profile
+                // object around.
+
                 const auto& profileGuid = focusedTab->GetFocusedProfile();
                 if (profileGuid.has_value())
                 {
@@ -875,11 +883,6 @@ namespace winrt::TerminalApp::implementation
                 }
             }
             CATCH_LOG();
-            // TODO: Should we display a dialog when we do nothing because we
-            // couldn't find the associated profile? This can only really happen in
-            // the duplicate tab scenario currently, but maybe in the future of
-            // keybindings with args, someone could manually open a tab/pane with
-            // specific a GUID.
         }
     }
 
@@ -1180,6 +1183,18 @@ namespace winrt::TerminalApp::implementation
                     controlSettings = _settings->BuildSettings(current_guid.value());
                     realGuid = current_guid.value();
                 }
+                // TODO: GH#5047 - In the future, we should get the Profile of
+                // the focused pane, and use that to build a new instance of the
+                // settings so we can duplicate this tab/pane.
+                //
+                // Currently, if the profile doesn't exist anymore in our
+                // settings, we'll silently do nothing.
+                //
+                // In the future, it will be preferable to just duplicate the
+                // current control's settings, but we can't do that currently,
+                // because we won't be able to create a new instance of the
+                // connection without keeing an instance of the original Profile
+                // object around.
             }
             if (!profileFound)
             {
@@ -1211,11 +1226,6 @@ namespace winrt::TerminalApp::implementation
             focusedTab->SplitPane(realSplitType, realGuid, newControl);
         }
         CATCH_LOG();
-        // TODO: Should we display a dialog when we do nothing because we
-        // couldn't find the associated profile? This can only really happen in
-        // the duplicate tab scenario currently, but maybe in the future of
-        // keybindings with args, someone could manually open a tab/pane with
-        // specific a GUID.
     }
 
     // Method Description:

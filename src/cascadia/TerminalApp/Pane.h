@@ -110,7 +110,7 @@ private:
                                                                    const GUID& profile,
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-    void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
+    void _CreateRowColDefinitions();
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
     void _UpdateBorders();
@@ -137,8 +137,6 @@ private:
 
     winrt::TerminalApp::SplitState _convertAutomaticSplitState(const winrt::TerminalApp::SplitState& splitType) const;
 
-    winrt::TerminalApp::SplitState _preTranslateAutoSplitType(const winrt::TerminalApp::SplitState& splitType) const;
-    bool _isSizeZero() const;
     std::optional<winrt::TerminalApp::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
