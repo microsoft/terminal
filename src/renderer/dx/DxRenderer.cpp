@@ -625,8 +625,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     return _dwriteFactory->CreateTextLayout(string,
                                             gsl::narrow<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
-                                            _displaySizePixels.width(),
-                                            _glyphCell.height() != 0 ? _glyphCell.height() : _displaySizePixels.height(),
+                                            _displaySizePixels.width<float>(),
+                                            _glyphCell.height() != 0 ? _glyphCell.height<float>() : _displaySizePixels.height<float>(),
                                             ppTextLayout);
 }
 
@@ -647,9 +647,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 [[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
 {
     _sizeTarget = Pixels;
-
-    RETURN_IF_FAILED(InvalidateAll());
-
+    _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
 
@@ -683,7 +681,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _invalidMap.set(*psrRegion);
+    _invalidMap.set(Viewport::FromExclusive(*psrRegion).ToInclusive());
 
     return S_OK;
 }
@@ -710,14 +708,17 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+try
 {
-    // TODO: this is not right.
     RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
 
-    _InvalidOr(*prcDirtyClient);
+    // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
+    // to cells.
+    _invalidMap.set(til::rectangle{ *prcDirtyClient } / _glyphCell);
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Invalidates a series of character rectangles
@@ -857,21 +858,17 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-    //#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
-    //    TraceLoggingWrite(g_hDxRenderProvider,
-    //                      "Invalid",
-    //                      TraceLoggingInt32(_invalidRect.bottom - _invalidRect.top, "InvalidHeight"),
-    //                      TraceLoggingInt32((_invalidRect.bottom - _invalidRect.top) / _glyphCell.cy, "InvalidHeightChars"),
-    //                      TraceLoggingInt32(_invalidRect.right - _invalidRect.left, "InvalidWidth"),
-    //                      TraceLoggingInt32((_invalidRect.right - _invalidRect.left) / _glyphCell.cx, "InvalidWidthChars"),
-    //                      TraceLoggingInt32(_invalidRect.left, "InvalidX"),
-    //                      TraceLoggingInt32(_invalidRect.left / _glyphCell.cx, "InvalidXChars"),
-    //                      TraceLoggingInt32(_invalidRect.top, "InvalidY"),
-    //                      TraceLoggingInt32(_invalidRect.top / _glyphCell.cy, "InvalidYChars"),
-    //                      TraceLoggingInt32(_invalidScroll.cx, "ScrollWidth"),
-    //                      TraceLoggingInt32(_invalidScroll.cx / _glyphCell.cx, "ScrollWidthChars"),
-    //                      TraceLoggingInt32(_invalidScroll.cy, "ScrollHeight"),
-    //                      TraceLoggingInt32(_invalidScroll.cy / _glyphCell.cy, "ScrollHeightChars"));
+    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        const auto invalidatedStr = _invalidMap.to_string();
+        const auto invalidated = invalidatedStr.c_str();
+
+#pragma warning(suppress : 26477 26485 26494 26482 26446 26447) // We don't control TraceLoggingWrite
+        TraceLoggingWrite(g_hDxRenderProvider,
+                          "Invalid",
+                          TraceLoggingWideString(invalidated),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    }
 
     if (_isEnabled)
     {
@@ -895,7 +892,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
                 _d2dRenderTarget.Reset();
 
                 // Change the buffer size and recreate the render target (and surface)
-                RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width(), clientSize.height(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+                RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
                 RETURN_IF_FAILED(_PrepareRenderTarget());
 
                 // OK we made it past the parts that can cause errors. We can release our failure handler.
@@ -934,7 +931,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 
         if (SUCCEEDED(hr))
         {
-            if (_invalidScroll != til::point{ 0, 0 })
+            /*if (_invalidScroll != til::point{ 0, 0 })
             {
                 _presentDirty = _invalidRect;
 
@@ -954,7 +951,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
                     _presentParams.pScrollRect = nullptr;
                     _presentParams.pScrollOffset = nullptr;
                 }
-            }
+            }*/
 
             _presentReady = true;
         }
@@ -1074,12 +1071,17 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 {
     D2D1_COLOR_F nothing = { 0 };
 
+    // Runs are counts of cells.
+    // Use a transform by the size of one cell to convert cells-to-pixels
+    // as we clear.
+    _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
     for (const auto rect : _invalidMap.runs())
     {
         _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->Clear(nothing);
         _d2dRenderTarget->PopAxisAlignedClip();
     }
+    _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     return S_OK;
 }
@@ -1226,16 +1228,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const til::rectangle cells{ rect };
-
-    /*RECT pixels;
-    pixels.left = rect.Left * _glyphCell.cx;
-    pixels.top = rect.Top * _glyphCell.cy;
-    pixels.right = rect.Right * _glyphCell.cx;
-    pixels.bottom = rect.Bottom * _glyphCell.cy;*/
-    const til::rectangle pixels = cells * _glyphCell;
-
-    const D2D1_RECT_F draw = pixels;
+    const D2D1_RECT_F draw = til::rectangle{ rect } *_glyphCell;
 
     _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
 
@@ -1263,8 +1256,8 @@ enum class CursorPaintType
     {
         return S_FALSE;
     }
-    // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = til::rectangle{ options.coordCursor } * _glyphCell;
+    // Create rectangular block representing where the cursor can fill.s
+    D2D1_RECT_F rect = til::rectangle{ til::point{options.coordCursor} } *_glyphCell;
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)

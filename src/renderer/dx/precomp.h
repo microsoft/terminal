@@ -8,6 +8,7 @@
 #include "LibraryIncludes.h"
 
 #include <windows.h>
+#include <winmeta.h>
 
 #include "..\host\conddkrefs.h"
 #include <condrv.h>

@@ -705,6 +705,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (notifyScroll)
     {
+        // TODO: don't do this, thanks migrie
         _buffer->GetRenderTarget().TriggerRedrawAll();
         _NotifyScrollEvent();
     }
