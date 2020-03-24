@@ -274,7 +274,9 @@ BOOL CALLBACK okay(HWND child, LPARAM lp)
 {
     MyMsg m = *((MyMsg*)lp);
     PostMessage(child, m.message, m.wparam, m.lparam);
-    return false;
+
+    return true;
+
 }
 
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
