@@ -30,6 +30,8 @@ Abstract:
 #include <shellscalingapi.h>
 #include <windowsx.h>
 
+#include <winrt/Windows.Foundation.h>
+
 #include "../inc/LibraryIncludes.h"
 
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the

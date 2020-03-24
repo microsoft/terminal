@@ -193,6 +193,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Windows_Foundation_H
+        operator winrt::Windows::Foundation::Point() const noexcept
+        {
+            winrt::Windows::Foundation::Point ret;
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
+            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
+            return ret;
+        }
+#endif
+
         std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());

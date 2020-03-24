@@ -17,6 +17,7 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+
 AppHost::AppHost() noexcept :
     _app{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
@@ -343,7 +344,30 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const bool isHorizonta
 {
     isHorizontalScroll;
     delta;
-    _logic.OnMouseWheel();
+    // winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates
+
+    // winrt::Windows::Foundation::Point p{ coord };
+    // coord.x
+    auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _logic.GetRoot());
+    for (const auto& e : elems)
+    {
+        auto control = e.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>();
+        if (control)
+        {
+            control.OnMouseWheel(coord, delta);
+        }
+    }
+
+    // if (isHorizontalScroll)
+    // {
+    //     _logic.OnMouseHWheel(coord, delta);
+    // }
+    // else
+    // {
+    //     _logic.OnMouseWheel(coord, delta);
+    // }
+
+
     // auto root = _logic.GetRoot();
     // root.
     // root.as<FrameworkElement>();
