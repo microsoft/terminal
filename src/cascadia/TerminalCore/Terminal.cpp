@@ -45,9 +45,7 @@ Terminal::Terminal() :
     _scrollOffset{ 0 },
     _snapOnInput{ true },
     _blockSelection{ false },
-    _selection{ std::nullopt },
-    _allowSingleCharSelection{ true },
-    _copyOnSelect{ false }
+    _selection{ std::nullopt }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -144,8 +142,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _snapOnInput = settings.SnapOnInput();
 
     _wordDelimiters = settings.WordDelimiters();
-
-    _copyOnSelect = settings.CopyOnSelect();
 
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
 

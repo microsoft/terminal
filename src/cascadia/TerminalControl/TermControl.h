@@ -155,12 +155,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // imported from WinUser
         // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
         Timestamp _multiClickTimer;
-        Timestamp _lastMouseClickTimestamp;
         unsigned int _multiClickCounter;
+        Timestamp _lastMouseClickTimestamp;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-
-        std::optional<winrt::Windows::Foundation::Point> _focusRaisedClickPos;
-        bool _clickDrag;
+        std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
+        bool _selectionUpdatedThisCycle;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
