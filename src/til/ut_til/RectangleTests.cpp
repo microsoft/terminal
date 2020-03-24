@@ -440,6 +440,16 @@ class RectangleTests
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
+    TEST_METHOD(OrUnionInplace)
+    {
+        til::rectangle one{ 4, 6, 10, 14 };
+        const til::rectangle two{ 5, 2, 13, 10 };
+
+        const til::rectangle expected{ 4, 2, 13, 14 };
+        one |= two;
+        VERIFY_ARE_EQUAL(expected, one);
+    }
+
     TEST_METHOD(AndIntersect)
     {
         const til::rectangle one{ 4, 6, 10, 14 };
@@ -448,6 +458,16 @@ class RectangleTests
         const til::rectangle expected{ 5, 6, 10, 10 };
         const auto actual = one & two;
         VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(AndIntersectInplace)
+    {
+        til::rectangle one{ 4, 6, 10, 14 };
+        const til::rectangle two{ 5, 2, 13, 10 };
+
+        const til::rectangle expected{ 5, 6, 10, 10 };
+        one &= two;
+        VERIFY_ARE_EQUAL(expected, one);
     }
 
     TEST_METHOD(MinusSubtractSame)
@@ -583,6 +603,198 @@ class RectangleTests
         };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(AdditionPoint)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 + 3, 20 + 7, 30 + 3, 40 + 7 };
+        const auto actual = start + pt;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(AdditionPointInplace)
+    {
+        til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 + 3, 20 + 7, 30 + 3, 40 + 7 };
+        start += pt;
+        VERIFY_ARE_EQUAL(expected, start);
+    }
+
+    TEST_METHOD(SubtractionPoint)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 - 3, 20 - 7, 30 - 3, 40 - 7 };
+        const auto actual = start - pt;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(SubtractionPointInplace)
+    {
+        til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 - 3, 20 - 7, 30 - 3, 40 - 7 };
+        start -= pt;
+        VERIFY_ARE_EQUAL(expected, start);
+    }
+
+    TEST_METHOD(AdditionSize)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Add size to bottom and right");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 33, 47 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Add size to top and left");
+        {
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 7, 13, 30, 40 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Add size to bottom and left");
+        {
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 7, 20, 30, 47 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Add size to top and right");
+        {
+            const til::size scale{ 3, -7 };
+            const til::rectangle expected{ 10, 13, 33, 40 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(AdditionSizeInplace)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Add size to bottom and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 33, 47 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Add size to top and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 7, 13, 30, 40 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Add size to bottom and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 7, 20, 30, 47 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Add size to top and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, -7 };
+            const til::rectangle expected{ 10, 13, 33, 40 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(SubtractionSize)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Subtract size from bottom and right");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 27, 33 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Subtract size from top and left");
+        {
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 13, 27, 30, 40 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Subtract size from bottom and left");
+        {
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 13, 20, 30, 33 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Subtract size from top and right");
+        {
+            const til::size scale{ 3, -6 };
+            const til::rectangle expected{ 10, 26, 27, 40 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(SubtractionSizeInplace)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Subtract size from bottom and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 27, 33 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Subtract size from top and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 13, 27, 30, 40 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Subtract size from bottom and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 13, 20, 30, 33 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Subtract size from top and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, -6 };
+            const til::rectangle expected{ 10, 26, 27, 40 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
     }
 
     TEST_METHOD(Top)

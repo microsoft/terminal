@@ -193,6 +193,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        std::wstring to_string() const
+        {
+            return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());
+        }
+
     protected:
         ptrdiff_t _x;
         ptrdiff_t _y;
@@ -212,7 +217,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const ::til::point& point)
         {
-            return WEX::Common::NoThrowString().Format(L"(X:%td, Y:%td)", point.x(), point.y());
+            return WEX::Common::NoThrowString(point.to_string().c_str());
         }
     };
 

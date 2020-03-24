@@ -26,6 +26,7 @@
       the default OutDir up one level, so the wapproj will be able to find it.
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

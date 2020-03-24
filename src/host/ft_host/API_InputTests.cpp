@@ -243,7 +243,7 @@ void InputTests::TestPeekConsoleInvalid()
 void InputTests::TestReadConsoleInvalid()
 {
     DWORD nRead = (DWORD)-1;
-    VERIFY_WIN32_BOOL_FAILED(ReadConsoleInput(0, nullptr, 0, &nRead));
+    VERIFY_WIN32_BOOL_FAILED(ReadConsoleInput(nullptr, nullptr, 0, &nRead));
     VERIFY_ARE_EQUAL(nRead, (DWORD)0);
 
     nRead = (DWORD)-1;
@@ -275,7 +275,7 @@ void InputTests::TestReadConsoleInvalid()
 void InputTests::TestWriteConsoleInvalid()
 {
     DWORD nWrite = (DWORD)-1;
-    VERIFY_WIN32_BOOL_FAILED(WriteConsoleInput(0, nullptr, 0, &nWrite));
+    VERIFY_WIN32_BOOL_FAILED(WriteConsoleInput(nullptr, nullptr, 0, &nWrite));
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
 
     // weird: WriteConsoleInput with INVALID_HANDLE_VALUE writes garbage to lpNumberOfEventsWritten, whereas
@@ -358,7 +358,7 @@ void InputTests::TestReadConsolePasswordScenario()
     {
         wchar_t ch;
         DWORD c;
-        int err = ReadConsoleW(hIn, &ch, 1, &c, 0);
+        int err = ReadConsoleW(hIn, &ch, 1, &c, nullptr);
 
         if (!err || c != 1)
         {

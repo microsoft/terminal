@@ -513,7 +513,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
         return -1;
     }
 
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (SUCCEEDED(hr))
     {
         LPWSTR pwszOutputDir = argv[2];

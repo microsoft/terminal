@@ -347,16 +347,13 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     expectedOutput.push_back("AAA");
     expectedOutput.push_back("\r\n");
     expectedOutput.push_back("BBB");
-    expectedOutput.push_back("\r\n");
-    // Here, we're going to emit 3 spaces. The region that got invalidated was a
-    // rectangle from 0,0 to 3,3, so the vt renderer will try to render the
-    // region in between BBB and CCC as well, because it got included in the
-    // rectangle Or() operation.
-    // This behavior should not be seen as binding - if a future optimization
-    // breaks this test, it wouldn't be the worst.
-    expectedOutput.push_back("   ");
-    expectedOutput.push_back("\r\n");
+    // Jump down to the fourth line because emitting spaces didn't do anything
+    // and we will skip to emitting the CCC segment.
+    expectedOutput.push_back("\x1b[4;1H");
     expectedOutput.push_back("CCC");
+
+    // Cursor goes back on.
+    expectedOutput.push_back("\x1b[?25h");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
@@ -458,14 +455,10 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
     expectedOutput.push_back(R"(!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnop)");
     // Without line breaking, write the remaining 20 chars
     expectedOutput.push_back(R"(qrstuvwxyz{|}~!"#$%&)");
-    // Clear the rest of row 1
-    expectedOutput.push_back("\x1b[K");
     // This is the hard line break
     expectedOutput.push_back("\r\n");
     // Now write row 2 of the buffer
     expectedOutput.push_back("          1234567890");
-    // and clear everything after the text, because the buffer is empty.
-    expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb);
@@ -537,8 +530,6 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     expectedOutput.push_back("\r\n");
     // Now write row 2 of the buffer
     expectedOutput.push_back("1234567890");
-    // and clear everything after the text, because the buffer is empty.
-    expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb);
@@ -601,8 +592,6 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     expectedOutput.push_back("\r\n");
     // Now write row 2 of the buffer
     expectedOutput.push_back("          1234567890");
-    // and clear everything after the text, because the buffer is empty.
-    expectedOutput.push_back("\x1b[K");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb);

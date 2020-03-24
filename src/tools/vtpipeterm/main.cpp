@@ -525,7 +525,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed:
-    srand((unsigned int)time(NULL));
+    srand((unsigned int)time(nullptr));
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -567,7 +567,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     if (g_useOutfile)
     {
-        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (hOutFile == INVALID_HANDLE_VALUE)
         {
             printf("Failed to open outfile (%ls) for writing\n", outfile.c_str());

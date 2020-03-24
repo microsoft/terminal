@@ -331,8 +331,8 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            NULL, // features
-            NULL, // featureRangeLengths
+            nullptr, // features
+            nullptr, // featureRangeLengths
             0, // featureRanges
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));

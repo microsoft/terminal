@@ -220,6 +220,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        std::wstring to_string() const
+        {
+            return wil::str_printf<std::wstring>(L"[W:%td, H:%td]", width(), height());
+        }
+
     protected:
         ptrdiff_t _width;
         ptrdiff_t _height;
@@ -239,7 +244,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const ::til::size& size)
         {
-            return WEX::Common::NoThrowString().Format(L"[W:%td, H:%td]", size.width(), size.height());
+            return WEX::Common::NoThrowString(size.to_string().c_str());
         }
     };
 
