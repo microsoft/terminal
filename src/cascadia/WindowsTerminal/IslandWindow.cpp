@@ -264,6 +264,19 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
 }
 
+struct MyMsg {
+    UINT message;
+    WPARAM wparam;
+    LPARAM lparam;
+};
+
+BOOL CALLBACK okay(HWND child, LPARAM lp)
+{
+    MyMsg m = *((MyMsg*)lp);
+    PostMessage(child, m.message, m.wparam, m.lparam);
+    return false;
+}
+
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message)
@@ -326,7 +339,41 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         _windowCloseButtonClickedHandler();
         return 0;
     }
+    case WM_MOUSEWHEEL:
+    case WM_MOUSEHWHEEL:
+    {
+        bool isMouseWheel = message == WM_MOUSEWHEEL;
+        bool isMouseHWheel = message == WM_MOUSEHWHEEL;
+        if (isMouseWheel || isMouseHWheel)
+        {
+            short wheelDelta = (short)HIWORD(wparam);
+            bool hasShift = (wparam & MK_SHIFT) ? true : false;
+            wheelDelta;
+            hasShift;
+            auto a = 0;
+            a++;
+            a;
+            // _MouseScrolledHandlers(isMouseHWheel, wheelDelta);
+            auto f = [&message, & wparam, & lparam](HWND child, LPARAM /*lp*/) -> BOOL {
+                PostMessage(child, message, wparam, lparam);
+                return false;
+            };
+            MyMsg m{ message, wparam, lparam };
+            EnumChildWindows(_interopWindowHandle, okay, (LPARAM)&m);
+            // PostMessage(_interopWindowHandle, message, wparam, lparam);
+            return 0;
+            // Scrolling::s_HandleMouseWheel(isMouseWheel,
+            //                               isMouseHWheel,
+            //                               wheelDelta,
+            //                               hasShift,
+            //                               ScreenInfo);
+        }
+        break;
+
     }
+    }
+
+
 
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);

@@ -51,7 +51,7 @@ AppHost::AppHost() noexcept :
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
-
+    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled});
     _window->MakeWindow();
 }
 
@@ -337,4 +337,13 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::TerminalApp::ToggleFullscreenEventArgs&)
 {
     _window->ToggleFullscreen();
+}
+
+void AppHost::_WindowMouseWheeled(const bool isHorizontalScroll, const float delta)
+{
+    isHorizontalScroll;
+    delta;
+    // auto root = _logic.GetRoot();
+    // root.
+    // root.as<FrameworkElement>();
 }
