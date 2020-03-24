@@ -5,7 +5,6 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
-#include "../types/inc/ThemeUtils.h"
 #include "../types/inc/utils.hpp"
 #include "TerminalThemeHelpers.h"
 
@@ -568,9 +567,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
-    case WM_ACTIVATE:
-        // If we do this every time we're activated, it should be close enough to correct.
-        TerminalTrySetDarkTheme(_window.get());
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
@@ -688,7 +684,7 @@ void NonClientIslandWindow::_UpdateFrameTheme() const
         break;
     }
 
-    LOG_IF_FAILED(ThemeUtils::SetWindowFrameDarkMode(_window.get(), isDarkMode));
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), isDarkMode));
 }
 
 // Method Description:
