@@ -2362,6 +2362,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsGlyphVisible(false);
     }
 
+
+    bool TermControl::OnMouseWheel(Windows::Foundation::Point location, float delta)
+    {
+        location;
+        delta;
+        auto a = 0;
+        a++;
+        a;
+        return false;
+    }
+    bool TermControl::OnMouseHWheel(Windows::Foundation::Point location, float delta)
+    {
+        location;
+        delta;
+        auto a = 0;
+        a++;
+        a;
+        return false;
+
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

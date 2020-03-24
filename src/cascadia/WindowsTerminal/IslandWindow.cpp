@@ -348,20 +348,31 @@ BOOL CALLBACK okay(HWND child, LPARAM lp)
         bool isMouseHWheel = message == WM_MOUSEHWHEEL;
         if (isMouseWheel || isMouseHWheel)
         {
+            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
+            //  Important  Do not use the LOWORD or HIWORD macros to extract the x- and y-
+            //  coordinates of the cursor position because these macros return incorrect
+            //  results on systems with multiple monitors. Systems with multiple monitors
+            //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
+            //  coordinates as unsigned quantities.
+            short x = GET_X_LPARAM(lparam);
+            short y = GET_Y_LPARAM(lparam);
+
             short wheelDelta = (short)HIWORD(wparam);
+
             bool hasShift = (wparam & MK_SHIFT) ? true : false;
             wheelDelta;
             hasShift;
+
             auto a = 0;
             a++;
             a;
-            // _MouseScrolledHandlers(isMouseHWheel, wheelDelta);
-            auto f = [&message, & wparam, & lparam](HWND child, LPARAM /*lp*/) -> BOOL {
-                PostMessage(child, message, wparam, lparam);
-                return false;
-            };
-            MyMsg m{ message, wparam, lparam };
-            EnumChildWindows(_interopWindowHandle, okay, (LPARAM)&m);
+            _MouseScrolledHandlers(til::point{x, y}, isMouseHWheel, wheelDelta);
+            // auto f = [&message, & wparam, & lparam](HWND child, LPARAM /*lp*/) -> BOOL {
+            //     PostMessage(child, message, wparam, lparam);
+            //     return false;
+            // };
+            // MyMsg m{ message, wparam, lparam };
+            // EnumChildWindows(_interopWindowHandle, okay, (LPARAM)&m);
             // PostMessage(_interopWindowHandle, message, wparam, lparam);
             return 0;
             // Scrolling::s_HandleMouseWheel(isMouseWheel,

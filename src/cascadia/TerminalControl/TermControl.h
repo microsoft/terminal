@@ -83,6 +83,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnF7Pressed();
 
+        bool OnMouseWheel(Windows::Foundation::Point location, float delta);
+        bool OnMouseHWheel(Windows::Foundation::Point location, float delta);
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();

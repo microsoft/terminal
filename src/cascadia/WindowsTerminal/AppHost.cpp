@@ -339,10 +339,11 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
     _window->ToggleFullscreen();
 }
 
-void AppHost::_WindowMouseWheeled(const bool isHorizontalScroll, const float delta)
+void AppHost::_WindowMouseWheeled(const til::point coord, const bool isHorizontalScroll, const float delta)
 {
     isHorizontalScroll;
     delta;
+    _logic.OnMouseWheel();
     // auto root = _logic.GetRoot();
     // root.
     // root.as<FrameworkElement>();

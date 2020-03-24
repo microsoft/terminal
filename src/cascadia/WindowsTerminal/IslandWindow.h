@@ -72,7 +72,7 @@ public:
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
-    WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(bool, float)>);
+    WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, bool, float)>);
 
 protected:
     void ForceResize()

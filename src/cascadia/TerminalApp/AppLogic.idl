@@ -4,6 +4,7 @@
 import "../TerminalPage.idl";
 import "../ShortcutActionDispatch.idl";
 import "../IF7Listener.idl";
+import "../IMouseWheelListener.idl";
 
 namespace TerminalApp
 {
@@ -13,7 +14,7 @@ namespace TerminalApp
         MaximizedMode,
     };
 
-    [default_interface] runtimeclass AppLogic: IF7Listener {
+    [default_interface] runtimeclass AppLogic: IF7Listener, IMouseWheelListener {
         AppLogic();
 
         // For your own sanity, it's better to do setup outside the ctor.
