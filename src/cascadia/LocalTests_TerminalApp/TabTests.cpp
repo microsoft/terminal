@@ -67,8 +67,7 @@ namespace TerminalAppLocalTests
         }
 
     private:
-        void _initializeTerminalPage(winrt::TerminalApp::TerminalPage& projectedPage,
-                                     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
+        void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      std::shared_ptr<CascadiaSettings> initialSettings);
     };
 
@@ -208,13 +207,11 @@ namespace TerminalAppLocalTests
     //   * It will also ensure that the first tab is focused, since that happens
     //     asynchronously in the application typically.
     // Arguments:
-    // - projectedPage: a TerminalPage projected type that will recieve the new TerminalPage instance
     // - page: a TerminalPage implementation ptr that will recieve the new TerminalPage instance
     // - initialSettings: a CascadiaSettings to initialize the TerminalPage with.
     // Return Value:
     // - <none>
-    void TabTests::_initializeTerminalPage(winrt::TerminalApp::TerminalPage& projectedPage,
-                                           winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
+    void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                            std::shared_ptr<CascadiaSettings> initialSettings)
     {
         // This is super wacky, but we can't just initialize the
@@ -225,6 +222,8 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
+        winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
+
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
             projectedPage = winrt::TerminalApp::TerminalPage();
@@ -340,10 +339,8 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
-
-        _initializeTerminalPage(projectedPage, page, settings0);
+        _initializeTerminalPage(page, settings0);
 
         auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
@@ -437,10 +434,8 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
-
-        _initializeTerminalPage(projectedPage, page, settings0);
+        _initializeTerminalPage(page, settings0);
 
         auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
