@@ -790,7 +790,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const std::basic_str
     //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
     //   of the keypad; and the divide (/) and ENTER keys in the keypad.
     // This snippet detects the non-direction keys
-    const auto identifier = (GenericKeyIdentifiers)til::at(parameters, 0);
+    const auto identifier = static_cast<GenericKeyIdentifiers>(til::at(parameters, 0));
     if (identifier <= GenericKeyIdentifiers::Next)
     {
         modifiers = WI_SetFlag(modifiers, ENHANCED_KEY);
