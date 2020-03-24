@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.TerminalControl
+{
+    [uuid("65b8b8c5-988f-43ff-aba9-e89368da1598")]
+    interface IMouseWheelListener
+    {
+        Boolean OnMouseWheel(Windows.Foundation.Point coord, Single delta);
+        Boolean OnMouseHWheel(Windows.Foundation.Point coord, Single delta);
+    }
+}

@@ -842,40 +842,6 @@ namespace winrt::TerminalApp::implementation
         return { L"" };
     }
 
-
-    bool AppLogic::OnMouseWheel(Windows::Foundation::Point location, float delta)
-    {
-        location;
-        delta;
-        auto a = 0;
-        a++;
-        a;
-        // if (!_root)
-        // {
-        //     return false;
-        // }
-        // auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementInHostCoordinates(location, _root);
-        // for (const auto& e : elems)
-        // {
-        //     auto control = e.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>();
-        //     if (control)
-        //     {
-        //         control.OnMouseWheel(location, delta);
-        //     }
-        // }
-        return false;
-    }
-    bool AppLogic::OnMouseHWheel(Windows::Foundation::Point location, float delta)
-    {
-        location;
-        delta;
-        auto a = 0;
-        a++;
-        a;
-        return false;
-
-    }
-
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

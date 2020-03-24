@@ -41,9 +41,6 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnF7Pressed();
 
-        bool OnMouseWheel(Windows::Foundation::Point location, float delta);
-        bool OnMouseHWheel(Windows::Foundation::Point location, float delta);
-
         void WindowCloseButtonClicked();
 
         // -------------------------------- WinRT Events ---------------------------------
