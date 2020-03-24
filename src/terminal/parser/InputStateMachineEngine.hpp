@@ -176,7 +176,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
 
-        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
+        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept;
         DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
         DWORD _GetSGRMouseModifierState(const std::basic_string_view<size_t> parameters) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
