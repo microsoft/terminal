@@ -830,19 +830,6 @@ void Pane::_CreateRowColDefinitions()
 }
 
 // Method Description:
-// - Initializes our UI for a new split in this pane. Sets up row/column
-//   definitions, and initializes the separator grid. Does nothing if our split
-//   state is currently set to SplitState::None
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Pane::_CreateSplitContent()
-{
-    _CreateRowColDefinitions();
-}
-
-// Method Description:
 // - Sets the thickness of each side of our borders to match our _borders state.
 // Arguments:
 // - <none>
@@ -999,9 +986,6 @@ bool Pane::_CanSplit(SplitState splitType)
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
 
-    const Size desiredSize = _root.DesiredSize();
-    desiredSize;
-
     const Size minSize = _GetMinSize();
 
     auto actualSplitType = _convertAutomaticSplitState(splitType);
@@ -1077,7 +1061,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _control = { nullptr };
     _secondChild = std::make_shared<Pane>(profile, control);
 
-    _CreateSplitContent();
+    _CreateRowColDefinitions();
 
     _root.Children().Append(_firstChild->GetRootElement());
     _root.Children().Append(_secondChild->GetRootElement());
@@ -1587,7 +1571,9 @@ std::optional<winrt::TerminalApp::SplitState> Pane::PreCalculateAutoSplit(const 
         return firstResult.has_value() ? firstResult : _secondChild->PreCalculateAutoSplit(target, { secondWidth, secondHeight });
     }
 
-    return std::nullopt;
+    // We should not possibly be getting here - both the above branches should
+    // return a value.
+    FAIL_FAST();
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

@@ -463,8 +463,7 @@ namespace winrt::TerminalApp::implementation
     //   `availableSpace`
     SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
-        const auto result = _rootPane->PreCalculateAutoSplit(_activePane, availableSpace);
-        return result.has_value() ? result.value() : SplitState::Vertical;
+        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

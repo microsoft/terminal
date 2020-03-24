@@ -111,7 +111,6 @@ private:
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void _CreateRowColDefinitions();
-    void _CreateSplitContent();
     void _ApplySplitDefinitions();
     void _UpdateBorders();
 

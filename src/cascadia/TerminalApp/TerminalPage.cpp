@@ -155,7 +155,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This method is caled once on startup, on the first LayoutUpdated event.
+    // - This method is called once on startup, on the first LayoutUpdated event.
     //   We'll use this event to know that we have an ActualWidth and
     //   ActualHeight, so we can now attempt to process our list of startup
     //   actions.
@@ -200,7 +200,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    fire_and_forget TerminalPage::_ProcessStartupActions()
+    winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
     {
         // If there are no actions left, do nothing.
         if (_appArgs.GetStartupActions().empty())
@@ -209,13 +209,13 @@ namespace winrt::TerminalApp::implementation
         }
         auto weakThis{ get_weak() };
 
-        // Handle it on the UI thread.
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        // Handle it on a subsequent pass of the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            for (const auto& action : page->_appArgs.GetStartupActions())
+            for (const auto& action : _appArgs.GetStartupActions())
             {
-                page->_actionDispatch->DoAction(action);
+                _actionDispatch->DoAction(action);
             }
             _startupState = StartupState::Initialized;
             _InitializedHandlers(*this, nullptr);
@@ -521,33 +521,31 @@ namespace winrt::TerminalApp::implementation
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
+    try
     {
-        try
-        {
-            const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
+        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
-            _CreateNewTabFromSettings(profileGuid, settings);
+        _CreateNewTabFromSettings(profileGuid, settings);
 
-            const uint32_t tabCount = _tabs.Size();
-            const bool usedManualProfile = (newTerminalArgs != nullptr) &&
-                                           (newTerminalArgs.ProfileIndex() != nullptr ||
-                                            newTerminalArgs.Profile().empty());
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "TabInformation",
-                TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-                TraceLoggingUInt32(1u, "EventVer", "Version of this event"),
-                TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
-                TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
-                TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-                TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-                TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
-                TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-        }
-        CATCH_LOG();
+        const uint32_t tabCount = _tabs.Size();
+        const bool usedManualProfile = (newTerminalArgs != nullptr) &&
+                                       (newTerminalArgs.ProfileIndex() != nullptr ||
+                                        newTerminalArgs.Profile().empty());
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "TabInformation",
+            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
+            TraceLoggingUInt32(1u, "EventVer", "Version of this event"),
+            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
+            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
+            TraceLoggingBool(settings.UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+            TraceLoggingFloat64(settings.TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingWideString(settings.FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
+    CATCH_LOG();
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
     {
@@ -563,7 +561,6 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
-        const bool isFirstTab = _tabs.Size() == 0;
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -617,21 +614,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // If this is the first tab, we don't need to kick off the event to get
-        // the tab's content added to the root of the page. just do it
-        // immediately.
-        if (isFirstTab)
-        {
-            _tabContent.Children().Clear();
-            auto tabRootElem = newTabImpl->GetRootElement();
-            _tabContent.Children().Append(tabRootElem);
-        }
-        else
-        {
-            // This kicks off TabView::SelectionChanged, in response to which
-            // we'll attach the terminal's Xaml control to the Xaml root.
-            _tabView.SelectedItem(tabViewItem);
-        }
+        // This kicks off TabView::SelectionChanged, in response to which
+        // we'll attach the terminal's Xaml control to the Xaml root.
+        _tabView.SelectedItem(tabViewItem);
     }
 
     // Method Description:
@@ -1660,12 +1645,12 @@ namespace winrt::TerminalApp::implementation
                 }
             }
             CATCH_LOG();
-            // TODO: Should we display a dialog when we do nothing because we
-            // couldn't find the associated profile? This can only really happen in
-            // the duplicate tab scenario currently, but maybe in the future of
-            // keybindings with args, someone could manually open a tab/pane with
-            // specific a GUID.
         }
+
+        // GH#2455: If there are any panes with controls that had been
+        // initialized with a Profile that no longer exists in our list of
+        // profiles, we'll leave it unmodified. The profile doesn't exist
+        // anymore, so we can't possibly update its settings.
 
         // Update the icon of the tab for the currently focused profile in that tab.
         for (auto tab : _tabs)
