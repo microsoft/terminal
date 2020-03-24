@@ -806,7 +806,7 @@ void InputEngineTest::EnhancedKeysTest()
     // The following vkeys should be handled as enhanced keys
     // Reference: https://docs.microsoft.com/en-us/windows/console/key-event-record-str
     // clang-format off
-    const std::map<WORD, std::wstring> enhancedKeys{
+    const std::map<int, std::wstring> enhancedKeys{
         { VK_PRIOR,  L"\x1b[5~"},
         { VK_NEXT,   L"\x1b[6~"},
         { VK_END,    L"\x1b[F"},
@@ -831,7 +831,7 @@ void InputEngineTest::EnhancedKeysTest()
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
         inputRec.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
         inputRec.Event.KeyEvent.wRepeatCount = 1;
-        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>(vkey);
         inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
         inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
 
