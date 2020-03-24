@@ -291,14 +291,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _dirty |= rc;
         }
 
-        void set_all()
+        void set_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
             _bits.set();
             _dirty = _rc;
         }
 
-        void reset_all()
+        void reset_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
             _bits.reset();
