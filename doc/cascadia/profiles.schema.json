@@ -580,7 +580,7 @@
           "type": "boolean"
         },
         "fontFace": {
-          "default": "Consolas",
+          "default": "Cascadia Code",
           "description": "Name of the font face used in the profile.",
           "type": "string"
         },
