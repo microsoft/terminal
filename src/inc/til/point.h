@@ -107,6 +107,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator+=(const point& other)
+        {
+            *this = *this + other;
+            return *this;
+        }
+
         point operator-(const point& other) const
         {
             ptrdiff_t x;
@@ -116,6 +122,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckSub(_y, other._y).AssignIfValid(&y));
 
             return point{ x, y };
+        }
+
+        point& operator-=(const point& other)
+        {
+            *this = *this - other;
+            return *this;
         }
 
         point operator*(const point& other) const
@@ -129,6 +141,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point& operator*=(const point& other)
+        {
+            *this = *this * other;
+            return *this;
+        }
+
         point operator/(const point& other) const
         {
             ptrdiff_t x;
@@ -138,6 +156,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, other._y).AssignIfValid(&y));
 
             return point{ x, y };
+        }
+
+        point& operator/=(const point& other)
+        {
+            *this = *this / other;
+            return *this;
         }
 
         constexpr ptrdiff_t x() const noexcept

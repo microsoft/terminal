@@ -64,7 +64,7 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT
 bool VtEngine::_WillWriteSingleChar() const
 {
     // If there is scroll delta, return false.
-    if (til::point{ 0, 0 } != til::point{ _scrollDelta })
+    if (til::point{ 0, 0 } != _scrollDelta)
     {
         return false;
     }
