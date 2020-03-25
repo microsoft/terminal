@@ -123,7 +123,12 @@ COORD RenderData::GetCursorPosition() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetPosition();
+    COORD effectiveCursor = cursor.GetPosition();
+    if (cursor.IsDelayedEOLWrap() && cursor.GetDelayedAtPosition() == effectiveCursor)
+    {
+        effectiveCursor.X++;
+    }
+    return effectiveCursor;
 }
 
 // Method Description:

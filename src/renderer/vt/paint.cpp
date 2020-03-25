@@ -160,7 +160,11 @@ using namespace Microsoft::Console::Types;
 {
     _trace.TracePaintCursor(options.coordCursor);
 
-    if (!_delayedEolWrap)
+    if (_delayedEolWrap && (options.coordCursor.Y == _lastText.Y && _lastText.X == _lastViewport.RightExclusive()))
+    {
+    }
+    else
+    // if (!_delayedEolWrap)
     {
         // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
         LOG_IF_FAILED(_MoveCursor(options.coordCursor));

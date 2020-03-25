@@ -628,7 +628,7 @@ void ConptyRoundtripTests::MoveCursorAtEOL()
     // might change, but the buffer contents shouldn't.
     // If they do change and these tests break, that's to be expected.
     expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    expectedOutput.push_back("\x1b[1;80H");
+    // expectedOutput.push_back("\x1b[1;80H");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
@@ -654,8 +654,11 @@ void ConptyRoundtripTests::MoveCursorAtEOL()
 
     verifyData1(hostTb);
 
+    // expectedOutput.push_back(" ");
+    // expectedOutput.push_back("\x1b[1;80H");
+    expectedOutput.push_back("\x08");
     expectedOutput.push_back(" ");
-    expectedOutput.push_back("\x1b[1;80H");
+    expectedOutput.push_back("\x08");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyData1(termTb);

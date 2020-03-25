@@ -120,7 +120,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     // Otherwise, if the cursor previously was visible, and it should be hidden
     // (on -> off), hide it at the end of the frame.
-    else if (!_nextCursorIsVisible && _lastCursorIsVisible)
+    else if (!_nextCursorIsVisible && _lastCursorIsVisible && !_delayedEolWrap)
     {
         RETURN_IF_FAILED(_HideCursor());
     }
