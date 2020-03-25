@@ -76,6 +76,7 @@
       <DependentUpon>TermControl.xaml</DependentUpon>
     </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
+    <Midl Include="IMouseWheelListener.idl" />
     <Midl Include="TSFInputControl.idl">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </Midl>

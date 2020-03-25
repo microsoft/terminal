@@ -1160,20 +1160,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto point = args.GetCurrentPoint(*this);
+        auto result = _DoMouseWheel(point.Position(), static_cast<uint32_t>(args.KeyModifiers()), point.Properties().MouseWheelDelta(), point.Properties().IsLeftButtonPressed());
+        if (result)
+        {
+            args.Handled(true);
+        }
+    }
+
+    bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point, const uint32_t modifiers, const int32_t delta, const bool isLeftButtonPressed)
+    {
 
         if (_CanSendVTMouseInput())
         {
-            _TrySendMouseEvent(point);
-            args.Handled(true);
-            return;
+            // GAH this used to be
+            // _TrySendMouseEvent(point);
+            // But we don't have a PointerPoint anymore. So we're going to fake that this is only a mousewheel.
+            const auto terminalPosition = _GetTerminalPosition(point);
+            unsigned int uiButton = WM_MOUSEWHEEL;
+            return _terminal->SendMouseEvent(terminalPosition, uiButton, _GetPressedModifierKeys(), ::base::saturated_cast<short>(delta));
         }
-
-        const auto delta = point.Properties().MouseWheelDelta();
 
         // Get the state of the Ctrl & Shift keys
         // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
         // directly with a VirtualKeyModifiers
-        const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
         const auto ctrlPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
         const auto shiftPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
@@ -1187,8 +1196,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         else
         {
-            _MouseScrollHandler(delta, point);
+            _MouseScrollHandler(delta, point, isLeftButtonPressed);
         }
+        return false;
     }
 
     // Method Description:
@@ -1261,7 +1271,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scroll the visible viewport in response to a mouse wheel event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
-    void TermControl::_MouseScrollHandler(const double mouseDelta, Windows::UI::Input::PointerPoint const& pointerPoint)
+    void TermControl::_MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed)
     {
         const auto currentOffset = ScrollBar().Value();
 
@@ -1278,11 +1288,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      for us.
         ScrollBar().Value(newValue);
 
-        if (_terminal->IsSelectionActive() && pointerPoint.Properties().IsLeftButtonPressed())
+        if (_terminal->IsSelectionActive() && isLeftButtonPressed)
         {
             // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
-            _SetEndSelectionPointAtCursor(pointerPoint.Position());
+            _SetEndSelectionPointAtCursor(point);
         }
     }
 
@@ -2363,24 +2373,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
 
-    bool TermControl::OnMouseWheel(Windows::Foundation::Point location, float delta)
+    bool TermControl::OnMouseWheel(Windows::Foundation::Point location, int32_t delta)
     {
-        location;
-        delta;
-        auto a = 0;
-        a++;
-        a;
-        return false;
+        // const auto modifiers = _GetPressedModifierKeys();
+        return _DoMouseWheel(location, 0, delta, false);
     }
-    bool TermControl::OnMouseHWheel(Windows::Foundation::Point location, float delta)
+    bool TermControl::OnMouseHWheel(Windows::Foundation::Point /*location*/, int32_t /*delta*/)
     {
-        location;
-        delta;
-        auto a = 0;
-        a++;
-        a;
         return false;
-
     }
 
     // -------------------------------- WinRT Events ---------------------------------

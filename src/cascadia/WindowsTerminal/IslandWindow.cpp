@@ -359,7 +359,13 @@ BOOL CALLBACK okay(HWND child, LPARAM lp)
         auto relative = eventPoint-origin;
         auto x1 = gsl::narrow_cast<int>(relative.x() / GetCurrentDpiScale());
         auto y1 = gsl::narrow_cast<int>(relative.y() / GetCurrentDpiScale());
+
+        auto x2 = gsl::narrow_cast<int>(relative.x() / GetCurrentDpiScale());
+        auto y2 = gsl::narrow_cast<int>(relative.y() / GetCurrentDpiScale());
+
         auto real = til::point{ x1, y1 };
+        auto real2 = til::point{ x2, y2 };
+        real2;
 
         short wheelDelta = (short)HIWORD(wparam);
 

@@ -340,7 +340,7 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
     _window->ToggleFullscreen();
 }
 
-void AppHost::_WindowMouseWheeled(const til::point coord, const bool isHorizontalScroll, const float delta)
+void AppHost::_WindowMouseWheeled(const til::point coord, const bool isHorizontalScroll, const int32_t delta)
 {
     isHorizontalScroll;
     delta;
