@@ -48,10 +48,11 @@ SOURCES = \
     TfConvArea.cpp \
     TfCatUtil.cpp \
     TfDispAttr.cpp \
-    TfEditses.cpp \
+    TfEditSession.cpp \
     TfTxtevCb.cpp \
 
 INCLUDES = \
+    $(INCLUDES); \
     ..\inc; \
     $(ONECORE_PRIV_SDK_INC_PATH); \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \

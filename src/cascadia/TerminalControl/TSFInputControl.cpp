@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -18,7 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
-        _inComposition{ false }
+        _inComposition{ false },
+        _activeTextStart{ 0 }
     {
         InitializeComponent();
 
@@ -26,9 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
-        // sets the Input Pane display policy to Manual for now so that it can manually show the
-        // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // TODO GitHub #3639: Should Input Pane display policy be Automatic
+        // InputPane is manually shown inside of TermControl.
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -93,6 +92,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Clears the input buffer and tells the text server to clear their buffer as well.
+    //   Also clears the TextBlock and sets the active text starting point to 0.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::ClearBuffer()
+    {
+        if (!_inputBuffer.empty())
+        {
+            TextBlock().Text(L"");
+            const auto bufLen = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
+            _inputBuffer.clear();
+            _editContext.NotifyFocusLeave();
+            _editContext.NotifyTextChanged({ 0, bufLen }, 0, { 0, 0 });
+            _editContext.NotifyFocusEnter();
+            _activeTextStart = 0;
+            _inComposition = false;
+        }
+    }
+
+    // Method Description:
     // - Handler for LayoutRequested event by CoreEditContext responsible
     //   for returning the current position the IME should be placed
     //   in screen coordinates on the screen.  TSFInputControls internal
@@ -142,24 +163,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
-        // Set the selection layout bounds
-        Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
+        // position textblock to cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
+        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
+
+        // calculate FontSize in pixels from DIPs
+        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
+        TextBlock().FontSize(fontSizePx);
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        const auto widthToTerminalEnd = Canvas().ActualWidth() - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        TextBlock().MaxWidth(widthToTerminalEnd);
+
+        // Set the text block bounds
+        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
+        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
+        Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
         // Set the control bounds of the whole control
         Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
-
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
-
-        TextBlock().Height(fontHeight);
-        // calculate FontSize in pixels from DIPs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
-
-        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
     }
 
     // Method Description:
@@ -271,26 +295,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
     {
-        const auto text = args.Text();
+        const auto incomingText = args.Text();
         const auto range = args.Range();
 
         try
         {
-            Canvas().Visibility(Visibility::Visible);
+            // When a user deletes the last character in their current composition, some machines
+            // will fire a CompositionCompleted before firing a TextUpdating event that deletes the last character.
+            // The TextUpdating will have a lower StartCaretPosition, so in this scenario, _activeTextStart
+            // needs to update to be the StartCaretPosition.
+            // A known issue related to this behavior is that the last character that's deleted from a composition
+            // will get sent to the terminal before we receive the TextUpdate to delete the character.
+            // See GH #5054.
+            _activeTextStart = ::base::ClampMin(_activeTextStart, ::base::ClampedNumeric<size_t>(range.StartCaretPosition));
 
-            const auto length = ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition);
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                length,
-                text);
+                ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
+                incomingText);
 
-            TextBlock().Text(_inputBuffer);
-
-            // If we receive tabbed IME input like emoji, kaomojis, and symbols, send it to the terminal immediately.
-            // They aren't composition, so we don't want to wait for the user to start and finish a composition to send the text.
+            // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
+            // will be sent straight through to the terminal.
             if (!_inComposition)
             {
                 _SendAndClearText();
+            }
+            else
+            {
+                Canvas().Visibility(Visibility::Visible);
+                const auto text = _inputBuffer.substr(_activeTextStart);
+                TextBlock().Text(text);
             }
 
             // Notify the TSF that the update succeeded
@@ -306,28 +340,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Sends the currently held text in the input buffer to the parent and
-    //   clears the input buffer and text block for the next round of input.
-    //   Then hides the text block control until the next time text received.
+    // - Send the portion of the textBuffer starting at _activeTextStart to the end of the buffer.
+    //   Then clear the TextBlock and hide it until the next time text is received.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TSFInputControl::_SendAndClearText()
     {
-        // call event handler with data handled by parent
-        _compositionCompletedHandlers(_inputBuffer);
+        const auto text = _inputBuffer.substr(_activeTextStart);
 
-        // clear the buffer for next round
-        const auto bufferLength = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
-        _inputBuffer.clear();
+        _compositionCompletedHandlers(text);
+
+        _activeTextStart = _inputBuffer.length();
+
         TextBlock().Text(L"");
-
-        // Leaving focus before NotifyTextChanged seems to guarantee that the next
-        // composition will send us a CompositionStarted event.
-        _editContext.NotifyFocusLeave();
-        _editContext.NotifyTextChanged({ 0, bufferLength }, 0, { 0, 0 });
-        _editContext.NotifyFocusEnter();
 
         // hide the controls until text input starts again
         Canvas().Visibility(Visibility::Collapsed);

@@ -155,11 +155,6 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
     }
 }
 
-bool TextAttribute::_IsReverseVideo() const noexcept
-{
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
-}
-
 bool TextAttribute::IsLeadingByte() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);

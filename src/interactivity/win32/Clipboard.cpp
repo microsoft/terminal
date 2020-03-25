@@ -188,10 +188,10 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
 // - Copies the selected area onto the global system clipboard.
 // - NOTE: Throws on allocation and other clipboard failures.
 // Arguments:
-// - fAlsoCopyFormatting - This will also place colored HTML & RTF text onto the clipboard as well as the usual plain text.
+// - copyFormatting - This will also place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
 //   <none>
-void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyFormatting)
+void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
 {
     const auto& selection = Selection::Instance();
 
@@ -203,40 +203,31 @@ void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyFormatting)
 
     // read selection area.
     const auto selectionRects = selection.GetSelectionRects();
-    const bool lineSelection = Selection::Instance().IsLineSelection();
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& screenInfo = gci.GetActiveOutputBuffer();
-
-    const auto text = RetrieveTextFromBuffer(screenInfo,
-                                             lineSelection,
-                                             selectionRects);
-
-    CopyTextToSystemClipboard(text, fAlsoCopyFormatting);
-}
-
-// Routine Description:
-// - Retrieves the text data from the selected region of the text buffer
-// Arguments:
-// - screenInfo - what is rendered on the screen
-// - lineSelection - true if entire line is being selected. False otherwise (box selection)
-// - selectionRects - the selection regions from which the data will be extracted from the buffer
-TextBuffer::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                           const bool lineSelection,
-                                                           const std::vector<SMALL_RECT>& selectionRects)
-{
-    const auto& buffer = screenInfo.GetTextBuffer();
-    const bool trimTrailingWhitespace = !WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&CONSOLE_INFORMATION::LookupForegroundColor, &gci, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&CONSOLE_INFORMATION::LookupBackgroundColor, &gci, std::placeholders::_1);
 
-    return buffer.GetTextForClipboard(lineSelection,
-                                      trimTrailingWhitespace,
-                                      selectionRects,
-                                      GetForegroundColor,
-                                      GetBackgroundColor);
+    bool includeCRLF, trimTrailingWhitespace;
+    if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
+    {
+        // When shift is held, put everything in one line
+        includeCRLF = trimTrailingWhitespace = false;
+    }
+    else
+    {
+        includeCRLF = trimTrailingWhitespace = true;
+    }
+
+    const auto text = buffer.GetText(includeCRLF,
+                                     trimTrailingWhitespace,
+                                     selectionRects,
+                                     GetForegroundColor,
+                                     GetBackgroundColor);
+
+    CopyTextToSystemClipboard(text, copyFormatting);
 }
 
 // Routine Description:
@@ -369,7 +360,7 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR* const pwch)
             break;
         }
 
-        // Replace Unicode dashes with a standard hypen
+        // Replace Unicode dashes with a standard hyphen
         case UNICODE_EM_DASH:
         case UNICODE_EN_DASH:
         {

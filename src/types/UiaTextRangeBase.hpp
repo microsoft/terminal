@@ -73,14 +73,15 @@ namespace Microsoft::Console::Types
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ const COORD start,
                                                _In_ const COORD end,
+                                               _In_ bool blockRange = false,
                                                _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         virtual HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
-        UiaTextRangeBase(const UiaTextRangeBase&) = default;
-        UiaTextRangeBase(UiaTextRangeBase&&) = default;
-        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
-        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
+        UiaTextRangeBase(const UiaTextRangeBase&) = delete;
+        UiaTextRangeBase(UiaTextRangeBase&&) = delete;
+        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = delete;
+        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = delete;
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
@@ -149,42 +150,44 @@ namespace Microsoft::Console::Types
         // NOTE: _start is inclusive, but _end is exclusive
         COORD _start{};
         COORD _end{};
+        bool _blockRange;
 
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
         // GetText() cannot be used as it's not const
-        std::wstring _getTextValue(int maxLength = -1) const noexcept;
+        std::wstring _getTextValue(std::optional<unsigned int> maxLength = std::nullopt) const noexcept;
 
         RECT _getTerminalRect() const;
 
         virtual const COORD _getScreenFontSize() const;
+
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
         const Viewport _getBufferSize() const noexcept;
 
-        void _getBoundingRect(_In_ const COORD startAnchor, _In_ const COORD endAnchor, _Inout_ std::vector<double>& coords) const;
+        void _getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const;
 
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
-                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                     _In_ const bool preventBufferEnd = false) noexcept;
+                                     gsl::not_null<int*> const pAmountMoved,
+                                     _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _Out_ gsl::not_null<int*> const pAmountMoved,
+                                gsl::not_null<int*> const pAmountMoved,
                                 _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                _Out_ gsl::not_null<int*> const pAmountMoved,
+                                gsl::not_null<int*> const pAmountMoved,
                                 _In_ const bool preventBufferEnd = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
-                                    _Out_ gsl::not_null<int*> const pAmountMoved,
+                                    gsl::not_null<int*> const pAmountMoved,
                                     _In_ const bool preventBufferEnd = false) noexcept;
 
 #ifdef UNIT_TESTING

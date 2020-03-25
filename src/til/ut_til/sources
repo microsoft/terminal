@@ -14,7 +14,14 @@ DLLDEF                  =
 
 SOURCES = \
     $(SOURCES) \
+    BitmapTests.cpp \
+    ColorTests.cpp \
+    OperatorTests.cpp \
+    PointTests.cpp \
+    RectangleTests.cpp \
+    SizeTests.cpp \
     SomeTests.cpp \
+    u8u16convertTests.cpp \
     DefaultResource.rc \
 
 INCLUDES = \

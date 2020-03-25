@@ -355,7 +355,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-SMALL_RECT WddmConEngine::GetDirtyRectInChars()
+std::vector<til::rectangle> WddmConEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
@@ -363,7 +363,7 @@ SMALL_RECT WddmConEngine::GetDirtyRectInChars()
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return r;
+    return { r };
 }
 
 RECT WddmConEngine::GetDisplaySize()

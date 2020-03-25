@@ -219,7 +219,7 @@ void BufferTests::ChafaGifPerformance()
     SetConsoleOutputCP(CP_UTF8);
 
     // Taken from: https://blog.kowalczyk.info/article/zy/Embedding-binary-resources-on-Windows.html
-    HGLOBAL res_handle = NULL;
+    HGLOBAL res_handle = nullptr;
     HRSRC res;
     char* res_data;
     DWORD res_size;

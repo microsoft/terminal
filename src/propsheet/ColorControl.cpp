@@ -33,7 +33,7 @@ void SimpleColorDoPaint(const HWND hColor, PAINTSTRUCT& ps, const int ColorId)
 
     GetClientRect(hColor, &rColor);
     rgbBrush = GetNearestColor(ps.hdc, GetColorForItem(ColorId));
-    if ((hbr = CreateSolidBrush(rgbBrush)) != NULL)
+    if ((hbr = CreateSolidBrush(rgbBrush)) != nullptr)
     {
         InflateRect(&rColor, -1, -1);
         FillRect(ps.hdc, &rColor, hbr);

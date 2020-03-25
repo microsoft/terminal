@@ -43,7 +43,13 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
 
+    auto engineRef = engine.get();
+
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
+
+    // we need this callback to be able to flush an unknown input sequence to the app
+    auto flushCallback = std::bind(&StateMachine::FlushToTerminal, _pInputStateMachine.get());
+    engineRef->SetFlushToInputQueueCallback(flushCallback);
 }
 
 // Method Description:

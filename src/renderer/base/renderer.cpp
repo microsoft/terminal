@@ -563,51 +563,62 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    auto dirty = Viewport::FromInclusive(pEngine->GetDirtyRectInChars());
+    const auto dirtyAreas = pEngine->GetDirtyArea();
 
-    // Shift the origin of the dirty region to match the underlying buffer so we can
-    // compare the two regions directly for intersection.
-    dirty = Viewport::Offset(dirty, view.Origin());
-
-    // The intersection between what is dirty on the screen (in need of repaint)
-    // and what is supposed to be visible on the screen (the viewport) is what
-    // we need to walk through line-by-line and repaint onto the screen.
-    const auto redraw = Viewport::Intersect(dirty, view);
-
-    // Shortcut: don't bother redrawing if the width is 0.
-    if (redraw.Width() > 0)
+    for (const auto dirtyRect : dirtyAreas)
     {
-        // Retrieve the text buffer so we can read information out of it.
-        const auto& buffer = _pData->GetTextBuffer();
+        auto dirty = Viewport::FromInclusive(dirtyRect);
 
-        // Now walk through each row of text that we need to redraw.
-        for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
+        // Shift the origin of the dirty region to match the underlying buffer so we can
+        // compare the two regions directly for intersection.
+        dirty = Viewport::Offset(dirty, view.Origin());
+
+        // The intersection between what is dirty on the screen (in need of repaint)
+        // and what is supposed to be visible on the screen (the viewport) is what
+        // we need to walk through line-by-line and repaint onto the screen.
+        const auto redraw = Viewport::Intersect(dirty, view);
+
+        // Shortcut: don't bother redrawing if the width is 0.
+        if (redraw.Width() > 0)
         {
-            // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
-            // area in width and exactly 1 tall.
-            const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
+            // Retrieve the text buffer so we can read information out of it.
+            const auto& buffer = _pData->GetTextBuffer();
 
-            // Find where on the screen we should place this line information. This requires us to re-map
-            // the buffer-based origin of the line back onto the screen-based origin of the line
-            // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking
-            // at 13,26 relative to the buffer.
-            // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
-            const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
+            // Now walk through each row of text that we need to redraw.
+            for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
+            {
+                // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
+                // area in width and exactly 1 tall.
+                const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
 
-            // Retrieve the cell information iterator limited to just this line we want to redraw.
-            auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
+                // Find where on the screen we should place this line information. This requires us to re-map
+                // the buffer-based origin of the line back onto the screen-based origin of the line
+                // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking
+                // at 13,26 relative to the buffer.
+                // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
+                const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
 
-            // Calculate if two things are true:
-            // 1. this row wrapped
-            // 2. We're painting the last col of the row.
-            // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-            const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
-                                     (bufferLine.RightExclusive() == buffer.GetSize().Width());
+                // Retrieve the cell information iterator limited to just this line we want to redraw.
+                auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
-            // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
+                // Calculate if two things are true:
+                // 1. this row wrapped
+                // 2. We're painting the last col of the row.
+                // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+                const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).GetCharRow().WasWrapForced()) &&
+                                         (bufferLine.RightExclusive() == buffer.GetSize().Width());
+
+                // Ask the helper to paint through this specific line.
+                _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
+            }
         }
     }
+}
+
+static bool _IsAllSpaces(const std::wstring_view v)
+{
+    // first non-space char is not found (is npos)
+    return v.find_first_not_of(L" ") == decltype(v)::npos;
 }
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
@@ -615,6 +626,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         const COORD target,
                                         const bool lineWrapped)
 {
+    auto globalInvert{ _pData->IsScreenReversed() };
+
     // If we have valid data, let's figure out how to draw it.
     if (it)
     {
@@ -661,8 +674,14 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             {
                 if (color != it->TextAttr())
                 {
-                    color = it->TextAttr();
-                    break;
+                    auto newAttr{ it->TextAttr() };
+                    // foreground doesn't matter for runs of spaces (!)
+                    // if we trick it . . . we call Paint far fewer times for cmatrix
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    {
+                        color = newAttr;
+                        break; // vend this run
+                    }
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
@@ -784,26 +803,35 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     {
         // Get cursor position in buffer
         COORD coordCursor = _pData->GetCursorPosition();
-        // Adjust cursor to viewport
+
+        // GH#3166: Only draw the cursor if it's actually in the viewport. It
+        // might be on the line that's in that partially visible row at the
+        // bottom of the viewport, the space that's not quite a full line in
+        // height. Since we don't draw that text, we shouldn't draw the cursor
+        // there either.
         Viewport view = _pData->GetViewport();
-        view.ConvertToOrigin(&coordCursor);
+        if (view.IsInBounds(coordCursor))
+        {
+            // Adjust cursor to viewport
+            view.ConvertToOrigin(&coordCursor);
 
-        COLORREF cursorColor = _pData->GetCursorColor();
-        bool useColor = cursorColor != INVALID_COLOR;
+            COLORREF cursorColor = _pData->GetCursorColor();
+            bool useColor = cursorColor != INVALID_COLOR;
 
-        // Build up the cursor parameters including position, color, and drawing options
-        IRenderEngine::CursorOptions options;
-        options.coordCursor = coordCursor;
-        options.ulCursorHeightPercent = _pData->GetCursorHeight();
-        options.cursorPixelWidth = _pData->GetCursorPixelWidth();
-        options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-        options.cursorType = _pData->GetCursorStyle();
-        options.fUseColor = useColor;
-        options.cursorColor = cursorColor;
-        options.isOn = _pData->IsCursorOn();
+            // Build up the cursor parameters including position, color, and drawing options
+            IRenderEngine::CursorOptions options;
+            options.coordCursor = coordCursor;
+            options.ulCursorHeightPercent = _pData->GetCursorHeight();
+            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
+            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
+            options.cursorType = _pData->GetCursorStyle();
+            options.fUseColor = useColor;
+            options.cursorColor = cursorColor;
+            options.isOn = _pData->IsCursorOn();
 
-        // Draw it within the viewport
-        LOG_IF_FAILED(pEngine->PaintCursor(options));
+            // Draw it within the viewport
+            LOG_IF_FAILED(pEngine->PaintCursor(options));
+        }
     }
 }
 
@@ -834,24 +862,25 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv = Viewport::FromInclusive(srCaView);
 
-        SMALL_RECT srDirty = engine.GetDirtyRectInChars();
-
-        // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
-        srDirty.Bottom++;
-        srDirty.Right++;
-
-        if (viewConv.TrimToViewport(&srDirty))
+        for (SMALL_RECT srDirty : engine.GetDirtyArea())
         {
-            Viewport viewDirty = Viewport::FromInclusive(srDirty);
+            // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
+            srDirty.Bottom++;
+            srDirty.Right++;
 
-            for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+            if (viewConv.TrimToViewport(&srDirty))
             {
-                const COORD target{ viewDirty.Left(), iRow };
-                const auto source = target - overlay.origin;
+                Viewport viewDirty = Viewport::FromInclusive(srDirty);
 
-                auto it = overlay.buffer.GetCellLineDataAt(source);
+                for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+                {
+                    const COORD target{ viewDirty.Left(), iRow };
+                    const auto source = target - overlay.origin;
 
-                _PaintBufferOutputHelper(&engine, it, target, false);
+                    auto it = overlay.buffer.GetCellLineDataAt(source);
+
+                    _PaintBufferOutputHelper(&engine, it, target, false);
+                }
             }
         }
     }
@@ -890,16 +919,19 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
-        Viewport dirtyView = Viewport::FromInclusive(srDirty);
+        auto dirtyAreas = pEngine->GetDirtyArea();
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
         for (auto rect : rectangles)
         {
-            if (dirtyView.TrimToViewport(&rect))
+            for (auto dirtyRect : dirtyAreas)
             {
-                LOG_IF_FAILED(pEngine->PaintSelection(rect));
+                Viewport dirtyView = Viewport::FromInclusive(dirtyRect);
+                if (dirtyView.TrimToViewport(&rect))
+                {
+                    LOG_IF_FAILED(pEngine->PaintSelection(rect));
+                }
             }
         }
     }

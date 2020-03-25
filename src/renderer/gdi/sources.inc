@@ -28,6 +28,7 @@ SOURCES = \
     ..\state.cpp \
 
 INCLUDES = \
+    $(INCLUDES); \
     ..; \
     ..\..\..\inc; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \

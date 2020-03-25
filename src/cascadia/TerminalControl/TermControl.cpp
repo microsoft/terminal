@@ -21,6 +21,8 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::ViewManagement;
+using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -65,11 +67,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
-        _lastMouseClick{},
+        _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _searchBox{ nullptr },
-        _unfocusedClickPos{ std::nullopt },
-        _isClickDragSelection{ false }
+        _focusRaisedClickPos{ std::nullopt },
+        _clickDrag{ false }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -251,7 +253,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Apply settings for scrollbar
         if (_settings.ScrollState() == ScrollbarState::Hidden)
         {
-            // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the
+            // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
             // achieve the intended effect.
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
@@ -464,9 +466,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If 'weakThis' is locked, then we can safely work with 'this'
         if (auto control{ weakThis.get() })
         {
-            auto lock = _terminal->LockForWriting();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -479,10 +484,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (auto control{ weakThis.get() })
         {
-            _terminal->LockConsole();
-            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockConsole();
+            if (_terminal)
+            {
+                auto lock = _terminal->LockForWriting();
+                auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+                nativePanel->SetSwapChain(chain.Get());
+            }
         }
     }
 
@@ -654,6 +661,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.Handled(handled);
     }
 
+    // Method Description:
+    // - Manually generate an F7 event into the key bindings or terminal.
+    //   This is required as part of GH#638.
+    // Return value:
+    // - Whether F7 was handled.
+    bool TermControl::OnF7Pressed()
+    {
+        bool handled{ false };
+        auto bindings{ _settings.KeyBindings() };
+
+        const auto modifiers{ _GetPressedModifierKeys() };
+
+        if (bindings)
+        {
+            handled = bindings.TryKeyChord({
+                modifiers.IsCtrlPressed(),
+                modifiers.IsAltPressed(),
+                modifiers.IsShiftPressed(),
+                VK_F7,
+            });
+        }
+
+        if (!handled)
+        {
+            // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
+            (void)_TrySendKeyEvent(VK_F7, 0, modifiers);
+            handled = true;
+        }
+
+        return handled;
+    }
+
     void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                       Input::KeyRoutedEventArgs const& e)
     {
@@ -684,6 +723,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         bool handled = false;
+
+        // Alt-Numpad# input will send us a character once the user releases Alt, so we should be ignoring the individual keydowns.
+        // The character will be sent through the TSFInputControl.
+        // See GH#1401 for more details
+        if (modifiers.IsAltPressed() && (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
+
+        {
+            e.Handled(true);
+            return;
+        }
 
         // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.
@@ -741,6 +790,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
+        if (vkey == VK_ESCAPE ||
+            vkey == VK_RETURN)
+        {
+            TSFInputControl().ClearBuffer();
+        }
+
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
@@ -750,7 +805,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _terminal->SetCursorVisible(true);
+            _terminal->SetCursorOn(true);
             _cursorTimer.value().Start();
         }
 
@@ -769,6 +824,72 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Send this particular mouse event to the terminal.
+    //   See Terminal::SendMouseEvent for more information.
+    // Arguments:
+    // - point: the PointerPoint object representing a mouse event from our XAML input handler
+    bool TermControl::_TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point)
+    {
+        const auto props = point.Properties();
+
+        // Get the terminal position relative to the viewport
+        const auto terminalPosition = _GetTerminalPosition(point.Position());
+
+        // Which mouse button changed state (and how)
+        unsigned int uiButton{};
+        switch (props.PointerUpdateKind())
+        {
+        case PointerUpdateKind::LeftButtonPressed:
+            uiButton = WM_LBUTTONDOWN;
+            break;
+        case PointerUpdateKind::LeftButtonReleased:
+            uiButton = WM_LBUTTONUP;
+            break;
+        case PointerUpdateKind::MiddleButtonPressed:
+            uiButton = WM_MBUTTONDOWN;
+            break;
+        case PointerUpdateKind::MiddleButtonReleased:
+            uiButton = WM_MBUTTONUP;
+            break;
+        case PointerUpdateKind::RightButtonPressed:
+            uiButton = WM_RBUTTONDOWN;
+            break;
+        case PointerUpdateKind::RightButtonReleased:
+            uiButton = WM_RBUTTONUP;
+            break;
+        default:
+            uiButton = WM_MOUSEMOVE;
+        }
+
+        // Mouse wheel data
+        const short sWheelDelta = ::base::saturated_cast<short>(props.MouseWheelDelta());
+        if (sWheelDelta != 0 && !props.IsHorizontalMouseWheel())
+        {
+            // if we have a mouse wheel delta and it wasn't a horizontal wheel motion
+            uiButton = WM_MOUSEWHEEL;
+        }
+
+        const auto modifiers = _GetPressedModifierKeys();
+        return _terminal->SendMouseEvent(terminalPosition, uiButton, modifiers, sWheelDelta);
+    }
+
+    // Method Description:
+    // - Checks if we can send vt mouse input.
+    // Arguments:
+    // - point: the PointerPoint object representing a mouse event from our XAML input handler
+    bool TermControl::_CanSendVTMouseInput()
+    {
+        // If the user is holding down Shift, suppress mouse events
+        // TODO GH#4875: disable/customize this functionality
+        const auto modifiers = _GetPressedModifierKeys();
+        if (modifiers.IsShiftPressed())
+        {
+            return false;
+        }
+        return _terminal->IsTrackingMouseInput();
+    }
+
+    // Method Description:
     // - handle a mouse click event. Begin selection process.
     // Arguments:
     // - sender: the XAML element responding to the pointer input
@@ -781,16 +902,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
 
+        // We also TryShow in GotFocusHandler, but this call is specifically
+        // for the case where the Terminal is in focus but the user closed the
+        // on-screen keyboard. This lets the user simply tap on the terminal
+        // again to bring it up.
+        InputPane::GetForCurrentView().TryShow();
+
         if (!_focused)
         {
             Focus(FocusState::Pointer);
-
-            // Save the click position here when the terminal does not have focus
-            // because they might be performing a click-drag selection. Since we
-            // only want to start the selection when the user moves the pointer with
-            // the left mouse button held down, the PointerMovedHandler will use
-            // this saved position to set the SelectionAnchor.
-            _unfocusedClickPos = point.Position();
+            // Save the click position that brought this control into focus
+            // in case the user wants to perform a click-drag selection.
+            _focusRaisedClickPos = point.Position();
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
@@ -801,13 +924,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
+            if (_CanSendVTMouseInput())
+            {
+                _TrySendMouseEvent(point);
+                args.Handled(true);
+                return;
+            }
+
             if (point.Properties().IsLeftButtonPressed())
             {
-                // _unfocusedClickPos having a value signifies to us that
-                // the user clicked on an unfocused terminal. We don't want
-                // a single left click from out of focus to start a selection,
-                // so we return fast here.
-                if (_unfocusedClickPos)
+                // A single left click from out of focus should only focus.
+                if (_focusRaisedClickPos)
                 {
                     args.Handled(true);
                     return;
@@ -842,25 +969,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                     else
                     {
-                        // save location before rendering
                         _terminal->SetSelectionAnchor(terminalPosition);
                     }
 
-                    _lastMouseClick = point.Timestamp();
+                    _lastMouseClickTimestamp = point.Timestamp();
                     _lastMouseClickPos = cursorPosition;
                 }
                 _renderer->TriggerSelection();
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // copyOnSelect causes right-click to always paste
+                // CopyOnSelect right click always pastes
                 if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
                 }
                 else
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -885,19 +1011,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
 
+        if (!_focused)
+        {
+            args.Handled(true);
+            return;
+        }
+
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
+            if (_CanSendVTMouseInput())
+            {
+                _TrySendMouseEvent(point);
+                args.Handled(true);
+                return;
+            }
+
             if (point.Properties().IsLeftButtonPressed())
             {
-                _isClickDragSelection = true;
+                _clickDrag = true;
 
-                // If this does not have a value, it means that PointerPressedHandler already
-                // set the SelectionAnchor. If it does have a value, that means the user is
-                // performing a click-drag selection on an unfocused terminal, so
-                // a SelectionAnchor isn't set yet. We'll have to set it here.
-                if (_unfocusedClickPos)
+                // PointerPressedHandler doesn't set the SelectionAnchor when the click was
+                // from out of focus, so PointerMoved has to set it.
+                if (_focusRaisedClickPos)
                 {
-                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_unfocusedClickPos));
+                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_focusRaisedClickPos));
                 }
 
                 const auto cursorPosition = point.Position();
@@ -968,24 +1105,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& sender,
                                               Input::PointerRoutedEventArgs const& args)
     {
-        _ReleasePointerCapture(sender, args);
-
         const auto ptr = args.Pointer();
+        const auto point = args.GetCurrentPoint(*this);
+
+        _ReleasePointerCapture(sender, args);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
-            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
-            // macro directly with a VirtualKeyModifiers
-            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
-
-            if (_terminal->IsCopyOnSelectActive())
+            if (_CanSendVTMouseInput())
             {
-                // If the terminal was in focus, copy to clipboard.
-                // If the terminal was unfocused AND a click-drag selection happened, copy to clipboard.
-                if (!_unfocusedClickPos || (_unfocusedClickPos && _isClickDragSelection))
+                _TrySendMouseEvent(point);
+                args.Handled(true);
+                return;
+            }
+
+            // Only a left click release when copy on select is active should perform a copy.
+            // Right clicks and middle clicks should not need to do anything when released.
+            if (_terminal->IsCopyOnSelectActive() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
+            {
+                const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+                // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+                // macro directly with a VirtualKeyModifiers
+                const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+                // In a Copy on Select scenario,
+                // All left click drags should copy,
+                // All left clicks on a focused control should copy if a selection is active.
+                if (_clickDrag || !_focusRaisedClickPos)
                 {
-                    CopySelectionToClipboard(!shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled);
                 }
             }
         }
@@ -994,8 +1142,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _touchAnchor = std::nullopt;
         }
 
-        _unfocusedClickPos = std::nullopt;
-        _isClickDragSelection = false;
+        _focusRaisedClickPos = std::nullopt;
+        _clickDrag = false;
 
         _TryStopAutoScroll(ptr.PointerId());
 
@@ -1012,6 +1160,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto point = args.GetCurrentPoint(*this);
+
+        if (_CanSendVTMouseInput())
+        {
+            _TrySendMouseEvent(point);
+            args.Handled(true);
+            return;
+        }
+
         const auto delta = point.Properties().MouseWheelDelta();
 
         // Get the state of the Ctrl & Shift keys
@@ -1051,8 +1207,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 auto acrylicBrush = RootGrid().Background().as<Media::AcrylicBrush>();
                 acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+                if (acrylicBrush.TintOpacity() == 1.0)
+                {
+                    _settings.UseAcrylic(false);
+                    _InitializeBackgroundBrush();
+                    uint32_t bg = _settings.DefaultBackground();
+                    _BackgroundColorChanged(bg);
+                }
             }
             CATCH_LOG();
+        }
+        else if (mouseDelta < 0)
+        {
+            _settings.UseAcrylic(true);
+
+            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+            _settings.TintOpacity(1.0);
+            _InitializeBackgroundBrush();
         }
     }
 
@@ -1263,6 +1434,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _focused = true;
 
+        InputPane::GetForCurrentView().TryShow();
+
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
         // terminal's cursor to start blinking. So, we'll just return quickly here.
@@ -1284,7 +1457,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             // When the terminal focuses, show the cursor immediately
-            _terminal->SetCursorVisible(true);
+            _terminal->SetCursorOn(true);
             _cursorTimer.value().Start();
         }
         _rowsToScroll = _settings.RowsToScroll();
@@ -1316,7 +1489,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
-            _terminal->SetCursorVisible(false);
+            _terminal->SetCursorOn(false);
         }
     }
 
@@ -1456,7 +1629,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
+        _terminal->SetCursorOn(!_terminal->IsCursorOn());
     }
 
     // Method Description:
@@ -1618,9 +1791,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
-    // - trimTrailingWhitespace: enable removing any whitespace from copied selection
-    //    and get text to appear on separate lines.
-    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    // - collapseText: collapse all of the text to one line
+    bool TermControl::CopySelectionToClipboard(bool collapseText)
     {
         // no selection --> nothing to copy
         if (_terminal == nullptr || !_terminal->IsSelectionActive())
@@ -1628,7 +1800,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
         // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
 
         // convert text: vector<string> --> string
         std::wstring textData;
@@ -1803,8 +1975,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         double height = rows * fFontHeight;
         auto thickness = _ParseThicknessFromPadding(settings.Padding());
-        width += thickness.Left + thickness.Right;
-        height += thickness.Top + thickness.Bottom;
+        // GH#2061 - make sure to account for the size the padding _will be_ scaled to
+        width += scale * (thickness.Left + thickness.Right);
+        height += scale * (thickness.Top + thickness.Bottom);
 
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
@@ -2032,6 +2205,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
+        // If we haven't initialized yet, just quick return.
+        if (!_terminal)
+        {
+            return;
+        }
         const COORD cursorPos = _terminal->GetCursorPosition();
         Windows::Foundation::Point p = { gsl::narrow_cast<float>(cursorPos.X), gsl::narrow_cast<float>(cursorPos.Y) };
         eventArgs.CurrentPosition(p);
@@ -2063,7 +2241,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // if click occurred at a different location or past the multiClickTimer...
         Timestamp delta;
-        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClick, &delta));
+        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClickTimestamp, &delta));
         if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
         {
             // exit early. This is a single click.
@@ -2181,7 +2359,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsCaptionVisible(true);
         // Sets if the dragged content is visible
         e.DragUIOverride().IsContentVisible(false);
-        // Sets if the glyph is visibile
+        // Sets if the glyph is visible
         e.DragUIOverride().IsGlyphVisible(false);
     }
 

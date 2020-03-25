@@ -1624,7 +1624,7 @@ CATCH_RETURN()
         _ComputePixelShaderSettings();
         try
         {
-            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, NULL, &_pixelShaderSettings, 0, 0);
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
         }
         CATCH_RETURN();
     }
@@ -1686,7 +1686,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
+[[nodiscard]] std::vector<til::rectangle> DxEngine::GetDirtyArea()
 {
     SMALL_RECT r;
     r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
@@ -1698,7 +1698,7 @@ float DxEngine::GetScaling() const noexcept
     r.Bottom--;
     r.Right--;
 
-    return r;
+    return { r };
 }
 
 // Routine Description:
@@ -1983,7 +1983,10 @@ float DxEngine::GetScaling() const noexcept
         DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
         std::wstring localeName = _GetLocaleName();
 
-        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, localeName);
+        // _ResolveFontFaceWithFallback overrides the last argument with the locale name of the font,
+        // but we should use the system's locale to render the text.
+        std::wstring fontLocaleName = localeName;
+        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, fontLocaleName);
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);

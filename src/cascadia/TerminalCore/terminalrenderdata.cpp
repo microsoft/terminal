@@ -204,3 +204,13 @@ void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock_shared();
 }
+
+// Method Description:
+// - Returns whether the screen is inverted;
+//   This state is not currently known to Terminal.
+// Return Value:
+// - false.
+bool Terminal::IsScreenReversed() const noexcept
+{
+    return false;
+}
