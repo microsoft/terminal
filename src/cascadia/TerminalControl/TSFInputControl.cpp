@@ -19,7 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
         _inComposition{ false },
-        _activeTextStart{ 0 }
+        _activeTextStart{ 0 },
+        _focused{ false }
     {
         InitializeComponent();
 
@@ -59,6 +60,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Explicitly disconnect the LayoutRequested handler -- it can cause problems during application teardown.
         // See GH#4159 for more info.
         _layoutRequestedRevoker.revoke();
+        _focused = false;
     }
 
     // Method Description:
@@ -73,6 +75,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusEnter();
+            _focused = true;
         }
     }
 
@@ -88,6 +91,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusLeave();
+            _focused = false;
         }
     }
 
@@ -115,6 +119,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     winrt::Windows::Foundation::Rect TSFInputControl::RedrawCanvas()
     {
+        if (!_focused)
+        {
+            return { 0, 0, 0, 0 };
+        }
+
         // Get window in screen coordinates, this is the entire window including tabs
         const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
 
@@ -227,8 +236,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _SendAndClearText();
         }
-
-        RedrawCanvas();
     }
 
     // Method Description:

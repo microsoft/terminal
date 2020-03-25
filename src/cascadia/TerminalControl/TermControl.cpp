@@ -612,6 +612,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
+        auto pfnCursorPositionChanged = std::bind(&TermControl::_TerminalCursorPositionChanged, this);
+        _terminal->SetCursorPositionChangedCallback(pfnCursorPositionChanged);
+
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
@@ -1768,6 +1771,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // Update our scrollbar
                 _ScrollbarUpdater(ScrollBar(), viewTop, viewHeight, bufferSize);
+            }
+        }
+    }
+
+    
+    // Method Description:
+    // - Tells TSFInputControl to redraw the Canvas/TextBlock so it'll update
+    //   to be where the current cursor position is.
+    // Arguments:
+    // - N/A
+    winrt::fire_and_forget TermControl::_TerminalCursorPositionChanged()
+    {
+        if (_closing.load())
+        {
+            return;
+        }
+
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            if (!_closing.load())
+            {
+                TSFInputControl().RedrawCanvas();
             }
         }
     }

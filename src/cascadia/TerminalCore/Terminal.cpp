@@ -703,6 +703,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
     }
 
+    _NotifyTerminalCursorPositionChanged();
+
     if (notifyScroll)
     {
         _buffer->GetRenderTarget().TriggerRedrawAll();
@@ -740,6 +742,14 @@ try
 }
 CATCH_LOG()
 
+void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
+{
+    if (_pfnCursorPositionChanged)
+    {
+        _pfnCursorPositionChanged();
+    }
+}
+
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
@@ -753,6 +763,11 @@ void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_vie
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged.swap(pfn);
+}
+
+void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnCursorPositionChanged.swap(pfn);
 }
 
 // Method Description:
