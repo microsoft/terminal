@@ -1075,6 +1075,7 @@ IAction
 IApi
 IApplication
 IBase
+IBeam
 icacls
 iccex
 icch
