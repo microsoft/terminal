@@ -280,7 +280,7 @@ namespace winrt::TerminalApp::implementation
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
-        // possible that the focus events won't propogate immediately. Updating
+        // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
         _UpdateActivePane(second);
     }

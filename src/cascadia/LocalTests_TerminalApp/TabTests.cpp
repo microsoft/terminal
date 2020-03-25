@@ -200,14 +200,14 @@ namespace TerminalAppLocalTests
     //     non-zero ActualSize to the Terminal window, and adding the Page to
     //     the Application will make it behave as expected.
     //   * It will wait for the TerminalPage to finish initialization before
-    //     returning control to the caler. It does this by creating an event and
+    //     returning control to the caller. It does this by creating an event and
     //     only setting the event when the TerminalPage raises its Initialized
     //     event, to signal that startup is complete. At this point, there will
     //     be one tab with the default profile in the page.
     //   * It will also ensure that the first tab is focused, since that happens
     //     asynchronously in the application typically.
     // Arguments:
-    // - page: a TerminalPage implementation ptr that will recieve the new TerminalPage instance
+    // - page: a TerminalPage implementation ptr that will receive the new TerminalPage instance
     // - initialSettings: a CascadiaSettings to initialize the TerminalPage with.
     // Return Value:
     // - <none>

@@ -858,7 +858,7 @@ namespace winrt::TerminalApp::implementation
                 // In the future, it will be preferable to just duplicate the
                 // current control's settings, but we can't do that currently,
                 // because we won't be able to create a new instance of the
-                // connection without keeing an instance of the original Profile
+                // connection without keeping an instance of the original Profile
                 // object around.
 
                 const auto& profileGuid = focusedTab->GetFocusedProfile();
@@ -1179,7 +1179,7 @@ namespace winrt::TerminalApp::implementation
                 // In the future, it will be preferable to just duplicate the
                 // current control's settings, but we can't do that currently,
                 // because we won't be able to create a new instance of the
-                // connection without keeing an instance of the original Profile
+                // connection without keeping an instance of the original Profile
                 // object around.
             }
             if (!profileFound)
