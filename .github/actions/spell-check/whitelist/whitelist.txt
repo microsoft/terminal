@@ -114,6 +114,7 @@ ATest
 atg
 attr
 ATTRCOLOR
+au
 aumid
 Authenticode
 AUTOBUDDY
@@ -970,6 +971,7 @@ Greyscale
 gridline
 groupbox
 gsl
+GSM
 GTP
 guc
 gui
