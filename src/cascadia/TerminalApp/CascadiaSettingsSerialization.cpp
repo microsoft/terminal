@@ -177,7 +177,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                 "CustomKeybindings",
-                TraceLoggingDescription("Event emitted when custom keybindings are idenfitied on load/reload"),
+                TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
                 TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));

@@ -1281,7 +1281,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
 //   already snapped or minimum size.
 // Arguments:
 // - widthOrHeight: if true operates on width, otherwise on height.
-// - sizeNode: a layouting node that corresponds to this pane.
+// - sizeNode: a layout size node that corresponds to this pane.
 // Return Value:
 // - <none>
 void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const

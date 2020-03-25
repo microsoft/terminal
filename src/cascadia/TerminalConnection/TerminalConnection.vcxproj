@@ -59,7 +59,7 @@
     <Midl Include="TelnetConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources/Resources.language-en.resw" />
+    <PRIResource Include="Resources\*\Resources.resw" />
     <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
