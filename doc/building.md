@@ -57,3 +57,27 @@ Openconsole has three configuration types:
 - AuditMode
 
 AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
+
+## Updating Nuget package references
+Certain Nuget package references in this project, like `Microsoft.UI.Xaml`, must be updated outside of the Visual Studio NuGet package manager. This can be done using the snippet below.
+> Note that to run this snippet, you need to use WSL as the command uses `sed`.
+To update the version of a given package, use the following snippet
+
+`git grep -z -l $PackageName | xargs -0 sed -i -e 's/$OldVersionNumber/$NewVersionNumber/g'`
+
+where:
+- `$PackageName` is the name of the package, e.g. Microsoft.UI.Xaml
+- `$OldVersionNumber` is the version number currently used, e.g. 2.3.191217003-prerelease
+- `$NewVersionNumber` is the version number you want to migrate to, e.g. 2.4.200117003-prerelease
+
+Example usage:
+
+`git grep -z -l Microsoft.UI.Xaml | xargs -0 sed -i -e 's/2.3.191217003-prerelease/2.4.200117003-prerelease/g'`
+
+## Using .nupkg files instead of downloaded Nuget packages
+If you want to use .nupkg files instead of the downloaded Nuget package, you can do this with the following steps:
+
+1. Open the Nuget.config file and uncomment line 8 ("Static Package Dependencies")
+2. Create the folder /dep/packages
+3. Put your .nupkg files in /dep/packages
+4. If you are using different versions than those already being used, you need to update the references as well. How to do that is explained under "Updating Nuget package references".

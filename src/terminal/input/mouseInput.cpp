@@ -19,6 +19,8 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 // Alternate scroll sequences
 static constexpr std::wstring_view CursorUpSequence{ L"\x1b[A" };
 static constexpr std::wstring_view CursorDownSequence{ L"\x1b[B" };
+static constexpr std::wstring_view ApplicationUpSequence{ L"\x1bOA" };
+static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
 
 // Routine Description:
 // - Determines if the input windows message code describes a button event
@@ -523,11 +525,11 @@ bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
 {
     if (delta > 0)
     {
-        _SendInputSequence(CursorUpSequence);
+        _SendInputSequence(_cursorApplicationMode ? ApplicationUpSequence : CursorUpSequence);
     }
     else
     {
-        _SendInputSequence(CursorDownSequence);
+        _SendInputSequence(_cursorApplicationMode ? ApplicationDownSequence : CursorDownSequence);
     }
     return true;
 }

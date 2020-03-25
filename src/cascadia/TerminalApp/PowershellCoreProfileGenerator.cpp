@@ -53,7 +53,7 @@ namespace
         Dotnet = 1 << 2, // installed as a dotnet global tool
         Traditional = 1 << 3, // installed in traditional Program Files locations
 
-        // native architecutre (choose one)
+        // native architecture (choose one)
         WOWARM = 1 << 4, // non-native (Windows-on-Windows, ARM variety)
         WOWx86 = 1 << 5, // non-native (Windows-on-Windows, x86 variety)
 
@@ -196,7 +196,7 @@ catch (...)
 static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>& out)
 {
     wil::unique_cotaskmem_string localAppDataFolder;
-    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, 0, &localAppDataFolder)))
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder)))
     {
         return;
     }

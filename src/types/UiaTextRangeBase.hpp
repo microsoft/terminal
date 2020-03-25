@@ -78,10 +78,10 @@ namespace Microsoft::Console::Types
 
         virtual HRESULT RuntimeClassInitialize(const UiaTextRangeBase& a) noexcept;
 
-        UiaTextRangeBase(const UiaTextRangeBase&) = default;
-        UiaTextRangeBase(UiaTextRangeBase&&) = default;
-        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
-        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
+        UiaTextRangeBase(const UiaTextRangeBase&) = delete;
+        UiaTextRangeBase(UiaTextRangeBase&&) = delete;
+        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = delete;
+        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = delete;
         ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;
@@ -170,7 +170,7 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
                                      gsl::not_null<int*> const pAmountMoved,
-                                     _In_ const bool preventBufferEnd = false) noexcept;
+                                     _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,

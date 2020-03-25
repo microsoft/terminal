@@ -64,11 +64,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        operator bool() const noexcept
-        {
-            return _x != 0 || _y != 0;
-        }
-
         constexpr bool operator<(const point& other) const noexcept
         {
             if (_y < other._y)
@@ -198,6 +193,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+        std::wstring to_string() const
+        {
+            return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());
+        }
+
     protected:
         ptrdiff_t _x;
         ptrdiff_t _y;
@@ -217,7 +217,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const ::til::point& point)
         {
-            return WEX::Common::NoThrowString().Format(L"(X:%td, Y:%td)", point.x(), point.y());
+            return WEX::Common::NoThrowString(point.to_string().c_str());
         }
     };
 

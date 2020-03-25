@@ -163,24 +163,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
-        // Set the selection layout bounds
-        Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
+        // position textblock to cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
+        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
+
+        // calculate FontSize in pixels from DIPs
+        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
+        TextBlock().FontSize(fontSizePx);
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        const auto widthToTerminalEnd = Canvas().ActualWidth() - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        TextBlock().MaxWidth(widthToTerminalEnd);
+
+        // Set the text block bounds
+        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
+        const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
+        Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
         // Set the control bounds of the whole control
         Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
-
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
-
-        TextBlock().Height(fontHeight);
-        // calculate FontSize in pixels from DIPs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
-
-        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
     }
 
     // Method Description:
@@ -297,6 +300,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
+            // When a user deletes the last character in their current composition, some machines
+            // will fire a CompositionCompleted before firing a TextUpdating event that deletes the last character.
+            // The TextUpdating will have a lower StartCaretPosition, so in this scenario, _activeTextStart
+            // needs to update to be the StartCaretPosition.
+            // A known issue related to this behavior is that the last character that's deleted from a composition
+            // will get sent to the terminal before we receive the TextUpdate to delete the character.
+            // See GH #5054.
+            _activeTextStart = ::base::ClampMin(_activeTextStart, ::base::ClampedNumeric<size_t>(range.StartCaretPosition));
+
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),

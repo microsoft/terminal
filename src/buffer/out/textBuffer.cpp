@@ -1261,6 +1261,94 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 }
 
 // Method Description:
+// - Update pos to be the beginning of the current glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// Return Value:
+// - pos - The COORD for the first cell of the current glyph (inclusive)
+const til::point TextBuffer::GetGlyphStart(const til::point pos) const
+{
+    COORD resultPos = pos;
+
+    const auto bufferSize = GetSize();
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    {
+        bufferSize.DecrementInBounds(resultPos, true);
+    }
+
+    return resultPos;
+}
+
+// Method Description:
+// - Update pos to be the end of the current glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// Return Value:
+// - pos - The COORD for the last cell of the current glyph (exclusive)
+const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
+{
+    COORD resultPos = pos;
+
+    const auto bufferSize = GetSize();
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    {
+        bufferSize.IncrementInBounds(resultPos, true);
+    }
+
+    // increment one more time to become exclusive
+    bufferSize.IncrementInBounds(resultPos, true);
+    return resultPos;
+}
+
+// Method Description:
+// - Update pos to be the beginning of the next glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
+// Return Value:
+// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
+// - pos - The COORD for the first cell of the current glyph (inclusive)
+bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) const
+{
+    COORD resultPos = pos;
+
+    // try to move. If we can't, we're done.
+    const auto bufferSize = GetSize();
+    const bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    {
+        bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+    }
+
+    pos = resultPos;
+    return success;
+}
+
+// Method Description:
+// - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
+// Arguments:
+// - pos - a COORD on the word you are currently on
+// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
+// Return Value:
+// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
+// - pos - The COORD for the first cell of the previous glyph (inclusive)
+bool TextBuffer::MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive) const
+{
+    COORD resultPos = pos;
+
+    // try to move. If we can't, we're done.
+    const auto bufferSize = GetSize();
+    const bool success = bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    {
+        bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    }
+
+    pos = resultPos;
+    return success;
+}
+
+// Method Description:
 // - Determines the line-by-line rectangles based on two COORDs
 // - expands the rectangles to support wide glyphs
 // - used for selection rects and UIA bounding rects

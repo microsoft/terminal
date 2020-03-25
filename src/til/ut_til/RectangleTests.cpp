@@ -440,6 +440,16 @@ class RectangleTests
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
+    TEST_METHOD(OrUnionInplace)
+    {
+        til::rectangle one{ 4, 6, 10, 14 };
+        const til::rectangle two{ 5, 2, 13, 10 };
+
+        const til::rectangle expected{ 4, 2, 13, 14 };
+        one |= two;
+        VERIFY_ARE_EQUAL(expected, one);
+    }
+
     TEST_METHOD(AndIntersect)
     {
         const til::rectangle one{ 4, 6, 10, 14 };
@@ -448,6 +458,16 @@ class RectangleTests
         const til::rectangle expected{ 5, 6, 10, 10 };
         const auto actual = one & two;
         VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(AndIntersectInplace)
+    {
+        til::rectangle one{ 4, 6, 10, 14 };
+        const til::rectangle two{ 5, 2, 13, 10 };
+
+        const til::rectangle expected{ 5, 6, 10, 10 };
+        one &= two;
+        VERIFY_ARE_EQUAL(expected, one);
     }
 
     TEST_METHOD(MinusSubtractSame)
@@ -583,6 +603,198 @@ class RectangleTests
         };
         const auto actual = original - removal;
         VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(AdditionPoint)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 + 3, 20 + 7, 30 + 3, 40 + 7 };
+        const auto actual = start + pt;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(AdditionPointInplace)
+    {
+        til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 + 3, 20 + 7, 30 + 3, 40 + 7 };
+        start += pt;
+        VERIFY_ARE_EQUAL(expected, start);
+    }
+
+    TEST_METHOD(SubtractionPoint)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 - 3, 20 - 7, 30 - 3, 40 - 7 };
+        const auto actual = start - pt;
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(SubtractionPointInplace)
+    {
+        til::rectangle start{ 10, 20, 30, 40 };
+        const til::point pt{ 3, 7 };
+        const til::rectangle expected{ 10 - 3, 20 - 7, 30 - 3, 40 - 7 };
+        start -= pt;
+        VERIFY_ARE_EQUAL(expected, start);
+    }
+
+    TEST_METHOD(AdditionSize)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Add size to bottom and right");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 33, 47 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Add size to top and left");
+        {
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 7, 13, 30, 40 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Add size to bottom and left");
+        {
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 7, 20, 30, 47 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Add size to top and right");
+        {
+            const til::size scale{ 3, -7 };
+            const til::rectangle expected{ 10, 13, 33, 40 };
+            const auto actual = start + scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(AdditionSizeInplace)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Add size to bottom and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 33, 47 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Add size to top and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 7, 13, 30, 40 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Add size to bottom and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 7, 20, 30, 47 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Add size to top and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, -7 };
+            const til::rectangle expected{ 10, 13, 33, 40 };
+            actual += scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(SubtractionSize)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Subtract size from bottom and right");
+        {
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 27, 33 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Subtract size from top and left");
+        {
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 13, 27, 30, 40 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Subtract size from bottom and left");
+        {
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 13, 20, 30, 33 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Subtract size from top and right");
+        {
+            const til::size scale{ 3, -6 };
+            const til::rectangle expected{ 10, 26, 27, 40 };
+            const auto actual = start - scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+    }
+
+    TEST_METHOD(SubtractionSizeInplace)
+    {
+        const til::rectangle start{ 10, 20, 30, 40 };
+
+        Log::Comment(L"1.) Subtract size from bottom and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, 7 };
+            const til::rectangle expected{ 10, 20, 27, 33 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Subtract size from top and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, -7 };
+            const til::rectangle expected{ 13, 27, 30, 40 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Subtract size from bottom and left");
+        {
+            auto actual = start;
+            const til::size scale{ -3, 7 };
+            const til::rectangle expected{ 13, 20, 30, 33 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"4.) Subtract size from top and right");
+        {
+            auto actual = start;
+            const til::size scale{ 3, -6 };
+            const til::rectangle expected{ 10, 26, 27, 40 };
+            actual -= scale;
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
     }
 
     TEST_METHOD(Top)
@@ -723,6 +935,141 @@ class RectangleTests
         const bool expected = !(left < right && top < bottom);
         const til::rectangle actual{ left, top, right, bottom };
         VERIFY_ARE_EQUAL(expected, actual.empty());
+    }
+
+    TEST_METHOD(ContainsPoint)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:x", L"{-1000,0,4,5,6,14,15,16,1000}")
+            TEST_METHOD_PROPERTY(L"Data:y", L"{-1000,0,9,10,11,19,20,21,1000}")
+        END_TEST_METHOD_PROPERTIES()
+
+        ptrdiff_t x, y;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"x", x));
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"y", y));
+
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point pt{ x, y };
+
+        const bool xInBounds = x >= 5 && x < 15;
+        const bool yInBounds = y >= 10 && y < 20;
+        const bool expected = xInBounds && yInBounds;
+        if (expected)
+        {
+            Log::Comment(L"Expected in bounds.");
+        }
+        else
+        {
+            Log::Comment(L"Expected OUT of bounds.");
+        }
+
+        VERIFY_ARE_EQUAL(expected, rc.contains(pt));
+    }
+
+    TEST_METHOD(ContainsIndex)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:idx", L"{-1000,-1,0, 1,50,99,100,101, 1000}")
+        END_TEST_METHOD_PROPERTIES()
+
+        ptrdiff_t idx;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"idx", idx));
+
+        const til::rectangle rc{ 5, 10, 15, 20 }; // 10x10 rectangle.
+        const ptrdiff_t area = (15 - 5) * (20 - 10);
+        const bool expected = idx >= 0 && idx < area;
+        if (expected)
+        {
+            Log::Comment(L"Expected in bounds.");
+        }
+        else
+        {
+            Log::Comment(L"Expected OUT of bounds.");
+        }
+
+        VERIFY_ARE_EQUAL(expected, rc.contains(idx));
+    }
+
+    TEST_METHOD(ContainsRectangle)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 }; // 10x10 rectangle.
+
+        const til::rectangle fitsInside{ 8, 12, 10, 18 };
+        const til::rectangle spillsOut{ 0, 0, 50, 50 };
+        const til::rectangle sticksOut{ 14, 12, 30, 13 };
+
+        VERIFY_IS_TRUE(rc.contains(rc), L"We contain ourself.");
+        VERIFY_IS_TRUE(rc.contains(fitsInside), L"We fully contain a smaller rectangle.");
+        VERIFY_IS_FALSE(rc.contains(spillsOut), L"We do not fully contain rectangle larger than us.");
+        VERIFY_IS_FALSE(rc.contains(sticksOut), L"We do not contain a rectangle that is smaller, but sticks out our edge.");
+    }
+
+    TEST_METHOD(IndexOfPoint)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        Log::Comment(L"0.) Normal in bounds.");
+        {
+            const til::point pt{ 7, 17 };
+            const ptrdiff_t expected = 72;
+            VERIFY_ARE_EQUAL(expected, rc.index_of(pt));
+        }
+
+        Log::Comment(L"1.) Out of bounds.");
+        {
+            auto fn = [&]() {
+                const til::point pt{ 1, 1 };
+                rc.index_of(pt);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"2.) Overflow.");
+        {
+            auto fn = [&]() {
+                constexpr const ptrdiff_t min = static_cast<ptrdiff_t>(0);
+                constexpr const ptrdiff_t max = std::numeric_limits<ptrdiff_t>().max();
+                const til::rectangle bigRc{ min, min, max, max };
+                const til::point pt{ max - 1, max - 1 };
+                bigRc.index_of(pt);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        }
+    }
+
+    TEST_METHOD(PointAtIndex)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        Log::Comment(L"0.) Normal in bounds.");
+        {
+            const ptrdiff_t index = 72;
+            const til::point expected{ 7, 17 };
+
+            VERIFY_ARE_EQUAL(expected, rc.point_at(index));
+        }
+
+        Log::Comment(L"1.) Out of bounds too low.");
+        {
+            auto fn = [&]() {
+                const ptrdiff_t index = -1;
+                rc.point_at(index);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
+
+        Log::Comment(L"2.) Out of bounds too high.");
+        {
+            auto fn = [&]() {
+                const ptrdiff_t index = 1000;
+                rc.point_at(index);
+            };
+
+            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+        }
     }
 
     TEST_METHOD(CastToSmallRect)
@@ -929,4 +1276,89 @@ class RectangleTests
 
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
+
+#pragma region iterator
+    TEST_METHOD(Begin)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point expected{ rc.left(), rc.top() };
+        const auto it = rc.begin();
+
+        VERIFY_ARE_EQUAL(expected, *it);
+    }
+
+    TEST_METHOD(End)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+        const til::point expected{ rc.left(), rc.bottom() };
+        const auto it = rc.end();
+
+        VERIFY_ARE_EQUAL(expected, *it);
+    }
+
+    TEST_METHOD(ConstIteratorIncrement)
+    {
+        const til::rectangle rc{ til::size{ 2, 2 } };
+
+        auto it = rc.begin();
+        auto expected = til::point{ 0, 0 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 1, 0 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 0, 1 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 1, 1 };
+        VERIFY_ARE_EQUAL(expected, *it);
+
+        ++it;
+        expected = til::point{ 0, 2 };
+        VERIFY_ARE_EQUAL(expected, *it);
+        VERIFY_ARE_EQUAL(expected, *rc.end());
+
+        // We wouldn't normally walk one past, but validate it keeps going
+        // like any STL iterator would.
+        ++it;
+        expected = til::point{ 1, 2 };
+        VERIFY_ARE_EQUAL(expected, *it);
+    }
+
+    TEST_METHOD(ConstIteratorEquality)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_TRUE(rc.begin() == rc.begin());
+        VERIFY_IS_FALSE(rc.begin() == rc.end());
+    }
+
+    TEST_METHOD(ConstIteratorInequality)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_FALSE(rc.begin() != rc.begin());
+        VERIFY_IS_TRUE(rc.begin() != rc.end());
+    }
+
+    TEST_METHOD(ConstIteratorLessThan)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_TRUE(rc.begin() < rc.end());
+        VERIFY_IS_FALSE(rc.end() < rc.begin());
+    }
+
+    TEST_METHOD(ConstIteratorGreaterThan)
+    {
+        const til::rectangle rc{ 5, 10, 15, 20 };
+
+        VERIFY_IS_TRUE(rc.end() > rc.begin());
+        VERIFY_IS_FALSE(rc.begin() > rc.end());
+    }
+
+#pragma endregion
 };

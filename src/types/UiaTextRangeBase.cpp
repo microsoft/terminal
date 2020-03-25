@@ -263,8 +263,8 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 
         if (unit == TextUnit_Character)
         {
-            _end = _start;
-            bufferSize.IncrementInBounds(_end, true);
+            _start = buffer.GetGlyphStart(_start);
+            _end = buffer.GetGlyphEnd(_start);
         }
         else if (unit <= TextUnit_Word)
         {
@@ -526,7 +526,7 @@ try
         const auto bufferSize = buffer.GetSize();
 
         // convert _end to be inclusive
-        auto inclusiveEnd{ _end };
+        auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange);
@@ -687,9 +687,9 @@ try
     }
     else
     {
-        auto temp = _end;
-        _pData->GetTextBuffer().GetSize().DecrementInBounds(temp);
-        _pData->SelectNewRegion(_start, temp);
+        auto inclusiveEnd = _end;
+        _pData->GetTextBuffer().GetSize().DecrementInBounds(inclusiveEnd);
+        _pData->SelectNewRegion(_start, inclusiveEnd);
     }
 
     UiaTracing::TextRange::Select(*this);
@@ -897,7 +897,7 @@ void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ s
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
                                                     _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                    _In_ const bool preventBufferEnd) noexcept
+                                                    _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
 
@@ -908,23 +908,23 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _getBufferSize();
+    const auto& buffer = _pData->GetTextBuffer();
 
     bool success = true;
-    auto target = GetEndpoint(endpoint);
+    til::point target = GetEndpoint(endpoint);
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         switch (moveDirection)
         {
         case MovementDirection::Forward:
-            success = bufferSize.IncrementInBounds(target, allowBottomExclusive);
+            success = buffer.MoveToNextGlyph(target, allowBottomExclusive);
             if (success)
             {
                 (*pAmountMoved)++;
             }
             break;
         case MovementDirection::Backward:
-            success = bufferSize.DecrementInBounds(target, allowBottomExclusive);
+            success = buffer.MoveToPreviousGlyph(target, allowBottomExclusive);
             if (success)
             {
                 (*pAmountMoved)--;
