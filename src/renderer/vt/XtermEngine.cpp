@@ -252,15 +252,13 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            bool wrapped = false;
+            bool previousLineWrapped = false;
             if (_wrappedRow.has_value())
             {
-                const bool circlingWrap = _circled && coord.Y == _wrappedRow.value();
-                const bool previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
-                wrapped = previousLineWrapped || circlingWrap;
+                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
             }
 
-            if (wrapped)
+            if (previousLineWrapped)
             {
                 _trace.TraceWrapped();
                 hr = S_OK;
@@ -283,8 +281,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             //
             // Make sure to do this _after_ the possible \r\n branch above,
             // otherwise we might accidentally break wrapped lines (GH#405)
-            // hr = _CursorPosition(coord);
-            return S_OK;
+            hr = _CursorPosition(coord);
         }
         else if (coord.X == 0 && coord.Y == _lastText.Y)
         {
@@ -366,27 +363,22 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     HRESULT hr = S_OK;
     if (dy < 0)
     {
+        // Instead of deleting the first line (causing everything to move up)
+        // move to the bottom of the buffer, and newline.
+        //      That will cause everything to move up, by moving the viewport down.
+        // This will let remote conhosts scroll up to see history like normal.
         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-        const bool lastLineWrapped = _wrappedRow.has_value() && _wrappedRow.value() == bottom;
-        if (!lastLineWrapped)
+        hr = _MoveCursor({ 0, bottom });
+        if (SUCCEEDED(hr))
         {
-            // Instead of deleting the first line (causing everything to move up)
-            // move to the bottom of the buffer, and newline.
-            //      That will cause everything to move up, by moving the viewport down.
-            // This will let remote conhosts scroll up to see history like normal.
-            hr = _MoveCursor({ 0, bottom });
-            if (SUCCEEDED(hr))
-            {
-                std::string seq = std::string(absDy, '\n');
-                hr = _Write(seq);
-            }
-            // We don't need to _MoveCursor the cursor again, because it's still
-            //      at the bottom of the viewport.
+            std::string seq = std::string(absDy, '\n');
+            hr = _Write(seq);
+            // Mark that the bottom line is new, so we won't spend time with an
+            // ECH on it.
+            _newBottomLine = true;
         }
-
-        // Mark that the bottom line is new, so we won't spend time with an
-        // ECH on it.
-        _newBottomLine = true;
+        // We don't need to _MoveCursor the cursor again, because it's still
+        //      at the bottom of the viewport.
     }
     else if (dy > 0)
     {
@@ -397,12 +389,6 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         {
             hr = _InsertLine(absDy);
         }
-    }
-
-    if (_wrappedRow.has_value())
-    {
-        _wrappedRow.value() += dy;
-        _trace.TraceSetWrapped(_wrappedRow.value());
     }
 
     return hr;
