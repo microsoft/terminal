@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _cursorTimer{},
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
-        _selectionUpdatedThisCycle{ false },
+        _selectionNeedsToBeCopied{ false },
         _searchBox{ nullptr }
     {
         _EnsureStaticInitialization();
@@ -945,26 +945,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (multiClickMapper == 3)
                 {
                     _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
-                    _selectionUpdatedThisCycle = true;
+                    _selectionNeedsToBeCopied = true;
                 }
                 else if (multiClickMapper == 2)
                 {
                     _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
-                    _selectionUpdatedThisCycle = true;
+                    _selectionNeedsToBeCopied = true;
                 }
                 else
                 {
                     if (shiftEnabled && _terminal->IsSelectionActive())
                     {
                         _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
-                        _selectionUpdatedThisCycle = true;
+                        _selectionNeedsToBeCopied = true;
                     }
                     else
                     {
                         // A single click down resets the selection and begins a new one.
                         _terminal->ClearSelection();
                         _singleClickTouchdownPos = cursorPosition;
-                        _selectionUpdatedThisCycle = false; // there's no selection, so there's nothing to update
+                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                     }
 
                     _lastMouseClickTimestamp = point.Timestamp();
@@ -975,7 +975,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else if (point.Properties().IsRightButtonPressed())
             {
                 // CopyOnSelect right click always pastes
-                if (!_selectionUpdatedThisCycle || !_terminal->IsSelectionActive())
+                if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
                 }
@@ -1129,7 +1129,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // macro directly with a VirtualKeyModifiers
                 const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-                if (_selectionUpdatedThisCycle)
+                if (_selectionNeedsToBeCopied)
                 {
                     CopySelectionToClipboard(shiftEnabled);
                 }
@@ -1646,7 +1646,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
-        _selectionUpdatedThisCycle = true;
+        _selectionNeedsToBeCopied = true;
     }
 
     // Method Description:
@@ -1799,7 +1799,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Mark the current selection as copied
-        _selectionUpdatedThisCycle = false;
+        _selectionNeedsToBeCopied = false;
 
         // extract text from buffer
         const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
