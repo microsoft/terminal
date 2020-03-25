@@ -181,7 +181,6 @@ public:
         Word,
         Line
     };
-    const bool IsCopyOnSelectActive() const noexcept;
     void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
@@ -222,8 +221,6 @@ private:
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
-    bool _allowSingleCharSelection;
-    bool _copyOnSelect;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -275,7 +272,6 @@ private:
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
 
 #ifdef UNIT_TESTING

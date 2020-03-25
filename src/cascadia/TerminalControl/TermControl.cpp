@@ -69,9 +69,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _cursorTimer{},
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
-        _searchBox{ nullptr },
-        _focusRaisedClickPos{ std::nullopt },
-        _clickDrag{ false }
+        _selectionNeedsToBeCopied{ false },
+        _searchBox{ nullptr }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -911,9 +910,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_focused)
         {
             Focus(FocusState::Pointer);
-            // Save the click position that brought this control into focus
-            // in case the user wants to perform a click-drag selection.
-            _focusRaisedClickPos = point.Position();
         }
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse || ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Pen)
@@ -933,13 +929,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
-                // A single left click from out of focus should only focus.
-                if (_focusRaisedClickPos)
-                {
-                    args.Handled(true);
-                    return;
-                }
-
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
@@ -956,20 +945,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (multiClickMapper == 3)
                 {
                     _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Line);
+                    _selectionNeedsToBeCopied = true;
                 }
                 else if (multiClickMapper == 2)
                 {
                     _terminal->MultiClickSelection(terminalPosition, ::Terminal::SelectionExpansionMode::Word);
+                    _selectionNeedsToBeCopied = true;
                 }
                 else
                 {
                     if (shiftEnabled && _terminal->IsSelectionActive())
                     {
                         _terminal->SetSelectionEnd(terminalPosition, ::Terminal::SelectionExpansionMode::Cell);
+                        _selectionNeedsToBeCopied = true;
                     }
                     else
                     {
-                        _terminal->SetSelectionAnchor(terminalPosition);
+                        // A single click down resets the selection and begins a new one.
+                        _terminal->ClearSelection();
+                        _singleClickTouchdownPos = cursorPosition;
+                        _selectionNeedsToBeCopied = false; // there's no selection, so there's nothing to update
                     }
 
                     _lastMouseClickTimestamp = point.Timestamp();
@@ -980,7 +975,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else if (point.Properties().IsRightButtonPressed())
             {
                 // CopyOnSelect right click always pastes
-                if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
+                if (_settings.CopyOnSelect() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
                 }
@@ -1028,16 +1023,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (point.Properties().IsLeftButtonPressed())
             {
-                _clickDrag = true;
+                const auto cursorPosition = point.Position();
 
-                // PointerPressedHandler doesn't set the SelectionAnchor when the click was
-                // from out of focus, so PointerMoved has to set it.
-                if (_focusRaisedClickPos)
+                if (_singleClickTouchdownPos)
                 {
-                    _terminal->SetSelectionAnchor(_GetTerminalPosition(*_focusRaisedClickPos));
+                    // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
+                    auto& touchdownPoint{ *_singleClickTouchdownPos };
+                    auto distance{ std::sqrtf(std::powf(cursorPosition.X - touchdownPoint.X, 2) + std::powf(cursorPosition.Y - touchdownPoint.Y, 2)) };
+                    const auto fontSize{ _actualFont.GetSize() };
+                    if (distance >= (std::min(fontSize.X, fontSize.Y) / 4.f))
+                    {
+                        _terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
+                        // stop tracking the touchdown point
+                        _singleClickTouchdownPos = std::nullopt;
+                    }
                 }
 
-                const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
 
                 const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
@@ -1121,17 +1122,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Only a left click release when copy on select is active should perform a copy.
             // Right clicks and middle clicks should not need to do anything when released.
-            if (_terminal->IsCopyOnSelectActive() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
+            if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased)
             {
                 const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
                 // static_cast to a uint32_t because we can't use the WI_IsFlagSet
                 // macro directly with a VirtualKeyModifiers
                 const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-                // In a Copy on Select scenario,
-                // All left click drags should copy,
-                // All left clicks on a focused control should copy if a selection is active.
-                if (_clickDrag || !_focusRaisedClickPos)
+                if (_selectionNeedsToBeCopied)
                 {
                     CopySelectionToClipboard(shiftEnabled);
                 }
@@ -1142,8 +1140,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _touchAnchor = std::nullopt;
         }
 
-        _focusRaisedClickPos = std::nullopt;
-        _clickDrag = false;
+        _singleClickTouchdownPos = std::nullopt;
 
         _TryStopAutoScroll(ptr.PointerId());
 
@@ -1649,6 +1646,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
+        _selectionNeedsToBeCopied = true;
     }
 
     // Method Description:
@@ -1799,6 +1797,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return false;
         }
+
+        // Mark the current selection as copied
+        _selectionNeedsToBeCopied = false;
+
         // extract text from buffer
         const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(collapseText);
 
@@ -1822,7 +1824,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                 _actualFont.GetFaceName(),
                                                 _settings.DefaultBackground());
 
-        if (!_terminal->IsCopyOnSelectActive())
+        if (!_settings.CopyOnSelect())
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
