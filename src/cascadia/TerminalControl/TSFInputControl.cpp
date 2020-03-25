@@ -113,21 +113,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    // Method Description:
-    // - Handler for LayoutRequested event by CoreEditContext responsible
-    //   for returning the current position the IME should be placed
-    //   in screen coordinates on the screen.  TSFInputControls internal
-    //   XAML controls (TextBlock/Canvas) are also positioned and updated.
-    //   NOTE: documentation says application should handle this event
-    // Arguments:
-    // - sender: CoreTextEditContext sending the request.
-    // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
-    // Return Value:
-    // - <none>
-    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    winrt::Windows::Foundation::Rect TSFInputControl::RedrawCanvas()
     {
-        auto request = args.Request();
-
         // Get window in screen coordinates, this is the entire window including tabs
         const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
 
@@ -160,9 +147,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
         screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
 
-        // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-
         // position textblock to cursor position
         Canvas().SetLeft(TextBlock(), clientCursorPos.X);
         Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
@@ -172,18 +156,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().FontSize(fontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        const auto widthToTerminalEnd = Canvas().ActualWidth() - ::base::ClampedNumeric<double>(clientCursorPos.X);
-        TextBlock().MaxWidth(widthToTerminalEnd);
+        const auto canvasActualWidth = Canvas().ActualWidth();
+        const auto widthToTerminalEnd = canvasActualWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        // Make sure that we're setting the MaxWidth to a positive number - a
+        // negative number here will crash us in mysterious ways with a useless
+        // stack trace
+        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
+        TextBlock().MaxWidth(newMaxWidth);
 
-        // Set the text block bounds
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
         const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
         const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
         Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
-        request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
+
+        return ScaleRect(selectionRect, scaleFactor);
+    }
+
+    // Method Description:
+    // - Handler for LayoutRequested event by CoreEditContext responsible
+    //   for returning the current position the IME should be placed
+    //   in screen coordinates on the screen.  TSFInputControls internal
+    //   XAML controls (TextBlock/Canvas) are also positioned and updated.
+    //   NOTE: documentation says application should handle this event
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request.
+    // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    {
+        auto request = args.Request();
+
+        const auto scaledRect = RedrawCanvas();
+
+        // Set the text block bounds
+        request.LayoutBounds().TextBounds(scaledRect);
 
         // Set the control bounds of the whole control
-        Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
-        request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
+        request.LayoutBounds().ControlBounds(scaledRect);
     }
 
     // Method Description:
@@ -216,6 +227,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _SendAndClearText();
         }
+
+        RedrawCanvas();
     }
 
     // Method Description:

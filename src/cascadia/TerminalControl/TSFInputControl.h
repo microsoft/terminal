@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void NotifyFocusEnter();
         void NotifyFocusLeave();
         void ClearBuffer();
+        winrt::Windows::Foundation::Rect RedrawCanvas();
 
         void Close();
 
