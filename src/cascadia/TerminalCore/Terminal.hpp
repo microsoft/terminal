@@ -170,7 +170,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
-
+    
     void SetCursorOn(const bool isOn) noexcept;
     bool IsCursorBlinkingAllowed() const noexcept;
 

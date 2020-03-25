@@ -74,7 +74,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _inComposition;
         size_t _activeTextStart;
         void _SendAndClearText();
-        bool _focused;
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
