@@ -32,7 +32,12 @@ using namespace Microsoft::Console::Types;
                          _titleChanged;
 
     _quickReturn = !somethingToDo;
-    _trace.TraceStartPaint(_quickReturn, _invalidMap, _lastViewport.ToInclusive(), _scrollDelta, _cursorMoved);
+    _trace.TraceStartPaint(_quickReturn,
+                           _invalidMap,
+                           _lastViewport.ToInclusive(),
+                           _scrollDelta,
+                           _cursorMoved,
+                           _wrappedRow);
 
     return _quickReturn ? S_FALSE : S_OK;
 }
@@ -458,6 +463,7 @@ using namespace Microsoft::Console::Types;
         // the cursor is still waiting on that character for the next character
         // to follow it.
         _wrappedRow = std::nullopt;
+        _trace.TraceClearWrapped();
     }
 
     // Move the cursor to the start of this run.
@@ -479,6 +485,7 @@ using namespace Microsoft::Console::Types;
         lastWrittenChar > _lastViewport.RightInclusive())
     {
         _wrappedRow = coord.Y;
+        _trace.TraceSetWrapped(coord.Y);
     }
 
     // Update our internal tracker of the cursor's position.
