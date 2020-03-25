@@ -159,10 +159,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Timestamp _lastMouseClickTimestamp;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
         std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
-        // This field tracks whether the selection has changed meaningfully
-        // since it was last copied. It's generally used to prevent copyOnSelect
-        // from firing when the pointer _just happens_ to be released over the
-        // terminal.
         bool _selectionNeedsToBeCopied;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
@@ -217,7 +213,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
 
-        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition, bool roundedForSelection = false);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 

@@ -930,7 +930,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
-                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
+                const auto terminalPosition = _GetTerminalPosition(cursorPosition, true);
 
                 // handle ALT key
                 _terminal->SetBlockSelection(altEnabled);
@@ -1033,7 +1033,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     const auto fontSize{ _actualFont.GetSize() };
                     if (distance >= (std::min(fontSize.X, fontSize.Y) / 4.f))
                     {
-                        _terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint));
+                        _terminal->SetSelectionAnchor(_GetTerminalPosition(touchdownPoint, true));
                         // stop tracking the touchdown point
                         _singleClickTouchdownPos = std::nullopt;
                     }
@@ -1635,7 +1635,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        auto terminalPosition = _GetTerminalPosition(cursorPosition);
+        auto terminalPosition = _GetTerminalPosition(cursorPosition, true);
 
         const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
         const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
@@ -2167,12 +2167,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //    NOTE: origin (0,0) is top-left.
     // Return Value:
     // - the corresponding viewport terminal position for the given Point parameter
-    const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
+    const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition, bool roundedForSelection)
     {
         // Exclude padding from cursor position calculation
-        COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - SwapChainPanel().Margin().Left),
-            static_cast<SHORT>(cursorPosition.Y - SwapChainPanel().Margin().Top)
+        winrt::Windows::Foundation::Point terminalPosition = {
+            cursorPosition.X - gsl::narrow_cast<float>(SwapChainPanel().Margin().Left),
+            cursorPosition.Y - gsl::narrow_cast<float>(SwapChainPanel().Margin().Top)
         };
 
         const auto fontSize = _actualFont.GetSize();
@@ -2180,10 +2180,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FAIL_FAST_IF(fontSize.Y == 0);
 
         // Normalize to terminal coordinates by using font size
-        terminalPosition.X /= fontSize.X;
-        terminalPosition.Y /= fontSize.Y;
+        if (roundedForSelection)
+        {
+            return COORD{
+                ::base::ClampedNumeric<SHORT>(std::roundf(terminalPosition.X / fontSize.X)),
+                ::base::ClampedNumeric<SHORT>(terminalPosition.Y / fontSize.Y)
+            };
+        }
 
-        return terminalPosition;
+        return COORD{
+            ::base::ClampedNumeric<SHORT>(terminalPosition.X / fontSize.X),
+            ::base::ClampedNumeric<SHORT>(terminalPosition.Y / fontSize.Y)
+        };
     }
 
     // Method Description:

@@ -1149,25 +1149,21 @@ const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::w
 {
     const auto bufferSize = GetSize();
 
-    // can't expand right
-    if (target.X == bufferSize.RightInclusive())
-    {
-        return target;
-    }
-
     COORD result = target;
+    if (!bufferSize.DecrementInBounds(result, true))
+    {
+        // We can't walk backwards; return as-is
+        return result;
+    }
+    // End was exclusive; walk it back one to get the text
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
 
-    // expand right until we hit the right boundary or a different delimiter class
-    while (result.X < bufferSize.RightInclusive() && (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter))
+    while (_GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
     {
-        bufferSize.IncrementInBounds(result);
-    }
-
-    if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
-    {
-        // move off of delimiter
-        bufferSize.DecrementInBounds(result);
+        if (!bufferSize.IncrementInBounds(result, true))
+        {
+            break;
+        }
     }
 
     return result;

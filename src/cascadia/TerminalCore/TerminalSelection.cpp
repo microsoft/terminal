@@ -54,7 +54,9 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection);
+        auto inclusiveEnd{ _selection->end };
+        _buffer->GetSize().DecrementInBounds(inclusiveEnd, true);
+        return _buffer->GetTextRects(_selection->start, inclusiveEnd, _blockSelection);
     }
     CATCH_LOG();
     return result;
@@ -88,7 +90,7 @@ const COORD Terminal::GetSelectionEnd() const noexcept
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
-    return _selection.has_value();
+    return _selection.has_value() && _selection->start != _selection->end;
 }
 
 const bool Terminal::IsBlockSelection() const noexcept
@@ -106,6 +108,7 @@ void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMo
     // set the selection pivot to expand the selection using SetSelectionEnd()
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
+    _buffer->GetSize().DecrementInBounds(_selection->pivot, true);
 
     _multiClickSelectionMode = expansionMode;
     SetSelectionEnd(viewportPos);
@@ -157,18 +160,30 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - the new start/end for a selection
 std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos) const
 {
-    if (_buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    const auto bufferSize = _buffer->GetSize();
+    const auto compareResult = bufferSize.CompareInBounds(targetPos, _selection->pivot, true);
+    if (compareResult < 0)
     {
-        // target is before pivot
-        // treat target as start
+// target is before pivot
+// treat target as start
+// the targetPos was the end, but now we're making it the start: swap their exclusivities
+#if 0
+        auto newInclusiveStart{ targetPos };
+        auto newExclusiveEnd{ _selection->pivot };
+        _buffer->GetSize().DecrementInBounds(newInclusiveStart, true);
+        _buffer->GetSize().IncrementInBounds(newExclusiveEnd, true);
+#endif
         return std::make_pair(targetPos, _selection->pivot);
     }
-    else
+    else if (compareResult > 0)
     {
         // target is after pivot
         // treat pivot as start
         return std::make_pair(_selection->pivot, targetPos);
     }
+
+    // If they were the same point, doesn't matter what we return
+    return std::make_pair(targetPos, targetPos);
 }
 
 // Method Description:
@@ -187,7 +202,7 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
     {
     case SelectionExpansionMode::Line:
         start = { bufferSize.Left(), start.Y };
-        end = { bufferSize.RightInclusive(), end.Y };
+        end = { 0, end.Y + 1 };
         break;
     case SelectionExpansionMode::Word:
         start = _buffer->GetWordStart(start, _wordDelimiters);
