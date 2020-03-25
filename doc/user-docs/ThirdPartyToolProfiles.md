@@ -30,6 +30,7 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
 {
     "commandline" : "cmd.exe /k \"%CMDER_ROOT%\\vendor\\init.bat\"",
     "name" : "cmder",
+    "icon" : "%CMDER_ROOT%/icons/cmder.ico",
     "startingDirectory" : "%USERPROFILE%"
 }
 ```

@@ -256,6 +256,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         return hr;
     }
 
+    UiaTracing::TextProvider::GetSelection(*this, *range.Get());
+
     LONG currentIndex = 0;
     hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
     if (FAILED(hr))
@@ -265,7 +267,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         return hr;
     }
 
-    UiaTracing::TextProvider::GetSelection(*this, *range.Get());
     return S_OK;
 }
 

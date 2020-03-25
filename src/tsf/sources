@@ -48,7 +48,7 @@ SOURCES = \
     TfConvArea.cpp \
     TfCatUtil.cpp \
     TfDispAttr.cpp \
-    TfEditses.cpp \
+    TfEditSession.cpp \
     TfTxtevCb.cpp \
 
 INCLUDES = \

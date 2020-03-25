@@ -208,7 +208,7 @@ scheme in `profiles.json` with the same name as a default color scheme.
 
 If you'd like to unbind a keystroke that's bound to an action in the default
 keybindings, you can set the `"command"` to `"unbound"` or `null`. This will
-allow the keystroke to fallthough to the commandline application instead of
+allow the keystroke to fallthrough to the commandline application instead of
 performing the default action.
 
 ### Dynamic Profiles

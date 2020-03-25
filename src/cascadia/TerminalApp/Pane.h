@@ -187,7 +187,7 @@ private:
     };
 
     // Helper structure that builds a (roughly) binary tree corresponding
-    // to the pane tree. Used for layouting panes with snapped sizes.
+    // to the pane tree. Used for laying out panes with snapped sizes.
     struct LayoutSizeNode
     {
         float size;

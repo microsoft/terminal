@@ -79,6 +79,13 @@
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
+// LibPopCnt - Fast C/C++ bit population count library (on bits in an array)
+#include <libpopcnt.h>
+
+// Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
+// Variable-size compressed-storage header-only bit flag storage library.
+#include <dynamic_bitset.hpp>
+
 // SAL
 #include <sal.h>
 
