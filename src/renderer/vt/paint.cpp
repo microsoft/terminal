@@ -518,6 +518,10 @@ using namespace Microsoft::Console::Types;
     {
         _delayedEolWrap = true;
     }
+    else
+    {
+        _delayedEolWrap = false;
+    }
 
     short sNumSpaces;
     try
