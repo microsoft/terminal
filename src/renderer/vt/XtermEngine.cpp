@@ -344,6 +344,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::ScrollFrame() noexcept
 {
+    _trace.TraceScrollFrame(_scrollDelta);
+
     if (_scrollDelta.X != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
