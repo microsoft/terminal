@@ -402,18 +402,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 [[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+try
 {
-    const short dx = pcoordDelta->X;
-    const short dy = pcoordDelta->Y;
+    const til::point delta{ *pcoordDelta };
 
-    if (dx != 0 || dy != 0)
+    if (delta != til::point{ 0, 0 })
     {
+        _trace.TraceInvalidateScroll(delta);
+
         // Scroll the current offset and invalidate the revealed area
-        _invalidMap.translate(til::point(*pcoordDelta), true);
+        _invalidMap.translate(delta, true);
 
         COORD invalidScrollNew;
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
+        RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, delta.x<SHORT>(), &invalidScrollNew.X));
+        RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, delta.y<SHORT>(), &invalidScrollNew.Y));
 
         // Store if safemath succeeded
         _scrollDelta = invalidScrollNew;
@@ -421,6 +423,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the

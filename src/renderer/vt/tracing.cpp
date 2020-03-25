@@ -127,6 +127,20 @@ void RenderTracing::TraceTriggerCircling(const bool newFrame) const
 #endif UNIT_TESTING
 }
 
+void RenderTracing::TraceInvalidateScroll(const til::point scroll) const
+{
+#ifndef UNIT_TESTING
+    const auto scrollDeltaStr = scroll.to_string();
+    const auto scrollDelta = scrollDeltaStr.c_str();
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TraceInvalidateScroll",
+                      TraceLoggingWideString(scrollDelta),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+#else
+    UNREFERENCED_PARAMETER(scroll);
+#endif
+}
+
 void RenderTracing::TraceStartPaint(const bool quickReturn,
                                     const til::bitmap invalidMap,
                                     const til::rectangle lastViewport,
