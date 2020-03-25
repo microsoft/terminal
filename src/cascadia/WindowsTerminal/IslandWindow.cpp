@@ -342,37 +342,36 @@ BOOL CALLBACK okay(HWND child, LPARAM lp)
         return 0;
     }
     case WM_MOUSEWHEEL:
-    case WM_MOUSEHWHEEL:
     {
-        bool isMouseHWheel = message == WM_MOUSEHWHEEL;
+        // This whole handler is a hack for GH#979.
+        //
+        // On some laptops, their trackpads won't scroll inactive windows
+        // _ever_. With our entire window just being one giant XAML Island, the
+        // touchpad driver thinks our entire window is inactive, and won't
+        // scroll the XAML island. On those types of laptops, we'll get a
+        // WM_MOUSEWHEEL here, in our root window, when the trackpad scrolls.
+        // We're going to take that message and manually plumb it through to our
+        // TermControl's, or anything else that implements IMouseWheelListener.
+
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
-        //  Important  Do not use the LOWORD or HIWORD macros to extract the x- and y-
-        //  coordinates of the cursor position because these macros return incorrect
-        //  results on systems with multiple monitors. Systems with multiple monitors
-        //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
-        //  coordinates as unsigned quantities.
-        short x = GET_X_LPARAM(lparam);
-        short y = GET_Y_LPARAM(lparam);
-        const til::point eventPoint{x, y};
-        const til::rectangle windowRect{GetWindowRect()};
+        // Important! Do not use the LOWORD or HIWORD macros to extract the x-
+        // and y- coordinates of the cursor position because these macros return
+        // incorrect results on systems with multiple monitors. Systems with
+        // multiple monitors can have negative x- and y- coordinates, and LOWORD
+        // and HIWORD treat the coordinates as unsigned quantities.
+        const til::point eventPoint{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+        // This mouse event is relative to the display origin, not the window. Convert here.
+        const til::rectangle windowRect{ GetWindowRect() };
         const auto origin = windowRect.origin();
-        auto relative = eventPoint-origin;
-        auto x1 = gsl::narrow_cast<int>(relative.x() / GetCurrentDpiScale());
-        auto y1 = gsl::narrow_cast<int>(relative.y() / GetCurrentDpiScale());
+        const auto relative = eventPoint - origin;
+        // Convert to logical scaling before raising the event.
+        const auto real = relative / GetCurrentDpiScale();
 
-        auto x2 = gsl::narrow_cast<int>(relative.x() / GetCurrentDpiScale());
-        auto y2 = gsl::narrow_cast<int>(relative.y() / GetCurrentDpiScale());
+        const short wheelDelta = static_cast<short>(HIWORD(wparam));
 
-        auto real = til::point{ x1, y1 };
-        auto real2 = til::point{ x2, y2 };
-        real2;
-
-        short wheelDelta = (short)HIWORD(wparam);
-
-        _MouseScrolledHandlers(real, isMouseHWheel, wheelDelta);
+        // Raise an event, so any listeners can handle the mouse wheel event manually.
+        _MouseScrolledHandlers(real, wheelDelta);
         return 0;
-        break;
-
     }
     }
 

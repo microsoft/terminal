@@ -83,8 +83,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnF7Pressed();
 
-        bool OnMouseWheel(Windows::Foundation::Point location, int32_t delta);
-        bool OnMouseHWheel(Windows::Foundation::Point location, int32_t delta);
+        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta);
 
         ~TermControl();
 
@@ -201,7 +200,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
-        bool _DoMouseWheel(const Windows::Foundation::Point point, const uint32_t modifiers, const int32_t delta, const bool isLeftButtonPressed);
+        bool _DoMouseWheel(const Windows::Foundation::Point point, const Windows::System::VirtualKeyModifiers modifiers, const int32_t delta, const bool isLeftButtonPressed);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -224,7 +223,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-
 
 
         // TSFInputControl Handlers

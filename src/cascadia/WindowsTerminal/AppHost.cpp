@@ -340,37 +340,36 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
     _window->ToggleFullscreen();
 }
 
-void AppHost::_WindowMouseWheeled(const til::point coord, const bool isHorizontalScroll, const int32_t delta)
+// Method Description:
+// - Called when the IslandWindow has recieved a WM_MOUSEWHEEL message. This can
+//   happen oOn some laptops, where their trackpads won't scroll inactive windows
+//   _ever_.
+// - We're going to take that message and manually plumb it through to our
+//   TermControl's, or anything else that implements IMouseWheelListener.
+// - See GH#979 for more details.
+// Arguments:
+// - coord: The Window-relative, logical coordinates location of the mouse during this event.
+// - delta: the wheel delta that triggered this event.
+// Return Value:
+// - <none>
+void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 {
-    isHorizontalScroll;
-    delta;
-    // winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates
-    winrt::guid foo;
-    GUID bar;
-    bar = foo;
-    // winrt::Windows::Foundation::Point p{ coord };
-    // coord.x
-    auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _logic.GetRoot());
-    for (const auto& e : elems)
+    if (_logic)
     {
-        auto control = e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>();
-        if (control)
+        // Find all the elements that are underneath the mouse
+        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _logic.GetRoot());
+        for (const auto& e : elems)
         {
-            control.OnMouseWheel(coord, delta);
-            if (isHorizontalScroll)
+            // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
+            if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
             {
-                control.OnMouseHWheel(coord, delta);
-            }
-            else
-            {
-                control.OnMouseWheel(coord, delta);
+                if (control.OnMouseWheel(coord, delta))
+                {
+                    // If the element handled the mouse wheel event, don't
+                    // continue to iterate over the remaining controls.
+                    break;
+                }
             }
         }
     }
-
-
-
-    // auto root = _logic.GetRoot();
-    // root.
-    // root.as<FrameworkElement>();
 }

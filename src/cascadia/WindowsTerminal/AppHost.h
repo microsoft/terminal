@@ -35,5 +35,5 @@ private:
                       const winrt::Windows::UI::Xaml::ElementTheme& arg);
     void _ToggleFullscreen(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::TerminalApp::ToggleFullscreenEventArgs& arg);
-    void _WindowMouseWheeled(const til::point coord, const bool isHorizontalScroll, const int32_t delta);
+    void _WindowMouseWheeled(const til::point coord, const int32_t delta);
 };

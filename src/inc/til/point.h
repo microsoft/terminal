@@ -140,6 +140,50 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
+        point operator*(const int& scale) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point operator/(const int& scale) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point operator*(const float& scale) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
+        point operator/(const float& scale) const
+        {
+            ptrdiff_t x;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
+
+            ptrdiff_t y;
+            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
+
+            return point{ x, y };
+        }
+
         constexpr ptrdiff_t x() const noexcept
         {
             return _x;

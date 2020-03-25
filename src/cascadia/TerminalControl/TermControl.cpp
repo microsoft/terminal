@@ -1154,25 +1154,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Event handler for the PointerWheelChanged event. This is raised in
     //   response to mouse wheel changes. Depending upon what modifier keys are
     //   pressed, different actions will take place.
+    // - Primarily just takes the data from the PointerRoutedEventArgs and uses
+    //   it to call _DoMouseWheel, see _DoMouseWheel for more details.
     // Arguments:
     // - args: the event args containing information about t`he mouse wheel event.
     void TermControl::_MouseWheelHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto point = args.GetCurrentPoint(*this);
-        auto result = _DoMouseWheel(point.Position(), static_cast<uint32_t>(args.KeyModifiers()), point.Properties().MouseWheelDelta(), point.Properties().IsLeftButtonPressed());
+        auto result = _DoMouseWheel(point.Position(),
+                                    args.KeyModifiers(),
+                                    point.Properties().MouseWheelDelta(),
+                                    point.Properties().IsLeftButtonPressed());
         if (result)
         {
             args.Handled(true);
         }
     }
 
-    bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point, const uint32_t modifiers, const int32_t delta, const bool isLeftButtonPressed)
+    // Method Description:
+    // - Actually handle a scrolling event, with from a mouse wheel or a touchpad scroll. Depending upon what modifier keys are
+    //   pressed, different actions will take place.
+    //   * Attempts to first dispatch the mouse scroll as a VT event
+    //   * If Ctrl+Shift are pressed, then attempts to change our opacity
+    //   * If just Ctrl is pressed, we'll attempt to "zoom" by changing our font size
+    //   * Otherwise, just scrolls the content of the viewport
+    // Arguments:
+    // - point: the location of the mouse during this event
+    // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
+    // - delta: the mouse wheel delta that triggered this event.
+    bool TermControl::_DoMouseWheel(const Windows::Foundation::Point point,
+                                    const VirtualKeyModifiers modifiers,
+                                    const int32_t delta,
+                                    const bool isLeftButtonPressed)
     {
 
         if (_CanSendVTMouseInput())
         {
-            // GAH this used to be
+            // TODO this used to be
             // _TrySendMouseEvent(point);
             // But we don't have a PointerPoint anymore. So we're going to fake that this is only a mousewheel.
             const auto terminalPosition = _GetTerminalPosition(point);
@@ -1183,8 +1202,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Get the state of the Ctrl & Shift keys
         // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
         // directly with a VirtualKeyModifiers
-        const auto ctrlPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
-        const auto shiftPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+        const auto ctrlPressed = WI_IsFlagSet(static_cast<uint32_t>(modifiers),
+                                              static_cast<uint32_t>(VirtualKeyModifiers::Control));
+        const auto shiftPressed = WI_IsFlagSet(static_cast<uint32_t>(modifiers),
+                                              static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
         if (ctrlPressed && shiftPressed)
         {
@@ -1199,6 +1220,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _MouseScrollHandler(delta, point, isLeftButtonPressed);
         }
         return false;
+    }
+
+
+    // Method Description:
+    // - This is part of the solution to GH#979
+    // - Manually handle a scrolling event. This is used to help support
+    //   scrolling on devices where the touchpad doesn't correctly handle
+    //   scrolling inactive windows.
+    // Arguments:
+    // - location: the location of the mouse during this event
+    // - delta: the mouse wheel delta that triggered this event.
+    bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
+                                   const int32_t delta)
+    {
+        // TODO: Right now, the location is window-relative. I believe this needs to get converted to control-relative
+
+        const auto modifiers = _GetPressedModifierKeys();
+        // TODO: Try and use the above to get the current modifiers, instead of just None
+        return _DoMouseWheel(location, Windows::System::VirtualKeyModifiers::None, delta, false);
     }
 
     // Method Description:
@@ -1271,7 +1311,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scroll the visible viewport in response to a mouse wheel event.
     // Arguments:
     // - mouseDelta: the mouse wheel delta that triggered this event.
-    void TermControl::_MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed)
+    // - point: the location of the mouse during this event
+    // - isLeftButtonPressed: true iff the left mouse button was pressed during this event.
+    void TermControl::_MouseScrollHandler(const double mouseDelta,
+                                          const Windows::Foundation::Point point,
+                                          const bool isLeftButtonPressed)
     {
         const auto currentOffset = ScrollBar().Value();
 
@@ -2370,17 +2414,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsContentVisible(false);
         // Sets if the glyph is visibile
         e.DragUIOverride().IsGlyphVisible(false);
-    }
-
-
-    bool TermControl::OnMouseWheel(Windows::Foundation::Point location, int32_t delta)
-    {
-        // const auto modifiers = _GetPressedModifierKeys();
-        return _DoMouseWheel(location, 0, delta, false);
-    }
-    bool TermControl::OnMouseHWheel(Windows::Foundation::Point /*location*/, int32_t /*delta*/)
-    {
-        return false;
     }
 
     // -------------------------------- WinRT Events ---------------------------------
