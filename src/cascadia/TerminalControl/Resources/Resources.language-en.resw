@@ -159,7 +159,7 @@
   </data>
   <data name="TerminalControl_ControlType" xml:space="preserve">
     <value>terminal</value>
-    <comment>The type of control that the terminal ahderes to. Used to identify how a user can interact with this kind of control.</comment>
+    <comment>The type of control that the terminal adheres to. Used to identify how a user can interact with this kind of control.</comment>
   </data>
   <data name="SearchBox_Close.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close Search Box</value>

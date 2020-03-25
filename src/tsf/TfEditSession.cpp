@@ -5,7 +5,7 @@ Licensed under the MIT license.
 
 Module Name:
 
-    TfEditses.cpp
+    TfEditSession.cpp
 
 Abstract:
 
@@ -23,7 +23,7 @@ Notes:
 #include "TfConvArea.h"
 #include "TfCatUtil.h"
 #include "TfDispAttr.h"
-#include "TfEditses.h"
+#include "TfEditSession.h"
 
 //+---------------------------------------------------------------------------
 //

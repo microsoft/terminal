@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "TfConvArea.h"
-#include "TfEditSes.h"
+#include "TfEditSession.h"
 
 /* 626761ad-78d2-44d2-be8b-752cf122acec */
 const GUID GUID_APPLICATION = { 0x626761ad, 0x78d2, 0x44d2, { 0xbe, 0x8b, 0x75, 0x2c, 0xf1, 0x22, 0xac, 0xec } };

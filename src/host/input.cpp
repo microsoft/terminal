@@ -316,7 +316,7 @@ void ProcessCtrlEvents()
     {
         /*
          * Status will be non-successful if a process attached to this console
-         * vetos shutdown. In that case, we don't want to try to kill any more
+         * vetoes shutdown. In that case, we don't want to try to kill any more
          * processes, but we do need to make sure we continue looping so we
          * can close any remaining process handles. The exception is if the
          * process is inaccessible, such that we can't even open a handle for

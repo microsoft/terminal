@@ -23,7 +23,7 @@ std::vector<til::rectangle> VtEngine::GetDirtyArea()
 }
 
 // Routine Description:
-// - Uses the currently selected font to determine how wide the given character will be when renderered.
+// - Uses the currently selected font to determine how wide the given character will be when rendered.
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - glyph - utf16 encoded codepoint to check

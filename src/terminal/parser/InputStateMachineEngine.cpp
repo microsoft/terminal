@@ -1214,7 +1214,7 @@ bool InputStateMachineEngine::_GetXYPosition(const std::basic_string_view<size_t
 // Routine Description:
 // - Retrieves an X/Y coordinate pair for an SGR Mouse sequence from the parameter pool stored during Param actions.
 // Arguments:
-// - parameters - set of numeric parameters collected while pasring the sequence.
+// - parameters - set of numeric parameters collected while parsing the sequence.
 // - line - Receives the Y/Line/Row position
 // - column - Receives the X/Column position
 // Return Value:

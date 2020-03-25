@@ -1578,7 +1578,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Attempts to parse an array of commandline args into a list of
     //   commands to execute, and then parses these commands. As commands are
-    //   succesfully parsed, they will generate ShortcutActions for us to be
+    //   successfully parsed, they will generate ShortcutActions for us to be
     //   able to execute. If we fail to parse any commands, we'll return the
     //   error code from the failure to parse that command, and stop processing
     //   additional commands.
@@ -1676,7 +1676,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - the help text or error message for the providied commandline, if one
+    // - the help text or error message for the provided commandline, if one
     //   exists, otherwise the empty string.
     winrt::hstring TerminalPage::EarlyExitMessage()
     {

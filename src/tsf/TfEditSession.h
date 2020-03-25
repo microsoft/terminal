@@ -5,7 +5,7 @@ Licensed under the MIT license.
 
 Module Name:
 
-    TfEditses.h
+    TfEditSession.h
 
 Abstract:
 
