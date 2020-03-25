@@ -536,7 +536,7 @@ try
         // This means that we've represented one text with one glyph.
 
         // 2.
-        // U+0041 is A and U+0301 is a combinine acute accent ´.
+        // U+0041 is A and U+0301 is a combining acute accent ´.
         // That is a text length of two.
         // A given font might have two glyphs for this
         // which will be mapped into the _glyphIndices array.

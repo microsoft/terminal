@@ -253,7 +253,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Apply settings for scrollbar
         if (_settings.ScrollState() == ScrollbarState::Hidden)
         {
-            // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the
+            // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
             // achieve the intended effect.
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
@@ -2359,7 +2359,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsCaptionVisible(true);
         // Sets if the dragged content is visible
         e.DragUIOverride().IsContentVisible(false);
-        // Sets if the glyph is visibile
+        // Sets if the glyph is visible
         e.DragUIOverride().IsGlyphVisible(false);
     }
 

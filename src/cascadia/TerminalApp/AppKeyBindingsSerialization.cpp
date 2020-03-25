@@ -344,7 +344,7 @@ static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParse
 
 // Function Description:
 // - Small helper to create a json value serialization of a single
-//   KeyBinding->Action maping.
+//   KeyBinding->Action mapping.
 //   {
 //      keys:[String],
 //      command:String

@@ -403,7 +403,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them
             // reveal the taskbar from fullscreen mode. This includes Edge,
-            // Firefox, Chrome, Sublime Text, Powerpoint - none seemed to
+            // Firefox, Chrome, Sublime Text, PowerPoint - none seemed to
             // support this.
             //
             // This does however work fine for maximized.

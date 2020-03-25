@@ -75,7 +75,7 @@ class BitmapTests
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
-        VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), true));
+        VERIFY_IS_TRUE(bitmap._bits.none());
     }
 
     TEST_METHOD(SizeConstruct)
@@ -90,7 +90,7 @@ class BitmapTests
 
         // The find will go from begin to end in the bits looking for a "true".
         // It should miss so the result should be "cend" and turn out true here.
-        VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), true));
+        VERIFY_IS_TRUE(bitmap._bits.none());
     }
 
     TEST_METHOD(SizeConstructWithFill)
@@ -111,16 +111,12 @@ class BitmapTests
 
         if (!fill)
         {
-            // The find will go from begin to end in the bits looking for a "true".
-            // It should miss so the result should be "cend" and turn out true here.
-            VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), true));
+            VERIFY_IS_TRUE(bitmap._bits.none());
             VERIFY_ARE_EQUAL(til::rectangle{}, bitmap._dirty);
         }
         else
         {
-            // The find will go from begin to end in the bits looking for a "false".
-            // It should miss so the result should be "cend" and turn out true here.
-            VERIFY_IS_TRUE(bitmap._bits.cend() == std::find(bitmap._bits.cbegin(), bitmap._bits.cend(), false));
+            VERIFY_IS_TRUE(bitmap._bits.all());
             VERIFY_ARE_EQUAL(expectedRect, bitmap._dirty);
         }
     }
@@ -612,10 +608,7 @@ class BitmapTests
 
         // Every bit should be false.
         Log::Comment(L"All bits false on creation.");
-        for (auto bit : bitmap._bits)
-        {
-            VERIFY_IS_FALSE(bit);
-        }
+        VERIFY_IS_TRUE(bitmap._bits.none());
 
         const til::point point{ 2, 2 };
         bitmap.set(point);
