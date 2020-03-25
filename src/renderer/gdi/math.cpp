@@ -16,18 +16,18 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - The character dimensions of the current dirty area of the frame.
 //      This is an Inclusive rect.
-SMALL_RECT GdiEngine::GetDirtyRectInChars()
+std::vector<til::rectangle> GdiEngine::GetDirtyArea()
 {
     RECT rc = _psInvalidData.rcPaint;
 
     SMALL_RECT sr = { 0 };
     LOG_IF_FAILED(_ScaleByFont(&rc, &sr));
 
-    return sr;
+    return { sr };
 }
 
 // Routine Description:
-// - Uses the currently selected font to determine how wide the given character will be when renderered.
+// - Uses the currently selected font to determine how wide the given character will be when rendered.
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - glyph - utf16 encoded codepoint to check

@@ -64,12 +64,20 @@ namespace Microsoft::Console::Types
             static void GetRuntimeId(const ScreenInfoUiaProviderBase& base) noexcept;
             static void GetEmbeddedFragmentRoots(const ScreenInfoUiaProviderBase& base) noexcept;
             static void SetFocus(const ScreenInfoUiaProviderBase& base) noexcept;
-            static void GetSelection(const ScreenInfoUiaProviderBase& base) noexcept;
+            static void GetSelection(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
             static void GetVisibleRanges(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
             static void RangeFromChild(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
             static void RangeFromPoint(const ScreenInfoUiaProviderBase& base, UiaPoint point, const UiaTextRangeBase& result) noexcept;
             static void get_DocumentRange(const ScreenInfoUiaProviderBase& base, const UiaTextRangeBase& result) noexcept;
             static void get_SupportedTextSelection(const ScreenInfoUiaProviderBase& base, SupportedTextSelection result) noexcept;
+        };
+
+        class Signal final
+        {
+        public:
+            static void SelectionChanged() noexcept;
+            static void TextChanged() noexcept;
+            static void CursorChanged() noexcept;
         };
 
     private:

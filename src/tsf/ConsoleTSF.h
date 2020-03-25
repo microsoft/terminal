@@ -154,7 +154,7 @@ public:
                 wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
                 if (spCompositionServices)
                 {
-                    spCompositionServices->TerminateComposition(NULL);
+                    spCompositionServices->TerminateComposition(nullptr);
                 }
             }
         }

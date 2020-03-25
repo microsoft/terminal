@@ -89,7 +89,7 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        SMALL_RECT GetDirtyRectInChars() override;
+        std::vector<til::rectangle> GetDirtyArea() override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -106,9 +106,13 @@ namespace Microsoft::Console::Render
         void BeginResizeRequest();
         void EndResizeRequest();
 
+        void SetResizeQuirk(const bool resizeQuirk);
+
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
+
+        std::string _formatBuffer;
 
         const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
@@ -117,9 +121,9 @@ namespace Microsoft::Console::Render
         bool _lastWasBold;
 
         Microsoft::Console::Types::Viewport _lastViewport;
-        Microsoft::Console::Types::Viewport _invalidRect;
 
-        bool _fInvalidRectUsed;
+        til::bitmap _invalidMap;
+
         COORD _lastRealCursor;
         COORD _lastText;
         COORD _scrollDelta;
@@ -149,14 +153,13 @@ namespace Microsoft::Console::Render
 
         bool _delayedEolWrap{ false };
 
+        bool _resizeQuirk{ false };
+
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
         [[nodiscard]] HRESULT _Flush() noexcept;
 
         void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const;
-        [[nodiscard]] HRESULT _InvalidCombine(const Microsoft::Console::Types::Viewport invalid) noexcept;
-        [[nodiscard]] HRESULT _InvalidOffset(const COORD* const ppt) noexcept;
-        [[nodiscard]] HRESULT _InvalidRestrict() noexcept;
         bool _AllIsInvalid() const;
 
         [[nodiscard]] HRESULT _StopCursorBlinking() noexcept;

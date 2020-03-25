@@ -131,7 +131,7 @@ using namespace Microsoft::Console::Types;
         RECT rectProposed = { rc.left, rc.top, 0, 0 };
         _CalculateWindowRect(_pSettings->GetWindowSize(), &rectProposed);
 
-        SetWindowPos(hWnd, NULL, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
+        SetWindowPos(hWnd, nullptr, rectProposed.left, rectProposed.top, RECT_WIDTH(&rectProposed), RECT_HEIGHT(&rectProposed), SWP_NOACTIVATE | SWP_NOZORDER);
 
         // Save the proposed window rect dimensions here so we can adjust if the system comes back and changes them on what we asked for.
         ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertWindowRectToClientRect(&rectProposed);
@@ -156,7 +156,7 @@ using namespace Microsoft::Console::Types;
         // signal to uia that they can disconnect our uia provider
         if (_pUiaProvider)
         {
-            UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+            UiaReturnRawElementProvider(hWnd, 0, 0, nullptr);
         }
         break;
     }
@@ -695,7 +695,7 @@ using namespace Microsoft::Console::Types;
     {
         // Re-read the edit key settings from registry.
         Registry reg(&gci);
-        reg.GetEditKeys(NULL);
+        reg.GetEditKeys(nullptr);
         break;
     }
 

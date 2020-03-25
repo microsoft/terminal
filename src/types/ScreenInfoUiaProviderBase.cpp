@@ -18,8 +18,8 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
         for (size_t i = 0; i < data.size(); i++)
         {
             LONG lIndex = 0;
-            if (FAILED(SizeTToLong(i, &lIndex) ||
-                       FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i))))))
+            if (FAILED(SizeTToLong(i, &lIndex)) ||
+                FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i)))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
@@ -256,6 +256,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         return hr;
     }
 
+    UiaTracing::TextProvider::GetSelection(*this, *range.Get());
+
     LONG currentIndex = 0;
     hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
     if (FAILED(hr))
@@ -265,7 +267,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         return hr;
     }
 
-    UiaTracing::TextProvider::GetSelection(*this);
     return S_OK;
 }
 

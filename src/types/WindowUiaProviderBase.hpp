@@ -37,10 +37,10 @@ namespace Microsoft::Console::Types
         WindowUiaProviderBase() = default;
         HRESULT RuntimeClassInitialize(IUiaWindow* baseWindow) noexcept;
 
-        WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
-        WindowUiaProviderBase(WindowUiaProviderBase&&) = default;
-        WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = default;
-        WindowUiaProviderBase& operator=(WindowUiaProviderBase&&) = default;
+        WindowUiaProviderBase(const WindowUiaProviderBase&) = delete;
+        WindowUiaProviderBase(WindowUiaProviderBase&&) = delete;
+        WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = delete;
+        WindowUiaProviderBase& operator=(WindowUiaProviderBase&&) = delete;
 
     public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;

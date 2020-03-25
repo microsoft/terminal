@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
+        bool CopySelectionToClipboard(bool collapseText);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -81,6 +81,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget SwapChainChanged();
 
         void CreateSearchBoxControl();
+
+        bool OnF7Pressed();
 
         ~TermControl();
 
@@ -152,11 +154,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // imported from WinUser
         // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
         Timestamp _multiClickTimer;
-        Timestamp _lastMouseClick;
         unsigned int _multiClickCounter;
+        Timestamp _lastMouseClickTimestamp;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
-        std::optional<winrt::Windows::Foundation::Point> _unfocusedClickPos;
-        bool _isClickDragSelection;
+        std::optional<winrt::Windows::Foundation::Point> _singleClickTouchdownPos;
+        // This field tracks whether the selection has changed meaningfully
+        // since it was last copied. It's generally used to prevent copyOnSelect
+        // from firing when the pointer _just happens_ to be released over the
+        // terminal.
+        bool _selectionNeedsToBeCopied;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
@@ -207,6 +213,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
+        bool _CanSendVTMouseInput();
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

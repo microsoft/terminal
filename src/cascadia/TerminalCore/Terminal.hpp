@@ -33,6 +33,7 @@ namespace Microsoft::Terminal::Core
 namespace TerminalCoreUnitTests
 {
     class TerminalBufferTests;
+    class TerminalApiTest;
     class ConptyRoundtripTests;
 };
 #endif
@@ -84,6 +85,8 @@ public:
     bool ReverseText(bool reversed) noexcept override;
     bool SetCursorPosition(short x, short y) noexcept override;
     COORD GetCursorPosition() noexcept override;
+    bool SetCursorVisibility(const bool visible) noexcept override;
+    bool EnableCursorBlinking(const bool enable) noexcept override;
     bool CursorLineFeed(const bool withReturn) noexcept override;
     bool DeleteCharacter(const size_t count) noexcept override;
     bool InsertCharacter(const size_t count) noexcept override;
@@ -95,11 +98,23 @@ public:
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
+
+    bool SetCursorKeysMode(const bool applicationMode) noexcept override;
+    bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool EnableVT200MouseMode(const bool enabled) noexcept override;
+    bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
+    bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
+    bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
+    bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
+    bool EnableAlternateScrollMode(const bool enabled) noexcept override;
+
+    bool IsVtInputEnabled() const noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
+    bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) override;
     bool SendCharEvent(const wchar_t ch) override;
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
@@ -107,6 +122,7 @@ public:
     int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
+    bool IsTrackingMouseInput() const noexcept;
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -132,6 +148,7 @@ public:
     CursorType GetCursorStyle() const noexcept override;
     COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const noexcept override;
+    bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
 #pragma endregion
@@ -139,6 +156,7 @@ public:
 #pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
     const bool IsSelectionActive() const noexcept override;
+    const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const COORD GetSelectionAnchor() const noexcept override;
@@ -152,7 +170,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
-    void SetCursorVisible(const bool isVisible) noexcept;
+    void SetCursorOn(const bool isOn) noexcept;
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection
@@ -163,7 +181,6 @@ public:
         Word,
         Line
     };
-    const bool IsCopyOnSelectActive() const noexcept;
     void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
@@ -204,8 +221,6 @@ private:
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
-    bool _allowSingleCharSelection;
-    bool _copyOnSelect;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
@@ -222,7 +237,7 @@ private:
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
     int _scrollOffset;
     // TODO this might not be the value we want to store.
-    // We might want to store the height in the scrollback that's currenty visible.
+    // We might want to store the height in the scrollback that's currently visible.
     // Think on this some more.
     // For example: While looking at the scrollback, we probably want the visible region to "stick"
     //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport,
@@ -257,11 +272,11 @@ private:
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    const bool _IsSingleCellSelection() const noexcept;
 #pragma endregion
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
+    friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 };

@@ -39,9 +39,6 @@
     <ClCompile Include="..\InteractDispatch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\MouseInput.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\adaptDefaults.hpp">
@@ -63,9 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\tracing.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MouseInput.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\DispatchCommon.hpp">

@@ -203,3 +203,14 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 
     return success;
 }
+
+// Routine Description:
+// - Checks if the InputBuffer is willing to accept VT Input directly
+// Arguments:
+// - <none>
+// Return value:
+// - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
+bool InteractDispatch::IsVtInputEnabled() const
+{
+    return _pConApi->PrivateIsVtInputEnabled();
+}

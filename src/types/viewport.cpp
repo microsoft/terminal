@@ -903,7 +903,7 @@ Viewport Viewport::ToOrigin() const noexcept
 //      The result will be the smallest area that fits within both rectangles.
 // Arguments:
 // - lhs: one of the viewports to intersect
-// - rhs: the other viepwort to intersect
+// - rhs: the other viewport to intersect
 // Return Value:
 // - a Viewport representing the intersection of the other two, or an empty viewport if there's no intersection.
 [[nodiscard]] Viewport Viewport::Intersect(const Viewport& lhs, const Viewport& rhs) noexcept

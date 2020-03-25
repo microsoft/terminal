@@ -110,7 +110,7 @@ HRESULT ScreenInfoUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple*
 
     // TODO GH #4509: Box Selection is misrepresented here as a line selection.
     UiaTextRange* result;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, _pData->IsBlockSelection(), wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }
@@ -147,7 +147,7 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* c
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
     UiaTextRange* result = nullptr;
-    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, wordDelimiters));
+    RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(&result, _pData, pProvider, start, end, false, wordDelimiters));
     *ppUtr = result;
     return S_OK;
 }

@@ -208,7 +208,7 @@ scheme in `profiles.json` with the same name as a default color scheme.
 
 If you'd like to unbind a keystroke that's bound to an action in the default
 keybindings, you can set the `"command"` to `"unbound"` or `null`. This will
-allow the keystroke to fallthough to the commandline application instead of
+allow the keystroke to fallthrough to the commandline application instead of
 performing the default action.
 
 ### Dynamic Profiles
@@ -287,7 +287,7 @@ properties for all your profiles, like so:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -299,8 +299,8 @@ properties for all your profiles, like so:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 Note that the `profiles` property has changed in this example from a _list_ of
@@ -328,7 +328,7 @@ could achieve that with the following:
             {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "name": "Windows PowerShell",
-                "commandline": "powershell.exe",
+                "commandline": "powershell.exe"
             },
             {
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -341,8 +341,8 @@ could achieve that with the following:
                 "name" : "cmder",
                 "startingDirectory" : "%USERPROFILE%"
             }
-        ],
-    }
+        ]
+    },
 ```
 
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the

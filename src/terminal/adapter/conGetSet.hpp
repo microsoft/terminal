@@ -35,6 +35,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetConsoleCursorPosition(const COORD position) = 0;
         virtual bool SetConsoleTextAttribute(const WORD attr) = 0;
 
+        virtual bool PrivateIsVtInputEnabled() const = 0;
+
         virtual bool PrivateSetLegacyAttributes(const WORD attr,
                                                 const bool foreground,
                                                 const bool background,
@@ -96,7 +98,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool GetConsoleOutputCP(unsigned int& codepage) = 0;
 
         virtual bool PrivateSuppressResizeRepaint() = 0;
-        virtual bool IsConsolePty(bool& isPty) const = 0;
+        virtual bool IsConsolePty() const = 0;
 
         virtual bool DeleteLines(const size_t count) = 0;
         virtual bool InsertLines(const size_t count) = 0;

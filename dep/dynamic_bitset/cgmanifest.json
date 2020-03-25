@@ -1,0 +1,13 @@
+{"Registrations":[ 
+    {
+      "component": { 
+       "type": "git", 
+       "git": { 
+         "repositoryUrl": "https://github.com/pinam45/dynamic_bitset", 
+         "commitHash": "00f2d066ce9deebf28b006636150e5a882beb83f" 
+         }
+       }
+    }
+ ],
+ "Version": 1
+}

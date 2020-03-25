@@ -89,8 +89,8 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 }
 
 HwndTerminal::HwndTerminal(HWND parentHwnd) :
-    _desiredFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8 },
-    _actualFont{ DEFAULT_FONT_FACE, 0, 10, { 0, 14 }, CP_UTF8, false },
+    _desiredFont{ L"Consolas", 0, 10, { 0, 14 }, CP_UTF8 },
+    _actualFont{ L"Consolas", 0, 10, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
     _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
@@ -289,7 +289,7 @@ HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void**
         parentHwnd,
         nullptr,
         nullptr,
-        0);
+        nullptr);
     auto _terminal = std::make_unique<HwndTerminal>(_hostWindow);
     RETURN_IF_FAILED(_terminal->Initialize());
 
@@ -527,13 +527,13 @@ void _stdcall TerminalBlinkCursor(void* terminal)
         return;
     }
 
-    publicTerminal->_terminal->SetCursorVisible(!publicTerminal->_terminal->IsCursorVisible());
+    publicTerminal->_terminal->SetCursorOn(!publicTerminal->_terminal->IsCursorOn());
 }
 
 void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    publicTerminal->_terminal->SetCursorVisible(visible);
+    publicTerminal->_terminal->SetCursorOn(visible);
 }
 
 // Routine Description:
