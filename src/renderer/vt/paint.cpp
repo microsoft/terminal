@@ -160,8 +160,11 @@ using namespace Microsoft::Console::Types;
 {
     _trace.TracePaintCursor(options.coordCursor);
 
-    // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
-    LOG_IF_FAILED(_MoveCursor(options.coordCursor));
+    if (!_delayedEolWrap)
+    {
+        // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
+        LOG_IF_FAILED(_MoveCursor(options.coordCursor));
+    }
 
     return S_OK;
 }

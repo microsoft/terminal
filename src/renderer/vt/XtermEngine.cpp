@@ -269,20 +269,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                 hr = _Write(seq);
             }
         }
-        else if (_delayedEolWrap)
-        {
-            // GH#1245, GH#357 - If we were in the delayed EOL wrap state, make
-            // sure to _manually_ position the cursor now, with a full CUP
-            // sequence, don't try and be clever with \b or \r or other control
-            // sequences. Different terminals (conhost, gnome-terminal, wt) all
-            // behave differently with how the cursor behaves at an end of line.
-            // This is the only solution that works in all of them, and also
-            // works wrapped lines emitted by conpty.
-            //
-            // Make sure to do this _after_ the possible \r\n branch above,
-            // otherwise we might accidentally break wrapped lines (GH#405)
-            hr = _CursorPosition(coord);
-        }
+        // else if (_delayedEolWrap)
+        // {
+        //     // GH#1245, GH#357 - If we were in the delayed EOL wrap state, make
+        //     // sure to _manually_ position the cursor now, with a full CUP
+        //     // sequence, don't try and be clever with \b or \r or other control
+        //     // sequences. Different terminals (conhost, gnome-terminal, wt) all
+        //     // behave differently with how the cursor behaves at an end of line.
+        //     // This is the only solution that works in all of them, and also
+        //     // works wrapped lines emitted by conpty.
+        //     //
+        //     // Make sure to do this _after_ the possible \r\n branch above,
+        //     // otherwise we might accidentally break wrapped lines (GH#405)
+        //     hr = _CursorPosition(coord);
+        // }
         else if (coord.X == 0 && coord.Y == _lastText.Y)
         {
             // Start of this line
@@ -358,38 +358,47 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
 
     const short dy = _scrollDelta.Y;
-    const short absDy = static_cast<short>(abs(dy));
+    // const short absDy = static_cast<short>(abs(dy));
 
     HRESULT hr = S_OK;
-    if (dy < 0)
+
+    _lastText.Y += dy;
+    _trace.TraceLastText(_lastText);
+    if (_wrappedRow.has_value())
     {
-        // Instead of deleting the first line (causing everything to move up)
-        // move to the bottom of the buffer, and newline.
-        //      That will cause everything to move up, by moving the viewport down.
-        // This will let remote conhosts scroll up to see history like normal.
-        const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-        hr = _MoveCursor({ 0, bottom });
-        if (SUCCEEDED(hr))
-        {
-            std::string seq = std::string(absDy, '\n');
-            hr = _Write(seq);
-            // Mark that the bottom line is new, so we won't spend time with an
-            // ECH on it.
-            _newBottomLine = true;
-        }
-        // We don't need to _MoveCursor the cursor again, because it's still
-        //      at the bottom of the viewport.
+        _wrappedRow.value() += dy;
+        _trace.TraceSetWrapped(_wrappedRow.value());
     }
-    else if (dy > 0)
-    {
-        // Move to the top of the buffer, and insert some lines of text, to
-        //      cause the viewport contents to shift down.
-        hr = _MoveCursor({ 0, 0 });
-        if (SUCCEEDED(hr))
-        {
-            hr = _InsertLine(absDy);
-        }
-    }
+    _newBottomLine = true;
+    // if (dy < 0)
+    // {
+    //     // Instead of deleting the first line (causing everything to move up)
+    //     // move to the bottom of the buffer, and newline.
+    //     //      That will cause everything to move up, by moving the viewport down.
+    //     // This will let remote conhosts scroll up to see history like normal.
+    //     const short bottom = _lastViewport.ToOrigin().BottomInclusive();
+    //     hr = _MoveCursor({ 0, bottom });
+    //     if (SUCCEEDED(hr))
+    //     {
+    //         std::string seq = std::string(absDy, '\n');
+    //         hr = _Write(seq);
+    //         // Mark that the bottom line is new, so we won't spend time with an
+    //         // ECH on it.
+    //         _newBottomLine = true;
+    //     }
+    //     // We don't need to _MoveCursor the cursor again, because it's still
+    //     //      at the bottom of the viewport.
+    // }
+    // else if (dy > 0)
+    // {
+    //     // Move to the top of the buffer, and insert some lines of text, to
+    //     //      cause the viewport contents to shift down.
+    //     hr = _MoveCursor({ 0, 0 });
+    //     if (SUCCEEDED(hr))
+    //     {
+    //         hr = _InsertLine(absDy);
+    //     }
+    // }
 
     return hr;
 }
