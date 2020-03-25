@@ -300,6 +300,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         try
         {
+            // When a user deletes the last character in their current composition, some machines
+            // will fire a CompositionCompleted before firing a TextUpdating event that deletes the last character.
+            // The TextUpdating will have a lower StartCaretPosition, so in this scenario, _activeTextStart
+            // needs to update to be the StartCaretPosition.
+            // A known issue related to this behavior is that the last character that's deleted from a composition
+            // will get sent to the terminal before we receive the TextUpdate to delete the character.
+            // See GH #5054.
+            _activeTextStart = ::base::ClampMin(_activeTextStart, ::base::ClampedNumeric<size_t>(range.StartCaretPosition));
+
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
                 ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
