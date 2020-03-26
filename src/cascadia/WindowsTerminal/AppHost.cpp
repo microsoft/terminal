@@ -340,8 +340,8 @@ void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
 }
 
 // Method Description:
-// - Called when the IslandWindow has recieved a WM_MOUSEWHEEL message. This can
-//   happen oOn some laptops, where their trackpads won't scroll inactive windows
+// - Called when the IslandWindow has received a WM_MOUSEWHEEL message. This can
+//   happen on some laptops, where their trackpads won't scroll inactive windows
 //   _ever_.
 // - We're going to take that message and manually plumb it through to our
 //   TermControl's, or anything else that implements IMouseWheelListener.
