@@ -70,6 +70,10 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestTerminalArgsForBinding);
 
+        TEST_METHOD(FindMissingProfile);
+        TEST_METHOD(MakeSettingsForProfileThatDoesntExist);
+        TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
+
         TEST_METHOD(TestLayerProfileOnColorScheme);
 
         TEST_METHOD(ValidateKeybindingsWarnings);
@@ -2091,6 +2095,146 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
+        }
+    }
+
+    void SettingsTests::FindMissingProfile()
+    {
+        // Test that CascadiaSettings::FindProfile returns null for a GUID that
+        // doesn't exist
+        const std::string settingsString{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+        const auto settingsJsonObj = VerifyParseSucceeded(settingsString);
+        auto settings = CascadiaSettings::FromJson(settingsJsonObj);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        const Profile* const profile1 = settings->FindProfile(guid1);
+        const Profile* const profile2 = settings->FindProfile(guid2);
+        const Profile* const profile3 = settings->FindProfile(guid3);
+
+        VERIFY_IS_NOT_NULL(profile1);
+        VERIFY_IS_NOT_NULL(profile2);
+        VERIFY_IS_NULL(profile3);
+
+        VERIFY_ARE_EQUAL(L"profile0", profile1->GetName());
+        VERIFY_ARE_EQUAL(L"profile1", profile2->GetName());
+    }
+
+    void SettingsTests::MakeSettingsForProfileThatDoesntExist()
+    {
+        // Test that MakeSettings throws when the GUID doesn't exist
+        const std::string settingsString{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+        const auto settingsJsonObj = VerifyParseSucceeded(settingsString);
+        auto settings = CascadiaSettings::FromJson(settingsJsonObj);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        try
+        {
+            auto terminalSettings = settings->BuildSettings(guid1);
+            VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
+            VERIFY_ARE_EQUAL(1, terminalSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+
+        try
+        {
+            auto terminalSettings = settings->BuildSettings(guid2);
+            VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
+            VERIFY_ARE_EQUAL(2, terminalSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+
+        VERIFY_THROWS(auto terminalSettings = settings->BuildSettings(guid3), wil::ResultException, L"This call to BuildSettings should fail");
+
+        try
+        {
+            const auto [guid, termSettings] = settings->BuildSettings(nullptr);
+            VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+    }
+
+    void SettingsTests::MakeSettingsForDefaultProfileThatDoesntExist()
+    {
+        // Test that MakeSettings _doesnt_ throw when we load settings with a
+        // defaultProfile that's not in the list, we validate the settings, and
+        // then call MakeSettings(nullopt). The validation should ensure that
+        // the default profile is something reasonable
+        const std::string settingsString{ R"(
+        {
+            "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+        const auto settingsJsonObj = VerifyParseSucceeded(settingsString);
+        auto settings = CascadiaSettings::FromJson(settingsJsonObj);
+        settings->_ValidateSettings();
+
+        VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(2u, settings->_profiles.size());
+        VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+        try
+        {
+            const auto [guid, termSettings] = settings->BuildSettings(nullptr);
+            VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
         }
     }
 

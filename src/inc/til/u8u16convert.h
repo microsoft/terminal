@@ -243,7 +243,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _Utf8BitMasks::IsLeadByteThreeByteSequence,
         };
 
-        std::basic_string<charT> _buffer; // buffer to which the poulated string_view refers
+        std::basic_string<charT> _buffer; // buffer to which the populated string_view refers
         std::array<charT, 4> _utfPartials; // buffer for code units of a partial code point that have to be cached
         size_t _partialsLen{}; // number of cached code units
     };
@@ -258,7 +258,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - in - UTF-8 string to be converted
     // - out - reference to the resulting UTF-16 string
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -305,7 +305,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-16 string
     // - state - reference to a til::u8state class holding the status of the current partials handling
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -324,7 +324,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - in - UTF-16 string to be converted
     // - out - reference to the resulting UTF-8 string
     // Return Value:
-    // - S_OK          - the conversion succeded
+    // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -374,7 +374,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-8 string
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
-    // - S_OK          - the conversion succeded without any change of the represented code points
+    // - S_OK          - the conversion succeeded without any change of the represented code points
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred

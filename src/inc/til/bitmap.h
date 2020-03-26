@@ -20,7 +20,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using pointer = typename const til::rectangle*;
             using reference = typename const til::rectangle&;
 
-            _bitmap_const_iterator(const std::vector<bool>& values, til::rectangle rc, ptrdiff_t pos) :
+            _bitmap_const_iterator(const dynamic_bitset<>& values, til::rectangle rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
                 _pos(pos),
@@ -74,7 +74,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
         private:
-            const std::vector<bool>& _values;
+            const dynamic_bitset<>& _values;
             const til::rectangle _rc;
             ptrdiff_t _pos;
             ptrdiff_t _nextPos;
@@ -87,7 +87,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _nextPos = _pos;
 
                 // Seek forward until we find an on bit.
-                while (_nextPos < _end && !_values.at(_nextPos))
+                while (_nextPos < _end && !_values[_nextPos])
                 {
                     ++_nextPos;
                 }
@@ -110,7 +110,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     {
                         ++_nextPos;
                         ++runLength;
-                    } while (_nextPos < rowEndIndex && _values.at(_nextPos));
+                    } while (_nextPos < rowEndIndex && _values[_nextPos]);
                     // Keep going until we reach end of row, end of the buffer, or the next bit is off.
 
                     // Assemble and store that run.
@@ -148,10 +148,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         bitmap(til::size sz, bool fill) :
             _sz(sz),
             _rc(sz),
-            _bits(sz.area(), fill),
+            _bits(_sz.area()),
             _dirty(fill ? sz : til::rectangle{}),
             _runs{}
         {
+            if (fill)
+            {
+                set_all();
+            }
         }
 
         constexpr bool operator==(const bitmap& other) const noexcept
@@ -287,24 +291,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _dirty |= rc;
         }
 
-        void set_all()
+        void set_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
-
-            // .clear() then .resize(_size(), true) throws an assert (unsupported operation)
-            // .assign(_size(), true) throws an assert (unsupported operation)
-            _bits = std::vector<bool>(_sz.area(), true);
+            _bits.set();
             _dirty = _rc;
         }
 
-        void reset_all()
+        void reset_all() noexcept
         {
             _runs.reset(); // reset cached runs on any non-const method
-
-            // .clear() then .resize(_size(), false) throws an assert (unsupported operation)
-            // .assign(_size(), false) throws an assert (unsupported operation)
-
-            _bits = std::vector<bool>(_sz.area(), false);
+            _bits.reset();
             _dirty = {};
         }
 
@@ -313,8 +310,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         bool resize(til::size size, bool fill = false)
         {
             _runs.reset(); // reset cached runs on any non-const method
-
-            // FYI .resize(_size(), true/false) throws an assert (unsupported operation)
 
             // Don't resize if it's not different
             if (_sz != size)
@@ -402,7 +397,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         til::rectangle _dirty;
         til::size _sz;
         til::rectangle _rc;
-        std::vector<bool> _bits;
+        dynamic_bitset<> _bits;
 
         mutable std::optional<std::vector<til::rectangle>> _runs;
 

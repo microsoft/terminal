@@ -1707,7 +1707,7 @@ public:
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1742,7 +1742,7 @@ public:
         VERIFY_IS_TRUE(_testGetSet->_isBold);
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;
@@ -1770,7 +1770,7 @@ public:
         VERIFY_IS_FALSE(_testGetSet->_isBold);
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
-        Log::Comment(L"Reseting graphics options");
+        Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_privateSetDefaultAttributesResult = true;
         _testGetSet->_expectedAttribute = 0;

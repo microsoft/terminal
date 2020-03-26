@@ -5,6 +5,12 @@
 #include "Pane.h"
 #include "Tab.g.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
+
 namespace winrt::TerminalApp::implementation
 {
     struct Tab : public TabT<Tab>
@@ -32,6 +38,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::TerminalApp::Direction& direction);
@@ -64,5 +71,10 @@ namespace winrt::TerminalApp::implementation
 
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
+
+        int _GetLeafPaneCount() const noexcept;
+        void _UpdateActivePane(std::shared_ptr<Pane> pane);
+
+        friend class ::TerminalAppLocalTests::TabTests;
     };
 }

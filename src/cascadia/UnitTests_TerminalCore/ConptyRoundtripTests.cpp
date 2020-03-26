@@ -471,7 +471,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     //
     // If a line _exactly_ wraps to the next line, we can't tell if the line
     // should really wrap, or manually break. The client app is writing a line
-    // that's exactly the width of the buffer that manually linebreaked at the
+    // that's exactly the width of the buffer that manually breaks at the
     // end of the line, followed by another line.
     //
     // With the old PaintBufferLine interface, there's no way to know if this
@@ -945,7 +945,7 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
         else
         {
             // After we hit the bottom of the viewport, the newlines come in
-            // seperated for whatever reason.
+            // separated for whatever reason.
             expectedOutput.push_back("\r");
             expectedOutput.push_back("\n");
             expectedOutput.push_back("");

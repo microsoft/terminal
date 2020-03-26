@@ -43,7 +43,7 @@
     <!-- Resources -->
     <!-- This resw only defines things that are used in this package's AppxManifest,
          so it's not in the common resource items. -->
-    <PRIResource Include="Resources\Resources.language-en.resw" />
+    <PRIResource Include="Resources\*\Resources.resw" />
     <PRIResource Include="Resources\Resources.resw" />
   </ItemGroup>
   <PropertyGroup Condition="'$(WindowsTerminalReleaseBuild)'!='true'">

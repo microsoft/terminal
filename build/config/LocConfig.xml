@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Modules>
+  <Module name="Microsoft.WindowsTerminal" tdbuildteamid="7105">
+    <File location="TerminalApp"
+      path="%BUILD_SOURCESDIRECTORY%\src\cascadia\TerminalApp\Resources\en-US\Resources.resw" />
+    <File location="TerminalControl"
+      path="%BUILD_SOURCESDIRECTORY%\src\cascadia\TerminalControl\Resources\en-US\Resources.resw" />
+    <File location="TerminalConnection"
+      path="%BUILD_SOURCESDIRECTORY%\src\cascadia\TerminalConnection\Resources\en-US\Resources.resw" />
+    <File location="WindowsTerminalUniversal"
+      path="%BUILD_SOURCESDIRECTORY%\src\cascadia\WindowsTerminalUniversal\Resources\en-US\Resources.resw" />
+    <File location="CascadiaPackage"
+      path="%BUILD_SOURCESDIRECTORY%\src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw" />
+  </Module>
+</Modules>
