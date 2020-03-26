@@ -358,7 +358,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         //       as might be expected.
         //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
         //       ---
-        //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
+        //       A prime example of this is that PSReadline module in PowerShell will set the invalid mode 0x1e4
         //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
         //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
         {

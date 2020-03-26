@@ -32,7 +32,7 @@ namespace
         // They are ordered such that the "most important" flags have the largest
         // impact on the sort space. For example, since we want Preview to be very polar
         // we give it the highest flag value.
-        // The "ideal" powershell instance has 0 flags (stable, native, Program Files location)
+        // The "ideal" PowerShell instance has 0 flags (stable, native, Program Files location)
         //
         // With this ordering, the sort space ends up being (for PowerShell 6)
         // (numerically greater values are on the left; this is flipped in the final sort)
@@ -82,7 +82,7 @@ namespace
         }
 
         // Method Description:
-        // - Generates a name, based on flags, for a powershell instance.
+        // - Generates a name, based on flags, for a PowerShell instance.
         // Return value:
         // - the name
         std::wstring Name() const
@@ -137,7 +137,7 @@ namespace
 using namespace ::TerminalApp;
 
 // Function Description:
-// - Finds all powershell instances with the traditional layout under a directory.
+// - Finds all PowerShell instances with the traditional layout under a directory.
 // - The "traditional" directory layout requires that pwsh.exe exist in a versioned directory, as in
 //   ROOT\6\pwsh.exe
 // Arguments:
@@ -190,7 +190,7 @@ catch (...)
 }
 
 // Function Description:
-// - Finds all powershell instances that have App Execution Aliases in the standard location
+// - Finds all PowerShell instances that have App Execution Aliases in the standard location
 // Arguments:
 // - out: the list into which to accumulate these instances.
 static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>& out)
@@ -207,7 +207,7 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
 
     if (std::filesystem::exists(appExecAliasPath))
     {
-        // App execution aliases for preview powershell
+        // App execution aliases for preview PowerShell
         const auto previewPath = appExecAliasPath / POWERSHELL_PREVIEW_PFN;
         if (std::filesystem::exists(previewPath))
         {
@@ -221,7 +221,7 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
             }
         }
 
-        // App execution aliases for stable powershell
+        // App execution aliases for stable PowerShell
         const auto gaPath = appExecAliasPath / POWERSHELL_PFN;
         if (std::filesystem::exists(gaPath))
         {
@@ -239,8 +239,8 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
 }
 
 // Function Description:
-// - Finds a powershell instance that's just a pwsh.exe in a folder.
-// - This function cannot determine the version number of such a powershell instance.
+// - Finds a PowerShell instance that's just a pwsh.exe in a folder.
+// - This function cannot determine the version number of such a PowerShell instance.
 // Arguments:
 // - directory: the directory under which to search
 // - flags: flags to apply to all found instances
@@ -256,9 +256,9 @@ static void _accumulatePwshExeInDirectory(const std::wstring_view directory, con
 }
 
 // Function Description:
-// - Builds a comprehensive priority-ordered list of powershell instances.
+// - Builds a comprehensive priority-ordered list of PowerShell instances.
 // Return value:
-// - a comprehensive priority-ordered list of powershell instances.
+// - a comprehensive priority-ordered list of PowerShell instances.
 static std::vector<PowerShellInstance> _collectPowerShellInstances()
 {
     std::vector<PowerShellInstance> versions;

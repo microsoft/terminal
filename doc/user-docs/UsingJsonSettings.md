@@ -180,7 +180,7 @@ The runtime settings are actually constructed from _three_ sources:
 * The default settings, which are hardcoded into the application, and available
   in `defaults.json`. This includes the default keybindings, color schemes, and
   profiles for both Windows PowerShell and Command Prompt (`cmd.exe`).
-* Dynamic Profiles, which are generated at runtime. These include Powershell
+* Dynamic Profiles, which are generated at runtime. These include PowerShell
   Core, the Azure Cloud Shell connector, and profiles for and WSL distros.
 * The user settings from `profiles.json`.
 

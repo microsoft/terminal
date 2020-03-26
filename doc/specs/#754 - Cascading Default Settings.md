@@ -383,7 +383,7 @@ Windows PowerShell.
 
 PowerShell core acts much like a dynamic profile. It has an installation source
 that may or not be there. So we'll add a dynamic profile generator for
-PowerShell Core. This will automatically create a profile for Powershell Core if
+PowerShell Core. This will automatically create a profile for PowerShell Core if
 necessary.
 
 Unlike the other dynamic profiles, if PowerShell Core is present on
@@ -391,7 +391,7 @@ _first_ launch of the terminal, we set that as the default profile. This can
 still be done - we'll need to do some special-case work when we're loading the
 user settings and we _don't_ find any existing settings. When that happens,
 we'll generate all the default user settings. Before we commit them, we'll check
-if the Powershell Core profile exists, and if it does, we'll set that as the
+if the PowerShell Core profile exists, and if it does, we'll set that as the
 default profile before writing the settings to disk.
 
 ### Unbinding a Keybinding
@@ -432,7 +432,7 @@ it's first generated, taking all the above points into consideration.
             "guid": "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
         },
         {
-            // Make changes here to the Windows Powershell profile
+            // Make changes here to the Windows PowerShell profile
             "guid": "{086a83cd-e4ef-418b-89b1-3f6523ff9195}",
         },
         {
@@ -455,7 +455,7 @@ it's first generated, taking all the above points into consideration.
 Note the following:
 * cmd.exe and powershell.exe are both in the file, as to give users an easy
   point to extend the settings for those default profiles.
-* Powershell Core is included in the file, and the default profile has been set
+* PowerShell Core is included in the file, and the default profile has been set
   to its GUID. The `source` has been set, indicating that it came from a dynamic profile source.
 * There are a few helpful comments scattered throughout the file to help point
   the user in the right direction.
@@ -620,20 +620,20 @@ the `profiles.json` file. Fortunately though, users should be able to remove
 much of the boilerplate from their `profiles.json` files, and trim it down just
 to their modifications.
 
-#### Migrating Powershell Core
+#### Migrating PowerShell Core
 
-Right now, default-generated Powershell Core profiles exist with a stable guid
-we've generated for them. However, when we move Powershell Core to being a
+Right now, default-generated PowerShell Core profiles exist with a stable guid
+we've generated for them. However, when we move PowerShell Core to being a
 dynamically generated profile, we'll have to ensure that we don't create a
 duplicated "dynamic" entry for that profile. If we want to convert the existing
-Powershell Core profiles into a dynamic profile, we'll need to make sure to add
+PowerShell Core profiles into a dynamic profile, we'll need to make sure to add
 a `source` key to the profile. Everything else in the profile can remain the
 same. Once the `source` is added, we'll know to treat it as a dynamic profile,
 and it'll respond dynamically.
 
 This is actually something that will automatically be covered by the scenario
 mentioned above in "Profiles with the same `guid` as a dynamic profile but not
-the same `source`". When we encounter the existing Powershell Core profiles that
+the same `source`". When we encounter the existing PowerShell Core profiles that
 don't have a `source`, we'll automatically think they're the dynamically
 generated ones, and auto-migrate them.
 
