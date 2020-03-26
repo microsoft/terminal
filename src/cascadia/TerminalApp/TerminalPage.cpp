@@ -63,11 +63,20 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-        // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-        // but that process is running at a different IL than us.
-        // For now, we're disabling elevated drag.
-        const auto isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+        // GH#2455 - Make sure to try/catch calls to Application::Current,
+        // because that _won't_ be an instance of TerminalApp::App in the
+        // LocalTests
+        auto isElevated = false;
+        try
+        {
+            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
+            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
+            // but that process is running at a different IL than us.
+            // For now, we're disabling elevated drag.
+            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+        }
+        CATCH_LOG();
+
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
 
@@ -137,51 +146,79 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        // Actually start the terminal.
-        if (_appArgs.GetStartupActions().empty())
-        {
-            _OpenNewTab(nullptr);
-        }
-        else
-        {
-            _appArgs.ValidateStartupCommands();
+        // Once the page is actually laid out on the screen, trigger all our
+        // startup actions. Things like Panes need to know at least how big the
+        // window will be, so they can subdivide that space.
+        //
+        // _OnFirstLayout will remove this handler so it doesn't get called more than once.
+        _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
+    }
 
-            // This will kick off a chain of events to perform each startup
-            // action. As each startup action is completed, the next will be
-            // fired.
-            _ProcessNextStartupAction();
+    // Method Description:
+    // - This method is called once on startup, on the first LayoutUpdated event.
+    //   We'll use this event to know that we have an ActualWidth and
+    //   ActualHeight, so we can now attempt to process our list of startup
+    //   actions.
+    // - We'll remove this event handler when the event is first handled.
+    // - If there are no startup actions, we'll open a single tab with the
+    //   default profile.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnFirstLayout(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    {
+        // Only let this succeed once.
+        _layoutUpdatedRevoker.revoke();
+
+        // This event fires every time the layout changes, but it is always the
+        // last one to fire in any layout change chain. That gives us great
+        // flexibility in finding the right point at which to initialize our
+        // renderer (and our terminal). Any earlier than the last layout update
+        // and we may not know the terminal's starting size.
+        if (_startupState == StartupState::NotInitialized)
+        {
+            _startupState = StartupState::InStartup;
+            _appArgs.ValidateStartupCommands();
+            if (_appArgs.GetStartupActions().empty())
+            {
+                _OpenNewTab(nullptr);
+                _startupState = StartupState::Initialized;
+                _InitializedHandlers(*this, nullptr);
+            }
+            else
+            {
+                _ProcessStartupActions();
+            }
         }
     }
 
     // Method Description:
-    // - Process the next startup action in our list of startup actions. When
-    //   that action is complete, fire the next (if there are any more).
+    // - Process all the startup actions in our list of startup actions. We'll
+    //   do this all at once here.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    fire_and_forget TerminalPage::_ProcessNextStartupAction()
+    winrt::fire_and_forget TerminalPage::_ProcessStartupActions()
     {
         // If there are no actions left, do nothing.
         if (_appArgs.GetStartupActions().empty())
         {
             return;
         }
-
-        // Get the next action to be processed
-        auto nextAction = _appArgs.GetStartupActions().front();
-        _appArgs.GetStartupActions().pop_front();
-
         auto weakThis{ get_weak() };
 
-        // Handle it on the UI thread.
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        // Handle it on a subsequent pass of the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (auto page{ weakThis.get() })
         {
-            page->_actionDispatch->DoAction(nextAction);
-
-            // Kick off the next action to be handled (if necessary)
-            page->_ProcessNextStartupAction();
+            for (const auto& action : _appArgs.GetStartupActions())
+            {
+                _actionDispatch->DoAction(action);
+            }
+            _startupState = StartupState::Initialized;
+            _InitializedHandlers(*this, nullptr);
         }
     }
 
@@ -406,7 +443,15 @@ namespace winrt::TerminalApp::implementation
 
         // add static items
         {
-            const auto isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            auto isUwp = false;
+            try
+            {
+                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            }
+            CATCH_LOG();
 
             if (!isUwp)
             {
@@ -476,6 +521,7 @@ namespace winrt::TerminalApp::implementation
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
+    try
     {
         const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
 
@@ -499,6 +545,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
+    CATCH_LOG();
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
     {
@@ -514,7 +561,6 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
-        const bool isFirstTab = _tabs.Size() == 0;
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
@@ -568,20 +614,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // If this is the first tab, we don't need to kick off the event to get
-        // the tab's content added to the root of the page. just do it
-        // immediately.
-        if (isFirstTab)
-        {
-            _tabContent.Children().Clear();
-            _tabContent.Children().Append(newTabImpl->GetRootElement());
-        }
-        else
-        {
-            // This kicks off TabView::SelectionChanged, in response to which
-            // we'll attach the terminal's Xaml control to the Xaml root.
-            _tabView.SelectedItem(tabViewItem);
-        }
+        // This kicks off TabView::SelectionChanged, in response to which
+        // we'll attach the terminal's Xaml control to the Xaml root.
+        _tabView.SelectedItem(tabViewItem);
     }
 
     // Method Description:
@@ -810,13 +845,30 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            auto focusedTab = _GetStrongTabImpl(*index);
-            const auto& profileGuid = focusedTab->GetFocusedProfile();
-            if (profileGuid.has_value())
+            try
             {
-                const auto settings = _settings->BuildSettings(profileGuid.value());
-                _CreateNewTabFromSettings(profileGuid.value(), settings);
+                auto focusedTab = _GetStrongTabImpl(*index);
+                // TODO: GH#5047 - In the future, we should get the Profile of
+                // the focused pane, and use that to build a new instance of the
+                // settings so we can duplicate this tab/pane.
+                //
+                // Currently, if the profile doesn't exist anymore in our
+                // settings, we'll silently do nothing.
+                //
+                // In the future, it will be preferable to just duplicate the
+                // current control's settings, but we can't do that currently,
+                // because we won't be able to create a new instance of the
+                // connection without keeping an instance of the original Profile
+                // object around.
+
+                const auto& profileGuid = focusedTab->GetFocusedProfile();
+                if (profileGuid.has_value())
+                {
+                    const auto settings = _settings->BuildSettings(profileGuid.value());
+                    _CreateNewTabFromSettings(profileGuid.value(), settings);
+                }
             }
+            CATCH_LOG();
         }
     }
 
@@ -901,20 +953,36 @@ namespace winrt::TerminalApp::implementation
             // Wraparound math. By adding tabCount and then calculating modulo tabCount,
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
-            _SetFocusedTabIndex(((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount));
+            const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            _SelectTab(newTabIndex);
         }
     }
 
     // Method Description:
     // - Sets focus to the desired tab. Returns false if the provided tabIndex
     //   is greater than the number of tabs we have.
+    // - During startup, we'll immediately set the selected tab as focused.
+    // - After startup, we'll dispatch an async method to set the the selected
+    //   item of the TabView, which will then also trigger a
+    //   TabView::SelectionChanged, handled in
+    //   TerminalPage::_OnTabSelectionChanged
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
     bool TerminalPage::_SelectTab(const uint32_t tabIndex)
     {
         if (tabIndex >= 0 && tabIndex < _tabs.Size())
         {
-            _SetFocusedTabIndex(tabIndex);
+            if (_startupState == StartupState::InStartup)
+            {
+                auto tab{ _GetStrongTabImpl(tabIndex) };
+                _tabView.SelectedItem(tab->GetTabViewItem());
+                _UpdatedSelectedTab(tabIndex);
+            }
+            else
+            {
+                _SetFocusedTabIndex(tabIndex);
+            }
+
             return true;
         }
         return false;
@@ -967,6 +1035,16 @@ namespace winrt::TerminalApp::implementation
         return std::nullopt;
     }
 
+    // Method Description:
+    // - An async method for changing the focused tab on the UI thread. This
+    //   method will _only_ set the selected item of the TabView, which will
+    //   then also trigger a TabView::SelectionChanged event, which we'll handle
+    //   in TerminalPage::_OnTabSelectionChanged, where we'll mark the new tab
+    //   as focused.
+    // Arguments:
+    // - tabIndex: the index in the list of tabs to focus.
+    // Return Value:
+    // - <none>
     winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t tabIndex)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
@@ -1075,42 +1153,65 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedTab = _GetStrongTabImpl(*indexOpt);
-
-        winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
-        GUID realGuid;
-        bool profileFound = false;
-
-        if (splitMode == TerminalApp::SplitType::Duplicate)
+        try
         {
-            std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
-            if (current_guid)
+            auto focusedTab = _GetStrongTabImpl(*indexOpt);
+            winrt::Microsoft::Terminal::Settings::TerminalSettings controlSettings;
+            GUID realGuid;
+            bool profileFound = false;
+
+            if (splitMode == TerminalApp::SplitType::Duplicate)
             {
-                profileFound = true;
-                controlSettings = _settings->BuildSettings(current_guid.value());
-                realGuid = current_guid.value();
+                std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
+                if (current_guid)
+                {
+                    profileFound = true;
+                    controlSettings = _settings->BuildSettings(current_guid.value());
+                    realGuid = current_guid.value();
+                }
+                // TODO: GH#5047 - In the future, we should get the Profile of
+                // the focused pane, and use that to build a new instance of the
+                // settings so we can duplicate this tab/pane.
+                //
+                // Currently, if the profile doesn't exist anymore in our
+                // settings, we'll silently do nothing.
+                //
+                // In the future, it will be preferable to just duplicate the
+                // current control's settings, but we can't do that currently,
+                // because we won't be able to create a new instance of the
+                // connection without keeping an instance of the original Profile
+                // object around.
             }
+            if (!profileFound)
+            {
+                std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
+            }
+
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+
+            const auto canSplit = focusedTab->CanSplitPane(splitType);
+
+            if (!canSplit && _startupState == StartupState::Initialized)
+            {
+                return;
+            }
+
+            auto realSplitType = splitType;
+            if (realSplitType == SplitState::Automatic && _startupState < StartupState::Initialized)
+            {
+                float contentWidth = gsl::narrow_cast<float>(_tabContent.ActualWidth());
+                float contentHeight = gsl::narrow_cast<float>(_tabContent.ActualHeight());
+                realSplitType = focusedTab->PreCalculateAutoSplit({ contentWidth, contentHeight });
+            }
+
+            TermControl newControl{ controlSettings, controlConnection };
+
+            // Hookup our event handlers to the new terminal
+            _RegisterTerminalEvents(newControl, *focusedTab);
+
+            focusedTab->SplitPane(realSplitType, realGuid, newControl);
         }
-        if (!profileFound)
-        {
-            std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
-        }
-
-        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
-
-        const auto canSplit = focusedTab->CanSplitPane(splitType);
-
-        if (!canSplit)
-        {
-            return;
-        }
-
-        TermControl newControl{ controlSettings, controlConnection };
-
-        // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, *focusedTab);
-
-        focusedTab->SplitPane(splitType, realGuid, newControl);
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1426,6 +1527,31 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_UpdatedSelectedTab(const int32_t index)
+    {
+        // Unfocus all the tabs.
+        for (auto tab : _tabs)
+        {
+            auto tabImpl{ _GetStrongTabImpl(tab) };
+            tabImpl->SetFocused(false);
+        }
+
+        if (index >= 0)
+        {
+            try
+            {
+                auto tab{ _GetStrongTabImpl(index) };
+
+                _tabContent.Children().Clear();
+                _tabContent.Children().Append(tab->GetRootElement());
+
+                tab->SetFocused(true);
+                _titleChangeHandlers(*this, Title());
+            }
+            CATCH_LOG();
+        }
+    }
+
     // Method Description:
     // - Responds to the TabView control's Selection Changed event (to move a
     //      new terminal control into focus) when not in in the middle of a tab rearrangement.
@@ -1438,28 +1564,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-
-            // Unfocus all the tabs.
-            for (auto tab : _tabs)
-            {
-                auto tabImpl{ _GetStrongTabImpl(tab) };
-                tabImpl->SetFocused(false);
-            }
-
-            if (selectedIndex >= 0)
-            {
-                try
-                {
-                    auto tab{ _GetStrongTabImpl(selectedIndex) };
-
-                    _tabContent.Children().Clear();
-                    _tabContent.Children().Append(tab->GetRootElement());
-
-                    tab->SetFocused(true);
-                    _titleChangeHandlers(*this, Title());
-                }
-                CATCH_LOG();
-            }
+            _UpdatedSelectedTab(selectedIndex);
         }
     }
 
@@ -1525,15 +1630,27 @@ namespace winrt::TerminalApp::implementation
         for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
-            const auto settings = _settings->BuildSettings(profileGuid);
 
-            for (auto tab : _tabs)
+            try
             {
-                // Attempt to reload the settings of any panes with this profile
-                auto tabImpl{ _GetStrongTabImpl(tab) };
-                tabImpl->UpdateSettings(settings, profileGuid);
+                // BuildSettings can throw an exception if the profileGuid does
+                // not belong to an actual profile in the list of profiles.
+                const auto settings = _settings->BuildSettings(profileGuid);
+
+                for (auto tab : _tabs)
+                {
+                    // Attempt to reload the settings of any panes with this profile
+                    auto tabImpl{ _GetStrongTabImpl(tab) };
+                    tabImpl->UpdateSettings(settings, profileGuid);
+                }
             }
+            CATCH_LOG();
         }
+
+        // GH#2455: If there are any panes with controls that had been
+        // initialized with a Profile that no longer exists in our list of
+        // profiles, we'll leave it unmodified. The profile doesn't exist
+        // anymore, so we can't possibly update its settings.
 
         // Update the icon of the tab for the currently focused profile in that tab.
         for (auto tab : _tabs)

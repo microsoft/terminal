@@ -292,6 +292,7 @@ Clcompile
 CLE
 cleartype
 CLICKACTIVE
+clickdown
 climits
 clipbrd
 CLIPCHILDREN
@@ -596,6 +597,7 @@ deff
 DEFFACE
 defing
 DEFPUSHBUTTON
+defterm
 DELAYLOAD
 deletable
 DELETEONRELEASE
@@ -1145,10 +1147,12 @@ INITDIALOG
 initguid
 INITMENU
 inl
+INLINEPREFIX
 Inlines
 INotify
 inout
 INPATHROOT
+Inplace
 inproc
 inputdev
 Inputkeyinfo
@@ -1284,6 +1288,7 @@ LEFTALIGN
 LEFTSHIFT
 len
 lhs
+libpopcnt
 LIMITTEXT
 LINEDOWN
 LINESELECTION
@@ -1488,6 +1493,7 @@ msixbundle
 msrc
 msvcrt
 MSVS
+msys
 msysgit
 mui
 Mul
@@ -1783,6 +1789,7 @@ pid
 pidl
 PIDLIST
 pii
+pinam
 pinvoke
 pipename
 pipestr
@@ -2208,6 +2215,8 @@ SOLIDBOX
 Solutiondir
 somefile
 sourced
+SOURCESDIRECTORY
+SPACEBAR
 spammy
 spand
 Spc

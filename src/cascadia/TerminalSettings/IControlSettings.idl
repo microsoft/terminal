@@ -38,6 +38,8 @@ namespace Microsoft.Terminal.Settings
 
         IKeyBindings KeyBindings;
 
+        Boolean CopyOnSelect;
+
         String Commandline;
         String StartingDirectory;
         String EnvironmentVariables;
