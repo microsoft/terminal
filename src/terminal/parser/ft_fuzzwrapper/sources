@@ -50,6 +50,7 @@ SOURCES = \
 
 INCLUDES = \
     $(INCLUDES); \
+    $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\wextest\cue; \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
