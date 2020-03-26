@@ -196,7 +196,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
 // even if the final result will be ANSI.
 // Therefore, if we're matching based on a char size buffer, multiply the expected result by 2.
 #pragma warning(suppress : 4127) // This is a constant, but conditionally compiled twice so we need the check.
-        if (1 == sizeof(TCH))
+        if constexpr (1 == sizeof(TCH))
         {
             dwExpectedResult *= sizeof(wchar_t);
         }

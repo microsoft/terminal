@@ -150,7 +150,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     }
 
     // Go get the icon
-    if (wszIconLocation[0] == L'\0')
+    if constexpr (wszIconLocation[0] == L'\0')
     {
         // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
         // the shortcut)
@@ -171,7 +171,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         }
     }
 
-    if (wszIconLocation[0] != L'\0')
+    if constexpr (wszIconLocation[0] != L'\0')
     {
         LOG_IF_FAILED(Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex));
     }
