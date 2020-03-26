@@ -571,9 +571,9 @@ namespace winrt::TerminalApp::implementation
         const CoreWindow window = CoreWindow::GetForCurrentThread();
         const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
         const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-        if (altPressed)
+        const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                     WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+        if (bothAltsPressed)
         {
             std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
         }
@@ -630,9 +630,8 @@ namespace winrt::TerminalApp::implementation
         if (debugConnection)
         {
             TermControl newControl{ settings, debugConnection };
-            // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *newTabImpl);
-
+            // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, profileGuid, newControl);
         }
 

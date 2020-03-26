@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "DebugTapConnection.h"
 
@@ -5,6 +8,9 @@ using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
 namespace winrt::Microsoft::TerminalApp::implementation
 {
+    // DebugInputTapConnection is an implementation detail of DebugTapConnection.
+    // It wraps the _actual_ connection so it can hook WriteInput and forward it
+    // into the actual debug panel.
     class DebugInputTapConnection : public winrt::implements<DebugInputTapConnection, ITerminalConnection>
     {
     public:
@@ -14,10 +20,13 @@ namespace winrt::Microsoft::TerminalApp::implementation
         {
         }
         ~DebugInputTapConnection() = default;
-        void Start() { _wrappedConnection.Start(); }
+        void Start()
+        {
+            _wrappedConnection.Start();
+        }
         void WriteInput(hstring const& data)
         {
-            _pairedTap->PrintInput(data);
+            _pairedTap->_PrintInput(data);
             _wrappedConnection.WriteInput(data);
         }
         void Resize(uint32_t rows, uint32_t columns) { _wrappedConnection.Resize(rows, columns); }
@@ -41,35 +50,47 @@ namespace winrt::Microsoft::TerminalApp::implementation
         });
         _wrappedConnection = wrappedConnection;
     }
+
     DebugTapConnection::~DebugTapConnection()
     {
     }
+
     void DebugTapConnection::Start()
     {
         // presume the wrapped connection is started.
     }
-    void DebugTapConnection::WriteInput(hstring const& /*data*/)
+
+    void DebugTapConnection::WriteInput(hstring const& data)
     {
-        // no input is written.
+        // If the user types into the tap side, forward it to the input side
+        if (auto strongInput{ _inputSide.get() })
+        {
+            auto inputAsTap{ winrt::get_self<DebugInputTapConnection>(strongInput) };
+            inputAsTap->WriteInput(data);
+        }
     }
+
     void DebugTapConnection::Resize(uint32_t /*rows*/, uint32_t /*columns*/)
     {
         // no resize events are propagated
     }
+
     void DebugTapConnection::Close()
     {
         _outputRevoker.revoke();
         _stateChangedRevoker.revoke();
         _wrappedConnection = nullptr;
     }
+
     ConnectionState DebugTapConnection::State() const noexcept
     {
-        if (auto strongConnection = _wrappedConnection.get())
+        if (auto strongConnection{ _wrappedConnection.get() })
         {
             return strongConnection.State();
         }
         return ConnectionState::Failed;
     }
+
     static std::wstring _sanitizeString(const std::wstring_view str)
     {
         std::wstring newString{ str.begin(), str.end() };
@@ -90,23 +111,37 @@ namespace winrt::Microsoft::TerminalApp::implementation
         }
         return newString;
     }
+
     void DebugTapConnection::_OutputHandler(const hstring str)
     {
         _TerminalOutputHandlers(_sanitizeString(str));
     }
-    void DebugTapConnection::PrintInput(const hstring& str)
+
+    // Called by the DebugInputTapConnection to print user input
+    void DebugTapConnection::_PrintInput(const hstring& str)
     {
         auto clean{ _sanitizeString(str) };
-        auto formatted{ wil::str_printf<std::wstring>(L"\x1b[1;31m%ls\x1b[m", clean.data()) };
+        auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
         _TerminalOutputHandlers(formatted);
+    }
+
+    // Wire us up so that we can forward input through
+    void DebugTapConnection::SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap)
+    {
+        _inputSide = inputTap;
     }
 }
 
-using namespace winrt::Microsoft::TerminalApp::implementation;
+// Function Description
+// - Takes one connection and returns two connections:
+//   1. One that can be used in place of the original connection (wrapped)
+//   2. One that will print raw VT sequences sent into and received _from_ the original connection.
 std::tuple<ITerminalConnection, ITerminalConnection> OpenDebugTapConnection(ITerminalConnection baseConnection)
 {
-    auto b = winrt::make_self<DebugTapConnection>(baseConnection);
-    auto a = winrt::make_self<DebugInputTapConnection>(b, baseConnection);
-    std::tuple<ITerminalConnection, ITerminalConnection> p{ *a, *b };
+    using namespace winrt::Microsoft::TerminalApp::implementation;
+    auto debugSide{ winrt::make_self<DebugTapConnection>(baseConnection) };
+    auto inputSide{ winrt::make_self<DebugInputTapConnection>(debugSide, baseConnection) };
+    debugSide->SetInputTap(*inputSide);
+    std::tuple<ITerminalConnection, ITerminalConnection> p{ *inputSide, *debugSide };
     return p;
 }
