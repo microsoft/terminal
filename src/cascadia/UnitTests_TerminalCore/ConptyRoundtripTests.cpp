@@ -171,7 +171,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(TestResizeHeight);
 
-    TEST_METHOD(OutputWrappedLines);
+    TEST_METHOD(OutputWrappedLinesAtTopOfBuffer);
+    TEST_METHOD(OutputWrappedLinesAtBottomOfBuffer);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -1055,7 +1056,7 @@ void ConptyRoundtripTests::PassthroughHardReset()
     }
 }
 
-void ConptyRoundtripTests::OutputWrappedLines()
+void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
 {
     Log::Comment(L"Output various different wrapped lines, and ensure we emit them correctly");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
@@ -1071,29 +1072,95 @@ void ConptyRoundtripTests::OutputWrappedLines()
     _flushFirstFrame();
 
     const auto wrappedLineLength = TerminalViewWidth + 20;
+    Log::Comment(
+        L"Case 1: Write a wrapped line right at the start of the buffer, before any circling");
+
+    sm.ProcessString(std::wstring(wrappedLineLength, L'A'));
+
+    auto verifyBuffer = [](const TextBuffer& tb) {
+        VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
+        auto iter0 = tb.GetCellDataAt({ 0, 0 });
+        TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
+        auto iter1 = tb.GetCellDataAt({ 0, 1 });
+        TestUtils::VerifySpanOfText(L"A", iter1, 0, 20);
+        auto iter2 = tb.GetCellDataAt({ 20, 1 });
+        TestUtils::VerifySpanOfText(L" ", iter2, 0, TerminalViewWidth - 20);
+    };
+
+    verifyBuffer(hostTb);
+
+    expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    expectedOutput.push_back(std::string(20, 'A'));
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb);
+}
+
+void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
+{
+    Log::Comment(
+        L"Case 2: Write a wrapped line at the end of the buffer, once the conpty started circling");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    // First, fill the buffer with contents, so conpty starts circling
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
     {
-        Log::Comment(
-            L"Case 1: Write a wrapped line right at the start of the buffer, before any circling");
+        Log::Comment(NoThrowString().Format(L"Writing line %d/%d", i, end));
+        expectedOutput.push_back("X");
+        if (i < hostView.BottomInclusive())
+        {
+            expectedOutput.push_back("\r\n");
+        }
+        else
+        {
+            // After we hit the bottom of the viewport, the newlines come in
+            // separated by empty writes for whatever reason.
+            expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("");
+        }
 
-        sm.ProcessString(std::wstring(wrappedLineLength, L'A'));
+        hostSm.ProcessString(L"X\n");
 
-        auto verifyBuffer = [](const TextBuffer& tb) {
-            VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
-            VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
-            auto iter0 = tb.GetCellDataAt({ 0, 0 });
-            TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
-            auto iter1 = tb.GetCellDataAt({ 0, 1 });
-            TestUtils::VerifySpanOfText(L"A", iter1, 0, 20);
-            auto iter2 = tb.GetCellDataAt({ 20, 1 });
-            TestUtils::VerifySpanOfText(L" ", iter2, 0, TerminalViewWidth - 20);
-        };
-
-        verifyBuffer(hostTb);
-
-        expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-        expectedOutput.push_back(std::string(20, 'A'));
         VERIFY_SUCCEEDED(renderer.PaintFrame());
-
-        verifyBuffer(termTb);
     }
+
+    const auto wrappedLineLength = TerminalViewWidth + 20;
+
+    expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    expectedOutput.push_back("\x1b[32;80H"); // If a future change removes the need for this, it wouldn't be the worst.
+    expectedOutput.push_back(std::string(20, 'A'));
+
+    hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
+
+    auto verifyBuffer = [](const TextBuffer& tb, const short wrappedRow) {
+        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
+
+        auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
+        TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
+        auto iter1 = tb.GetCellDataAt({ 0, wrappedRow + 1 });
+        TestUtils::VerifySpanOfText(L"A", iter1, 0, 20);
+        auto iter2 = tb.GetCellDataAt({ 20, wrappedRow + 1 });
+        TestUtils::VerifySpanOfText(L" ", iter2, 0, TerminalViewWidth - 20);
+    };
+
+    verifyBuffer(hostTb, hostView.BottomInclusive() - 1);
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    verifyBuffer(termTb, term->_mutableViewport.BottomInclusive() - 1);
 }
