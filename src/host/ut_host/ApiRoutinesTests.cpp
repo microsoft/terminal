@@ -195,7 +195,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiSetConsoleInputModeImplPSReadlineScenario)
     {
-        Log::Comment(L"Set Powershell PSReadline expected modes.");
+        Log::Comment(L"Set PowerShell PSReadline expected modes.");
         PrepVerifySetConsoleInputModeImpl(0x1F7);
         Log::Comment(L"Should return an invalid argument code because ECHO is set without LINE.");
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");

@@ -4,7 +4,7 @@
 // This test class creates an in-proc conpty host as well as a Terminal, to
 // validate that strings written to the conpty create the same response on the
 // terminal end. Tests can be written that validate both the contents of the
-// host buffer as well as the terminal buffer. Everytime that
+// host buffer as well as the terminal buffer. Every time
 // `renderer.PaintFrame()` is called, the tests will validate the expected
 // output, and then flush the output of the VtEngine straight to the Terminal.
 

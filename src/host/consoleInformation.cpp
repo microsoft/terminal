@@ -215,7 +215,7 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 // - Return the default foreground color of the console. If the settings are
 //      configured to have a default foreground color (separate from the color
 //      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
+//      from the color table corresponding to our default attributes.
 // Arguments:
 // - <none>
 // Return Value:
@@ -229,7 +229,7 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 // - Return the default background color of the console. If the settings are
 //      configured to have a default background color (separate from the color
 //      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
+//      from the color table corresponding to our default attributes.
 // Arguments:
 // - <none>
 // Return Value:

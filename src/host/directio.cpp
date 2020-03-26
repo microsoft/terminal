@@ -580,7 +580,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Arguments:
 // - pInputBuffer - the input buffer to write to. Currently unused, as
 //      HandleGenericKeyEvent just gets the global input buffer, but all
-//      ConGetSet API's require an input or output object.
+//      ConGetSet APIs require an input or output object.
 // - key - The keyevent to send to the console.
 // Return Value:
 // - HRESULT indicating success or failure

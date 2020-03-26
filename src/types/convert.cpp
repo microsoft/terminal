@@ -281,7 +281,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
     {
         // It is OK if the char is "signed -1", we want to interpret that as "unsigned 255" for the
         // "integer to character" conversion below with ::to_string, thus the static_cast.
-        // Prime example is nonbreaking space U+00A0 will convert to OEM by codepage 437 to 0xFF which is -1 signed.
+        // Prime example is non-breaking space U+00A0 will convert to OEM by codepage 437 to 0xFF which is -1 signed.
         // But it is absolutely valid as 0xFF or 255 unsigned as the correct CP437 character.
         // We need to treat it as unsigned because we're going to pretend it was a keypad entry
         // and you don't enter negative numbers on the keypad.

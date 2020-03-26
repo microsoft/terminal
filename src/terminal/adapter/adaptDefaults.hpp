@@ -23,7 +23,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         virtual ~AdaptDefaults() = default;
         virtual void Print(const wchar_t wch) = 0;
-        // These characters need to be mutable so that they can be processed by the TerminalInput translater.
+        // These characters need to be mutable so that they can be processed by the TerminalInput translator.
         virtual void PrintString(const std::wstring_view string) = 0;
         virtual void Execute(const wchar_t wch) = 0;
     };

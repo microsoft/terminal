@@ -471,7 +471,7 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     buffer.at(6) = (buffer.at(6) & 0x0F) | 0x50; // set the uuid version to 5
     buffer.at(8) = (buffer.at(8) & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
 
-    // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
+    // We're using memcpy_s here pursuant to N4713 6.7.2/3 [basic.types],
     // "...the underlying bytes making up the object can be copied into an array
     // of char or unsigned char...array is copied back into the object..."
     // std::copy may compile down to ::memcpy for these types, but using it might
