@@ -945,9 +945,8 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
         else
         {
             // After we hit the bottom of the viewport, the newlines come in
-            // separated for whatever reason.
-            expectedOutput.push_back("\r");
-            expectedOutput.push_back("\n");
+            // separated by empty writes for whatever reason.
+            expectedOutput.push_back("\r\n");
             expectedOutput.push_back("");
         }
 
@@ -1021,10 +1020,8 @@ void ConptyRoundtripTests::PassthroughHardReset()
         else
         {
             // After we hit the bottom of the viewport, the newlines come in
-            // separated for whatever reason.
-
-            expectedOutput.push_back("\r");
-            expectedOutput.push_back("\n");
+            // separated by empty writes for whatever reason.
+            expectedOutput.push_back("\r\n");
             expectedOutput.push_back("");
         }
 
