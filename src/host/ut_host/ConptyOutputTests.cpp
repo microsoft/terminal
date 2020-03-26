@@ -364,7 +364,5 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
     expectedOutput.push_back("\x1b[13X");
     expectedOutput.push_back("\x1b[13C");
 
-    expectedOutput.push_back("\x1b[?25h"); // we turn the cursor back on for good measure
-
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
