@@ -214,7 +214,21 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // _nextCursorIsVisible will still be false (from when we set it during
     // StartPaint)
     _nextCursorIsVisible = true;
-    return VtEngine::PaintCursor(options);
+
+    const auto stashedEOLWrap = _delayedEolWrap;
+    const auto stashedWappedRow = _wrappedRow;
+    const auto result = VtEngine::PaintCursor(options);
+    _delayedEolWrap = stashedEOLWrap;
+    _wrappedRow = stashedWappedRow;
+    if (_wrappedRow.has_value())
+    {
+        _trace.TraceSetWrapped(_wrappedRow.value());
+    }
+    else
+    {
+        _trace.TraceClearWrapped();
+    }
+    return result;
 }
 
 // Routine Description:
@@ -362,35 +376,50 @@ try
     const short absDy = static_cast<short>(abs(dy));
 
     HRESULT hr = S_OK;
-    if (dy < 0)
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Experiment 1
     {
-        // Instead of deleting the first line (causing everything to move up)
-        // move to the bottom of the buffer, and newline.
-        //      That will cause everything to move up, by moving the viewport down.
-        // This will let remote conhosts scroll up to see history like normal.
-        const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-        hr = _MoveCursor({ 0, bottom });
-        if (SUCCEEDED(hr))
+        _lastText.Y += dy;
+        _trace.TraceLastText(_lastText);
+        if (_wrappedRow.has_value())
         {
-            std::string seq = std::string(absDy, '\n');
-            hr = _Write(seq);
-            // Mark that the bottom line is new, so we won't spend time with an
-            // ECH on it.
-            _newBottomLine = true;
+            _wrappedRow.value() += dy;
+            _trace.TraceSetWrapped(_wrappedRow.value());
         }
-        // We don't need to _MoveCursor the cursor again, because it's still
-        //      at the bottom of the viewport.
+        _newBottomLine = true;
     }
-    else if (dy > 0)
-    {
-        // Move to the top of the buffer, and insert some lines of text, to
-        //      cause the viewport contents to shift down.
-        hr = _MoveCursor({ 0, 0 });
-        if (SUCCEEDED(hr))
-        {
-            hr = _InsertLine(absDy);
-        }
-    }
+    ////////////////////////////////////////////////////////////////////////////
+    // if (dy < 0)
+    // {
+    //     // Instead of deleting the first line (causing everything to move up)
+    //     // move to the bottom of the buffer, and newline.
+    //     //      That will cause everything to move up, by moving the viewport down.
+    //     // This will let remote conhosts scroll up to see history like normal.
+    //     const short bottom = _lastViewport.ToOrigin().BottomInclusive();
+    //     hr = _MoveCursor({ 0, bottom });
+    //     if (SUCCEEDED(hr))
+    //     {
+    //         std::string seq = std::string(absDy, '\n');
+    //         hr = _Write(seq);
+    //         // Mark that the bottom line is new, so we won't spend time with an
+    //         // ECH on it.
+    //         _newBottomLine = true;
+    //     }
+    //     // We don't need to _MoveCursor the cursor again, because it's still
+    //     //      at the bottom of the viewport.
+    // }
+    // else if (dy > 0)
+    // {
+    //     // Move to the top of the buffer, and insert some lines of text, to
+    //     //      cause the viewport contents to shift down.
+    //     hr = _MoveCursor({ 0, 0 });
+    //     if (SUCCEEDED(hr))
+    //     {
+    //         hr = _InsertLine(absDy);
+    //     }
+    // }
+    ////////////////////////////////////////////////////////////////////////////
 
     return hr;
 }
