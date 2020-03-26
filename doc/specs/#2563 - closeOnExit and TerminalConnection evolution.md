@@ -41,7 +41,7 @@ Other terminal emulators like ConEmu have a similar feature.
 
 ### `TerminalControl` Changes
 
-* As the decision as to whether to close a terminal control hosting a connection that has transitioned into a terminal state will be made by the application, the unexpressive `Close` event will be removed and replaced with a `ConnectionStateChanged` event.
+* As the decision as to whether to close a terminal control hosting a connection that has transitioned into a terminal state will be made by the application, the inexpressive `Close` event will be removed and replaced with a `ConnectionStateChanged` event.
 * `event ConnectionStateChanged(TerminalControl, IInspectable)` event will project its connection's `StateChanged` event.
 * TerminalControl's new `ConnectionState` will project its connection's `State`.
     * (this is indicated for an eventual data binding; see Future Considerations.)

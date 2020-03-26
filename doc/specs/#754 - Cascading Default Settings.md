@@ -342,7 +342,7 @@ class IDynamicProfileGenerator
 ```
 
 For example, the WSL generator would return `Microsoft.Terminal.WSL`. The
-Powershell Core generator would return `Microsoft.Terminal.PowershellCore`.
+PowerShell Core generator would return `Microsoft.Terminal.PowershellCore`.
 We'll use these names to be able to generate uuidv5 GUIDs that will be unique
 (so long as the names are unique).
 
@@ -370,23 +370,23 @@ It's not the responsibility of the dynamic profile generator to fill in the
 through and fill in the guid for the generated profiles given the generator's
 namespace GUID.
 
-### Powershell Core & the Defaults
+### PowerShell Core & the Defaults
 
-How do we handle the potential existence of Powershell Core in this model?
-Powershell core is unique as far as the default profiles goes - it may or may
+How do we handle the potential existence of PowerShell Core in this model?
+PowerShell core is unique as far as the default profiles goes - it may or may
 not exist on the user's system. Not only that, but depending on the user's
-install of Powershell Core, it might have a path in either `Program Files` or
+install of PowerShell Core, it might have a path in either `Program Files` or
 `Program Files(x86)`.
 
 Additionally, if it _is_ installed, we set it as the default profile instead of
-Windows Powershell.
+Windows PowerShell.
 
-Powershell core acts much like a dynamic profile. It has an installation source
+PowerShell core acts much like a dynamic profile. It has an installation source
 that may or not be there. So we'll add a dynamic profile generator for
-Powershell Core. This will automatically create a profile for Powershell Core if
+PowerShell Core. This will automatically create a profile for Powershell Core if
 necessary.
 
-Unlike the other dynamic profiles, if Powershell Core is present on
+Unlike the other dynamic profiles, if PowerShell Core is present on
 _first_ launch of the terminal, we set that as the default profile. This can
 still be done - we'll need to do some special-case work when we're loading the
 user settings and we _don't_ find any existing settings. When that happens,

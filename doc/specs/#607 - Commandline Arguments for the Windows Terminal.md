@@ -549,14 +549,14 @@ itself, we'll use `\;` as an escaped `;` within the commandline. This is an area
 we've been caught in before, so extensive testing will be necessary to make sure
 this works as expected.
 
-Painfully, powershell uses `;` as a separator between commands as well. So, if
-someone wanted to call a `wt` commandline in powershell with multiple commands,
-the user would need to also escape those semicolons for powershell first. That
+Painfully, PowerShell uses `;` as a separator between commands as well. So, if
+someone wanted to call a `wt` commandline in PowerShell with multiple commands,
+the user would need to also escape those semicolons for PowerShell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab
-`; split-pane``` in powershell, and ```wt new-tab ; split-pane commandline \; with
+`; split-pane``` in PowerShell, and ```wt new-tab ; split-pane commandline \; with
 \; semicolons``` would need to become ```wt new-tab `; split-pane commandline \`;
 with \`; semicolons```, using ```\`;``` to first escape the semicolon for
-powershell, then the backslash to escape it for `wt`.
+PowerShell, then the backslash to escape it for `wt`.
 
 Alternatively, the user could choose to escape the semicolons with quotes
 (either single or double), like so: ```wt new-tab ';' split-pane "commandline \;
