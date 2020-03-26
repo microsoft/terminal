@@ -516,7 +516,7 @@ std::wstring_view GlobalAppSettings::_SerializeTabWidthMode(const TabViewWidthMo
 // Method Description:
 // - Adds the given ColorScheme to our map of schemes, using its name as the key.
 // Arguments:
-// - scheme: the color scheme to add
+// - scheme: the ColorScheme to add
 // Return Value:
 // - <none>
 void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
