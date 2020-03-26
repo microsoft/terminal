@@ -20,6 +20,13 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
+    enum StartupState : int
+    {
+        NotInitialized = 0,
+        InStartup = 1,
+        Initialized = 2
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -48,6 +55,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ToggleFullscreen, _toggleFullscreenHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs);
+        TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         // If you add controls here, but forget to null them either here or in
@@ -75,9 +83,12 @@ namespace winrt::TerminalApp::implementation
 
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
 
+        winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        StartupState _startupState{ StartupState::NotInitialized };
+
         ::TerminalApp::AppCommandlineArgs _appArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
-        fire_and_forget _ProcessNextStartupAction();
+        winrt::fire_and_forget _ProcessStartupActions();
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -141,6 +152,8 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
+        void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
+        void _UpdatedSelectedTab(const int32_t index);
 
         void _Find();
 

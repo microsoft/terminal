@@ -172,8 +172,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TextBlock().FontSize(fontSizePx);
         TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
 
-        const auto widthToTerminalEnd = Canvas().ActualWidth() - ::base::ClampedNumeric<double>(clientCursorPos.X);
-        TextBlock().MaxWidth(widthToTerminalEnd);
+        const auto canvasActualWidth = Canvas().ActualWidth();
+        const auto widthToTerminalEnd = canvasActualWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        // Make sure that we're setting the MaxWidth to a positive number - a
+        // negative number here will crash us in mysterious ways with a useless
+        // stack trace
+        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
+        TextBlock().MaxWidth(newMaxWidth);
 
         // Set the text block bounds
         const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
