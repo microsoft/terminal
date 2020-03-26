@@ -171,6 +171,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(TestResizeHeight);
 
+    TEST_METHOD(OutputWrappedLines);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -1050,5 +1052,48 @@ void ConptyRoundtripTests::PassthroughHardReset()
     for (short y = 0; y < termFirstView.BottomInclusive(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
+    }
+}
+
+void ConptyRoundtripTests::OutputWrappedLines()
+{
+    Log::Comment(L"Output various different wrapped lines, and ensure we emit them correctly");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    const auto wrappedLineLength = TerminalViewWidth + 20;
+    {
+        Log::Comment(
+            L"Case 1: Write a wrapped line right at the start of the buffer, before any circling");
+
+        sm.ProcessString(std::wstring(wrappedLineLength, L'A'));
+
+        auto verifyBuffer = [](const TextBuffer& tb) {
+            VERIFY_IS_TRUE(tb.GetRowByOffset(0).GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(tb.GetRowByOffset(1).GetCharRow().WasWrapForced());
+            auto iter0 = tb.GetCellDataAt({ 0, 0 });
+            TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
+            auto iter1 = tb.GetCellDataAt({ 0, 1 });
+            TestUtils::VerifySpanOfText(L"A", iter1, 0, 20);
+            auto iter2 = tb.GetCellDataAt({ 20, 1 });
+            TestUtils::VerifySpanOfText(L" ", iter2, 0, TerminalViewWidth - 20);
+        };
+
+        verifyBuffer(hostTb);
+
+        expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+        expectedOutput.push_back(std::string(20, 'A'));
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+        verifyBuffer(termTb);
     }
 }

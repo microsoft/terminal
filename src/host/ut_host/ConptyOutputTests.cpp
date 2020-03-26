@@ -27,6 +27,9 @@ using namespace Microsoft::Console::Types;
 
 class ConptyOutputTests
 {
+    static const SHORT TerminalViewWidth = 80;
+    static const SHORT TerminalViewHeight = 32;
+
     BEGIN_TEST_CLASS(ConptyOutputTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
     END_TEST_CLASS()
@@ -37,7 +40,7 @@ class ConptyOutputTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
 
         return true;
@@ -63,7 +66,7 @@ class ConptyOutputTests
         gci.SetDefaultBackgroundColor(INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
-        m_state->PrepareNewTextBufferInfo(true);
+        m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
