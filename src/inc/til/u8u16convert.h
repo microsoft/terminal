@@ -96,11 +96,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
 
                 _buffer.append(in);
-                size_t remainingLength = _buffer.length();
+                size_t remainingLength{ _buffer.length() };
 
                 if (codepage == gsl::narrow_cast<unsigned int>(CP_UTF8)) // UTF-8
                 {
-                    auto backIter = _buffer.end();
+                    auto backIter{ _buffer.end() };
                     // If the last byte in the string was a byte belonging to a UTF-8 multi-byte character
                     if ((*(backIter - 1) & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
                     {
