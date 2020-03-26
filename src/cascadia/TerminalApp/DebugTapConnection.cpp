@@ -32,9 +32,9 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void Resize(uint32_t rows, uint32_t columns) { _wrappedConnection.Resize(rows, columns); }
         void Close() { _wrappedConnection.Close(); }
         winrt::event_token TerminalOutput(TerminalOutputHandler const& args) { return _wrappedConnection.TerminalOutput(args); };
-        void TerminalOutput(winrt::event_token const& tok) noexcept { _wrappedConnection.TerminalOutput(tok); };
+        void TerminalOutput(winrt::event_token const& token) noexcept { _wrappedConnection.TerminalOutput(token); };
         winrt::event_token StateChanged(TypedEventHandler<ITerminalConnection, IInspectable> const& handler) { return _wrappedConnection.StateChanged(handler); };
-        void StateChanged(winrt::event_token const& tok) noexcept { _wrappedConnection.StateChanged(tok); };
+        void StateChanged(winrt::event_token const& token) noexcept { _wrappedConnection.StateChanged(token); };
         ConnectionState State() const noexcept { return _wrappedConnection.State(); }
 
     private:
