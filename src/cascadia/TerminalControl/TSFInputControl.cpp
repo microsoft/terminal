@@ -19,7 +19,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
         _inComposition{ false },
-        _activeTextStart{ 0 }
+        _activeTextStart{ 0 },
+        _focused{ false },
+        _currentTerminalCursorPos{ 0, 0 },
+        _currentCanvasWidth{ 0.0 },
+        _currentTextBlockHeight{ 0.0 },
+        _currentTextBounds{ 0, 0, 0, 0 },
+        _currentControlBounds{ 0, 0, 0, 0 }
     {
         InitializeComponent();
 
@@ -77,6 +83,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusEnter();
+            _focused = true;
         }
     }
 
@@ -92,6 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_editContext != nullptr)
         {
             _editContext.NotifyFocusLeave();
+            _focused = false;
         }
     }
 
@@ -117,16 +125,54 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    winrt::Windows::Foundation::Rect TSFInputControl::RedrawCanvas()
+    // Method Description:
+    // - Redraw the canvas and update our dimensions if certain dimensions have changed since the last
+    //   redraw. This includes the Terminal cursor position, the actual Canvas width,
+    //   and the actual TextBlock height.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::TryRedrawCanvas()
     {
-        // Get window in screen coordinates, this is the entire window including tabs
-        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
+        if (!_focused)
+        {
+            return;
+        }
 
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
         const COORD cursorPos = { ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().X), ::base::ClampedNumeric<short>(cursorArgs->CurrentPosition().Y) };
 
+        const double actualCanvasWidth = Canvas().ActualWidth();
+
+        const double actualTextBlockHeight = TextBlock().ActualHeight();
+
+        if (_currentTerminalCursorPos.X == cursorPos.X &&
+            _currentTerminalCursorPos.Y == cursorPos.Y &&
+            _currentCanvasWidth == actualCanvasWidth &&
+            _currentTextBlockHeight == actualTextBlockHeight)
+        {
+            return;
+        }
+
+        _currentTerminalCursorPos = cursorPos;
+        _currentCanvasWidth = actualCanvasWidth;
+        _currentTextBlockHeight = actualTextBlockHeight;
+
+        _RedrawCanvas();
+    }
+
+    // Method Description:
+    // - Redraw the Canvas and update the current Text Bounds and Control Bounds for
+    //   the CoreTextEditContext.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TSFInputControl::_RedrawCanvas()
+    {
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _CurrentFontInfoHandlers(*this, *fontArgs);
@@ -136,8 +182,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
-        clientCursorPos.X = ::base::ClampMul(cursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
-        clientCursorPos.Y = ::base::ClampMul(cursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
+        clientCursorPos.X = ::base::ClampMul(_currentTerminalCursorPos.X, ::base::ClampedNumeric<short>(fontWidth));
+        clientCursorPos.Y = ::base::ClampMul(_currentTerminalCursorPos.Y, ::base::ClampedNumeric<short>(fontHeight));
+
+        // position textblock to cursor position
+        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
+        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
+
+        // calculate FontSize in pixels from DPIs
+        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
+        TextBlock().FontSize(fontSizePx);
+        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
+
+        const auto widthToTerminalEnd = _currentCanvasWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
+        // Make sure that we're setting the MaxWidth to a positive number - a
+        // negative number here will crash us in mysterious ways with a useless
+        // stack trace
+        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
+        TextBlock().MaxWidth(newMaxWidth);
+
+        // Get window in screen coordinates, this is the entire window including tabs
+        const auto windowBounds = CoreWindow::GetForCurrentThread().Bounds();
 
         // Convert from client coordinate to screen coordinate by adding window position
         COORD screenCursorPos;
@@ -151,30 +216,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         screenCursorPos.X = ::base::ClampAdd(screenCursorPos.X, ::base::ClampedNumeric<short>(offsetPoint.X));
         screenCursorPos.Y = ::base::ClampAdd(screenCursorPos.Y, ::base::ClampedNumeric<short>(offsetPoint.Y));
 
-        // position textblock to cursor position
-        Canvas().SetLeft(TextBlock(), clientCursorPos.X);
-        Canvas().SetTop(TextBlock(), ::base::ClampedNumeric<double>(clientCursorPos.Y));
-
-        // calculate FontSize in pixels from DIPs
-        const double fontSizePx = (fontHeight * 72) / USER_DEFAULT_SCREEN_DPI;
-        TextBlock().FontSize(fontSizePx);
-        TextBlock().FontFamily(Media::FontFamily(fontArgs->FontFace()));
-
-        const auto canvasActualWidth = Canvas().ActualWidth();
-        const auto widthToTerminalEnd = canvasActualWidth - ::base::ClampedNumeric<double>(clientCursorPos.X);
-        // Make sure that we're setting the MaxWidth to a positive number - a
-        // negative number here will crash us in mysterious ways with a useless
-        // stack trace
-        const auto newMaxWidth = std::max<double>(0.0, widthToTerminalEnd);
-        TextBlock().MaxWidth(newMaxWidth);
-
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
-        const auto yOffset = ::base::ClampedNumeric<float>(TextBlock().ActualHeight()) - fontHeight;
+        const auto yOffset = ::base::ClampedNumeric<float>(_currentTextBlockHeight) - fontHeight;
         const auto textBottom = ::base::ClampedNumeric<float>(screenCursorPos.Y) + yOffset;
-        Rect selectionRect = Rect(screenCursorPos.X, textBottom, 0, fontHeight);
 
-        return ScaleRect(selectionRect, scaleFactor);
+        _currentTextBounds = ScaleRect(Rect(screenCursorPos.X, textBottom, 0, fontHeight), scaleFactor);
+        _currentControlBounds = ScaleRect(Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight), scaleFactor);
     }
 
     // Method Description:
@@ -192,13 +240,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto request = args.Request();
 
-        const auto scaledRect = RedrawCanvas();
+        TryRedrawCanvas();
 
         // Set the text block bounds
-        request.LayoutBounds().TextBounds(scaledRect);
+        request.LayoutBounds().TextBounds(_currentTextBounds);
 
         // Set the control bounds of the whole control
-        request.LayoutBounds().ControlBounds(scaledRect);
+        request.LayoutBounds().ControlBounds(_currentControlBounds);
     }
 
     // Method Description:

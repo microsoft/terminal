@@ -703,13 +703,13 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
     }
 
-    _NotifyTerminalCursorPositionChanged();
-
     if (notifyScroll)
     {
         _buffer->GetRenderTarget().TriggerRedrawAll();
         _NotifyScrollEvent();
     }
+
+    _NotifyTerminalCursorPositionChanged();
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
