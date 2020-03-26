@@ -126,9 +126,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Redraw the canvas and update our dimensions if certain dimensions have changed since the last
-    //   redraw. This includes the Terminal cursor position, the actual Canvas width,
-    //   and the actual TextBlock height.
+    // - Redraw the canvas if certain dimensions have changed since the last
+    //   redraw. This includes the Terminal cursor position, the Canvas width, and the TextBlock height.
     // Arguments:
     // - <none>
     // Return Value:
