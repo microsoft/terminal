@@ -173,6 +173,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(OutputWrappedLinesAtTopOfBuffer);
     TEST_METHOD(OutputWrappedLinesAtBottomOfBuffer);
+    TEST_METHOD(ScrollWithChangesInMiddle);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -1163,4 +1164,104 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     verifyBuffer(termTb, term->_mutableViewport.BottomInclusive() - 1);
+}
+
+void ConptyRoundtripTests::ScrollWithChangesInMiddle()
+{
+    Log::Comment(L"");
+    VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    // First, fill the buffer with contents, so conpty starts circling
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
+    {
+        Log::Comment(NoThrowString().Format(L"Writing line %d/%d", i, end));
+        expectedOutput.push_back("X");
+        if (i < hostView.BottomInclusive())
+        {
+            expectedOutput.push_back("\r\n");
+        }
+        else
+        {
+            // After we hit the bottom of the viewport, the newlines come in
+            // separated by empty writes for whatever reason.
+            expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("");
+        }
+
+        hostSm.ProcessString(L"X\n");
+
+        VERIFY_SUCCEEDED(renderer.PaintFrame());
+    }
+
+    const auto wrappedLineLength = TerminalViewWidth + 20;
+
+    expectedOutput.push_back("\x1b[15;1H");
+    expectedOutput.push_back("Y");
+    expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
+    // expectedOutput.push_back("\x1b[32;80H"); // If a future change removes the need for this, it wouldn't be the worst.
+    expectedOutput.push_back(std::string(20, 'A'));
+
+    _checkConptyOutput = false;
+
+    _logConpty = true;
+
+    hostSm.ProcessString(L"\x1b"
+                         L"7"); // Save cursor
+    hostSm.ProcessString(L"\x1b[15;1H");
+    hostSm.ProcessString(L"Y");
+    hostSm.ProcessString(L"\x1b"
+                         L"8"); // Restore
+    hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
+
+    auto verifyBuffer = [](const TextBuffer& tb, const til::rectangle viewport) {
+        const short wrappedRow = viewport.bottom<short>() - 2;
+
+        for (short i = viewport.top<short>(); i < wrappedRow; i++)
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Checking row %d", i));
+            TestUtils::VerifyExpectedString(tb, i == 13 ? L"Y" : L"X", { 0, i });
+        }
+
+        VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
+        VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).GetCharRow().WasWrapForced());
+
+        auto iter0 = tb.GetCellDataAt({ 0, wrappedRow });
+        TestUtils::VerifySpanOfText(L"A", iter0, 0, TerminalViewWidth);
+        auto iter1 = tb.GetCellDataAt({ 0, wrappedRow + 1 });
+        TestUtils::VerifySpanOfText(L"A", iter1, 0, 20);
+        auto iter2 = tb.GetCellDataAt({ 20, wrappedRow + 1 });
+        TestUtils::VerifySpanOfText(L" ", iter2, 0, TerminalViewWidth - 20);
+    };
+
+    Log::Comment(NoThrowString().Format(L"Checking the host buffer..."));
+    verifyBuffer(hostTb, hostView.ToInclusive());
+    Log::Comment(NoThrowString().Format(L"... Done"));
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // TODO: This proves that the scrolling during a frame with other text breaks this scenario.
+    // We're going to try and special-case the scrolling thing to _only_ when
+    // * the invalid area is the bottom line, and
+    // * the line wrapped
+    // So in that case, we'll be sure that the next text will cause us to move the viewport down a line appropriately
+    //
+    // I've got a crazy theory that rendering bottom-up _might_ fix this
+
+    Log::Comment(NoThrowString().Format(L"Checking the terminal buffer..."));
+    verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
+    Log::Comment(NoThrowString().Format(L"... Done"));
 }

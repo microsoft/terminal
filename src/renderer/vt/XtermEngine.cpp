@@ -215,37 +215,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // StartPaint)
     _nextCursorIsVisible = true;
 
-    // {
-    //     // Method.2
-    //     const auto stashedEOLWrap = _delayedEolWrap;
-    //     const auto stashedWappedRow = _wrappedRow;
-    //     const auto result = VtEngine::PaintCursor(options);
-    //     _delayedEolWrap = stashedEOLWrap;
-    //     _wrappedRow = stashedWappedRow;
-    //     if (_wrappedRow.has_value())
-    //     {
-    //         _trace.TraceSetWrapped(_wrappedRow.value());
-    //     }
-    //     else
-    //     {
-    //         _trace.TraceClearWrapped();
-    //     }
-    //     return result;
-
-    // }
-
+    // If we did a delayed EOL wrap because we actually wrapped the line here,
+    // then don't PaintCursor. When we're at the EOL because we've wrapped, our
+    // internal _lastText thinks the cursor is on the cell just past the right
+    // of the viewport (ex { 120, 0 }). However, conhost thinks the cursor is
+    // actually on the last cell of the row. So it'll tell us to paint the
+    // cursor at { 119, 0 }. If we do that movement, then we'll break line
+    // wrapping.
+    // See GH#5113, GH#1245, GH#357
+    if (!(_delayedEolWrap && _wrappedRow.has_value()))
     {
-        // Method.3
-        if (_delayedEolWrap && _wrappedRow.has_value())
-        {
-        }
-        else
-        {
-            return VtEngine::PaintCursor(options);
-        }
-
-        return S_OK;
+        return VtEngine::PaintCursor(options);
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -397,6 +380,14 @@ try
     ////////////////////////////////////////////////////////////////////////////
     // Experiment 1
     {
+        // shift our internal tracker of the last text position according to how
+        // much we've scrolled. If we manually scroll the buffer right now, by
+        // moving the cursor to the bottom row of the viewport and newlining,
+        // we'll cause any wrapped lines to get broken.
+        //
+        // We'll also shift our other coordinates we're tracking -
+        //
+        // See GH#5113
         _lastText.Y += dy;
         _trace.TraceLastText(_lastText);
         if (_wrappedRow.has_value())
@@ -405,6 +396,9 @@ try
             _trace.TraceSetWrapped(_wrappedRow.value());
         }
         _newBottomLine = true;
+
+        // TODO: If there's a single frame with changes in the middle of the
+        // frame and scrolling, how do we react?
     }
     ////////////////////////////////////////////////////////////////////////////
     // if (dy < 0)
