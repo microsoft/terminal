@@ -122,6 +122,7 @@ CATCH_RETURN();
     }
 
     _trace.TraceTriggerCircling(*pForcePaint);
+
     return S_OK;
 }
 
