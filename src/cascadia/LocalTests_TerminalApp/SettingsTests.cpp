@@ -70,6 +70,14 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestTerminalArgsForBinding);
 
+        TEST_METHOD(FindMissingProfile);
+        TEST_METHOD(MakeSettingsForProfileThatDoesntExist);
+        TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
+
+        TEST_METHOD(TestLayerProfileOnColorScheme);
+
+        TEST_METHOD(ValidateKeybindingsWarnings);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1466,7 +1474,7 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{};
         settings._ParseJsonString(settingsJson, false);
         settings.LayerJson(settings._userSettings);
-        VERIFY_IS_FALSE(settings._profiles.empty(), 0);
+        VERIFY_IS_FALSE(settings._profiles.empty());
         VERIFY_ARE_EQUAL(expectedPath, settings._profiles[0].GetExpandedIconPath());
     }
     void SettingsTests::TestProfileBackgroundImageWithEnvVar()
@@ -1487,7 +1495,7 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{};
         settings._ParseJsonString(settingsJson, false);
         settings.LayerJson(settings._userSettings);
-        VERIFY_IS_FALSE(settings._profiles.empty(), 0);
+        VERIFY_IS_FALSE(settings._profiles.empty());
 
         GlobalAppSettings globalSettings{};
         auto terminalSettings = settings._profiles[0].CreateTerminalSettings(globalSettings.GetColorSchemes());
@@ -2088,5 +2096,257 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
+    }
+
+    void SettingsTests::FindMissingProfile()
+    {
+        // Test that CascadiaSettings::FindProfile returns null for a GUID that
+        // doesn't exist
+        const std::string settingsString{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+        const auto settingsJsonObj = VerifyParseSucceeded(settingsString);
+        auto settings = CascadiaSettings::FromJson(settingsJsonObj);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        const Profile* const profile1 = settings->FindProfile(guid1);
+        const Profile* const profile2 = settings->FindProfile(guid2);
+        const Profile* const profile3 = settings->FindProfile(guid3);
+
+        VERIFY_IS_NOT_NULL(profile1);
+        VERIFY_IS_NOT_NULL(profile2);
+        VERIFY_IS_NULL(profile3);
+
+        VERIFY_ARE_EQUAL(L"profile0", profile1->GetName());
+        VERIFY_ARE_EQUAL(L"profile1", profile2->GetName());
+    }
+
+    void SettingsTests::MakeSettingsForProfileThatDoesntExist()
+    {
+        // Test that MakeSettings throws when the GUID doesn't exist
+        const std::string settingsString{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+        const auto settingsJsonObj = VerifyParseSucceeded(settingsString);
+        auto settings = CascadiaSettings::FromJson(settingsJsonObj);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        try
+        {
+            auto terminalSettings = settings->BuildSettings(guid1);
+            VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
+            VERIFY_ARE_EQUAL(1, terminalSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+
+        try
+        {
+            auto terminalSettings = settings->BuildSettings(guid2);
+            VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
+            VERIFY_ARE_EQUAL(2, terminalSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+
+        VERIFY_THROWS(auto terminalSettings = settings->BuildSettings(guid3), wil::ResultException, L"This call to BuildSettings should fail");
+
+        try
+        {
+            const auto [guid, termSettings] = settings->BuildSettings(nullptr);
+            VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+    }
+
+    void SettingsTests::MakeSettingsForDefaultProfileThatDoesntExist()
+    {
+        // Test that MakeSettings _doesnt_ throw when we load settings with a
+        // defaultProfile that's not in the list, we validate the settings, and
+        // then call MakeSettings(nullopt). The validation should ensure that
+        // the default profile is something reasonable
+        const std::string settingsString{ R"(
+        {
+            "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+        const auto settingsJsonObj = VerifyParseSucceeded(settingsString);
+        auto settings = CascadiaSettings::FromJson(settingsJsonObj);
+        settings->_ValidateSettings();
+
+        VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(2u, settings->_profiles.size());
+        VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+        try
+        {
+            const auto [guid, termSettings] = settings->BuildSettings(nullptr);
+            VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
+            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+        }
+        catch (...)
+        {
+            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
+        }
+    }
+
+    void SettingsTests::TestLayerProfileOnColorScheme()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Ensure that setting (or not) a property in the profile that should override a property of the color scheme works correctly."));
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeWithCursorColor"
+                },
+                {
+                    "name" : "profile1",
+                    "colorScheme": "schemeWithoutCursorColor"
+                },
+                {
+                    "name" : "profile2",
+                    "colorScheme": "schemeWithCursorColor",
+                    "cursorColor": "#234567"
+                },
+                {
+                    "name" : "profile3",
+                    "colorScheme": "schemeWithoutCursorColor",
+                    "cursorColor": "#345678"
+                },
+                {
+                    "name" : "profile4",
+                    "cursorColor": "#456789"
+                },
+                {
+                    "name" : "profile5"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeWithCursorColor",
+                    "cursorColor": "#123456"
+                },
+                {
+                    "name": "schemeWithoutCursorColor"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings;
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(6u, settings._profiles.size());
+        VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
+
+        auto terminalSettings0 = settings._profiles[0].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings1 = settings._profiles[1].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings2 = settings._profiles[2].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings3 = settings._profiles[3].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings4 = settings._profiles[4].CreateTerminalSettings(settings._globals._colorSchemes);
+        auto terminalSettings5 = settings._profiles[5].CreateTerminalSettings(settings._globals._colorSchemes);
+
+        VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0.CursorColor()); // from color scheme
+        VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1.CursorColor()); // default
+        VERIFY_ARE_EQUAL(ARGB(0, 0x23, 0x45, 0x67), terminalSettings2.CursorColor()); // from profile (trumps color scheme)
+        VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3.CursorColor()); // from profile (not set in color scheme)
+        VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4.CursorColor()); // from profile (no color scheme)
+        VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5.CursorColor()); // default
+    }
+
+    void SettingsTests::ValidateKeybindingsWarnings()
+    {
+        const std::string badSettings{ R"(
+        {
+            "globals": {
+                "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+            },
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "keybindings": [
+                { "command": { "action": "splitPane", "split":"auto" }, "keys": [ "ctrl+alt+t", "ctrl+a" ] },
+                { "command": { "action": "moveFocus" }, "keys": [ "ctrl+a" ] },
+                { "command": { "action": "resizePane" }, "keys": [ "ctrl+b" ] }
+            ]
+        })" };
+
+        const auto settingsObject = VerifyParseSucceeded(badSettings);
+        auto settings = CascadiaSettings::FromJson(settingsObject);
+
+        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+
+        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_globals._keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+
+        settings->_ValidateKeybindings();
+
+        VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::TooManyKeysForChord, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
     }
 }

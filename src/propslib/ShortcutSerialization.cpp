@@ -290,7 +290,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
     *ppsl = nullptr;
     *ppPf = nullptr;
     IShellLink* psl;
-    HRESULT hr = SHCoCreateInstance(NULL, &CLSID_ShellLink, NULL, IID_PPV_ARGS(&psl));
+    HRESULT hr = SHCoCreateInstance(nullptr, &CLSID_ShellLink, nullptr, IID_PPV_ARGS(&psl));
     if (SUCCEEDED(hr))
     {
         IPersistFile* pPf;
@@ -517,7 +517,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
         if (SUCCEEDED(hr))
         {
             // Only persist changes if we've successfully made them.
-            hr = ppf->Save(NULL, TRUE);
+            hr = ppf->Save(nullptr, TRUE);
         }
 
         ppf->Release();

@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>UNIT_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;UNIT_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\packages\Taef.Redist.Wlk.10.51.200127004\build\Taef.Redist.Wlk.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Taef.Redist.Wlk.10.51.200127004\build\Taef.Redist.Wlk.targets')" />

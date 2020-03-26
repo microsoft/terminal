@@ -142,6 +142,11 @@ bool Terminal::CursorLineFeed(const bool withReturn) noexcept
 try
 {
     auto cursorPos = _buffer->GetCursor().GetPosition();
+
+    // since we explicitly just moved down a row, clear the wrap status on the
+    // row we just came from
+    _buffer->GetRowByOffset(cursorPos.Y).GetCharRow().SetWrapForced(false);
+
     cursorPos.Y++;
     if (withReturn)
     {
@@ -391,7 +396,7 @@ try
         return false;
     }
 
-    // Move the viewport, adjust the scoll bar if needed, and restore the old cursor position
+    // Move the viewport, adjust the scroll bar if needed, and restore the old cursor position
     _mutableViewport = Viewport::FromExclusive(newWin);
     Terminal::_NotifyScrollEvent();
     SetCursorPosition(relativeCursor.X, relativeCursor.Y);
@@ -514,3 +519,77 @@ try
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
+
+bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
+{
+    _terminalInput->ChangeCursorKeysMode(applicationMode);
+    return true;
+}
+
+bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
+{
+    _terminalInput->ChangeKeypadMode(applicationMode);
+    return true;
+}
+
+bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
+{
+    _terminalInput->EnableDefaultTracking(enabled);
+    return true;
+}
+
+bool Terminal::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
+{
+    _terminalInput->SetUtf8ExtendedMode(enabled);
+    return true;
+}
+
+bool Terminal::EnableSGRExtendedMouseMode(const bool enabled) noexcept
+{
+    _terminalInput->SetSGRExtendedMode(enabled);
+    return true;
+}
+
+bool Terminal::EnableButtonEventMouseMode(const bool enabled) noexcept
+{
+    _terminalInput->EnableButtonEventTracking(enabled);
+    return true;
+}
+
+bool Terminal::EnableAnyEventMouseMode(const bool enabled) noexcept
+{
+    _terminalInput->EnableAnyEventTracking(enabled);
+    return true;
+}
+
+bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
+{
+    _terminalInput->EnableAlternateScroll(enabled);
+    return true;
+}
+
+bool Terminal::IsVtInputEnabled() const noexcept
+{
+    // We should never be getting this call in Terminal.
+    FAIL_FAST();
+}
+
+bool Terminal::SetCursorVisibility(const bool visible) noexcept
+{
+    _buffer->GetCursor().SetIsVisible(visible);
+    return true;
+}
+
+bool Terminal::EnableCursorBlinking(const bool enable) noexcept
+{
+    _buffer->GetCursor().SetBlinkingAllowed(enable);
+
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    _buffer->GetCursor().SetIsOn(true);
+    return true;
+}

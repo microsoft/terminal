@@ -95,7 +95,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     if (SUCCEEDED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&pMessage->Complete)))
     {
-        // We've successfully transfered ownership of the handle to the driver. We can release and not free it.
+        // We've successfully transferred ownership of the handle to the driver. We can release and not free it.
         handle.release();
     }
 

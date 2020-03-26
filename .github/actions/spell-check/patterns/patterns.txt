@@ -1,0 +1,7 @@
+https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*
+(?:0[Xx]|U\+|#)[a-f0-9A-FGgRr]{2,}[Uu]?[Ll]?\b
+\{[0-9A-FA-F]{8}-(?:[0-9A-FA-F]{4}-){3}[0-9A-FA-F]{12}\}
+\d+x\d+Logo
+Scro\&ll
+# selectionInput.cpp
+ :\\windows\\syste\b

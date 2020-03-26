@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "WexTestClass.h"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -27,6 +26,38 @@ class SomeTests
         };
 
         VERIFY_THROWS(f(), std::invalid_argument);
+    }
+
+    TEST_METHOD(Equality)
+    {
+        til::some<int, 2> a{ 1, 2 };
+        til::some<int, 2> b{ 1, 2 };
+        VERIFY_IS_TRUE(a == b);
+
+        til::some<int, 2> c{ 3, 2 };
+        VERIFY_IS_FALSE(a == c);
+
+        til::some<int, 2> d{ 2, 3 };
+        VERIFY_IS_FALSE(a == d);
+
+        til::some<int, 2> e{ 1 };
+        VERIFY_IS_FALSE(a == e);
+    }
+
+    TEST_METHOD(Inequality)
+    {
+        til::some<int, 2> a{ 1, 2 };
+        til::some<int, 2> b{ 1, 2 };
+        VERIFY_IS_FALSE(a != b);
+
+        til::some<int, 2> c{ 3, 2 };
+        VERIFY_IS_TRUE(a != c);
+
+        til::some<int, 2> d{ 2, 3 };
+        VERIFY_IS_TRUE(a != d);
+
+        til::some<int, 2> e{ 1 };
+        VERIFY_IS_TRUE(a != e);
     }
 
     TEST_METHOD(Fill)
@@ -133,6 +164,40 @@ class SomeTests
         VERIFY_IS_FALSE(s.empty());
         s.pop_back();
         VERIFY_IS_TRUE(s.empty());
+    }
+
+    TEST_METHOD(Clear)
+    {
+        til::some<int, 2> s;
+        VERIFY_IS_TRUE(s.empty());
+        s.push_back(12);
+        VERIFY_IS_FALSE(s.empty());
+        VERIFY_ARE_EQUAL(1u, s.size());
+        s.clear();
+        VERIFY_IS_TRUE(s.empty());
+        VERIFY_ARE_EQUAL(0u, s.size());
+    }
+
+    TEST_METHOD(ClearFreesMembers)
+    {
+        til::some<std::shared_ptr<int>, 2> s;
+
+        auto a = std::make_shared<int>(4);
+        auto weakA = std::weak_ptr<int>(a);
+
+        auto b = std::make_shared<int>(6);
+        auto weakB = std::weak_ptr<int>(b);
+
+        s.push_back(std::move(a));
+        s.push_back(std::move(b));
+
+        VERIFY_IS_FALSE(weakA.expired());
+        VERIFY_IS_FALSE(weakB.expired());
+
+        s.clear();
+
+        VERIFY_IS_TRUE(weakA.expired());
+        VERIFY_IS_TRUE(weakB.expired());
     }
 
     TEST_METHOD(Data)

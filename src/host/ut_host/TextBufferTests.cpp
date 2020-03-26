@@ -148,6 +148,10 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+    TEST_METHOD(GetGlyphBoundaries);
+
+    TEST_METHOD(GetTextRects);
+    TEST_METHOD(GetText);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2020,11 +2024,24 @@ void TextBufferTests::TestBurrito()
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)
 {
+    const auto bufferSize = buffer.GetSize();
+
     for (size_t row = 0; row < text.size(); ++row)
     {
         auto line = text[row];
-        OutputCellIterator iter{ line };
-        buffer.WriteLine(iter, { 0, gsl::narrow<SHORT>(row) });
+        if (!line.empty())
+        {
+            // TODO GH#780: writing up to (but not past) the end of the line
+            //              should NOT set the wrap flag
+            std::optional<bool> wrap = true;
+            if (line.size() == static_cast<size_t>(bufferSize.RightExclusive()))
+            {
+                wrap = std::nullopt;
+            }
+
+            OutputCellIterator iter{ line };
+            buffer.Write(iter, { 0, gsl::narrow<SHORT>(row) }, wrap);
+        }
     }
 }
 
@@ -2134,5 +2151,320 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::GetGlyphBoundaries()
+{
+    struct ExpectedResult
+    {
+        std::wstring name;
+        til::point start;
+        til::point wideGlyphEnd;
+        til::point normalEnd;
+    };
+
+    // clang-format off
+    const std::vector<ExpectedResult> expected = {
+        { L"Buffer Start", { 0, 0 },   { 2,  0 },   { 1,  0 } },
+        { L"Line Start",   { 0, 1 },   { 2,  1 },   { 1,  1 } },
+        { L"General Case", { 1, 1 },   { 3,  1 },   { 2,  1 } },
+        { L"Line End",     { 9, 1 },   { 0,  2 },   { 0,  2 } },
+        { L"Buffer End",   { 9, 9 },   { 0, 10 },   { 0, 10 } },
+    };
+    // clang-format on
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:wideGlyph", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool wideGlyph;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"wideGlyph", wideGlyph), L"Get wide glyph variant");
+
+    COORD bufferSize{ 10, 10 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // This is the burrito emoji: 🌯
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto burrito = L"\xD83C\xDF2F";
+    const wchar_t* const output = wideGlyph ? burrito : L"X";
+
+    const OutputCellIterator iter{ output };
+
+    for (const auto& test : expected)
+    {
+        Log::Comment(test.name.c_str());
+        auto target = test.start;
+        _buffer->Write(iter, target);
+
+        auto start = _buffer->GetGlyphStart(target);
+        auto end = _buffer->GetGlyphEnd(target);
+
+        VERIFY_ARE_EQUAL(test.start, start);
+        VERIFY_ARE_EQUAL(wideGlyph ? test.wideGlyphEnd : test.normalEnd, end);
+    }
+}
+
+void TextBufferTests::GetTextRects()
+{
+    // GetTextRects() is used to...
+    //  - Represent selection rects
+    //  - Represent UiaTextRanges for accessibility
+
+    // This is the burrito emoji: 🌯
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto burrito = std::wstring(L"\xD83C\xDF2F");
+
+    COORD bufferSize{ 20, 50 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::vector<std::wstring> text = { L"0123456789",
+                                             L" " + burrito + L"3456" + burrito,
+                                             L"  " + burrito + L"45" + burrito,
+                                             burrito + L"234567" + burrito,
+                                             L"0123456789" };
+    WriteLinesToBuffer(text, *_buffer);
+    // - - - Text Buffer Contents - - -
+    // |0123456789
+    // | 🌯3456🌯
+    // |  🌯45🌯
+    // |🌯234567🌯
+    // |0123456789
+    // - - - - - - - - - - - - - - - -
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:blockSelection", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool blockSelection;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
+
+    std::vector<SMALL_RECT> expected{};
+    if (blockSelection)
+    {
+        expected.push_back({ 1, 0, 7, 0 });
+        expected.push_back({ 1, 1, 8, 1 }); // expand right
+        expected.push_back({ 1, 2, 7, 2 });
+        expected.push_back({ 0, 3, 7, 3 }); // expand left
+        expected.push_back({ 1, 4, 7, 4 });
+    }
+    else
+    {
+        expected.push_back({ 1, 0, 19, 0 });
+        expected.push_back({ 0, 1, 19, 1 });
+        expected.push_back({ 0, 2, 19, 2 });
+        expected.push_back({ 0, 3, 19, 3 });
+        expected.push_back({ 0, 4, 7, 4 });
+    }
+
+    COORD start{ 1, 0 };
+    COORD end{ 7, 4 };
+    const auto result = _buffer->GetTextRects(start, end, blockSelection);
+    VERIFY_ARE_EQUAL(expected.size(), result.size());
+    for (size_t i = 0; i < expected.size(); ++i)
+    {
+        VERIFY_ARE_EQUAL(expected.at(i), result.at(i));
+    }
+}
+
+void TextBufferTests::GetText()
+{
+    // GetText() is used by...
+    //  - Copying text to the clipboard regularly
+    //  - Copying text to the clipboard, with shift held (collapse to one line)
+    //  - Extracting text from a UiaTextRange
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:wrappedText", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:blockSelection", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:includeCRLF", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:trimTrailingWhitespace", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool wrappedText;
+    bool blockSelection;
+    bool includeCRLF;
+    bool trimTrailingWhitespace;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"wrappedText", wrappedText), L"Get 'wrappedText' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"includeCRLF", includeCRLF), L"Get 'includeCRLF' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"trimTrailingWhitespace", trimTrailingWhitespace), L"Get 'trimTrailingWhitespace' variant");
+
+    if (!wrappedText)
+    {
+        COORD bufferSize{ 10, 20 };
+        UINT cursorSize = 12;
+        TextAttribute attr{ 0x7f };
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+        // Setup: Write lines of text to the buffer
+        const std::vector<std::wstring> bufferText = { L"12345",
+                                                       L"  345",
+                                                       L"123  ",
+                                                       L"  3  " };
+        WriteLinesToBuffer(bufferText, *_buffer);
+
+        // simulate a selection from origin to {4,4}
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection);
+
+        std::wstring result = L"";
+        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+        for (auto& text : textData)
+        {
+            result += text;
+        }
+
+        std::wstring expectedText = L"";
+        if (includeCRLF)
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"Standard Copy to Clipboard");
+                expectedText += L"12345\r\n";
+                expectedText += L"  345\r\n";
+                expectedText += L"123\r\n";
+                expectedText += L"  3\r\n";
+            }
+            else
+            {
+                Log::Comment(L"UI Automation");
+                if (blockSelection)
+                {
+                    expectedText += L"12345\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"  3  \r\n";
+                    expectedText += L"     ";
+                }
+                else
+                {
+                    expectedText += L"12345     \r\n";
+                    expectedText += L"  345     \r\n";
+                    expectedText += L"123       \r\n";
+                    expectedText += L"  3       \r\n";
+                    expectedText += L"     ";
+                }
+            }
+        }
+        else
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"UNDEFINED");
+                expectedText += L"12345";
+                expectedText += L"  345";
+                expectedText += L"123";
+                expectedText += L"  3";
+            }
+            else
+            {
+                Log::Comment(L"Shift+Copy to Clipboard");
+                if (blockSelection)
+                {
+                    expectedText += L"12345";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"  3  ";
+                    expectedText += L"     ";
+                }
+                else
+                {
+                    expectedText += L"12345     ";
+                    expectedText += L"  345     ";
+                    expectedText += L"123       ";
+                    expectedText += L"  3       ";
+                    expectedText += L"     ";
+                }
+            }
+        }
+
+        // Verify expected output and actual output are the same
+        VERIFY_ARE_EQUAL(expectedText, result);
+    }
+    else
+    {
+        // Case 2: Wrapped Text
+        COORD bufferSize{ 5, 20 };
+        UINT cursorSize = 12;
+        TextAttribute attr{ 0x7f };
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+        // Setup: Write lines of text to the buffer
+        const std::vector<std::wstring> bufferText = { L"1234567",
+                                                       L"",
+                                                       L"  345",
+                                                       L"123    ",
+                                                       L"" };
+        WriteLinesToBuffer(bufferText, *_buffer);
+        // buffer should look like this:
+        // ______
+        // |12345| <-- wrapped
+        // |67   |
+        // |  345|
+        // |123  | <-- wrapped
+        // |     |
+        // |_____|
+
+        // simulate a selection from origin to {4,5}
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 });
+
+        std::wstring result = L"";
+        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+        for (auto& text : textData)
+        {
+            result += text;
+        }
+
+        std::wstring expectedText = L"";
+        if (includeCRLF)
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"Standard Copy to Clipboard");
+                expectedText += L"12345";
+                expectedText += L"67\r\n";
+                expectedText += L"  345\r\n";
+                expectedText += L"123  \r\n";
+            }
+            else
+            {
+                Log::Comment(L"UI Automation");
+                expectedText += L"12345";
+                expectedText += L"67   \r\n";
+                expectedText += L"  345\r\n";
+                expectedText += L"123  ";
+                expectedText += L"     \r\n";
+                expectedText += L"     ";
+            }
+        }
+        else
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"UNDEFINED");
+                expectedText += L"12345";
+                expectedText += L"67";
+                expectedText += L"  345";
+                expectedText += L"123  ";
+            }
+            else
+            {
+                Log::Comment(L"Shift+Copy to Clipboard");
+                expectedText += L"12345";
+                expectedText += L"67   ";
+                expectedText += L"  345";
+                expectedText += L"123  ";
+                expectedText += L"     ";
+                expectedText += L"     ";
+            }
+        }
+
+        // Verify expected output and actual output are the same
+        VERIFY_ARE_EQUAL(expectedText, result);
     }
 }

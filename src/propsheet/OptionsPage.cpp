@@ -261,11 +261,11 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
                 PNMLINK pnmLink = (PNMLINK)lParam;
                 if (0 == pnmLink->item.iLink)
                 {
-                    ShellExecute(NULL,
+                    ShellExecute(nullptr,
                                  L"open",
                                  pnmLink->item.szUrl,
-                                 NULL,
-                                 NULL,
+                                 nullptr,
+                                 nullptr,
                                  SW_SHOW);
                 }
 
