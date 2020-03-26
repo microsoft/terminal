@@ -243,7 +243,7 @@ namespace winrt::TerminalApp::implementation
         {
             // fail out
         }
-        return RS_(L"AboutDialogDisplayNameUnpackaged");
+        return RS_(L"AboutDialog_DisplayNameUnpackaged");
     }
 
     winrt::hstring TerminalPage::ApplicationVersion()
@@ -260,7 +260,7 @@ namespace winrt::TerminalApp::implementation
             // fail out
         }
 
-        return RS_(L"AboutDialogVersionUnknown");
+        return RS_(L"AboutDialog_VersionUnknown");
     }
 
     // Method Description:

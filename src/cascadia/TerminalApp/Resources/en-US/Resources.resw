@@ -246,43 +246,31 @@ Temporarily using the Windows Terminal default settings.
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
   </data>
-  <data name="AboutDialogVersion.Text" xml:space="preserve">
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
     <value>Version:</value>
     <comment>This is the heading for a version number label</comment>
   </data>
-  <data name="AboutGettingStartedText.Text" xml:space="preserve">
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
     <value>Getting Started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
-  <data name="AboutGettingStartedLink.NavigateUri" xml:space="preserve">
-    <value>https://aka.ms/terminal-getting-started</value>
-  </data>
-  <data name="AboutDocumentationText.Text" xml:space="preserve">
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
     <value>Documentation</value>
     <comment>A hyperlink name for user documentation</comment>
   </data>
-  <data name="AboutDocumentationLink.NavigateUri" xml:space="preserve">
-    <value>https://aka.ms/terminal-documentation</value>
-  </data>
-  <data name="AboutReleaseNotesText.Text" xml:space="preserve">
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
     <value>Release Notes</value>
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
-  <data name="AboutReleaseNotesLink.NavigateUri" xml:space="preserve">
-    <value>https://aka.ms/terminal-release-notes</value>
-  </data>
-  <data name="AboutPrivacyPolicyText.Text" xml:space="preserve">
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
     <value>Privacy Policy</value>
     <comment>A hyperlink name for the Terminal's privacy policy</comment>
   </data>
-  <data name="AboutPrivacyPolicyLink.NavigateUri" xml:space="preserve">
-    <value>https://aka.ms/terminal-privacy-policy</value>
-  </data>
-  <data name="AboutDialogDisplayNameUnpackaged" xml:space="preserve">
+  <data name="AboutDialog_DisplayNameUnpackaged" xml:space="preserve">
     <value>Windows Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
-  <data name="AboutDialogVersionUnknown" xml:space="preserve">
+  <data name="AboutDialog_VersionUnknown" xml:space="preserve">
     <value>Unknown</value>
     <comment>This is displayed when the version of the application cannot be determined</comment>
   </data>

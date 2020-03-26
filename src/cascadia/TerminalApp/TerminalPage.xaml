@@ -25,34 +25,25 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="AboutDialog"
             x:Uid="AboutDialog"
             DefaultButton="Close">
-            <TextBlock IsTextSelectionEnabled="True">
-                <Run Text="{x:Bind ApplicationDisplayName}" />
-                <LineBreak />
-
-                <Run x:Uid="AboutDialogVersion" />
-                <Run Text="{x:Bind ApplicationVersion}" />
-                <LineBreak />
-
-                <Hyperlink x:Uid="AboutGettingStartedLink">
-                    <Run x:Uid="AboutGettingStartedText" />
-                </Hyperlink>
-                <LineBreak />
-
-                <Hyperlink x:Uid="AboutDocumentationLink">
-                    <Run x:Uid="AboutDocumentationText" />
-                </Hyperlink>
-                <LineBreak />
-
-                <Hyperlink x:Uid="AboutReleaseNotesLink">
-                    <Run x:Uid="AboutReleaseNotesText" />
-                </Hyperlink>
-                <LineBreak />
-
-                <Hyperlink x:Uid="AboutPrivacyPolicyLink">
-                    <Run x:Uid="AboutPrivacyPolicyText" />
-                </Hyperlink>
-                <LineBreak />
-            </TextBlock>
+            <StackPanel Orientation="Vertical">
+                <TextBlock IsTextSelectionEnabled="True">
+                    <Run Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
+                    <Run x:Uid="AboutDialog_VersionLabel" />
+                    <Run Text="{x:Bind ApplicationVersion}" />
+                </TextBlock>
+                <HyperlinkButton
+                    x:Uid="AboutDialog_GettingStartedLink"
+                    NavigateUri="https://aka.ms/terminal-getting-started" />
+                <HyperlinkButton
+                    x:Uid="AboutDialog_DocumentationLink"
+                    NavigateUri="https://aka.ms/terminal-documentation" />
+                <HyperlinkButton
+                    x:Uid="AboutDialog_ReleaseNotesLink"
+                    NavigateUri="https://aka.ms/terminal-release-notes" />
+                <HyperlinkButton
+                    x:Uid="AboutDialog_PrivacyPolicyLink"
+                    NavigateUri="https://aka.ms/terminal-privacy-policy" />
+            </StackPanel>
         </ContentDialog>
 
         <ContentDialog
