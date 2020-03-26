@@ -1189,7 +1189,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                     const int32_t delta,
                                     const bool isLeftButtonPressed)
     {
-
         if (_CanSendVTMouseInput())
         {
             // TODO this used to be
@@ -1206,7 +1205,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ctrlPressed = WI_IsFlagSet(static_cast<uint32_t>(modifiers),
                                               static_cast<uint32_t>(VirtualKeyModifiers::Control));
         const auto shiftPressed = WI_IsFlagSet(static_cast<uint32_t>(modifiers),
-                                              static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+                                               static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
         if (ctrlPressed && shiftPressed)
         {
@@ -1222,7 +1221,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         return false;
     }
-
 
     // Method Description:
     // - This is part of the solution to GH#979

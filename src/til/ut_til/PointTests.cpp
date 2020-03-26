@@ -444,13 +444,12 @@ class PointTests
         // All ptrdiff_ts fit into a float, so there's no exception tests.
     }
 
-
     TEST_METHOD(Scaling)
     {
         Log::Comment(L"0.) Multiplication of two things that should be in bounds.");
         {
             const til::point pt{ 5, 10 };
-            const int scale = 23 ;
+            const int scale = 23;
 
             const til::point expected{ pt.x() * scale, pt.y() * scale };
 
@@ -486,7 +485,7 @@ class PointTests
         Log::Comment(L"3.) Division of two things that should be in bounds.");
         {
             const til::point pt{ 555, 510 };
-            const int scale = 23 ;
+            const int scale = 23;
 
             const til::point expected{ pt.x() / scale, pt.y() / scale };
 

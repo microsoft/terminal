@@ -264,21 +264,6 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
 }
 
-struct MyMsg {
-    UINT message;
-    WPARAM wparam;
-    LPARAM lparam;
-};
-
-BOOL CALLBACK okay(HWND child, LPARAM lp)
-{
-    MyMsg m = *((MyMsg*)lp);
-    PostMessage(child, m.message, m.wparam, m.lparam);
-
-    return true;
-
-}
-
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message)
@@ -359,7 +344,7 @@ BOOL CALLBACK okay(HWND child, LPARAM lp)
         // incorrect results on systems with multiple monitors. Systems with
         // multiple monitors can have negative x- and y- coordinates, and LOWORD
         // and HIWORD treat the coordinates as unsigned quantities.
-        const til::point eventPoint{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+        const til::point eventPoint{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
         // This mouse event is relative to the display origin, not the window. Convert here.
         const til::rectangle windowRect{ GetWindowRect() };
         const auto origin = windowRect.origin();
@@ -374,8 +359,6 @@ BOOL CALLBACK okay(HWND child, LPARAM lp)
         return 0;
     }
     }
-
-
 
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);

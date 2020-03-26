@@ -227,7 +227,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
-
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);

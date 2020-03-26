@@ -17,7 +17,6 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
-
 AppHost::AppHost() noexcept :
     _app{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
@@ -52,7 +51,7 @@ AppHost::AppHost() noexcept :
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
-    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled});
+    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->MakeWindow();
 }
 

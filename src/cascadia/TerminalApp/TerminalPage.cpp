@@ -665,7 +665,7 @@ namespace winrt::TerminalApp::implementation
                                                                     settings.InitialRows(),
                                                                     settings.InitialCols(),
                                                                     winrt::guid());
-            sessionGuid = (GUID)conhostConn.Guid();
+            sessionGuid = conhostConn.Guid();
             connection = conhostConn;
         }
 
