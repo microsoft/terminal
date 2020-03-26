@@ -215,20 +215,37 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // StartPaint)
     _nextCursorIsVisible = true;
 
-    const auto stashedEOLWrap = _delayedEolWrap;
-    const auto stashedWappedRow = _wrappedRow;
-    const auto result = VtEngine::PaintCursor(options);
-    _delayedEolWrap = stashedEOLWrap;
-    _wrappedRow = stashedWappedRow;
-    if (_wrappedRow.has_value())
+    // {
+    //     // Method.2
+    //     const auto stashedEOLWrap = _delayedEolWrap;
+    //     const auto stashedWappedRow = _wrappedRow;
+    //     const auto result = VtEngine::PaintCursor(options);
+    //     _delayedEolWrap = stashedEOLWrap;
+    //     _wrappedRow = stashedWappedRow;
+    //     if (_wrappedRow.has_value())
+    //     {
+    //         _trace.TraceSetWrapped(_wrappedRow.value());
+    //     }
+    //     else
+    //     {
+    //         _trace.TraceClearWrapped();
+    //     }
+    //     return result;
+
+    // }
+
     {
-        _trace.TraceSetWrapped(_wrappedRow.value());
+        // Method.3
+        if (_delayedEolWrap && _wrappedRow.has_value())
+        {
+        }
+        else
+        {
+            return VtEngine::PaintCursor(options);
+        }
+
+        return S_OK;
     }
-    else
-    {
-        _trace.TraceClearWrapped();
-    }
-    return result;
 }
 
 // Routine Description:

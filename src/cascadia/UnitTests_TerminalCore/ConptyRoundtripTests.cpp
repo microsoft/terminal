@@ -1141,7 +1141,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
     const auto wrappedLineLength = TerminalViewWidth + 20;
 
     expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    expectedOutput.push_back("\x1b[32;80H"); // If a future change removes the need for this, it wouldn't be the worst.
+    // expectedOutput.push_back("\x1b[32;80H"); // If a future change removes the need for this, it wouldn't be the worst.
     expectedOutput.push_back(std::string(20, 'A'));
 
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));

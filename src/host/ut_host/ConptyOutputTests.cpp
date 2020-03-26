@@ -347,7 +347,7 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
 
     expectedOutput.push_back("\x1b[65C");
     expectedOutput.push_back("ABCDEFGHIJKLMNO");
-    expectedOutput.push_back("\x1b[1;80H"); // we move the cursor to the end of the line after paint
+    // expectedOutput.push_back("\x1b[1;80H"); // we move the cursor to the end of the line after paint
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
