@@ -527,7 +527,7 @@ void Telemetry::WriteFinalTraceLog()
             {
                 if (_rguiTimesApiUsedAnsi[n])
                 {
-                    // Ansi specific API's are used less, so check if we have anything to send back.
+                    // Ansi specific APIs are used less, so check if we have anything to send back.
                     // Also breaking it up into a separate TraceLoggingWriteTagged fixes a compilation warning that
                     // the heap is too small.
                     // clang-format off

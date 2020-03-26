@@ -1472,7 +1472,7 @@ namespace winrt::TerminalApp::implementation
     fire_and_forget TerminalPage::_LaunchSettings(const bool openDefaults)
     {
         // This will switch the execution of the function to a background (not
-        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        // UI) thread. This is IMPORTANT, because the Windows.Storage APIs
         // (used for retrieving the path to the file) will crash on the UI
         // thread, because the main thread is a STA.
         co_await winrt::resume_background();

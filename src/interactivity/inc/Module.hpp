@@ -7,7 +7,7 @@ Module Name:
 
 Abstract:
 - Lists all the interfaces for which there exist multiple implementations that
-  can be picked amongst depending on API's available on the host OS.
+  can be picked amongst depending on APIs available on the host OS.
 
 Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017

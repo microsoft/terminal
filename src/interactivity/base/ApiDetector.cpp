@@ -88,12 +88,12 @@ using namespace Microsoft::Console::Interactivity;
     //       downlevel (i.e. < Windows 10), we do not run the risk of failing
     //       to accurately detect system functionality there.
     //
-    // N.B.: We cannot use IsWindowsVersionOrGreater or associated helper API's
+    // N.B.: We cannot use IsWindowsVersionOrGreater or associated helper APIs
     //       because those are subject to manifesting and may tell us we are
     //       running on Windows 8 even if we are running on Windows 10.
     //
     // TODO: MSFT 10916452 Determine what manifest magic is required to make
-    //       versioning API's behave sanely.
+    //       versioning APIs behave sanely.
 
     status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER, phModule);
     if (!NT_SUCCESS(status) && GetLastError() == ERROR_INVALID_PARAMETER)

@@ -296,7 +296,7 @@ VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 // - `hOutput` is used for reading the output of the pty, encoded as UTF-8 and VT sequences.
 // Once the call completes, `phPty` will receive a token value to identify this
 //      conpty object. This value should be used in conjunction with the other
-//      Pseudoconsole API's.
+//      Pseudoconsole APIs.
 // `dwFlags` is used to specify optional behavior to the created pseudoconsole.
 // The flags can be combinations of the following values:
 //  INHERIT_CURSOR: This will cause the created conpty to attempt to inherit the

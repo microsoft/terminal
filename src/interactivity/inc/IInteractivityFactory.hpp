@@ -8,7 +8,7 @@ Module Name:
 Abstract:
 - Defines methods for a factory class that picks the implementation of
   interfaces depending on whether the console is running on OneCore or a larger
-  edition of Windows with all the requisite API's to run the full console.
+  edition of Windows with all the requisite APIs to run the full console.
 
 Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017

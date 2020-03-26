@@ -7,7 +7,7 @@ Module Name:
 
 Abstract:
 - Locates and holds instances of classes for which multiple implementations
-  exist depending on API's available on the host OS.
+  exist depending on APIs available on the host OS.
 
 Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017
