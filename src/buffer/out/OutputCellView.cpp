@@ -102,7 +102,7 @@ bool OutputCellView::operator==(const OutputCellView& it) const noexcept
 // Arguments:
 // - it - Other view to compare tot his one.
 // Return Value:
-// - True if any contents or references are inequal. False if they're all equal.
+// - True if any contents or references are unequal. False if they're all equal.
 bool OutputCellView::operator!=(const OutputCellView& it) const noexcept
 {
     return !(*this == it);

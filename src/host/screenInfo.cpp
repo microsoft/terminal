@@ -1870,7 +1870,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     if (NT_SUCCESS(Status))
     {
         // if this is already an alternate buffer, we want to make the new
-        // buffer the alt on our main buffer, not on ourself, because there
+        // buffer the alt on our main buffer, not on ourselves, because there
         // can only ever be one main and one alternate.
         SCREEN_INFORMATION* const psiOldAltBuffer = siMain._psiAlternateBuffer;
 

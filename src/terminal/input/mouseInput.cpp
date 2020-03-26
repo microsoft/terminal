@@ -57,7 +57,7 @@ static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 // Parameters:
 // - buttonCode - the message to decode.
 // Return value:
-// - true iff buttonCode is a hover enent to translate
+// - true iff buttonCode is a hover event to translate
 static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEMOVE;

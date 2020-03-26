@@ -22,7 +22,7 @@ void TextColor::SetColor(const COLORREF rgbColor) noexcept
 // Method Description:
 // - Sets this TextColor to be a legacy-style index into the color table.
 // Arguments:
-// - index: the index of the colortable we should use for this TextColor.
+// - index: the index of the color table we should use for this TextColor.
 // Return Value:
 // - <none>
 void TextColor::SetIndex(const BYTE index) noexcept

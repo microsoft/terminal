@@ -381,7 +381,7 @@ namespace winrt::TerminalApp::implementation
         // This is called when the terminal changes its font size or sets it for the first
         // time (because when we just create terminal via its ctor it has invalid font size).
         // On the latter event, we tell the root pane to resize itself so that its descendants
-        // (including ourself) can properly snap to character grids. In future, we may also
+        // (including ourselves) can properly snap to character grids. In future, we may also
         // want to do that on regular font changes.
         control.FontSizeChanged([this](const int /* fontWidth */,
                                        const int /* fontHeight */,

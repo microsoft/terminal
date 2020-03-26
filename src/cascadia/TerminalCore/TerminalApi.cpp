@@ -417,7 +417,7 @@ try
 CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
-// - Updates the value in the colortable at index tableIndex to the new color
+// - Updates the value in the color table at index tableIndex to the new color
 //   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
 // - tableIndex: the index of the color table to update.

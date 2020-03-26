@@ -113,10 +113,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // Make sure there's a $schema at the top of the file.
     needToWriteFile = resultPtr->_PrependSchemaDirective() || needToWriteFile;
 
-    // TODO:GH#2721 If powershell core is installed, we need to set that to the
+    // TODO:GH#2721 If PowerShell Core is installed, we need to set that to the
     // default profile, but only when the settings file was newly created. We'll
     // re-write the segment of the user settings for "default profile" to have
-    // the powershell core GUID instead.
+    // the PowerShell core GUID instead.
 
     // If we created the file, or found new dynamic profiles, write the user
     // settings string back to the file.

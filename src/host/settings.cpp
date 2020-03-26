@@ -778,7 +778,7 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
 // Parameters:
 // - attributes - The TextAttributes to generate a legacy attribute for.
 // Return value:
-// - A WORD representing the entry in the color table that most closely represents the given fullcolor attributes.
+// - A WORD representing the entry in the color table that most closely represents the given full color attributes.
 WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
 {
     const WORD wLegacyOriginal = attributes.GetLegacyAttributes();
@@ -916,7 +916,7 @@ bool Settings::GetUseDx() const noexcept
 // - Return the default foreground color of the console. If the settings are
 //      configured to have a default foreground color (separate from the color
 //      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default legacy attributes.
+//      from the color table corresponding to our default legacy attributes.
 // Arguments:
 // - <none>
 // Return Value:
@@ -931,7 +931,7 @@ COLORREF Settings::CalculateDefaultForeground() const noexcept
 // - Return the default background color of the console. If the settings are
 //      configured to have a default background color (separate from the color
 //      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default legacy attributes.
+//      from the color table corresponding to our default legacy attributes.
 // Arguments:
 // - <none>
 // Return Value:

@@ -125,7 +125,7 @@ try
 CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
-// - Sets a single entry of the colortable to a new value
+// - Sets a single entry of the color table to a new value
 // Arguments:
 // - tableIndex: The VT color table index
 // - color: The new RGB color value to use.

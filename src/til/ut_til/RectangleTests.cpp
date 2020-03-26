@@ -998,7 +998,7 @@ class RectangleTests
         const til::rectangle spillsOut{ 0, 0, 50, 50 };
         const til::rectangle sticksOut{ 14, 12, 30, 13 };
 
-        VERIFY_IS_TRUE(rc.contains(rc), L"We contain ourself.");
+        VERIFY_IS_TRUE(rc.contains(rc), L"We contain ourselves.");
         VERIFY_IS_TRUE(rc.contains(fitsInside), L"We fully contain a smaller rectangle.");
         VERIFY_IS_FALSE(rc.contains(spillsOut), L"We do not fully contain rectangle larger than us.");
         VERIFY_IS_FALSE(rc.contains(sticksOut), L"We do not contain a rectangle that is smaller, but sticks out our edge.");

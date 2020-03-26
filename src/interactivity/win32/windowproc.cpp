@@ -828,7 +828,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     // ---
     // We've tried in the past to not call BeginPaint/EndPaint
     // and under certain circumstances (windows with SW_HIDE, SKUs without DWM, etc.)
-    // the system either sends WM_PAINT messages ad nauseum or fails to redraw everything correctly.
+    // the system either sends WM_PAINT messages ad nauseam or fails to redraw everything correctly.
     PAINTSTRUCT ps;
     HDC const hdc = BeginPaint(hwnd, &ps);
     RETURN_HR_IF_NULL(E_FAIL, hdc);
