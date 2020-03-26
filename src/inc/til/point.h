@@ -238,7 +238,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
 #ifdef WINRT_Windows_Foundation_H
-        operator winrt::Windows::Foundation::Point() const noexcept
+        operator winrt::Windows::Foundation::Point() const
         {
             winrt::Windows::Foundation::Point ret;
             THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
