@@ -1777,7 +1777,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    
     // Method Description:
     // - Tells TSFInputControl to redraw the Canvas/TextBlock so it'll update
     //   to be where the current cursor position is.
