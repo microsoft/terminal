@@ -565,17 +565,20 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
-                                     WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-        if (bothAltsPressed)
+        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        if (_settings->GlobalSettings().DebugFeaturesEnabled())
         {
-            std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+            const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+            const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+            if (bothAltsPressed)
+            {
+                std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+            }
         }
 
         TermControl term{ settings, connection };
@@ -627,7 +630,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        if (debugConnection)
+        if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             TermControl newControl{ settings, debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
