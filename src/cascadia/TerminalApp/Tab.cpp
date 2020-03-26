@@ -277,6 +277,12 @@ namespace winrt::TerminalApp::implementation
         // gains focus, we'll mark it as the new active pane.
         _AttachEventHandlersToPane(first);
         _AttachEventHandlersToPane(second);
+
+        // Immediately update our tracker of the focused pane now. If we're
+        // splitting panes during startup (from a commandline), then it's
+        // possible that the focus events won't propagate immediately. Updating
+        // the focus here will give the same effect though.
+        _UpdateActivePane(second);
     }
 
     // Method Description:
@@ -388,6 +394,28 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Mark the given pane as the active pane in this tab. All other panes
+    //   will be marked as inactive. We'll also update our own UI state to
+    //   reflect this newly active pane.
+    // Arguments:
+    // - pane: a Pane to mark as active.
+    // Return Value:
+    // - <none>
+    void Tab::_UpdateActivePane(std::shared_ptr<Pane> pane)
+    {
+        // Clear the active state of the entire tree, and mark only the pane as active.
+        _rootPane->ClearActive();
+        _activePane = pane;
+        _activePane->SetActive();
+
+        // Update our own title text to match the newly-active pane.
+        SetTabText(GetActiveTitle());
+
+        // Raise our own ActivePaneChanged event.
+        _ActivePaneChangedHandlers();
+    }
+
+    // Method Description:
     // - Add an event handler to this pane's GotFocus event. When that pane gains
     //   focus, we'll mark it as the new active pane. We'll also query the title of
     //   that pane when it's focused to set our own text, and finally, we'll trigger
@@ -406,18 +434,36 @@ namespace winrt::TerminalApp::implementation
 
             if (tab && sender != tab->_activePane)
             {
-                // Clear the active state of the entire tree, and mark only the sender as active.
-                tab->_rootPane->ClearActive();
-                tab->_activePane = sender;
-                tab->_activePane->SetActive();
-
-                // Update our own title text to match the newly-active pane.
-                tab->SetTabText(tab->GetActiveTitle());
-
-                // Raise our own ActivePaneChanged event.
-                tab->_ActivePaneChangedHandlers();
+                tab->_UpdateActivePane(sender);
             }
         });
+    }
+
+    // Method Description:
+    // - Get the total number of leaf panes in this tab. This will be the number
+    //   of actual controls hosted by this tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The total number of leaf panes hosted by this tab.
+    int Tab::_GetLeafPaneCount() const noexcept
+    {
+        return _rootPane->GetLeafPaneCount();
+    }
+
+    // Method Description:
+    // - This is a helper to determine which direction an "Automatic" split should
+    //   happen in for the active pane of this tab, but without using the ActualWidth() and
+    //   ActualHeight() methods.
+    // - See Pane::PreCalculateAutoSplit
+    // Arguments:
+    // - availableSpace: The theoretical space that's available for this Tab's content
+    // Return Value:
+    // - The SplitState that we should use for an `Automatic` split given
+    //   `availableSpace`
+    SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    {
+        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

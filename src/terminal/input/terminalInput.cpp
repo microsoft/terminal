@@ -357,7 +357,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
             // modifiers, or '/' with some modifiers.
             //
             // These translations are not in s_simpleModifiedKeyMapping, because
-            // the aformentioned fact that they aren't the same VKEY on all
+            // the aforementioned fact that they aren't the same VKEY on all
             // keyboards.
             //
             // See GH#3079 for details.

@@ -45,9 +45,7 @@ Terminal::Terminal() :
     _scrollOffset{ 0 },
     _snapOnInput{ true },
     _blockSelection{ false },
-    _selection{ std::nullopt },
-    _allowSingleCharSelection{ true },
-    _copyOnSelect{ false }
+    _selection{ std::nullopt }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -145,8 +143,6 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _wordDelimiters = settings.WordDelimiters();
 
-    _copyOnSelect = settings.CopyOnSelect();
-
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
 
     _startingTitle = settings.StartingTitle();
@@ -211,7 +207,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
         //   requires a bit of trickiness to remain consistent with conpty's
         //   buffer (as seen below).
         // * the new value of visibleViewportTop will be used to calculate the
-        //   new scrollOffsett in the new buffer, so that the visible lines on
+        //   new scrollOffset in the new buffer, so that the visible lines on
         //   the screen remain roughly the same.
         TextBuffer::PositionInformation oldRows{ 0 };
         oldRows.mutableViewportTop = oldViewportTop;

@@ -396,7 +396,7 @@ try
         return false;
     }
 
-    // Move the viewport, adjust the scoll bar if needed, and restore the old cursor position
+    // Move the viewport, adjust the scroll bar if needed, and restore the old cursor position
     _mutableViewport = Viewport::FromExclusive(newWin);
     Terminal::_NotifyScrollEvent();
     SetCursorPosition(relativeCursor.X, relativeCursor.Y);

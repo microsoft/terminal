@@ -83,41 +83,17 @@ const COORD Terminal::GetSelectionEnd() const noexcept
 }
 
 // Method Description:
-// - Checks if selection is on a single cell
-// Return Value:
-// - bool representing if selection is only a single cell. Used for copyOnSelect
-const bool Terminal::_IsSingleCellSelection() const noexcept
-{
-    return (_selection->start == _selection->end);
-}
-
-// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
-    // A single cell selection is not considered an active selection,
-    // if it's not allowed
-    if (!_allowSingleCharSelection && _IsSingleCellSelection())
-    {
-        return false;
-    }
     return _selection.has_value();
 }
 
 const bool Terminal::IsBlockSelection() const noexcept
 {
     return _blockSelection;
-}
-
-// Method Description:
-// - Checks if the CopyOnSelect setting is active
-// Return Value:
-// - true if feature is active, false otherwise.
-const bool Terminal::IsCopyOnSelectActive() const noexcept
-{
-    return _copyOnSelect;
 }
 
 // Method Description:
@@ -148,8 +124,6 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
-    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
-
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
     SetSelectionEnd(viewportPos);
 
@@ -172,13 +146,6 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 
     const auto anchors = _PivotSelection(textBufferPos);
     std::tie(_selection->start, _selection->end) = _ExpandSelectionAnchors(anchors);
-
-    // moving the endpoint of what used to be a single cell selection
-    // allows the user to drag back and select just one cell
-    if (_copyOnSelect && !_IsSingleCellSelection())
-    {
-        _allowSingleCharSelection = true;
-    }
 }
 
 // Method Description:
@@ -248,7 +215,6 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
 #pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
-    _allowSingleCharSelection = false;
     _selection = std::nullopt;
 }
 
