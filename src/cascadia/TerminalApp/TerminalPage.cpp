@@ -249,7 +249,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto version{ package.Id().Version()} ;
+            const auto version{ package.Id().Version() };
             winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
             return formatted;
         }
