@@ -1197,9 +1197,9 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
         {
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
-            // expectedOutput.push_back("\r\n");
-            expectedOutput.push_back("\n");
-            expectedOutput.push_back("\r");
+            expectedOutput.push_back("\r\n");
+            // expectedOutput.push_back("\n");
+            // expectedOutput.push_back("\r");
             expectedOutput.push_back("");
         }
 
@@ -1212,12 +1212,12 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
 
     expectedOutput.push_back("\x1b[15;1H");
     expectedOutput.push_back("Y");
+    expectedOutput.push_back("\x1b[32;1H");
     expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    // expectedOutput.push_back("\x1b[32;80H"); // If a future change removes the need for this, it wouldn't be the worst.
+    expectedOutput.push_back("\x1b[?25h");
     expectedOutput.push_back(std::string(20, 'A'));
 
-    _checkConptyOutput = false;
-
+    // _checkConptyOutput = false;
     _logConpty = true;
 
     hostSm.ProcessString(L"\x1b"

@@ -379,27 +379,27 @@ try
 
     ////////////////////////////////////////////////////////////////////////////
     // Experiment 1
-    // {
-    //     // shift our internal tracker of the last text position according to how
-    //     // much we've scrolled. If we manually scroll the buffer right now, by
-    //     // moving the cursor to the bottom row of the viewport and newlining,
-    //     // we'll cause any wrapped lines to get broken.
-    //     //
-    //     // We'll also shift our other coordinates we're tracking -
-    //     //
-    //     // See GH#5113
-    //     _lastText.Y += dy;
-    //     _trace.TraceLastText(_lastText);
-    //     if (_wrappedRow.has_value())
-    //     {
-    //         _wrappedRow.value() += dy;
-    //         _trace.TraceSetWrapped(_wrappedRow.value());
-    //     }
-    //     _newBottomLine = true;
+    {
+        // shift our internal tracker of the last text position according to how
+        // much we've scrolled. If we manually scroll the buffer right now, by
+        // moving the cursor to the bottom row of the viewport and newlining,
+        // we'll cause any wrapped lines to get broken.
+        //
+        // We'll also shift our other coordinates we're tracking -
+        //
+        // See GH#5113
+        _lastText.Y += dy;
+        _trace.TraceLastText(_lastText);
+        if (_wrappedRow.has_value())
+        {
+            _wrappedRow.value() += dy;
+            _trace.TraceSetWrapped(_wrappedRow.value());
+        }
+        _newBottomLine = true;
 
-    //     // TODO: If there's a single frame with changes in the middle of the
-    //     // frame and scrolling, how do we react?
-    // }
+        // TODO: If there's a single frame with changes in the middle of the
+        // frame and scrolling, how do we react?
+    }
     ////////////////////////////////////////////////////////////////////////////
     // ////////////////////////////////////////////////////////////////////////////
     // // Experiment 2
@@ -473,42 +473,42 @@ try
 
     ////////////////////////////////////////////////////////////////////////////
     // Experiment 4
-    {
-        _lastText.Y += dy;
-        _trace.TraceLastText(_lastText);
-        if (_wrappedRow.has_value())
-        {
-            _wrappedRow.value() += dy;
-            _trace.TraceSetWrapped(_wrappedRow.value());
-        }
+    // {
+    //     _lastText.Y += dy;
+    //     _trace.TraceLastText(_lastText);
+    //     if (_wrappedRow.has_value())
+    //     {
+    //         _wrappedRow.value() += dy;
+    //         _trace.TraceSetWrapped(_wrappedRow.value());
+    //     }
 
-        if (dy < 0)
-        {
-            // Instead of deleting the first line (causing everything to move up)
-            // move to the bottom of the buffer, and newline.
-            //      That will cause everything to move up, by moving the viewport down.
-            // This will let remote conhosts scroll up to see history like normal.
-            const short bottom = _lastViewport.ToOrigin().BottomInclusive();
+    //     if (dy < 0)
+    //     {
+    //         // Instead of deleting the first line (causing everything to move up)
+    //         // move to the bottom of the buffer, and newline.
+    //         //      That will cause everything to move up, by moving the viewport down.
+    //         // This will let remote conhosts scroll up to see history like normal.
+    //         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
 
-            if (!(_delayedEolWrap && _wrappedRow.has_value()))
-            {
-                hr = _MoveCursor({ _lastText.X, bottom });
-            }
-            _newBottomLine = true;
-            // We don't need to _MoveCursor the cursor again, because it's still
-            //      at the bottom of the viewport.
-        }
-        else if (dy > 0)
-        {
-            // Move to the top of the buffer, and insert some lines of text, to
-            //      cause the viewport contents to shift down.
-            hr = _MoveCursor({ 0, 0 });
-            if (SUCCEEDED(hr))
-            {
-                hr = _InsertLine(absDy);
-            }
-        }
-    }
+    //         if (!(_delayedEolWrap && _wrappedRow.has_value()))
+    //         {
+    //             hr = _MoveCursor({ _lastText.X, bottom });
+    //         }
+    //         _newBottomLine = true;
+    //         // We don't need to _MoveCursor the cursor again, because it's still
+    //         //      at the bottom of the viewport.
+    //     }
+    //     else if (dy > 0)
+    //     {
+    //         // Move to the top of the buffer, and insert some lines of text, to
+    //         //      cause the viewport contents to shift down.
+    //         hr = _MoveCursor({ 0, 0 });
+    //         if (SUCCEEDED(hr))
+    //         {
+    //             hr = _InsertLine(absDy);
+    //         }
+    //     }
+    // }
     ////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////
