@@ -1197,7 +1197,9 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
         {
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
-            expectedOutput.push_back("\r\n");
+            // expectedOutput.push_back("\r\n");
+            expectedOutput.push_back("\n");
+            expectedOutput.push_back("\r");
             expectedOutput.push_back("");
         }
 
@@ -1229,11 +1231,19 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     auto verifyBuffer = [](const TextBuffer& tb, const til::rectangle viewport) {
         const short wrappedRow = viewport.bottom<short>() - 2;
 
-        for (short i = viewport.top<short>(); i < wrappedRow; i++)
+        const bool isTerminal = viewport.top() != 0;
+
+        const short start = viewport.top<short>();
+        for (short i = start; i < wrappedRow; i++)
         {
             Log::Comment(NoThrowString().Format(
                 L"Checking row %d", i));
-            TestUtils::VerifyExpectedString(tb, i == 13 ? L"Y" : L"X", { 0, i });
+            // TestUtils::VerifyExpectedString(tb, i == (isTerminal ? 14 : 13) ? L"Y" : L"X", { 0, i });
+            TestUtils::VerifyExpectedString(tb, i == start + 13 ? L"Y" : L"X", { 0, i });
+
+            // auto iter = tb.GetCellDataAt({ 0, i });
+            // Log::Comment(NoThrowString().Format(
+            //     L"Found char '%s'", (iter++)->Chars().data()));
         }
 
         VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
@@ -1253,11 +1263,13 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    // TODO: This proves that the scrolling during a frame with other text breaks this scenario.
-    // We're going to try and special-case the scrolling thing to _only_ when
+    // TODO: This proves that the scrolling during a frame with other text
+    // breaks this scenario. We're going to try and special-case the scrolling
+    // thing to _only_ when
     // * the invalid area is the bottom line, and
     // * the line wrapped
-    // So in that case, we'll be sure that the next text will cause us to move the viewport down a line appropriately
+    // So in that case, we'll be sure that the next text will cause us to move
+    // the viewport down a line appropriately
     //
     // I've got a crazy theory that rendering bottom-up _might_ fix this
 
