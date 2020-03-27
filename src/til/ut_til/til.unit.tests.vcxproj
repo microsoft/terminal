@@ -13,6 +13,7 @@
     <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
     <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
