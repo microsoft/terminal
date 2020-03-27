@@ -15,6 +15,7 @@
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
+#include "DebugTapConnection.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -564,7 +565,22 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+
+        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        if (_settings->GlobalSettings().DebugFeaturesEnabled())
+        {
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+            const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+            const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+            if (bothAltsPressed)
+            {
+                std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+            }
+        }
+
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
@@ -613,6 +629,14 @@ namespace winrt::TerminalApp::implementation
                 page->_RemoveOnCloseRoutine(tabViewItem, page);
             }
         });
+
+        if (debugConnection) // this will only be set if global debugging is on and tap is active
+        {
+            TermControl newControl{ settings, debugConnection };
+            _RegisterTerminalEvents(newControl, *newTabImpl);
+            // Split (auto) with the debug tap.
+            newTabImpl->SplitPane(SplitState::Automatic, profileGuid, newControl);
+        }
 
         // This kicks off TabView::SelectionChanged, in response to which
         // we'll attach the terminal's Xaml control to the Xaml root.
