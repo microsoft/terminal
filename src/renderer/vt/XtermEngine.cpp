@@ -375,178 +375,28 @@ try
     const short dy = _scrollDelta.y<SHORT>();
     const short absDy = static_cast<short>(abs(dy));
 
-    HRESULT hr = S_OK;
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Experiment 1
+    // Shift our internal tracker of the last text position according to how
+    // much we've scrolled. If we manually scroll the buffer right now, by
+    // moving the cursor to the bottom row of the viewport and emitting a
+    // newline, we'll cause any wrapped lines to get broken.
+    //
+    // Instead, we'll just update our internal tracker of where the buffer
+    // contents are. On this frame, we'll then still move the cursor correctly
+    // relative to the new frame contents. To do this, we'll shift our
+    // coordinates we're tracking, like the row that we wrapped on and the
+    // position we think we left the cursor.
+    //
+    // See GH#5113
+    _lastText.Y += dy;
+    _trace.TraceLastText(_lastText);
+    if (_wrappedRow.has_value())
     {
-        // shift our internal tracker of the last text position according to how
-        // much we've scrolled. If we manually scroll the buffer right now, by
-        // moving the cursor to the bottom row of the viewport and newlining,
-        // we'll cause any wrapped lines to get broken.
-        //
-        // We'll also shift our other coordinates we're tracking -
-        //
-        // See GH#5113
-        _lastText.Y += dy;
-        _trace.TraceLastText(_lastText);
-        if (_wrappedRow.has_value())
-        {
-            _wrappedRow.value() += dy;
-            _trace.TraceSetWrapped(_wrappedRow.value());
-        }
-        _newBottomLine = true;
-
-        // TODO: If there's a single frame with changes in the middle of the
-        // frame and scrolling, how do we react?
+        _wrappedRow.value() += dy;
+        _trace.TraceSetWrapped(_wrappedRow.value());
     }
-    ////////////////////////////////////////////////////////////////////////////
-    // ////////////////////////////////////////////////////////////////////////////
-    // // Experiment 2
-    // {
-    //     if (dy < 0)
-    //     {
-    //         // Instead of deleting the first line (causing everything to move up)
-    //         // move to the bottom of the buffer, and newline.
-    //         //      That will cause everything to move up, by moving the viewport down.
-    //         // This will let remote conhosts scroll up to see history like normal.
-    //         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-    //         hr = _MoveCursor({ _lastText.X, bottom });
-    //         if (SUCCEEDED(hr))
-    //         {
-    //             std::string seq = std::string(absDy, '\n');
-    //             hr = _Write(seq);
-    //             // Mark that the bottom line is new, so we won't spend time with an
-    //             // ECH on it.
-    //             _newBottomLine = true;
-    //         }
-    //         // We don't need to _MoveCursor the cursor again, because it's still
-    //         //      at the bottom of the viewport.
-    //     }
-    //     else if (dy > 0)
-    //     {
-    //         // Move to the top of the buffer, and insert some lines of text, to
-    //         //      cause the viewport contents to shift down.
-    //         hr = _MoveCursor({ 0, 0 });
-    //         if (SUCCEEDED(hr))
-    //         {
-    //             hr = _InsertLine(absDy);
-    //         }
-    //     }
-    // }
-    // ////////////////////////////////////////////////////////////////////////////
-    // ////////////////////////////////////////////////////////////////////////////
-    // // Experiment 3
-    // {
-    //     _lastText.Y += dy;
-    //     _trace.TraceLastText(_lastText);
-    //     if (_wrappedRow.has_value())
-    //     {
-    //         _wrappedRow.value() += dy;
-    //         _trace.TraceSetWrapped(_wrappedRow.value());
-    //     }
+    _newBottomLine = true;
 
-    //     if (dy < 0)
-    //     {
-    //         // Instead of deleting the first line (causing everything to move up)
-    //         // move to the bottom of the buffer, and newline.
-    //         //      That will cause everything to move up, by moving the viewport down.
-    //         // This will let remote conhosts scroll up to see history like normal.
-    //         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-    //         hr = _MoveCursor({ _lastText.X, bottom });
-    //         _newBottomLine = true;
-    //         // We don't need to _MoveCursor the cursor again, because it's still
-    //         //      at the bottom of the viewport.
-    //     }
-    //     else if (dy > 0)
-    //     {
-    //         // Move to the top of the buffer, and insert some lines of text, to
-    //         //      cause the viewport contents to shift down.
-    //         hr = _MoveCursor({ 0, 0 });
-    //         if (SUCCEEDED(hr))
-    //         {
-    //             hr = _InsertLine(absDy);
-    //         }
-    //     }
-    // }
-    // ////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Experiment 4
-    // {
-    //     _lastText.Y += dy;
-    //     _trace.TraceLastText(_lastText);
-    //     if (_wrappedRow.has_value())
-    //     {
-    //         _wrappedRow.value() += dy;
-    //         _trace.TraceSetWrapped(_wrappedRow.value());
-    //     }
-
-    //     if (dy < 0)
-    //     {
-    //         // Instead of deleting the first line (causing everything to move up)
-    //         // move to the bottom of the buffer, and newline.
-    //         //      That will cause everything to move up, by moving the viewport down.
-    //         // This will let remote conhosts scroll up to see history like normal.
-    //         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-
-    //         if (!(_delayedEolWrap && _wrappedRow.has_value()))
-    //         {
-    //             hr = _MoveCursor({ _lastText.X, bottom });
-    //         }
-    //         _newBottomLine = true;
-    //         // We don't need to _MoveCursor the cursor again, because it's still
-    //         //      at the bottom of the viewport.
-    //     }
-    //     else if (dy > 0)
-    //     {
-    //         // Move to the top of the buffer, and insert some lines of text, to
-    //         //      cause the viewport contents to shift down.
-    //         hr = _MoveCursor({ 0, 0 });
-    //         if (SUCCEEDED(hr))
-    //         {
-    //             hr = _InsertLine(absDy);
-    //         }
-    //     }
-    // }
-    ////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Original Behavior
-    // {
-    //     if (dy < 0)
-    //     {
-    //         // Instead of deleting the first line (causing everything to move up)
-    //         // move to the bottom of the buffer, and newline.
-    //         //      That will cause everything to move up, by moving the viewport down.
-    //         // This will let remote conhosts scroll up to see history like normal.
-    //         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-    //         hr = _MoveCursor({ 0, bottom });
-    //         if (SUCCEEDED(hr))
-    //         {
-    //             std::string seq = std::string(absDy, '\n');
-    //             hr = _Write(seq);
-    //             // Mark that the bottom line is new, so we won't spend time with an
-    //             // ECH on it.
-    //             _newBottomLine = true;
-    //         }
-    //         // We don't need to _MoveCursor the cursor again, because it's still
-    //         //      at the bottom of the viewport.
-    //     }
-    //     else if (dy > 0)
-    //     {
-    //         // Move to the top of the buffer, and insert some lines of text, to
-    //         //      cause the viewport contents to shift down.
-    //         hr = _MoveCursor({ 0, 0 });
-    //         if (SUCCEEDED(hr))
-    //         {
-    //             hr = _InsertLine(absDy);
-    //         }
-    //     }
-    // }
-    ////////////////////////////////////////////////////////////////////////////
-
-    return hr;
+    return S_OK;
 }
 CATCH_RETURN();
 

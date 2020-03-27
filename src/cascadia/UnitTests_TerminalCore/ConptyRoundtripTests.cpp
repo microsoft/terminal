@@ -1059,7 +1059,8 @@ void ConptyRoundtripTests::PassthroughHardReset()
 
 void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
 {
-    Log::Comment(L"Output various different wrapped lines, and ensure we emit them correctly");
+    Log::Comment(
+        L"Case 1: Write a wrapped line right at the start of the buffer, before any circling");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -1073,8 +1074,6 @@ void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
     _flushFirstFrame();
 
     const auto wrappedLineLength = TerminalViewWidth + 20;
-    Log::Comment(
-        L"Case 1: Write a wrapped line right at the start of the buffer, before any circling");
 
     sm.ProcessString(std::wstring(wrappedLineLength, L'A'));
 
@@ -1142,7 +1141,6 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
     const auto wrappedLineLength = TerminalViewWidth + 20;
 
     expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    // expectedOutput.push_back("\x1b[32;80H"); // If a future change removes the need for this, it wouldn't be the worst.
     expectedOutput.push_back(std::string(20, 'A'));
 
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
@@ -1168,7 +1166,11 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
 
 void ConptyRoundtripTests::ScrollWithChangesInMiddle()
 {
-    Log::Comment(L"");
+    Log::Comment(L"This test checks emitting a wrapped line at the bottom of the"
+                 L" viewport while _also_ emitting other text elsewhere in the same frame. This"
+                 L" output will cause us to scroll the viewport in one frame, but we need to"
+                 L" make sure the wrapped line _stays_ wrapped, and the scrolled text appears in"
+                 L" the right place.");
     VERIFY_IS_NOT_NULL(_pVtRenderEngine.get());
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -1198,8 +1200,6 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
             // After we hit the bottom of the viewport, the newlines come in
             // separated by empty writes for whatever reason.
             expectedOutput.push_back("\r\n");
-            // expectedOutput.push_back("\n");
-            // expectedOutput.push_back("\r");
             expectedOutput.push_back("");
         }
 
@@ -1210,40 +1210,36 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
 
     const auto wrappedLineLength = TerminalViewWidth + 20;
 
-    expectedOutput.push_back("\x1b[15;1H");
-    expectedOutput.push_back("Y");
-    expectedOutput.push_back("\x1b[32;1H");
-    expectedOutput.push_back(std::string(TerminalViewWidth, 'A'));
-    expectedOutput.push_back("\x1b[?25h");
-    expectedOutput.push_back(std::string(20, 'A'));
+    // In the Terminal, we're going to expect:
+    expectedOutput.push_back("\x1b[15;1H"); // Move the cursor to row 14, col 0
+    expectedOutput.push_back("Y"); // Print a 'Y'
+    expectedOutput.push_back("\x1b[32;1H"); // Move the cursor to the last row
+    expectedOutput.push_back(std::string(TerminalViewWidth, 'A')); // Print the first 80 'A's
+    // This is going to be the end of the first frame - b/c we moved the cursor
+    // in the middle of the frame, we're going to hide/show the cursor during
+    // this frame
+    expectedOutput.push_back("\x1b[?25h"); // hide the cursor
+    // On the subsequent frame:
+    expectedOutput.push_back(std::string(20, 'A')); // print the remaining 'A's
 
-    // _checkConptyOutput = false;
     _logConpty = true;
 
+    // To the host, we'll do something very similar:
     hostSm.ProcessString(L"\x1b"
                          L"7"); // Save cursor
-    hostSm.ProcessString(L"\x1b[15;1H");
-    hostSm.ProcessString(L"Y");
+    hostSm.ProcessString(L"\x1b[15;1H"); // Move the cursor to row 14, col 0
+    hostSm.ProcessString(L"Y"); // Print a 'Y'
     hostSm.ProcessString(L"\x1b"
                          L"8"); // Restore
-    hostSm.ProcessString(std::wstring(wrappedLineLength, L'A'));
+    hostSm.ProcessString(std::wstring(wrappedLineLength, L'A')); // Print 100 'A's
 
     auto verifyBuffer = [](const TextBuffer& tb, const til::rectangle viewport) {
         const short wrappedRow = viewport.bottom<short>() - 2;
-
-        const bool isTerminal = viewport.top() != 0;
-
         const short start = viewport.top<short>();
         for (short i = start; i < wrappedRow; i++)
         {
-            Log::Comment(NoThrowString().Format(
-                L"Checking row %d", i));
-            // TestUtils::VerifyExpectedString(tb, i == (isTerminal ? 14 : 13) ? L"Y" : L"X", { 0, i });
+            Log::Comment(NoThrowString().Format(L"Checking row %d", i));
             TestUtils::VerifyExpectedString(tb, i == start + 13 ? L"Y" : L"X", { 0, i });
-
-            // auto iter = tb.GetCellDataAt({ 0, i });
-            // Log::Comment(NoThrowString().Format(
-            //     L"Found char '%s'", (iter++)->Chars().data()));
         }
 
         VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).GetCharRow().WasWrapForced());
@@ -1262,16 +1258,6 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     Log::Comment(NoThrowString().Format(L"... Done"));
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
-
-    // TODO: This proves that the scrolling during a frame with other text
-    // breaks this scenario. We're going to try and special-case the scrolling
-    // thing to _only_ when
-    // * the invalid area is the bottom line, and
-    // * the line wrapped
-    // So in that case, we'll be sure that the next text will cause us to move
-    // the viewport down a line appropriately
-    //
-    // I've got a crazy theory that rendering bottom-up _might_ fix this
 
     Log::Comment(NoThrowString().Format(L"Checking the terminal buffer..."));
     verifyBuffer(termTb, term->_mutableViewport.ToInclusive());
