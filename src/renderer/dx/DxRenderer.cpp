@@ -533,6 +533,10 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
                                                                     &props,
                                                                     &_d2dRenderTarget));
 
+        // We need the AntialiasMode for non-text object to be Aliased to ensure
+        //  that background boxes line up with each other and don't leave behind
+        //  stray colors.
+        // See GH#3626 for more details.
         _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->SetTextAntialiasMode(_antialiasingMode);
 
