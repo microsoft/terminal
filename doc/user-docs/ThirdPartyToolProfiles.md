@@ -78,6 +78,19 @@ Assuming that you've installed Git Bash into `C:/Program Files/Git`:
 }
 ````
 
+## Git Bash (WOW64)
+
+Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
+
+```json
+{
+    "name" : "Git Bash",
+    "commandline" : "C:/Program Files (x86)/Git/bin/bash.exe",
+    "icon" : "C:/Program Files (x86)/Git/mingw32/share/git/git-for-windows.ico",
+    "startingDirectory" : "%USERPROFILE%"
+}
+```
+
 ## MSYS2
 
 Assuming that you've installed MSYS2 into `C:/msys64`:
