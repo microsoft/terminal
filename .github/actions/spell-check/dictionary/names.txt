@@ -17,6 +17,7 @@ Illhardt
 jantari
 jerrysh
 Kaiyu
+kimwalisch
 KMehrain
 Kourosh
 kowalczyk
@@ -45,7 +46,9 @@ Somuah
 sonph
 sonpham
 stakx
+Walisch
 Wirt
+Wojciech
 zadjii
 Zamor
 Zoey

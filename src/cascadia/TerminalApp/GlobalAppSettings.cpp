@@ -41,6 +41,14 @@ static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
+static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
+
+#ifdef _DEBUG
+static constexpr bool debugFeaturesDefault{ true };
+#else
+static constexpr bool debugFeaturesDefault{ false };
+#endif
+
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _keybindingsWarnings{},
@@ -59,7 +67,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _tabWidthMode{ TabViewWidthMode::Equal },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
-    _launchMode{ LaunchMode::DefaultMode }
+    _launchMode{ LaunchMode::DefaultMode },
+    _debugFeatures{ debugFeaturesDefault }
 {
 }
 
@@ -171,6 +180,11 @@ void GlobalAppSettings::SetConfirmCloseAllTabs(const bool confirmCloseAllTabs) n
     _confirmCloseAllTabs = confirmCloseAllTabs;
 }
 
+bool GlobalAppSettings::DebugFeaturesEnabled() const noexcept
+{
+    return _debugFeatures;
+}
+
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
 {
@@ -237,6 +251,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
     jsonObject[JsonKey(ConfirmCloseAllKey)] = _confirmCloseAllTabs;
     jsonObject[JsonKey(SnapToGridOnResizeKey)] = _SnapToGridOnResize;
+    jsonObject[JsonKey(DebugFeaturesKey)] = _debugFeatures;
 
     return jsonObject;
 }
@@ -324,6 +339,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
 
     JsonUtils::GetBool(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
+
+    // GetBool will only override the current value if the key exists
+    JsonUtils::GetBool(json, DebugFeaturesKey, _debugFeatures);
 }
 
 // Method Description:
