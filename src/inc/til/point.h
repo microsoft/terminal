@@ -140,8 +140,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
-        point operator*(const int& scale) const
+        template<typename T>
+        point operator*(const T& scale) const
         {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
             ptrdiff_t x;
             THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
 
@@ -151,30 +153,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
-        point operator/(const int& scale) const
+        template<typename T>
+        point operator/(const T& scale) const
         {
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
-
-            return point{ x, y };
-        }
-
-        point operator*(const float& scale) const
-        {
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
-
-            return point{ x, y };
-        }
-
-        point operator/(const float& scale) const
-        {
+            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
             ptrdiff_t x;
             THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
 

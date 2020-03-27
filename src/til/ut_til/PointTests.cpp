@@ -504,5 +504,49 @@ class PointTests
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
         }
+
+        Log::Comment(L"5.) Multiplication of floats that should be in bounds.");
+        {
+            const til::point pt{ 3, 10 };
+            const float scale = 5.5f;
+
+            // 3 * 5.5 = 15.5, which we'll round to 15
+            const til::point expected{ 16, 55 };
+
+            VERIFY_ARE_EQUAL(expected, pt * scale);
+        }
+
+        Log::Comment(L"6.) Multiplication of doubles that should be in bounds.");
+        {
+            const til::point pt{ 3, 10 };
+            const double scale = 5.5f;
+
+            // 3 * 5.5 = 15.5, which we'll round to 15
+            const til::point expected{ 16, 55 };
+
+            VERIFY_ARE_EQUAL(expected, pt * scale);
+        }
+
+        Log::Comment(L"5.) Division of floats that should be in bounds.");
+        {
+            const til::point pt{ 15, 10 };
+            const float scale = 2.0f;
+
+            // 15 / 2 = 7.5, which we'll floor to 7
+            const til::point expected{ 7, 5 };
+
+            VERIFY_ARE_EQUAL(expected, pt / scale);
+        }
+
+        Log::Comment(L"6.) Division of doubles that should be in bounds.");
+        {
+            const til::point pt{ 15, 10 };
+            const double scale = 2.0;
+
+            // 15 / 2 = 7.5, which we'll floor to 7
+            const til::point expected{ 7, 5 };
+
+            VERIFY_ARE_EQUAL(expected, pt / scale);
+        }
     }
 };
