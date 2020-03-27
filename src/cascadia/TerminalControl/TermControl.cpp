@@ -1186,8 +1186,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Actually handle a scrolling event, with from a mouse wheel or a touchpad scroll. Depending upon what modifier keys are
-    //   pressed, different actions will take place.
+    // - Actually handle a scrolling event, with from a mouse wheel or a
+    //   touchpad scroll. Depending upon what modifier keys are pressed,
+    //   different actions will take place.
     //   * Attempts to first dispatch the mouse scroll as a VT event
     //   * If Ctrl+Shift are pressed, then attempts to change our opacity
     //   * If just Ctrl is pressed, we'll attempt to "zoom" by changing our font size
@@ -1203,12 +1204,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_CanSendVTMouseInput())
         {
-            // TODO this used to be
-            // _TrySendMouseEvent(point);
-            // But we don't have a PointerPoint anymore. So we're going to fake that this is only a mousewheel.
-            const auto terminalPosition = _GetTerminalPosition(point);
-            unsigned int uiButton = WM_MOUSEWHEEL;
-            return _terminal->SendMouseEvent(terminalPosition, uiButton, _GetPressedModifierKeys(), ::base::saturated_cast<short>(delta));
+            // Most mouse event handlers call
+            //      _TrySendMouseEvent(point);
+            // here with a PointerPoint. However, as of #979, we don't have a
+            // PointerPoint to work with. So, we're just going to do a
+            // mousewheel event manually
+            return _terminal->SendMouseEvent(_GetTerminalPosition(point),
+                                             WM_MOUSEWHEEL,
+                                             _GetPressedModifierKeys(),
+                                             ::base::saturated_cast<short>(delta));
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
