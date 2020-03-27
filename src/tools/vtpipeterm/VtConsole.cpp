@@ -165,10 +165,10 @@ void VtConsole::_createPseudoConsole(const std::wstring& command)
     siEx = { 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
     size_t size;
-    InitializeProcThreadAttributeList(nullptr, 1, 0, static_cast<PSIZE_T>(&size));
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
     BYTE* attrList = new BYTE[size];
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    fSuccess = InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, static_cast<PSIZE_T>(&size));
+    fSuccess = InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size);
     THROW_LAST_ERROR_IF(!fSuccess);
 
     THROW_IF_FAILED(AttachPseudoConsole(_hPC, siEx.lpAttributeList));
